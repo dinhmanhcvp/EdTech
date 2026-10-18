@@ -15,8 +15,8 @@ def clean_equation_string(raw: str) -> str:
     superscript characters, and converting to valid SymPy syntax.
     """
     eq = raw.strip()
-    # Strip y = or f(x) =
-    eq = re.sub(r'^[yYfF]\s*(\([xX]\))?\s*=\s*', '', eq)
+    # Strip y = or f(x) = or x = or x(t) = or s(t) = or v(t) =
+    eq = re.sub(r'^[yYfFxXsSvVuU]\s*(\([xXtT]\))?\s*=\s*', '', eq)
     
     # Handle fractions: \frac{a}{b} -> ((a)/(b))
     while r'\frac' in eq:
@@ -27,6 +27,7 @@ def clean_equation_string(raw: str) -> str:
     
     # LaTeX cleanup
     eq = eq.replace(r'\,', ' ')
+    eq = eq.replace(r'\pi', 'pi')
     eq = eq.replace('\\sin', 'sin').replace('\\cos', 'cos').replace('\\tan', 'tan')
     eq = eq.replace('\\cdot', '*').replace('\\times', '*')
     
@@ -75,17 +76,33 @@ def generate_neon_graph(equation_str: str, param_a: float = 1.0, param_b: float 
         else:
             expr_evaluated = expr
             
-        # Lambdify to numpy function
-        f = sp.lambdify(x, expr_evaluated, modules=["numpy"])
+        # Determine independent variable: if 't' is present, use 't', else 'x'
+        t = sp.Symbol('t')
+        var_symbol = t if t in expr_evaluated.free_symbols else x
         
-        # Determine x range: trig functions get [-2*pi, 2*pi], algebraic get [-6, 6]
+        # Lambdify to numpy function
+        f = sp.lambdify(var_symbol, expr_evaluated, modules=["numpy"])
+        
+        # Determine range and labels
         expr_str = str(expr_evaluated).lower()
-        if 'sin' in expr_str or 'cos' in expr_str or 'tan' in expr_str:
+        if var_symbol == t:
+            x_vals = np.linspace(0, 4, 1000)
+            x_label_title = "t (s)"
+            y_label_title = "x (cm)"
+            curve_label = f"x(t) = {expr_evaluated}"
+            plot_title = f"Dao động: x(t) = {expr_evaluated}"
+        elif 'sin' in expr_str or 'cos' in expr_str or 'tan' in expr_str:
             x_vals = np.linspace(-2 * np.pi, 2 * np.pi, 1000)
             x_label_title = "x (rad)"
+            y_label_title = "y"
+            curve_label = f"y = {expr_evaluated}"
+            plot_title = f"y = {expr_evaluated}"
         else:
             x_vals = np.linspace(-6, 6, 1000)
             x_label_title = "x"
+            y_label_title = "y"
+            curve_label = f"y = {expr_evaluated}"
+            plot_title = f"y = {expr_evaluated}"
 
         # Evaluate safely
         y_vals = f(x_vals)
@@ -121,12 +138,12 @@ def generate_neon_graph(equation_str: str, param_a: float = 1.0, param_b: float 
             ax.plot(x_vals, y_vals, color=glow_color, linewidth=lw, alpha=0.15)
         
         # Crisp foreground curve
-        ax.plot(x_vals, y_vals, color='#22d3ee', linewidth=2.2, label=f"y = {expr_evaluated}")
+        ax.plot(x_vals, y_vals, color='#22d3ee', linewidth=2.2, label=curve_label)
 
         # Title
-        ax.set_title(f"y = {str(expr_evaluated)}", color='#f8fafc', fontsize=14, pad=16, fontfamily='monospace', fontweight='bold')
+        ax.set_title(plot_title, color='#f8fafc', fontsize=14, pad=16, fontfamily='monospace', fontweight='bold')
         ax.set_xlabel(x_label_title, color='#64748b', fontsize=10)
-        ax.set_ylabel("y", color='#64748b', fontsize=10)
+        ax.set_ylabel(y_label_title, color='#64748b', fontsize=10)
 
         # Vector SVG export
         svg_buffer = io.StringIO()

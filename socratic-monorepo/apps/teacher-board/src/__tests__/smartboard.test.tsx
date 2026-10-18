@@ -8,6 +8,7 @@ import { recognizeShape } from '../utils/shapeRecognizer';
 import { exportIsolatedWebp } from '../utils/isolatedExporter';
 import { SimulationWidget } from '../components/canvas/SimulationWidget';
 import { SmartboardCanvas } from '../components/canvas/SmartboardCanvas';
+import { OcrReviewModal } from '../components/canvas/OcrReviewModal';
 import { SimulationBlueprint } from '@socratic/types';
 
 describe('Smartboard Magic Lasso & 4 Deterministic Engines (Phase 3)', () => {
@@ -256,5 +257,52 @@ describe('Smartboard Magic Lasso & 4 Deterministic Engines (Phase 3)', () => {
     // 4. Assert formula updated in state and callback fired
     expect(formulaDisplay.textContent).toBe('4Fe + 3O_2 -> 2Fe_2O_3');
     expect(onFormulaChange).toHaveBeenCalledWith('4Fe + 3O_2 -> 2Fe_2O_3');
+  });
+
+  /**
+   * TEST 5: OCR Review & Verification Dialog
+   * Verify teacher can review the recognized formula, check confidence badge,
+   * inspect KaTeX math typography, edit if needed, and confirm to push to the board.
+   */
+  it('test_ocr_verification_modal', () => {
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+
+    render(
+      <OcrReviewModal
+        isOpen={true}
+        thumbnailUrl="data:image/webp;base64,mockThumbnail"
+        recognizedLatex="x = 5\cos(2\pi t + \frac{\pi}{2})"
+        confidence={0.98}
+        alternatives={['y = \int x^3 dx', 'y = 2\sin(3x)']}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />
+    );
+
+    // 1. Verify modal is rendered
+    const modal = screen.getByTestId('ocr-review-modal');
+    expect(modal).toBeTruthy();
+
+    // 2. Check confidence badge
+    const badge = screen.getByTestId('ocr-confidence-badge');
+    expect(badge.textContent).toContain('98%');
+
+    // 3. Check handwriting thumbnail
+    const thumb = screen.getByTestId('ocr-review-thumb') as HTMLImageElement;
+    expect(thumb.src).toContain('data:image/webp;base64,mockThumbnail');
+
+    // 4. Check formula input has the initial value
+    const input = screen.getByTestId('ocr-review-input') as HTMLInputElement;
+    expect(input.value).toBe('x = 5\\cos(2\\pi t + \\frac{\\pi}{2})');
+
+    // 5. Test editing the formula
+    fireEvent.change(input, { target: { value: 'y = \\int x^3 dx' } });
+    expect(input.value).toBe('y = \\int x^3 dx');
+
+    // 6. Test confirm button
+    const confirmBtn = screen.getByTestId('ocr-confirm-btn');
+    fireEvent.click(confirmBtn);
+    expect(onConfirm).toHaveBeenCalledWith('y = \\int x^3 dx');
   });
 });

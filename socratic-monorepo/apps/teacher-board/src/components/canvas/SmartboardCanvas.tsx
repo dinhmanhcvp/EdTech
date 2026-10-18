@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
 import { SimulationWidget } from './SimulationWidget';
+import { OcrReviewModal } from './OcrReviewModal';
 import { SimulationBlueprint } from '@socratic/types';
 import {
   Pen,
@@ -78,6 +79,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [formulaInput, setFormulaInput] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // OCR Verification Modal States
+  const [isOcrReviewOpen, setIsOcrReviewOpen] = useState(false);
+  const [pendingBlueprint, setPendingBlueprint] = useState<SimulationBlueprint | null>(null);
+  const [reviewFormula, setReviewFormula] = useState<string>('');
+  const [reviewConfidence, setReviewConfidence] = useState<number>(0.98);
+  const [reviewThumbnailUrl, setReviewThumbnailUrl] = useState<string | null>(null);
+  const [reviewAlternatives, setReviewAlternatives] = useState<string[]>([]);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
@@ -467,18 +476,54 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
       const data = await resp.json();
       const bp = data.simulation_blueprint || data;
-      setActiveBlueprint(bp);
+      const formula = data.ocr_result?.recognized_latex || bp.recognizedLatex || effectiveHint || 'y = 2x + 1';
+      const conf = data.ocr_result?.confidence ?? 0.98;
+      const alts = data.ocr_result?.alternatives || bp.ocrAlternatives || [];
+
+      setPendingBlueprint(bp);
+      setReviewFormula(formula);
+      setReviewConfidence(conf);
+      setReviewThumbnailUrl(cropData ? cropData.dataUrl : thumbnailUrl);
+      setReviewAlternatives(alts);
+      setIsOcrReviewOpen(true);
       setFormulaInput('');
     } catch (err: any) {
       console.error('[Magic Lasso] Pipeline Error:', err);
       setErrorMessage(`Lỗi nhận diện (${err?.message || 'Không kết nối được server'}). Đã kích hoạt mô phỏng offline.`);
 
       // Fallback heuristics:
+      let fallbackBp: SimulationBlueprint;
       const h = effectiveHint.toLowerCase();
-      if (h.includes('sin') || h.includes('cos') || h.includes('wave')) {
-        handleQuickFormula('y = 2\\sin(3x)');
+      if (h.includes('sin') || h.includes('cos') || h.includes('wave') || h.includes('dao động') || h.includes('harmonic')) {
+        fallbackBp = {
+          engine: 'MATH',
+          templateId: 'MATH_TRIG_WAVE',
+          recognizedLatex: effectiveHint || 'y = 2\\sin(3x)',
+          ocrAlternatives: ['y = 2\\sin(3x)', 'x = 5\\cos(2\\pi t + \\frac{\\pi}{2})', 'y = 2\\cos(3x)'],
+          parameters: [
+            { key: 'A', label: 'Biên độ (A)', unit: 'cm', defaultValue: 2.0, min: 0.5, max: 5.0, step: 0.5 },
+            { key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', defaultValue: 3.0, min: 1.0, max: 10.0, step: 1.0 },
+            { key: 'phi', label: 'Pha ban đầu (φ)', unit: 'rad', defaultValue: 0.0, min: -3.14, max: 3.14, step: 0.1 },
+            { key: 'D', label: 'Độ lệch trục (D)', unit: '', defaultValue: 0.0, min: -3.0, max: 3.0, step: 0.5 },
+          ],
+          socraticQuestion: 'Nếu giữ nguyên biên độ A = 2 nhưng tăng tần số góc ω lên gấp đôi, đồ thị sẽ thay đổi như thế nào?',
+        };
+      } else if (h.includes('int') || h.includes('\\int') || h.includes('tích phân')) {
+        fallbackBp = {
+          engine: 'MATH',
+          templateId: 'MATH_FUNC_2D',
+          recognizedLatex: effectiveHint || 'y = \\int x^3 dx',
+          ocrAlternatives: ['y = \\int x^3 dx', 'y = \\int x^2 dx', 'y = x^2 - 4'],
+          parameters: [
+            { key: 'a', label: 'Hệ số a (x³)', unit: '', defaultValue: 1, min: -5, max: 5, step: 0.5 },
+            { key: 'b', label: 'Hệ số b (x²)', unit: '', defaultValue: 0, min: -5, max: 5, step: 0.5 },
+            { key: 'c', label: 'Hệ số c (x)', unit: '', defaultValue: 0, min: -10, max: 10, step: 0.5 },
+            { key: 'd', label: 'Hằng số tích phân C', unit: '', defaultValue: 0, min: -10, max: 10, step: 0.5 },
+          ],
+          socraticQuestion: 'Nguyên hàm của x³ là x⁴/4 + C. Diện tích dưới đường cong thay đổi như thế nào khi x tăng?',
+        };
       } else if (h.includes('ném') || h.includes('v0') || h.includes('projectile')) {
-        setActiveBlueprint({
+        fallbackBp = {
           engine: 'PHYSICS',
           templateId: 'PHYS_PROJECTILE',
           recognizedLatex: 'v_0 = 22\\text{ m/s}, \\alpha = 45^\\circ',
@@ -489,9 +534,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             { key: 'g', label: 'Gia tốc g', unit: 'm/s²', defaultValue: 9.8, min: 1.6, max: 25.0, step: 0.1 },
           ],
           socraticQuestion: 'Tại sao với cùng vận tốc đầu v₀, góc ném 45° lại cho tầm xa cực đại?',
-        });
+        };
       } else if (h.includes('fe') || h.includes('cân') || h.includes('o2')) {
-        setActiveBlueprint({
+        fallbackBp = {
           engine: 'CHEMISTRY',
           templateId: 'CHEM_BALANCE_SCALE',
           recognizedLatex: '4\\text{Fe} + 3\\text{O}_2 \\rightarrow 2\\text{Fe}_2\\text{O}_3',
@@ -502,9 +547,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             { key: 'c3', label: 'Hệ số Fe₂O₃', unit: '', defaultValue: 2.0, min: 1.0, max: 4.0, step: 1.0 },
           ],
           socraticQuestion: 'Em cần chọn bội chung nhỏ nhất là mấy để số Oxi hai vế thăng bằng?',
-        });
+        };
       } else if (h.includes('quang') || h.includes('25') || h.includes('lá') || h.includes('cây')) {
-        setActiveBlueprint({
+        fallbackBp = {
           engine: 'BIOLOGY',
           templateId: 'BIO_PHOTOSYNTHESIS',
           recognizedLatex: '\\text{Quang hợp: } Rate = f(T = 25.0^\\circ\\text{C}, I = 70.0\\%)',
@@ -514,12 +559,12 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             { key: 'light', label: 'Cường độ sáng (I)', unit: '%', defaultValue: 70.0, min: 10.0, max: 100.0, step: 5.0 },
           ],
           socraticQuestion: 'Tại sao khi nhiệt độ vượt quá 45°C, cường độ quang hợp lại giảm dốc đứng?',
-        });
+        };
       } else {
-        setActiveBlueprint({
+        fallbackBp = {
           engine: 'MATH',
           templateId: 'MATH_FUNC_2D',
-          recognizedLatex: 'y = 2x + 1',
+          recognizedLatex: effectiveHint || 'y = 2x + 1',
           ocrAlternatives: ['y = 2x + 1', 'y = x^2 - 4', 'y = x^3 - 3x', 'y = 2\\sin(3x)'],
           parameters: [
             { key: 'c', label: 'Hệ số góc (k)', unit: '', defaultValue: 2, min: -10, max: 10, step: 0.5 },
@@ -527,11 +572,49 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             { key: 'x0', label: 'Điểm tiếp điểm (x₀)', unit: '', defaultValue: 1, min: -5, max: 5, step: 0.5 },
           ],
           socraticQuestion: 'Tại sao khi tăng hệ số góc k = 2 lên k = 4, độ dốc của đường thẳng lại tăng lên?',
-        });
+        };
       }
+
+      setPendingBlueprint(fallbackBp);
+      setReviewFormula(fallbackBp.recognizedLatex);
+      setReviewConfidence(0.92);
+      setReviewThumbnailUrl(cropData ? cropData.dataUrl : thumbnailUrl);
+      setReviewAlternatives(fallbackBp.ocrAlternatives || []);
+      setIsOcrReviewOpen(true);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleConfirmReview = (finalFormula: string) => {
+    let bp = pendingBlueprint;
+    if (!bp) {
+      bp = {
+        engine: 'MATH',
+        templateId: finalFormula.includes('sin') || finalFormula.includes('cos') ? 'MATH_TRIG_WAVE' : 'MATH_FUNC_2D',
+        recognizedLatex: finalFormula,
+        parameters: [],
+        socraticQuestion: 'Làm thế nào để xác định đặc trưng biến thiên của đồ thị này?',
+      };
+    } else {
+      bp = {
+        ...bp,
+        recognizedLatex: finalFormula,
+      };
+      if (finalFormula.includes('sin') || finalFormula.includes('cos')) {
+        bp.engine = 'MATH';
+        bp.templateId = 'MATH_TRIG_WAVE';
+      }
+    }
+
+    setActiveBlueprint(bp);
+    setIsOcrReviewOpen(false);
+    setSelectedStrokes([]);
+    setLassoLoop([]);
+  };
+
+  const handleCancelReview = () => {
+    setIsOcrReviewOpen(false);
   };
 
   const handleQuickFormula = (latex: string) => {
@@ -900,13 +983,25 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       )}
 
       {/* Quick Demo Preset Pills for Live Demo Guaranteed Triggering */}
-      <div className="flex flex-wrap items-center gap-2 mt-2 px-4 py-2 rounded-2xl bg-slate-900/50 border border-white/5 text-xs max-w-5xl w-full">
-        <span className="text-slate-400 font-medium text-[11px] shrink-0">Demo kích hoạt tức thì:</span>
+      <div className="flex flex-wrap items-center gap-2 mt-2 px-4 py-2 rounded-2xl bg-slate-900/50 border border-white/5 text-xs max-w-6xl w-full">
+        <span className="text-slate-400 font-medium text-[11px] shrink-0">Demo nhanh:</span>
         <button
           onClick={() => handleVisualize('y = 2\\sin(3x)')}
           className="px-2.5 py-1 rounded-lg bg-cyan-950/40 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-mono text-[11px] transition cursor-pointer"
         >
           📐 Đồ thị Sin
+        </button>
+        <button
+          onClick={() => handleVisualize('x = 5\\cos(2\\pi t + \\frac{\\pi}{2})')}
+          className="px-2.5 py-1 rounded-lg bg-indigo-950/40 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 font-mono text-[11px] transition cursor-pointer"
+        >
+          🌊 Dao động 5cos(2πt+π/2)
+        </button>
+        <button
+          onClick={() => handleVisualize('y = \\int x^3 dx')}
+          className="px-2.5 py-1 rounded-lg bg-teal-950/40 hover:bg-teal-500/20 border border-teal-500/30 text-teal-300 font-mono text-[11px] transition cursor-pointer"
+        >
+          ∫ Tích phân x³
         </button>
         <button
           onClick={() => handleVisualize('ném xiên v0 = 22 m/s, alpha = 45 độ')}
@@ -930,13 +1025,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
       {/* Smartboard Canvas & Side-by-Side Visualization Workspace */}
       <div className="flex flex-col lg:flex-row items-start justify-center gap-4 mt-3 w-full max-w-7xl">
-        {/* Drawing Canvas Area (Always visible, NEVER covered) */}
-        <div className={`relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900/80 transition-all duration-300 ${activeBlueprint ? 'w-full lg:w-[54%]' : 'w-full max-w-5xl'}`}>
+        {/* Drawing Canvas Area (Always visible, NEVER covered, high-def 1200x675) */}
+        <div className={`relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900/80 transition-all duration-300 ${activeBlueprint ? 'w-full lg:w-[52%]' : 'w-full max-w-6xl'}`}>
           <canvas
             ref={canvasRef}
             data-testid="chalkboard-canvas"
-            width={960}
-            height={540}
+            width={1200}
+            height={675}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -948,7 +1043,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         {activeBlueprint && (
           <div
             data-testid="active-simulation-modal"
-            className="w-full lg:w-[46%] flex flex-col rounded-3xl overflow-hidden border border-white/15 bg-slate-900/95 backdrop-blur-2xl shadow-2xl animate-in fade-in"
+            className="w-full lg:w-[48%] flex flex-col rounded-3xl overflow-hidden border border-white/15 bg-slate-900/95 backdrop-blur-2xl shadow-2xl animate-in fade-in"
           >
             {/* Header bar with dedicated Close / Hide Visualize Button */}
             <div className="flex items-center justify-between px-5 py-3 bg-slate-950/70 border-b border-white/10">
@@ -975,6 +1070,17 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           </div>
         )}
       </div>
+
+      {/* OCR Review & Verification Modal */}
+      <OcrReviewModal
+        isOpen={isOcrReviewOpen}
+        thumbnailUrl={reviewThumbnailUrl}
+        recognizedLatex={reviewFormula}
+        confidence={reviewConfidence}
+        alternatives={reviewAlternatives}
+        onConfirm={handleConfirmReview}
+        onCancel={handleCancelReview}
+      />
     </div>
   );
 };

@@ -9,6 +9,7 @@ import { PhysicsSandboxEngine } from '../../engines/PhysicsSandboxEngine';
 import { ChemistryLabEngine } from '../../engines/ChemistryLabEngine';
 import { BioSystemEngine } from '../../engines/BioSystemEngine';
 import { TapAndSwapOCR } from './TapAndSwapOCR';
+import { MathView } from '../common/MathView';
 
 export interface SimulationWidgetProps {
   blueprint: SimulationBlueprint;
@@ -123,6 +124,11 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               onSwap={handleFormulaSwap}
             />
           </div>
+          {activeFormula && (
+            <div className="mt-1.5 px-3 py-1 rounded-xl bg-slate-950/80 border border-cyan-500/20 text-cyan-100 text-sm inline-block">
+              <MathView latex={activeFormula} displayMode={false} />
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-3">

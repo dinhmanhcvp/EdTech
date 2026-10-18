@@ -374,7 +374,7 @@ def intelligent_fallback_matcher(
             matched_template = "MATH_TRIG_WAVE"
         elif any(k in hint for k in ["elip", "ellipse", "conic", "tròn", "tron"]):
             matched_template = "MATH_CONIC_2D"
-        elif any(k in hint for k in ["x^", "x2", "x3", "y =", "y=", "f(x)", "hàm", "ham"]):
+        elif any(k in hint for k in ["x^", "x2", "x3", "y =", "y=", "f(x)", "hàm", "ham", "int", "tích phân", "tich phan"]):
             matched_template = "MATH_FUNC_2D"
 
     # 2. Run Blackboard OCR Engine (RapidOCR + Stroke vector analysis)
@@ -386,6 +386,9 @@ def intelligent_fallback_matcher(
 
     if matched_template and ocr_res.get("template_id") != matched_template:
         ocr_res["template_id"] = matched_template
+
+    if hint_text and (not ocr_res.get("recognized_latex") or ocr_res.get("recognized_latex") in ["y = 2x + 1", ""]):
+        ocr_res["recognized_latex"] = hint_text
 
     # 3. Geometric heuristic if still not mapped
     if not ocr_res.get("template_id"):
@@ -574,11 +577,17 @@ async def compile_lasso(request: Request):
     if key == "MATH_FUNC_2D":
         expressions = [final_latex.replace("y =", "").strip()]
 
+    alts = list(recognition.get("alternatives", []))
+    if final_latex not in alts:
+        alts.insert(0, final_latex)
+    if item["recognizedLatex"] not in alts:
+        alts.append(item["recognizedLatex"])
+
     blueprint = SimulationBlueprint(
         engine=item["engine"],
         templateId=item["templateId"],
         recognizedLatex=final_latex,
-        ocrAlternatives=recognition.get("alternatives", [final_latex])[:2],
+        ocrAlternatives=alts[:3],
         expressions=expressions,
         parameters=parameters,
         socraticQuestion=item["socraticQuestion"],
@@ -595,7 +604,7 @@ async def compile_lasso(request: Request):
         recognized_latex=final_latex,
         subject=item["subject"],
         confidence=recognition.get("confidence", 0.95),
-        alternatives=recognition.get("alternatives", [final_latex])
+        alternatives=alts
     )
 
     cue = {

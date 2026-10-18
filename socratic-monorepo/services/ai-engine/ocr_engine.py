@@ -675,6 +675,7 @@ class BlackboardOCREngine:
                 print(f"[BlackboardOCREngine] Raw image OCR error: {e}")
 
         # Pass B2: Preprocessed Image Crop OCR
+        prep_img = None
         if image_bytes and len(image_bytes) > 0 and self.rapidocr is not None:
             prep_img, meta_info = self.preprocessor.preprocess(image_bytes)
             if prep_img is not None:

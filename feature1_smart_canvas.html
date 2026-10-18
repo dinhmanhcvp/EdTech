@@ -1538,30 +1538,39 @@
 
                 const recognizedLatex = data.ocr_result ? data.ocr_result.recognized_latex : (effectiveHint || 'y = 2x + 1');
                 currentFormulaStr = recognizedLatex;
-
-                const formulaForPlot = (data.simulation_blueprint && data.simulation_blueprint.expressions) ?
-                    data.simulation_blueprint.expressions[0] : recognizedLatex;
-
-                // 3. Render Đồ thị Python Live
-                await triggerPythonPlot(formulaForPlot, recognizedLatex, data.simulation_blueprint);
-
-                // Render Tap & Swap Alternatives
-                renderAlternatives(data.ocr_result.alternatives || []);
+                const alts = (data.ocr_result && data.ocr_result.alternatives) ? data.ocr_result.alternatives : [];
+                const confidence = data.ocr_result ? Math.round((data.ocr_result.confidence || 0.98) * 100) : 98;
 
                 const elapsed = (performance.now() - startTime).toFixed(1);
                 latencyBadge.innerText = `● Thật: ${elapsed}ms`;
                 if (ocrEngineDisplay && data.simulation_blueprint && data.simulation_blueprint.meta) {
-                    ocrEngineDisplay.innerText = data.simulation_blueprint.meta.engine || 'RAPIDOCR_ONNX';
+                    ocrEngineDisplay.innerText = data.simulation_blueprint.meta.engine || 'GEMINI_VISION';
                 }
 
                 wrapper.classList.remove('scanning');
-                resultBox.classList.add('active');
+
+                // Render preview in side-panel
+                renderAlternatives(alts);
+
+                // MỞ UI CHO NGƯỜI DÙNG CHECK KẾT QUẢ NHẬN DIỆN TRƯỚC KHI VẼ
+                openOcrReviewModal({
+                    cropDataUrl: cropData ? cropData.dataUrl : '',
+                    recognizedLatex: recognizedLatex,
+                    confidence: confidence,
+                    alternatives: alts,
+                    blueprint: data.simulation_blueprint
+                });
 
             } catch (err) {
                 console.warn("Backend compiler fallback:", err);
                 wrapper.classList.remove('scanning');
-                await triggerPythonPlot(effectiveHint || currentFormulaStr || 'y = 2x + 1');
-                resultBox.classList.add('active');
+                openOcrReviewModal({
+                    cropDataUrl: '',
+                    recognizedLatex: effectiveHint || currentFormulaStr || 'y = 2x + 1',
+                    confidence: 80,
+                    alternatives: ['y = 2x + 1', 'y = x^2 - 4', 'y = \\int x^2 dx'],
+                    blueprint: null
+                });
             }
         }
 
@@ -1805,6 +1814,134 @@
             }
         }
 
+        // =========================================================================
+        // KIỂM TRA & XÁC NHẬN KẾT QUẢ NHẬN DIỆN (OCR REVIEW SYSTEM)
+        // =========================================================================
+        let pendingPlotBlueprint = null;
+
+        function openOcrReviewModal({ cropDataUrl, recognizedLatex, confidence, alternatives, blueprint }) {
+            pendingPlotBlueprint = blueprint;
+            currentFormulaStr = recognizedLatex;
+
+            const modal = document.getElementById('ocrReviewModal');
+            const thumb = document.getElementById('ocrReviewThumb');
+            const mathEl = document.getElementById('ocrReviewLatexMath');
+            const input = document.getElementById('ocrReviewInput');
+            const badge = document.getElementById('ocrConfidenceBadge');
+            const altsContainer = document.getElementById('ocrReviewAlts');
+
+            if (thumb) {
+                if (cropDataUrl) {
+                    thumb.src = cropDataUrl;
+                    thumb.style.display = 'block';
+                } else {
+                    thumb.style.display = 'none';
+                }
+            }
+
+            if (badge) {
+                badge.innerText = `● ${confidence}% Tin cậy (Gemini)`;
+            }
+
+            if (input) {
+                input.value = recognizedLatex;
+                input.oninput = () => {
+                    renderOcrReviewLatex(input.value);
+                };
+                input.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        confirmAndPlot();
+                    }
+                };
+            }
+
+            renderOcrReviewLatex(recognizedLatex);
+
+            // Populate alternative chips
+            if (altsContainer) {
+                altsContainer.innerHTML = '<span class="text-[10px] text-slate-500 font-mono">Gợi ý khác:</span>';
+                (alternatives || []).forEach(alt => {
+                    const clean = alt.replace(/^\$|\$$/g, '').trim();
+                    if (!clean || clean === recognizedLatex) return;
+                    const btn = document.createElement('button');
+                    btn.className = 'px-2.5 py-1 rounded-lg bg-white/5 hover:bg-cyan-500/20 border border-white/10 text-cyan-300 font-mono text-xs transition cursor-pointer';
+                    btn.innerText = clean;
+                    btn.onclick = () => {
+                        if (input) input.value = clean;
+                        renderOcrReviewLatex(clean);
+                    };
+                    altsContainer.appendChild(btn);
+                });
+            }
+
+            if (modal) modal.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+            if (input) input.focus();
+        }
+
+        function renderOcrReviewLatex(latex) {
+            const mathEl = document.getElementById('ocrReviewLatexMath');
+            if (!mathEl) return;
+            mathEl.innerHTML = `\\[ ${latex} \\]`;
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                if (window.MathJax.typesetClear) {
+                    window.MathJax.typesetClear([mathEl]);
+                }
+                window.MathJax.typesetPromise([mathEl]).catch(() => {});
+            }
+        }
+
+        function closeOcrReviewModal() {
+            const modal = document.getElementById('ocrReviewModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function confirmAndPlot() {
+            const input = document.getElementById('ocrReviewInput');
+            const formula = input ? input.value.trim() : currentFormulaStr;
+            currentFormulaStr = formula;
+            closeOcrReviewModal();
+
+            // Đảm bảo mở panel kết quả nếu đang ở chế độ song song
+            if (!isVisualizeOpen && currentBoardSize === 'standard') {
+                toggleVisualizePanel();
+            }
+
+            // Gọi vẽ đồ thị với công thức đã kiểm tra chính xác
+            await triggerPythonPlot(formula, formula, pendingPlotBlueprint);
+
+            // Cập nhật thẻ trên bảng nếu đang mở
+            const widget = document.getElementById('boardFloatingWidget');
+            if (widget && !widget.classList.contains('hidden')) {
+                const widgetTitle = document.getElementById('boardWidgetTitle');
+                if (widgetTitle) widgetTitle.innerText = formula;
+            }
+
+            const canvasWrap = document.getElementById('canvasWrapper');
+            if (canvasWrap) canvasWrap.classList.remove('scanning');
+            const resContent = document.getElementById('resultContent');
+            if (resContent) resContent.classList.add('active');
+            showToast(`✅ Đã xác nhận công thức: ${formula}`);
+        }
+
+        async function confirmAndPinToBoard() {
+            const input = document.getElementById('ocrReviewInput');
+            const formula = input ? input.value.trim() : currentFormulaStr;
+            currentFormulaStr = formula;
+            closeOcrReviewModal();
+
+            // Vẽ đồ thị trước rồi ghim thẻ lên bảng
+            await triggerPythonPlot(formula, formula, pendingPlotBlueprint);
+            pinVisualizationToBoard();
+            
+            const canvasWrap = document.getElementById('canvasWrapper');
+            if (canvasWrap) canvasWrap.classList.remove('scanning');
+            const resContent = document.getElementById('resultContent');
+            if (resContent) resContent.classList.add('active');
+            showToast(`📌 Đã ghim mô hình lên bảng: ${formula}`);
+        }
+
         // Initialize on load
         window.addEventListener('load', () => {
             resizeCanvas();
@@ -1813,6 +1950,80 @@
             initWidgetDrag();
         });
     </script>
+
+    <!-- MODAL KIỂM TRA & XÁC NHẬN KẾT QUẢ NHẬN DIỆN (OCR REVIEW) -->
+    <div id="ocrReviewModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900/95 border border-cyan-500/50 rounded-3xl max-w-lg w-full p-6 shadow-2xl shadow-cyan-950/70 flex flex-col gap-4 animate-in fade-in">
+            <!-- Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                <div class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+                        <i data-lucide="check-check" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Kiểm tra kết quả nhận diện (OCR)</h3>
+                        <p class="text-[11px] text-slate-400">Xem và xác nhận công thức trước khi vẽ đồ thị</p>
+                    </div>
+                </div>
+                <span id="ocrConfidenceBadge" class="text-[11px] font-mono px-3 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-semibold">
+                    ● 98% Tin cậy (Gemini)
+                </span>
+            </div>
+
+            <!-- Comparison Row: Handwriting Thumbnail vs Recognized MathJax -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center bg-black/50 p-4 rounded-2xl border border-white/5">
+                <div class="sm:col-span-5 flex flex-col items-center">
+                    <span class="text-[10px] text-slate-400 mb-1 font-mono uppercase tracking-wider">Chữ viết tay gốc:</span>
+                    <div class="w-full h-20 bg-white rounded-xl border border-cyan-500/30 flex items-center justify-center overflow-hidden p-1 shadow-lg shadow-black/40">
+                        <img id="ocrReviewThumb" class="w-full h-full object-contain" src="" alt="Chữ viết tay" />
+                    </div>
+                </div>
+                <div class="sm:col-span-7 flex flex-col">
+                    <span class="text-[10px] text-cyan-400 mb-1 font-mono uppercase tracking-wider flex items-center gap-1">
+                        <i data-lucide="sparkles" class="w-3 h-3"></i> AI nhận diện được:
+                    </span>
+                    <div class="w-full h-20 bg-slate-950 rounded-xl border border-cyan-500/30 flex items-center justify-center p-2 shadow-inner">
+                        <div id="ocrReviewLatexMath" class="text-2xl text-cyan-200 font-medium">
+                            <!-- MathJax typeset here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editable Formula Input -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                    <span>Sửa trực tiếp công thức (nếu cần):</span>
+                    <span class="text-[10px] text-cyan-400 font-mono">Gõ lại ký tự muốn đổi</span>
+                </label>
+                <div class="relative">
+                    <input id="ocrReviewInput" type="text" class="w-full px-4 py-2.5 rounded-xl bg-black/60 border border-cyan-500/40 text-white text-sm font-mono focus:outline-none focus:border-cyan-300 shadow-inner transition" />
+                </div>
+            </div>
+
+            <!-- Candidate Alternative Chips -->
+            <div class="flex flex-wrap items-center gap-1.5 min-h-[26px]" id="ocrReviewAlts">
+                <span class="text-[10px] text-slate-500">Gợi ý khác:</span>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-between pt-3 border-t border-white/10">
+                <button onclick="closeOcrReviewModal()" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white transition-colors cursor-pointer">
+                    ✕ Hủy bỏ
+                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="confirmAndPinToBoard()" class="tool-btn px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 border-purple-500/40 text-purple-300 hover:bg-purple-950/40 transition cursor-pointer" title="Xác nhận và ghim thẳng lên bảng giảng dạy">
+                        <i data-lucide="pin" class="w-3.5 h-3.5 text-purple-400"></i>
+                        <span>Ghim lên bảng</span>
+                    </button>
+                    <button onclick="confirmAndPlot()" class="ai-glow-btn px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xl transition cursor-pointer" title="Xác nhận công thức đúng và vẽ đồ thị">
+                        <i data-lucide="check" class="w-4 h-4 text-white"></i>
+                        <span>✅ Đúng rồi, Vẽ Đồ Thị!</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL CẤU HÌNH GOOGLE GEMINI 2.0 FLASH VISION -->
     <div id="geminiModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">

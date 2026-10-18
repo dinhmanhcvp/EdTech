@@ -499,12 +499,13 @@ async def compile_lasso(request: Request):
                     pass
             parameters.append(param_obj)
 
+        expr_list = [recognized_latex] if recognized_latex else item.get("expressions")
         blueprint = SimulationBlueprint(
             engine=item["engine"],
             templateId=item["templateId"],
             recognizedLatex=recognized_latex,
             ocrAlternatives=[recognized_latex, item["recognizedLatex"]],
-            expressions=item.get("expressions"),
+            expressions=expr_list,
             parameters=parameters,
             socraticQuestion=socratic_q,
             meta={
@@ -516,11 +517,16 @@ async def compile_lasso(request: Request):
             }
         )
 
+        unique_alts = []
+        for alt_cand in [recognized_latex, item.get("recognizedLatex")]:
+            if alt_cand and alt_cand not in unique_alts:
+                unique_alts.append(alt_cand)
+
         ocr = OCRResult(
             recognized_latex=recognized_latex,
             subject=item["subject"],
             confidence=confidence,
-            alternatives=[recognized_latex, item["recognizedLatex"]]
+            alternatives=unique_alts
         )
 
         cue = {

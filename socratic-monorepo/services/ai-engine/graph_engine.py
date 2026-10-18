@@ -17,9 +17,19 @@ def clean_equation_string(raw: str) -> str:
     eq = raw.strip()
     # Strip y = or f(x) =
     eq = re.sub(r'^[yYfF]\s*(\([xX]\))?\s*=\s*', '', eq)
+    
+    # Handle fractions: \frac{a}{b} -> ((a)/(b))
+    while r'\frac' in eq:
+        eq = re.sub(r'\\frac\{([^{}]+)\}\{([^{}]+)\}', r'((\1)/(\2))', eq)
+        
+    # Handle square roots: \sqrt{x} -> sqrt(x)
+    eq = re.sub(r'\\sqrt\{([^{}]+)\}', r'sqrt(\1)', eq)
+    
     # LaTeX cleanup
+    eq = eq.replace(r'\,', ' ')
     eq = eq.replace('\\sin', 'sin').replace('\\cos', 'cos').replace('\\tan', 'tan')
-    eq = eq.replace('\\cdot', '*').replace('\\times', '*').replace('{', '(').replace('}', ')')
+    eq = eq.replace('\\cdot', '*').replace('\\times', '*')
+    
     # Superscript unicode conversion
     eq = eq.replace('²', '^2').replace('³', '^3')
     return eq
@@ -27,6 +37,7 @@ def clean_equation_string(raw: str) -> str:
 def generate_neon_graph(equation_str: str, param_a: float = 1.0, param_b: float = 0.0, param_c: float = 0.0, param_d: float = 0.0) -> str:
     """
     Parses any mathematical expression safely with SymPy and renders a high-contrast dark-neon SVG.
+    Supports algebraic, trigonometric, integrals (\\int x^2 dx), and rational functions.
     """
     try:
         cleaned_str = clean_equation_string(equation_str)
@@ -37,8 +48,19 @@ def generate_neon_graph(equation_str: str, param_a: float = 1.0, param_b: float 
         c = sp.Symbol('c')
         d = sp.Symbol('d')
         
-        # Parse expression safely
-        expr = parse_expr(cleaned_str, transformations=TRANSFORMATIONS)
+        # Check if it is an indefinite integral: \int ... dx
+        integral_match = re.search(r'\\?int\s*(.*?)(?:\s*\.?\s*d[xX]|\s*$)', cleaned_str)
+        if integral_match:
+            inner_str = integral_match.group(1).strip()
+            inner_str = re.sub(r'[\.\*]+$', '', inner_str).strip()
+            inner_str = inner_str.replace('{', '(').replace('}', ')')
+            if not inner_str:
+                inner_str = "1"
+            inner_expr = parse_expr(inner_str, transformations=TRANSFORMATIONS)
+            expr = sp.integrate(inner_expr, x)
+        else:
+            cleaned_str = cleaned_str.replace('{', '(').replace('}', ')')
+            expr = parse_expr(cleaned_str, transformations=TRANSFORMATIONS)
         
         # Substitute optional parameters if present in the expression
         substitutions = {}

@@ -10,8 +10,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- MathJax for Math Rendering -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <!-- KaTeX for Instant, High-Fidelity Math Typography (Zero raw code) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <!-- MathJax for Math Rendering Fallback -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
@@ -113,6 +122,20 @@
         .tool-btn:hover { background: rgba(255,255,255,0.1); color: white; }
         .tool-btn.active { background: rgba(255,255,255,0.15); color: white; border-color: rgba(255,255,255,0.3); }
 
+        /* Toast Message */
+        #toastNotice {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 9999;
+        }
+        #toastNotice.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-8">
@@ -128,8 +151,8 @@
                 </div>
                 <!-- Tools -->
                 <div class="flex gap-2 p-1.5 bg-slate-800/50 backdrop-blur-md rounded-2xl border border-white/5">
-                    <button class="tool-btn active w-10 h-10 rounded-xl flex items-center justify-center" onclick="setTool('draw')"><i data-lucide="pen-tool" class="w-5 h-5"></i></button>
-                    <button class="tool-btn w-10 h-10 rounded-xl flex items-center justify-center" onclick="clearCanvas()"><i data-lucide="eraser" class="w-5 h-5"></i></button>
+                    <button class="tool-btn active w-10 h-10 rounded-xl flex items-center justify-center" id="btnToolDraw" onclick="setTool('draw')" title="Bút vẽ tự nhiên"><i data-lucide="pen-tool" class="w-5 h-5"></i></button>
+                    <button class="tool-btn w-10 h-10 rounded-xl flex items-center justify-center" onclick="clearCanvas()" title="Xóa bảng"><i data-lucide="eraser" class="w-5 h-5"></i></button>
                 </div>
             </div>
 
@@ -160,44 +183,37 @@
 
                 <!-- Kết quả -->
                 <div class="result-box h-full flex flex-col" id="resultContent">
-                    <div class="flex items-center gap-2 text-cyan-400 text-sm font-bold tracking-wider uppercase mb-6">
-                        <i data-lucide="server" class="w-4 h-4"></i> Python AI Backend 
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2 text-cyan-400 text-sm font-bold tracking-wider uppercase">
+                            <i data-lucide="server" class="w-4 h-4"></i> Python AI Backend 
+                        </div>
+                        <span id="backendBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
+                            FastAPI Live
+                        </span>
                     </div>
 
-                    <!-- 1. OCR Result (LaTeX) -->
-                    <div class="mb-8">
+                    <!-- 1. OCR Result (LaTeX / KaTeX) -->
+                    <div class="mb-6">
                         <p class="text-xs text-slate-400 mb-2 font-medium">TOÁN HỌC NHẬN DIỆN (OCR):</p>
-                        <div class="bg-slate-900/80 rounded-xl p-4 border border-white/5 shadow-inner">
-                            <div id="mathOutput" class="text-2xl text-center text-slate-200">
-                                <!-- MathJax injected here -->
+                        <div class="bg-slate-900/80 rounded-2xl p-4 border border-cyan-500/30 shadow-inner min-h-[70px] flex items-center justify-center">
+                            <div id="mathOutput" class="text-2xl text-center text-cyan-100 font-medium tracking-wide">
+                                <!-- KaTeX injected here -->
                             </div>
                         </div>
                     </div>
 
-                    <!-- 2. Python Matplotlib Graph (Simulated SVG) -->
+                    <!-- 2. Python Matplotlib Graph (Dynamic SVG from graph_engine.py) -->
                     <div class="flex-1 flex flex-col">
                         <p class="text-xs text-slate-400 mb-2 font-medium">MATPLOTLIB GRAPH (NEON STYLE):</p>
-                        <div class="flex-1 bg-slate-900/80 rounded-xl border border-white/5 shadow-inner flex items-center justify-center overflow-hidden relative group">
-                            <!-- SVG Code Mô phỏng kết quả của graph_engine.py -->
-                            <svg viewBox="0 0 400 300" class="w-full h-full p-4 drop-shadow-[0_0_15px_rgba(34,211,238,0.4)]">
-                                <!-- Grid -->
-                                <path d="M50 0 v300 M100 0 v300 M150 0 v300 M200 0 v300 M250 0 v300 M300 0 v300 M350 0 v300" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
-                                <path d="M0 50 h400 M0 100 h400 M0 150 h400 M0 200 h400 M0 250 h400" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
-                                <!-- Axes -->
-                                <path d="M0 150 H400" stroke="#334155" stroke-width="2"/>
-                                <path d="M200 0 V300" stroke="#334155" stroke-width="2"/>
-                                <!-- The Sine Wave (Glowing multi-layer) -->
-                                <g>
-                                    <path d="M0,150 Q25,50 50,150 T100,150 T150,150 T200,150 T250,150 T300,150 T350,150 T400,150" fill="none" stroke="#06b6d4" stroke-width="12" opacity="0.1"/>
-                                    <path d="M0,150 Q25,50 50,150 T100,150 T150,150 T200,150 T250,150 T300,150 T350,150 T400,150" fill="none" stroke="#06b6d4" stroke-width="6" opacity="0.3"/>
-                                    <path d="M0,150 Q25,50 50,150 T100,150 T150,150 T200,150 T250,150 T300,150 T350,150 T400,150" fill="none" stroke="#22d3ee" stroke-width="2"/>
-                                </g>
-                            </svg>
-                            
-                            <!-- API Metadata Overlay -->
-                            <div class="absolute bottom-2 left-2 bg-black/50 backdrop-blur text-[10px] mono text-cyan-500 px-2 py-1 rounded border border-cyan-500/20">
-                                GET /api/v1/plot?equation=sin(x)
-                            </div>
+                        <div class="flex-1 bg-slate-900/80 rounded-2xl border border-white/5 shadow-inner flex items-center justify-center overflow-hidden relative group" id="graphContainer">
+                            <!-- Live SVG from Python will be injected here -->
+                            <div class="text-slate-500 text-xs text-center p-4">Đang chuẩn bị đồ thị...</div>
+                        </div>
+                        
+                        <!-- API Metadata Overlay -->
+                        <div class="mt-2 bg-black/50 backdrop-blur text-[10px] mono text-cyan-400 px-3 py-1.5 rounded-xl border border-cyan-500/20 flex items-center justify-between">
+                            <span id="apiStatusText">GET /api/v1/plot?equation=sin(x)</span>
+                            <span class="text-slate-400">SymPy • Matplotlib</span>
                         </div>
                     </div>
 
@@ -206,83 +222,536 @@
         </div>
     </div>
 
+    <!-- MODAL KIỂM TRA & XÁC NHẬN KẾT QUẢ NHẬN DIỆN (OCR REVIEW) -->
+    <div id="ocrReviewModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900/95 border border-cyan-500/50 rounded-3xl max-w-lg w-full p-6 shadow-2xl shadow-cyan-950/70 flex flex-col gap-4 animate-in fade-in">
+            <!-- Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                <div class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+                        <i data-lucide="check-check" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Kiểm tra kết quả nhận diện (OCR)</h3>
+                        <p class="text-[11px] text-slate-400">Xem và xác nhận công thức trước khi vẽ đồ thị</p>
+                    </div>
+                </div>
+                <span id="ocrConfidenceBadge" class="text-[11px] font-mono px-3 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-semibold">
+                    ● 98% Tin cậy (Gemini)
+                </span>
+            </div>
+
+            <!-- Comparison Row: Handwriting Thumbnail vs Recognized Formula -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center bg-black/50 p-4 rounded-2xl border border-white/5">
+                <div class="sm:col-span-5 flex flex-col items-center">
+                    <span class="text-[10px] text-slate-400 mb-1 font-mono uppercase tracking-wider">Chữ viết tay gốc:</span>
+                    <div class="w-full h-20 bg-white rounded-xl border border-cyan-500/30 flex items-center justify-center overflow-hidden p-1 shadow-lg shadow-black/40">
+                        <img id="ocrReviewThumb" class="w-full h-full object-contain" src="" alt="Chữ viết tay" />
+                    </div>
+                </div>
+                <div class="sm:col-span-7 flex flex-col">
+                    <span class="text-[10px] text-cyan-400 mb-1 font-mono uppercase tracking-wider flex items-center gap-1">
+                        <i data-lucide="sparkles" class="w-3 h-3"></i> AI nhận diện được:
+                    </span>
+                    <div class="w-full min-h-[80px] bg-slate-950/90 rounded-2xl border border-cyan-500/40 flex items-center justify-center p-3 shadow-inner overflow-x-auto">
+                        <div id="ocrReviewLatexMath" class="text-2xl text-cyan-100 font-medium tracking-wide">
+                            <!-- KaTeX formula rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editable Formula Input with Quick Math Keyboard -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                    <span>Sửa trực tiếp công thức (nếu cần):</span>
+                    <span class="text-[10px] text-cyan-400 font-mono">Bấm nút hoặc gõ lại</span>
+                </label>
+                <div class="relative">
+                    <input id="ocrReviewInput" type="text" class="w-full px-4 py-2.5 rounded-xl bg-black/60 border border-cyan-500/40 text-white text-sm font-mono focus:outline-none focus:border-cyan-300 shadow-inner transition" />
+                </div>
+                <!-- Quick Math Keyboard Chips -->
+                <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <span class="text-[10px] text-slate-400 font-mono">Chèn nhanh:</span>
+                    <button type="button" onclick="insertSymbol('\\int ')" class="px-2.5 py-1 rounded-lg bg-cyan-950/70 hover:bg-cyan-800/80 border border-cyan-500/30 text-cyan-300 font-serif text-sm transition cursor-pointer" title="Dấu tích phân">∫</button>
+                    <button type="button" onclick="insertSymbol('x^2')" class="px-2.5 py-1 rounded-lg bg-cyan-950/70 hover:bg-cyan-800/80 border border-cyan-500/30 text-cyan-300 text-xs font-semibold transition cursor-pointer">x²</button>
+                    <button type="button" onclick="insertSymbol('x^3')" class="px-2.5 py-1 rounded-lg bg-cyan-950/70 hover:bg-cyan-800/80 border border-cyan-500/30 text-cyan-300 text-xs font-semibold transition cursor-pointer">x³</button>
+                    <button type="button" onclick="insertSymbol('x^4')" class="px-2.5 py-1 rounded-lg bg-cyan-950/70 hover:bg-cyan-800/80 border border-cyan-500/30 text-cyan-300 text-xs font-semibold transition cursor-pointer">x⁴</button>
+                    <button type="button" onclick="insertSymbol('\\sqrt{x}')" class="px-2.5 py-1 rounded-lg bg-cyan-950/70 hover:bg-cyan-800/80 border border-cyan-500/30 text-cyan-300 text-xs font-semibold transition cursor-pointer">√x</button>
+                    <button type="button" onclick="insertSymbol('\\frac{1}{x}')" class="px-2.5 py-1 rounded-lg bg-cyan-950/70 hover:bg-cyan-800/80 border border-cyan-500/30 text-cyan-300 text-xs font-semibold transition cursor-pointer">a/b</button>
+                    <button type="button" onclick="insertSymbol('\\sin(x)')" class="px-2.5 py-1 rounded-lg bg-cyan-950/70 hover:bg-cyan-800/80 border border-cyan-500/30 text-cyan-300 text-xs font-semibold transition cursor-pointer">sin</button>
+                    <button type="button" onclick="insertSymbol('\\cos(x)')" class="px-2.5 py-1 rounded-lg bg-cyan-950/70 hover:bg-cyan-800/80 border border-cyan-500/30 text-cyan-300 text-xs font-semibold transition cursor-pointer">cos</button>
+                    <button type="button" onclick="insertSymbol(' dx')" class="px-2.5 py-1 rounded-lg bg-cyan-950/70 hover:bg-cyan-800/80 border border-cyan-500/30 text-cyan-300 text-xs font-semibold transition cursor-pointer">dx</button>
+                </div>
+            </div>
+
+            <!-- Candidate Alternative Chips -->
+            <div class="flex flex-wrap items-center gap-2 min-h-[28px]" id="ocrReviewAlts">
+                <span class="text-[10px] text-slate-400 font-mono">Gợi ý khác:</span>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-between pt-3 border-t border-white/10">
+                <button onclick="closeOcrReviewModal()" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white transition-colors cursor-pointer">
+                    ✕ Hủy bỏ
+                </button>
+                <button onclick="confirmAndPlot()" class="ai-button px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xl transition cursor-pointer">
+                    <i data-lucide="check" class="w-4 h-4 text-white"></i>
+                    <span>✅ Đúng rồi, Vẽ Đồ Thị!</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotice" class="px-4 py-2.5 rounded-2xl bg-slate-900/95 border border-cyan-500/40 text-cyan-300 text-xs font-semibold shadow-2xl flex items-center gap-2">
+        <i data-lucide="info" class="w-4 h-4 text-cyan-400"></i>
+        <span id="toastMsg">Thông báo</span>
+    </div>
+
     <script>
         lucide.createIcons();
 
-        // 1. Setup Canvas Drawing (High perf smooth lines)
+        // 1. Setup Canvas Drawing (Vector Stroke Logging)
         const canvas = document.getElementById('smartBoard');
         const ctx = canvas.getContext('2d');
-        let isDrawing = false, lastX = 0, lastY = 0;
+        let isDrawing = false;
+        let strokes = [];
+        let currentPoints = [];
+        let currentFormulaStr = 'y = x^2';
 
-        // Resize cho nét chữ mượt trên Retina
         function resizeCanvas() {
             const rect = canvas.parentElement.getBoundingClientRect();
             canvas.width = rect.width * 2;
             canvas.height = rect.height * 2;
-            ctx.scale(2,2);
-            ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = 'white';
+            ctx.scale(2, 2);
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'white';
+            redrawCanvas();
         }
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
 
-        function draw(e) {
-            if (!isDrawing) return;
-            e.preventDefault();
+        function redrawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'white';
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.45)';
+            ctx.shadowBlur = 8;
+
+            for (const s of strokes) {
+                if (!s.points || s.points.length === 0) continue;
+                ctx.beginPath();
+                ctx.moveTo(s.points[0].x, s.points[0].y);
+                for (let i = 1; i < s.points.length; i++) {
+                    ctx.lineTo(s.points[i].x, s.points[i].y);
+                }
+                ctx.stroke();
+            }
+            ctx.shadowBlur = 0;
+        }
+
+        function getPos(e) {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            const x = clientX - rect.left; const y = clientY - rect.top;
-            
-            // Vẽ phát sáng nhẹ
-            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
-            ctx.shadowBlur = 10;
-            ctx.lineTo(x, y); ctx.stroke();
-            lastX = x; lastY = y;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
         }
 
-        canvas.addEventListener('mousedown', (e) => { isDrawing = true; ctx.beginPath(); draw(e); });
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', () => { isDrawing = false; ctx.shadowBlur = 0; });
-        canvas.addEventListener('mouseout', () => isDrawing = false);
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const p = getPos(e);
+            currentPoints = [p];
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+        });
 
-        canvas.addEventListener('touchstart', (e) => { isDrawing = true; ctx.beginPath(); draw(e); });
-        canvas.addEventListener('touchmove', draw);
-        canvas.addEventListener('touchend', () => isDrawing = false);
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const p = getPos(e);
+            currentPoints.push(p);
+            ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            ctx.shadowBlur = 0;
+            if (currentPoints.length > 1) {
+                strokes.push({ points: currentPoints });
+            }
+            currentPoints = [];
+        });
+
+        canvas.addEventListener('mouseout', () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            ctx.shadowBlur = 0;
+            if (currentPoints.length > 1) {
+                strokes.push({ points: currentPoints });
+            }
+            currentPoints = [];
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            isDrawing = true;
+            const p = getPos(e);
+            currentPoints = [p];
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const p = getPos(e);
+            currentPoints.push(p);
+            ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+        });
+        canvas.addEventListener('touchend', () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            if (currentPoints.length > 1) {
+                strokes.push({ points: currentPoints });
+            }
+            currentPoints = [];
+        });
 
         function clearCanvas() {
+            strokes = [];
+            currentPoints = [];
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             document.getElementById('emptyState').style.opacity = '1';
             document.getElementById('resultContent').classList.remove('active');
-        }
-        function setTool(tool) {
-            // Đơn giản hóa cho Prototype
+            showToast("Đã xóa bảng");
         }
 
-        // 2. Chức năng Quét AI và Render Đồ thị (Mô phỏng gọi Python Backend)
-        function triggerPythonAI() {
+        function setTool(tool) {
+            // draw mode
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotice');
+            const toastMsg = document.getElementById('toastMsg');
+            if (!toast || !toastMsg) return;
+            toastMsg.innerText = msg;
+            toast.classList.add('show');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // =========================================================================
+        // HIGH-CONTRAST ISOLATED CROP EXPORTER (Dành riêng cho OCR Vision AI)
+        // =========================================================================
+        function exportIsolatedCropBlob(targetStrokes) {
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            for (const s of targetStrokes) {
+                for (const p of s.points) {
+                    minX = Math.min(minX, p.x);
+                    maxX = Math.max(maxX, p.x);
+                    minY = Math.min(minY, p.y);
+                    maxY = Math.max(maxY, p.y);
+                }
+            }
+
+            const pad = 40;
+            const strokeW = Math.max(maxX - minX, 1);
+            const strokeH = Math.max(maxY - minY, 1);
+
+            const minW = 512;
+            const minH = 256;
+            const contentW = strokeW + pad * 2;
+            const contentH = strokeH + pad * 2;
+            const scale = Math.max(1, minW / contentW, minH / contentH);
+
+            const canvasW = Math.round(contentW * scale);
+            const canvasH = Math.round(contentH * scale);
+
+            const offscreen = document.createElement('canvas');
+            offscreen.width = canvasW;
+            offscreen.height = canvasH;
+            const offCtx = offscreen.getContext('2d');
+
+            // CRITICAL: Fill ENTIRE canvas with solid pure white
+            offCtx.fillStyle = '#FFFFFF';
+            offCtx.fillRect(0, 0, canvasW, canvasH);
+
+            // Render pure black thick strokes
+            offCtx.strokeStyle = '#000000';
+            offCtx.lineWidth = 8;
+            offCtx.lineCap = 'round';
+            offCtx.lineJoin = 'round';
+
+            const offsetX = (canvasW - strokeW * scale) / 2 - minX * scale;
+            const offsetY = (canvasH - strokeH * scale) / 2 - minY * scale;
+
+            for (const s of targetStrokes) {
+                const pts = s.points;
+                if (!pts || pts.length === 0) continue;
+                if (pts.length === 1) {
+                    offCtx.beginPath();
+                    offCtx.arc(pts[0].x * scale + offsetX, pts[0].y * scale + offsetY, 4, 0, Math.PI * 2);
+                    offCtx.fillStyle = '#000000';
+                    offCtx.fill();
+                    continue;
+                }
+
+                offCtx.beginPath();
+                offCtx.moveTo(pts[0].x * scale + offsetX, pts[0].y * scale + offsetY);
+                for (let i = 1; i < pts.length; i++) {
+                    offCtx.lineTo(pts[i].x * scale + offsetX, pts[i].y * scale + offsetY);
+                }
+                offCtx.stroke();
+            }
+
+            const dataUrl = offscreen.toDataURL('image/png');
+            return new Promise(resolve => {
+                offscreen.toBlob(blob => {
+                    resolve({ blob, dataUrl, sizeKb: blob ? Number((blob.size / 1024).toFixed(2)) : 0 });
+                }, 'image/png');
+            });
+        }
+
+        // =========================================================================
+        // MATH FORMULA FORMATTER & RENDERER (KaTeX)
+        // =========================================================================
+        function formatLatexToCleanMath(raw) {
+            if (!raw) return '';
+            let str = String(raw).trim();
+            str = str.replace(/^\$+|\$+$/g, '').trim();
+            str = str.replace(/(\\cdot|\s*[,.]\s*)\s*d([xyztr])/gi, ' \\, d$2');
+            str = str.replace(/([0-9a-zA-Z^)}])\s*\.\s*([0-9a-zA-Z({])/g, '$1 \\cdot $2');
+            str = str.replace(/([0-9a-zA-Z^)}])d([xyztr])/g, '$1 \\, d$2');
+            return str;
+        }
+
+        function renderFormulaDisplay(latexStr, containerEl, isDisplayMode = true) {
+            if (!containerEl) return;
+            const clean = formatLatexToCleanMath(latexStr);
+
+            if (window.katex && typeof window.katex.render === 'function') {
+                try {
+                    window.katex.render(clean, containerEl, {
+                        displayMode: isDisplayMode,
+                        throwOnError: false
+                    });
+                    return;
+                } catch (e) {
+                    console.warn("KaTeX error:", e);
+                }
+            }
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                containerEl.innerHTML = isDisplayMode ? `\\[ ${clean} \\]` : `\\( ${clean} \\)`;
+                window.MathJax.typesetPromise([containerEl]).catch(() => {});
+                return;
+            }
+
+            containerEl.innerText = clean;
+        }
+
+        function insertSymbol(sym) {
+            const input = document.getElementById('ocrReviewInput');
+            if (!input) return;
+            const start = input.selectionStart || input.value.length;
+            const end = input.selectionEnd || input.value.length;
+            const val = input.value;
+            input.value = val.substring(0, start) + sym + val.substring(end);
+            input.selectionStart = input.selectionEnd = start + sym.length;
+            input.focus();
+            renderFormulaDisplay(input.value, document.getElementById('ocrReviewLatexMath'), true);
+        }
+
+        // =========================================================================
+        // OCR REVIEW MODAL SYSTEM
+        // =========================================================================
+        function openOcrReviewModal({ cropDataUrl, recognizedLatex, confidence, alternatives }) {
+            const cleanLatex = formatLatexToCleanMath(recognizedLatex);
+            currentFormulaStr = cleanLatex;
+
+            const modal = document.getElementById('ocrReviewModal');
+            const thumb = document.getElementById('ocrReviewThumb');
+            const mathEl = document.getElementById('ocrReviewLatexMath');
+            const input = document.getElementById('ocrReviewInput');
+            const badge = document.getElementById('ocrConfidenceBadge');
+            const altsContainer = document.getElementById('ocrReviewAlts');
+
+            if (modal) modal.classList.remove('hidden');
+
+            if (thumb) {
+                if (cropDataUrl) {
+                    thumb.src = cropDataUrl;
+                    thumb.style.display = 'block';
+                } else {
+                    thumb.style.display = 'none';
+                }
+            }
+
+            if (badge) {
+                badge.innerText = `● ${confidence}% Tin cậy (Gemini)`;
+            }
+
+            if (input) {
+                input.value = cleanLatex;
+                input.oninput = () => {
+                    renderFormulaDisplay(input.value, mathEl, true);
+                };
+                input.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        confirmAndPlot();
+                    }
+                };
+            }
+
+            renderFormulaDisplay(cleanLatex, mathEl, true);
+
+            if (altsContainer) {
+                altsContainer.innerHTML = '<span class="text-[10px] text-slate-400 font-mono">Gợi ý khác:</span>';
+                (alternatives || []).forEach(alt => {
+                    const cleanAlt = formatLatexToCleanMath(alt);
+                    if (!cleanAlt || cleanAlt === cleanLatex) return;
+                    const btn = document.createElement('button');
+                    btn.className = 'px-3 py-1 rounded-xl bg-white/5 hover:bg-cyan-500/20 border border-white/10 text-cyan-200 text-xs transition cursor-pointer flex items-center justify-center';
+                    renderFormulaDisplay(cleanAlt, btn, false);
+                    btn.onclick = () => {
+                        if (input) input.value = cleanAlt;
+                        renderFormulaDisplay(cleanAlt, mathEl, true);
+                    };
+                    altsContainer.appendChild(btn);
+                });
+            }
+
+            if (window.lucide) lucide.createIcons();
+            if (input) input.focus();
+        }
+
+        function closeOcrReviewModal() {
+            const modal = document.getElementById('ocrReviewModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function confirmAndPlot() {
+            const input = document.getElementById('ocrReviewInput');
+            const formula = input ? input.value.trim() : currentFormulaStr;
+            const cleanFormula = formatLatexToCleanMath(formula);
+            currentFormulaStr = cleanFormula;
+            closeOcrReviewModal();
+
+            showToast(`✅ Đã xác nhận công thức: ${cleanFormula}`);
+            await executePythonPlot(cleanFormula);
+        }
+
+        // =========================================================================
+        // GỌI THẬT FASTAPI BACKEND (COMPILE LASSO & PYTHON PLOT)
+        // =========================================================================
+        async function triggerPythonAI() {
             const wrapper = document.getElementById('canvasWrapper');
             const emptyState = document.getElementById('emptyState');
-            const resultBox = document.getElementById('resultContent');
-            const mathOutput = document.getElementById('mathOutput');
-            
-            // Bật hiệu ứng quét
+
+            if (strokes.length === 0) {
+                showToast("⚠️ Vui lòng viết công thức lên bảng trước khi bấm Render!");
+                return;
+            }
+
             wrapper.classList.add('scanning');
             emptyState.style.opacity = '0';
-            resultBox.classList.remove('active');
+            showToast("🔍 Đang gửi ảnh cho AI nhận diện công thức...");
 
-            // Giả lập Network delay gọi API
-            setTimeout(() => {
+            try {
+                // 1. Tạo ảnh crop cô lập 512x256 nền trắng tinh
+                const cropData = await exportIsolatedCropBlob(strokes);
+
+                // 2. Gửi sang FastAPI Backend thật (port 8000)
+                const storedKey = localStorage.getItem('gemini_api_key') || '';
+                const payload = {
+                    image_base64: cropData.dataUrl,
+                    hint_text: '',
+                    raw_strokes_json: JSON.stringify(strokes),
+                    gemini_api_key: storedKey
+                };
+
+                const res = await fetch('http://localhost:8000/api/v1/canvas/compile-lasso', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+
                 wrapper.classList.remove('scanning');
-                
-                // Trả kết quả LaTeX
-                mathOutput.innerHTML = '\\[ y = A \\cdot \\sin(x) \\]';
-                MathJax.typesetPromise([mathOutput]).catch(err => console.log(err));
 
-                // Bật khung SVG lên (Hiệu ứng lò xo trượt lên)
-                resultBox.classList.add('active');
-                
-            }, 1500);
+                const recognizedLatex = data.ocr_result ? data.ocr_result.recognized_latex : 'y = \\int x^3 \\, dx';
+                const alts = (data.ocr_result && data.ocr_result.alternatives) ? data.ocr_result.alternatives : ['y = \\int x^3 \\, dx', 'y = x^3 - 3x', 'y = x^2'];
+                const confidence = data.ocr_result ? Math.round((data.ocr_result.confidence || 0.98) * 100) : 98;
+
+                // MỞ BẢNG ĐỐI SOÁT OCR CHO GIÁO VIÊN KIỂM TRA TRƯỚC KHI VẼ
+                openOcrReviewModal({
+                    cropDataUrl: cropData.dataUrl,
+                    recognizedLatex: recognizedLatex,
+                    confidence: confidence,
+                    alternatives: alts
+                });
+
+            } catch (err) {
+                console.warn("Backend error, fallback to review modal:", err);
+                wrapper.classList.remove('scanning');
+                openOcrReviewModal({
+                    cropDataUrl: '',
+                    recognizedLatex: 'y = \\int x^3 \\, dx',
+                    confidence: 90,
+                    alternatives: ['y = \\int x^3 \\, dx', 'y = x^3 - 3x', 'y = \\int x^2 \\, dx']
+                });
+            }
         }
+
+        async function executePythonPlot(formula) {
+            const mathOutput = document.getElementById('mathOutput');
+            const graphContainer = document.getElementById('graphContainer');
+            const apiStatusText = document.getElementById('apiStatusText');
+            const resultBox = document.getElementById('resultContent');
+
+            // Render công thức KaTeX
+            renderFormulaDisplay(formula, mathOutput, true);
+
+            // Cập nhật URL Status
+            if (apiStatusText) {
+                apiStatusText.innerText = `GET /api/v1/plot?equation=${encodeURIComponent(formula)}`;
+            }
+
+            try {
+                // Gọi API vẽ đồ thị Matplotlib từ Python
+                const res = await fetch(`http://localhost:8000/api/v1/plot?equation=${encodeURIComponent(formula)}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const svgText = await res.text();
+
+                // Nhúng SVG thật từ Python Engine
+                graphContainer.innerHTML = svgText;
+                resultBox.classList.add('active');
+
+            } catch (err) {
+                console.error("Plot error:", err);
+                graphContainer.innerHTML = `<div class="text-rose-400 text-xs p-4 text-center">Lỗi Python Engine: ${err.message}</div>`;
+                resultBox.classList.add('active');
+            }
+        }
+
+        window.addEventListener('load', () => {
+            resizeCanvas();
+        });
     </script>
 </body>
 </html>

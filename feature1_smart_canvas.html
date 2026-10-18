@@ -151,10 +151,10 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col p-4 md:p-6 lg:p-8">
+<body class="min-h-screen flex flex-col p-2 md:p-3 lg:p-4 bg-slate-950">
 
     <!-- Top Navigation Header -->
-    <header class="max-w-7xl w-full mx-auto flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+    <header class="w-full max-w-[98%] mx-auto flex items-center justify-between pb-3 border-b border-white/10 mb-3">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
                 <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
@@ -194,7 +194,7 @@
     </header>
 
     <!-- Main Workspace Container: Flexible Side-by-Side (Không bao giờ che bảng) -->
-    <main id="mainGrid" class="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 transition-all duration-300">
+    <main id="mainGrid" class="w-full max-w-[98%] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 transition-all duration-300">
         
         <!-- Cột trái: Smartboard Canvas (Co giãn linh hoạt khi bật/tắt visualize) -->
         <div id="canvasColumn" class="lg:col-span-8 flex flex-col gap-3 transition-all duration-300">
@@ -288,6 +288,12 @@
                     <!-- Tải ảnh bảng -->
                     <button class="tool-btn p-2 rounded-xl" onclick="exportBoardImage()" title="Tải ảnh bảng PNG"><i data-lucide="download" class="w-4 h-4"></i></button>
 
+                    <!-- Chế độ phóng to bảng cho giảng dạy -->
+                    <button id="btnToggleFullBoard" class="tool-btn px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-1 font-semibold text-cyan-300 border-cyan-500/30 hover:bg-cyan-950/40 transition-all cursor-pointer" onclick="toggleBoardSize()" title="Chuyển đổi kích thước bảng cực đại (100% không gian giảng dạy)">
+                        <i id="boardSizeIcon" data-lucide="maximize" class="w-4 h-4 text-cyan-400"></i>
+                        <span id="boardSizeLabel" class="text-[11px]">Bảng To 100%</span>
+                    </button>
+
                     <!-- Xóa bảng -->
                     <button class="tool-btn p-2 rounded-xl hover:bg-rose-500/20 text-slate-400 hover:text-rose-400" onclick="clearBoard()" title="Xóa toàn bộ bảng"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
@@ -312,10 +318,47 @@
                 </button>
             </div>
 
-            <!-- CANVAS DRAWING CONTAINER (Luôn hiển thị 100%, không bị che) -->
-            <div class="glass-panel flex-1 relative min-h-[540px] overflow-hidden" id="canvasWrapper">
+            <!-- CANVAS DRAWING CONTAINER (Cực đại không gian, hỗ trợ widget giảng dạy) -->
+            <div class="glass-panel flex-1 relative min-h-[720px] lg:min-h-[780px] h-[calc(100vh-185px)] overflow-hidden" id="canvasWrapper">
                 <div class="scan-line"></div>
                 <canvas id="smartBoard" class="w-full h-full canvas-theme-dots cursor-crosshair touch-none block"></canvas>
+                
+                <!-- FLOATING INTERACTIVE TEACHING WIDGET ON BOARD (Đưa trực quan vào bảng) -->
+                <div id="boardFloatingWidget" class="hidden absolute top-4 right-4 z-40 max-w-[400px] w-full rounded-2xl bg-slate-950/95 border border-cyan-500/50 backdrop-blur-2xl shadow-2xl shadow-cyan-950/70 overflow-hidden flex flex-col transition-all duration-200">
+                    <!-- Header with Drag Handle & Actions -->
+                    <div id="boardWidgetHeader" class="px-3.5 py-2.5 bg-slate-900/90 border-b border-white/10 flex items-center justify-between cursor-move select-none">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="grip-vertical" class="w-4 h-4 text-cyan-400"></i>
+                            <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                                <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i>
+                                <span id="boardWidgetTitle">y = x² + 2</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="stampGraphToCanvas()" class="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer" title="Dán phẳng vào nền bảng để dùng bút phấn vẽ đè lên giảng dạy">
+                                <i data-lucide="image-plus" class="w-3 h-3"></i>
+                                <span>Dán vẽ đè</span>
+                            </button>
+                            <button onclick="toggleMinimizeBoardWidget()" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer" title="Thu nhỏ/Mở rộng">
+                                <i id="boardWidgetMinIcon" data-lucide="minus" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="closeBoardWidget()" class="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer" title="Đóng thẻ">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Body: Live Graph + Compact Sliders -->
+                    <div id="boardWidgetBody" class="p-3 flex flex-col gap-2.5">
+                        <div id="boardWidgetSvgContainer" class="w-full bg-slate-900/95 rounded-xl border border-white/5 overflow-hidden flex items-center justify-center p-1 min-h-[180px]">
+                            <!-- Injected SVG -->
+                        </div>
+
+                        <div id="boardWidgetSliders" class="flex flex-col gap-1.5 bg-black/40 p-2.5 rounded-xl border border-white/5">
+                            <!-- Dynamic Sliders Injected Here -->
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- Contextual Floating Action Bar for Lasso Selection -->
                 <div id="lassoContextAction" class="hidden absolute z-30 flex flex-col md:flex-row items-center gap-2.5 p-3 rounded-2xl bg-slate-900/95 border border-cyan-500/30 backdrop-blur-2xl shadow-2xl animate-in fade-in max-w-xl">
@@ -455,6 +498,29 @@
                         </div>
                     </div>
 
+                    <!-- ĐƯA VÀO BẢNG ĐỂ GIẢNG DẠY -->
+                    <div class="mt-3 pt-3 border-t border-white/10 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-xs text-slate-300 font-semibold">
+                            <span class="flex items-center gap-1.5 text-cyan-300">
+                                <i data-lucide="presentation" class="w-4 h-4 text-cyan-400"></i>
+                                ĐƯA VÀO BẢNG ĐỂ GIẢNG DẠY:
+                            </span>
+                            <span class="text-[10px] text-slate-400 font-mono">Tương tác 60FPS</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <!-- Nút Ghim Thẻ Tương Tác Lên Bảng -->
+                            <button onclick="pinVisualizationToBoard()" class="ai-glow-btn px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg cursor-pointer transition-all" title="Ghim thẻ tương tác có thanh trượt ngay trên mặt bảng để vừa viết vừa giảng">
+                                <i data-lucide="pin" class="w-3.5 h-3.5 text-cyan-300"></i>
+                                <span>📌 Ghim lên bảng</span>
+                            </button>
+                            <!-- Nút Dán Phẳng Vào Bảng để Vẽ Đè Lên -->
+                            <button onclick="stampGraphToCanvas()" class="tool-btn px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border-emerald-500/40 text-emerald-300 hover:bg-emerald-950/40 cursor-pointer transition-all" title="Dán phẳng đồ thị làm hình nền trên bảng để dùng bút/phấn vẽ đè lên giảng dạy">
+                                <i data-lucide="image-plus" class="w-3.5 h-3.5 text-emerald-400"></i>
+                                <span>🎨 Dán vẽ đè</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- 4. Telemetry Footer -->
                     <div class="mt-3 pt-2 text-[10px] font-mono text-slate-400 flex items-center justify-between border-t border-white/5">
                         <span id="ocrEngineDisplay">RAPIDOCR_ONNX</span>
@@ -484,6 +550,7 @@
 
         let isDrawing = false;
         let strokes = []; // { id, type, tool, color, size, points }
+        let boardStickers = []; // { id, img, x, y, width, height, formula }
         let currentPoints = [];
         let undoStack = [];
         let redoStack = [];
@@ -493,25 +560,44 @@
         let selectedStrokes = [];
         let currentFormulaStr = 'y = 2x + 1';
         let currentParams = { a: 1.0, b: 0.0, c: 2.0, d: 1.0 };
+        let currentBoardSize = 'standard'; // 'standard' | 'expanded'
+
+        // Chuyển đổi kích thước bảng: Tiêu chuẩn (Song song) vs Cực đại 100% cho giảng dạy
+        function toggleBoardSize() {
+            setBoardSize(currentBoardSize === 'standard' ? 'expanded' : 'standard');
+        }
+
+        function setBoardSize(size) {
+            currentBoardSize = size;
+            const canvasCol = document.getElementById('canvasColumn');
+            const visCol = document.getElementById('visualizeColumn');
+            const btnLabel = document.getElementById('boardSizeLabel');
+            const btnIcon = document.getElementById('boardSizeIcon');
+            const toggleLabel = document.getElementById('toggleVisualizeLabel');
+
+            if (size === 'expanded') {
+                canvasCol.className = 'lg:col-span-12 flex flex-col gap-3 transition-all duration-300';
+                visCol.classList.add('hidden');
+                isVisualizeOpen = false;
+                if (btnLabel) btnLabel.innerText = 'Bảng Chuẩn 75%';
+                if (btnIcon) btnIcon.setAttribute('data-lucide', 'minimize');
+                if (toggleLabel) toggleLabel.innerText = 'Bật Visualize Bên Cạnh';
+                showToast('📐 Đã mở rộng bảng 100% toàn màn hình cho giảng dạy!');
+            } else {
+                canvasCol.className = 'lg:col-span-8 flex flex-col gap-3 transition-all duration-300';
+                visCol.classList.remove('hidden');
+                isVisualizeOpen = true;
+                if (btnLabel) btnLabel.innerText = 'Bảng To 100%';
+                if (btnIcon) btnIcon.setAttribute('data-lucide', 'maximize');
+                if (toggleLabel) toggleLabel.innerText = 'Tắt Visualize (Mở rộng bảng)';
+            }
+            if (window.lucide) lucide.createIcons();
+            setTimeout(resizeCanvas, 150);
+        }
 
         // Toggle Visualize Panel On/Off (Bên cạnh bảng, không che bảng)
         function toggleVisualizePanel() {
-            isVisualizeOpen = !isVisualizeOpen;
-            const canvasCol = document.getElementById('canvasColumn');
-            const visCol = document.getElementById('visualizeColumn');
-            const toggleLabel = document.getElementById('toggleVisualizeLabel');
-
-            if (isVisualizeOpen) {
-                visCol.classList.remove('hidden');
-                canvasCol.className = 'lg:col-span-8 flex flex-col gap-3 transition-all duration-300';
-                toggleLabel.innerText = 'Tắt Visualize (Mở rộng bảng)';
-            } else {
-                visCol.classList.add('hidden');
-                canvasCol.className = 'lg:col-span-12 flex flex-col gap-3 transition-all duration-300';
-                toggleLabel.innerText = 'Bật Visualize';
-            }
-            // Trigger smooth canvas resize
-            setTimeout(resizeCanvas, 150);
+            setBoardSize(isVisualizeOpen ? 'expanded' : 'standard');
         }
 
         let lastCssWidth = 0;
@@ -535,6 +621,12 @@
                             p.y *= scaleY;
                         });
                     }
+                });
+                boardStickers.forEach(s => {
+                    s.x *= scaleX;
+                    s.y *= scaleY;
+                    s.width *= scaleX;
+                    s.height *= scaleY;
                 });
             }
             lastCssWidth = rect.width;
@@ -629,7 +721,29 @@
             const rect = canvas.getBoundingClientRect();
             ctx.clearRect(0, 0, rect.width, rect.height);
 
-            // Draw all completed strokes
+            // 1. Draw stamped graphics/stickers first so ink strokes can be drawn ON TOP
+            boardStickers.forEach(sticker => {
+                if (sticker.img && sticker.img.complete) {
+                    ctx.save();
+                    // Draw stylish border / card background on chalkboard
+                    ctx.fillStyle = 'rgba(9, 13, 22, 0.85)';
+                    ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    if (ctx.roundRect) {
+                        ctx.roundRect(sticker.x, sticker.y, sticker.width, sticker.height, 16);
+                        ctx.fill();
+                        ctx.stroke();
+                    } else {
+                        ctx.fillRect(sticker.x, sticker.y, sticker.width, sticker.height);
+                        ctx.strokeRect(sticker.x, sticker.y, sticker.width, sticker.height);
+                    }
+                    ctx.drawImage(sticker.img, sticker.x + 8, sticker.y + 8, sticker.width - 16, sticker.height - 16);
+                    ctx.restore();
+                }
+            });
+
+            // 2. Draw all completed strokes
             strokes.forEach(stroke => {
                 ctx.save();
                 const isSelected = selectedStrokes.some(s => s.id === stroke.id);
@@ -999,39 +1113,245 @@
             }
         }
 
-        // Undo & Redo
+        // Undo & Redo (Hỗ trợ cả nét vẽ và đồ thị đã dán)
         function saveUndo() {
-            undoStack.push(JSON.parse(JSON.stringify(strokes)));
+            undoStack.push({
+                strokes: JSON.parse(JSON.stringify(strokes)),
+                stickers: [...boardStickers]
+            });
             redoStack = [];
             if (undoStack.length > 25) undoStack.shift();
         }
 
         function undo() {
             if (undoStack.length === 0) return;
-            redoStack.push(JSON.parse(JSON.stringify(strokes)));
-            strokes = undoStack.pop();
+            redoStack.push({
+                strokes: JSON.parse(JSON.stringify(strokes)),
+                stickers: [...boardStickers]
+            });
+            const state = undoStack.pop();
+            if (Array.isArray(state)) {
+                strokes = state;
+                boardStickers = [];
+            } else {
+                strokes = state.strokes || [];
+                boardStickers = state.stickers || [];
+            }
             selectedStrokes = [];
             redrawBoard();
+            showToast('↩️ Đã hoàn tác');
         }
 
         function redo() {
             if (redoStack.length === 0) return;
-            undoStack.push(JSON.parse(JSON.stringify(strokes)));
-            strokes = redoStack.pop();
+            undoStack.push({
+                strokes: JSON.parse(JSON.stringify(strokes)),
+                stickers: [...boardStickers]
+            });
+            const state = redoStack.pop();
+            if (Array.isArray(state)) {
+                strokes = state;
+                boardStickers = [];
+            } else {
+                strokes = state.strokes || [];
+                boardStickers = state.stickers || [];
+            }
             selectedStrokes = [];
             redrawBoard();
+            showToast('↪️ Đã làm lại');
         }
 
         function clearBoard() {
-            if (strokes.length === 0) return;
+            if (strokes.length === 0 && boardStickers.length === 0) return;
             saveUndo();
             strokes = [];
+            boardStickers = [];
             selectedStrokes = [];
             redrawBoard();
             document.getElementById('emptyState').style.display = 'flex';
             document.getElementById('resultContent').classList.add('hidden');
             document.getElementById('resultContent').classList.remove('active');
             document.getElementById('lassoContextAction').classList.add('hidden');
+            closeBoardWidget();
+            showToast('🗑️ Đã xóa toàn bộ nội dung bảng');
+        }
+
+        // =========================================================================
+        // ĐƯA TRỰC QUAN VÀO BẢNG ĐỂ GIẢNG DẠY (PIN & STAMP)
+        // =========================================================================
+
+        // 1. GHIM THẺ TƯƠNG TÁC LÊN BẢNG (Movable Interactive Teaching Widget)
+        function pinVisualizationToBoard() {
+            const widget = document.getElementById('boardFloatingWidget');
+            const widgetSvg = document.getElementById('boardWidgetSvgContainer');
+            const widgetTitle = document.getElementById('boardWidgetTitle');
+            const mainSvg = document.getElementById('svgGraphContainer');
+
+            if (!widget) return;
+
+            // Copy SVG content
+            if (mainSvg && widgetSvg && mainSvg.innerHTML) {
+                widgetSvg.innerHTML = mainSvg.innerHTML;
+            }
+            if (widgetTitle) {
+                widgetTitle.innerText = currentFormulaStr || 'Đồ thị trực quan';
+            }
+
+            // Đồng bộ lại sliders
+            setupSliders(currentFormulaStr);
+
+            widget.classList.remove('hidden');
+            // Mặc định ghim ở góc trên bên phải của bảng
+            widget.style.right = '20px';
+            widget.style.left = 'auto';
+            widget.style.top = '20px';
+
+            // Tự động mở rộng bảng 100% để giáo viên có không gian rộng nhất để giảng
+            setBoardSize('expanded');
+
+            showToast('📌 Đã ghim thẻ trực quan lên bảng! Bạn có thể kéo thả bất kỳ vị trí nào để giảng bài.');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        let isWidgetMinimized = false;
+        function toggleMinimizeBoardWidget() {
+            isWidgetMinimized = !isWidgetMinimized;
+            const body = document.getElementById('boardWidgetBody');
+            const minIcon = document.getElementById('boardWidgetMinIcon');
+            if (!body) return;
+            if (isWidgetMinimized) {
+                body.classList.add('hidden');
+                if (minIcon) minIcon.setAttribute('data-lucide', 'maximize-2');
+            } else {
+                body.classList.remove('hidden');
+                if (minIcon) minIcon.setAttribute('data-lucide', 'minus');
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeBoardWidget() {
+            const widget = document.getElementById('boardFloatingWidget');
+            if (widget) widget.classList.add('hidden');
+        }
+
+        // 2. DÁN PHẲNG ĐỒ THỊ LÊN MẶT BẢNG (ĐỂ VẼ PHẤN / BÚT ĐÈ LÊN)
+        function stampGraphToCanvas() {
+            const svgEl = document.querySelector('#svgGraphContainer svg') || document.querySelector('#boardWidgetSvgContainer svg');
+            if (!svgEl) {
+                alert('Chưa có đồ thị trực quan để dán lên bảng. Vui lòng nhận diện công thức trước.');
+                return;
+            }
+
+            // Convert SVG sang Image đối tượng
+            const svgData = new XMLSerializer().serializeToString(svgEl);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const URL = window.URL || window.webkitURL || window;
+            const blobURL = URL.createObjectURL(svgBlob);
+
+            const img = new Image();
+            img.onload = function() {
+                saveUndo();
+                const rect = canvas.getBoundingClientRect();
+                // Kích thước chuẩn đẹp trên mặt bảng
+                const stampWidth = Math.min(480, Math.round(rect.width * 0.45));
+                const stampHeight = Math.round(stampWidth * 0.65);
+                
+                // Đặt ở vị trí trung tâm - phải hoặc gần vị trí vừa khoanh vùng
+                const stampX = Math.max(30, Math.round(rect.width - stampWidth - 50));
+                const stampY = Math.max(30, Math.round((rect.height - stampHeight) / 2));
+
+                boardStickers.push({
+                    id: 'sticker_' + Date.now(),
+                    img: img,
+                    x: stampX,
+                    y: stampY,
+                    width: stampWidth,
+                    height: stampHeight,
+                    formula: currentFormulaStr
+                });
+
+                redrawBoard();
+                showToast('🎨 Đã dán đồ thị phẳng lên mặt bảng! Bạn có thể dùng bút viết hoặc dạ quang vẽ đè lên đồ thị.');
+            };
+            img.src = blobURL;
+        }
+
+        // KÉO THẢ THẺ GIẢNG DẠY TRÊN BẢNG (Smooth Touch & Mouse Drag)
+        let isDraggingWidget = false;
+        let widgetStartX = 0, widgetStartY = 0;
+        let widgetStartLeft = 0, widgetStartTop = 0;
+
+        function initWidgetDrag() {
+            const header = document.getElementById('boardWidgetHeader');
+            const widget = document.getElementById('boardFloatingWidget');
+            if (!header || !widget) return;
+
+            const onPointerDown = (e) => {
+                if (e.target.closest('button')) return; // Bỏ qua nếu bấm nút
+                isDraggingWidget = true;
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+                widgetStartX = clientX;
+                widgetStartY = clientY;
+
+                const rect = widget.getBoundingClientRect();
+                const wrapperRect = wrapper.getBoundingClientRect();
+                widgetStartLeft = rect.left - wrapperRect.left;
+                widgetStartTop = rect.top - wrapperRect.top;
+
+                widget.style.right = 'auto'; // Hủy right cố định
+                widget.style.left = `${widgetStartLeft}px`;
+                widget.style.top = `${widgetStartTop}px`;
+
+                window.addEventListener('pointermove', onPointerMove);
+                window.addEventListener('pointerup', onPointerUp);
+            };
+
+            const onPointerMove = (e) => {
+                if (!isDraggingWidget) return;
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+                const dx = clientX - widgetStartX;
+                const dy = clientY - widgetStartY;
+
+                const wrapperRect = wrapper.getBoundingClientRect();
+                const widgetRect = widget.getBoundingClientRect();
+
+                let newLeft = Math.max(10, Math.min(wrapperRect.width - widgetRect.width - 10, widgetStartLeft + dx));
+                let newTop = Math.max(10, Math.min(wrapperRect.height - widgetRect.height - 10, widgetStartTop + dy));
+
+                widget.style.left = `${newLeft}px`;
+                widget.style.top = `${newTop}px`;
+            };
+
+            const onPointerUp = () => {
+                isDraggingWidget = false;
+                window.removeEventListener('pointermove', onPointerMove);
+                window.removeEventListener('pointerup', onPointerUp);
+            };
+
+            header.addEventListener('pointerdown', onPointerDown);
+        }
+
+        // Sleek Notification Toast
+        function showToast(msg) {
+            let toast = document.getElementById('boardToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'boardToast';
+                toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-slate-900/95 border border-cyan-500/40 text-cyan-200 text-xs font-medium shadow-2xl backdrop-blur-md flex items-center gap-2 pointer-events-none transition-all duration-300 opacity-0 translate-y-3';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4 text-cyan-400"></i> <span>${msg}</span>`;
+            if (window.lucide) lucide.createIcons();
+            toast.classList.remove('opacity-0', 'translate-y-3');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-3');
+            }, 3000);
         }
 
         // Attach listeners
@@ -1274,6 +1594,12 @@
                 const svgText = await res.text();
                 svgContainer.innerHTML = svgText;
 
+                // Sync with Board Floating Widget
+                const widgetSvg = document.getElementById('boardWidgetSvgContainer');
+                if (widgetSvg) widgetSvg.innerHTML = svgText;
+                const widgetTitle = document.getElementById('boardWidgetTitle');
+                if (widgetTitle) widgetTitle.innerText = formula;
+
                 // Setup parameter sliders
                 setupSliders(formula, blueprint);
 
@@ -1301,10 +1627,12 @@
             });
         }
 
-        // Setup Interactive Sliders
+        // Setup Interactive Sliders (Đồng bộ đồng thời cả thanh panel và thẻ ghim trên bảng)
         function setupSliders(formula, blueprint) {
-            const container = document.getElementById('slidersList');
-            container.innerHTML = '';
+            const list1 = document.getElementById('slidersList');
+            const list2 = document.getElementById('boardWidgetSliders');
+            if (list1) list1.innerHTML = '';
+            if (list2) list2.innerHTML = '';
 
             const isQuad = formula.includes('^2') || formula.includes('²');
             const isTrig = formula.includes('sin') || formula.includes('cos');
@@ -1318,7 +1646,7 @@
             } else if (isQuad) {
                 sliderConfigs = [
                     { key: 'b', label: 'Hệ số parabol (a)', min: -4.0, max: 4.0, step: 0.5, val: currentParams.b || 1.0 },
-                    { key: 'd', label: 'Tung độ gốc (c)', min: -8.0, max: 8.0, step: 0.5, val: currentParams.d || -4.0 }
+                    { key: 'd', label: 'Tung độ gốc (c)', min: -8.0, max: 8.0, step: 0.5, val: currentParams.d || 2.0 }
                 ];
             } else {
                 sliderConfigs = [
@@ -1327,23 +1655,37 @@
                 ];
             }
 
-            sliderConfigs.forEach(cfg => {
-                const row = document.createElement('div');
-                row.className = 'flex items-center justify-between gap-3 text-xs';
-                row.innerHTML = `
-                    <span class="text-slate-300 font-mono w-28">${cfg.label}:</span>
-                    <input type="range" min="${cfg.min}" max="${cfg.max}" step="${cfg.step}" value="${cfg.val}" 
-                           class="flex-1 cursor-pointer" id="slider_${cfg.key}">
-                    <span class="text-cyan-400 font-mono w-8 text-right font-bold" id="val_${cfg.key}">${cfg.val}</span>
-                `;
-                container.appendChild(row);
+            [list1, list2].forEach((container, idx) => {
+                if (!container) return;
+                const prefix = idx === 0 ? '' : 'widget_';
+                sliderConfigs.forEach(cfg => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between gap-2 text-xs';
+                    row.innerHTML = `
+                        <span class="text-slate-300 font-mono text-[11px] w-28 shrink-0">${cfg.label}:</span>
+                        <input type="range" min="${cfg.min}" max="${cfg.max}" step="${cfg.step}" value="${cfg.val}" 
+                               class="flex-1 cursor-pointer h-1.5" id="${prefix}slider_${cfg.key}">
+                        <span class="text-cyan-400 font-mono w-7 text-right font-bold text-[11px]" id="${prefix}val_${cfg.key}">${cfg.val}</span>
+                    `;
+                    container.appendChild(row);
 
-                const input = row.querySelector('input');
-                input.addEventListener('input', (e) => {
-                    const newVal = parseFloat(e.target.value);
-                    currentParams[cfg.key] = newVal;
-                    document.getElementById(`val_${cfg.key}`).innerText = newVal;
-                    debouncePlot();
+                    const input = row.querySelector('input');
+                    input.addEventListener('input', (e) => {
+                        const newVal = parseFloat(e.target.value);
+                        currentParams[cfg.key] = newVal;
+                        
+                        // Đồng bộ giá trị giữa thẻ trên bảng và panel bên cạnh
+                        const el1 = document.getElementById(`val_${cfg.key}`);
+                        const el2 = document.getElementById(`widget_val_${cfg.key}`);
+                        const s1 = document.getElementById(`slider_${cfg.key}`);
+                        const s2 = document.getElementById(`widget_slider_${cfg.key}`);
+                        if (el1) el1.innerText = newVal;
+                        if (el2) el2.innerText = newVal;
+                        if (s1 && s1 !== input) s1.value = newVal;
+                        if (s2 && s2 !== input) s2.value = newVal;
+                        
+                        debouncePlot();
+                    });
                 });
             });
         }
@@ -1468,6 +1810,7 @@
             resizeCanvas();
             setTool('PEN');
             updateGeminiBadgeStatus();
+            initWidgetDrag();
         });
     </script>
 

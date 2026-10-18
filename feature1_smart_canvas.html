@@ -175,6 +175,12 @@
                 <span id="toggleVisualizeLabel">Tắt Visualize (Mở rộng bảng)</span>
             </button>
 
+            <!-- NÚT CÀI ĐẶT GOOGLE GEMINI 2.0 FLASH AI VISION -->
+            <button id="btnGeminiConfig" onclick="openGeminiModal()" class="tool-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 border-purple-500/30 text-purple-300 hover:bg-purple-900/30 transition-all" title="Cài đặt Model AI nhận diện chữ viết tay Gemini 2.0 Flash">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-400"></i>
+                <span id="geminiModelBadge">AI Vision: Đang tải...</span>
+            </button>
+
             <div id="connectionStatus" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-[11px] font-mono text-emerald-300">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>FastAPI Live :8000</span>
@@ -1187,16 +1193,23 @@
                 }
 
                 // 2. Gửi JSON với image_base64 & hint_text sang FastAPI OCR
+                const storedKey = localStorage.getItem('gemini_api_key') || '';
                 const payload = {
                     image_base64: cropData ? cropData.dataUrl : '',
                     hint_text: effectiveHint,
                     hint_subject: effectiveHint,
-                    raw_strokes_json: JSON.stringify(targetStrokes)
+                    raw_strokes_json: JSON.stringify(targetStrokes),
+                    gemini_api_key: storedKey
                 };
+
+                const headers = { 'Content-Type': 'application/json' };
+                if (storedKey) {
+                    headers['x-gemini-api-key'] = storedKey;
+                }
 
                 const compileRes = await fetch('http://localhost:8000/api/v1/canvas/compile-lasso', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headers,
                     body: JSON.stringify(payload)
                 });
 
@@ -1363,11 +1376,141 @@
             }
         });
 
+        // =========================================================================
+        // GOOGLE GEMINI 2.0 FLASH VISION MANAGEMENT
+        // =========================================================================
+        function openGeminiModal() {
+            const modal = document.getElementById('geminiModal');
+            const input = document.getElementById('inputGeminiKey');
+            const statusMsg = document.getElementById('geminiKeyStatusMsg');
+            const currentKey = localStorage.getItem('gemini_api_key') || '';
+            if (input) input.value = currentKey;
+            if (statusMsg) statusMsg.innerHTML = '';
+            if (modal) modal.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeGeminiModal() {
+            const modal = document.getElementById('geminiModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function saveGeminiApiKey() {
+            const input = document.getElementById('inputGeminiKey');
+            const statusMsg = document.getElementById('geminiKeyStatusMsg');
+            const key = input ? input.value.trim() : '';
+
+            if (!key) {
+                if (statusMsg) {
+                    statusMsg.innerHTML = '<span class="text-rose-400">⚠️ Vui lòng nhập API Key hợp lệ.</span>';
+                }
+                return;
+            }
+
+            localStorage.setItem('gemini_api_key', key);
+            if (statusMsg) {
+                statusMsg.innerHTML = '<span class="text-cyan-400">Đang lưu vào FastAPI backend...</span>';
+            }
+
+            try {
+                const res = await fetch('http://localhost:8000/api/v1/canvas/settings/gemini-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ gemini_api_key: key })
+                });
+                const data = await res.json();
+                if (statusMsg) {
+                    statusMsg.innerHTML = `<span class="text-emerald-400 font-semibold">✅ ${data.message || 'Đã kích hoạt Gemini 2.0 Flash thành công!'}</span>`;
+                }
+                setTimeout(() => {
+                    closeGeminiModal();
+                    updateGeminiBadgeStatus();
+                }, 900);
+            } catch (e) {
+                console.warn("Backend save failed, saved locally in browser:", e);
+                if (statusMsg) {
+                    statusMsg.innerHTML = '<span class="text-emerald-400 font-semibold">✅ Đã lưu vào trình duyệt (sẽ gửi trực tiếp khi Magic Lasso hoạt động).</span>';
+                }
+                setTimeout(() => {
+                    closeGeminiModal();
+                    updateGeminiBadgeStatus();
+                }, 900);
+            }
+        }
+
+        async function updateGeminiBadgeStatus() {
+            const badge = document.getElementById('geminiModelBadge');
+            if (!badge) return;
+            const localKey = localStorage.getItem('gemini_api_key');
+
+            try {
+                const res = await fetch('http://localhost:8000/api/v1/canvas/settings/gemini-key');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.has_key || localKey) {
+                        badge.innerHTML = '<span class="text-purple-300 font-semibold">● Gemini 2.0 Flash</span>';
+                        badge.parentElement.classList.add('border-purple-500/60', 'bg-purple-950/40');
+                        return;
+                    }
+                }
+            } catch (e) {}
+
+            if (localKey) {
+                badge.innerHTML = '<span class="text-purple-300 font-semibold">● Gemini 2.0 Flash</span>';
+                badge.parentElement.classList.add('border-purple-500/60', 'bg-purple-950/40');
+            } else {
+                badge.innerHTML = '<span class="text-amber-400 font-medium">⚙️ Kích hoạt Gemini AI</span>';
+            }
+        }
+
         // Initialize on load
         window.addEventListener('load', () => {
             resizeCanvas();
             setTool('PEN');
+            updateGeminiBadgeStatus();
         });
     </script>
+
+    <!-- MODAL CẤU HÌNH GOOGLE GEMINI 2.0 FLASH VISION -->
+    <div id="geminiModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900/95 border border-purple-500/40 rounded-3xl max-w-lg w-full p-6 shadow-2xl shadow-purple-950/50 flex flex-col gap-4">
+            <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Cấu hình Google Gemini 2.0 Flash Vision</h3>
+                        <p class="text-[11px] text-slate-400">Nhận diện chữ viết tay & công thức STEM không cần luật tự chế</p>
+                    </div>
+                </div>
+                <button onclick="closeGeminiModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+            </div>
+
+            <div class="text-xs text-slate-300 leading-relaxed bg-black/40 p-3.5 rounded-2xl border border-white/5 space-y-2">
+                <p>✨ <strong>Gemini 2.0 Flash</strong> là mô hình AI thị giác đa phương thức (Multimodal VLM) tân tiến nhất của Google:</p>
+                <ul class="list-disc list-inside space-y-1 text-slate-400 text-[11px]">
+                    <li>Nhận diện trực tiếp chữ viết tay nguệch ngoạc, số mũ (x²), phân số, tích phân.</li>
+                    <li>Tự động phân loại đồ thị Toán/Lý/Hóa và trích xuất tham số trong 1 bước.</li>
+                    <li><strong>Hoàn toàn miễn phí</strong>: Nhận API Key tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-cyan-400 underline font-mono">aistudio.google.com</a> (15 requests/phút).</li>
+                </ul>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-slate-300">Google Gemini API Key:</label>
+                <input id="inputGeminiKey" type="password" placeholder="Dán mã AIzaSy... vào đây" class="w-full px-3.5 py-2.5 rounded-xl bg-black/50 border border-purple-500/30 text-white text-xs font-mono focus:outline-none focus:border-purple-400 transition-colors">
+            </div>
+
+            <div id="geminiKeyStatusMsg" class="text-[11px] font-mono text-slate-400 min-h-[18px]"></div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+                <button onclick="closeGeminiModal()" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white transition-colors">Hủy</button>
+                <button onclick="saveGeminiApiKey()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-600/30 transition-all flex items-center gap-1.5">
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    <span>Lưu & Kích hoạt</span>
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

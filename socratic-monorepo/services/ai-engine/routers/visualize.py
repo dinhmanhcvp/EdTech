@@ -252,8 +252,8 @@ OFFLINE_TEMPLATE_REGISTRY: Dict[str, Dict[str, Any]] = {
 }
 
 
-def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None) -> Optional[Dict[str, Any]]:
-    gemini_key = os.getenv("GEMINI_API_KEY")
+def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None, api_key: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    gemini_key = api_key or os.getenv("GEMINI_API_KEY")
     openai_key = os.getenv("OPENAI_API_KEY")
 
     if not gemini_key and not openai_key:
@@ -412,6 +412,7 @@ async def compile_lasso(request: Request):
     Seamlessly falls back to RapidOCR & intelligent heuristics when offline.
     """
     content_type = request.headers.get("content-type", "").lower()
+    custom_gemini_key = request.headers.get("x-gemini-api-key")
     image_bytes = None
     image_base64 = None
     hint_text = None
@@ -424,6 +425,7 @@ async def compile_lasso(request: Request):
             image_base64 = body.get("image_base64") or body.get("image") or body.get("dataUrl")
             hint_text = body.get("hint_text")
             hint_subject = body.get("hint_subject") or hint_text
+            custom_gemini_key = body.get("gemini_api_key") or custom_gemini_key
             raw_strokes_json = body.get("raw_strokes_json")
             if isinstance(raw_strokes_json, (dict, list)):
                 raw_strokes_json = json.dumps(raw_strokes_json)
@@ -434,6 +436,7 @@ async def compile_lasso(request: Request):
             form = await request.form()
             hint_subject = form.get("hint_subject")
             hint_text = form.get("hint_text") or hint_subject
+            custom_gemini_key = form.get("gemini_api_key") or custom_gemini_key
             raw_strokes_json = form.get("raw_strokes_json")
             image_base64 = form.get("image_base64")
             image_file = form.get("image")
@@ -441,6 +444,9 @@ async def compile_lasso(request: Request):
                 image_bytes = await image_file.read()
         except Exception as e:
             print(f"[compile_lasso] Form parse error: {e}")
+
+    if custom_gemini_key:
+        os.environ["GEMINI_API_KEY"] = custom_gemini_key.strip()
 
     if image_base64 and not image_bytes:
         try:
@@ -471,7 +477,7 @@ async def compile_lasso(request: Request):
     # Step 1: Attempt Real Vision LLM (Gemini Flash / OpenAI)
     llm_result = None
     if image_bytes and len(image_bytes) > 0:
-        llm_result = classify_with_vision_llm(image_bytes, hint_text or hint_subject)
+        llm_result = classify_with_vision_llm(image_bytes, hint_text or hint_subject, api_key=custom_gemini_key)
 
     if llm_result and "templateId" in llm_result:
         template_id = llm_result["templateId"]
@@ -592,3 +598,30 @@ async def compile_lasso(request: Request):
         simulation_blueprint=blueprint,
         socratic_cue=cue
     )
+
+
+@router.post("/settings/gemini-key")
+async def save_gemini_key(request: Request):
+    data = await request.json()
+    key = data.get("gemini_api_key", "").strip()
+    if key:
+        os.environ["GEMINI_API_KEY"] = key
+        # Persist to .env in services/ai-engine
+        env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+        try:
+            with open(env_path, "w", encoding="utf-8") as f:
+                f.write(f"GEMINI_API_KEY={key}\n")
+        except Exception as e:
+            print(f"[Settings] Env write error: {e}")
+        return {"status": "ok", "message": "Gemini 2.0 Flash Vision Key đã được lưu thành công", "has_key": True}
+    return {"status": "error", "message": "Key không hợp lệ", "has_key": False}
+
+
+@router.get("/settings/gemini-key")
+def get_gemini_key_status():
+    key = os.getenv("GEMINI_API_KEY")
+    return {
+        "has_key": bool(key),
+        "model": "gemini-2.0-flash",
+        "masked_key": f"{key[:6]}...{key[-4:]}" if key and len(key) > 10 else None
+    }

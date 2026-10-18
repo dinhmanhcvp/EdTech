@@ -422,12 +422,19 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         }
       }
 
+      const storedGeminiKey = typeof window !== 'undefined' ? (localStorage.getItem('gemini_api_key') || '') : '';
       const payload = {
         image_base64: cropData ? cropData.dataUrl : '',
         hint_text: effectiveHint,
         hint_subject: effectiveHint,
         raw_strokes_json: JSON.stringify(selectedStrokes),
+        gemini_api_key: storedGeminiKey,
       };
+
+      const requestHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (storedGeminiKey) {
+        requestHeaders['x-gemini-api-key'] = storedGeminiKey;
+      }
 
       if (onApiCallSpy) {
         onApiCallSpy(apiEndpoint, { strokeCount: selectedStrokes.length, hint: effectiveHint });
@@ -437,14 +444,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       try {
         resp = await fetch(apiEndpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: requestHeaders,
           body: JSON.stringify(payload),
         });
       } catch (fetchErr) {
         if (apiEndpoint.startsWith('/')) {
           resp = await fetch(`http://localhost:8000${apiEndpoint}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: requestHeaders,
             body: JSON.stringify(payload),
           });
         } else {

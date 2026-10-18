@@ -352,27 +352,27 @@ def intelligent_fallback_matcher(
     # 1. Direct Keyword / Preset matching on hint
     matched_template = None
     if hint:
-        if any(k in hint for k in ["sin", "cos", "wave", "sóng", "dao động", "trig"]):
-            matched_template = "MATH_TRIG_WAVE"
-        elif any(k in hint for k in ["ném", "projectile", "v0", "parabol", "quỹ đạo", "alpha"]):
-            matched_template = "PHYS_PROJECTILE"
-        elif any(k in hint for k in ["con lắc", "pendulum", "dây", "chu kỳ"]):
-            matched_template = "PHYS_PENDULUM"
-        elif any(k in hint for k in ["quang hợp", "photo", "quang", "lá", "cây", "stomata", "sinh học"]):
+        if any(k in hint for k in ["quang hợp", "quang hop", "photo", "quang", "lá", "la", "cây", "cay", "stomata", "sinh học", "sinh hoc"]):
             matched_template = "BIO_PHOTOSYNTHESIS"
-        elif any(k in hint for k in ["fe", "cân bằng", "balance", "scale", "o2", "fe2o3"]):
-            matched_template = "CHEM_BALANCE_SCALE"
-        elif any(k in hint for k in ["mg", "hcl", "phản ứng", "acid", "axit", "bọt", "rate", "nồng độ"]):
-            matched_template = "CHEM_REACTION_LAB"
-        elif any(k in hint for k in ["tim", "heart", "ecg", "bpm", "nhịp"]):
+        elif any(k in hint for k in ["tim", "heart", "ecg", "bpm", "nhịp", "nhip", "pulse"]):
             matched_template = "BIO_HEART_CYCLE"
-        elif any(k in hint for k in ["thấu kính", "lens", "1/f", "tiêu cự"]):
-            matched_template = "PHYS_OPTICS_LENS"
-        elif any(k in hint for k in ["nghiêng", "incline", "ma sát", "trượt", "mu"]):
+        elif any(k in hint for k in ["fe", "cân bằng", "can bang", "balance", "scale", "o2", "fe2o3"]):
+            matched_template = "CHEM_BALANCE_SCALE"
+        elif any(k in hint for k in ["mg", "hcl", "phản ứng", "phan ung", "acid", "axit", "bọt", "bot", "rate", "nồng độ", "nong do"]):
+            matched_template = "CHEM_REACTION_LAB"
+        elif any(k in hint for k in ["ném", "nem", "projectile", "v0", "vo", "parabol", "parabola", "quỹ đạo", "quy dao", "alpha"]):
+            matched_template = "PHYS_PROJECTILE"
+        elif any(k in hint for k in ["con lắc", "con lac", "pendulum", "dây", "day", "chu kỳ", "chu ky"]):
+            matched_template = "PHYS_PENDULUM"
+        elif any(k in hint for k in ["nghiêng", "nghieng", "incline", "ma sát", "ma sat", "trượt", "truot", "mu"]):
             matched_template = "PHYS_INCLINED"
-        elif any(k in hint for k in ["elip", "conic", "tròn"]):
+        elif any(k in hint for k in ["thấu kính", "thau kinh", "lens", "1/f", "tiêu cự", "tieu cu"]):
+            matched_template = "PHYS_OPTICS_LENS"
+        elif any(k in hint for k in ["sin", "cos", "wave", "sóng", "song", "dao động", "dao dong", "trig"]):
+            matched_template = "MATH_TRIG_WAVE"
+        elif any(k in hint for k in ["elip", "ellipse", "conic", "tròn", "tron"]):
             matched_template = "MATH_CONIC_2D"
-        elif any(k in hint for k in ["x^", "x2", "x3", "y =", "y=", "f(x)", "hàm"]):
+        elif any(k in hint for k in ["x^", "x2", "x3", "y =", "y=", "f(x)", "hàm", "ham"]):
             matched_template = "MATH_FUNC_2D"
 
     # 2. Run Blackboard OCR Engine (RapidOCR + Stroke vector analysis)
@@ -463,9 +463,9 @@ async def compile_lasso(request: Request):
                     "size_bytes": len(image_bytes),
                     "raw_strokes_json": raw_strokes_json
                 }, f, ensure_ascii=False, indent=2)
-            print(f"[DEBUG LASSO] Saved debug_last_lasso.png ({len(image_bytes)} bytes), hint='{hint_text}'")
+            print(f"[DEBUG LASSO] Saved debug_last_lasso.png ({len(image_bytes)} bytes)")
         except Exception as de:
-            print(f"[DEBUG LASSO] Save error: {de}")
+            print(f"[DEBUG LASSO] Save error: {str(de).encode('ascii', 'replace').decode()}")
 
     # Step 1: Attempt Real Vision LLM (Gemini Flash / OpenAI)
     llm_result = None

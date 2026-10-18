@@ -241,6 +241,11 @@ class BlackboardMathCorrector:
         t = re.sub(r'c02\b', 'CO2', t, flags=re.IGNORECASE)
         t = re.sub(r'h20\b', 'H2O', t, flags=re.IGNORECASE)
 
+        # If Mg + HCl reaction kinetics
+        if any(w in t.lower() for w in ["mg", "hcl", "acid", "axit", "bọt", "rate"]):
+            latex = "\\text{Mg} + 2\\text{HCl} \\rightarrow \\text{MgCl}_2 + \\text{H}_2\\uparrow"
+            return latex, {"temperature": 25.0, "concentration": 1.0, "c1": 1.0, "c2": 2.0}
+
         # Extract coefficients for Fe + O2 -> Fe2O3
         # e.g. 4Fe + 3O2 -> 2Fe2O3
         c1, c2, c3 = 4.0, 3.0, 2.0
@@ -649,55 +654,55 @@ class BlackboardOCREngine:
         dynamic_parameters: Optional[List[Dict[str, Any]]] = None
         latex_formula = ""
 
-        # Check Chemistry
-        if any(w in lower_t for w in ["fe", "o2", "02", "fe2", "h2", "co2", "chem", "phản ứng", "cân bằng"]):
-            key = "CHEM_BALANCE_SCALE" if any(w in lower_t for w in ["fe", "cân", "scale", "o2", "02"]) else "CHEM_REACTION_LAB"
-            latex_formula, extracted_params = self.corrector.normalize_chemistry(cleaned_text)
-
-        # Check Optics (f, d, 1/f)
-        elif any(w in lower_t for w in ["thấu kính", "lens", "1/f", "tiêu cự"]) or (("f=" in lower_t or "f =" in lower_t) and ("d=" in lower_t or "d =" in lower_t)):
-            key = "PHYS_OPTICS_LENS"
-            latex_formula, extracted_params = self.corrector.normalize_optics(cleaned_text)
-
-        # Check Waves / Trigonometry
-        elif any(w in lower_t for w in ["sin", "cos", "tan", "wave", "sóng", "dao động"]):
-            key = "MATH_TRIG_WAVE"
-            latex_formula, extracted_params = self.corrector.normalize_trig_wave(cleaned_text)
-
-        # Check Conics (Ellipse, Circle)
-        elif any(w in lower_t for w in ["elip", "tròn", "conic", "x^2/", "y^2/", "x2/", "y2/"]):
-            key = "MATH_CONIC_2D"
-            latex_formula, extracted_params = self.corrector.normalize_conic(cleaned_text)
-
-        # Check Polynomial / 2D Functions (Linear, Quadratic, Cubic, etc.)
-        elif any(w in lower_t for w in ["x^", "x2", "x3", "y =", "y=", "f(x)", "hàm số", "cực trị"]) or re.search(r'(?:[0-9]x|[-+]x|\bx\b)', lower_t):
-            key = "MATH_FUNC_2D"
-            latex_formula, extracted_params, dynamic_parameters = self.corrector.normalize_polynomial_2d(cleaned_text)
-
-        # Check Projectile Motion
-        elif any(w in lower_t for w in ["ném", "projectile", "v0", "vo", "m/s", "tầm xa"]):
-            key = "PHYS_PROJECTILE"
-            latex_formula, extracted_params = self.corrector.normalize_projectile(cleaned_text)
-
-        # Check Pendulum
-        elif any(w in lower_t for w in ["con lắc", "pendulum", "dây", "chu kỳ"]) or (("l=" in lower_t or "l =" in lower_t) and ("theta" in lower_t or "g=" in lower_t or "g =" in lower_t)):
-            key = "PHYS_PENDULUM"
-            latex_formula, extracted_params = self.corrector.normalize_pendulum(cleaned_text)
-
-        # Check Inclined Plane
-        elif any(w in lower_t for w in ["nghiêng", "incline", "ma sát", "trượt"]) or ("mu=" in lower_t or "mu =" in lower_t):
-            key = "PHYS_INCLINED"
-            latex_formula, extracted_params = self.corrector.normalize_inclined(cleaned_text)
-
-        # Check Biology: Photosynthesis
-        elif any(w in lower_t for w in ["quang hợp", "photosynthesis", "khí khổng", "lá", "stomata"]):
+        # 1. Check Biology: Photosynthesis
+        if any(w in lower_t for w in ["quang hợp", "quang hop", "photosynthesis", "khí khổng", "khi khong", "lá", "la cây", "la cay", "stomata", "25°c", "25c", "quang"]):
             key = "BIO_PHOTOSYNTHESIS"
             latex_formula, extracted_params = self.corrector.normalize_bio(cleaned_text, is_heart=False)
 
-        # Check Biology: Heart & ECG
-        elif any(w in lower_t for w in ["tim", "heart", "ecg", "bpm", "nhịp"]):
+        # 2. Check Biology: Heart & ECG
+        elif any(w in lower_t for w in ["tim", "heart", "ecg", "bpm", "nhịp", "nhip", "pulse"]):
             key = "BIO_HEART_CYCLE"
             latex_formula, extracted_params = self.corrector.normalize_bio(cleaned_text, is_heart=True)
+
+        # 3. Check Chemistry (Reactions & Balance)
+        elif any(w in lower_t for w in ["fe", "o2", "02", "fe2", "h2", "co2", "chem", "phản ứng", "phan ung", "cân bằng", "can bang", "mg", "hcl", "acid", "axit", "na", "cl", "cu", "so4", "h2o", "koh", "naoh", "rate"]):
+            key = "CHEM_BALANCE_SCALE" if any(w in lower_t for w in ["fe", "cân", "can bang", "scale", "o2", "02", "balance"]) else "CHEM_REACTION_LAB"
+            latex_formula, extracted_params = self.corrector.normalize_chemistry(cleaned_text)
+
+        # 4. Check Projectile Motion
+        elif any(w in lower_t for w in ["ném", "nem", "projectile", "v0", "vo", "m/s", "tầm xa", "tam xa", "ném xiên", "nem xien", "parabol", "parabola"]):
+            key = "PHYS_PROJECTILE"
+            latex_formula, extracted_params = self.corrector.normalize_projectile(cleaned_text)
+
+        # 5. Check Pendulum
+        elif any(w in lower_t for w in ["con lắc", "con lac", "pendulum", "dây", "day", "chu kỳ", "chu ky"]) or (("l=" in lower_t or "l =" in lower_t) and ("theta" in lower_t or "g=" in lower_t or "g =" in lower_t)):
+            key = "PHYS_PENDULUM"
+            latex_formula, extracted_params = self.corrector.normalize_pendulum(cleaned_text)
+
+        # 6. Check Inclined Plane
+        elif any(w in lower_t for w in ["nghiêng", "nghieng", "incline", "ma sát", "ma sat", "trượt", "truot"]) or ("mu=" in lower_t or "mu =" in lower_t):
+            key = "PHYS_INCLINED"
+            latex_formula, extracted_params = self.corrector.normalize_inclined(cleaned_text)
+
+        # 7. Check Optics (f, d, 1/f)
+        elif any(w in lower_t for w in ["thấu kính", "thau kinh", "lens", "1/f", "tiêu cự", "tieu cu"]) or (("f=" in lower_t or "f =" in lower_t) and ("d=" in lower_t or "d =" in lower_t)):
+            key = "PHYS_OPTICS_LENS"
+            latex_formula, extracted_params = self.corrector.normalize_optics(cleaned_text)
+
+        # 8. Check Waves / Trigonometry
+        elif any(w in lower_t for w in ["sin", "cos", "tan", "wave", "sóng", "song", "dao động", "dao dong", "trig"]):
+            key = "MATH_TRIG_WAVE"
+            latex_formula, extracted_params = self.corrector.normalize_trig_wave(cleaned_text)
+
+        # 9. Check Conics (Ellipse, Circle)
+        elif any(w in lower_t for w in ["elip", "ellipse", "tròn", "tron", "conic", "x^2/", "y^2/", "x2/", "y2/"]):
+            key = "MATH_CONIC_2D"
+            latex_formula, extracted_params = self.corrector.normalize_conic(cleaned_text)
+
+        # 10. Check Polynomial / 2D Functions (Linear, Quadratic, Cubic, etc.)
+        elif any(w in lower_t for w in ["x^", "x2", "x3", "y =", "y=", "f(x)", "hàm số", "ham so", "cực trị", "cuc tri"]) or re.search(r'(?:[0-9]x|[-+]x|\bx\b)', lower_t):
+            key = "MATH_FUNC_2D"
+            latex_formula, extracted_params, dynamic_parameters = self.corrector.normalize_polynomial_2d(cleaned_text)
 
         # 5. Stroke Geometry Fallback if no text matched
         if not key and parsed_strokes:

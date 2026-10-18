@@ -250,6 +250,12 @@
                         <span>Lasso</span>
                     </button>
 
+                    <!-- Nút Nhận diện AI Trực tiếp -->
+                    <button id="btnToolbarRecognize" class="ai-glow-btn px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 font-bold shadow-xl shadow-cyan-500/20 cursor-pointer" onclick="triggerUnifiedCompile()" title="Nhận diện chữ viết tay trên bảng ngay lập tức (không cần khoanh)">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-cyan-200"></i>
+                        <span>✨ Nhận diện AI</span>
+                    </button>
+
                     <!-- Tẩy -->
                     <button id="btnToolEraser" class="tool-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 text-rose-400 hover:text-rose-300" onclick="setTool('ERASER')" title="Tẩy nét">
                         <i data-lucide="eraser" class="w-4 h-4"></i>
@@ -959,26 +965,32 @@
                 }
             } else if (currentTool === 'LASSO') {
                 // Forgiving Polygon hit-testing: >=25% points OR >=30% BBox overlap + 24px pad
-                if (currentPoints.length > 5) {
-                    const enclosed = filterEnclosedStrokes(strokes, currentPoints);
+                if (currentPoints.length > 3) {
+                    let enclosed = filterEnclosedStrokes(strokes, currentPoints);
+                    // Nếu khoanh rộng không trúng nét nào mà trên bảng có nét thì tự động lấy toàn bộ nét trên bảng
+                    if (enclosed.length === 0 && strokes.length > 0) {
+                        enclosed = strokes;
+                    }
                     selectedStrokes = enclosed;
                     if (enclosed.length > 0) {
                         const lassoBtn = document.getElementById('lassoContextAction');
-                        lassoBtn.classList.remove('hidden');
-                        document.getElementById('lassoCountLabel').innerText = enclosed.length;
+                        if (lassoBtn) {
+                            lassoBtn.classList.remove('hidden');
+                            const countEl = document.getElementById('lassoCountLabel');
+                            if (countEl) countEl.innerText = enclosed.length;
+                            const lastPt = currentPoints[currentPoints.length - 1];
+                            lassoBtn.style.left = `${Math.min(window.innerWidth - 380, Math.max(20, lastPt.x - 100))}px`;
+                            lassoBtn.style.top = `${Math.min(480, Math.max(80, lastPt.y - 120))}px`;
+                        }
                         
-                        // Generate Debug Preview Thumbnail immediately
-                        exportIsolatedCropBlob(enclosed).then(res => {
-                            if (res && res.dataUrl) {
-                                const thumb = document.getElementById('lassoPreviewThumb');
-                                if (thumb) thumb.src = res.dataUrl;
-                            }
-                        });
-
-                        // Position button near last point
-                        const lastPt = currentPoints[currentPoints.length - 1];
-                        lassoBtn.style.left = `${Math.min(window.innerWidth - 380, Math.max(20, lastPt.x - 100))}px`;
-                        lassoBtn.style.top = `${Math.min(480, Math.max(80, lastPt.y - 120))}px`;
+                        showToast(`🔍 Đã khoanh vùng ${enclosed.length} nét. Đang nhận diện AI...`);
+                        
+                        // TỰ ĐỘNG KÍCH HOẠT NHẬN DIỆN VÀ MỞ BẢNG ĐỐI SOÁT NGAY LẬP TỨC!
+                        setTimeout(() => {
+                            triggerUnifiedCompile();
+                        }, 200);
+                    } else {
+                        showToast(`⚠️ Hãy viết công thức lên bảng trước khi khoanh vùng.`);
                     }
                 }
             } else {
@@ -1494,9 +1506,11 @@
 
             const targetStrokes = selectedStrokes.length > 0 ? selectedStrokes : strokes;
             if (targetStrokes.length === 0 && !effectiveHint) {
-                alert("Vui lòng viết công thức hoặc nhập nội dung trước khi nhận diện!");
+                showToast("⚠️ Vui lòng viết công thức lên bảng trước khi bấm nhận diện!");
                 return;
             }
+
+            showToast("🔍 AI đang nhận diện chữ viết tay...");
 
             wrapper.classList.add('scanning');
             emptyState.style.display = 'none';

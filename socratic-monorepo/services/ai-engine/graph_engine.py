@@ -48,11 +48,11 @@ def generate_neon_graph(equation_str: str, param_a: float = 1.0, param_b: float 
         c = sp.Symbol('c')
         d = sp.Symbol('d')
         
-        # Check if it is an indefinite integral: \int ... dx
-        integral_match = re.search(r'\\?int\s*(.*?)(?:\s*\.?\s*d[xX]|\s*$)', cleaned_str)
+        # Check if it is an indefinite integral: \int ... dx (supports .dx, ,dx, dx)
+        integral_match = re.search(r'\\?int\s*(.*?)(?:\s*[\.,]?\s*d[xX]|\s*$)', cleaned_str)
         if integral_match:
             inner_str = integral_match.group(1).strip()
-            inner_str = re.sub(r'[\.\*]+$', '', inner_str).strip()
+            inner_str = re.sub(r'[\.,\*]+$', '', inner_str).strip()
             inner_str = inner_str.replace('{', '(').replace('}', ')')
             if not inner_str:
                 inner_str = "1"

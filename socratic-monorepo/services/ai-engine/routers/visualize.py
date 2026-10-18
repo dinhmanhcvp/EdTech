@@ -484,6 +484,9 @@ async def compile_lasso(request: Request):
         template_id = llm_result["templateId"]
         item = OFFLINE_TEMPLATE_REGISTRY.get(template_id, OFFLINE_TEMPLATE_REGISTRY["MATH_TRIG_WAVE"])
         recognized_latex = llm_result.get("recognizedLatex", item["recognizedLatex"])
+        if recognized_latex:
+            recognized_latex = recognized_latex.strip().strip('$').strip()
+            recognized_latex = re.sub(r'(\\cdot|[\.,])\s*d([xyztr])', r' \\, d\1', recognized_latex)
         socratic_q = llm_result.get("socraticQuestion", item["socraticQuestion"])
         confidence = float(llm_result.get("confidence", 0.95))
 

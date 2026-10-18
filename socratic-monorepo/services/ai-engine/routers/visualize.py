@@ -296,7 +296,7 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
             genai.configure(api_key=gemini_key)
             pil_img = Image.open(io.BytesIO(image_bytes)) if PIL_AVAILABLE else None
             if pil_img:
-                for model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"]:
+                for model_name in ["gemini-2.5-flash", "gemini-flash-latest", "gemini-3.8-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
                     try:
                         model = genai.GenerativeModel(model_name)
                         response = model.generate_content([few_shot_prompt, pil_img])
@@ -305,6 +305,7 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
                             if m:
                                 data = json.loads(m.group(0))
                                 if "templateId" in data and data["templateId"] in OFFLINE_TEMPLATE_REGISTRY:
+                                    print(f"[Gemini Vision] Succeeded with model: {model_name}")
                                     return data
                     except Exception as me:
                         print(f"[Gemini Vision] Model {model_name} error: {me}")

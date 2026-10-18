@@ -190,16 +190,24 @@
         <span>Biến Hình 3D</span>
     </button>
 
-    <!-- KẾT QUẢ HIỂN THỊ (Dual-Audience: Chữ khổng lồ cho học sinh ngồi cuối lớp) -->
-    <div id="resultCard" class="absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl p-10 shadow-2xl border-4 border-indigo-100 hidden flex-col items-center gap-8 z-30 min-w-[600px]">
-        <!-- Chữ siêu to (72px) và tương phản cực mạnh -->
-        <div class="text-[80px] font-extrabold text-slate-900 tracking-tight leading-none" style="font-family: 'Times New Roman', serif;">
+    <!-- KẾT QUẢ HIỂN THỊ (Bên cạnh bảng, không che bảng, giữ nguyên nét vẽ) -->
+    <div id="resultCard" class="fixed top-16 right-8 w-[460px] max-w-[90vw] bg-white/95 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border-2 border-indigo-200 hidden flex-col items-center gap-4 z-30 animate-in fade-in">
+        <div class="w-full flex items-center justify-between pb-2 border-b border-slate-100">
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
+                <i data-lucide="sparkles" class="w-4 h-4"></i> Mô phỏng Trực quan (Bên cạnh bảng)
+            </span>
+            <button onclick="closeResultCard()" class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition">
+                ✕ Đóng
+            </button>
+        </div>
+        <!-- Chữ công thức to rõ -->
+        <div class="text-[52px] font-extrabold text-slate-900 tracking-tight leading-none text-center" style="font-family: 'Times New Roman', serif;">
             y = <span id="dynA">1</span> sin(x)
         </div>
         
         <!-- Hộp trượt giải quyết bài toán Occlusion (Bàn tay che khuất) -->
-        <div class="w-full bg-slate-50 p-8 rounded-2xl border-2 border-slate-200 mt-4">
-            <div class="text-2xl font-bold text-slate-600 mb-8 uppercase tracking-wider text-center">Kéo để đổi Biên độ (A)</div>
+        <div class="w-full bg-slate-50 p-6 rounded-2xl border border-slate-200">
+            <div class="text-sm font-bold text-slate-600 mb-6 uppercase tracking-wider text-center">Kéo để đổi Biên độ (A)</div>
             
             <div class="smart-slider-container">
                 <!-- Giá trị nổi lên trên 60px để ngón tay không che mất -->
@@ -336,14 +344,18 @@
         // 3. TRANSFORM TO DIGITAL & OCCLUSION-FREE SLIDER
         function transformToDigital() {
             document.getElementById('contextBtn').style.display = 'none';
-            // Xóa nét vẽ nháp
-            ctx.clearRect(0,0, canvas.width, canvas.height);
-            // Hiện kết quả siêu to (Dual-audience)
+            // GIỮ NGUYÊN NÉT VẼ TRÊN BẢNG, KHÔNG XÓA NÉT
+            // Hiện kết quả bên cạnh bảng (Side-by-side)
             document.getElementById('resultCard').classList.remove('hidden');
             document.getElementById('resultCard').classList.add('flex');
             
             // Cập nhật vị trí bọt khí ban đầu
             updateSliderBubble(document.getElementById('paramA'));
+        }
+
+        function closeResultCard() {
+            document.getElementById('resultCard').classList.add('hidden');
+            document.getElementById('resultCard').classList.remove('flex');
         }
 
         function updateGraph(val) {

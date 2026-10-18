@@ -508,10 +508,32 @@
             setTimeout(resizeCanvas, 150);
         }
 
-        // Resize Canvas with Retina HiDPI scale
+        let lastCssWidth = 0;
+        let lastCssHeight = 0;
+
+        // Resize Canvas with Retina HiDPI scale & Proportional Stroke Preservation
         function resizeCanvas() {
             const rect = wrapper.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0) return;
             const dpr = window.devicePixelRatio || 1;
+
+            // When layout flexes (e.g. side panel toggles), scale stroke coordinates proportionally
+            // so NO handwriting is EVER clipped, shifted, or erased!
+            if (lastCssWidth > 0 && lastCssHeight > 0 && (Math.abs(rect.width - lastCssWidth) > 5 || Math.abs(rect.height - lastCssHeight) > 5)) {
+                const scaleX = rect.width / lastCssWidth;
+                const scaleY = rect.height / lastCssHeight;
+                strokes.forEach(s => {
+                    if (s.points) {
+                        s.points.forEach(p => {
+                            p.x *= scaleX;
+                            p.y *= scaleY;
+                        });
+                    }
+                });
+            }
+            lastCssWidth = rect.width;
+            lastCssHeight = rect.height;
+
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);

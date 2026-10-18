@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "paths": {
       "@socratic/types": [
         "../../packages/types/src/index.ts"

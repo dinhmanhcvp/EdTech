@@ -227,12 +227,18 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
   useEffect(() => {
     redraw();
-  }, [redraw]);
+  }, [redraw, activeBlueprint]);
 
   // Pointer Interaction
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pt: Point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const canvas = e.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / (rect.width || 1);
+    const scaleY = canvas.height / (rect.height || 1);
+    const pt: Point = {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
     isDrawingRef.current = true;
 
     if (tool === 'ERASER') {
@@ -252,8 +258,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isDrawingRef.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pt: Point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const canvas = e.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / (rect.width || 1);
+    const scaleY = canvas.height / (rect.height || 1);
+    const pt: Point = {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
 
     if (tool === 'ERASER') {
       eraseAtPoint(pt);
@@ -916,7 +928,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <canvas
             ref={canvasRef}
             data-testid="chalkboard-canvas"
-            width={activeBlueprint ? 680 : 960}
+            width={960}
             height={540}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}

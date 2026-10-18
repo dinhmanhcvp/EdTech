@@ -80,12 +80,13 @@ OFFLINE_TEMPLATE_REGISTRY: Dict[str, Dict[str, Any]] = {
     "MATH_FUNC_2D": {
         "engine": "MATH",
         "templateId": "MATH_FUNC_2D",
-        "recognizedLatex": "y = x^3 - 2x^2 + 0",
-        "expressions": ["a * x^3 + b * x^2 + c * x"],
+        "recognizedLatex": "y = x^2 + 2",
+        "expressions": ["a * x^3 + b * x^2 + c * x + d"],
         "parameters": [
-            { "key": "a", "label": "Hệ số a", "unit": "", "defaultValue": 1.0, "min": -3.0, "max": 3.0, "step": 0.5 },
-            { "key": "b", "label": "Hệ số b", "unit": "", "defaultValue": -2.0, "min": -4.0, "max": 4.0, "step": 0.5 },
-            { "key": "c", "label": "Hệ số c", "unit": "", "defaultValue": 0.0, "min": -5.0, "max": 5.0, "step": 1.0 },
+            { "key": "a", "label": "Hệ số a (x³)", "unit": "", "defaultValue": 0.0, "min": -3.0, "max": 3.0, "step": 0.5 },
+            { "key": "b", "label": "Hệ số b (x²)", "unit": "", "defaultValue": 1.0, "min": -4.0, "max": 4.0, "step": 0.5 },
+            { "key": "c", "label": "Hệ số c (x)", "unit": "", "defaultValue": 0.0, "min": -5.0, "max": 5.0, "step": 0.5 },
+            { "key": "d", "label": "Hệ số d (tự do)", "unit": "", "defaultValue": 2.0, "min": -10.0, "max": 10.0, "step": 0.5 },
             { "key": "x0", "label": "Hoành độ tiếp điểm (x₀)", "unit": "", "defaultValue": 1.0, "min": -3.0, "max": 3.0, "step": 0.2 }
         ],
         "socraticQuestion": "Tại sao hệ số góc của tiếp tuyến k = f'(x₀) lại bằng 0 tại các điểm cực trị của hàm số?",

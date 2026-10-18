@@ -204,6 +204,14 @@ class BlackboardMathCorrector:
         # Fix OCR artifacts where = is split or misread:
         t = re.sub(r':=|=:|\s*=\s*', ' = ', t)
 
+        # Mathematical CJK / Greek misclassifications in RapidOCR
+        t = re.sub(r'[\u306e\u03b3\u0443]', 'y', t) # Hiragana 'no', Greek gamma, Cyrillic u -> 'y'
+        t = re.sub(r'\u4e8c', '=', t) # Chinese two -> '='
+        t = re.sub(r'\u5341', '+', t) # Chinese ten / cross -> '+'
+        t = re.sub(r'\u4e00', '-', t) # Chinese one / bar -> '-'
+        t = re.sub(r'(?<=\s|[=+-])(?:#C|DC|dc|\)\(|\>\<|><|oe|ae)(?=\s|[0-9^+-]|$)', 'x', t) # Cursive x variants
+        t = re.sub(r'(?:^|[=+\s])(?:#C|DC)(?=[0-9\s^+-]|$)', 'x', t)
+
         # Fix y misread as v, V, Y, 4, q at the beginning: e.g. "v = 2x + 1" -> "y = 2x + 1"
         t = re.sub(r'^[vV4q]\s*=', 'y =', t)
 
@@ -564,6 +572,56 @@ class BlackboardOCREngine:
         self.preprocessor = BlackboardPreprocessor()
         self.corrector = BlackboardMathCorrector()
 
+    @staticmethod
+    def assemble_math_tokens(ocr_res: List[Any]) -> Tuple[str, float]:
+        if not ocr_res:
+            return "", 0.0
+        sorted_res = sorted(ocr_res, key=lambda r: min(pt[0] for pt in r[0]))
+        tokens = []
+        scores = []
+        prev_box = None
+
+        cjk_map = {
+            '\u306e': 'y', # の
+            '\u03b3': 'y', # gamma
+            '\u0443': 'y', # cyrillic u
+            '\u4e8c': '=', # 二
+            '\u5341': '+', # 十
+            '\u4e00': '-', # 一
+            '#C': 'x',
+            '#c': 'x',
+            'DC': 'x',
+            'dc': 'x',
+            ')(': 'x',
+            '><': 'x',
+            'oe': 'x',
+            'ae': 'x',
+        }
+
+        for r in sorted_res:
+            raw_t = str(r[1]).strip()
+            pts = r[0]
+            scores.append(float(r[2]))
+            min_x = min(pt[0] for pt in pts)
+            min_y = min(pt[1] for pt in pts)
+            max_y = max(pt[1] for pt in pts)
+            cy = (min_y + max_y) / 2.0
+            h = max_y - min_y
+
+            mapped = cjk_map.get(raw_t, raw_t)
+            # Detect Superscript: if follows x, X, y, t and center is vertically higher
+            if prev_box is not None and prev_box['mapped'] in ['x', 'X', 'y', 't', ')'] and mapped in ['2', '3', '4', 'n']:
+                if cy < prev_box['cy'] - 10:
+                    mapped = '^' + mapped
+
+            tokens.append(mapped)
+            prev_box = {'mapped': mapped.replace('^', ''), 'cy': cy, 'h': h}
+
+        raw_str = " ".join(tokens)
+        raw_str = re.sub(r'([xXyY])\s*\^(\d)', r'\1^\2', raw_str)
+        avg_conf = float(sum(scores) / len(scores)) if scores else 0.8
+        return raw_str, avg_conf
+
     def recognize(
         self,
         image_bytes: Optional[bytes] = None,
@@ -587,7 +645,7 @@ class BlackboardOCREngine:
             except Exception:
                 pass
 
-        # 2. Multi-Pass OCR: Vector Stroke Reconstruction + Direct Image Processing
+        # 2. Multi-Pass OCR: Vector Stroke Reconstruction + Direct Raw Image + Preprocessed Image
         candidates = []
 
         # Pass A: Stroke Vector Reconstruction (Extremely crisp, thickness 5, anti-aliased, 0 noise)
@@ -597,43 +655,46 @@ class BlackboardOCREngine:
                 try:
                     ocr_res, _ = self.rapidocr(stroke_img)
                     if ocr_res:
-                        # Sort bounding boxes strictly left-to-right (min X coordinate)
-                        ocr_res = sorted(ocr_res, key=lambda r: min(pt[0] for pt in r[0]))
-                        texts = [r[1] for r in ocr_res]
-                        scores = [float(r[2]) for r in ocr_res]
-                        txt = " ".join(texts).strip()
-                        conf = float(sum(scores) / len(scores))
+                        txt, conf = self.assemble_math_tokens(ocr_res)
                         if txt:
                             candidates.append((txt, conf, "RAPIDOCR_STROKES"))
                 except Exception as e:
                     print(f"[BlackboardOCREngine] Stroke OCR error: {e}")
 
-        # Pass B: Uploaded Image Crop OCR
-        if image_bytes and len(image_bytes) > 0:
+        # Pass B1: Raw Image Direct OCR (Optimal for dark chalkboard screenshots & high contrast ink)
+        if image_bytes and len(image_bytes) > 0 and self.rapidocr is not None and CV2_AVAILABLE:
+            try:
+                raw_np = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
+                if raw_np is not None:
+                    ocr_res, _ = self.rapidocr(raw_np)
+                    if ocr_res:
+                        txt, conf = self.assemble_math_tokens(ocr_res)
+                        if txt:
+                            candidates.append((txt, conf, "RAPIDOCR_RAW_IMAGE"))
+            except Exception as e:
+                print(f"[BlackboardOCREngine] Raw image OCR error: {e}")
+
+        # Pass B2: Preprocessed Image Crop OCR
+        if image_bytes and len(image_bytes) > 0 and self.rapidocr is not None:
             prep_img, meta_info = self.preprocessor.preprocess(image_bytes)
-            if prep_img is not None and self.rapidocr is not None:
+            if prep_img is not None:
                 try:
                     ocr_res, _ = self.rapidocr(prep_img)
                     if ocr_res:
-                        # Sort bounding boxes left-to-right
-                        ocr_res = sorted(ocr_res, key=lambda r: min(pt[0] for pt in r[0]))
-                        texts = [r[1] for r in ocr_res]
-                        scores = [float(r[2]) for r in ocr_res]
-                        txt = " ".join(texts).strip()
-                        conf = float(sum(scores) / len(scores))
+                        txt, conf = self.assemble_math_tokens(ocr_res)
                         if txt:
-                            candidates.append((txt, conf, "RAPIDOCR_IMAGE"))
+                            candidates.append((txt, conf, "RAPIDOCR_PREPROCESSED"))
                 except Exception as e:
-                    print(f"[BlackboardOCREngine] Image OCR error: {e}")
+                    print(f"[BlackboardOCREngine] Preprocessed OCR error: {e}")
 
-            # PyTesseract fallback
-            if not candidates and PYTESSERACT_AVAILABLE and prep_img is not None:
-                try:
-                    tess_text = pytesseract.image_to_string(prep_img, config="--psm 6").strip()
-                    if tess_text:
-                        candidates.append((tess_text, 0.85, "PYTESSERACT_ENSEMBLE"))
-                except Exception:
-                    pass
+        # PyTesseract fallback
+        if not candidates and PYTESSERACT_AVAILABLE and prep_img is not None:
+            try:
+                tess_text = pytesseract.image_to_string(prep_img, config="--psm 6").strip()
+                if tess_text:
+                    candidates.append((tess_text, 0.85, "PYTESSERACT_ENSEMBLE"))
+            except Exception:
+                pass
 
         # Select Best Candidate (Prefer text containing recognizable math tokens)
         if candidates:

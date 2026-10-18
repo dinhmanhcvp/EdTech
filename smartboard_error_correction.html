@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zero-Keyboard Error Correction - Socratic Vision Board</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- MathJax -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            background-image: radial-gradient(#cbd5e1 2px, transparent 2px);
+            background-size: 32px 32px;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .equation-card {
+            background: white;
+            padding: 40px 60px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            position: relative;
+            border: 2px solid #e2e8f0;
+            min-width: 600px;
+            text-align: center;
+        }
+
+        /* Toán học khổng lồ cho Smartboard */
+        .math-display {
+            font-size: 56px;
+            color: #0f172a;
+            cursor: pointer; /* Cho Tap & Swap */
+        }
+
+        /* 4. Passive Error Indicator: Gạch chân đứt nét màu vàng */
+        .low-confidence {
+            border-bottom: 4px dashed #eab308;
+            padding-bottom: 2px;
+            position: relative;
+            display: inline-block;
+            transition: border-color 0.3s;
+            cursor: pointer;
+        }
+        
+        /* Hiệu ứng tự động mờ dần sau 3 giây */
+        .fade-out-underline {
+            animation: fadeUnderline 3s forwards;
+            animation-delay: 2s;
+        }
+        @keyframes fadeUnderline {
+            to { border-color: transparent; }
+        }
+
+        /* 1. Tap & Swap Menu */
+        #nBestMenu {
+            position: absolute;
+            background: #1e293b;
+            color: white;
+            border-radius: 100px;
+            padding: 8px 16px;
+            display: none;
+            gap: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 50;
+            transform: translate(-50%, -120%);
+        }
+        .n-best-item {
+            font-size: 32px;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .n-best-item:hover, .n-best-item:active { background: #4f46e5; }
+        
+        .n-best-item span {
+            font-size: 14px;
+            color: #94a3b8;
+            display: block;
+            text-align: center;
+            margin-top: -5px;
+        }
+
+        /* 3. Undo to Ink Icon */
+        .undo-ink-btn {
+            position: absolute;
+            bottom: -20px;
+            right: -20px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            color: #64748b;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .undo-ink-btn:active { transform: scale(0.9); background: #f1f5f9; }
+
+        /* Mực gốc (Raw Ink) - Ẩn lúc đầu */
+        #rawInkImage {
+            display: none;
+            opacity: 0.6;
+        }
+
+        /* 2. Scribble Simulation */
+        .scribble-line {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0; left: 0;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0,50 Q25,0 50,50 T100,50" stroke="black" stroke-width="4" fill="none"/></svg>');
+            background-size: 100% 100%;
+            display: none;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="absolute top-8 left-8 text-slate-500 font-semibold text-xl">
+        <h1 class="text-3xl text-indigo-900 font-bold mb-4">Zero-Keyboard AI Correction</h1>
+        <p>Thử nghiệm 4 Tính năng giải quyết vấn đề nhận diện sai:</p>
+        <ul class="list-disc ml-8 mt-2 text-lg text-slate-600 flex flex-col gap-2">
+            <li>(4) Passive Error Indicator: Chữ <strong class="text-yellow-500">S</strong> bị gạch chân đứt nét cảnh báo.</li>
+            <li>(1) Tap & Swap: Chạm vào chữ <strong class="text-indigo-600">S</strong> để xem danh sách AI gợi ý (N-best list).</li>
+            <li>(3) Undo to Ink: Bấm icon Cây bút ở góc phải dưới thẻ để trả về nét viết tay nháp.</li>
+        </ul>
+    </div>
+
+    <!-- MAIN INTERACTIVE CARD -->
+    <div class="equation-card" id="mainCard">
+        
+        <!-- N-Best Bubble Menu -->
+        <div id="nBestMenu">
+            <div class="n-best-item" onclick="swapChar('5')">5 <span>90%</span></div>
+            <div class="n-best-item" style="color:#94a3b8;">S <span>8%</span></div>
+            <div class="n-best-item" onclick="swapChar('$\\delta$')">δ <span>2%</span></div>
+        </div>
+
+        <!-- 3. Bấm để trả về Mực gốc -->
+        <button class="undo-ink-btn" onclick="undoToInk()" title="Trở về nét vẽ gốc">
+            <i data-lucide="pen-tool"></i>
+        </button>
+
+        <!-- Trạng thái Kỹ thuật số (Digital) -->
+        <div id="digitalState">
+            <div class="math-display">
+                <!-- Chữ S bị nhận diện sai từ số 5. Bọc trong span để làm Passive Indicator -->
+                \[ f(x) = \int_0^{ <span id="errorChar" class="low-confidence fade-out-underline" onclick="showNBestMenu(event)">S</span> } (x^2 + 3x) dx \]
+            </div>
+        </div>
+
+        <!-- Trạng thái Viết tay (Raw Ink) -->
+        <div id="rawState" style="display: none; padding: 20px 0;">
+            <!-- Giả lập hình ảnh chữ viết tay -->
+            <svg width="400" height="150" viewBox="0 0 400 150" fill="none" stroke="#1e293b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                <text x="0" y="80" font-family="cursive" font-size="40" fill="#1e293b" stroke="none">f(x) = </text>
+                <path d="M 140 100 C 130 90, 130 50, 140 40 C 150 30, 160 30, 150 20" /> <!-- Dấu tích phân -->
+                <text x="135" y="120" font-family="cursive" font-size="20" fill="#1e293b" stroke="none">0</text>
+                <text x="155" y="30" font-family="cursive" font-size="24" fill="#1e293b" stroke="none">5</text> <!-- Số 5 viết loằng ngoằng giống S -->
+                <text x="180" y="80" font-family="cursive" font-size="40" fill="#1e293b" stroke="none">(x² + 3x) dx</text>
+            </svg>
+            <p class="text-sm text-slate-400 mt-4 font-normal">(Giáo viên bỏ qua lỗi số hóa và cứ thế dùng nét phấn cũ giảng tiếp)</p>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // (1) TAP & SWAP LOGIC
+        function showNBestMenu(event) {
+            // Ngăn chặn nổi bọt sự kiện
+            event.stopPropagation();
+            
+            const menu = document.getElementById('nBestMenu');
+            const target = event.currentTarget;
+            
+            // Xóa hiệu ứng mờ dần để giữ nguyên gạch chân khi đang sửa
+            target.classList.remove('fade-out-underline');
+            target.style.borderColor = '#4f46e5'; // Đổi sang màu nhấn đang active
+            
+            // Hiện Menu phía trên ký tự
+            menu.style.display = 'flex';
+            menu.style.left = target.getBoundingClientRect().left - document.getElementById('mainCard').getBoundingClientRect().left + (target.offsetWidth/2) + 'px';
+            menu.style.top = target.getBoundingClientRect().top - document.getElementById('mainCard').getBoundingClientRect().top + 'px';
+        }
+
+        // Ẩn menu khi click ra ngoài
+        document.addEventListener('click', () => {
+            document.getElementById('nBestMenu').style.display = 'none';
+            document.getElementById('errorChar').style.borderColor = 'transparent';
+        });
+
+        function swapChar(correctChar) {
+            const errorSpan = document.getElementById('errorChar');
+            // Gỡ bỏ class báo lỗi
+            errorSpan.className = ''; 
+            errorSpan.onclick = null;
+            
+            // Render lại đoạn MathJax với ký tự mới
+            const newFormula = `\\[ f(x) = \\int_0^{ ${correctChar} } (x^2 + 3x) dx \\]`;
+            const mathContainer = document.querySelector('.math-display');
+            mathContainer.innerHTML = newFormula;
+            
+            // Kích hoạt render lại Toán học
+            MathJax.typesetPromise([mathContainer]);
+            
+            // Ẩn Menu
+            document.getElementById('nBestMenu').style.display = 'none';
+        }
+
+        // (3) UNDO TO INK LOGIC
+        let isDigital = true;
+        function undoToInk() {
+            const digital = document.getElementById('digitalState');
+            const raw = document.getElementById('rawState');
+            const btn = document.querySelector('.undo-ink-btn i');
+            
+            if (isDigital) {
+                digital.style.display = 'none';
+                raw.style.display = 'block';
+                // Đổi icon sang dạng Code (Biểu thị: Chuyển lại thành Kỹ thuật số)
+                btn.setAttribute('data-lucide', 'file-code-2');
+            } else {
+                digital.style.display = 'block';
+                raw.style.display = 'none';
+                btn.setAttribute('data-lucide', 'pen-tool');
+            }
+            isDigital = !isDigital;
+            lucide.createIcons(); // Re-render icon
+        }
+    </script>
+</body>
+</html>

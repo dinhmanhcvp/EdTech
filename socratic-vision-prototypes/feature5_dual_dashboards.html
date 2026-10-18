@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dual Dashboards - Socratic Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; margin: 0; padding: 0; overflow-x: hidden; }
+
+        /* Khung chứa 2 giao diện */
+        .split-container { display: flex; flex-direction: column; align-items: center; padding: 40px 20px; gap: 40px; }
+        @media (min-width: 1024px) {
+            .split-container { flex-direction: row; justify-content: center; align-items: stretch; height: 100vh; padding: 40px; }
+        }
+
+        /* --- TEACHER DASHBOARD (TABLET) --- */
+        .tablet-frame {
+            width: 100%; max-width: 900px; background: white; border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08); border: 12px solid #1e293b;
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
+        }
+
+        /* Bottleneck Alert */
+        .alert-banner { background: #fee2e2; border-left: 4px solid #ef4444; padding: 16px 24px; display: flex; gap: 16px; align-items: flex-start; }
+        
+        /* Heatmap */
+        .heatmap-grid { display: grid; grid-template-columns: 120px repeat(4, 1fr); gap: 2px; background: #e2e8f0; border: 1px solid #e2e8f0; }
+        .hm-cell { padding: 12px; font-size: 13px; display: flex; justify-content: center; align-items: center; font-weight: 500; color: #1e293b; }
+        .hm-header { background: #f8fafc; font-weight: 600; color: #64748b; }
+        .hm-row-header { background: #f8fafc; justify-content: flex-start; }
+        .hm-green { background: #dcfce7; color: #166534; }
+        .hm-yellow { background: #fef08a; color: #854d0e; }
+        .hm-red { background: #fee2e2; color: #991b1b; cursor: pointer; transition: 0.2s; position: relative; }
+        .hm-red:hover { background: #fca5a5; transform: scale(1.05); z-index: 10; box-shadow: 0 4px 10px rgba(239,68,68,0.3); }
+
+        /* Visual Debug Modal */
+        .debug-modal {
+            position: absolute; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 50;
+        }
+        .debug-content { background: white; padding: 30px; border-radius: 20px; width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+
+        /* --- PARENT DASHBOARD (MOBILE) --- */
+        .mobile-frame {
+            width: 380px; min-width: 380px; height: 800px; background: #f8fafc; border-radius: 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15); border: 14px solid #0f172a;
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
+        }
+
+        .notch { width: 140px; height: 25px; background: #0f172a; position: absolute; top: -1px; left: 50%; transform: translateX(-50%); border-bottom-left-radius: 15px; border-bottom-right-radius: 15px; z-index: 10; }
+
+        /* Vòng Nỗ lực (Grit Score) */
+        .grit-circle { position: relative; width: 140px; height: 140px; margin: 0 auto; display: flex; justify-content: center; align-items: center; }
+        svg.circle-svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+        .circle-bg { stroke: #e2e8f0; stroke-width: 8; fill: transparent; }
+        .circle-progress { stroke: #10b981; stroke-width: 8; fill: transparent; stroke-dasharray: 314; stroke-dashoffset: 60; stroke-linecap: round; }
+        
+        /* The Narrative Card */
+        .narrative-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
+        
+        /* Actionable Prompt */
+        .action-prompt { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 16px; padding: 16px; cursor: pointer; transition: 0.2s; }
+        .action-prompt:active { transform: scale(0.98); }
+        .prompt-content { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #a5b4fc; color: #4338ca; font-style: italic; }
+
+    </style>
+</head>
+<body>
+
+    <div class="text-center pt-8 pb-4">
+        <h1 class="text-3xl font-bold text-slate-800">Feature 5: Giải mã Dữ liệu Học tập</h1>
+        <p class="text-slate-500 mt-2">Đài quan sát chiến thuật (Giáo viên) vs Bản tin sức khỏe (Phụ huynh)</p>
+    </div>
+
+    <div class="split-container">
+        
+        <!-- ================= TEACHER DASHBOARD (TABLET) ================= -->
+        <div class="tablet-frame">
+            <div class="bg-slate-900 text-white p-5 flex justify-between items-center">
+                <div class="flex items-center gap-3"><i data-lucide="layout-dashboard"></i> <span class="font-bold text-lg">Teacher Command Center</span></div>
+                <div class="text-slate-400 text-sm">Lớp 11A1 - Môn Hóa Học</div>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 bg-slate-50">
+                <!-- Bottleneck Alert -->
+                <div class="alert-banner rounded-xl mb-8 shadow-sm">
+                    <div class="bg-red-100 p-2 rounded-full text-red-600"><i data-lucide="siren"></i></div>
+                    <div>
+                        <h3 class="font-bold text-red-800 text-lg mb-1">Cảnh báo Điểm nghẽn (Bottleneck)</h3>
+                        <p class="text-red-900 text-sm">60% lớp mất hơn 10 phút ở bài <strong>Cân bằng phương trình Oxi hóa khử</strong>.<br>Lỗi sai phổ biến nhất: <em>Quên cân bằng gốc SO4</em>.</p>
+                        <button class="mt-3 bg-white border border-red-200 text-red-700 px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-50 transition">Giao bài tập phụ đạo nhóm này</button>
+                    </div>
+                </div>
+
+                <!-- Knowledge Heatmap -->
+                <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="grid-3x3" class="w-5 h-5"></i> Bản đồ Nhiệt Tri thức (Knowledge Heatmap)</h3>
+                <div class="heatmap-grid rounded-xl overflow-hidden shadow-sm">
+                    <!-- Headers -->
+                    <div class="hm-cell hm-header">Học sinh</div>
+                    <div class="hm-cell hm-header">Bảo toàn KL</div>
+                    <div class="hm-cell hm-header">Oxi hóa khử</div>
+                    <div class="hm-cell hm-header">Axit - Bazơ</div>
+                    <div class="hm-cell hm-header">Tốc độ PƯ</div>
+                    
+                    <!-- Row 1 -->
+                    <div class="hm-cell hm-row-header">Minh Tuấn</div>
+                    <div class="hm-cell hm-green">Đã hiểu</div>
+                    <div class="hm-cell hm-yellow">Đang chật vật</div>
+                    <div class="hm-cell hm-green">Đã hiểu</div>
+                    <div class="hm-cell hm-green">Đã hiểu</div>
+                    
+                    <!-- Row 2 -->
+                    <div class="hm-cell hm-row-header">Lan Anh</div>
+                    <div class="hm-cell hm-green">Đã hiểu</div>
+                    <div class="hm-cell hm-red" onclick="openDebugModal()" title="Click để xem lỗi sai trực quan">Mất gốc 🔍</div>
+                    <div class="hm-cell hm-yellow">Đang chật vật</div>
+                    <div class="hm-cell hm-green">Đã hiểu</div>
+                    
+                    <!-- Row 3 -->
+                    <div class="hm-cell hm-row-header">Hoàng Phong</div>
+                    <div class="hm-cell hm-green">Đã hiểu</div>
+                    <div class="hm-cell hm-red" onclick="openDebugModal()" title="Click để xem lỗi sai trực quan">Mất gốc 🔍</div>
+                    <div class="hm-cell hm-red" onclick="openDebugModal()" title="Click để xem lỗi sai trực quan">Mất gốc 🔍</div>
+                    <div class="hm-cell hm-yellow">Đang chật vật</div>
+                </div>
+                <p class="text-xs text-slate-400 mt-3">* Cột "Oxi hóa khử" đang báo đỏ toàn tập. Giáo viên nên lướt mắt và quyết định dạy lại phần này vào ngày mai.</p>
+            </div>
+
+            <!-- Visual Debugging Log Modal -->
+            <div class="debug-modal" id="debugModal">
+                <div class="debug-content">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg text-slate-800">Nhật ký Gỡ lỗi: Lan Anh</h3>
+                        <button onclick="closeDebugModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x"></i></button>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-4">Bên dưới là Widget trực quan mô phỏng khoảnh khắc em Lan Anh làm sai và bị kẹt lại 15 phút:</p>
+                    
+                    <div class="bg-slate-100 rounded-xl p-6 text-center border-2 border-dashed border-slate-300">
+                        <div class="text-xl font-bold mb-4 text-slate-800">Fe + O₂ → Fe₂O₃</div>
+                        <!-- Mô phỏng cái cân bị lệch -->
+                        <div class="flex justify-around items-end h-24 mb-2">
+                            <div class="bg-red-100 border-2 border-red-400 p-2 rounded-lg text-red-600 transform rotate-12">🔴🔴 (2 Oxi)</div>
+                            <div class="text-4xl">⚖️</div>
+                            <div class="bg-green-100 border-2 border-green-400 p-2 rounded-lg text-green-600 transform -rotate-12 translate-y-4">🔴🔴🔴 (3 Oxi)</div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-amber-600 mt-4 font-medium"><i data-lucide="alert-triangle" class="w-4 h-4 inline"></i> Lan Anh liên tục không nhận ra sự chênh lệch số nguyên tử Oxi ở hai vế.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PARENT DASHBOARD (MOBILE) ================= -->
+        <div class="mobile-frame">
+            <div class="notch"></div>
+            
+            <div class="bg-white p-6 pt-10 border-b border-slate-200">
+                <h2 class="text-xl font-bold text-slate-800">Sức khỏe Học tập</h2>
+                <p class="text-slate-500 text-sm">Của bé Minh Tuấn</p>
+            </div>
+
+            <div class="p-5 flex-1 overflow-y-auto flex flex-col gap-5">
+                
+                <!-- Grit Score (Thay vì điểm số) -->
+                <div class="bg-white rounded-2xl p-5 text-center shadow-sm border border-slate-100">
+                    <h3 class="font-semibold text-slate-700 mb-4">Chỉ số Nỗ lực (Grit Score)</h3>
+                    <div class="grit-circle">
+                        <svg class="circle-svg" width="140" height="140">
+                            <circle class="circle-bg" cx="70" cy="70" r="50"></circle>
+                            <circle class="circle-progress" cx="70" cy="70" r="50"></circle>
+                        </svg>
+                        <div class="absolute flex flex-col items-center">
+                            <span class="text-3xl font-black text-emerald-500">85%</span>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Kiên trì</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 leading-relaxed">Minh Tuấn đã vượt qua <strong class="text-slate-700">12/15</strong> bậc thang Scaffolding tuần này mà không xem đáp án gốc.</p>
+                </div>
+
+                <!-- Báo cáo kể chuyện (Narrative Insights) -->
+                <div class="narrative-card">
+                    <div class="flex items-center gap-2 mb-3 text-indigo-600 font-bold">
+                        <i data-lucide="sparkles" class="w-5 h-5"></i> Báo cáo từ AI Gia sư
+                    </div>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Tuần này, Tuấn đã tiến bộ rất nhanh ở môn Vật Lý. Mặc dù ban đầu con liên tục vẽ sai đồ thị Dao động điều hòa, nhưng con đã <strong class="text-indigo-600 bg-indigo-50 px-1 rounded">tự sửa được lỗi nhầm lẫn dấu âm dương</strong> sau 3 lần thử tương tác với Hộp cát ảo. Ba mẹ hãy khen ngợi con nhé!
+                    </p>
+                </div>
+
+                <!-- Actionable Prompts -->
+                <div class="action-prompt" onclick="togglePrompt()">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-indigo-100 p-2 rounded-full text-indigo-600"><i data-lucide="message-circle-heart" class="w-5 h-5"></i></div>
+                            <span class="font-bold text-indigo-900">Câu hỏi hôm nay</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="text-indigo-400"></i>
+                    </div>
+                    <div class="prompt-content" id="promptContent">
+                        "Tối nay lúc ăn cơm, ba mẹ hãy thử hỏi con: <strong>'Hôm nay ở lớp con xoay thử mô hình trái tim 3D có nhìn rõ Tâm thất không?'</strong>"
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function openDebugModal() {
+            document.getElementById('debugModal').style.display = 'flex';
+        }
+        
+        function closeDebugModal() {
+            document.getElementById('debugModal').style.display = 'none';
+        }
+
+        function togglePrompt() {
+            const content = document.getElementById('promptContent');
+            if (content.style.display === 'block') {
+                content.style.display = 'none';
+            } else {
+                content.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

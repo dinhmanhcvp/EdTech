@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socratic Vision Board - Project Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: white; background-image: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15), transparent 50%); }
+        .card-link { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-link:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); border-color: rgba(168, 85, 247, 0.5); }
+    </style>
+</head>
+<body class="min-h-screen py-12 px-6">
+    <div class="max-w-6xl mx-auto">
+        
+        <!-- Header -->
+        <div class="text-center mb-16">
+            <div class="inline-block bg-fuchsia-500/20 text-fuchsia-400 px-4 py-1.5 rounded-full text-sm font-bold tracking-wider mb-4 border border-fuchsia-500/30">
+                GIẢI THƯỞNG TIÊN PHONG AI 2026
+            </div>
+            <h1 class="text-5xl font-extrabold mb-4">Socratic Vision Board</h1>
+            <p class="text-xl text-slate-400 max-w-2xl mx-auto">Tuyển tập 7 Bản mẫu (Prototypes) minh họa UX/UI chuyên sâu và Kiến trúc Hệ thống Sư phạm thế hệ mới.</p>
+        </div>
+
+        <!-- Section 1: Teacher Experience -->
+        <h2 class="text-2xl font-bold text-slate-200 mb-6 flex items-center gap-2 border-b border-slate-800 pb-2">
+            <i data-lucide="presentation"></i> 1. Smartboard UX (Dành cho Giáo viên)
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            
+            <a href="smartboard_ui_final.html" target="_blank" class="card-link bg-slate-900 border border-slate-800 rounded-2xl p-6 block">
+                <div class="bg-blue-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-blue-400 mb-4"><i data-lucide="move"></i></div>
+                <h3 class="font-bold text-lg mb-2">Ergonomics & Gestures</h3>
+                <p class="text-slate-400 text-sm">Xử lý vùng chết công thái học (Floating Toolbar), Menu hướng tâm và Vấn đề Occlusion cho màn hình 75-inch.</p>
+            </a>
+
+            <a href="smartboard_error_correction.html" target="_blank" class="card-link bg-slate-900 border border-slate-800 rounded-2xl p-6 block">
+                <div class="bg-amber-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-amber-400 mb-4"><i data-lucide="keyboard-off"></i></div>
+                <h3 class="font-bold text-lg mb-2">Zero-Keyboard Correction</h3>
+                <p class="text-slate-400 text-sm">Giao diện sửa lỗi AI nhận diện bằng Tap & Swap (N-best menu) và Undo to Ink. Loại bỏ bàn phím ảo.</p>
+            </a>
+
+            <a href="smartboard_socratic_flow.html" target="_blank" class="card-link bg-slate-900 border border-slate-800 rounded-2xl p-6 block">
+                <div class="bg-emerald-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-emerald-400 mb-4"><i data-lucide="wind"></i></div>
+                <h3 class="font-bold text-lg mb-2">Pedagogical Flow Protection</h3>
+                <p class="text-slate-400 text-sm">Bảo vệ dòng chảy bài giảng: Bóng đèn chờ lệnh (Opt-in Cue), Vuốt để bỏ qua, và Kích hoạt bằng khoảng lặng.</p>
+            </a>
+            
+        </div>
+
+        <!-- Section 2: Student Experience -->
+        <h2 class="text-2xl font-bold text-slate-200 mb-6 flex items-center gap-2 border-b border-slate-800 pb-2">
+            <i data-lucide="smartphone"></i> 2. Student UX (Học sinh & Tương tác)
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            
+            <a href="smartboard_sandbox_student.html" target="_blank" class="card-link bg-slate-900 border border-slate-800 rounded-2xl p-6 block">
+                <div class="bg-cyan-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-cyan-400 mb-4"><i data-lucide="flask-conical"></i></div>
+                <h3 class="font-bold text-lg mb-2">Foolproof Sandbox</h3>
+                <p class="text-slate-400 text-sm">Hộp cát tương tác trên bảng lớn: Nút Macro ngoại cỡ, Phản hồi không độ trễ, và Cảm giác quyền lực (Zero-learning).</p>
+            </a>
+
+            <a href="feature6_student_friction_app.html" target="_blank" class="card-link bg-slate-900 border border-slate-800 rounded-2xl p-6 block">
+                <div class="bg-rose-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-rose-400 mb-4"><i data-lucide="lock"></i></div>
+                <h3 class="font-bold text-lg mb-2">Cognitive Friction App</h3>
+                <p class="text-slate-400 text-sm">UI Mobile chống gian lận: Bậc thang khóa (Locked Stepper), Gỡ lỗi trực quan, và Chốt chặn Voice Final Boss.</p>
+            </a>
+
+            <a href="feature6_gamified_dashboard.html" target="_blank" class="card-link bg-slate-900 border border-slate-800 rounded-2xl p-6 block">
+                <div class="bg-purple-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-purple-400 mb-4"><i data-lucide="gamepad-2"></i></div>
+                <h3 class="font-bold text-lg mb-2">Grit Economy Dashboard</h3>
+                <p class="text-slate-400 text-sm">Gamification nhắm vào Động lực nội tại: Vũ trụ tri thức, Điểm Eureka, và Cửa hàng Nhân cách AI.</p>
+            </a>
+            
+        </div>
+
+        <!-- Section 3: Data & Architecture -->
+        <h2 class="text-2xl font-bold text-slate-200 mb-6 flex items-center gap-2 border-b border-slate-800 pb-2">
+            <i data-lucide="network"></i> 3. Analytics & Design System
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            
+            <a href="feature5_dual_dashboards.html" target="_blank" class="card-link bg-slate-900 border border-slate-800 rounded-2xl p-6 block flex gap-6 items-center">
+                <div class="bg-indigo-500/20 w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center text-indigo-400"><i data-lucide="bar-chart-3" class="w-8 h-8"></i></div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">Dual Analytics Dashboards</h3>
+                    <p class="text-slate-400 text-sm">Bản đồ nhiệt chiến thuật cho Giáo viên vs Bản tin sức khỏe nỗ lực cho Phụ huynh.</p>
+                </div>
+            </a>
+
+            <a href="design_system_showcase.html" target="_blank" class="card-link bg-slate-900 border border-slate-800 rounded-2xl p-6 block flex gap-6 items-center">
+                <div class="bg-pink-500/20 w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center text-pink-400"><i data-lucide="palette" class="w-8 h-8"></i></div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">Design System Manifesto</h3>
+                    <p class="text-slate-400 text-sm">UI Kit chứa "Linh hồn" dự án: Kính mờ (Glassmorphism), Màu phát quang, Vật lý lò xo.</p>
+                </div>
+            </a>
+            
+        </div>
+
+    </div>
+
+    <script> lucide.createIcons(); </script>
+</body>
+</html>

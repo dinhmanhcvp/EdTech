@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # 1. Relational Database (Knowledge Graphs, Users, Classes)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: socratic_admin
+      POSTGRES_PASSWORD: secure_password
+      POSTGRES_DB: socratic_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U socratic_admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. In-Memory Store (WebSocket Pub/Sub & Real-time State)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  # 3. ChromaDB Vector Store (Tier 2 Semantic Cache - Scaffolding Templates)
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8001:8000"
+    volumes:
+      - chromadata:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+
+  # 4. Node.js API Gateway (Auth, CRUD, WebSockets)
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://socratic_admin:secure_password@postgres:5432/socratic_db
+      - REDIS_URL=redis://redis:6379
+      - AI_ENGINE_URL=http://ai-engine:8000
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # 5. Python AI Engine (SymPy Deterministic, ChromaDB Cache, Socratic LLM)
+  ai-engine:
+    build:
+      context: ./services/ai-engine
+      dockerfile: Dockerfile
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:
+  redisdata:
+  chromadata:

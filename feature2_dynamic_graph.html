@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature 2 & 3: Dynamic Visualization & Socratic Engine</title>
+    <style>
+        :root {
+            --primary: #27ae60;
+            --bg: #f8f9fa;
+            --text: #333;
+            --board: #ffffff;
+            --border: #e0e0e0;
+            --socratic: #9b59b6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            margin: 0 0 10px 0;
+        }
+
+        .app-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+            height: 600px;
+        }
+
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-card {
+            background: var(--board);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 2px solid var(--border);
+        }
+
+        .input-card h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+        
+        .equation-display {
+            font-size: 1.5em;
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #b6d4fe;
+            margin: 15px 0;
+        }
+
+        .socratic-card {
+            background: var(--board);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 2px solid var(--socratic);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .socratic-card h3 {
+            margin-top: 0;
+            color: var(--socratic);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-bubble {
+            background: #f4ecf7;
+            padding: 15px;
+            border-radius: 15px;
+            border-bottom-left-radius: 0;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .graph-panel {
+            flex: 2;
+            background: var(--board);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 2px solid var(--border);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Vùng chứa Desmos */
+        #calculator {
+            width: 100%;
+            height: 100%;
+        }
+        
+        button.action-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background-color: var(--primary);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            font-size: 1.1em;
+            transition: all 0.2s;
+        }
+        button.action-btn:hover {
+            background-color: #219a52;
+        }
+    </style>
+    
+    <!-- Nạp thư viện MathJax để hiển thị công thức đẹp -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <!-- Nạp thư viện Desmos API (Dùng public API key cho giáo dục) -->
+    <script src="https://www.desmos.com/api/v1.8/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Feature 2 & 3: Đồ thị Động & Gia sư Socratic</h1>
+        <p>Mô phỏng: Sau khi AI nhận diện chữ viết (Feature 1), hệ thống sẽ vẽ đồ thị và đặt câu hỏi gợi mở.</p>
+    </div>
+
+    <div class="app-container">
+        <!-- Bảng điều khiển bên trái -->
+        <div class="left-panel">
+            <div class="input-card">
+                <h3>1. Dữ liệu từ Bảng viết tay (Feature 1)</h3>
+                <p>AI đã nhận diện phương trình sau từ nét chữ của bạn:</p>
+                <div class="equation-display">
+                    \\[ y = a \cdot \sin(bx) \\]
+                </div>
+                <button class="action-btn" onclick="generateGraph()">Mô phỏng Đồ thị 3D/2D</button>
+            </div>
+
+            <div class="socratic-card" id="socraticCard" style="opacity: 0.5; pointer-events: none;">
+                <h3>🤖 Trợ lý Socratic AI</h3>
+                <div class="chat-bubble" id="aiMessage">
+                    Đang chờ mô phỏng đồ thị...
+                </div>
+                <button class="action-btn" style="background-color: var(--socratic); margin-top: auto;" onclick="showAnswer()">Xem gợi ý</button>
+            </div>
+        </div>
+
+        <!-- Bảng đồ thị bên phải -->
+        <div class="graph-panel">
+            <div id="calculator"></div>
+        </div>
+    </div>
+
+    <script>
+        // Khởi tạo Desmos Calculator lúc tải trang (Trống)
+        const elt = document.getElementById('calculator');
+        const calculator = Desmos.GraphingCalculator(elt, {
+            expressions: false, // Ẩn cột nhập liệu bên trái của Desmos để nhìn chuyên nghiệp hơn
+            settingsMenu: false,
+            zoomButtons: true
+        });
+
+        function generateGraph() {
+            // Xóa đồ thị cũ nếu có
+            calculator.setBlank();
+
+            // 1. Vẽ đồ thị y = a * sin(bx)
+            calculator.setExpression({ id: 'graph1', latex: 'y=a\\sin(bx)', color: Desmos.Colors.BLUE });
+            
+            // 2. Tạo thanh trượt (slider) cho biến a và b
+            calculator.setExpression({ id: 'slider-a', latex: 'a=2', sliderBounds: { min: -5, max: 5, step: 0.5 } });
+            calculator.setExpression({ id: 'slider-b', latex: 'b=1', sliderBounds: { min: 0.1, max: 5, step: 0.1 } });
+
+            // Mở khóa phần AI Socratic
+            const socraticCard = document.getElementById('socraticCard');
+            socraticCard.style.opacity = '1';
+            socraticCard.style.pointerEvents = 'auto';
+
+            // Kích hoạt câu hỏi của AI (Feature 3)
+            typeWriter("AI Message: Cô đã vẽ xong đồ thị sóng âm. Các em hãy thử kéo thanh trượt biến 'a' trên bảng điện tử. Biến 'a' đại diện cho biên độ, vậy khi 'a' tăng lên, âm thanh ta nghe được sẽ thay đổi như thế nào? (Gợi ý: To hơn hay bổng hơn?)", "aiMessage");
+        }
+
+        function showAnswer() {
+            typeWriter("Gợi ý: Biên độ 'a' quyết định độ cao của đồ thị dọc theo trục y. Biên độ càng lớn, sóng âm càng mạnh, do đó âm thanh ta nghe được sẽ TO HƠN. Còn biến 'b' mới quyết định âm thanh trầm/bổng. Em hãy thử kéo biến 'b' xem sao!", "aiMessage");
+        }
+
+        // Hiệu ứng gõ chữ của AI
+        function typeWriter(text, elementId) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = '';
+            let i = 0;
+            const speed = 30;
+            
+            function type() {
+                if (i < text.length) {
+                    el.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+    </script>
+</body>
+</html>

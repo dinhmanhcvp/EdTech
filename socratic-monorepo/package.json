@@ -1,0 +1,39 @@
+{
+  "name": "socratic-vision-monorepo",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/api-gateway"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:unit": "vitest run apps/",
+    "test:e2e": "vitest run e2e/",
+    "test:py": "python -m pytest services/ai-engine/tests/test_engine.py -v",
+    "typecheck": "tsc --noEmit",
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "autoprefixer": "^10.6.1",
+    "jsdom": "^29.1.1",
+    "postcss": "^8.5.30",
+    "prettier": "^3.0.0",
+    "tailwindcss": "^3.4.1",
+    "turbo": "^1.10.12",
+    "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}

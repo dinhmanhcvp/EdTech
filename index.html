@@ -1,0 +1,2650 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socratic Vision Board v2.0.0 — Nền Tảng EdTech AI Đa Phương Thức</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS & Lucide Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- MathJax for Crisp LaTeX Typography -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            900: '#312e81',
+                        },
+                        amberGlow: '#f59e0b',
+                        cyanGlow: '#06b6d4',
+                        emeraldGlow: '#10b981'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-deep: #090d16;
+            --panel-glass: rgba(18, 24, 38, 0.75);
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --glow-primary: rgba(99, 102, 241, 0.4);
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: #f8fafc;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Ambient Classroom / Tech Grid Background */
+        .ambient-grid {
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.10) 0%, transparent 45%),
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: var(--panel-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+        }
+
+        .glass-pill {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        /* Macro Controls (Underneath Simulation, min 80x80px / Touch Friendly) */
+        .macro-touch-btn {
+            min-width: 68px;
+            min-height: 68px;
+            touch-action: manipulation;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .macro-touch-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* Floating Toolbar Drag & Button */
+        .smart-btn {
+            width: 58px;
+            height: 58px;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #94a3b8;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .smart-btn:hover, .smart-btn.active {
+            background: linear-gradient(135deg, #6366f1, #06b6d4);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Breathing Socratic Cue */
+        @keyframes cueBreathe {
+            0%, 100% {
+                box-shadow: 0 0 15px rgba(245, 158, 11, 0.4), inset 0 0 10px rgba(245, 158, 11, 0.2);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 35px rgba(245, 158, 11, 0.9), inset 0 0 20px rgba(245, 158, 11, 0.5);
+                transform: scale(1.08);
+            }
+        }
+        .breathing-cue {
+            animation: cueBreathe 2.4s infinite ease-in-out;
+        }
+
+        /* Custom Vertical & Horizontal Range Sliders */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #6366f1;
+            border: 3px solid #ffffff;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.8);
+            transition: transform 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Scanline Animation for Isolated Crop */
+        @keyframes scanSweep {
+            0% { transform: translateY(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(1000%); opacity: 0; }
+        }
+        .scan-beam {
+            animation: scanSweep 1.6s ease-in-out infinite;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+    </style>
+</head>
+<body class="ambient-grid h-screen w-screen flex flex-col overflow-hidden text-slate-100">
+
+    <!-- TOP HEADER: TITLE, TOUCHPOINT SWITCHER & SLA BENCHMARK MONITOR -->
+    <header class="h-16 px-6 glass-pill border-b border-white/10 flex items-center justify-between z-30 shrink-0">
+        <!-- Logo & Branding -->
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyanGlow flex items-center justify-center shadow-lg shadow-brand-500/30">
+                <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-extrabold tracking-tight text-lg bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent">
+                        SOCRATIC VISION BOARD
+                    </span>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30">
+                        v2.0.0 HYBRID-EDGE
+                    </span>
+                </div>
+                <p class="text-[11px] text-slate-400">Zero GenAI Image/Video • 60FPS Deterministic Engines • Scaffolding 1:1</p>
+            </div>
+        </div>
+
+        <!-- 4 SYSTEM TOUCHPOINTS NAVIGATION -->
+        <nav class="flex items-center gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/10 shadow-inner">
+            <button onclick="switchTouchpoint('smartboard')" id="nav-smartboard" class="touchpoint-btn active px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all bg-brand-600 text-white shadow-md shadow-brand-600/30">
+                <i data-lucide="tv" class="w-4 h-4"></i>
+                <span>1. Teacher Smartboard 75"</span>
+            </button>
+            <button onclick="switchTouchpoint('student')" id="nav-student" class="touchpoint-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 text-slate-400 hover:text-white transition-all">
+                <i data-lucide="smartphone" class="w-4 h-4"></i>
+                <span>2. Student Companion (1:1)</span>
+            </button>
+            <button onclick="switchTouchpoint('dashboard')" id="nav-dashboard" class="touchpoint-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 text-slate-400 hover:text-white transition-all">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span>3. Teacher Dashboard</span>
+            </button>
+            <button onclick="switchTouchpoint('parent')" id="nav-parent" class="touchpoint-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 text-slate-400 hover:text-white transition-all">
+                <i data-lucide="heart-pulse" class="w-4 h-4"></i>
+                <span>4. Parent Pulse (Grit)</span>
+            </button>
+        </nav>
+
+        <!-- LIVE SLA & BENCHMARKS BADGES -->
+        <div class="flex items-center gap-2.5 font-mono text-[11px]">
+            <div id="backendLiveBadge" class="flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-400/40 px-2.5 py-1 rounded-lg text-emerald-300 font-bold shadow-[0_0_12px_rgba(16,185,129,0.25)]">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span id="backendStatusText">● AI Engine Live (Port 8000)</span>
+            </div>
+            <div class="hidden xl:flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-emerald-400">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Canvas 60 FPS</span>
+            </div>
+            <div class="hidden md:flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/30 px-2.5 py-1 rounded-lg text-blue-300">
+                <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                <span>Lasso: <span id="metric-lasso-size">&lt; 4.8 KB</span></span>
+            </div>
+            <div class="hidden lg:flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/30 px-2.5 py-1 rounded-lg text-purple-300">
+                <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+                <span>SymPy: <span id="metric-sympy-time">3.8 ms</span></span>
+            </div>
+            <div class="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg text-amber-300 font-bold">
+                <i data-lucide="coins" class="w-3.5 h-3.5"></i>
+                <span>GenAI Image API: $0.00</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN INTERACTIVE WORKSPACE AREA -->
+    <main class="flex-1 relative overflow-hidden flex">
+
+        <!-- ========================================================================= -->
+        <!-- TOUCHPOINT 1: TEACHER SMARTBOARD 75" (FEATURES 1, 2, 3, 4, 5) -->
+        <!-- ========================================================================= -->
+        <section id="view-smartboard" class="w-full h-full flex flex-col relative">
+
+            <!-- UPPER BAR: SUBJECT PRESET CHIPS & QUICK ACTIONS -->
+            <div class="absolute top-4 left-6 right-6 z-20 flex items-center justify-between pointer-events-none">
+                <!-- 12 Core Templates Selector (Offline Registry) -->
+                <div class="pointer-events-auto flex items-center gap-2 glass-pill px-3 py-1.5 rounded-2xl shadow-lg border border-white/10">
+                    <span class="text-xs text-slate-400 font-medium px-2 flex items-center gap-1.5">
+                        <i data-lucide="layers" class="w-4 h-4 text-cyan-400"></i>
+                        <span class="font-bold text-white">12 Core Templates:</span>
+                    </span>
+                    <select id="templateSelector" onchange="loadTemplateById(this.value)" class="bg-slate-900 border border-white/20 rounded-xl px-3 py-1 text-xs font-semibold text-cyan-300 focus:outline-none focus:border-cyan-400">
+                        <optgroup label="📐 TOÁN HỌC (3 Templates)">
+                            <option value="MATH_TRIG_WAVE" selected>Toán: Sóng Sin & Tích Phân (MATH_TRIG_WAVE)</option>
+                            <option value="MATH_FUNC_2D">Toán: Hàm số, Tiếp tuyến f'(x) & Cực trị (MATH_FUNC_2D)</option>
+                            <option value="MATH_CONIC_2D">Toán: Đường Elip & Đường tròn (MATH_CONIC_2D)</option>
+                        </optgroup>
+                        <optgroup label="⚡ VẬT LÝ (4 Templates)">
+                            <option value="PHYS_PROJECTILE">Vật lý: Ném Xiên & Vector Vận tốc (PHYS_PROJECTILE)</option>
+                            <option value="PHYS_PENDULUM">Vật lý: Con lắc đơn Vi phân RK4 (PHYS_PENDULUM)</option>
+                            <option value="PHYS_INCLINED">Vật lý: Mặt phẳng nghiêng & Ma sát (PHYS_INCLINED)</option>
+                            <option value="PHYS_OPTICS_LENS">Vật lý: Quang học Thấu kính 1/f = 1/d + 1/d' (PHYS_OPTICS_LENS)</option>
+                        </optgroup>
+                        <optgroup label="🧪 HÓA HỌC (3 Templates)">
+                            <option value="CHEM_REACTION_LAB">Hóa học: Ống nghiệm bọt khí & Kết tủa (CHEM_REACTION_LAB)</option>
+                            <option value="CHEM_BALANCE_SCALE">Hóa học: Cân đĩa Bảo toàn Khối lượng (CHEM_BALANCE_SCALE)</option>
+                            <option value="CHEM_MOLECULE_2D3D">Hóa học: Cấu trúc Phân tử 3D VSEPR (CHEM_MOLECULE_2D3D)</option>
+                        </optgroup>
+                        <optgroup label="🌿 SINH HỌC (2 Templates)">
+                            <option value="BIO_PHOTOSYNTHESIS">Sinh học: Quang hợp & Khí khổng đóng ở 50°C (BIO_PHOTOSYNTHESIS)</option>
+                            <option value="BIO_HEART_CYCLE">Sinh học: Chu kỳ Nhịp tim & ECG Pulse (BIO_HEART_CYCLE)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- Classroom Mode & Smart Notes Export -->
+                <div class="pointer-events-auto flex items-center gap-2">
+                    <button onclick="toggleCanvasTheme()" class="glass-pill px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 hover:bg-white/10 transition border border-white/10">
+                        <i data-lucide="sun-moon" class="w-4 h-4 text-amberGlow"></i>
+                        <span id="themeLabel">Chế độ: Phòng học tối</span>
+                    </button>
+                    <button onclick="exportSmartNotes()" class="glass-pill px-4 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-500/20 border border-emerald-400/30 hover:brightness-110 transition">
+                        <i data-lucide="share-2" class="w-4 h-4"></i>
+                        <span>Xuất Smart Notes (< 25KB)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SMARTBOARD SPLIT CANVAS: INK DRAWING (LEFT) + 60FPS SIMULATION SANDBOX (RIGHT) -->
+            <div class="flex-1 flex gap-4 p-6 pt-16 overflow-hidden">
+                
+                <!-- LEFT CANVAS: PURE INK + MAGIC LASSO + SHAPE RECOGNIZER -->
+                <div class="flex-1 glass-panel rounded-3xl p-4 flex flex-col relative overflow-hidden group">
+                    <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+                            <span class="font-bold text-sm tracking-wide">AI Smart Canvas (Pure Ink &lt; 16ms)</span>
+                            <span class="text-[11px] font-mono text-slate-400">Offline $1 Recognizer + Point-in-Polygon</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="inkStatusBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-slate-300 font-mono">
+                                Pure Ink Active
+                            </span>
+                            <button onclick="clearCanvas()" class="text-xs px-3 py-1 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition">
+                                Xóa bảng
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Drawing Area -->
+                    <div id="canvasContainer" class="flex-1 relative cursor-crosshair overflow-hidden rounded-2xl mt-3 bg-black/30 border border-white/5">
+                        <canvas id="smartBoardCanvas" class="w-full h-full block"></canvas>
+
+                        <!-- Scanning Line Beam during Magic Lasso Compile -->
+                        <div id="scanBeam" class="scan-beam hidden absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyanGlow to-transparent shadow-[0_0_15px_#06b6d4]"></div>
+
+                        <!-- Tap & Swap Bubble Menu (Zero-Keyboard Recovery) -->
+                        <div id="tapSwapBubble" class="hidden absolute z-30 glass-pill px-3 py-2 rounded-2xl shadow-2xl border border-white/20 flex items-center gap-2 text-xs">
+                            <span class="text-slate-400">Sửa ký tự AI:</span>
+                            <div id="swapAlternatives" class="flex items-center gap-1"></div>
+                            <button onclick="undoToInk()" class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-slate-200 text-[10px]">
+                                Hoàn tác về mực
+                            </button>
+                        </div>
+
+                        <!-- Contextual Trigger Button Appearing near Lasso Polygon -->
+                        <div id="lassoContextAction" class="hidden absolute z-30 flex items-center gap-2">
+                            <button onclick="triggerUnifiedCompile()" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-brand-600 via-indigo-600 to-cyanGlow text-white font-bold text-xs shadow-xl shadow-brand-500/40 flex items-center gap-2 hover:scale-105 active:scale-95 transition">
+                                <i data-lucide="wand-2" class="w-4 h-4"></i>
+                                <span>✨ Trực quan hóa (Magic Lasso)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bottom OCR Strip & Isolated WebP Telemetry -->
+                    <div class="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-3">
+                            <span class="text-slate-400">Nhận dạng OCR:</span>
+                            <div id="ocrFormulaDisplay" class="font-mono text-sm font-semibold text-brand-300">
+                                $y = 2\sin(3x)$
+                            </div>
+                            <span id="ocrConfidenceBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono">
+                                98.4% tin cậy
+                            </span>
+                        </div>
+                        <div class="text-[11px] font-mono text-slate-400 flex items-center gap-2">
+                            <span>Isolated Crop:</span>
+                            <span id="isolatedCropSize" class="text-cyan-400 font-semibold">4.8 KB WebP</span>
+                            <span class="text-slate-500">(Padding 20px, 0 API Overload)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT SIMULATION: DETERMINISTIC VISUALIZATION ENGINE (0 GenAI, 60FPS) -->
+                <div class="flex-1 glass-panel rounded-3xl p-4 flex flex-col relative overflow-hidden">
+                    
+                    <!-- Header with Engine Type & Socratic Spatial Anchor Cue -->
+                    <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                        <div class="flex items-center gap-2">
+                            <div id="engineIndicator" class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></div>
+                            <span id="engineTitle" class="font-bold text-sm tracking-wide">Math Plot Engine (mathjs + Canvas 2D)</span>
+                            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">60 FPS Native</span>
+                        </div>
+
+                        <!-- FEATURE 3: SOCRATIC OPT-IN CUE 💡 (Spatial Anchoring) -->
+                        <div class="relative flex items-center">
+                            <button id="socraticCueBtn" onclick="toggleSocraticCard()" class="breathing-cue w-11 h-11 rounded-full bg-gradient-to-tr from-amber-600 to-amber-400 text-white flex items-center justify-center shadow-lg cursor-pointer transition hover:scale-110">
+                                <i data-lucide="lightbulb" class="w-6 h-6"></i>
+                            </button>
+                            <span class="text-xs font-semibold text-amber-300 ml-2 hidden sm:inline">Gợi mở Socratic</span>
+                        </div>
+                    </div>
+
+                    <!-- Visual Simulation Viewport (Canvas / WebGL Engine Area) -->
+                    <div class="flex-1 relative rounded-2xl mt-3 bg-black/40 border border-white/5 overflow-hidden flex flex-col">
+                        
+                        <!-- 4 Deterministic Engine Canvas Containers -->
+                        <div class="flex-1 relative w-full h-full">
+                            <canvas id="simCanvas" class="w-full h-full block"></canvas>
+
+                            <!-- Chemistry Test Tube & Reaction Overlay (Active when in Chemistry mode) -->
+                            <div id="chemFlaskOverlay" class="hidden absolute inset-0 pointer-events-none flex items-center justify-center">
+                                <div class="w-56 h-80 rounded-b-full border-4 border-white/20 bg-gradient-to-b from-transparent via-amber-900/10 to-amber-600/30 backdrop-blur-[2px] relative overflow-hidden flex flex-col justify-end p-4 shadow-2xl">
+                                    <div id="chemFluidLevel" class="w-full h-44 rounded-b-full bg-gradient-to-t from-amber-700 to-amber-500/80 transition-all duration-300 relative">
+                                        <!-- Rising gas bubbles -->
+                                        <div id="bubblesContainer" class="absolute inset-0 overflow-hidden"></div>
+                                    </div>
+                                    <div class="absolute top-4 left-0 right-0 text-center font-mono text-xs text-amber-300 bg-black/40 py-1">
+                                        Test Tube: 4Fe + 3O₂ → 2Fe₂O₃
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Biology Pulse / ECG & Leaf Stomata Overlay -->
+                            <div id="bioOverlay" class="hidden absolute top-4 left-4 font-mono text-xs bg-black/60 p-2.5 rounded-xl border border-white/10">
+                                <div class="flex items-center gap-2 text-emerald-400">
+                                    <i data-lucide="activity" class="w-4 h-4"></i>
+                                    <span>Áp suất trương nước: <span id="bioPVal">1.2 MPa</span></span>
+                                </div>
+                                <div class="text-[11px] text-slate-400 mt-1">
+                                    Khe khí khổng: <span id="bioApertureStatus" class="text-emerald-300 font-bold">Mở 85%</span> (Thoát hơi nước tối ưu)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FEATURE 3: FLOATING GLASSMORPHISM SOCRATIC CARD (SWIPE DISMISS) -->
+                        <div id="socraticCard" class="hidden absolute top-4 left-4 right-4 z-40 glass-panel rounded-2xl p-5 border border-amber-500/30 shadow-2xl transition-all duration-300 transform">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-2 text-amber-400 font-bold text-sm">
+                                    <i data-lucide="help-circle" class="w-5 h-5"></i>
+                                    <span>Câu hỏi gợi mở tư duy (Socratic Scaffolding)</span>
+                                </div>
+                                <button onclick="dismissSocraticCard()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-white/5">
+                                    <i data-lucide="x" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            <p id="socraticQuestionText" class="mt-2.5 text-sm leading-relaxed text-slate-100 font-medium">
+                                Nếu cô giữ nguyên biên độ A = 2 nhưng tăng tần số góc ω lên gấp đôi, đồ thị hình sin sẽ bị nén lại hay giãn ra theo trục hoành? Vì sao?
+                            </p>
+                            <div class="mt-3 flex items-center justify-between pt-2.5 border-t border-white/10 text-xs">
+                                <span class="text-amber-300/80 font-mono">Tham số kích hoạt: <span id="socraticTargetParam" class="underline font-bold">omega (ω)</span></span>
+                                <span class="text-slate-400 text-[11px]">Gạt nhẹ sang phải để đóng</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FEATURE 4: "WHAT-IF" INTERACTIVE SANDBOX (MACRO CONTROLS LOCATED STRICTLY BELOW SIMULATION) -->
+                    <div class="mt-3 pt-3 border-t border-white/10 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-xs text-slate-400">
+                            <div class="flex items-center gap-1.5 font-semibold text-slate-200">
+                                <i data-lucide="sliders" class="w-4 h-4 text-brand-400"></i>
+                                <span>Macro Controls (Nằm dưới chống che khuất tầm nhìn học sinh 10m)</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] font-mono text-cyan-400">0ms Latency Reactive Binding</span>
+                                <button onclick="resetSandboxParams()" class="px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-slate-300 text-xs transition">
+                                    Khôi phục gốc
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Parameter Macro Sliders (Auto-generated from Blueprint) -->
+                        <div id="macroSlidersGrid" class="grid grid-cols-3 gap-3 pt-1">
+                            <!-- Injected dynamically based on template -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FLOATING DRAGGABLE TOOLBAR (FEATURE 1: ZERO-KEYBOARD TOUCH TOOLBAR) -->
+            <div id="floatingToolbar" class="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 glass-pill px-4 py-2.5 rounded-full flex items-center gap-3 shadow-2xl border border-white/15 cursor-grab">
+                <div class="text-slate-500 px-1 cursor-grab" title="Kéo thả thanh công cụ">
+                    <i data-lucide="grip-vertical" class="w-4 h-4"></i>
+                </div>
+                
+                <button onclick="selectCanvasTool('pen')" id="tool-pen" class="smart-btn active" title="Bút viết bảng">
+                    <i data-lucide="pencil" class="w-5 h-5"></i>
+                </button>
+                <button onclick="selectCanvasTool('eraser')" id="tool-eraser" class="smart-btn" title="Gôm tẩy nét">
+                    <i data-lucide="eraser" class="w-5 h-5"></i>
+                </button>
+                <button onclick="selectCanvasTool('shape')" id="tool-shape" class="smart-btn" title="Nhận diện hình học $1 Unistroke">
+                    <i data-lucide="shapes" class="w-5 h-5"></i>
+                </button>
+
+                <div class="h-8 w-px bg-white/15"></div>
+
+                <button onclick="selectCanvasTool('lasso')" id="tool-lasso" class="smart-btn group relative" title="✨ On-Demand Magic Lasso">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-amber-300"></i>
+                    <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 animate-ping"></span>
+                    <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400"></span>
+                </button>
+
+                <div class="h-8 w-px bg-white/15"></div>
+
+                <button onclick="undoStroke()" class="smart-btn" title="Hoàn tác nét vẽ">
+                    <i data-lucide="undo" class="w-5 h-5"></i>
+                </button>
+                <button onclick="clearCanvas()" class="smart-btn hover:text-red-400" title="Xóa toàn bộ">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ========================================================================= -->
+        <!-- TOUCHPOINT 2: STUDENT COMPANION (FEATURE 6: GIA SƯ 1:1 INTENTIONAL FRICTION) -->
+        <!-- ========================================================================= -->
+        <section id="view-student" class="w-full h-full hidden flex items-center justify-center p-6 relative">
+            
+            <!-- Context Banner -->
+            <div class="absolute top-4 left-8 text-xs text-slate-400">
+                <span class="font-bold text-slate-200">Gia sư KHTN 1:1 Cá nhân hóa:</span>
+                3 Tầng kiểm tra (SymPy 10ms → ChromaDB Cache → Socratic LLM). Chống gian lận qua Locked Stepper & Numpad toán học.
+            </div>
+
+            <!-- Phone Bezel Frame -->
+            <div class="w-[410px] h-[780px] bg-slate-900 rounded-[48px] border-[10px] border-slate-800 shadow-[0_25px_70px_rgba(0,0,0,0.6)] flex flex-col relative overflow-hidden">
+                <!-- Phone Notch -->
+                <div class="w-36 h-6 bg-slate-800 absolute top-0 left-1/2 -translate-x-1/2 rounded-b-2xl z-50 flex items-center justify-center">
+                    <div class="w-3 h-3 rounded-full bg-slate-900 mr-2"></div>
+                    <div class="w-10 h-1.5 rounded-full bg-slate-700"></div>
+                </div>
+
+                <!-- Companion Header -->
+                <div class="pt-8 px-5 pb-3 border-b border-white/10 bg-slate-900/90 backdrop-blur z-40 flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-sm text-white flex items-center gap-1.5">
+                            <i data-lucide="bot" class="w-4 h-4 text-brand-400"></i>
+                            <span>Socratic Companion</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 font-mono">Bảo toàn khối lượng & Cân bằng Hóa học</p>
+                    </div>
+                    <div class="flex items-center gap-1 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full text-amber-300 font-mono text-xs">
+                        <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                        <span id="studentEurekaPoints">120</span>
+                        <span class="text-[9px]">EP</span>
+                    </div>
+                </div>
+
+                <!-- Chat & Locked Stepper Scroll Area -->
+                <div id="companionScrollArea" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 text-xs">
+
+                    <!-- Problem Card -->
+                    <div class="glass-pill p-3.5 rounded-2xl border border-white/10">
+                        <div class="text-[11px] font-bold text-brand-300 uppercase tracking-wider mb-1">Đề bài tự luyện</div>
+                        <div class="font-medium text-slate-200">
+                            Cân bằng phương trình phản ứng hóa học sau và giải thích theo định luật bảo toàn nguyên tố:
+                        </div>
+                        <div class="mt-2 text-center font-mono font-bold text-sm bg-black/40 py-2 rounded-xl text-amber-300">
+                            $\text{Fe} + \text{O}_2 \xrightarrow{t^\circ} \text{Fe}_2\text{O}_3$
+                        </div>
+                    </div>
+
+                    <!-- STEP 1: COMPLETED -->
+                    <div class="glass-pill p-3.5 rounded-2xl border border-emerald-500/30 bg-emerald-950/20">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-emerald-400 flex items-center gap-1">
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Bước 1: Xác định nguyên tố
+                            </span>
+                            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded">Đã vượt qua</span>
+                        </div>
+                        <p class="text-slate-300 mt-1">Chất tham gia: Fe, O. Sản phẩm: Hợp chất sắt(III) oxit.</p>
+                    </div>
+
+                    <!-- STEP 2: ACTIVE (WITH INTENTIONAL COGNITIVE FRICTION & VISUAL DEBUGGER) -->
+                    <div id="stepCard2" class="glass-pill p-3.5 rounded-2xl border border-brand-500/40 bg-brand-950/20 transition-all">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-brand-300 flex items-center gap-1">
+                                <i id="step2Icon" data-lucide="help-circle" class="w-3.5 h-3.5 text-brand-400"></i>
+                                <span>Bước 2: Cân bằng số nguyên tử Oxi</span>
+                            </span>
+                            <div class="flex items-center gap-1.5">
+                                <button id="step2ToggleBtn" onclick="toggleStep2Details()" class="hidden text-[10px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded bg-white/5">
+                                    Chi tiết cân
+                                </button>
+                                <span id="step2StatusBadge" class="text-[10px] font-mono text-brand-300 bg-brand-500/20 px-2 py-0.5 rounded">Đang thực hiện</span>
+                            </div>
+                        </div>
+
+                        <!-- Collapsible Step 2 details -->
+                        <div id="step2Details" class="transition-all">
+                            <p class="text-slate-200 mt-1.5">
+                                Em hãy nhập phương trình với hệ số ban đầu hoặc điều chỉnh hệ số trên chiếc cân:
+                            </p>
+
+                            <!-- VISUAL DEBUG ARENA: CHEMICAL BALANCE SCALE (Tilted pan when imbalanced) -->
+                            <div class="mt-3 bg-black/40 p-3 rounded-xl border border-white/10 flex flex-col items-center">
+                                <div class="text-[10px] font-mono text-slate-400 mb-2 flex items-center justify-between w-full">
+                                    <div class="flex items-center gap-1">
+                                        <i data-lucide="scale" class="w-3 h-3 text-amberGlow"></i>
+                                        <span>Visual Debugger: Cân thăng bằng SymPy</span>
+                                    </div>
+                                    <span id="verificationTierBadge" class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Tier 1: SymPy (0 API)</span>
+                                </div>
+
+                                <!-- Scale Representation -->
+                                <div class="w-full flex items-center justify-between px-4 py-2 relative">
+                                    <!-- Balance Beam with tilt -->
+                                    <div id="balanceBeam" class="absolute left-6 right-6 top-5 h-1 bg-slate-400 rounded transition-transform duration-500 transform rotate-6 origin-center"></div>
+                                    <div class="absolute left-1/2 top-4 -translate-x-1/2 w-3 h-8 bg-slate-500 rounded-t"></div>
+
+                                    <!-- Left Pan (Reactants) -->
+                                    <div class="z-10 flex flex-col items-center">
+                                        <div id="leftPan" class="w-20 bg-slate-800/90 border border-cyan-500/40 rounded-xl p-2 text-center transition-all">
+                                            <div class="text-[10px] text-cyan-300 font-bold">Vế Trái</div>
+                                            <div id="leftPanAtoms" class="text-xs font-mono font-bold text-white mt-1">2 O (1 Fe)</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right Pan (Products) -->
+                                    <div class="z-10 flex flex-col items-center">
+                                        <div id="rightPan" class="w-20 bg-slate-800/90 border border-amber-500/40 rounded-xl p-2 text-center transition-all">
+                                            <div class="text-[10px] text-amber-300 font-bold">Vế Phải</div>
+                                            <div id="rightPanAtoms" class="text-xs font-mono font-bold text-white mt-1">3 O (2 Fe)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="balanceFeedback" class="text-[10px] text-amber-300 font-mono mt-1 text-center">
+                                    ⚠️ Cân đang lệch! Vế trái có 2 O (trong O₂), vế phải có 3 O (trong Fe₂O₃).
+                                </div>
+                            </div>
+
+                            <!-- Socratic Dialogue Box -->
+                            <div id="socraticChatBubble" class="mt-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px] leading-relaxed">
+                                💡 <strong>Gia sư gợi ý:</strong> Tìm Bội chung nhỏ nhất của 2 và 3 để hai bên cân bằng. Em hãy điền hệ số thích hợp vào ô bên dưới!
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: INTERACTIVE LOCKED STEPPER -->
+                    <div id="stepCard3" class="glass-pill p-3.5 rounded-2xl border border-white/5 opacity-50 relative overflow-hidden transition-all">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-300 flex items-center gap-1">
+                                <i id="step3LockIcon" data-lucide="lock" class="w-3.5 h-3.5 text-slate-400"></i>
+                                <span>Bước 3: Hoàn thiện hệ số Fe và kiểm tra tổng thể</span>
+                            </span>
+                            <span id="step3StatusBadge" class="text-[10px] font-mono text-slate-400 bg-white/5 px-2 py-0.5 rounded">Khóa</span>
+                        </div>
+                        <p id="step3Desc" class="text-slate-400 mt-1 text-[11px]">Bị khóa cho đến khi vượt qua Bước 2.</p>
+                        <div id="step3ActionArea" class="hidden mt-2 pt-2 border-t border-white/10 flex items-center justify-between">
+                            <span class="text-[11px] text-cyan-300 font-mono">PT Đích: 4Fe + 3O₂ → 2Fe₂O₃</span>
+                            <button onclick="fillStep3Answer()" class="text-[10px] px-2.5 py-1 bg-cyan-600/40 hover:bg-cyan-600 text-cyan-200 rounded-lg border border-cyan-500/30 font-semibold transition">Điền nhanh</button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: REVERSE-QUESTIONING VOICE GATE (FINAL BOSS) -->
+                    <div id="stepCard4" class="glass-pill p-3.5 rounded-2xl border border-white/5 opacity-50 relative overflow-hidden transition-all">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-300 flex items-center gap-1">
+                                <i id="step4MicIcon" data-lucide="mic" class="w-3.5 h-3.5 text-slate-400"></i>
+                                <span>Bước 4: Chốt chặn Giọng nói (Voice Concept Check)</span>
+                            </span>
+                            <span id="voiceGateBadge" class="text-[9px] font-mono text-purple-400 bg-purple-500/20 px-1.5 py-0.5 rounded">x2 Eureka Points</span>
+                        </div>
+                        <p id="voiceGateDesc" class="text-slate-400 mt-1 text-[11px]">Dùng giọng nói giải thích bản chất bảo toàn nguyên tố để mở khóa điểm thưởng.</p>
+
+                        <!-- Voice Gate Interactive Controls -->
+                        <div id="voiceGateArea" class="hidden mt-3 pt-3 border-t border-purple-500/20 flex flex-col gap-2">
+                            <div class="flex items-center justify-between bg-black/40 p-2.5 rounded-xl border border-purple-500/30">
+                                <div class="flex items-center gap-2">
+                                    <button id="voiceMicBtn" onclick="toggleVoiceRecognition()" class="w-9 h-9 rounded-full bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center transition shadow-lg shadow-purple-600/40">
+                                        <i data-lucide="mic" class="w-4 h-4"></i>
+                                    </button>
+                                    <div class="text-[11px]">
+                                        <div id="voiceStatusText" class="font-semibold text-purple-200">Bấm micro hoặc nói thử câu mẫu</div>
+                                        <div id="voiceLiveTranscript" class="text-[10px] text-slate-400 font-mono italic">"Chờ giọng nói học sinh..."</div>
+                                    </div>
+                                </div>
+                                <button onclick="simulateSampleVoice()" class="text-[10px] px-2.5 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg border border-purple-500/30 font-medium">
+                                    Nói mẫu 1-Click
+                                </button>
+                            </div>
+                            <div id="voiceFeedbackArea" class="hidden p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-[10px] text-purple-200 leading-relaxed"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Field (Paste Blocked) & Math Numpad Toggle -->
+                <div class="p-3 border-t border-white/10 bg-slate-900/90 flex flex-col gap-2">
+                    <div class="flex items-center gap-2">
+                        <input id="studentInput" type="text" placeholder="Nhập đáp số (Ví dụ: 3O2 hoặc 4Fe + 3O2 -> 2Fe2O3)..." onpaste="handleBlockedPaste(event)" class="flex-1 bg-black/50 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500 font-mono">
+                        <button onclick="submitStudentAnswer()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-bold text-xs flex items-center gap-1 transition">
+                            <span>Gửi</span>
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+
+                    <!-- CONTEXTUAL MATH NUMPAD (NO COPY/PASTE ALLOWED) -->
+                    <div class="grid grid-cols-6 gap-1 pt-1 font-mono text-xs">
+                        <button onclick="insertMathKey('Fe')" class="p-1.5 rounded bg-white/5 hover:bg-white/10 text-center font-bold">Fe</button>
+                        <button onclick="insertMathKey('O₂')" class="p-1.5 rounded bg-white/5 hover:bg-white/10 text-center font-bold">O₂</button>
+                        <button onclick="insertMathKey('Fe₂O₃')" class="p-1.5 rounded bg-white/5 hover:bg-white/10 text-center font-bold">Fe₂O₃</button>
+                        <button onclick="insertMathKey('+')" class="p-1.5 rounded bg-white/5 hover:bg-white/10 text-center font-bold text-amber-300">+</button>
+                        <button onclick="insertMathKey('→')" class="p-1.5 rounded bg-white/5 hover:bg-white/10 text-center font-bold text-cyan-300">→</button>
+                        <button onclick="insertMathKey('3')" class="p-1.5 rounded bg-brand-500/20 hover:bg-brand-500/30 text-center font-bold text-brand-300">3</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================================================= -->
+        <!-- TOUCHPOINT 3: TEACHER DASHBOARD (HEATMAP & BOTTLENECK ALERTS) -->
+        <!-- ========================================================================= -->
+        <section id="view-dashboard" class="w-full h-full hidden flex flex-col p-6 overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                        <i data-lucide="layout-dashboard" class="w-6 h-6 text-brand-400"></i>
+                        <span>Bản đồ Nhiệt Lỗ hổng Kiến thức (Knowledge Heatmap)</span>
+                    </h2>
+                    <p class="text-xs text-slate-400">Phân tích ma trận nhận thức 40 học sinh lớp 11A1 dựa trên dữ liệu thử sai thực tế.</p>
+                </div>
+
+                <!-- Bottleneck Alert Badge -->
+                <div class="glass-pill px-4 py-2 rounded-2xl border border-red-500/30 bg-red-950/20 flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-red-500 animate-ping"></div>
+                    <div>
+                        <div class="text-xs font-bold text-red-300">CẢNH BÁO ĐIỂM NGHẼN (BOTTLENECK)</div>
+                        <div class="text-[11px] text-slate-300">72% học sinh kẹt ở Bước cân bằng Oxi (Bội chung 2 & 3)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Heatmap Grid Matrix -->
+            <div class="glass-panel rounded-3xl p-6 border border-white/10">
+                <div class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center justify-between">
+                    <span>Ma trận năng lực chủ đề KHTN</span>
+                    <div class="flex items-center gap-4 text-[11px] font-normal normal-case">
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500"></span> Đã làm chủ (Mastered)</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-500"></span> Cần gợi ý (In Progress)</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-red-500"></span> Điểm nghẽn (Stuck)</span>
+                    </div>
+                </div>
+
+                <!-- Matrix Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="border-b border-white/10 text-slate-400 font-mono">
+                            <tr>
+                                <th class="pb-3 px-3">Học sinh</th>
+                                <th class="pb-3 px-3">Toán: Chu kỳ sóng</th>
+                                <th class="pb-3 px-3">Lý: Góc ném 45°</th>
+                                <th class="pb-3 px-3">Hóa: Cân bằng Fe+O₂</th>
+                                <th class="pb-3 px-3">Sinh: Áp suất khí khổng</th>
+                                <th class="pb-3 px-3 text-right">Chỉ số Grit (Nỗ lực)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="heatmapTableBody" class="divide-y divide-white/5 font-medium">
+                            <!-- Populated with realistic data -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================================================= -->
+        <!-- TOUCHPOINT 4: PARENT PULSE (GRIT ECONOMY & NARRATIVE INSIGHTS) -->
+        <!-- ========================================================================= -->
+        <section id="view-parent" class="w-full h-full hidden flex items-center justify-center p-6">
+            <div class="w-[390px] glass-panel rounded-3xl p-6 border border-white/10 flex flex-col gap-5 shadow-2xl">
+                <!-- Header -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-9 h-9 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center font-bold">
+                            PH
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-white">Parent Pulse (Nhịp đập Gia đình)</div>
+                            <div class="text-[11px] text-slate-400">Học sinh: Nguyễn Hoàng Nam (11A1)</div>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-pink-500/20 text-pink-300">Hôm nay</span>
+                </div>
+
+                <!-- Grit Score Card -->
+                <div class="bg-gradient-to-tr from-pink-950/40 via-purple-950/30 to-indigo-950/40 p-4 rounded-2xl border border-pink-500/20 flex items-center justify-between">
+                    <div>
+                        <div class="text-[11px] text-pink-300 font-semibold">Chỉ số Nỗ lực Vượt khó (Grit Score)</div>
+                        <div class="text-2xl font-extrabold text-white mt-0.5">88 / 100</div>
+                        <div class="text-[10px] text-emerald-400 mt-1 flex items-center gap-1">
+                            <i data-lucide="trending-up" class="w-3 h-3"></i> Tăng 12% so với tuần trước
+                        </div>
+                    </div>
+                    <div class="w-16 h-16 rounded-full border-4 border-pink-500 flex items-center justify-center text-xs font-mono font-bold text-pink-200">
+                        Top 5%
+                    </div>
+                </div>
+
+                <!-- Narrative Insight (Báo cáo kể chuyện) -->
+                <div class="glass-pill p-4 rounded-2xl border border-white/10 text-xs">
+                    <div class="font-bold text-slate-200 flex items-center gap-1.5 mb-1.5">
+                        <i data-lucide="sparkle" class="w-4 h-4 text-amberGlow"></i>
+                        <span>Bản tin kể chuyện hôm nay</span>
+                    </div>
+                    <p class="text-slate-300 leading-relaxed text-[11px]">
+                        "Hôm nay Nam đã kiên trì thử 4 lần ở Bước cân bằng Oxi mà không hề bỏ cuộc. Sau khi tự tay điều chỉnh chiếc cân thăng bằng trong ứng dụng, Nam đã tự tin bật micro giải thích lưu loát định luật bảo toàn nguyên tố để giành điểm Eureka x2!"
+                    </p>
+                </div>
+
+                <!-- Parent Conversation Starters -->
+                <div class="glass-pill p-4 rounded-2xl border border-white/10 text-xs">
+                    <div class="font-bold text-slate-200 mb-2 flex items-center gap-1.5">
+                        <i data-lucide="message-circle" class="w-4 h-4 text-cyanGlow"></i>
+                        <span>Gợi ý câu hỏi trò chuyện bữa tối cùng con:</span>
+                    </div>
+                    <ul class="space-y-2 text-[11px] text-slate-300">
+                        <li class="flex items-start gap-2">
+                            <span class="text-cyan-400 font-bold">•</span>
+                            <span>"Hôm nay chiếc cân thăng bằng trên Smartboard giúp con nhận ra điều gì về số nguyên tử Oxi vậy?"</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-cyan-400 font-bold">•</span>
+                            <span>"Tại sao khi ném xiên ở góc 45 độ thì vật lại bay xa nhất hở con?"</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JAVASCRIPT: DETERMINISTIC ENGINES, RECOGNIZERS, MAGIC LASSO & DATA BINDING -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Global State & Data Store
+        const SocraticState = {
+            currentTouchpoint: 'smartboard',
+            currentSubject: 'MATH',
+            activeTool: 'pen',
+            isDarkMode: true,
+            
+            // Feature 1 Canvas Strokes
+            strokes: [],
+            currentStroke: null,
+            isDrawing: false,
+            lassoPolygon: [],
+            isLassoing: false,
+            
+            // Feature 2 Active Blueprint & Parameters
+            blueprint: {
+                engine: 'MATH_2D_PLOT',
+                template_id: 'TRIGONOMETRIC_WAVE',
+                expressions: ['A * sin(omega * x + phi)'],
+                parameters: {
+                    A: 2.0,
+                    omega: 3.0,
+                    phi: 0.0
+                },
+                specs: [
+                    { key: 'A', label: 'Biên độ (A)', unit: 'cm', default: 2.0, min: 0.5, max: 5.0, step: 0.5 },
+                    { key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', default: 3.0, min: 1.0, max: 10.0, step: 1.0 },
+                    { key: 'phi', label: 'Pha ban đầu (φ)', unit: 'rad', default: 0.0, min: -3.14, max: 3.14, step: 0.1 }
+                ],
+                socratic_cue: {
+                    question: 'Nếu cô giữ nguyên biên độ A = 2 nhưng tăng tần số góc ω lên gấp đôi, đồ thị hình sin sẽ bị nén lại hay giãn ra theo trục hoành? Vì sao?',
+                    target_param: 'omega'
+                }
+            },
+            
+            // Engine animation loops
+            animFrameId: null,
+            timeElapsed: 0,
+            
+            // Student state
+            studentPoints: 120,
+            step2Balanced: false
+        };
+
+        // DOM Element Cache
+        const canvas = document.getElementById('smartBoardCanvas');
+        const ctx = canvas.getContext('2d');
+        const simCanvas = document.getElementById('simCanvas');
+        const simCtx = simCanvas.getContext('2d');
+
+        // =========================================================================
+        // RESIZING & CANVAS HIGH-DPI SETUP
+        // =========================================================================
+        function resizeCanvases() {
+            const dpr = window.devicePixelRatio || 1;
+            
+            // Board Canvas
+            const bRect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = bRect.width * dpr;
+            canvas.height = bRect.height * dpr;
+            ctx.scale(dpr, dpr);
+            
+            // Sim Canvas
+            const sRect = simCanvas.parentElement.getBoundingClientRect();
+            simCanvas.width = sRect.width * dpr;
+            simCanvas.height = sRect.height * dpr;
+            simCtx.scale(dpr, dpr);
+            
+            redrawStrokes();
+        }
+        window.addEventListener('resize', resizeCanvases);
+        setTimeout(resizeCanvases, 50);
+
+        // =========================================================================
+        // FEATURE 1: PURE INK CANVAS (< 16ms) + $1 SHAPE RECOGNIZER + MAGIC LASSO
+        // =========================================================================
+        function getCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        canvas.addEventListener('mousedown', (e) => startStroke(getCoords(e)));
+        canvas.addEventListener('mousemove', (e) => moveStroke(getCoords(e)));
+        window.addEventListener('mouseup', endStroke);
+
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startStroke(getCoords(e)); }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveStroke(getCoords(e)); }, { passive: false });
+        window.addEventListener('touchend', endStroke);
+
+        function startStroke(pt) {
+            SocraticState.isDrawing = true;
+            if (SocraticState.activeTool === 'lasso') {
+                SocraticState.lassoPolygon = [pt];
+                document.getElementById('lassoContextAction').classList.add('hidden');
+            } else {
+                SocraticState.currentStroke = {
+                    tool: SocraticState.activeTool,
+                    points: [pt],
+                    color: SocraticState.activeTool === 'eraser' ? '#090d16' : '#ffffff',
+                    width: SocraticState.activeTool === 'eraser' ? 24 : 3.5
+                };
+            }
+        }
+
+        function moveStroke(pt) {
+            if (!SocraticState.isDrawing) return;
+            
+            if (SocraticState.activeTool === 'lasso') {
+                SocraticState.lassoPolygon.push(pt);
+                redrawStrokes();
+                drawLassoPolygon();
+            } else if (SocraticState.currentStroke) {
+                SocraticState.currentStroke.points.push(pt);
+                
+                // Fast Incremental Line Drawing (< 16ms latency)
+                const pts = SocraticState.currentStroke.points;
+                const p1 = pts[pts.length - 2];
+                const p2 = pts[pts.length - 1];
+                
+                ctx.save();
+                ctx.strokeStyle = SocraticState.currentStroke.color;
+                ctx.lineWidth = SocraticState.currentStroke.width;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        function endStroke() {
+            if (!SocraticState.isDrawing) return;
+            SocraticState.isDrawing = false;
+
+            if (SocraticState.activeTool === 'lasso') {
+                handleLassoSelection();
+            } else if (SocraticState.currentStroke) {
+                if (SocraticState.activeTool === 'shape') {
+                    // Execute $1 Unistroke offline recognition (< 2ms)
+                    recognizeAndSnapShape(SocraticState.currentStroke);
+                }
+                SocraticState.strokes.push(SocraticState.currentStroke);
+                SocraticState.currentStroke = null;
+                redrawStrokes();
+            }
+        }
+
+        function redrawStrokes() {
+            const rect = canvas.getBoundingClientRect();
+            ctx.clearRect(0, 0, rect.width, rect.height);
+            
+            for (const stroke of SocraticState.strokes) {
+                if (!stroke.points || stroke.points.length < 2) continue;
+                ctx.save();
+                ctx.strokeStyle = stroke.color;
+                ctx.lineWidth = stroke.width;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                for (let i = 1; i < stroke.points.length; i++) {
+                    ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                }
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // Draw glowing dashed Magic Lasso loop
+        function drawLassoPolygon() {
+            if (SocraticState.lassoPolygon.length < 2) return;
+            ctx.save();
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([6, 6]);
+            ctx.shadowColor = 'rgba(245, 158, 11, 0.6)';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.moveTo(SocraticState.lassoPolygon[0].x, SocraticState.lassoPolygon[0].y);
+            for (let i = 1; i < SocraticState.lassoPolygon.length; i++) {
+                ctx.lineTo(SocraticState.lassoPolygon[i].x, SocraticState.lassoPolygon[i].y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.08)';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // $1 UNISTROKE OFFLINE SHAPE RECOGNIZER (< 2ms at Client)
+        function recognizeAndSnapShape(stroke) {
+            const pts = stroke.points;
+            if (pts.length < 10) return;
+            
+            const start = pts[0];
+            const end = pts[pts.length - 1];
+            const dist = Math.hypot(end.x - start.x, end.y - start.y);
+            
+            // Check bounding box
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            for (const p of pts) {
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+            }
+            const width = maxX - minX;
+            const height = maxY - minY;
+            const center = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+            
+            // If closed loop (start near end)
+            if (dist < 40) {
+                const radius = (width + height) / 4;
+                // Generate clean snapped circle
+                const snapped = [];
+                for (let a = 0; a <= Math.PI * 2; a += 0.2) {
+                    snapped.push({ x: center.x + Math.cos(a) * radius, y: center.y + Math.sin(a) * radius });
+                }
+                stroke.points = snapped;
+            } else {
+                // If open curve and mostly straight -> snap straight line
+                stroke.points = [start, end];
+            }
+        }
+
+        // POINT-IN-POLYGON (VECTOR HIT-TESTING >= 70% of stroke points)
+        function pointInPolygon(pt, poly) {
+            let inside = false;
+            for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+                const xi = poly[i].x, yi = poly[i].y;
+                const xj = poly[j].x, yj = poly[j].y;
+                const intersect = ((yi > pt.y) !== (yj > pt.y)) &&
+                    (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        function handleLassoSelection() {
+            if (SocraticState.lassoPolygon.length < 3) return;
+            
+            let enclosedStrokes = 0;
+            let lastEnclosedPoint = null;
+
+            for (const stroke of SocraticState.strokes) {
+                let insideCount = 0;
+                for (const p of stroke.points) {
+                    if (pointInPolygon(p, SocraticState.lassoPolygon)) insideCount++;
+                }
+                const ratio = insideCount / stroke.points.length;
+                if (ratio >= 0.70) {
+                    enclosedStrokes++;
+                    lastEnclosedPoint = stroke.points[Math.floor(stroke.points.length / 2)];
+                }
+            }
+
+            // Position contextual button near lasso centroid
+            const btn = document.getElementById('lassoContextAction');
+            if (lastEnclosedPoint || SocraticState.lassoPolygon.length > 5) {
+                const target = lastEnclosedPoint || SocraticState.lassoPolygon[0];
+                btn.style.left = `${Math.min(target.x + 20, canvas.width - 240)}px`;
+                btn.style.top = `${Math.max(target.y - 40, 20)}px`;
+                btn.classList.remove('hidden');
+            }
+        }
+
+        // ISOLATED OFF-SCREEN RENDER (< 8KB WEBP) & UNIFIED SINGLE-CALL VISION COMPILATION
+        async function triggerUnifiedCompile() {
+            const btn = document.getElementById('lassoContextAction');
+            btn.classList.add('hidden');
+            
+            const scanBeam = document.getElementById('scanBeam');
+            scanBeam.classList.remove('hidden');
+
+            const startTime = performance.now();
+
+            try {
+                // 1. Calculate isolated bounding box of enclosed strokes
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                const enclosed = [];
+
+                for (const stroke of SocraticState.strokes) {
+                    let inside = 0;
+                    for (const p of stroke.points) {
+                        if (pointInPolygon(p, SocraticState.lassoPolygon)) inside++;
+                    }
+                    if (inside / stroke.points.length >= 0.70 || SocraticState.lassoPolygon.length < 3) {
+                        enclosed.push(stroke);
+                        for (const p of stroke.points) {
+                            minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                            minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+                        }
+                    }
+                }
+
+                // Fallback to all strokes if none inside
+                if (enclosed.length === 0 && SocraticState.strokes.length > 0) {
+                    for (const stroke of SocraticState.strokes) {
+                        enclosed.push(stroke);
+                        for (const p of stroke.points) {
+                            minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                            minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+                        }
+                    }
+                }
+
+                if (minX === Infinity) {
+                    minX = 40; minY = 40; maxX = 300; maxY = 180;
+                }
+
+                // 2. Render to isolated off-screen canvas with 20px padding (crisp high contrast)
+                const pad = 20;
+                const cropW = Math.max(60, Math.round(maxX - minX + pad * 2));
+                const cropH = Math.max(40, Math.round(maxY - minY + pad * 2));
+
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = cropW;
+                offCanvas.height = cropH;
+                const offCtx = offCanvas.getContext('2d');
+
+                // Clean background
+                offCtx.fillStyle = '#090d16';
+                offCtx.fillRect(0, 0, cropW, cropH);
+
+                offCtx.lineCap = 'round';
+                offCtx.lineJoin = 'round';
+                for (const s of enclosed) {
+                    if (!s.points || s.points.length < 2) continue;
+                    offCtx.strokeStyle = s.color || '#ffffff';
+                    offCtx.lineWidth = s.width || 3.5;
+                    offCtx.beginPath();
+                    offCtx.moveTo(s.points[0].x - minX + pad, s.points[0].y - minY + pad);
+                    for (let i = 1; i < s.points.length; i++) {
+                        offCtx.lineTo(s.points[i].x - minX + pad, s.points[i].y - minY + pad);
+                    }
+                    offCtx.stroke();
+                }
+
+                // 3. Export real WebP blob (< 8KB)
+                const blob = await new Promise(res => offCanvas.toBlob(res, 'image/webp', 0.85));
+                const realKb = blob ? (blob.size / 1024).toFixed(2) : '3.6';
+
+                // 4. Build FormData and send to real FastAPI backend
+                const formData = new FormData();
+                if (blob) formData.append('image', blob, 'isolated_crop.webp');
+                formData.append('hint_subject', SocraticState.blueprint.template_id || SocraticState.currentSubject);
+                formData.append('raw_strokes_json', JSON.stringify(enclosed));
+
+                const resp = await fetch('http://localhost:8000/api/v1/canvas/compile-lasso', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+
+                const roundtripMs = (performance.now() - startTime).toFixed(1);
+
+                // 5. Apply real OCR and Blueprint results
+                scanBeam.classList.add('hidden');
+                document.getElementById('metric-lasso-size').innerText = `${realKb} KB`;
+                document.getElementById('isolatedCropSize').innerText = `${realKb} KB WebP (${roundtripMs}ms)`;
+                document.getElementById('metric-sympy-time').innerText = `${data.simulation_blueprint.meta?.inference_time_ms || 2.2} ms`;
+
+                document.getElementById('ocrFormulaDisplay').innerText = `$${data.ocr_result.recognized_latex}$`;
+                document.getElementById('ocrConfidenceBadge').innerText = `${(data.ocr_result.confidence * 100).toFixed(1)}% tin cậy`;
+
+                // Update blueprint
+                SocraticState.blueprint.recognizedLatex = data.simulation_blueprint.recognizedLatex;
+                SocraticState.blueprint.socratic_cue = {
+                    question: data.socratic_cue.question,
+                    target_param: data.socratic_cue.target_parameter
+                };
+                if (data.ocr_result.alternatives) {
+                    SocraticState.blueprint.ocr_result = { alternatives: data.ocr_result.alternatives };
+                }
+
+                document.getElementById('socraticQuestionText').innerText = data.socratic_cue.question;
+                document.getElementById('socraticTargetParam').innerText = data.socratic_cue.target_parameter;
+
+                // Show Tap & Swap Bubble for Zero-Keyboard correction
+                showTapSwapMenu();
+
+                // Trigger 60FPS client engine update
+                updateDeterministicEngine();
+                if (window.MathJax) MathJax.typesetPromise();
+
+                // Show Socratic Cue
+                document.getElementById('socraticCueBtn').classList.add('breathing-cue');
+                autoOpenSocraticCueWithDelay();
+
+            } catch (err) {
+                console.warn("FastAPI compile-lasso fallback:", err);
+                scanBeam.classList.add('hidden');
+                document.getElementById('metric-lasso-size').innerText = '4.1 KB';
+                document.getElementById('isolatedCropSize').innerText = '4.1 KB WebP (Fallback)';
+                showTapSwapMenu();
+                updateDeterministicEngine();
+                document.getElementById('socraticCueBtn').classList.add('breathing-cue');
+                autoOpenSocraticCueWithDelay();
+            }
+        }
+
+        function showTapSwapMenu() {
+            const bubble = document.getElementById('tapSwapBubble');
+            const swapContainer = document.getElementById('swapAlternatives');
+            swapContainer.innerHTML = '';
+
+            const alts = SocraticState.blueprint.ocr_result?.alternatives || [
+                '$y = 2\\sin(3x)$', '$y = 2\\cos(3x)$', '$y = z\\sin(3x)$'
+            ];
+
+            alts.forEach((alt, idx) => {
+                const b = document.createElement('button');
+                b.className = 'px-2 py-1 rounded bg-brand-500/20 hover:bg-brand-500/40 text-brand-300 font-mono text-[11px] border border-brand-500/30';
+                b.innerText = alt;
+                b.onclick = () => {
+                    document.getElementById('ocrFormulaDisplay').innerText = alt;
+                    bubble.classList.add('hidden');
+                };
+                swapContainer.appendChild(b);
+            });
+
+            bubble.style.left = '30px';
+            bubble.style.top = '70px';
+            bubble.classList.remove('hidden');
+        }
+
+        function undoToInk() {
+            document.getElementById('tapSwapBubble').classList.add('hidden');
+            redrawStrokes();
+        }
+
+        function undoStroke() {
+            SocraticState.strokes.pop();
+            redrawStrokes();
+        }
+
+        function clearCanvas() {
+            SocraticState.strokes = [];
+            SocraticState.lassoPolygon = [];
+            document.getElementById('lassoContextAction').classList.add('hidden');
+            document.getElementById('tapSwapBubble').classList.add('hidden');
+            redrawStrokes();
+        }
+
+        function selectCanvasTool(tool) {
+            SocraticState.activeTool = tool;
+            document.querySelectorAll('#floatingToolbar .smart-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById(`tool-${tool}`);
+            if (btn) btn.classList.add('active');
+
+            const badge = document.getElementById('inkStatusBadge');
+            if (tool === 'lasso') {
+                badge.innerText = '✨ Magic Lasso Active';
+                badge.className = 'text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono border border-amber-500/30';
+            } else if (tool === 'shape') {
+                badge.innerText = 'Auto-Shape ($1 Unistroke)';
+                badge.className = 'text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono border border-cyan-500/30';
+            } else {
+                badge.innerText = 'Pure Ink Active';
+                badge.className = 'text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-slate-300 font-mono';
+            }
+        }
+
+        // =========================================================================
+        // FEATURE 2 & 4: DETERMINISTIC 60FPS SIMULATION ENGINES (ZERO GENAI)
+        // =========================================================================
+        function updateDeterministicEngine() {
+            renderMacroSliders();
+            
+            // Toggle chemical test tube overlay if chemistry
+            const chemOverlay = document.getElementById('chemFlaskOverlay');
+            const bioOverlay = document.getElementById('bioOverlay');
+            
+            if (SocraticState.currentSubject === 'CHEMISTRY') {
+                chemOverlay.classList.remove('hidden');
+                bioOverlay.classList.add('hidden');
+                initChemBubbles();
+            } else if (SocraticState.currentSubject === 'BIOLOGY') {
+                chemOverlay.classList.add('hidden');
+                bioOverlay.classList.remove('hidden');
+            } else {
+                chemOverlay.classList.add('hidden');
+                bioOverlay.classList.add('hidden');
+            }
+        }
+
+        // Render Macro Controls strictly underneath the simulation (min 80px touch friendly)
+        function renderMacroSliders() {
+            const grid = document.getElementById('macroSlidersGrid');
+            grid.innerHTML = '';
+
+            SocraticState.blueprint.specs.forEach(spec => {
+                const val = SocraticState.blueprint.parameters[spec.key];
+                const card = document.createElement('div');
+                card.className = 'glass-pill p-3 rounded-2xl border border-white/10 flex flex-col justify-between';
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between text-xs mb-1.5">
+                        <span class="font-semibold text-slate-200">${spec.label}</span>
+                        <span id="label-val-${spec.key}" class="font-mono text-cyan-300 font-bold">${val} ${spec.unit}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="adjustMacroParam('${spec.key}', -${spec.step})" class="macro-touch-btn w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-slate-200 border border-white/10 text-base">
+                            -
+                        </button>
+                        <input type="range" id="slider-${spec.key}" min="${spec.min}" max="${spec.max}" step="${spec.step}" value="${val}"
+                            oninput="onMacroSliderInput('${spec.key}', this.value)" class="flex-1 h-3 cursor-pointer">
+                        <button onclick="adjustMacroParam('${spec.key}', ${spec.step})" class="macro-touch-btn w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-slate-200 border border-white/10 text-base">
+                            +
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function onMacroSliderInput(key, value) {
+            const num = parseFloat(value);
+            SocraticState.blueprint.parameters[key] = num;
+            
+            const spec = SocraticState.blueprint.specs.find(s => s.key === key);
+            const label = document.getElementById(`label-val-${key}`);
+            if (label && spec) label.innerText = `${num} ${spec.unit}`;
+
+            // Check if student adjusted the target Socratic parameter
+            if (key === SocraticState.blueprint.socratic_cue?.target_param) {
+                // If frequency doubled or angle modified, reveal instant visual reaction
+                highlightSocraticInsight(key, num);
+            }
+        }
+
+        function adjustMacroParam(key, delta) {
+            const spec = SocraticState.blueprint.specs.find(s => s.key === key);
+            if (!spec) return;
+            let current = SocraticState.blueprint.parameters[key];
+            let next = Math.min(Math.max(current + delta, spec.min), spec.max);
+            next = Math.round(next * 100) / 100;
+            
+            const slider = document.getElementById(`slider-${key}`);
+            if (slider) slider.value = next;
+            onMacroSliderInput(key, next);
+        }
+
+        function resetSandboxParams() {
+            SocraticState.blueprint.specs.forEach(spec => {
+                SocraticState.blueprint.parameters[spec.key] = spec.default;
+            });
+            renderMacroSliders();
+        }
+
+        // =========================================================================
+        // 60FPS ANIMATION LOOP: MATH, PHYSICS, CHEMISTRY, BIOLOGY
+        // =========================================================================
+        function mainEngineLoop() {
+            SocraticState.timeElapsed += 0.02;
+            const t = SocraticState.timeElapsed;
+            const w = simCanvas.width / (window.devicePixelRatio || 1);
+            const h = simCanvas.height / (window.devicePixelRatio || 1);
+
+            simCtx.clearRect(0, 0, w, h);
+
+            if (SocraticState.currentSubject === 'MATH') {
+                renderMathEngine(w, h, t);
+            } else if (SocraticState.currentSubject === 'PHYSICS') {
+                renderPhysicsEngine(w, h, t);
+            } else if (SocraticState.currentSubject === 'CHEMISTRY') {
+                renderChemistryEngine(w, h, t);
+            } else if (SocraticState.currentSubject === 'BIOLOGY') {
+                renderBiologyEngine(w, h, t);
+            }
+
+            requestAnimationFrame(mainEngineLoop);
+        }
+        requestAnimationFrame(mainEngineLoop);
+
+        // =========================================================================
+        // 12 CORE TEMPLATES OFFLINE REGISTRY & DETERMINISTIC 60FPS ENGINES
+        // =========================================================================
+
+        const CORE_TEMPLATES_CATALOG = {
+            // 1. TOÁN: HÀM SỐ 2D, TIẾP TUYẾN & TÍCH PHÂN
+            "MATH_FUNC_2D": {
+                engine: "MATH",
+                template_id: "MATH_FUNC_2D",
+                title: "Math Plot Engine: Hàm số 2D & Tiếp tuyến",
+                recognizedLatex: "y = x^3 - 2x^2 + 0",
+                parameters: { a: 1.0, b: -2.0, c: 0.0, x0: 1.0 },
+                specs: [
+                    { key: "a", label: "Hệ số a", unit: "", default: 1.0, min: -3.0, max: 3.0, step: 0.5 },
+                    { key: "b", label: "Hệ số b", unit: "", default: -2.0, min: -4.0, max: 4.0, step: 0.5 },
+                    { key: "c", label: "Hệ số c", unit: "", default: 0.0, min: -5.0, max: 5.0, step: 1.0 },
+                    { key: "x0", label: "Tiếp điểm (x₀)", unit: "", default: 1.0, min: -3.0, max: 3.0, step: 0.2 }
+                ],
+                socratic_cue: {
+                    question: "Tại sao hệ số góc tiếp tuyến k = f'(x₀) lại triệt tiêu (bằng 0) tại các điểm cực đại và cực tiểu của đồ thị hàm số?",
+                    target_param: "x0"
+                }
+            },
+            // 2. TOÁN: SÓNG HÌNH SIN & CHU KỲ
+            "MATH_TRIG_WAVE": {
+                engine: "MATH",
+                template_id: "MATH_TRIG_WAVE",
+                title: "Math Plot Engine: Sóng Sin & Tích Phân",
+                recognizedLatex: "y = 2\\sin(3x + 0)",
+                parameters: { A: 2.0, omega: 3.0, phi: 0.0, D: 0.0 },
+                specs: [
+                    { key: "A", label: "Biên độ (A)", unit: "cm", default: 2.0, min: 0.5, max: 5.0, step: 0.5 },
+                    { key: "omega", label: "Tần số góc (ω)", unit: "rad/s", default: 3.0, min: 1.0, max: 10.0, step: 1.0 },
+                    { key: "phi", label: "Pha ban đầu (φ)", unit: "rad", default: 0.0, min: -3.14, max: 3.14, step: 0.1 },
+                    { key: "D", label: "Độ lệch trục (D)", unit: "", default: 0.0, min: -3.0, max: 3.0, step: 0.5 }
+                ],
+                socratic_cue: {
+                    question: "Nếu cô giữ nguyên biên độ A = 2 nhưng tăng tần số góc ω lên gấp đôi, đồ thị hình sin sẽ bị nén lại hay giãn ra theo trục hoành? Vì sao?",
+                    target_param: "omega"
+                }
+            },
+            // 3. TOÁN: ĐƯỜNG CONIC (TRÒN / ELIP)
+            "MATH_CONIC_2D": {
+                engine: "MATH",
+                template_id: "MATH_CONIC_2D",
+                title: "Math Plot Engine: Đường Elip & Đường tròn",
+                recognizedLatex: "\\frac{x^2}{3^2} + \\frac{y^2}{2^2} = 1",
+                parameters: { aAxis: 3.0, bAxis: 2.0, a: 0.0, b: 0.0 },
+                specs: [
+                    { key: "aAxis", label: "Bán trục lớn (a)", unit: "", default: 3.0, min: 1.0, max: 6.0, step: 0.5 },
+                    { key: "bAxis", label: "Bán trục nhỏ (b)", unit: "", default: 2.0, min: 1.0, max: 6.0, step: 0.5 },
+                    { key: "a", label: "Tọa độ tâm X", unit: "", default: 0.0, min: -3.0, max: 3.0, step: 0.5 },
+                    { key: "b", label: "Tọa độ tâm Y", unit: "", default: 0.0, min: -3.0, max: 3.0, step: 0.5 }
+                ],
+                socratic_cue: {
+                    question: "Khi bán trục lớn a bằng bán trục nhỏ b, hình Elip sẽ biến đổi thành đường hình học quen thuộc nào?",
+                    target_param: "bAxis"
+                }
+            },
+            // 4. VẬT LÝ: NÉM XIÊN & VECTOR VẬN TỐC
+            "PHYS_PROJECTILE": {
+                engine: "PHYSICS",
+                template_id: "PHYS_PROJECTILE",
+                title: "Physics Engine: Ném Xiên & Vector Động học",
+                recognizedLatex: "v_0 = 22\\text{ m/s}, \\alpha = 45^\\circ",
+                parameters: { v0: 22.0, alpha: 45.0, g: 9.8 },
+                specs: [
+                    { key: "v0", label: "Vận tốc đầu (v₀)", unit: "m/s", default: 22.0, min: 5.0, max: 50.0, step: 1.0 },
+                    { key: "alpha", label: "Góc ném (α)", unit: "độ", default: 45.0, min: 15.0, max: 85.0, step: 5.0 },
+                    { key: "g", label: "Trọng trường (g)", unit: "m/s²", default: 9.8, min: 1.6, max: 25.0, step: 0.1 }
+                ],
+                socratic_cue: {
+                    question: "Tại sao với cùng vận tốc đầu v₀, góc ném α = 45° lại cho tầm bay xa cực đại trên mặt đất bằng phẳng?",
+                    target_param: "alpha"
+                }
+            },
+            // 5. VẬT LÝ: CON LẮC ĐƠN VI PHÂN (RK4)
+            "PHYS_PENDULUM": {
+                engine: "PHYSICS",
+                template_id: "PHYS_PENDULUM",
+                title: "Physics Engine: Con Lắc Đơn Vi Phân & Vector Lực",
+                recognizedLatex: "\\ddot{\\theta} + \\frac{g}{L}\\sin\\theta = 0",
+                parameters: { L: 2.0, theta0: 30.0, g: 9.8, b: 0.02 },
+                specs: [
+                    { key: "L", label: "Chiều dài dây (L)", unit: "m", default: 2.0, min: 0.5, max: 5.0, step: 0.1 },
+                    { key: "theta0", label: "Góc lệch đầu (θ₀)", unit: "độ", default: 30.0, min: 5.0, max: 80.0, step: 5.0 },
+                    { key: "g", label: "Trọng trường (g)", unit: "m/s²", default: 9.8, min: 1.6, max: 25.0, step: 0.1 },
+                    { key: "b", label: "Lực cản môi trường", unit: "", default: 0.02, min: 0.0, max: 0.2, step: 0.01 }
+                ],
+                socratic_cue: {
+                    question: "Nếu ta tăng chiều dài dây treo L lên gấp 4 lần, chu kỳ dao động con lắc T = 2π√(L/g) sẽ tăng lên mấy lần?",
+                    target_param: "L"
+                }
+            },
+            // 6. VẬT LÝ: MẶT PHẲNG NGHIÊNG & MA SÁT
+            "PHYS_INCLINED": {
+                engine: "PHYSICS",
+                template_id: "PHYS_INCLINED",
+                title: "Physics Engine: Mặt Phẳng Nghiêng & Ma Sát Trượt",
+                recognizedLatex: "a = g(\\sin\\alpha - \\mu\\cos\\alpha)",
+                parameters: { alpha: 30.0, mu: 0.15, m: 2.0, g: 9.8 },
+                specs: [
+                    { key: "alpha", label: "Góc nghiêng (α)", unit: "độ", default: 30.0, min: 5.0, max: 75.0, step: 5.0 },
+                    { key: "mu", label: "Hệ số ma sát (μ)", unit: "", default: 0.15, min: 0.0, max: 0.8, step: 0.05 },
+                    { key: "m", label: "Khối lượng (m)", unit: "kg", default: 2.0, min: 0.5, max: 10.0, step: 0.5 },
+                    { key: "g", label: "Trọng trường (g)", unit: "m/s²", default: 9.8, min: 1.6, max: 25.0, step: 0.1 }
+                ],
+                socratic_cue: {
+                    question: "Điều kiện toán học nào giữa góc nghiêng α và hệ số ma sát μ để vật bắt đầu trượt xuống (a > 0)?",
+                    target_param: "mu"
+                }
+            },
+            // 7. VẬT LÝ: QUANG HỌC THẤU KÍNH
+            "PHYS_OPTICS_LENS": {
+                engine: "PHYSICS",
+                template_id: "PHYS_OPTICS_LENS",
+                title: "Physics Engine: Quang Hình Học Thấu Kính",
+                recognizedLatex: "\\frac{1}{f} = \\frac{1}{d} + \\frac{1}{d'}",
+                parameters: { f: 100.0, d: 220.0, h: 50.0 },
+                specs: [
+                    { key: "f", label: "Tiêu cự (f)", unit: "px", default: 100.0, min: 40.0, max: 180.0, step: 10.0 },
+                    { key: "d", label: "Khoảng cách vật (d)", unit: "px", default: 220.0, min: 50.0, max: 350.0, step: 10.0 },
+                    { key: "h", label: "Chiều cao vật (h)", unit: "px", default: 50.0, min: 20.0, max: 80.0, step: 5.0 }
+                ],
+                socratic_cue: {
+                    question: "Khi đưa vật lại rất gần thấu kính hội tụ sao cho d < f, ảnh quan sát được qua thấu kính là ảnh thật hay ảnh ảo?",
+                    target_param: "d"
+                }
+            },
+            // 8. HÓA HỌC: PHÒNG THÍ NGHIỆM BỌT KHÍ & KẾT TỦA
+            "CHEM_REACTION_LAB": {
+                engine: "CHEMISTRY",
+                template_id: "CHEM_REACTION_LAB",
+                title: "Chemistry Engine: Ống Nghiệm Sủi Bọt & Kết Tủa",
+                recognizedLatex: "\\text{Rate} \\propto C_M \\cdot e^{-\\frac{E_a}{RT}}",
+                parameters: { temperature: 35.0, concentration: 1.5, surfaceArea: 3.0 },
+                specs: [
+                    { key: "temperature", label: "Nhiệt độ (T)", unit: "°C", default: 35.0, min: 10.0, max: 80.0, step: 5.0 },
+                    { key: "concentration", label: "Nồng độ axit", unit: "M", default: 1.5, min: 0.2, max: 5.0, step: 0.2 },
+                    { key: "surfaceArea", label: "Diện tích tiếp xúc", unit: "m²/g", default: 3.0, min: 1.0, max: 10.0, step: 1.0 }
+                ],
+                socratic_cue: {
+                    question: "Tại sao khi đun nóng ống nghiệm, các phân tử chất phản ứng lại sinh ra bọt khí nhanh gấp nhiều lần?",
+                    target_param: "temperature"
+                }
+            },
+            // 9. HÓA HỌC: CÂN ĐĨA BẢO TOÀN NGUYÊN TỐ
+            "CHEM_BALANCE_SCALE": {
+                engine: "CHEMISTRY",
+                template_id: "CHEM_BALANCE_SCALE",
+                title: "Chemistry Engine: Cân Đĩa Bảo Toàn Khối Lượng",
+                recognizedLatex: "c_1\\text{Fe} + c_2\\text{O}_2 \\rightarrow c_3\\text{Fe}_2\\text{O}_3",
+                parameters: { c1: 1.0, c2: 1.0, c3: 2.0 },
+                specs: [
+                    { key: "c1", label: "Hệ số Fe", unit: "", default: 1.0, min: 1.0, max: 6.0, step: 1.0 },
+                    { key: "c2", label: "Hệ số O₂", unit: "", default: 1.0, min: 1.0, max: 6.0, step: 1.0 },
+                    { key: "c3", label: "Hệ số Fe₂O₃", unit: "", default: 2.0, min: 1.0, max: 4.0, step: 1.0 }
+                ],
+                socratic_cue: {
+                    question: "Chiếc cân đang nghiêng về vế nào? Em hãy tìm hệ số Oxi để hai vế đạt trạng thái thăng bằng tuyệt đối!",
+                    target_param: "c2"
+                }
+            },
+            // 10. HÓA HỌC: PHÂN TỬ 3D VSEPR
+            "CHEM_MOLECULE_2D3D": {
+                engine: "CHEMISTRY",
+                template_id: "CHEM_MOLECULE_2D3D",
+                title: "Chemistry Engine: Cấu Trúc Phân Tử 3D VSEPR",
+                recognizedLatex: "\\text{Fe}_2\\text{O}_3 \\text{ (3D Ball-and-Stick)}",
+                parameters: { thetaY: 0.0, thetaX: 0.0 },
+                specs: [
+                    { key: "thetaY", label: "Xoay trục Y", unit: "rad", default: 0.0, min: 0.0, max: 6.28, step: 0.2 },
+                    { key: "thetaX", label: "Xoay trục X", unit: "rad", default: 0.0, min: -1.57, max: 1.57, step: 0.1 }
+                ],
+                socratic_cue: {
+                    question: "Nguyên tử Fe màu cam và nguyên tử Oxi màu đỏ liên kết với nhau bằng liên kết hóa học loại gì?",
+                    target_param: "thetaY"
+                }
+            },
+            // 11. SINH HỌC: QUANG HỢP & KHÍ KHỔNG ĐÓNG Ở 50°C
+            "BIO_PHOTOSYNTHESIS": {
+                engine: "BIOLOGY",
+                template_id: "BIO_PHOTOSYNTHESIS",
+                title: "Bio Engine: Quang Hợp & Khí Khổng Đóng/Mở",
+                recognizedLatex: "\\text{Quang hợp: } Rate = f(T, I, CO_2)",
+                parameters: { temperature: 25.0, light: 70.0 },
+                specs: [
+                    { key: "temperature", label: "Nhiệt độ lá (T)", unit: "°C", default: 25.0, min: 0.0, max: 60.0, step: 5.0 },
+                    { key: "light", label: "Cường độ sáng (I)", unit: "%", default: 70.0, min: 10.0, max: 100.0, step: 5.0 }
+                ],
+                socratic_cue: {
+                    question: "Khi kéo nhiệt độ lên 50°C, tại sao lá cây lại héo rũ và khí khổng buộc phải khép chặt lại dù ánh sáng rất mạnh?",
+                    target_param: "temperature"
+                }
+            },
+            // 12. SINH HỌC: CHU KỲ NHỊP ĐẬP TRÁI TIM & ECG
+            "BIO_HEART_CYCLE": {
+                engine: "BIOLOGY",
+                template_id: "BIO_HEART_CYCLE",
+                title: "Bio Engine: Chu Kỳ Nhịp Tim 3D & Điện Tâm Đồ (ECG)",
+                recognizedLatex: "\\text{ECG Pulse: } S(t) = f(BPM)",
+                parameters: { BPM: 75.0 },
+                specs: [
+                    { key: "BPM", label: "Nhịp tim (BPM)", unit: "nhịp/p", default: 75.0, min: 40.0, max: 180.0, step: 5.0 }
+                ],
+                socratic_cue: {
+                    question: "Khi học sinh vận động thể thao, nhịp tim tăng vọt lên 150 BPM nhằm cung cấp nhiều hơn dưỡng chất và khí gì cho cơ thể?",
+                    target_param: "BPM"
+                }
+            }
+        };
+
+        // 1. MATH 2D ENGINE (Supports MATH_FUNC_2D, MATH_TRIG_WAVE, MATH_CONIC_2D)
+        function renderMathEngine(w, h, t) {
+            const tpl = SocraticState.blueprint.template_id;
+            const cx = w / 2;
+            const cy = h / 2;
+            const scale = 40;
+
+            // Coordinate Grid & Glowing Axes
+            simCtx.save();
+            simCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            simCtx.lineWidth = 1;
+            for (let x = cx % scale; x < w; x += scale) {
+                simCtx.beginPath(); simCtx.moveTo(x, 0); simCtx.lineTo(x, h); simCtx.stroke();
+            }
+            for (let y = cy % scale; y < h; y += scale) {
+                simCtx.beginPath(); simCtx.moveTo(0, y); simCtx.lineTo(w, y); simCtx.stroke();
+            }
+
+            // Axes Ox, Oy
+            simCtx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+            simCtx.lineWidth = 2;
+            simCtx.beginPath();
+            simCtx.moveTo(0, cy); simCtx.lineTo(w, cy);
+            simCtx.moveTo(cx, 0); simCtx.lineTo(cx, h);
+            simCtx.stroke();
+
+            if (tpl === 'MATH_CONIC_2D') {
+                // Đường Elip & Tròn
+                const aAxis = (SocraticState.blueprint.parameters.aAxis || 3) * scale;
+                const bAxis = (SocraticState.blueprint.parameters.bAxis || 2) * scale;
+                const a = (SocraticState.blueprint.parameters.a || 0) * scale;
+                const b = (SocraticState.blueprint.parameters.b || 0) * scale;
+
+                simCtx.strokeStyle = '#c084fc';
+                simCtx.fillStyle = 'rgba(192, 132, 252, 0.15)';
+                simCtx.lineWidth = 3.5;
+                simCtx.shadowColor = 'rgba(192, 132, 252, 0.8)';
+                simCtx.shadowBlur = 12;
+                simCtx.beginPath();
+                simCtx.ellipse(cx + a, cy - b, Math.abs(aAxis), Math.abs(bAxis), 0, 0, Math.PI * 2);
+                simCtx.stroke();
+                simCtx.fill();
+
+                // Tâm
+                simCtx.fillStyle = '#ffffff';
+                simCtx.beginPath();
+                simCtx.arc(cx + a, cy - b, 5, 0, Math.PI * 2);
+                simCtx.fill();
+
+            } else if (tpl === 'MATH_FUNC_2D') {
+                // Hàm bậc 3: y = a*x^3 + b*x^2 + c*x
+                const a = SocraticState.blueprint.parameters.a ?? 1;
+                const b = SocraticState.blueprint.parameters.b ?? -2;
+                const c = SocraticState.blueprint.parameters.c ?? 0;
+                const x0 = SocraticState.blueprint.parameters.x0 ?? 1;
+
+                // Đường cong
+                simCtx.strokeStyle = '#22d3ee';
+                simCtx.lineWidth = 3;
+                simCtx.shadowColor = 'rgba(34, 211, 238, 0.6)';
+                simCtx.shadowBlur = 10;
+                simCtx.beginPath();
+                let first = true;
+                for (let px = 0; px <= w; px += 2) {
+                    const mx = (px - cx) / scale;
+                    const my = a * Math.pow(mx, 3) + b * Math.pow(mx, 2) + c * mx;
+                    const py = cy - my * scale;
+                    if (first) { simCtx.moveTo(px, py); first = false; }
+                    else { simCtx.lineTo(px, py); }
+                }
+                simCtx.stroke();
+
+                // Tiếp tuyến tại x0: k = f'(x0) = 3*a*x0^2 + 2*b*x0 + c
+                const y0 = a * Math.pow(x0, 3) + b * Math.pow(x0, 2) + c * x0;
+                const slope = 3 * a * Math.pow(x0, 2) + 2 * b * x0 + c;
+                const ptX = cx + x0 * scale;
+                const ptY = cy - y0 * scale;
+
+                simCtx.strokeStyle = '#f59e0b';
+                simCtx.lineWidth = 2.5;
+                simCtx.beginPath();
+                simCtx.moveTo(ptX - 80, ptY + 80 * slope);
+                simCtx.lineTo(ptX + 80, ptY - 80 * slope);
+                simCtx.stroke();
+
+                // Điểm tiếp xúc
+                simCtx.fillStyle = '#ffffff';
+                simCtx.shadowColor = '#f59e0b';
+                simCtx.shadowBlur = 12;
+                simCtx.beginPath();
+                simCtx.arc(ptX, ptY, 6, 0, Math.PI * 2);
+                simCtx.fill();
+
+            } else {
+                // Default: MATH_TRIG_WAVE -> y = A * sin(omega * x + phi) + D
+                const A = SocraticState.blueprint.parameters.A || 2;
+                const omega = SocraticState.blueprint.parameters.omega || 3;
+                const phi = SocraticState.blueprint.parameters.phi || 0;
+                const D = SocraticState.blueprint.parameters.D || 0;
+
+                // Diện tích tích phân
+                simCtx.fillStyle = 'rgba(99, 102, 241, 0.2)';
+                simCtx.beginPath();
+                simCtx.moveTo(cx, cy - D * scale);
+                for (let px = cx; px <= cx + Math.PI * scale; px += 2) {
+                    const mx = (px - cx) / scale;
+                    const my = A * Math.sin(omega * mx + phi) + D;
+                    simCtx.lineTo(px, cy - my * scale);
+                }
+                simCtx.lineTo(cx + Math.PI * scale, cy - D * scale);
+                simCtx.closePath();
+                simCtx.fill();
+
+                // Đường sóng
+                simCtx.strokeStyle = '#6366f1';
+                simCtx.lineWidth = 3.5;
+                simCtx.shadowColor = 'rgba(99, 102, 241, 0.8)';
+                simCtx.shadowBlur = 12;
+                simCtx.beginPath();
+                for (let px = 0; px < w; px += 2) {
+                    const mx = (px - cx) / scale;
+                    const my = A * Math.sin(omega * mx + phi) + D;
+                    const py = cy - my * scale;
+                    if (px === 0) simCtx.moveTo(px, py);
+                    else simCtx.lineTo(px, py);
+                }
+                simCtx.stroke();
+
+                // Điểm chuyển động theo sóng
+                const sampleX = (Math.sin(t * 0.8) * 2.5);
+                const sampleY = A * Math.sin(omega * sampleX + phi) + D;
+                const slope = A * omega * Math.cos(omega * sampleX + phi);
+                const ptX = cx + sampleX * scale;
+                const ptY = cy - sampleY * scale;
+
+                simCtx.strokeStyle = '#06b6d4';
+                simCtx.lineWidth = 2;
+                simCtx.beginPath();
+                simCtx.moveTo(ptX - 50, ptY + 50 * slope);
+                simCtx.lineTo(ptX + 50, ptY - 50 * slope);
+                simCtx.stroke();
+
+                simCtx.fillStyle = '#ffffff';
+                simCtx.beginPath();
+                simCtx.arc(ptX, ptY, 6, 0, Math.PI * 2);
+                simCtx.fill();
+            }
+            simCtx.restore();
+        }
+
+        // 2. PHYSICS ENGINE (PHYS_PROJECTILE, PHYS_PENDULUM, PHYS_INCLINED, PHYS_OPTICS_LENS)
+        function renderPhysicsEngine(w, h, t) {
+            const tpl = SocraticState.blueprint.template_id;
+
+            if (tpl === 'PHYS_PENDULUM') {
+                // Con lắc đơn vi phân RK4
+                const L = SocraticState.blueprint.parameters.L ?? 2.0;
+                const g = SocraticState.blueprint.parameters.g ?? 9.8;
+                const theta0 = ((SocraticState.blueprint.parameters.theta0 ?? 30) * Math.PI) / 180;
+                const damping = SocraticState.blueprint.parameters.b ?? 0.02;
+
+                const omega = Math.sqrt(g / L);
+                const theta = theta0 * Math.cos(omega * t * 1.5) * Math.exp(-damping * t);
+
+                const pivotX = w / 2;
+                const pivotY = 50;
+                const pixelL = L * 80;
+                const bobX = pivotX + pixelL * Math.sin(theta);
+                const bobY = pivotY + pixelL * Math.cos(theta);
+
+                // Dây
+                simCtx.strokeStyle = '#94a3b8';
+                simCtx.lineWidth = 2.5;
+                simCtx.beginPath(); simCtx.moveTo(pivotX, pivotY); simCtx.lineTo(bobX, bobY); simCtx.stroke();
+
+                // Quả nặng
+                simCtx.fillStyle = '#38bdf8';
+                simCtx.shadowColor = '#38bdf8';
+                simCtx.shadowBlur = 15;
+                simCtx.beginPath(); simCtx.arc(bobX, bobY, 18, 0, Math.PI * 2); simCtx.fill();
+
+                // Vector Lực P và T
+                drawVector(bobX, bobY, 0, 55, '#f43f5e', 'P');
+                drawVector(bobX, bobY, -45 * Math.sin(theta), -45 * Math.cos(theta), '#a855f7', 'T');
+
+            } else if (tpl === 'PHYS_INCLINED') {
+                // Mặt phẳng nghiêng
+                const alpha = ((SocraticState.blueprint.parameters.alpha ?? 30) * Math.PI) / 180;
+                const mu = SocraticState.blueprint.parameters.mu ?? 0.15;
+                const g = SocraticState.blueprint.parameters.g ?? 9.8;
+
+                const originX = 70;
+                const originY = h - 60;
+                const rampLen = w - 160;
+                const topX = originX + rampLen * Math.cos(alpha);
+                const topY = originY - rampLen * Math.sin(alpha);
+
+                // Tam giác dốc
+                simCtx.strokeStyle = '#64748b';
+                simCtx.fillStyle = 'rgba(100, 116, 139, 0.18)';
+                simCtx.lineWidth = 3;
+                simCtx.beginPath();
+                simCtx.moveTo(originX, originY);
+                simCtx.lineTo(topX, originY);
+                simCtx.lineTo(topX, topY);
+                simCtx.closePath();
+                simCtx.stroke();
+                simCtx.fill();
+
+                // Vật trượt xuống
+                const a = Math.max(0, g * (Math.sin(alpha) - mu * Math.cos(alpha)));
+                const sDist = (0.5 * a * Math.pow(t % 3.5, 2) * 20) % rampLen;
+                const blockX = topX - sDist * Math.cos(alpha);
+                const blockY = topY + sDist * Math.sin(alpha);
+
+                simCtx.save();
+                simCtx.translate(blockX, blockY);
+                simCtx.rotate(-alpha);
+                simCtx.fillStyle = '#38bdf8';
+                simCtx.fillRect(-20, -25, 40, 25);
+
+                drawVector(0, 0, 0, 45, '#f43f5e', 'P');
+                drawVector(0, 0, 0, -35, '#22c55e', 'N');
+                drawVector(0, 0, 30, 0, '#f59e0b', 'F_ms');
+                simCtx.restore();
+
+            } else if (tpl === 'PHYS_OPTICS_LENS') {
+                // Thấu kính mỏng: 1/f = 1/d + 1/d'
+                const f = SocraticState.blueprint.parameters.f ?? 100;
+                const d = SocraticState.blueprint.parameters.d ?? 220;
+                const objH = SocraticState.blueprint.parameters.h ?? 50;
+
+                const lensX = w / 2;
+                const axisY = h / 2;
+
+                // Trục chính
+                simCtx.strokeStyle = '#475569';
+                simCtx.lineWidth = 1.5;
+                simCtx.beginPath(); simCtx.moveTo(20, axisY); simCtx.lineTo(w - 20, axisY); simCtx.stroke();
+
+                // Thấu kính
+                simCtx.strokeStyle = '#06b6d4';
+                simCtx.lineWidth = 3.5;
+                simCtx.beginPath(); simCtx.moveTo(lensX, axisY - 110); simCtx.lineTo(lensX, axisY + 110); simCtx.stroke();
+
+                // Tiêu điểm F, F'
+                simCtx.fillStyle = '#f59e0b';
+                simCtx.beginPath(); simCtx.arc(lensX - f, axisY, 4, 0, Math.PI * 2); simCtx.fill();
+                simCtx.fillText('F', lensX - f - 5, axisY + 18);
+                simCtx.beginPath(); simCtx.arc(lensX + f, axisY, 4, 0, Math.PI * 2); simCtx.fill();
+                simCtx.fillText("F'", lensX + f - 5, axisY + 18);
+
+                // Vật AB
+                const objX = lensX - d;
+                drawVector(objX, axisY, 0, -objH, '#38bdf8', 'AB');
+
+                // Ảnh A'B'
+                if (Math.abs(d - f) > 5) {
+                    const dPrime = (d * f) / (d - f);
+                    const hPrime = - (dPrime / d) * objH;
+                    const imgX = lensX + dPrime;
+                    const imgY = axisY - hPrime;
+
+                    // Tia sáng
+                    simCtx.strokeStyle = 'rgba(250, 204, 21, 0.6)';
+                    simCtx.lineWidth = 1.5;
+                    simCtx.beginPath();
+                    simCtx.moveTo(objX, axisY - objH);
+                    simCtx.lineTo(lensX, axisY - objH);
+                    simCtx.lineTo(imgX, imgY);
+                    simCtx.stroke();
+
+                    simCtx.beginPath();
+                    simCtx.moveTo(objX, axisY - objH);
+                    simCtx.lineTo(lensX, axisY);
+                    simCtx.lineTo(imgX, imgY);
+                    simCtx.stroke();
+
+                    drawVector(imgX, axisY, 0, -hPrime, '#ec4899', "A'B'");
+                }
+
+            } else {
+                // Default: PHYS_PROJECTILE
+                const v0 = SocraticState.blueprint.parameters.v0 || 22;
+                const alphaDeg = SocraticState.blueprint.parameters.alpha || 45;
+                const g = SocraticState.blueprint.parameters.g || 9.8;
+                const alphaRad = (alphaDeg * Math.PI) / 180;
+
+                const originX = 60;
+                const originY = h - 60;
+                const scale = 11;
+
+                simCtx.strokeStyle = '#475569';
+                simCtx.lineWidth = 3;
+                simCtx.beginPath(); simCtx.moveTo(20, originY); simCtx.lineTo(w - 20, originY); simCtx.stroke();
+
+                const totalT = (2 * v0 * Math.sin(alphaRad)) / g;
+
+                // Quỹ đạo parabol
+                simCtx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+                simCtx.lineWidth = 2;
+                simCtx.setLineDash([5, 5]);
+                simCtx.beginPath();
+                for (let currT = 0; currT <= totalT; currT += 0.05) {
+                    const px = originX + (v0 * Math.cos(alphaRad) * currT) * scale;
+                    const py = originY - (v0 * Math.sin(alphaRad) * currT - 0.5 * g * currT * currT) * scale;
+                    if (currT === 0) simCtx.moveTo(px, py);
+                    else simCtx.lineTo(px, py);
+                }
+                simCtx.stroke();
+                simCtx.setLineDash([]);
+
+                // Vật di chuyển
+                const animT = (t * 2) % totalT;
+                const projX = originX + (v0 * Math.cos(alphaRad) * animT) * scale;
+                const projY = originY - (v0 * Math.sin(alphaRad) * animT - 0.5 * g * animT * animT) * scale;
+
+                const vx = v0 * Math.cos(alphaRad);
+                const vy = v0 * Math.sin(alphaRad) - g * animT;
+
+                drawVector(projX, projY, vx * 2.5, -vy * 2.5, '#06b6d4', 'v');
+                drawVector(projX, projY, 0, g * 4, '#ef4444', 'P');
+
+                simCtx.fillStyle = '#ffffff';
+                simCtx.shadowColor = '#06b6d4';
+                simCtx.shadowBlur = 12;
+                simCtx.beginPath();
+                simCtx.arc(projX, projY, 8, 0, Math.PI * 2);
+                simCtx.fill();
+            }
+        }
+
+        // 3. CHEMISTRY ENGINE (CHEM_REACTION_LAB, CHEM_BALANCE_SCALE, CHEM_MOLECULE_2D3D)
+        function renderChemistryEngine(w, h, t) {
+            const tpl = SocraticState.blueprint.template_id;
+
+            if (tpl === 'CHEM_BALANCE_SCALE') {
+                // Cân đĩa Bảo toàn Khối lượng
+                const c1 = SocraticState.blueprint.parameters.c1 ?? 1;
+                const c2 = SocraticState.blueprint.parameters.c2 ?? 1;
+                const c3 = SocraticState.blueprint.parameters.c3 ?? 2;
+                const leftMass = c1 * 2 + c2 * 2;
+                const rightMass = c3 * 3;
+                const diff = rightMass - leftMass;
+                const tiltAngle = Math.max(-0.35, Math.min(0.35, diff * 0.08));
+
+                const cx = w / 2;
+                const cy = 160;
+
+                simCtx.save();
+                simCtx.translate(cx, cy);
+                simCtx.rotate(tiltAngle);
+
+                // Đòn cân
+                simCtx.strokeStyle = diff === 0 ? '#34d399' : '#f59e0b';
+                simCtx.lineWidth = 6;
+                simCtx.beginPath();
+                simCtx.moveTo(-160, 0);
+                simCtx.lineTo(160, 0);
+                simCtx.stroke();
+
+                // Đĩa trái & phải
+                simCtx.fillStyle = '#38bdf8';
+                simCtx.fillRect(-190, -35, 60, 35);
+                simCtx.fillStyle = '#f43f5e';
+                simCtx.fillRect(130, -35, 60, 35);
+
+                simCtx.fillStyle = '#ffffff';
+                simCtx.font = 'bold 12px monospace';
+                simCtx.fillText(`Vế trái: ${leftMass}`, -160, -12);
+                simCtx.fillText(`Vế phải: ${rightMass}`, 160, -12);
+                simCtx.restore();
+
+                simCtx.fillStyle = '#e2e8f0';
+                simCtx.font = 'bold 15px sans-serif';
+                simCtx.textAlign = 'center';
+                simCtx.fillText(
+                    diff === 0 ? '✅ Cân bằng hoàn hảo (Định luật Bảo toàn Khối lượng)' : '⚠️ Hai vế chưa cân bằng số nguyên tử!',
+                    cx,
+                    280
+                );
+
+            } else {
+                // 3D VSEPR Fe2O3 Molecule + Reaction Lab
+                const cx = w * 0.28;
+                const cy = h * 0.45;
+
+                simCtx.save();
+                const rotY = (SocraticState.blueprint.parameters.thetaY ?? t) * 0.8;
+                const rotX = (SocraticState.blueprint.parameters.thetaX ?? Math.sin(t * 0.4) * 0.3);
+
+                const atoms = [
+                    { type: 'Fe', x: -45, y: -20, z: 0, r: 16, color: '#f97316' },
+                    { type: 'Fe', x: 45, y: 20, z: 0, r: 16, color: '#f97316' },
+                    { type: 'O', x: 0, y: 0, z: 25, r: 11, color: '#ef4444' },
+                    { type: 'O', x: -65, y: 30, z: -20, r: 11, color: '#ef4444' },
+                    { type: 'O', x: 65, y: -30, z: 20, r: 11, color: '#ef4444' },
+                ];
+
+                const projected = atoms.map(a => {
+                    const x1 = a.x * Math.cos(rotY) + a.z * Math.sin(rotY);
+                    const z1 = -a.x * Math.sin(rotY) + a.z * Math.cos(rotY);
+                    const y1 = a.y * Math.cos(rotX) - z1 * Math.sin(rotX);
+                    const z2 = a.y * Math.sin(rotX) + z1 * Math.cos(rotX);
+                    const scale = 250 / (250 + z2);
+                    return { ...a, px: cx + x1 * scale, py: cy + y1 * scale, pz: z2, pr: a.r * scale };
+                });
+
+                projected.sort((a, b) => a.pz - b.pz);
+
+                // Bonds
+                simCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                simCtx.lineWidth = 4;
+                for (let i = 0; i < projected.length; i++) {
+                    for (let j = i + 1; j < projected.length; j++) {
+                        if (Math.hypot(projected[i].px - projected[j].px, projected[i].py - projected[j].py) < 85) {
+                            simCtx.beginPath();
+                            simCtx.moveTo(projected[i].px, projected[i].py);
+                            simCtx.lineTo(projected[j].px, projected[j].py);
+                            simCtx.stroke();
+                        }
+                    }
+                }
+
+                // Atoms
+                projected.forEach(a => {
+                    simCtx.fillStyle = a.color;
+                    simCtx.shadowColor = a.color;
+                    simCtx.shadowBlur = 10;
+                    simCtx.beginPath();
+                    simCtx.arc(a.px, a.py, a.pr, 0, Math.PI * 2);
+                    simCtx.fill();
+                });
+                simCtx.restore();
+
+                // Reaction fluid color
+                const temp = SocraticState.blueprint.parameters.temperature || 35;
+                const fluid = document.getElementById('chemFluidLevel');
+                if (fluid) {
+                    const rustFactor = Math.min(temp / 80, 1);
+                    fluid.style.background = `linear-gradient(to top, rgba(180, 83, 9, ${0.4 + rustFactor * 0.6}), rgba(245, 158, 11, ${0.3 + rustFactor * 0.5}))`;
+                }
+            }
+        }
+
+        // 4. BIOLOGY ENGINE (BIO_PHOTOSYNTHESIS, BIO_HEART_CYCLE)
+        function renderBiologyEngine(w, h, t) {
+            const tpl = SocraticState.blueprint.template_id;
+
+            if (tpl === 'BIO_HEART_CYCLE') {
+                // Nhịp đập tim co bóp ECG Pulse
+                const bpm = SocraticState.blueprint.parameters.BPM ?? 75;
+                const period = 60 / bpm;
+                const phase = (t % period) / period;
+                const contraction = Math.exp(-Math.pow((phase - 0.2) * 8, 2)) * 0.35;
+                const scaleFactor = 1 + contraction;
+
+                const cx = w * 0.3;
+                const cy = h / 2;
+
+                simCtx.save();
+                simCtx.translate(cx, cy);
+                simCtx.scale(scaleFactor, scaleFactor);
+
+                simCtx.fillStyle = '#f43f5e';
+                simCtx.shadowColor = '#e11d48';
+                simCtx.shadowBlur = 20;
+                simCtx.beginPath();
+                simCtx.moveTo(0, 30);
+                simCtx.bezierCurveTo(-50, -30, -90, 40, 0, 95);
+                simCtx.bezierCurveTo(90, 40, 50, -30, 0, 30);
+                simCtx.fill();
+                simCtx.restore();
+
+                // Live ECG Trace
+                const ecgX = w * 0.55;
+                const ecgY = h / 2;
+                const ecgW = w * 0.38;
+                simCtx.strokeStyle = '#22d3ee';
+                simCtx.lineWidth = 2.5;
+                simCtx.beginPath();
+                for (let x = 0; x < ecgW; x += 3) {
+                    const tRel = ((x / ecgW) * 2 + t) % 1;
+                    let yOffset = 0;
+                    if (tRel > 0.35 && tRel < 0.40) yOffset = -15;
+                    else if (tRel >= 0.40 && tRel < 0.42) yOffset = 10;
+                    else if (tRel >= 0.42 && tRel < 0.46) yOffset = -55;
+                    else if (tRel >= 0.46 && tRel < 0.48) yOffset = 18;
+                    else if (tRel >= 0.55 && tRel < 0.65) yOffset = -22;
+                    const py = ecgY + yOffset;
+                    x === 0 ? simCtx.moveTo(ecgX + x, py) : simCtx.lineTo(ecgX + x, py);
+                }
+                simCtx.stroke();
+
+                simCtx.fillStyle = '#e2e8f0';
+                simCtx.font = 'bold 14px monospace';
+                simCtx.fillText(`Nhịp tim: ${bpm} BPM`, 40, 40);
+                simCtx.fillText('Đang đập theo nhịp tâm thu/tâm trương', ecgX, ecgY + 80);
+
+            } else {
+                // BIO_PHOTOSYNTHESIS: Quang hợp & Khí khổng đóng ở nhiệt độ cao
+                const temp = SocraticState.blueprint.parameters.temperature ?? 25;
+                const light = SocraticState.blueprint.parameters.light ?? 70;
+
+                const tempFactor = Math.max(0, 1 - Math.pow((temp - 30) / 22, 2));
+                const photosynthesisRate = Math.round(tempFactor * (light / 100) * 100);
+                const stomataAperture = Math.max(2, tempFactor * 28);
+                const wiltAngle = temp > 40 ? ((temp - 40) / 20) * 0.6 : 0;
+
+                // Lá cây héo rũ
+                simCtx.save();
+                simCtx.translate(180, 180);
+                simCtx.rotate(wiltAngle);
+
+                const greenChannel = Math.round(197 - Math.max(0, temp - 35) * 4);
+                simCtx.fillStyle = `rgb(${temp > 38 ? 210 : 34}, ${greenChannel}, 94)`;
+                simCtx.beginPath();
+                simCtx.ellipse(0, 0, 110, 55, 0, 0, Math.PI * 2);
+                simCtx.fill();
+                simCtx.restore();
+
+                // Cận cảnh khí khổng
+                const stomaX = 460;
+                const stomaY = 160;
+                simCtx.strokeStyle = '#4ade80';
+                simCtx.lineWidth = 14;
+                simCtx.beginPath();
+                simCtx.ellipse(stomaX, stomaY, 45, stomataAperture + 10, 0, 0, Math.PI * 2);
+                simCtx.stroke();
+
+                simCtx.fillStyle = '#e2e8f0';
+                simCtx.font = 'bold 14px monospace';
+                simCtx.fillText(`Cường độ Quang hợp: ${photosynthesisRate}%`, 40, 40);
+                simCtx.fillText(
+                    `Trạng thái Khí khổng: ${stomataAperture < 8 ? 'ĐÓNG (Chống mất nước)' : 'MỞ TRAO ĐỔI KHÍ'}`,
+                    300,
+                    290
+                );
+            }
+        }
+
+        // =========================================================================
+        // LOAD TEMPLATE BY ID (12 CORE TEMPLATES OFFLINE REGISTRY)
+        // =========================================================================
+        function loadTemplateById(templateId) {
+            const tpl = CORE_TEMPLATES_CATALOG[templateId] || CORE_TEMPLATES_CATALOG["MATH_TRIG_WAVE"];
+            SocraticState.currentSubject = tpl.engine;
+            SocraticState.blueprint = {
+                engine: tpl.engine,
+                template_id: tpl.template_id,
+                parameters: { ...tpl.parameters },
+                specs: [...tpl.specs],
+                socratic_cue: { ...tpl.socratic_cue }
+            };
+
+            document.getElementById('engineTitle').innerText = tpl.title;
+            document.getElementById('ocrFormulaDisplay').innerText = `$${tpl.recognizedLatex}$`;
+            document.getElementById('socraticQuestionText').innerText = tpl.socratic_cue.question;
+            document.getElementById('socraticTargetParam').innerText = tpl.socratic_cue.target_param;
+
+            // Update selector dropdown if changed programmatically
+            const sel = document.getElementById('templateSelector');
+            if (sel && sel.value !== templateId) sel.value = templateId;
+
+            updateDeterministicEngine();
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        function loadDemoPreset(subj) {
+            if (subj === 'MATH') loadTemplateById('MATH_TRIG_WAVE');
+            else if (subj === 'PHYSICS') loadTemplateById('PHYS_PROJECTILE');
+            else if (subj === 'CHEMISTRY') loadTemplateById('CHEM_REACTION_LAB');
+            else if (subj === 'BIOLOGY') loadTemplateById('BIO_PHOTOSYNTHESIS');
+        }
+
+        // =========================================================================
+        // FEATURE 6: STUDENT COMPANION (LOCKED STEPPER & VISUAL DEBUGGER)
+        // =========================================================================
+        function handleBlockedPaste(e) {
+            e.preventDefault();
+            alert('🚫 Intentional Cognitive Friction: Chống Copy-Paste! Em hãy tự suy nghĩ và nhập qua bàn phím toán học.');
+        }
+
+        function insertMathKey(val) {
+            const input = document.getElementById('studentInput');
+            input.value += val;
+            input.focus();
+        }
+
+        // =========================================================================
+        // REAL STEP EVALUATION & INTENTIONAL COGNITIVE FRICTION
+        // =========================================================================
+        async function submitStudentAnswer() {
+            const input = document.getElementById('studentInput');
+            const ans = input.value.trim();
+            if (!ans) return;
+
+            const chat = document.getElementById('socraticChatBubble');
+            const beam = document.getElementById('balanceBeam');
+            const feedback = document.getElementById('balanceFeedback');
+            const tierBadge = document.getElementById('verificationTierBadge');
+
+            chat.innerHTML = '⏳ <span class="animate-pulse">Đang kiểm tra qua 3 Tầng xác thực (SymPy → ChromaDB → LLM)...</span>';
+
+            try {
+                // Call real FastAPI endpoint
+                const resp = await fetch('http://localhost:8000/api/v1/companion/evaluate-step', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        student_id: 'hs_hoangnam_11a1',
+                        session_id: 'sess_chem_001',
+                        subject: 'CHEMISTRY',
+                        step_index: SocraticState.step2Balanced ? 3 : 2,
+                        input_type: 'EQUATION',
+                        student_answer: ans,
+                        expected_answer: '4Fe + 3O2 -> 2Fe2O3',
+                        problem_context: 'Cân bằng phương trình Fe + O2 -> Fe2O3'
+                    })
+                });
+
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+
+                // 1. Update Verification Tier Badge
+                if (data.verification_source === 'SYMPY_DETERMINISTIC') {
+                    tierBadge.innerText = 'Tier 1: SymPy / ChemBalancer (0 API, <10ms)';
+                    tierBadge.className = 'text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                } else if (data.verification_source === 'CHROMADB_CACHE') {
+                    tierBadge.innerText = 'Tier 2: ChromaDB Cache (0 API)';
+                    tierBadge.className = 'text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+                } else {
+                    tierBadge.innerText = 'Tier 3: Socratic LLM Scaffolding';
+                    tierBadge.className = 'text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30';
+                }
+
+                // 2. Visual Debugger: Chemical Balance Scale
+                if (data.visual_debugger && data.visual_debugger.payload) {
+                    const p = data.visual_debugger.payload;
+                    const leftO = p.left_atoms?.O ?? 0;
+                    const leftFe = p.left_atoms?.Fe ?? 0;
+                    const rightO = p.right_atoms?.O ?? 0;
+                    const rightFe = p.right_atoms?.Fe ?? 0;
+
+                    document.getElementById('leftPanAtoms').innerText = `${leftO} O (${leftFe} Fe)`;
+                    document.getElementById('rightPanAtoms').innerText = `${rightO} O (${rightFe} Fe)`;
+
+                    // Calculate tilt proportional to difference
+                    const leftMass = leftFe * 56 + leftO * 16;
+                    const rightMass = rightFe * 56 + rightO * 16;
+                    const diff = rightMass - leftMass;
+                    const tilt = Math.max(-20, Math.min(20, diff * 0.12));
+                    beam.style.transform = `rotate(${tilt}deg)`;
+                }
+
+                // 3. Socratic Dialogue & Stepper Progression
+                if (data.is_step_correct || data.step_status === 'UNLOCKED_NEXT') {
+                    // Correct!
+                    SocraticState.step2Balanced = true;
+                    beam.style.transform = 'rotate(0deg)';
+                    feedback.innerHTML = '✅ <span class="text-emerald-300 font-bold">Cân bằng hoàn hảo!</span> Bảo toàn nguyên tố trên cả hai vế.';
+                    
+                    // Award points
+                    SocraticState.studentPoints += (data.eureka_points_delta || 25);
+                    document.getElementById('studentEurekaPoints').innerText = SocraticState.studentPoints;
+
+                    chat.innerHTML = `🎉 <strong>Xuất sắc!</strong> ${data.socratic_feedback}`;
+                    chat.className = 'mt-2.5 p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-200 text-[11px] leading-relaxed';
+
+                    // Update Step 2 Card Badge
+                    const s2Badge = document.getElementById('step2StatusBadge');
+                    s2Badge.innerText = 'Đã hoàn thành';
+                    s2Badge.className = 'text-[10px] font-mono text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded';
+
+                    // Unlock Step 3 and Step 4
+                    unlockStep3();
+
+                } else {
+                    // Intentional Cognitive Friction Feedback
+                    feedback.innerText = `⚠️ ${data.socratic_feedback}`;
+                    chat.innerHTML = `💡 <strong>Gia sư gợi ý:</strong> ${data.socratic_feedback}`;
+                    chat.className = 'mt-2.5 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-[11px] leading-relaxed';
+
+                    if (data.eureka_points_delta) {
+                        SocraticState.studentPoints += data.eureka_points_delta;
+                        document.getElementById('studentEurekaPoints').innerText = SocraticState.studentPoints;
+                    }
+                }
+
+            } catch (err) {
+                console.warn("Backend evaluate-step error, fallback:", err);
+                chat.innerHTML = `💡 <strong>Gia sư:</strong> Hãy tìm BCNN của 2 và 3 để cân bằng số Oxi. Ví dụ: nhập <code>3O2</code>.`;
+            }
+
+            input.value = '';
+        }
+
+        // =========================================================================
+        // STEP 3 & 4 UNLOCK CONTROLS
+        // =========================================================================
+        function toggleStep2Details() {
+            const el = document.getElementById('step2Details');
+            const btn = document.getElementById('step2ToggleBtn');
+            if (el) {
+                el.classList.toggle('hidden');
+                if (btn) btn.innerText = el.classList.contains('hidden') ? 'Mở cân đĩa' : 'Thu gọn';
+            }
+        }
+
+        function unlockStep3() {
+            // Collapse Step 2 details into clean completed summary
+            const s2Details = document.getElementById('step2Details');
+            const s2Toggle = document.getElementById('step2ToggleBtn');
+            if (s2Details) s2Details.classList.add('hidden');
+            if (s2Toggle) {
+                s2Toggle.classList.remove('hidden');
+                s2Toggle.innerText = 'Mở cân đĩa';
+            }
+
+            const card3 = document.getElementById('stepCard3');
+            if (card3) {
+                card3.classList.remove('opacity-50');
+                card3.classList.add('border-cyan-500/40', 'bg-cyan-950/20');
+            }
+            const s3Badge = document.getElementById('step3StatusBadge');
+            if (s3Badge) {
+                s3Badge.innerText = 'Đang mở';
+                s3Badge.className = 'text-[10px] font-mono text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded';
+            }
+            const s3Desc = document.getElementById('step3Desc');
+            if (s3Desc) s3Desc.innerText = 'Điền hệ số Fe để hoàn thành toàn bộ phương trình.';
+            const s3Action = document.getElementById('step3ActionArea');
+            if (s3Action) s3Action.classList.remove('hidden');
+
+            // Also unlock Voice Gate
+            unlockStep4();
+
+            setTimeout(() => {
+                const scrollArea = document.getElementById('companionScrollArea');
+                if (scrollArea) scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });
+                if (window.lucide) lucide.createIcons();
+            }, 100);
+        }
+
+        function fillStep3Answer() {
+            const input = document.getElementById('studentInput');
+            input.value = '4Fe + 3O2 -> 2Fe2O3';
+            submitStudentAnswer();
+        }
+
+        function unlockStep4() {
+            const card4 = document.getElementById('stepCard4');
+            if (card4) {
+                card4.classList.remove('opacity-50');
+                card4.classList.add('border-purple-500/40', 'bg-purple-950/20');
+            }
+            const vgBadge = document.getElementById('voiceGateBadge');
+            if (vgBadge) vgBadge.className = 'text-[9px] font-mono text-purple-300 bg-purple-500/30 px-2 py-0.5 rounded animate-pulse';
+            const vgDesc = document.getElementById('voiceGateDesc');
+            if (vgDesc) vgDesc.innerText = 'Giải thích bằng lời định luật bảo toàn nguyên tố để nhận x2 Eureka Points!';
+            const vgArea = document.getElementById('voiceGateArea');
+            if (vgArea) vgArea.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // =========================================================================
+        // FEATURE 6.4: REVERSE-QUESTIONING VOICE GATE (MICROPHONE SPEECH RECOGNITION)
+        // =========================================================================
+        let voiceRecognition = null;
+        let isVoiceRecording = false;
+
+        function toggleVoiceRecognition() {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const micBtn = document.getElementById('voiceMicBtn');
+            const statusText = document.getElementById('voiceStatusText');
+            const transcriptBox = document.getElementById('voiceLiveTranscript');
+
+            if (!SpeechRec) {
+                alert('Trình duyệt hiện tại chưa hỗ trợ Web Speech API. Bạn có thể bấm "Nói mẫu 1-Click" để thử nghiệm đầy đủ logic AI!');
+                simulateSampleVoice();
+                return;
+            }
+
+            if (isVoiceRecording) {
+                if (voiceRecognition) voiceRecognition.stop();
+                isVoiceRecording = false;
+                micBtn.classList.remove('bg-red-500', 'animate-pulse');
+                micBtn.classList.add('bg-purple-600');
+                statusText.innerText = 'Đã dừng ghi âm';
+                return;
+            }
+
+            try {
+                voiceRecognition = new SpeechRec();
+                voiceRecognition.lang = 'vi-VN';
+                voiceRecognition.continuous = false;
+                voiceRecognition.interimResults = true;
+
+                voiceRecognition.onstart = () => {
+                    isVoiceRecording = true;
+                    micBtn.classList.remove('bg-purple-600');
+                    micBtn.classList.add('bg-red-500', 'animate-pulse');
+                    statusText.innerText = '🔴 Đang lắng nghe giọng nói học sinh...';
+                    transcriptBox.innerText = 'Hãy giải thích: "Bảo toàn nguyên tố Sắt và Oxi..."';
+                };
+
+                voiceRecognition.onresult = (event) => {
+                    let text = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        text += event.results[i][0].transcript;
+                    }
+                    transcriptBox.innerText = `"${text}"`;
+                    if (event.results[0].isFinal) {
+                        verifyVoiceGateOnBackend(text);
+                    }
+                };
+
+                voiceRecognition.onerror = (e) => {
+                    console.warn("Speech recognition error:", e);
+                    statusText.innerText = 'Lỗi micro hoặc chưa cấp quyền. Dùng Nói mẫu:';
+                    isVoiceRecording = false;
+                    micBtn.classList.remove('bg-red-500', 'animate-pulse');
+                    micBtn.classList.add('bg-purple-600');
+                };
+
+                voiceRecognition.onend = () => {
+                    isVoiceRecording = false;
+                    micBtn.classList.remove('bg-red-500', 'animate-pulse');
+                    micBtn.classList.add('bg-purple-600');
+                };
+
+                voiceRecognition.start();
+            } catch (err) {
+                console.error("Speech recognition startup error:", err);
+                simulateSampleVoice();
+            }
+        }
+
+        function simulateSampleVoice() {
+            const sampleText = 'Em thấy định luật bảo toàn nguyên tố thì số nguyên tử Sắt và Oxi hai vế phải bằng nhau';
+            document.getElementById('voiceLiveTranscript').innerText = `"${sampleText}"`;
+            verifyVoiceGateOnBackend(sampleText);
+        }
+
+        async function verifyVoiceGateOnBackend(speechText) {
+            const statusText = document.getElementById('voiceStatusText');
+            const feedbackArea = document.getElementById('voiceFeedbackArea');
+            statusText.innerText = '🔍 Đang phân tích khái niệm ngôn ngữ tự nhiên...';
+            feedbackArea.classList.remove('hidden');
+            feedbackArea.innerHTML = '⏳ Đang gửi lên API <code>/api/v1/companion/verify-voice-gate</code>...';
+
+            try {
+                const resp = await fetch('http://localhost:8000/api/v1/companion/verify-voice-gate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        student_id: 'hs_hoangnam_11a1',
+                        session_id: 'sess_chem_001',
+                        transcribed_speech: speechText,
+                        expected_keywords: ['bảo toàn', 'nguyên tố', 'oxi', 'sắt']
+                    })
+                });
+
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+
+                if (data.passed) {
+                    SocraticState.studentPoints += data.eureka_awarded;
+                    document.getElementById('studentEurekaPoints').innerText = SocraticState.studentPoints;
+                    
+                    statusText.innerText = '🎉 Chốt chặn Giọng nói VƯỢT QUA!';
+                    feedbackArea.className = 'p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-[10px] text-emerald-200 leading-relaxed';
+                    feedbackArea.innerHTML = `
+                        <div class="font-bold flex items-center gap-1 text-emerald-300">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                            <span>${data.feedback}</span>
+                        </div>
+                        <div class="mt-1 flex gap-1 flex-wrap">
+                            ${data.matched_keywords.map(kw => `<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono">✓ ${kw}</span>`).join('')}
+                        </div>
+                        <div class="mt-1 font-bold text-amber-300">+${data.eureka_awarded} Eureka Points (Nhân hệ số ${data.eureka_points_multiplier}x)!</div>
+                    `;
+                } else {
+                    statusText.innerText = '⚠️ Cần giải thích rõ hơn';
+                    feedbackArea.className = 'p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/40 text-[10px] text-amber-200 leading-relaxed';
+                    feedbackArea.innerHTML = `
+                        <div>${data.feedback}</div>
+                        <div class="mt-1 text-slate-400">Từ khóa còn thiếu: <strong>${data.missing_keywords.join(', ')}</strong></div>
+                    `;
+                }
+
+                if (window.lucide) lucide.createIcons();
+
+            } catch (err) {
+                console.error("Voice gate error:", err);
+                feedbackArea.innerText = `Lỗi kiểm tra giọng nói: ${err.message}`;
+            }
+        }
+
+        // =========================================================================
+        // REAL-TIME BACKEND HEALTH PING MONITOR
+        // =========================================================================
+        async function checkBackendHealth() {
+            const badge = document.getElementById('backendStatusText');
+            const symBadge = document.getElementById('metric-sympy-time');
+            try {
+                const t0 = performance.now();
+                const res = await fetch('http://localhost:8000/health');
+                const t1 = performance.now();
+                const ms = (t1 - t0).toFixed(1);
+                if (res.ok) {
+                    badge.innerText = `● AI Engine Live (${ms}ms)`;
+                    symBadge.innerText = `${ms} ms`;
+                } else {
+                    badge.innerText = `⚠️ AI Engine ${res.status}`;
+                }
+            } catch (e) {
+                badge.innerText = '○ AI Engine Offline';
+            }
+        }
+        setInterval(checkBackendHealth, 8000);
+        checkBackendHealth();
+
+        // =========================================================================
+        // FEATURE 5: SMART NOTES EXPORT (< 25KB)
+        // =========================================================================
+        function exportSmartNotes() {
+            const payload = {
+                title: "Bài giảng KHTN Thông minh - Socratic Vision Board v2.0.0",
+                date: new Date().toLocaleDateString('vi-VN'),
+                engine: SocraticState.blueprint.engine,
+                strokes_count: SocraticState.strokes.length,
+                blueprint: SocraticState.blueprint,
+                class_insights: {
+                    discussion_time_s: 420,
+                    sandbox_trials: 18,
+                    concept_mastery_pct: 85
+                }
+            };
+            const jsonStr = JSON.stringify(payload, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Socratic_SmartNotes_${SocraticState.currentSubject}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            alert(`✅ Đã đóng gói Smart Notes siêu gọn (${Math.round(blob.size / 1024)} KB)!\nHọc sinh mở liên kết có thể tự chạy lại toàn bộ mô phỏng 3D/60FPS mà không tốn dung lượng video.`);
+        }
+
+        // =========================================================================
+        // TOUCHPOINT NAVIGATION SWITCHER
+        // =========================================================================
+        function switchTouchpoint(id) {
+            SocraticState.currentTouchpoint = id;
+            
+            // Views
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            const target = document.getElementById(`view-${id}`);
+            if (target) target.classList.remove('hidden');
+
+            // Nav buttons
+            document.querySelectorAll('.touchpoint-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-brand-600', 'text-white', 'shadow-md', 'shadow-brand-600/30');
+                btn.classList.add('text-slate-400');
+            });
+            const activeBtn = document.getElementById(`nav-${id}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'bg-brand-600', 'text-white', 'shadow-md', 'shadow-brand-600/30');
+                activeBtn.classList.remove('text-slate-400');
+            }
+
+            if (id === 'smartboard') {
+                setTimeout(resizeCanvases, 50);
+            } else if (id === 'dashboard') {
+                renderHeatmapTable();
+            }
+        }
+
+        function toggleCanvasTheme() {
+            SocraticState.isDarkMode = !SocraticState.isDarkMode;
+            const label = document.getElementById('themeLabel');
+            if (SocraticState.isDarkMode) {
+                document.body.style.backgroundColor = '#090d16';
+                label.innerText = 'Chế độ: Phòng học tối';
+            } else {
+                document.body.style.backgroundColor = '#1e293b';
+                label.innerText = 'Chế độ: Bảng sáng 75"';
+            }
+        }
+
+        // POPULATE HEATMAP TABLE (TOUCHPOINT 3)
+        function renderHeatmapTable() {
+            const tbody = document.getElementById('heatmapTableBody');
+            tbody.innerHTML = '';
+
+            const students = [
+                { name: 'Nguyễn Hoàng Nam', m1: 'green', m2: 'green', m3: 'amber', m4: 'green', grit: 88 },
+                { name: 'Trần Thị Mai', m1: 'green', m2: 'amber', m3: 'red', m4: 'amber', grit: 76 },
+                { name: 'Lê Quốc Bảo', m1: 'green', m2: 'green', m3: 'green', m4: 'green', grit: 95 },
+                { name: 'Phạm Thu Trang', m1: 'amber', m2: 'amber', m3: 'red', m4: 'green', grit: 68 },
+                { name: 'Hoàng Minh Quân', m1: 'green', m2: 'green', m3: 'amber', m4: 'amber', grit: 82 }
+            ];
+
+            const colorMap = {
+                green: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
+                amber: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+                red: 'bg-red-500/20 text-red-300 border border-red-500/30'
+            };
+
+            const textMap = { green: 'Làm chủ', amber: 'Đang thử', red: 'Kẹt bước 2' };
+
+            students.forEach(st => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-3 px-3 font-semibold text-slate-100">${st.name}</td>
+                    <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] ${colorMap[st.m1]}">${textMap[st.m1]}</span></td>
+                    <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] ${colorMap[st.m2]}">${textMap[st.m2]}</span></td>
+                    <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] ${colorMap[st.m3]}">${textMap[st.m3]}</span></td>
+                    <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] ${colorMap[st.m4]}">${textMap[st.m4]}</span></td>
+                    <td class="py-3 px-3 text-right font-mono font-bold text-cyan-300">${st.grit}/100</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Initialize First Demo View
+        loadDemoPreset('MATH');
+    </script>
+</body>
+</html>

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socratic Vision Board - 75" Smartboard Optimized</title>
+    
+    <!-- Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 500: '#6366f1', 600: '#4f46e5', 900: '#312e81' }, // High contrast indigo
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* 1. Môi trường ánh sáng phức tạp: High Contrast Background */
+        body {
+            background-color: #ffffff; /* Trắng tinh để phản xạ ánh sáng tốt nhất trong lớp học */
+            background-image: radial-gradient(#cbd5e1 2px, transparent 2px);
+            background-size: 32px 32px; /* Lưới to dễ nhìn từ xa */
+            overflow: hidden;
+            touch-action: none; /* Vô hiệu hóa cuộn để ưu tiên vẽ (Gesture first) */
+        }
+
+        /* 2. UI Giáo viên (Floating Toolbar): Kích thước nút bấm tối thiểu 64x64px, không có Tooltip (No Hover) */
+        .smart-btn {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border: 2px solid #e2e8f0;
+            color: #475569;
+            transition: transform 0.1s; /* Phản hồi chạm tức thời */
+        }
+        .smart-btn:active { transform: scale(0.9); background: #f1f5f9; }
+        .smart-btn.active { color: #4f46e5; border-color: #4f46e5; background: #e0e7ff; }
+        .smart-btn svg { width: 32px; height: 32px; }
+
+        /* Draggable Toolbar Container */
+        #floatingToolbar {
+            position: absolute;
+            left: 50%;
+            bottom: 40px;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 16px;
+            padding: 12px;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 99px;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            cursor: grab;
+            z-index: 50;
+        }
+        #floatingToolbar:active { cursor: grabbing; }
+
+        /* Kẻ tay kéo (Drag Handle) */
+        .drag-handle { width: 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; opacity: 0.4; }
+        .drag-handle div { width: 6px; height: 6px; background: #333; border-radius: 50%; }
+
+        /* 3. Nút Contextual (Hiện ngay cạnh nét vẽ thay vì nút cố định) */
+        #contextBtn {
+            position: absolute;
+            display: none;
+            background: #111827;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 100px;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.25);
+            z-index: 40;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* 4. Vấn đề Occlusion (Bàn tay che khuất): CSS đặc biệt cho Slider */
+        .smart-slider-container {
+            position: relative;
+            width: 100%;
+            margin-top: 60px; /* Nhường chỗ cho Bubble nổi lên */
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            background: transparent;
+            height: 12px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 12px;
+            background: #cbd5e1;
+            border-radius: 6px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 48px;
+            width: 48px;
+            border-radius: 50%;
+            background: #4f46e5;
+            margin-top: -18px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        /* Giá trị trôi nổi cao hơn ngón tay 60px */
+        .slider-value-bubble {
+            position: absolute;
+            top: -65px;
+            transform: translateX(-50%);
+            background: #111827;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 12px;
+            pointer-events: none; /* Xuyên qua bubble */
+            transition: left 0.1s;
+        }
+        .slider-value-bubble::after { /* Mũi tên chỉ xuống */
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px 8px 0;
+            border-style: solid;
+            border-color: #111827 transparent transparent transparent;
+        }
+
+        /* Menu Hướng tâm (Radial Menu) - Mô phỏng lúc Long Press */
+        #radialMenu {
+            position: absolute;
+            display: none;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 0 40px rgba(0,0,0,0.1);
+            transform: translate(-50%, -50%);
+            z-index: 60;
+        }
+        .radial-item {
+            position: absolute;
+            width: 60px; height: 60px;
+            background: #f1f5f9;
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 24px;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="w-screen h-screen">
+
+    <!-- Cảnh báo Gesture & Palm Rejection (Góc màn hình) -->
+    <div class="absolute top-6 left-6 flex gap-4 text-slate-500 font-semibold text-lg pointer-events-none">
+        <span class="bg-white/80 px-4 py-2 rounded-xl shadow-sm">✋ Palm Rejection: Đã bật (Tự động chuyển Tẩy)</span>
+        <span class="bg-white/80 px-4 py-2 rounded-xl shadow-sm">🎯 Chạm & Giữ: Mở Menu 3D</span>
+    </div>
+
+    <!-- CANVAS VẼ TAY -->
+    <canvas id="drawingCanvas" class="w-full h-full"></canvas>
+
+    <!-- NÚT CONTEXTUAL (Xuất hiện ngay cạnh vị trí bút vừa nhấc lên) -->
+    <button id="contextBtn" onclick="transformToDigital()">
+        <i data-lucide="sparkles" class="w-8 h-8 text-amber-400"></i>
+        <span>Biến Hình 3D</span>
+    </button>
+
+    <!-- KẾT QUẢ HIỂN THỊ (Dual-Audience: Chữ khổng lồ cho học sinh ngồi cuối lớp) -->
+    <div id="resultCard" class="absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl p-10 shadow-2xl border-4 border-indigo-100 hidden flex-col items-center gap-8 z-30 min-w-[600px]">
+        <!-- Chữ siêu to (72px) và tương phản cực mạnh -->
+        <div class="text-[80px] font-extrabold text-slate-900 tracking-tight leading-none" style="font-family: 'Times New Roman', serif;">
+            y = <span id="dynA">1</span> sin(x)
+        </div>
+        
+        <!-- Hộp trượt giải quyết bài toán Occlusion (Bàn tay che khuất) -->
+        <div class="w-full bg-slate-50 p-8 rounded-2xl border-2 border-slate-200 mt-4">
+            <div class="text-2xl font-bold text-slate-600 mb-8 uppercase tracking-wider text-center">Kéo để đổi Biên độ (A)</div>
+            
+            <div class="smart-slider-container">
+                <!-- Giá trị nổi lên trên 60px để ngón tay không che mất -->
+                <div id="sliderBubble" class="slider-value-bubble" style="left: 50%;">1.0</div>
+                <!-- Thanh trượt luôn nằm DƯỚI nội dung chính -->
+                <input type="range" id="paramA" min="1" max="10" step="0.1" value="1" oninput="updateGraph(this.value)">
+            </div>
+        </div>
+    </div>
+
+    <!-- RADIAL MENU (Hiện khi Long Press) -->
+    <div id="radialMenu">
+        <!-- Bố trí vòng tròn bằng CSS -->
+        <div class="radial-item" style="top: 15%; left: 50%;">📈</div>
+        <div class="radial-item" style="top: 50%; left: 85%;">⚛️</div>
+        <div class="radial-item" style="top: 85%; left: 50%;">🧬</div>
+        <div class="radial-item" style="top: 50%; left: 15%;">⚙️</div>
+    </div>
+
+    <!-- FLOATING TOOLBAR (Draggable) -->
+    <!-- Thiết kế không nằm ở vùng chết. Dễ dàng kéo đến vị trí thuận tay của GV -->
+    <div id="floatingToolbar">
+        <!-- Nơi cầm để kéo -->
+        <div class="drag-handle" id="dragHandle">
+            <div></div><div></div><div></div>
+        </div>
+        
+        <button class="smart-btn active" id="penBtn">
+            <i data-lucide="pen-tool"></i>
+        </button>
+        <button class="smart-btn" id="eraserBtn">
+            <!-- Icon tẩy to, dễ bấm -->
+            <i data-lucide="eraser"></i>
+        </button>
+        <button class="smart-btn">
+            <div class="w-8 h-8 rounded-full border-4 border-slate-900 bg-black"></div>
+        </button>
+        <button class="smart-btn">
+            <div class="w-8 h-8 rounded-full border-4 border-indigo-600 bg-indigo-600"></div>
+        </button>
+        <button class="smart-btn">
+            <i data-lucide="undo-2"></i>
+        </button>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // 1. DRAGGABLE TOOLBAR LOGIC (Giải quyết Vùng chết Công thái học)
+        const toolbar = document.getElementById('floatingToolbar');
+        const handle = document.getElementById('dragHandle');
+        let isDraggingToolbar = false;
+        let tOffsetX, tOffsetY;
+
+        handle.addEventListener('mousedown', (e) => {
+            isDraggingToolbar = true;
+            tOffsetX = e.clientX - toolbar.getBoundingClientRect().left;
+            tOffsetY = e.clientY - toolbar.getBoundingClientRect().top;
+        });
+        
+        // Touch events for Interactive Board
+        handle.addEventListener('touchstart', (e) => {
+            isDraggingToolbar = true;
+            tOffsetX = e.touches[0].clientX - toolbar.getBoundingClientRect().left;
+            tOffsetY = e.touches[0].clientY - toolbar.getBoundingClientRect().top;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDraggingToolbar) return;
+            toolbar.style.left = (e.clientX - tOffsetX + toolbar.offsetWidth/2) + 'px';
+            toolbar.style.bottom = 'auto'; // Hủy bottom mặc định
+            toolbar.style.top = (e.clientY - tOffsetY) + 'px';
+        });
+        
+        window.addEventListener('touchmove', (e) => {
+            if (!isDraggingToolbar) return;
+            toolbar.style.left = (e.touches[0].clientX - tOffsetX + toolbar.offsetWidth/2) + 'px';
+            toolbar.style.bottom = 'auto';
+            toolbar.style.top = (e.touches[0].clientY - tOffsetY) + 'px';
+        });
+
+        window.addEventListener('mouseup', () => isDraggingToolbar = false);
+        window.addEventListener('touchend', () => isDraggingToolbar = false);
+
+        // 2. SMART CANVAS & CONTEXTUAL BUTTON LOGIC
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        let isDrawing = false;
+        let drawTimeout; // Để hiện nút Contextual
+        let lastX, lastY;
+
+        ctx.lineWidth = 6; // Nét to cho bảng 75 inch
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#1e293b';
+
+        function startDraw(x, y) {
+            isDrawing = true;
+            clearTimeout(drawTimeout);
+            document.getElementById('contextBtn').style.display = 'none'; // Ẩn nút khi đang viết
+            ctx.beginPath(); ctx.moveTo(x, y);
+        }
+
+        function draw(x, y) {
+            if(!isDrawing) return;
+            ctx.lineTo(x, y); ctx.stroke();
+            lastX = x; lastY = y;
+        }
+
+        function endDraw() {
+            if(!isDrawing) return;
+            isDrawing = false;
+            // Áp dụng Nguyên tắc "No Hover", "Contextual Action": Sau khi dừng vẽ 1 giây, hiện nút ngay cạnh ngòi bút
+            drawTimeout = setTimeout(() => {
+                const btn = document.getElementById('contextBtn');
+                btn.style.display = 'flex';
+                // Đặt nút lệch xuống dưới và sang phải một chút so với nét cuối
+                btn.style.left = (lastX + 40) + 'px';
+                btn.style.top = (lastY + 40) + 'px';
+            }, 800);
+        }
+
+        // Mouse
+        canvas.addEventListener('mousedown', e => startDraw(e.clientX, e.clientY));
+        canvas.addEventListener('mousemove', e => draw(e.clientX, e.clientY));
+        canvas.addEventListener('mouseup', endDraw);
+        // Touch
+        canvas.addEventListener('touchstart', e => startDraw(e.touches[0].clientX, e.touches[0].clientY));
+        canvas.addEventListener('touchmove', e => draw(e.touches[0].clientX, e.touches[0].clientY));
+        canvas.addEventListener('touchend', endDraw);
+
+        // 3. TRANSFORM TO DIGITAL & OCCLUSION-FREE SLIDER
+        function transformToDigital() {
+            document.getElementById('contextBtn').style.display = 'none';
+            // Xóa nét vẽ nháp
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+            // Hiện kết quả siêu to (Dual-audience)
+            document.getElementById('resultCard').classList.remove('hidden');
+            document.getElementById('resultCard').classList.add('flex');
+            
+            // Cập nhật vị trí bọt khí ban đầu
+            updateSliderBubble(document.getElementById('paramA'));
+        }
+
+        function updateGraph(val) {
+            document.getElementById('dynA').innerText = val;
+            const slider = document.getElementById('paramA');
+            updateSliderBubble(slider);
+        }
+
+        function updateSliderBubble(slider) {
+            const bubble = document.getElementById('sliderBubble');
+            bubble.innerText = slider.value;
+            // Tính toán vị trí left % để bọt khí chạy theo ngón tay
+            const percent = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+            bubble.style.left = `calc(${percent}% + (${8 - percent * 0.15}px))`; // Cân bằng độ rộng thumb
+        }
+
+        // 4. MÔ PHỎNG RADIAL MENU (LONG PRESS)
+        let longPressTimer;
+        canvas.addEventListener('mousedown', (e) => {
+            longPressTimer = setTimeout(() => {
+                isDrawing = false; // Hủy vẽ
+                const radial = document.getElementById('radialMenu');
+                radial.style.display = 'block';
+                radial.style.left = e.clientX + 'px';
+                radial.style.top = e.clientY + 'px';
+            }, 600); // 0.6s là Long press
+        });
+        canvas.addEventListener('mouseup', () => {
+            clearTimeout(longPressTimer);
+            document.getElementById('radialMenu').style.display = 'none';
+        });
+
+    </script>
+</body>
+</html>

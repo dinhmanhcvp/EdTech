@@ -1,0 +1,6 @@
+numpy
+matplotlib
+sympy
+fastapi
+uvicorn
+python-multipart

@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socratic Smartboard v2.0 - Bảng Thông Minh Edge AI</title>
+    
+    <!-- Typography & Styling -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- MathJax for Math LaTeX Rendering -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body {
+            background-color: #020617; /* Slate 950 */
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #f8fafc;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 15%, rgba(99, 102, 241, 0.12), transparent 45%),
+                radial-gradient(circle at 90% 85%, rgba(6, 182, 212, 0.12), transparent 45%);
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.3),
+                0 25px 50px -12px rgba(0, 0, 0, 0.8),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        /* Canvas Themes */
+        .canvas-theme-dots {
+            background-color: #090d16;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.18) 1.2px, transparent 1.2px);
+            background-size: 28px 28px;
+        }
+
+        .canvas-theme-grid {
+            background-color: #090d16;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+
+        .canvas-theme-blank {
+            background-color: #090d16;
+            background-image: none;
+        }
+
+        .canvas-theme-chalkboard {
+            background-color: #064e3b;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+
+        /* Bioluminescent AI Button */
+        .ai-glow-btn {
+            background: linear-gradient(135deg, #06b6d4, #6366f1);
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .ai-glow-btn:hover {
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.65);
+            transform: translateY(-1px) scale(1.02);
+        }
+        .ai-glow-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        /* Smartboard Tool Buttons */
+        .tool-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            transition: all 0.18s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        .tool-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+        .tool-btn.active {
+            background: #06b6d4;
+            color: #020617;
+            font-weight: 700;
+            border-color: #22d3ee;
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.5);
+        }
+
+        /* Scan Line Animation */
+        .scan-line {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, transparent, #22d3ee, #818cf8, transparent);
+            box-shadow: 0 0 18px 4px rgba(34, 211, 238, 0.7);
+            transform: translateY(-100%);
+            z-index: 30;
+            display: none;
+        }
+
+        @keyframes scanAnim {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(580px); opacity: 0; }
+        }
+
+        .scanning .scan-line {
+            display: block;
+            animation: scanAnim 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        /* Result container transitions */
+        .result-box {
+            opacity: 0;
+            transform: translateY(16px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .result-box.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Slider Styling */
+        input[type="range"] {
+            accent-color: #06b6d4;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-4 md:p-6 lg:p-8">
+
+    <!-- Top Navigation Header -->
+    <header class="max-w-7xl w-full mx-auto flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                    Socratic Smartboard
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-950/60 text-cyan-400 border border-cyan-500/30">v2.0 Pro</span>
+                </h1>
+                <p class="text-xs text-slate-400">Bảng thông minh: Mực tự nhiên, vẽ hình tròn có chức năng riêng, mô phỏng bên cạnh không che bảng</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <!-- NÚT BẬT / TẮT VISUALIZE TOÀN CỤC -->
+            <button id="toggleVisualizeBtn" onclick="toggleVisualizePanel()" class="tool-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 font-semibold text-cyan-300 border-cyan-500/30">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span id="toggleVisualizeLabel">Tắt Visualize (Mở rộng bảng)</span>
+            </button>
+
+            <div id="connectionStatus" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-[11px] font-mono text-emerald-300">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>FastAPI Live :8000</span>
+            </div>
+
+            <button onclick="toggleFullscreen()" class="tool-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5">
+                <i data-lucide="maximize-2" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Toàn màn hình</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container: Flexible Side-by-Side (Không bao giờ che bảng) -->
+    <main id="mainGrid" class="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 transition-all duration-300">
+        
+        <!-- Cột trái: Smartboard Canvas (Co giãn linh hoạt khi bật/tắt visualize) -->
+        <div id="canvasColumn" class="lg:col-span-8 flex flex-col gap-3 transition-all duration-300">
+            
+            <!-- MASTER SMARTBOARD TOOLBAR -->
+            <div class="glass-panel p-2.5 flex flex-wrap items-center justify-between gap-2.5">
+                
+                <!-- Primary Tools -->
+                <div class="flex items-center gap-1.5 bg-black/40 p-1 rounded-2xl border border-white/5">
+                    <!-- Bút viết tự nhiên -->
+                    <button id="btnToolPen" class="tool-btn active px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5" onclick="setTool('PEN')" title="Bút viết mực tự nhiên (Không tự động biến thành hình tròn)">
+                        <i data-lucide="pen-tool" class="w-4 h-4"></i>
+                        <span>Bút viết</span>
+                    </button>
+
+                    <!-- Bút dạ quang -->
+                    <button id="btnToolHighlighter" class="tool-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5" onclick="setTool('HIGHLIGHTER')" title="Bút dạ quang đánh dấu mờ">
+                        <i data-lucide="highlighter" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Dạ quang</span>
+                    </button>
+
+                    <!-- CHỨC NĂNG HÌNH TRÒN (ĐƯA VÀO CHỨC NĂNG RIÊNG) -->
+                    <button id="btnToolCircle" class="tool-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5" onclick="setTool('CIRCLE')" title="Chức năng vẽ hình tròn chuẩn xác (Kéo chuột/chạm để tạo hình tròn)">
+                        <i data-lucide="circle" class="w-4 h-4 text-cyan-300"></i>
+                        <span class="font-semibold text-cyan-200">Hình tròn</span>
+                    </button>
+
+                    <!-- Đoạn thẳng -->
+                    <button id="btnToolLine" class="tool-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5" onclick="setTool('LINE')" title="Vẽ đoạn thẳng">
+                        <i data-lucide="minus" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Đoạn thẳng</span>
+                    </button>
+
+                    <!-- Mũi tên -->
+                    <button id="btnToolArrow" class="tool-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5" onclick="setTool('ARROW')" title="Vẽ mũi tên vector">
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Mũi tên</span>
+                    </button>
+
+                    <!-- Hình chữ nhật -->
+                    <button id="btnToolRect" class="tool-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5" onclick="setTool('RECTANGLE')" title="Vẽ hình chữ nhật">
+                        <i data-lucide="square" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Chữ nhật</span>
+                    </button>
+
+                    <!-- Magic Lasso -->
+                    <button id="btnToolLasso" class="tool-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 text-amber-300" onclick="setTool('LASSO')" title="Magic Lasso: Khoanh vùng nét chữ để AI nhận diện">
+                        <i data-lucide="lasso" class="w-4 h-4 text-amber-400"></i>
+                        <span>Lasso</span>
+                    </button>
+
+                    <!-- Tẩy -->
+                    <button id="btnToolEraser" class="tool-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 text-rose-400 hover:text-rose-300" onclick="setTool('ERASER')" title="Tẩy nét">
+                        <i data-lucide="eraser" class="w-4 h-4"></i>
+                        <span>Tẩy</span>
+                    </button>
+                </div>
+
+                <!-- Palette & Stroke Width -->
+                <div class="flex items-center gap-2">
+                    <!-- Color Dots -->
+                    <div class="flex items-center gap-1 bg-black/40 px-2.5 py-1 rounded-xl border border-white/5" id="paletteContainer">
+                        <button class="w-5 h-5 rounded-full ring-2 ring-white scale-110 transition cursor-pointer" style="background-color: #ffffff" onclick="setColor('#ffffff', this)" title="Trắng phấn"></button>
+                        <button class="w-5 h-5 rounded-full opacity-70 hover:opacity-100 transition cursor-pointer" style="background-color: #22d3ee" onclick="setColor('#22d3ee', this)" title="Cyan Neon"></button>
+                        <button class="w-5 h-5 rounded-full opacity-70 hover:opacity-100 transition cursor-pointer" style="background-color: #facc15" onclick="setColor('#facc15', this)" title="Vàng tươi"></button>
+                        <button class="w-5 h-5 rounded-full opacity-70 hover:opacity-100 transition cursor-pointer" style="background-color: #f43f5e" onclick="setColor('#f43f5e', this)" title="Đỏ/Hồng"></button>
+                        <button class="w-5 h-5 rounded-full opacity-70 hover:opacity-100 transition cursor-pointer" style="background-color: #4ade80" onclick="setColor('#4ade80', this)" title="Xanh lá"></button>
+                        <button class="w-5 h-5 rounded-full opacity-70 hover:opacity-100 transition cursor-pointer" style="background-color: #c084fc" onclick="setColor('#c084fc', this)" title="Tím Pastel"></button>
+                    </div>
+
+                    <!-- Stroke Size -->
+                    <div class="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-xl border border-white/5">
+                        <button class="px-2 py-0.5 rounded text-[10px] font-mono tool-btn active" onclick="setSize(2.5, this)">Thanh</button>
+                        <button class="px-2 py-0.5 rounded text-[10px] font-mono tool-btn" onclick="setSize(5, this)">Vừa</button>
+                        <button class="px-2 py-0.5 rounded text-[10px] font-mono tool-btn" onclick="setSize(9, this)">Đậm</button>
+                    </div>
+                </div>
+
+                <!-- Board Options & Actions -->
+                <div class="flex items-center gap-1.5">
+                    <!-- Undo / Redo -->
+                    <button class="tool-btn p-2 rounded-xl" onclick="undo()" title="Hoàn tác (Ctrl+Z)"><i data-lucide="undo-2" class="w-4 h-4"></i></button>
+                    <button class="tool-btn p-2 rounded-xl" onclick="redo()" title="Làm lại (Ctrl+Y)"><i data-lucide="redo-2" class="w-4 h-4"></i></button>
+
+                    <!-- Nền bảng Grid -->
+                    <button class="tool-btn px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-1" onclick="cycleTheme()" title="Đổi kiểu nền bảng">
+                        <i data-lucide="grid" class="w-4 h-4"></i>
+                        <span id="themeNameLabel" class="text-[10px] font-mono">DOTS</span>
+                    </button>
+
+                    <!-- Tải ảnh bảng -->
+                    <button class="tool-btn p-2 rounded-xl" onclick="exportBoardImage()" title="Tải ảnh bảng PNG"><i data-lucide="download" class="w-4 h-4"></i></button>
+
+                    <!-- Xóa bảng -->
+                    <button class="tool-btn p-2 rounded-xl hover:bg-rose-500/20 text-slate-400 hover:text-rose-400" onclick="clearBoard()" title="Xóa toàn bộ bảng"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+
+            <!-- Quick Math Formula Short-cuts -->
+            <div class="flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/50 border border-white/5 text-xs">
+                <span class="text-slate-400 text-[11px] font-medium flex items-center gap-1">
+                    <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> Viết mẫu nhanh:
+                </span>
+                <button onclick="writeFormulaText('y = 2x + 1')" class="px-2.5 py-1 rounded-lg bg-cyan-950/40 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-mono text-[11px] transition">
+                    y = 2x + 1 (Bậc 1)
+                </button>
+                <button onclick="writeFormulaText('y = x^2 - 4')" class="px-2.5 py-1 rounded-lg bg-cyan-950/40 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-mono text-[11px] transition">
+                    y = x² - 4 (Parabol)
+                </button>
+                <button onclick="writeFormulaText('y = x^3 - 3x')" class="px-2.5 py-1 rounded-lg bg-cyan-950/40 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-mono text-[11px] transition">
+                    y = x³ - 3x (Bậc 3)
+                </button>
+                <button onclick="writeFormulaText('y = 2\\sin(3x)')" class="px-2.5 py-1 rounded-lg bg-cyan-950/40 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-mono text-[11px] transition">
+                    y = 2sin(3x) (Sóng điều hòa)
+                </button>
+            </div>
+
+            <!-- CANVAS DRAWING CONTAINER (Luôn hiển thị 100%, không bị che) -->
+            <div class="glass-panel flex-1 relative min-h-[540px] overflow-hidden" id="canvasWrapper">
+                <div class="scan-line"></div>
+                <canvas id="smartBoard" class="w-full h-full canvas-theme-dots cursor-crosshair touch-none block"></canvas>
+                
+                <!-- Contextual Floating Action Bar for Lasso Selection -->
+                <div id="lassoContextAction" class="hidden absolute z-30 flex flex-col md:flex-row items-center gap-2.5 p-3 rounded-2xl bg-slate-900/95 border border-cyan-500/30 backdrop-blur-2xl shadow-2xl animate-in fade-in max-w-xl">
+                    <!-- Debug Preview Thumbnail -->
+                    <div class="flex items-center gap-2 shrink-0">
+                        <img id="lassoPreviewThumb" class="w-14 h-9 object-contain rounded-lg border border-white/20 bg-white shadow-sm" src="" alt="OCR Preview" />
+                        <div class="flex flex-col text-left">
+                            <span class="text-xs font-bold text-cyan-300">Lasso: <span id="lassoCountLabel">0</span> nét</span>
+                            <span class="text-[9px] text-slate-400">512x256 • Nền trắng</span>
+                        </div>
+                    </div>
+
+                    <!-- Text / Voice Override Input -->
+                    <div class="flex-1 w-full min-w-[200px]">
+                        <input id="lassoInlineHintInput" type="text" placeholder="Hoặc gõ công thức: y=2sin(3x), Mg+HCl..." class="w-full px-2.5 py-1.5 rounded-xl bg-slate-950/80 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400/60 font-mono" />
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button onclick="triggerUnifiedCompile()" class="ai-glow-btn px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 text-xs shadow-xl cursor-pointer">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                            <span>✨ Nhận diện</span>
+                        </button>
+                        <button onclick="clearLassoSelection()" class="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition cursor-pointer" title="Bỏ chọn">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Preset Quick Pills -->
+                    <div class="w-full flex items-center gap-1.5 pt-1 border-t border-white/5 flex-wrap">
+                        <span class="text-[10px] text-slate-400">Gợi ý:</span>
+                        <button onclick="triggerPreset('y = 2\\sin(3x)')" class="px-2 py-0.5 rounded-lg bg-cyan-950/40 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-mono text-[10px]">📐 Đồ thị Sin</button>
+                        <button onclick="triggerPreset('ném xiên v0 = 22 m/s, alpha = 45 độ')" class="px-2 py-0.5 rounded-lg bg-sky-950/40 hover:bg-sky-500/20 border border-sky-500/30 text-sky-300 font-mono text-[10px]">🚀 Ném xiên</button>
+                        <button onclick="triggerPreset('4Fe + 3O2 -> 2Fe2O3')" class="px-2 py-0.5 rounded-lg bg-amber-950/40 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-mono text-[10px]">⚖️ Cân bằng Hóa</button>
+                        <button onclick="triggerPreset('quang hợp nhiệt độ 25 độ C')" class="px-2 py-0.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-mono text-[10px]">🌿 Quang hợp 25°C</button>
+                    </div>
+                </div>
+
+                <!-- Primary Floating AI Action Button -->
+                <div class="absolute bottom-5 right-5 z-20">
+                    <button class="ai-glow-btn px-5 py-3 rounded-full flex items-center gap-2.5 text-sm shadow-2xl" onclick="triggerUnifiedCompile()">
+                        <i data-lucide="sparkles" class="w-5 h-5"></i>
+                        <span>Nhận diện & Vẽ Đồ Thị</span>
+                    </button>
+                </div>
+
+                <!-- Bottom Status Bar -->
+                <div class="absolute bottom-4 left-5 z-10 flex items-center gap-3 text-[11px] font-mono text-slate-400 bg-slate-900/80 backdrop-blur px-3 py-1 rounded-full border border-white/5">
+                    <span id="currentToolDisplay" class="text-cyan-400">Công cụ: Bút viết tự nhiên</span>
+                    <span>•</span>
+                    <span id="strokeCountDisplay">0 nét vẽ</span>
+                    <span>•</span>
+                    <span id="coordDisplay">x: 0, y: 0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Live AI OCR & Python Matplotlib Engine (BÊN CẠNH BẢNG, KHÔNG CHE BẢNG) -->
+        <div id="visualizeColumn" class="lg:col-span-4 flex flex-col gap-4 transition-all duration-300">
+            <div class="glass-panel h-full p-6 flex flex-col relative overflow-hidden" id="aiResultPanel">
+                
+                <!-- Header with Dedicated Close / Hide Button -->
+                <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
+                    <div class="flex items-center gap-2 text-cyan-400 text-xs font-bold tracking-wider uppercase">
+                        <i data-lucide="cpu" class="w-4 h-4"></i> Python Engine Live
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="realLatencyBadge" class="text-[10px] font-mono text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/30">
+                            0ms
+                        </span>
+                        <!-- NÚT TẮT VISUALIZE ĐỂ MỞ RỘNG BẢNG -->
+                        <button onclick="toggleVisualizePanel()" class="px-2.5 py-1 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-1 transition" title="Tắt panel đồ thị để mở rộng bảng viết">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            <span>Tắt</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Initial Empty State -->
+                <div class="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-500 transition-opacity duration-300" id="emptyState">
+                    <div class="w-16 h-16 rounded-3xl bg-slate-800/60 border border-white/10 flex items-center justify-center mb-4">
+                        <i data-lucide="brain-circuit" class="w-8 h-8 text-cyan-400 opacity-60"></i>
+                    </div>
+                    <h3 class="text-base font-semibold text-slate-300 mb-1">Chờ nhận diện toán học</h3>
+                    <p class="text-xs text-slate-400 max-w-xs leading-relaxed">
+                        Viết phương trình lên bảng hoặc bấm chọn mẫu toán học nhanh, sau đó bấm <span class="text-cyan-400 font-semibold">[Nhận diện & Vẽ Đồ Thị]</span>.
+                    </p>
+                </div>
+
+                <!-- Result Box (Active when compiled) -->
+                <div class="result-box h-full flex flex-col hidden" id="resultContent">
+                    
+                    <!-- 1. OCR Result LaTeX with Inline Edit & Swap Chips -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-xs text-slate-400 font-medium">CÔNG THỨC NHẬN DIỆN (OCR):</span>
+                            <button onclick="editFormulaPrompt()" class="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-mono cursor-pointer">
+                                <i data-lucide="edit-3" class="w-3 h-3"></i> Sửa công thức
+                            </button>
+                        </div>
+                        <div class="bg-slate-900/90 rounded-2xl p-3 border border-white/5 shadow-inner">
+                            <div id="mathOutput" class="text-2xl text-center text-cyan-100 font-medium min-h-[36px] flex items-center justify-center">
+                                <!-- MathJax injected here -->
+                            </div>
+                        </div>
+
+                        <!-- Tap & Swap Alternative Candidates (Zero-Keyboard Recovery) -->
+                        <div class="mt-2 flex flex-wrap items-center gap-1.5" id="alternativesContainer">
+                            <span class="text-[10px] text-slate-400">Gợi ý khác:</span>
+                            <!-- Chips injected here -->
+                        </div>
+                    </div>
+
+                    <!-- 2. Python Matplotlib Live Neon SVG -->
+                    <div class="flex-1 flex flex-col">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-xs text-slate-400 font-medium">ĐỒ THỊ MATPLOTLIB (NEON SCI-FI):</span>
+                            <span id="equationLabel" class="text-[11px] font-mono text-slate-400">SymPy</span>
+                        </div>
+                        
+                        <div id="svgGraphContainer" class="flex-1 bg-slate-900/90 rounded-2xl border border-white/5 shadow-inner flex items-center justify-center overflow-hidden p-2 min-h-[200px]">
+                            <!-- SVG Live injected here -->
+                            <div class="text-xs text-slate-500 font-mono flex items-center gap-2">
+                                <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-cyan-400"></i> Đang tải đồ thị...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Dynamic Interactive Sliders (Khám phá tham số trực quan) -->
+                    <div class="mt-3 pt-3 border-t border-white/10" id="parametersSection">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-slate-400 font-medium">BỘ ĐIỀU CHỈNH THAM SỐ:</span>
+                            <span class="text-[10px] text-slate-500 font-mono">Kéo thanh trượt để thay đổi đồ thị</span>
+                        </div>
+                        <div id="slidersList" class="flex flex-col gap-2">
+                            <!-- Dynamic Sliders Injected Here -->
+                        </div>
+                    </div>
+
+                    <!-- 4. Telemetry Footer -->
+                    <div class="mt-3 pt-2 text-[10px] font-mono text-slate-400 flex items-center justify-between border-t border-white/5">
+                        <span id="ocrEngineDisplay">RAPIDOCR_ONNX</span>
+                        <span id="cropKbBadge">0 KB WebP</span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Core Smartboard & AI Script -->
+    <script>
+        lucide.createIcons();
+
+        // Canvas & Board State
+        const canvas = document.getElementById('smartBoard');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('canvasWrapper');
+
+        let currentTool = 'PEN'; // 'PEN' | 'HIGHLIGHTER' | 'CIRCLE' | 'LINE' | 'ARROW' | 'RECTANGLE' | 'LASSO' | 'ERASER'
+        let currentColor = '#ffffff';
+        let currentSize = 2.5;
+        let boardTheme = 'dots'; // 'dots' | 'grid' | 'blank' | 'chalkboard'
+        let isVisualizeOpen = true;
+
+        let isDrawing = false;
+        let strokes = []; // { id, type, tool, color, size, points }
+        let currentPoints = [];
+        let undoStack = [];
+        let redoStack = [];
+
+        // Shape drag origin
+        let shapeStartX = 0, shapeStartY = 0;
+        let selectedStrokes = [];
+        let currentFormulaStr = 'y = 2x + 1';
+        let currentParams = { a: 1.0, b: 0.0, c: 2.0, d: 1.0 };
+
+        // Toggle Visualize Panel On/Off (Bên cạnh bảng, không che bảng)
+        function toggleVisualizePanel() {
+            isVisualizeOpen = !isVisualizeOpen;
+            const canvasCol = document.getElementById('canvasColumn');
+            const visCol = document.getElementById('visualizeColumn');
+            const toggleLabel = document.getElementById('toggleVisualizeLabel');
+
+            if (isVisualizeOpen) {
+                visCol.classList.remove('hidden');
+                canvasCol.className = 'lg:col-span-8 flex flex-col gap-3 transition-all duration-300';
+                toggleLabel.innerText = 'Tắt Visualize (Mở rộng bảng)';
+            } else {
+                visCol.classList.add('hidden');
+                canvasCol.className = 'lg:col-span-12 flex flex-col gap-3 transition-all duration-300';
+                toggleLabel.innerText = 'Bật Visualize';
+            }
+            // Trigger smooth canvas resize
+            setTimeout(resizeCanvas, 150);
+        }
+
+        // Resize Canvas with Retina HiDPI scale
+        function resizeCanvas() {
+            const rect = wrapper.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            redrawBoard();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // Tool Switching
+        function setTool(tool) {
+            currentTool = tool;
+            selectedStrokes = [];
+            document.getElementById('lassoContextAction').classList.add('hidden');
+
+            // Update UI buttons
+            const toolBtnMap = {
+                'PEN': 'btnToolPen',
+                'HIGHLIGHTER': 'btnToolHighlighter',
+                'CIRCLE': 'btnToolCircle',
+                'LINE': 'btnToolLine',
+                'ARROW': 'btnToolArrow',
+                'RECTANGLE': 'btnToolRect',
+                'LASSO': 'btnToolLasso',
+                'ERASER': 'btnToolEraser'
+            };
+
+            Object.values(toolBtnMap).forEach(id => {
+                const b = document.getElementById(id);
+                if (b) b.classList.remove('active');
+            });
+            const activeBtn = document.getElementById(toolBtnMap[tool]);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Name display
+            const names = {
+                'PEN': 'Bút viết tự nhiên (Không tự nắn hình tròn)',
+                'HIGHLIGHTER': 'Bút dạ quang',
+                'CIRCLE': 'Vẽ hình tròn (Kéo chuột/chạm trên bảng)',
+                'LINE': 'Vẽ đoạn thẳng',
+                'ARROW': 'Vẽ mũi tên vector',
+                'RECTANGLE': 'Vẽ hình chữ nhật',
+                'LASSO': 'Magic Lasso (Khoanh vùng nét vẽ)',
+                'ERASER': 'Tẩy nét'
+            };
+            document.getElementById('currentToolDisplay').innerText = `Công cụ: ${names[tool]}`;
+        }
+
+        // Color & Size
+        function setColor(hex, el) {
+            currentColor = hex;
+            const container = document.getElementById('paletteContainer');
+            container.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-white', 'scale-110');
+                btn.classList.add('opacity-70');
+            });
+            el.classList.add('ring-2', 'ring-white', 'scale-110');
+            el.classList.remove('opacity-70');
+        }
+
+        function setSize(sz, el) {
+            currentSize = sz;
+            el.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        // Themes
+        function cycleTheme() {
+            const themes = ['dots', 'grid', 'blank', 'chalkboard'];
+            const nextIdx = (themes.indexOf(boardTheme) + 1) % themes.length;
+            boardTheme = themes[nextIdx];
+            canvas.className = `w-full h-full canvas-theme-${boardTheme} cursor-crosshair touch-none block`;
+            document.getElementById('themeNameLabel').innerText = boardTheme.toUpperCase();
+        }
+
+        // Helper: Canvas Coordinates
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        // Core Drawing Redraw
+        function redrawBoard() {
+            const rect = canvas.getBoundingClientRect();
+            ctx.clearRect(0, 0, rect.width, rect.height);
+
+            // Draw all completed strokes
+            strokes.forEach(stroke => {
+                ctx.save();
+                const isSelected = selectedStrokes.some(s => s.id === stroke.id);
+
+                if (isSelected) {
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.shadowColor = '#38bdf8';
+                    ctx.shadowBlur = 10;
+                } else if (stroke.tool === 'HIGHLIGHTER') {
+                    ctx.strokeStyle = stroke.color.includes('rgba') ? stroke.color : hexToRgba(stroke.color, 0.35);
+                    ctx.lineCap = 'square';
+                } else {
+                    ctx.strokeStyle = stroke.color;
+                    ctx.shadowColor = stroke.color;
+                    ctx.shadowBlur = 2;
+                    ctx.lineCap = 'round';
+                }
+
+                ctx.lineWidth = stroke.size + (isSelected ? 2 : 0);
+                ctx.lineJoin = 'round';
+
+                if (stroke.tool === 'CIRCLE') {
+                    const [p1, p2] = stroke.points;
+                    const r = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+                    ctx.beginPath();
+                    ctx.arc(p1.x, p1.y, r, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (stroke.tool === 'RECTANGLE') {
+                    const [p1, p2] = stroke.points;
+                    ctx.strokeRect(Math.min(p1.x, p2.x), Math.min(p1.y, p2.y), Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y));
+                } else if (stroke.tool === 'LINE') {
+                    const [p1, p2] = stroke.points;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                } else if (stroke.tool === 'ARROW') {
+                    const [p1, p2] = stroke.points;
+                    drawArrow(ctx, p1.x, p1.y, p2.x, p2.y, stroke.color);
+                } else {
+                    // Freehand PEN or HIGHLIGHTER
+                    if (stroke.points.length > 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                        for (let i = 1; i < stroke.points.length; i++) {
+                            ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                        }
+                        ctx.stroke();
+                    }
+                }
+                ctx.restore();
+            });
+
+            // Draw current active stroke preview
+            if (isDrawing && currentPoints.length > 0) {
+                ctx.save();
+                if (currentTool === 'LASSO') {
+                    ctx.setLineDash([6, 6]);
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
+                    for (let i = 1; i < currentPoints.length; i++) {
+                        ctx.lineTo(currentPoints[i].x, currentPoints[i].y);
+                    }
+                    ctx.stroke();
+                } else if (currentTool === 'CIRCLE') {
+                    ctx.strokeStyle = currentColor;
+                    ctx.lineWidth = currentSize;
+                    const p1 = { x: shapeStartX, y: shapeStartY };
+                    const p2 = currentPoints[currentPoints.length - 1];
+                    const r = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+                    ctx.beginPath();
+                    ctx.arc(p1.x, p1.y, r, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (currentTool === 'RECTANGLE') {
+                    ctx.strokeStyle = currentColor;
+                    ctx.lineWidth = currentSize;
+                    const p1 = { x: shapeStartX, y: shapeStartY };
+                    const p2 = currentPoints[currentPoints.length - 1];
+                    ctx.strokeRect(Math.min(p1.x, p2.x), Math.min(p1.y, p2.y), Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y));
+                } else if (currentTool === 'LINE') {
+                    ctx.strokeStyle = currentColor;
+                    ctx.lineWidth = currentSize;
+                    const p1 = { x: shapeStartX, y: shapeStartY };
+                    const p2 = currentPoints[currentPoints.length - 1];
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                } else if (currentTool === 'ARROW') {
+                    ctx.strokeStyle = currentColor;
+                    ctx.lineWidth = currentSize;
+                    const p1 = { x: shapeStartX, y: shapeStartY };
+                    const p2 = currentPoints[currentPoints.length - 1];
+                    drawArrow(ctx, p1.x, p1.y, p2.x, p2.y, currentColor);
+                } else if (currentTool === 'HIGHLIGHTER') {
+                    ctx.strokeStyle = hexToRgba(currentColor, 0.35);
+                    ctx.lineWidth = 18;
+                    ctx.lineCap = 'square';
+                    ctx.beginPath();
+                    ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
+                    for (let i = 1; i < currentPoints.length; i++) {
+                        ctx.lineTo(currentPoints[i].x, currentPoints[i].y);
+                    }
+                    ctx.stroke();
+                } else {
+                    // PEN - natural ink
+                    ctx.strokeStyle = currentColor;
+                    ctx.lineWidth = currentSize;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.shadowColor = currentColor;
+                    ctx.shadowBlur = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
+                    for (let i = 1; i < currentPoints.length; i++) {
+                        ctx.lineTo(currentPoints[i].x, currentPoints[i].y);
+                    }
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            document.getElementById('strokeCountDisplay').innerText = `${strokes.length} nét vẽ`;
+        }
+
+        function drawArrow(context, fromx, fromy, tox, toy, color) {
+            const headlen = 14;
+            const dx = tox - fromx;
+            const dy = toy - fromy;
+            const angle = Math.atan2(dy, dx);
+            context.beginPath();
+            context.moveTo(fromx, fromy);
+            context.lineTo(tox, toy);
+            context.stroke();
+
+            context.save();
+            context.fillStyle = color;
+            context.beginPath();
+            context.moveTo(tox, toy);
+            context.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+            context.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+            context.closePath();
+            context.fill();
+            context.restore();
+        }
+
+        function hexToRgba(hex, alpha) {
+            let c;
+            if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+                c = hex.substring(1).split('');
+                if (c.length === 3) c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+                c = '0x' + c.join('');
+                return `rgba(${[(c>>16)&255, (c>>8)&255, c&255].join(',')},${alpha})`;
+            }
+            return hex;
+        }
+
+        // Pointer Events
+        function onPointerDown(e) {
+            const pos = getPos(e);
+            isDrawing = true;
+            shapeStartX = pos.x;
+            shapeStartY = pos.y;
+            currentPoints = [pos];
+
+            if (currentTool === 'ERASER') {
+                eraseAtPoint(pos);
+            }
+            redrawBoard();
+        }
+
+        function onPointerMove(e) {
+            const pos = getPos(e);
+            document.getElementById('coordDisplay').innerText = `x: ${Math.round(pos.x)}, y: ${Math.round(pos.y)}`;
+
+            if (!isDrawing) return;
+            if (e.cancelable) e.preventDefault();
+
+            if (currentTool === 'ERASER') {
+                eraseAtPoint(pos);
+                return;
+            }
+
+            currentPoints.push(pos);
+            redrawBoard();
+        }
+
+        function onPointerUp(e) {
+            if (!isDrawing) return;
+            isDrawing = false;
+
+            if (currentTool === 'ERASER') return;
+
+            // Commit shapes or pen
+            if (['CIRCLE', 'RECTANGLE', 'LINE', 'ARROW'].includes(currentTool)) {
+                const endPos = currentPoints[currentPoints.length - 1];
+                const dist = Math.hypot(endPos.x - shapeStartX, endPos.y - shapeStartY);
+                if (dist > 6) {
+                    saveUndo();
+                    strokes.push({
+                        id: 'shape-' + Date.now(),
+                        tool: currentTool,
+                        color: currentColor,
+                        size: currentSize,
+                        points: [{ x: shapeStartX, y: shapeStartY }, endPos]
+                    });
+                }
+            } else if (currentTool === 'LASSO') {
+                // Forgiving Polygon hit-testing: >=25% points OR >=30% BBox overlap + 24px pad
+                if (currentPoints.length > 5) {
+                    const enclosed = filterEnclosedStrokes(strokes, currentPoints);
+                    selectedStrokes = enclosed;
+                    if (enclosed.length > 0) {
+                        const lassoBtn = document.getElementById('lassoContextAction');
+                        lassoBtn.classList.remove('hidden');
+                        document.getElementById('lassoCountLabel').innerText = enclosed.length;
+                        
+                        // Generate Debug Preview Thumbnail immediately
+                        exportIsolatedCropBlob(enclosed).then(res => {
+                            if (res && res.dataUrl) {
+                                const thumb = document.getElementById('lassoPreviewThumb');
+                                if (thumb) thumb.src = res.dataUrl;
+                            }
+                        });
+
+                        // Position button near last point
+                        const lastPt = currentPoints[currentPoints.length - 1];
+                        lassoBtn.style.left = `${Math.min(window.innerWidth - 380, Math.max(20, lastPt.x - 100))}px`;
+                        lassoBtn.style.top = `${Math.min(480, Math.max(80, lastPt.y - 120))}px`;
+                    }
+                }
+            } else {
+                // Natural Pen or Highlighter (ABSOLUTELY NO AUTO-CIRCLE SNAPPING)
+                if (currentPoints.length > 1) {
+                    saveUndo();
+                    strokes.push({
+                        id: 'stroke-' + Date.now(),
+                        tool: currentTool,
+                        color: currentTool === 'HIGHLIGHTER' ? hexToRgba(currentColor, 0.35) : currentColor,
+                        size: currentTool === 'HIGHLIGHTER' ? 18 : currentSize,
+                        points: currentPoints
+                    });
+                }
+            }
+
+            currentPoints = [];
+            redrawBoard();
+        }
+
+        // Bounding Box calculation for forgiving lasso
+        function computeBoundingBox(points, expandBy = 0) {
+            if (!points || points.length === 0) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const p of points) {
+                if (p.x < minX) minX = p.x;
+                if (p.x > maxX) maxX = p.x;
+                if (p.y < minY) minY = p.y;
+                if (p.y > maxY) maxY = p.y;
+            }
+            return {
+                minX: minX - expandBy,
+                minY: minY - expandBy,
+                maxX: maxX + expandBy,
+                maxY: maxY + expandBy
+            };
+        }
+
+        function getBoundingBoxOverlapRatio(boxA, boxB) {
+            const overlapMinX = Math.max(boxA.minX, boxB.minX);
+            const overlapMinY = Math.max(boxA.minY, boxB.minY);
+            const overlapMaxX = Math.min(boxA.maxX, boxB.maxX);
+            const overlapMaxY = Math.min(boxA.maxY, boxB.maxY);
+
+            if (overlapMaxX <= overlapMinX || overlapMaxY <= overlapMinY) return 0;
+            const overlapArea = (overlapMaxX - overlapMinX) * (overlapMaxY - overlapMinY);
+            const areaA = (boxA.maxX - boxA.minX) * (boxA.maxY - boxA.minY);
+            return areaA <= 0 ? 1.0 : overlapArea / areaA;
+        }
+
+        // Point-in-polygon algorithm for Lasso
+        function isPointInPoly(pt, poly) {
+            let inside = false;
+            for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+                const xi = poly[i].x, yi = poly[i].y;
+                const xj = poly[j].x, yj = poly[j].y;
+                const intersect = ((yi > pt.y) !== (yj > pt.y)) && (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        function filterEnclosedStrokes(allStrokes, lassoPoly, pointRatioThreshold = 0.25, bboxOverlapThreshold = 0.30, expansionPad = 24) {
+            if (!lassoPoly || lassoPoly.length < 3 || !allStrokes || allStrokes.length === 0) return [];
+            const lassoBox = computeBoundingBox(lassoPoly);
+            const selected = new Set();
+
+            for (const stroke of allStrokes) {
+                if (!stroke.points || stroke.points.length === 0) continue;
+                let insideCount = 0;
+                for (const pt of stroke.points) {
+                    if (isPointInPoly(pt, lassoPoly)) insideCount++;
+                }
+                const pointRatio = insideCount / stroke.points.length;
+                const strokeBox = computeBoundingBox(stroke.points);
+                const overlapRatio = getBoundingBoxOverlapRatio(strokeBox, lassoBox);
+
+                if (pointRatio >= pointRatioThreshold || overlapRatio >= bboxOverlapThreshold) {
+                    selected.add(stroke);
+                }
+            }
+
+            // 24px expansion to capture nearby dots, accents, or subscripts
+            if (selected.size > 0 && expansionPad > 0) {
+                const allSelectedPts = [];
+                for (const s of selected) allSelectedPts.push(...s.points);
+                const expandedBox = computeBoundingBox(allSelectedPts, expansionPad);
+
+                for (const stroke of allStrokes) {
+                    if (selected.has(stroke) || !stroke.points || stroke.points.length === 0) continue;
+                    const sBox = computeBoundingBox(stroke.points);
+                    const centerX = (sBox.minX + sBox.maxX) / 2;
+                    const centerY = (sBox.minY + sBox.maxY) / 2;
+                    if (
+                        centerX >= expandedBox.minX && centerX <= expandedBox.maxX &&
+                        centerY >= expandedBox.minY && centerY <= expandedBox.maxY
+                    ) {
+                        selected.add(stroke);
+                    }
+                }
+            }
+
+            return Array.from(selected);
+        }
+
+        function clearLassoSelection() {
+            selectedStrokes = [];
+            const lassoBtn = document.getElementById('lassoContextAction');
+            if (lassoBtn) lassoBtn.classList.add('hidden');
+            const hintInput = document.getElementById('lassoInlineHintInput');
+            if (hintInput) hintInput.value = '';
+            redrawBoard();
+        }
+
+        function triggerPreset(presetText) {
+            const hintInput = document.getElementById('lassoInlineHintInput');
+            if (hintInput) hintInput.value = presetText;
+            triggerUnifiedCompile(presetText);
+        }
+
+        // Eraser logic
+        function eraseAtPoint(pos) {
+            const beforeCount = strokes.length;
+            strokes = strokes.filter(s => {
+                if (s.tool === 'CIRCLE') {
+                    const [p1, p2] = s.points;
+                    const r = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+                    const d = Math.hypot(pos.x - p1.x, pos.y - p1.y);
+                    return Math.abs(d - r) > 18;
+                }
+                return !s.points.some(p => Math.hypot(p.x - pos.x, p.y - pos.y) < 18);
+            });
+            if (strokes.length !== beforeCount) {
+                saveUndo();
+                redrawBoard();
+            }
+        }
+
+        // Undo & Redo
+        function saveUndo() {
+            undoStack.push(JSON.parse(JSON.stringify(strokes)));
+            redoStack = [];
+            if (undoStack.length > 25) undoStack.shift();
+        }
+
+        function undo() {
+            if (undoStack.length === 0) return;
+            redoStack.push(JSON.parse(JSON.stringify(strokes)));
+            strokes = undoStack.pop();
+            selectedStrokes = [];
+            redrawBoard();
+        }
+
+        function redo() {
+            if (redoStack.length === 0) return;
+            undoStack.push(JSON.parse(JSON.stringify(strokes)));
+            strokes = redoStack.pop();
+            selectedStrokes = [];
+            redrawBoard();
+        }
+
+        function clearBoard() {
+            if (strokes.length === 0) return;
+            saveUndo();
+            strokes = [];
+            selectedStrokes = [];
+            redrawBoard();
+            document.getElementById('emptyState').style.display = 'flex';
+            document.getElementById('resultContent').classList.add('hidden');
+            document.getElementById('resultContent').classList.remove('active');
+            document.getElementById('lassoContextAction').classList.add('hidden');
+        }
+
+        // Attach listeners
+        canvas.addEventListener('mousedown', onPointerDown);
+        canvas.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
+
+        canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+        canvas.addEventListener('touchmove', onPointerMove, { passive: false });
+        window.addEventListener('touchend', onPointerUp);
+
+        // Export Board image
+        function exportBoardImage() {
+            const temp = document.createElement('canvas');
+            temp.width = canvas.width;
+            temp.height = canvas.height;
+            const tCtx = temp.getContext('2d');
+            tCtx.fillStyle = boardTheme === 'chalkboard' ? '#064e3b' : '#090d16';
+            tCtx.fillRect(0, 0, temp.width, temp.height);
+            tCtx.drawImage(canvas, 0, 0);
+
+            const a = document.createElement('a');
+            a.download = `socratic-board-${Date.now()}.png`;
+            a.href = temp.toDataURL('image/png');
+            a.click();
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+
+        // Quick Formula shortcut injector
+        function writeFormulaText(latex) {
+            currentFormulaStr = latex;
+            // Ensure visualize panel is open
+            if (!isVisualizeOpen) toggleVisualizePanel();
+            triggerPythonPlot(latex);
+        }
+
+        // TẠO ẢNH CROP CÔ LẬP CAO CẤP TỐI ƯU CHO OCR MẠNG NƠ-RON (FIX 2: Strict High-Contrast White Exporter)
+        function exportIsolatedCropBlob(targetStrokes) {
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            for (const s of targetStrokes) {
+                for (const p of s.points) {
+                    minX = Math.min(minX, p.x);
+                    maxX = Math.max(maxX, p.x);
+                    minY = Math.min(minY, p.y);
+                    maxY = Math.max(maxY, p.y);
+                }
+            }
+
+            const pad = 40;
+            const strokeW = Math.max(maxX - minX, 1);
+            const strokeH = Math.max(maxY - minY, 1);
+
+            const minW = 512;
+            const minH = 256;
+            const contentW = strokeW + pad * 2;
+            const contentH = strokeH + pad * 2;
+            const scale = Math.max(1, minW / contentW, minH / contentH);
+
+            const canvasW = Math.round(contentW * scale);
+            const canvasH = Math.round(contentH * scale);
+
+            const offscreen = document.createElement('canvas');
+            offscreen.width = canvasW;
+            offscreen.height = canvasH;
+            const offCtx = offscreen.getContext('2d');
+
+            // CRITICAL: Fill ENTIRE canvas with solid pure white
+            offCtx.fillStyle = '#FFFFFF';
+            offCtx.fillRect(0, 0, canvasW, canvasH);
+
+            // Render pure black thick strokes with quadratic smoothing
+            offCtx.strokeStyle = '#000000';
+            offCtx.lineWidth = 8;
+            offCtx.lineCap = 'round';
+            offCtx.lineJoin = 'round';
+
+            const offsetX = (canvasW - strokeW * scale) / 2 - minX * scale;
+            const offsetY = (canvasH - strokeH * scale) / 2 - minY * scale;
+
+            for (const s of targetStrokes) {
+                const pts = s.points;
+                if (!pts || pts.length === 0) continue;
+                if (pts.length === 1) {
+                    offCtx.beginPath();
+                    offCtx.arc(pts[0].x * scale + offsetX, pts[0].y * scale + offsetY, 4, 0, Math.PI * 2);
+                    offCtx.fillStyle = '#000000';
+                    offCtx.fill();
+                    continue;
+                }
+
+                offCtx.beginPath();
+                offCtx.moveTo(pts[0].x * scale + offsetX, pts[0].y * scale + offsetY);
+                for (let i = 1; i < pts.length - 1; i++) {
+                    const midX = (pts[i].x + pts[i + 1].x) / 2 * scale + offsetX;
+                    const midY = (pts[i].y + pts[i + 1].y) / 2 * scale + offsetY;
+                    const cX = pts[i].x * scale + offsetX;
+                    const cY = pts[i].y * scale + offsetY;
+                    if (typeof offCtx.quadraticCurveTo === 'function') {
+                        offCtx.quadraticCurveTo(cX, cY, midX, midY);
+                    } else {
+                        offCtx.lineTo(cX, cY);
+                    }
+                }
+                const last = pts[pts.length - 1];
+                offCtx.lineTo(last.x * scale + offsetX, last.y * scale + offsetY);
+                offCtx.stroke();
+            }
+
+            const dataUrl = offscreen.toDataURL('image/png');
+            return new Promise(resolve => {
+                offscreen.toBlob(blob => {
+                    resolve({ blob, dataUrl, sizeKb: blob ? Number((blob.size / 1024).toFixed(2)) : 0 });
+                }, 'image/png');
+            });
+        }
+
+        // Trigger AI Compiler & Matplotlib Plot (Multi-pass OCR + Vector Strokes + Hint Text Override)
+        async function triggerUnifiedCompile(presetHint) {
+            const emptyState = document.getElementById('emptyState');
+            const resultBox = document.getElementById('resultContent');
+            const latencyBadge = document.getElementById('realLatencyBadge');
+            const cropKbBadge = document.getElementById('cropKbBadge');
+            const ocrEngineDisplay = document.getElementById('ocrEngineDisplay');
+            const hintInput = document.getElementById('lassoInlineHintInput');
+            const effectiveHint = presetHint || (hintInput ? hintInput.value : '') || '';
+
+            // Ensure visualize panel is open
+            if (!isVisualizeOpen) toggleVisualizePanel();
+
+            const targetStrokes = selectedStrokes.length > 0 ? selectedStrokes : strokes;
+            if (targetStrokes.length === 0 && !effectiveHint) {
+                alert("Vui lòng viết công thức hoặc nhập nội dung trước khi nhận diện!");
+                return;
+            }
+
+            wrapper.classList.add('scanning');
+            emptyState.style.display = 'none';
+            resultBox.classList.remove('hidden');
+            resultBox.classList.remove('active');
+
+            const startTime = performance.now();
+
+            try {
+                // 1. Tạo ảnh crop cô lập 512x256 nền trắng tinh
+                let cropData = null;
+                if (targetStrokes.length > 0) {
+                    cropData = await exportIsolatedCropBlob(targetStrokes);
+                    const cropKb = cropData.sizeKb;
+                    cropKbBadge.innerText = `${cropKb} KB PNG Crop`;
+                    const thumb = document.getElementById('lassoPreviewThumb');
+                    if (thumb && cropData.dataUrl) thumb.src = cropData.dataUrl;
+                }
+
+                // 2. Gửi JSON với image_base64 & hint_text sang FastAPI OCR
+                const payload = {
+                    image_base64: cropData ? cropData.dataUrl : '',
+                    hint_text: effectiveHint,
+                    hint_subject: effectiveHint,
+                    raw_strokes_json: JSON.stringify(targetStrokes)
+                };
+
+                const compileRes = await fetch('http://localhost:8000/api/v1/canvas/compile-lasso', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!compileRes.ok) throw new Error(`HTTP ${compileRes.status}`);
+                const data = await compileRes.json();
+
+                const recognizedLatex = data.ocr_result ? data.ocr_result.recognized_latex : (effectiveHint || 'y = 2x + 1');
+                currentFormulaStr = recognizedLatex;
+
+                const formulaForPlot = (data.simulation_blueprint && data.simulation_blueprint.expressions) ?
+                    data.simulation_blueprint.expressions[0] : recognizedLatex;
+
+                // 3. Render Đồ thị Python Live
+                await triggerPythonPlot(formulaForPlot, recognizedLatex, data.simulation_blueprint);
+
+                // Render Tap & Swap Alternatives
+                renderAlternatives(data.ocr_result.alternatives || []);
+
+                const elapsed = (performance.now() - startTime).toFixed(1);
+                latencyBadge.innerText = `● Thật: ${elapsed}ms`;
+                if (ocrEngineDisplay && data.simulation_blueprint && data.simulation_blueprint.meta) {
+                    ocrEngineDisplay.innerText = data.simulation_blueprint.meta.engine || 'RAPIDOCR_ONNX';
+                }
+
+                wrapper.classList.remove('scanning');
+                resultBox.classList.add('active');
+
+            } catch (err) {
+                console.warn("Backend compiler fallback:", err);
+                wrapper.classList.remove('scanning');
+                await triggerPythonPlot(effectiveHint || currentFormulaStr || 'y = 2x + 1');
+                resultBox.classList.add('active');
+            }
+        }
+
+        // Live Python Plot Generator
+        async function triggerPythonPlot(formula, displayLatex = null, blueprint = null) {
+            const mathOutput = document.getElementById('mathOutput');
+            const svgContainer = document.getElementById('svgGraphContainer');
+            const equationLabel = document.getElementById('equationLabel');
+
+            const latex = displayLatex || formula;
+            mathOutput.innerHTML = `\\[ ${latex} \\]`;
+            if (window.MathJax) {
+                MathJax.typesetPromise([mathOutput]).catch(e => console.log(e));
+            }
+
+            equationLabel.innerText = formula;
+
+            try {
+                // Call GET /api/v1/plot with dynamic params
+                const params = new URLSearchParams({
+                    equation: formula,
+                    a: currentParams.a,
+                    b: currentParams.b,
+                    c: currentParams.c,
+                    d: currentParams.d
+                });
+
+                const res = await fetch(`http://localhost:8000/api/v1/plot?${params.toString()}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const svgText = await res.text();
+                svgContainer.innerHTML = svgText;
+
+                // Setup parameter sliders
+                setupSliders(formula, blueprint);
+
+            } catch (err) {
+                svgContainer.innerHTML = `<div class="text-rose-400 text-xs p-4 text-center">Lỗi kết nối Python Engine: ${err.message}</div>`;
+            }
+        }
+
+        // Tap & Swap Alternatives Chips
+        function renderAlternatives(alts) {
+            const container = document.getElementById('alternativesContainer');
+            if (!container) return;
+            container.innerHTML = '<span class="text-[10px] text-slate-400">Gợi ý khác:</span>';
+            alts.forEach(alt => {
+                const clean = alt.replace(/^\$|\$$/g, '');
+                if (clean === currentFormulaStr) return;
+                const btn = document.createElement('button');
+                btn.className = 'px-2 py-0.5 rounded-lg bg-white/5 hover:bg-cyan-500/20 border border-white/10 text-cyan-300 font-mono text-[10px] transition cursor-pointer';
+                btn.innerText = clean;
+                btn.onclick = () => {
+                    currentFormulaStr = clean;
+                    triggerPythonPlot(clean);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // Setup Interactive Sliders
+        function setupSliders(formula, blueprint) {
+            const container = document.getElementById('slidersList');
+            container.innerHTML = '';
+
+            const isQuad = formula.includes('^2') || formula.includes('²');
+            const isTrig = formula.includes('sin') || formula.includes('cos');
+
+            let sliderConfigs = [];
+
+            if (isTrig) {
+                sliderConfigs = [
+                    { key: 'a', label: 'Biên độ (A)', min: 0.5, max: 5.0, step: 0.5, val: currentParams.a || 2.0 },
+                ];
+            } else if (isQuad) {
+                sliderConfigs = [
+                    { key: 'b', label: 'Hệ số parabol (a)', min: -4.0, max: 4.0, step: 0.5, val: currentParams.b || 1.0 },
+                    { key: 'd', label: 'Tung độ gốc (c)', min: -8.0, max: 8.0, step: 0.5, val: currentParams.d || -4.0 }
+                ];
+            } else {
+                sliderConfigs = [
+                    { key: 'c', label: 'Hệ số góc (k)', min: -6.0, max: 6.0, step: 0.5, val: currentParams.c || 2.0 },
+                    { key: 'd', label: 'Tung độ gốc (d)', min: -8.0, max: 8.0, step: 0.5, val: currentParams.d || 1.0 }
+                ];
+            }
+
+            sliderConfigs.forEach(cfg => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between gap-3 text-xs';
+                row.innerHTML = `
+                    <span class="text-slate-300 font-mono w-28">${cfg.label}:</span>
+                    <input type="range" min="${cfg.min}" max="${cfg.max}" step="${cfg.step}" value="${cfg.val}" 
+                           class="flex-1 cursor-pointer" id="slider_${cfg.key}">
+                    <span class="text-cyan-400 font-mono w-8 text-right font-bold" id="val_${cfg.key}">${cfg.val}</span>
+                `;
+                container.appendChild(row);
+
+                const input = row.querySelector('input');
+                input.addEventListener('input', (e) => {
+                    const newVal = parseFloat(e.target.value);
+                    currentParams[cfg.key] = newVal;
+                    document.getElementById(`val_${cfg.key}`).innerText = newVal;
+                    debouncePlot();
+                });
+            });
+        }
+
+        let debounceTimer;
+        function debouncePlot() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                triggerPythonPlot(currentFormulaStr);
+            }, 50);
+        }
+
+        // Inline Formula Editor Prompt
+        function editFormulaPrompt() {
+            const input = prompt("Nhập hoặc sửa công thức toán học muốn vẽ đồ thị:", currentFormulaStr);
+            if (input && input.trim()) {
+                currentFormulaStr = input.trim();
+                triggerPythonPlot(currentFormulaStr);
+            }
+        }
+
+        // Keyboard shortcuts
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                undo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                e.preventDefault();
+                redo();
+            }
+        });
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            setTool('PEN');
+        });
+    </script>
+</body>
+</html>

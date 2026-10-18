@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socratic Vision Board - Premium</title>
+    
+    <!-- Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- MathJax for rendering math -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        },
+                        indigo: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                        'float': '0 20px 40px -10px rgba(0,0,0,0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            /* Subtle mesh gradient background */
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,0.03) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,0.03) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,0.03) 0, transparent 50%);
+            overflow: hidden; /* App-like feel */
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .canvas-bg {
+            background: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* Custom scrollbar for chat */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="text-slate-900 h-screen w-screen flex flex-col relative antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- TOP NAVIGATION -->
+    <header class="absolute top-0 w-full p-6 flex justify-between items-center z-20 pointer-events-none">
+        <div class="flex items-center gap-3 glass-panel px-4 py-2 rounded-2xl shadow-sm pointer-events-auto transition-transform hover:scale-[1.02]">
+            <div class="bg-indigo-600 p-2 rounded-xl text-white">
+                <i data-lucide="sparkles" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="font-semibold tracking-tight text-sm text-slate-800">Socratic Vision</h1>
+                <p class="text-xs text-slate-500 font-medium">Class 11A - Physics</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 glass-panel px-4 py-2 rounded-2xl shadow-sm pointer-events-auto">
+            <span class="flex h-2 w-2 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="text-xs font-medium text-slate-600">Edge AI Active</span>
+        </div>
+    </header>
+
+    <!-- MAIN CANVAS AREA -->
+    <main class="flex-1 relative w-full h-full canvas-bg" id="canvasContainer">
+        <!-- The actual drawing canvas will cover this area -->
+        <canvas id="drawingCanvas" class="absolute inset-0 w-full h-full cursor-crosshair z-0"></canvas>
+        
+        <!-- Placeholder for drawn math (Simulated for UI demonstration) -->
+        <div class="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-80" id="simulatedDrawing">
+            <!-- Simulated hand-drawn SVG -->
+            <svg width="300" height="150" viewBox="0 0 300 150" fill="none" stroke="#1e293b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M50 80 Q 70 20 90 80 T 130 80" />
+                <text x="150" y="85" font-family="cursive" font-size="24" fill="#1e293b" stroke="none">y = A sin(ωt + φ)</text>
+            </svg>
+        </div>
+    </main>
+
+    <!-- CONTEXTUAL AI SOCRATIC WIDGET (Progressive Disclosure) -->
+    <aside class="absolute top-24 right-8 w-80 lg:w-96 glass-panel rounded-3xl shadow-float flex flex-col z-20 pointer-events-auto opacity-0 translate-x-10 transition-all duration-500 ease-out" id="aiWidget">
+        <div class="p-5 border-b border-slate-200/50 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                    <i data-lucide="bot" class="w-4 h-4"></i>
+                </div>
+                <h2 class="font-semibold text-sm text-slate-800">Socratic Co-pilot</h2>
+            </div>
+            <button class="text-slate-400 hover:text-slate-600 transition-colors" onclick="closeWidget()">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+        
+        <div class="p-5 flex-1 max-h-[60vh] overflow-y-auto flex flex-col gap-4 text-sm" id="chatArea">
+            <!-- AI Message -->
+            <div class="flex flex-col gap-1 items-start">
+                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider ml-1">AI</span>
+                <div class="bg-white border border-slate-100 shadow-sm rounded-2xl rounded-tl-sm p-4 text-slate-700 leading-relaxed">
+                    I detected the harmonic motion equation: \\[ y = A \sin(\omega t + \phi) \\]
+                    If we double the amplitude <span class="font-semibold text-indigo-600">A</span>, how does that affect the total mechanical energy of the system?
+                </div>
+            </div>
+            <!-- Interactive Visual Debugging / Hint -->
+            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mt-2">
+                <div class="flex items-center gap-2 text-indigo-700 mb-2 font-medium">
+                    <i data-lucide="lightbulb" class="w-4 h-4"></i> Hint
+                </div>
+                <p class="text-indigo-900/80 text-xs">Think about the relationship between Energy (E) and Amplitude (A). Remember the formula \( E = \frac{1}{2} k A^2 \).</p>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-slate-200/50 bg-white/50 rounded-b-3xl">
+            <div class="relative flex items-center">
+                <input type="text" placeholder="Type or draw your answer..." class="w-full bg-white border border-slate-200 rounded-full py-2.5 pl-4 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm text-slate-700 placeholder:text-slate-400">
+                <button class="absolute right-1.5 p-1.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-sm">
+                    <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- FLOATING BOTTOM TOOLBAR (Core Tools) -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
+        <div class="glass-panel px-2 py-2 rounded-full shadow-glass flex items-center gap-1">
+            
+            <!-- Tools -->
+            <button class="tool-btn active-tool group relative p-3 rounded-full text-slate-600 hover:bg-slate-100/80 transition-all duration-200" onclick="setActive(this)">
+                <i data-lucide="pen-tool" class="w-5 h-5 group-[.active-tool]:text-indigo-600"></i>
+                <!-- Tooltip -->
+                <span class="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs py-1 px-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Draw</span>
+            </button>
+            
+            <button class="tool-btn group relative p-3 rounded-full text-slate-600 hover:bg-slate-100/80 transition-all duration-200" onclick="setActive(this)">
+                <i data-lucide="eraser" class="w-5 h-5 group-[.active-tool]:text-indigo-600"></i>
+                <span class="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs py-1 px-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Eraser</span>
+            </button>
+
+            <button class="tool-btn group relative p-3 rounded-full text-slate-600 hover:bg-slate-100/80 transition-all duration-200" onclick="setActive(this)">
+                <i data-lucide="shapes" class="w-5 h-5 group-[.active-tool]:text-indigo-600"></i>
+                <span class="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs py-1 px-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Shapes</span>
+            </button>
+
+            <div class="w-[1px] h-8 bg-slate-200 mx-2"></div>
+
+            <!-- Primary Action: Socratic Trigger -->
+            <button onclick="triggerAI()" class="group relative px-6 py-2.5 bg-slate-900 text-white rounded-full flex items-center gap-2 hover:bg-slate-800 hover:shadow-lg hover:shadow-slate-900/20 active:scale-95 transition-all duration-200">
+                <i data-lucide="zap" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+                <span class="font-medium text-sm">Analyze</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Canvas Drawing Logic (Basic implementation for UI completeness)
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        
+        // Resize canvas to window
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#0f172a';
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        canvas.addEventListener('mousedown', (e) => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.clientX, e.clientY); });
+        canvas.addEventListener('mousemove', (e) => { if(isDrawing) { ctx.lineTo(e.clientX, e.clientY); ctx.stroke(); }});
+        window.addEventListener('mouseup', () => { isDrawing = false; });
+
+        // Toolbar State Management
+        function setActive(element) {
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active-tool', 'bg-slate-100'));
+            element.classList.add('active-tool', 'bg-slate-100');
+        }
+
+        // Trigger AI Widget Animation
+        function triggerAI() {
+            const widget = document.getElementById('aiWidget');
+            const sim = document.getElementById('simulatedDrawing');
+            
+            // Visual feedback on the simulated drawing
+            sim.classList.add('transition-all', 'duration-1000');
+            sim.style.filter = 'drop-shadow(0 0 8px rgba(79, 70, 229, 0.4))';
+            
+            // Slide in widget
+            widget.classList.remove('opacity-0', 'translate-x-10', 'pointer-events-none');
+            widget.classList.add('opacity-100', 'translate-x-0', 'pointer-events-auto');
+        }
+
+        function closeWidget() {
+            const widget = document.getElementById('aiWidget');
+            widget.classList.remove('opacity-100', 'translate-x-0');
+            widget.classList.add('opacity-0', 'translate-x-10', 'pointer-events-none');
+            document.getElementById('simulatedDrawing').style.filter = 'none';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socratic Vision - Cosmos Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            background-color: #0f172a; /* Cosmos Dark */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(168, 85, 247, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.08), transparent 25%);
+            font-family: 'Inter', sans-serif;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        h1, h2, h3, .brand-font { font-family: 'Space Grotesk', sans-serif; }
+
+        /* Mobile Frame */
+        .mobile-frame {
+            width: 390px; height: 844px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 45px;
+            box-shadow: 0 0 80px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.1);
+            border: 14px solid #020617;
+            position: relative;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        .notch { width: 150px; height: 28px; background: #020617; position: absolute; top: -1px; left: 50%; transform: translateX(-50%); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; z-index: 50; }
+
+        .scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 40px; }
+        .scroll-area::-webkit-scrollbar { display: none; }
+
+        /* Header: Reactor Core & Eureka */
+        .glass-header {
+            background: linear-gradient(180deg, rgba(15,23,42,1) 0%, rgba(15,23,42,0) 100%);
+            padding: 50px 20px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 40;
+        }
+
+        .stat-pill {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 16px; border-radius: 100px;
+            display: flex; align-items: center; gap: 8px; font-weight: 600;
+        }
+
+        .eureka-glow { color: #c084fc; text-shadow: 0 0 10px rgba(192, 132, 252, 0.5); }
+        .reactor-glow { color: #fb923c; text-shadow: 0 0 10px rgba(251, 146, 60, 0.5); }
+        .reactor-icon { animation: pulseFlame 2s infinite; }
+        @keyframes pulseFlame { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; } }
+
+        /* Hero: The Cosmos (Horizontal Planets) */
+        .planets-container { display: flex; gap: 20px; padding: 10px 20px; overflow-x: auto; scroll-snap-type: x mandatory; }
+        .planets-container::-webkit-scrollbar { display: none; }
+        
+        .planet-card {
+            min-width: 140px; scroll-snap-align: center;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 24px; padding: 20px 15px;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            position: relative;
+        }
+
+        /* SVG Circular Progress Ring */
+        .ring-wrapper { position: relative; width: 80px; height: 80px; margin: 0 auto 15px; }
+        svg.progress-ring { transform: rotate(-90deg); }
+        .ring-bg { stroke: rgba(255,255,255,0.1); stroke-width: 6; fill: transparent; }
+        .ring-fill { stroke-width: 6; fill: transparent; stroke-linecap: round; stroke-dasharray: 219; }
+        
+        /* Specific Planets */
+        .planet-bio .ring-fill { stroke: #34d399; stroke-dashoffset: 60; }
+        .planet-bio .planet-icon { background: linear-gradient(135deg, #059669, #34d399); }
+        
+        .planet-chem .ring-fill { stroke: #c084fc; stroke-dashoffset: 140; }
+        .planet-chem .planet-icon { background: linear-gradient(135deg, #7e22ce, #c084fc); }
+
+        .planet-icon {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 50px; height: 50px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.1);
+        }
+
+        /* CTA: The Socratic Portal */
+        .portal-btn {
+            margin: 30px 20px;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            border-radius: 24px; padding: 24px; text-align: center;
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4), inset 0 2px 0 rgba(255,255,255,0.2);
+            position: relative; overflow: hidden; cursor: pointer; transition: 0.2s;
+            animation: breatheBtn 3s infinite ease-in-out;
+        }
+        .portal-btn:active { transform: scale(0.96); }
+        @keyframes breatheBtn { 0%, 100% { box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4); } 50% { box-shadow: 0 10px 60px rgba(99, 102, 241, 0.6); } }
+
+        /* Recent Grits (Activity Log) */
+        .grit-log { margin: 0 20px; }
+        .grit-card {
+            background: rgba(255,255,255,0.03); border-left: 3px solid #34d399;
+            padding: 16px; border-radius: 16px; border-top-left-radius: 4px; border-bottom-left-radius: 4px;
+            margin-bottom: 12px; display: flex; gap: 16px; align-items: center;
+        }
+
+        /* Persona Shop */
+        .shop-card {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px; padding: 16px; display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px;
+        }
+        .shop-jarvis { border-color: rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.05); }
+
+    </style>
+</head>
+<body>
+
+    <div class="mobile-frame">
+        <div class="notch"></div>
+
+        <!-- Header -->
+        <div class="glass-header">
+            <div class="stat-pill eureka-glow">
+                <i data-lucide="diamond" class="w-4 h-4 fill-fuchsia-400"></i>
+                <span class="brand-font text-lg">2,450</span>
+            </div>
+            <div class="stat-pill reactor-glow">
+                <span class="brand-font text-lg">5 Days</span>
+                <i data-lucide="flame" class="w-4 h-4 reactor-icon fill-orange-400"></i>
+            </div>
+        </div>
+
+        <div class="scroll-area">
+            
+            <!-- Hero: Cosmos -->
+            <div class="px-5 mb-2 mt-4">
+                <h2 class="text-xl font-bold brand-font text-white">Vũ trụ Tri thức</h2>
+                <p class="text-slate-400 text-sm">Chinh phục các tinh vân mới</p>
+            </div>
+
+            <div class="planets-container">
+                <!-- Planet Bio -->
+                <div class="planet-card planet-bio">
+                    <div class="ring-wrapper">
+                        <svg class="progress-ring" width="80" height="80">
+                            <circle class="ring-bg" cx="40" cy="40" r="35"></circle>
+                            <circle class="ring-fill" cx="40" cy="40" r="35"></circle>
+                        </svg>
+                        <div class="planet-icon"><i data-lucide="dna" class="text-white w-6 h-6"></i></div>
+                    </div>
+                    <h3 class="font-bold brand-font text-sm text-white mb-1">Tinh vân Sinh học</h3>
+                    <p class="text-xs text-emerald-400 font-semibold">Đã mở khóa 70%</p>
+                </div>
+
+                <!-- Planet Chem -->
+                <div class="planet-card planet-chem">
+                    <div class="ring-wrapper">
+                        <svg class="progress-ring" width="80" height="80">
+                            <circle class="ring-bg" cx="40" cy="40" r="35"></circle>
+                            <circle class="ring-fill" cx="40" cy="40" r="35"></circle>
+                        </svg>
+                        <div class="planet-icon"><i data-lucide="beaker" class="text-white w-6 h-6"></i></div>
+                    </div>
+                    <h3 class="font-bold brand-font text-sm text-white mb-1">Thiên hà Hóa học</h3>
+                    <p class="text-xs text-fuchsia-400 font-semibold">Đang khám phá...</p>
+                </div>
+            </div>
+
+            <!-- CTA Portal -->
+            <div class="portal-btn">
+                <div class="flex justify-center mb-2"><i data-lucide="scan-line" class="w-10 h-10 text-white"></i></div>
+                <h2 class="brand-font text-2xl font-bold text-white mb-1">Socratic Portal</h2>
+                <p class="text-indigo-100 text-sm font-medium">Quét bài tập để bắt đầu</p>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="grit-log">
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Ghi nhận Nỗ lực (Grit Log)</h3>
+                
+                <div class="grit-card">
+                    <div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
+                    <div>
+                        <p class="text-sm text-slate-300"><strong class="text-white">Sinh tồn thành công</strong> qua 4 bước Scaffolding môn Vật lý.</p>
+                        <p class="text-xs text-fuchsia-400 font-bold mt-1">+50 Eureka</p>
+                    </div>
+                </div>
+
+                <div class="grit-card" style="border-color: #c084fc;">
+                    <div class="bg-fuchsia-500/20 p-3 rounded-full text-fuchsia-400"><i data-lucide="mic" class="w-5 h-5"></i></div>
+                    <div>
+                        <p class="text-sm text-slate-300"><strong class="text-white">Bảo vệ luận án lớn tiếng</strong>: Giải thích hoàn hảo Cân bằng Hóa học.</p>
+                        <p class="text-xs text-fuchsia-400 font-bold mt-1">Multiplayer x2! (+100 Eureka)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lab Shop -->
+            <div class="px-5 mt-8 mb-4">
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Cửa hàng Nhân cách (Lab Shop)</h3>
+                
+                <div class="shop-card shop-jarvis">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-sky-900 flex justify-center items-center text-sky-400"><i data-lucide="cpu"></i></div>
+                        <div>
+                            <h4 class="font-bold text-sky-400 brand-font">J.A.R.V.I.S Protocol</h4>
+                            <p class="text-xs text-slate-400">"Sẵn sàng phục vụ, Sir."</p>
+                        </div>
+                    </div>
+                    <button class="bg-sky-500/20 text-sky-400 text-xs font-bold px-3 py-1.5 rounded-lg">Trang bị</button>
+                </div>
+
+                <div class="shop-card">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-slate-800 flex justify-center items-center text-slate-400"><i data-lucide="flask-conical"></i></div>
+                        <div>
+                            <h4 class="font-bold text-slate-300 brand-font">Nhà Khoa Học Điên</h4>
+                            <p class="text-xs text-slate-500">"Cháy! Cháy hết cho Ta!"</p>
+                        </div>
+                    </div>
+                    <button class="bg-fuchsia-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex gap-1 items-center">
+                        1,000 <i data-lucide="diamond" class="w-3 h-3 fill-white"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

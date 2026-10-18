@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socratic Vision - Design System Manifesto</title>
+    
+    <!-- Typography System -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            background-color: #0f172a;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.15), transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.15), transparent 40%);
+            font-family: 'Inter', sans-serif;
+            color: white;
+            padding: 40px;
+            overflow-x: hidden;
+        }
+
+        .mono-text { font-family: 'JetBrains Mono', monospace; }
+
+        /* 1. Spatial & Tactile Intelligence (Glassmorphism & Shadows) */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            /* Squircle approximation */
+            border-radius: 28px;
+            /* Multi-layered shadows for Elevation */
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 10px 15px -3px rgba(0, 0, 0, 0.2),
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        /* 2. Color & Illumination (AI Accents) */
+        .ai-gradient-text {
+            background: linear-gradient(135deg, #a855f7 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .ai-button {
+            position: relative;
+            background: linear-gradient(135deg, #8b5cf6, #14b8a6);
+            border-radius: 100px;
+            padding: 16px 32px;
+            font-weight: 600;
+            color: white;
+            border: none;
+            cursor: pointer;
+            z-index: 1;
+            /* 3. Motion Choreography (Spring Physics) */
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .ai-button::before {
+            content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+            background: linear-gradient(135deg, #a855f7, #0ea5e9, #10b981);
+            border-radius: 100px; z-index: -1;
+            filter: blur(12px); opacity: 0.6;
+            animation: pulse-glow 3s infinite alternate;
+        }
+
+        .ai-button:active { transform: scale(0.92); }
+
+        @keyframes pulse-glow {
+            0% { opacity: 0.4; transform: scale(1); }
+            100% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        /* 3. Motion Choreography: Ink Reveal Morph (Simulated via CSS) */
+        .ink-reveal-container {
+            position: relative; height: 60px; display: flex; align-items: center;
+        }
+        .ink-raw, .ink-digital {
+            position: absolute; left: 0;
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .ink-raw { opacity: 1; filter: blur(0px); transform: translateY(0) scale(1); }
+        .ink-digital { opacity: 0; filter: blur(10px); transform: translateY(10px) scale(0.9); color: #06b6d4; }
+
+        .morph-active .ink-raw { opacity: 0; filter: blur(10px); transform: translateY(-10px) scale(1.1); }
+        .morph-active .ink-digital { opacity: 1; filter: blur(0px); transform: translateY(0) scale(1); }
+
+    </style>
+</head>
+<body>
+
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-4xl font-bold mb-4">Socratic Vision <span class="ai-gradient-text">Design Manifesto</span></h1>
+        <p class="text-slate-400 mb-12 max-w-2xl text-lg">Hệ thống Thiết kế UI/UX cốt lõi áp dụng nguyên lý Không gian, Hoạt ảnh Lò xo và Kính mờ, định hình ngôn ngữ giao diện của tương lai.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+
+            <!-- 1. Spatial & Tactile Intelligence -->
+            <div class="glass-card p-8">
+                <div class="flex items-center gap-3 mb-6 text-fuchsia-400">
+                    <i data-lucide="layers"></i>
+                    <h2 class="text-xl font-bold">1. Không gian & Xúc giác</h2>
+                </div>
+                <p class="text-slate-300 text-sm mb-6 leading-relaxed">Vật liệu Kính mờ (Glassmorphism) kết hợp Đổ bóng đa tầng (Multi-layered shadows) và Góc bo siêu mượt (Squircle).</p>
+                
+                <!-- Demo Background underlying glass -->
+                <div class="relative w-full h-40 bg-slate-800 rounded-2xl overflow-hidden flex items-center justify-center border border-slate-700">
+                    <div class="absolute w-32 h-32 bg-fuchsia-500 rounded-full mix-blend-screen filter blur-2xl opacity-50 -left-10"></div>
+                    <div class="absolute w-32 h-32 bg-cyan-500 rounded-full mix-blend-screen filter blur-2xl opacity-50 -right-10"></div>
+                    
+                    <!-- The Glass Object -->
+                    <div class="z-10 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+                        <span class="text-white font-semibold">Floating AI Card</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Color & Illumination -->
+            <div class="glass-card p-8">
+                <div class="flex items-center gap-3 mb-6 text-cyan-400">
+                    <i data-lucide="sparkles"></i>
+                    <h2 class="text-xl font-bold">2. Màu sắc & Ánh sáng</h2>
+                </div>
+                <p class="text-slate-300 text-sm mb-6 leading-relaxed">Dải màu phát quang (Bioluminescent) Tím rực (Amethyst) sang Xanh lơ (Cyan) đại diện cho thực thể AI sống động.</p>
+                
+                <div class="flex flex-col items-center justify-center h-40 gap-6">
+                    <button class="ai-button flex items-center gap-2">
+                        <i data-lucide="wand-2" class="w-5 h-5"></i> Kích hoạt Socratic
+                    </button>
+                    <p class="text-xs text-slate-500 italic">Thử chạm (Click/Giữ) vào nút để cảm nhận độ nảy</p>
+                </div>
+            </div>
+
+            <!-- 3. Motion Choreography -->
+            <div class="glass-card p-8">
+                <div class="flex items-center gap-3 mb-6 text-emerald-400">
+                    <i data-lucide="zap"></i>
+                    <h2 class="text-xl font-bold">3. Động lực học (Spring Physics)</h2>
+                </div>
+                <p class="text-slate-300 text-sm mb-6 leading-relaxed">Hiệu ứng "Mực loang" (Ink Reveal) biến nét phấn thủ công thành công cụ kỹ thuật số một cách mượt mà.</p>
+                
+                <div class="bg-slate-900 rounded-2xl p-6 border border-slate-700 h-40 flex flex-col justify-center">
+                    <div class="ink-reveal-container text-3xl font-bold cursor-pointer" id="morphDemo" onclick="toggleMorph()">
+                        <!-- Chữ viết tay giả lập -->
+                        <div class="ink-raw font-serif italic text-slate-300">f(x) = ∫ x² dx</div>
+                        <!-- Chữ AI đã nhận diện -->
+                        <div class="ink-digital mono-text">f(x) = \int x^2 dx</div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 italic text-center">Click vào công thức để xem hiệu ứng Biến hình</p>
+                </div>
+            </div>
+
+            <!-- 4. Typography System -->
+            <div class="glass-card p-8">
+                <div class="flex items-center gap-3 mb-6 text-amber-400">
+                    <i data-lucide="type"></i>
+                    <h2 class="text-xl font-bold">4. Kiến trúc Chữ (Typography)</h2>
+                </div>
+                <p class="text-slate-300 text-sm mb-6 leading-relaxed">Hệ thống phân cấp rõ ràng: Chữ đọc dùng Sans-serif (Inter/Geist), Biến số và Toán học dùng Monospace.</p>
+                
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 h-40 flex flex-col justify-center gap-4">
+                    <div class="text-lg font-medium text-slate-200">
+                        Vận tốc rơi tự do của vật thể:
+                    </div>
+                    <!-- Monospace highlight -->
+                    <div class="flex items-baseline gap-3">
+                        <span class="mono-text text-4xl font-bold text-amber-400 bg-amber-400/10 px-3 py-1 rounded-xl">9.81</span>
+                        <span class="mono-text text-slate-400 text-lg">m/s²</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        function toggleMorph() {
+            document.getElementById('morphDemo').classList.toggle('morph-active');
+        }
+    </script>
+</body>
+</html>

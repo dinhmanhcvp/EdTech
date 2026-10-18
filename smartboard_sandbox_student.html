@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Sandbox - Student UX</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Thư viện Confetti cho hiệu ứng hoàn thành -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            background-color: #0f172a; /* Dark mode nổi bật màu sắc thực nghiệm */
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            user-select: none; /* Tránh bôi đen text khi vuốt */
+        }
+
+        /* 1. Clear Visual Affordance: Pill-shape & Breathing */
+        .interactive-var {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 32px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 3px dashed #3b82f6;
+            border-radius: 100px;
+            font-size: 56px;
+            font-weight: 900;
+            color: #60a5fa;
+            cursor: pointer;
+            transition: all 0.2s;
+            animation: breathe 2.5s infinite ease-in-out;
+        }
+
+        .interactive-var:active { transform: scale(0.95); }
+        .interactive-var.active {
+            animation: none;
+            background: rgba(59, 130, 246, 0.2);
+            border-style: solid;
+        }
+
+        @keyframes breathe {
+            0%, 100% { box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.6); }
+        }
+
+        /* 2. Macro-Controls: Không bàn phím */
+        .macro-control-panel {
+            position: absolute;
+            bottom: -400px; /* Ẩn ban đầu */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+            border: 2px solid #334155;
+            border-radius: 40px;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            box-shadow: 0 -20px 60px rgba(0,0,0,0.5);
+            transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 50;
+        }
+        .macro-control-panel.show { bottom: 60px; }
+
+        /* Nút +/- Ngoại cỡ (80x80) */
+        .huge-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #1e293b;
+            border: 4px solid #475569;
+            color: white;
+            font-size: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .huge-btn:active { transform: scale(0.9); background: #334155; }
+
+        /* 3. Slider Dọc (Biến thể Ngang cho dễ kéo) */
+        .mega-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 500px;
+            height: 24px;
+            background: #334155;
+            border-radius: 12px;
+            outline: none;
+        }
+        .mega-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: 6px solid white;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+            transition: transform 0.1s;
+        }
+        .mega-slider::-webkit-slider-thumb:active { transform: scale(1.1); }
+
+        /* Vùng thực nghiệm (Mô phỏng phản hồi tức thì) */
+        .experiment-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .plant-visual {
+            width: 250px;
+            height: 250px;
+            background-color: #22c55e;
+            mask: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>') no-repeat center / contain;
+            -webkit-mask: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>') no-repeat center / contain;
+            transition: all 0.2s; /* Phản hồi nhanh nhưng không giật cục */
+        }
+
+        /* 4. Safety Net: Nút Reset Mờ Ảo */
+        .ghost-reset {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            color: #94a3b8;
+            padding: 16px 32px;
+            border-radius: 100px;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .ghost-reset:hover, .ghost-reset:active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        /* Dành cho nút Chốt KQ */
+        .confirm-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            background: #10b981;
+            color: white;
+            padding: 16px 32px;
+            border-radius: 100px;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            display: flex; align-items: center; gap: 12px;
+        }
+        .confirm-btn:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+    <div class="absolute top-10 text-center w-full">
+        <h2 class="text-4xl text-white font-bold mb-2">Thực nghiệm: Ảnh hưởng của Nhiệt độ</h2>
+        <p class="text-slate-400 text-xl">Mời 1 bạn học sinh lên bảng điều chỉnh nhiệt độ để xem phản ứng của cây.</p>
+    </div>
+
+    <!-- Nút An toàn tâm lý (Safety Net) -->
+    <button class="ghost-reset" onclick="resetSim()">
+        <i data-lucide="rotate-ccw"></i> Khôi phục 25°C
+    </button>
+    
+    <!-- Ghi nhận nỗ lực -->
+    <button class="confirm-btn" onclick="celebrate()">
+        <i data-lucide="check-circle-2"></i> Hoàn thành thí nghiệm
+    </button>
+
+    <!-- Khu vực thực nghiệm chính -->
+    <div class="experiment-zone">
+        <!-- Plant Visual (Thay đổi màu tức thì theo Nhiệt độ) -->
+        <div id="plant" class="plant-visual"></div>
+        <div id="yieldText" class="text-3xl font-bold text-green-400 h-10">Hiệu suất Quang hợp: Tối ưu</div>
+
+        <!-- Biến số có Visual Affordance -->
+        <div id="tempVar" class="interactive-var" onclick="toggleControl()">
+            <i data-lucide="thermometer" class="w-12 h-12"></i>
+            <span id="tempDisplay">25</span>°C
+        </div>
+    </div>
+
+    <!-- Macro Control Panel (Ẩn dưới đáy) -->
+    <div id="macroPanel" class="macro-control-panel">
+        <button class="huge-btn" onclick="stepTemp(-1)">-</button>
+        <input type="range" id="tempSlider" class="mega-slider" min="0" max="60" value="25" oninput="liveUpdate(this.value)">
+        <button class="huge-btn" onclick="stepTemp(1)">+</button>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const defaultTemp = 25;
+        const tempDisplay = document.getElementById('tempDisplay');
+        const slider = document.getElementById('tempSlider');
+        const plant = document.getElementById('plant');
+        const yieldText = document.getElementById('yieldText');
+        const panel = document.getElementById('macroPanel');
+        const varPill = document.getElementById('tempVar');
+
+        function toggleControl() {
+            const isShowing = panel.classList.contains('show');
+            if(isShowing) {
+                panel.classList.remove('show');
+                varPill.classList.remove('active');
+            } else {
+                panel.classList.add('show');
+                varPill.classList.add('active');
+            }
+        }
+
+        function stepTemp(step) {
+            let newVal = parseInt(slider.value) + step;
+            if(newVal > slider.max) newVal = slider.max; // Rubber-band effect could be added here
+            if(newVal < slider.min) newVal = slider.min;
+            slider.value = newVal;
+            liveUpdate(newVal);
+        }
+
+        // 3. Zero-latency Binding (Phản hồi không độ trễ)
+        function liveUpdate(val) {
+            tempDisplay.innerText = val;
+            
+            // Logic đổi màu lập tức
+            if (val < 10) {
+                plant.style.backgroundColor = '#0284c7'; // Xanh dương (Lạnh)
+                plant.style.transform = 'scale(0.8)';
+                yieldText.innerText = "Quá lạnh - Enzime ngưng hoạt động";
+                yieldText.style.color = '#38bdf8';
+            } else if (val >= 10 && val <= 35) {
+                plant.style.backgroundColor = '#22c55e'; // Xanh lá (Tối ưu)
+                plant.style.transform = 'scale(1.2)';
+                yieldText.innerText = "Hiệu suất Quang hợp: Tối ưu";
+                yieldText.style.color = '#4ade80';
+            } else if (val > 35 && val <= 45) {
+                plant.style.backgroundColor = '#eab308'; // Vàng (Héo)
+                plant.style.transform = 'scale(1)';
+                yieldText.innerText = "Cây héo - Khí khổng đóng";
+                yieldText.style.color = '#fde047';
+            } else {
+                plant.style.backgroundColor = '#ef4444'; // Đỏ (Chết)
+                plant.style.transform = 'scale(0.7)';
+                yieldText.innerText = "Enzime biến tính hoàn toàn";
+                yieldText.style.color = '#fca5a5';
+            }
+        }
+
+        // 4. Ghost Reset
+        function resetSim() {
+            slider.value = defaultTemp;
+            liveUpdate(defaultTemp);
+            panel.classList.remove('show');
+            varPill.classList.remove('active');
+        }
+
+        // 4. Ghi nhận nỗ lực (Confetti)
+        function celebrate() {
+            confetti({
+                particleCount: 150,
+                spread: 100,
+                origin: { y: 0.6 },
+                colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+            });
+            setTimeout(() => {
+                panel.classList.remove('show');
+                varPill.classList.remove('active');
+            }, 500);
+        }
+    </script>
+</body>
+</html>

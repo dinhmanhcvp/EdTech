@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature 4 & 5: Hộp cát Tương tác & Bảng Phân tích Giáo viên</title>
+    <style>
+        :root {
+            --primary: #e67e22;
+            --bg: #f4f6f8;
+            --text: #2c3e50;
+            --card: #ffffff;
+            --alert: #e74c3c;
+            --success: #2ecc71;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 2.2em;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            border-top: 5px solid var(--primary);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.4em;
+            color: #34495e;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Feature 4: What-if Sandbox */
+        .sandbox-area {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .plant-sim {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 150px;
+            margin-top: 20px;
+            border-bottom: 2px solid #7f8c8d;
+        }
+
+        .plant {
+            width: 40px;
+            background: var(--success);
+            border-radius: 20px 20px 0 0;
+            transition: height 0.5s, background-color 0.5s;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .controls input {
+            width: 100%;
+        }
+
+        /* Feature 5: Insights */
+        .insight-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fdfbf7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--alert);
+        }
+
+        .insight-item.positive { border-left-color: var(--success); }
+        .insight-item.warning { border-left-color: #f1c40f; }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover { background: #d35400; }
+        
+        .smart-note-preview {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            color: #555;
+            white-space: pre-line;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Bảng Điều Khiển Giáo Viên (Teacher Dashboard)</h1>
+        <p>Feature 4 (Hộp cát mô phỏng) & Feature 5 (Phân tích & Tóm tắt tự động)</p>
+    </div>
+
+    <div class="dashboard">
+        <!-- Feature 4: What-If Sandbox -->
+        <div class="card">
+            <h2>🧪 Feature 4: "What-If" Sandbox (Sinh học - Quang hợp)</h2>
+            <p>Cho phép học sinh tương tác trực tiếp với bảng điện tử để thử nghiệm các giả thuyết.</p>
+            
+            <div class="sandbox-area">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Ánh sáng: <span id="lightVal">50</span>%</span>
+                    <span>Nhiệt độ: <span id="tempVal">25</span>°C</span>
+                    <span>CO2: <span id="co2Val">400</span> ppm</span>
+                </div>
+                
+                <div class="plant-sim">
+                    <div class="plant" id="plantVisual" style="height: 100px;"></div>
+                </div>
+                <div style="text-align: center; margin-top: 10px; color: #bdc3c7;">Hiệu suất quang hợp: <strong id="yieldVal" style="color: var(--success);">Bình thường</strong></div>
+
+                <div class="controls">
+                    <label>Nhiệt độ (0-50°C):
+                        <input type="range" id="tempSlider" min="0" max="50" value="25" oninput="updateSimulation()">
+                    </label>
+                </div>
+            </div>
+            <p style="font-size: 0.9em; color: #7f8c8d; margin-top: 15px;">* Lúc học sinh lên bảng kéo thanh nhiệt độ lên mức cao nhất (50°C), cây sẽ héo (đổi màu) và giảm hiệu suất quang hợp. Từ đó tự rút ra bài học.</p>
+        </div>
+
+        <!-- Feature 5: Class Insights -->
+        <div class="card">
+            <h2>📊 Feature 5: AI Class Insights</h2>
+            <p>Báo cáo tự động sau buổi học</p>
+
+            <div class="insight-item warning">
+                <div>
+                    <strong>Cảnh báo học thuật</strong>
+                    <div style="font-size: 0.9em; color: #666;">60% học sinh mất hơn 3 phút để giải câu hỏi Socratic về <em>"Tác động của CO2"</em>.</div>
+                </div>
+            </div>
+
+            <div class="insight-item positive">
+                <div>
+                    <strong>Điểm sáng</strong>
+                    <div style="font-size: 0.9em; color: #666;">Nhóm B đã tự tìm ra cách cân bằng phương trình Hóa học khó nhất nhờ sử dụng Visual Debugging.</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; font-size: 1.1em;">Tự động gửi "Smart Notes"</h3>
+            <div class="smart-note-preview">
+                [TÓM TẮT BÀI HỌC BỞI AI]
+                Chủ đề: Quang Hợp
+                1. Khái niệm cốt lõi: ...
+                2. Hình ảnh đồ thị đã vẽ trên lớp: [Đính kèm ảnh]
+                3. Lỗ hổng cần ôn lại ở nhà: Ảnh hưởng của nồng độ CO2.
+            </div>
+            <button class="btn">Gửi tài liệu này qua Zalo Phụ huynh</button>
+        </div>
+    </div>
+
+    <script>
+        function updateSimulation() {
+            const temp = document.getElementById('tempSlider').value;
+            document.getElementById('tempVal').innerText = temp;
+            
+            const plant = document.getElementById('plantVisual');
+            const yieldText = document.getElementById('yieldVal');
+
+            if (temp < 10) {
+                plant.style.height = '40px';
+                plant.style.backgroundColor = '#27ae60';
+                yieldText.innerText = 'Rất thấp (Quá lạnh)';
+                yieldText.style.color = '#e74c3c';
+            } else if (temp >= 10 && temp <= 35) {
+                plant.style.height = '120px';
+                plant.style.backgroundColor = '#2ecc71';
+                yieldText.innerText = 'Tối ưu';
+                yieldText.style.color = '#2ecc71';
+            } else {
+                plant.style.height = '60px';
+                plant.style.backgroundColor = '#e67e22'; // Màu úa
+                yieldText.innerText = 'Giảm mạnh (Enzyme biến tính)';
+                yieldText.style.color = '#e74c3c';
+            }
+        }
+    </script>
+</body>
+</html>

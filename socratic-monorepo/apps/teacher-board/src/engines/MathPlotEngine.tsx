@@ -182,14 +182,16 @@ export const MathPlotEngine: React.FC<Props> = ({ blueprint, params }: Props) =>
 
   const isComplexMath = useMemo(() => {
     const f = (blueprint.recognizedLatex || '').toLowerCase();
+    const tid = blueprint.templateId as string;
     return (
       f.includes('\\int') ||
       f.includes('int') ||
       f.includes('\\pi') ||
       f.includes('\\cos') ||
       f.includes('cos') ||
-      blueprint.templateId === 'PYTHON_PLOT' ||
-      blueprint.templateId === 'MATH_INTEGRAL'
+      tid === 'MATH_TRIG_WAVE' ||
+      tid === 'PYTHON_PLOT' ||
+      tid === 'MATH_INTEGRAL'
     );
   }, [blueprint.recognizedLatex, blueprint.templateId]);
 

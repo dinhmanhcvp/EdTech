@@ -419,10 +419,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     setErrorMessage(null);
 
     const effectiveHint = overrideHint || formulaInput || '';
+    let cropData: { blob: Blob; dataUrl: string; sizeKb: number } | null = null;
 
     try {
       // 1. High-Contrast Thick-Stroke Off-screen crop (min 512x256, 8px ink, #FFFFFF background)
-      let cropData: { blob: Blob; dataUrl: string; sizeKb: number } | null = null;
       if (selectedStrokes.length > 0) {
         try {
           cropData = await exportIsolatedWebp(selectedStrokes);

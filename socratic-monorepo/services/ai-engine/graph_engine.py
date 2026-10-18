@@ -15,8 +15,13 @@ def clean_equation_string(raw: str) -> str:
     superscript characters, and converting to valid SymPy syntax.
     """
     eq = raw.strip()
-    # Strip y = or f(x) = or x = or x(t) = or s(t) = or v(t) =
-    eq = re.sub(r'^[yYfFxXsSvVuU]\s*(\([xXtT]\))?\s*=\s*', '', eq)
+    # Strip \text{...} or \mathrm{...}
+    eq = re.sub(r'\\(?:text|mathrm|mathbf|mathit)\{([^{}]*)\}', r'\1', eq)
+    # Strip unit annotations
+    eq = re.sub(r'\b(m/s|m/s2|cm|rad/s|rad|độ|do)\b', '', eq, flags=re.IGNORECASE)
+    
+    # Strip leading assignment: y =, x =, x(t) =, s(t) =, v(t) =, f(x) =, Rate =
+    eq = re.sub(r'^[yYfFxXsSvVuUrR]\s*(\([xXtTa-zA-Z]\))?\s*=\s*', '', eq)
     
     # Handle fractions: \frac{a}{b} -> ((a)/(b))
     while r'\frac' in eq:
@@ -26,14 +31,16 @@ def clean_equation_string(raw: str) -> str:
     eq = re.sub(r'\\sqrt\{([^{}]+)\}', r'sqrt(\1)', eq)
     
     # LaTeX cleanup
-    eq = eq.replace(r'\,', ' ')
+    eq = re.sub(r'\\[,;!]', ' ', eq)
+    eq = eq.replace(r'\quad', ' ').replace(r'\qquad', ' ')
     eq = eq.replace(r'\pi', 'pi')
     eq = eq.replace('\\sin', 'sin').replace('\\cos', 'cos').replace('\\tan', 'tan')
     eq = eq.replace('\\cdot', '*').replace('\\times', '*')
+    eq = re.sub(r'(\^\\circ|°)', '', eq)
     
     # Superscript unicode conversion
-    eq = eq.replace('²', '^2').replace('³', '^3')
-    return eq
+    eq = eq.replace('²', '^2').replace('³', '^3').replace('⁴', '^4')
+    return eq.strip()
 
 def generate_neon_graph(equation_str: str, param_a: float = 1.0, param_b: float = 0.0, param_c: float = 0.0, param_d: float = 0.0) -> str:
     """
@@ -43,22 +50,27 @@ def generate_neon_graph(equation_str: str, param_a: float = 1.0, param_b: float 
     try:
         cleaned_str = clean_equation_string(equation_str)
         x = sp.Symbol('x')
+        t = sp.Symbol('t')
         A = sp.Symbol('A')
         a = sp.Symbol('a')
         b = sp.Symbol('b')
         c = sp.Symbol('c')
         d = sp.Symbol('d')
         
-        # Check if it is an indefinite integral: \int ... dx (supports .dx, ,dx, dx)
-        integral_match = re.search(r'\\?int\s*(.*?)(?:\s*[\.,]?\s*d[xX]|\s*$)', cleaned_str)
+        # Check if it is an indefinite integral: \int ... dx or \int ... dt
+        is_integral = False
+        integral_match = re.search(r'\\?int\s*(.*?)(?:\s*[\.,]?\s*d([xXtT])|\s*$)', cleaned_str)
         if integral_match:
+            is_integral = True
             inner_str = integral_match.group(1).strip()
+            int_var_char = integral_match.group(2) or ('t' if 't' in inner_str else 'x')
+            int_var = t if int_var_char.lower() == 't' else x
             inner_str = re.sub(r'[\.,\*]+$', '', inner_str).strip()
             inner_str = inner_str.replace('{', '(').replace('}', ')')
             if not inner_str:
                 inner_str = "1"
             inner_expr = parse_expr(inner_str, transformations=TRANSFORMATIONS)
-            expr = sp.integrate(inner_expr, x)
+            expr = sp.integrate(inner_expr, int_var)
         else:
             cleaned_str = cleaned_str.replace('{', '(').replace('}', ')')
             expr = parse_expr(cleaned_str, transformations=TRANSFORMATIONS)
@@ -76,6 +88,10 @@ def generate_neon_graph(equation_str: str, param_a: float = 1.0, param_b: float 
         else:
             expr_evaluated = expr
             
+        if is_integral:
+            if param_d != 0.0:
+                expr_evaluated = expr_evaluated + param_d
+
         # Determine independent variable: if 't' is present, use 't', else 'x'
         t = sp.Symbol('t')
         var_symbol = t if t in expr_evaluated.free_symbols else x
@@ -85,7 +101,14 @@ def generate_neon_graph(equation_str: str, param_a: float = 1.0, param_b: float 
         
         # Determine range and labels
         expr_str = str(expr_evaluated).lower()
-        if var_symbol == t:
+        if is_integral:
+            x_vals = np.linspace(-4, 4, 1000)
+            x_label_title = "x"
+            y_label_title = "F(x)"
+            c_tag = f" + {param_d}" if param_d != 0.0 else " + C"
+            curve_label = f"F(x) = {expr_evaluated}" + (c_tag if param_d == 0.0 and "+ c" not in str(expr_evaluated).lower() else "")
+            plot_title = f"Nguyên hàm xác thực: F(x) = ∫ ({inner_str}) dx"
+        elif var_symbol == t:
             x_vals = np.linspace(0, 4, 1000)
             x_label_title = "t (s)"
             y_label_title = "x (cm)"
@@ -136,6 +159,10 @@ def generate_neon_graph(equation_str: str, param_a: float = 1.0, param_b: float 
         glow_color = '#06b6d4'
         for lw in [8, 5, 3]:
             ax.plot(x_vals, y_vals, color=glow_color, linewidth=lw, alpha=0.15)
+        
+        # Shaded area under curve for integrals
+        if is_integral:
+            ax.fill_between(x_vals, y_vals, 0, color='#06b6d4', alpha=0.22, label="Diện tích tích phân ∫")
         
         # Crisp foreground curve
         ax.plot(x_vals, y_vals, color='#22d3ee', linewidth=2.2, label=curve_label)

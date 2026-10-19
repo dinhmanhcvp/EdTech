@@ -10,6 +10,15 @@ export interface ConceptCheckGateProps {
   pointsAwarded?: number;
 }
 
+function removeDiacritics(str: string): string {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase();
+}
+
 export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
   onPassGate,
   conceptTitle = 'Định luật Bảo toàn Khối lượng',
@@ -27,9 +36,9 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
 
     // Attempt Web Speech API if supported
     if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       try {
-        const recognition = new SpeechRecognition();
+        const recognition = new SpeechRec();
         recognition.lang = 'vi-VN';
         recognition.continuous = false;
         recognition.onresult = (event: any) => {
@@ -39,6 +48,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
         };
         recognition.onerror = () => {
           setIsRecording(false);
+          setFeedback('Không nhận diện được giọng nói. Em hãy nói to hơn hoặc gõ lời giải thích.');
         };
         recognition.onend = () => {
           setIsRecording(false);
@@ -46,17 +56,13 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
         recognition.start();
         return;
       } catch (err) {
-        // Fallback below
+        setIsRecording(false);
       }
     }
 
-    // Fallback simulation for tests & unsupported browsers
-    setTimeout(() => {
-      const simulatedExplanation = 'Vì theo định luật bảo toàn khối lượng, tổng số nguyên tử của mỗi nguyên tố ở hai vế phải bằng nhau.';
-      setTranscript(simulatedExplanation);
-      setIsRecording(false);
-      verifyExplanation(simulatedExplanation);
-    }, 1500);
+    // Zero Mock: Do NOT fake or auto-pass! Guide the student to articulate or type.
+    setIsRecording(false);
+    setFeedback('Trình duyệt chưa hỗ trợ Web Speech trực tiếp. Em hãy gõ lời giải thích bản chất vào ô bên dưới nhé!');
   };
 
   const stopListening = () => {
@@ -64,15 +70,28 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
   };
 
   const verifyExplanation = (text: string) => {
-    const lower = text.toLowerCase();
-    const hasRequiredConcept = targetKeywords.some((kw) => lower.includes(kw.toLowerCase()));
+    const norm = removeDiacritics(text);
+    const matched: string[] = [];
+    const missing: string[] = [];
 
-    if (hasRequiredConcept) {
+    targetKeywords.forEach((kw) => {
+      if (norm.includes(removeDiacritics(kw))) {
+        matched.push(kw);
+      } else {
+        missing.push(kw);
+      }
+    });
+
+    // Require >= 60% concept keyword coverage
+    const coverage = matched.length / Math.max(targetKeywords.length, 1);
+    const passed = coverage >= 0.6;
+
+    if (passed) {
       setIsPassed(true);
       setFeedback(`🎉 Tuyệt vời! Lời giải thích rất chuẩn xác. Em nhận được +${pointsAwarded} Eureka Particles!`);
       onPassGate(pointsAwarded);
     } else {
-      setFeedback('Em đã nói đúng một phần, nhưng hãy nhắc thêm về "bảo toàn nguyên tử" nhé!');
+      setFeedback(`Em đã nói đúng một phần, nhưng còn thiếu các khái niệm then chốt: ${missing.join(', ')}. Hãy giải thích rõ hơn!`);
     }
   };
 
@@ -103,6 +122,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
       {/* Voice Recording Control */}
       <div className="flex flex-col items-center gap-3 py-2">
         <button
+          type="button"
           data-testid="voice-record-btn"
           onClick={isRecording ? stopListening : startListening}
           disabled={isPassed}
@@ -144,6 +164,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
           className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-white/10 text-xs text-slate-200 focus:outline-none focus:border-purple-400"
         />
         <button
+          type="button"
           data-testid="btn-verify-explanation"
           onClick={() => verifyExplanation(transcript)}
           disabled={isPassed || transcript.trim().length === 0}
@@ -159,8 +180,8 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
           data-testid="concept-feedback"
           className={`p-3 rounded-2xl text-xs leading-relaxed ${
             isPassed
-              ? 'bg-emerald-950/40 border border-emerald-500/30 text-emerald-300'
-              : 'bg-amber-950/40 border border-amber-500/30 text-amber-300'
+              ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-200'
+              : 'bg-amber-950/70 border border-amber-500/40 text-amber-200'
           }`}
         >
           {feedback}

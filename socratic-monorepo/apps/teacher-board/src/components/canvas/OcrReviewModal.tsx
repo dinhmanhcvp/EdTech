@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Check, X, Sparkles, CheckCheck, RefreshCw } from 'lucide-react';
 import { MathView } from '../common/MathView';
+import { findAmbiguousTokens, swapTokenInFormula } from '../../utils/ocrConfusions';
 
 export interface OcrReviewModalProps {
   isOpen: boolean;
@@ -44,11 +45,8 @@ export const OcrReviewModal: React.FC<OcrReviewModalProps> = ({
     setEditedFormula(recognizedLatex);
   }, [recognizedLatex, isOpen]);
 
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  }, [isOpen]);
+  // Detect ambiguous OCR characters (2↔Z, n↔π, etc.) for 1-tap correction without keyboard
+  const confusions = useMemo(() => findAmbiguousTokens(editedFormula), [editedFormula]);
 
   if (!isOpen) return null;
 
@@ -156,6 +154,28 @@ export const OcrReviewModal: React.FC<OcrReviewModalProps> = ({
             </div>
           </div>
         </div>
+
+        {/* 1-Tap Ambiguous OCR Tokens Swap Chips (Zero Virtual Keyboard Needed) */}
+        {confusions.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-2xl bg-amber-950/40 border border-amber-500/40">
+            <span className="text-[11px] font-medium text-amber-300 font-mono">
+              Sửa nhanh lỗi nhận diện nhầm (1 chạm):
+            </span>
+            {confusions.map((conf) =>
+              conf.alternatives.map((alt) => (
+                <button
+                  key={`${conf.token}-${alt}`}
+                  type="button"
+                  onClick={() => setEditedFormula((prev) => swapTokenInFormula(prev, conf.token, alt))}
+                  className="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 border border-amber-400/50 text-xs font-mono text-amber-200 transition cursor-pointer active:scale-95"
+                  title={`Đổi ${conf.token} thành ${alt}`}
+                >
+                  {conf.token} ⇄ {alt}
+                </button>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Direct formula editor input */}
         <div className="flex flex-col gap-1.5">

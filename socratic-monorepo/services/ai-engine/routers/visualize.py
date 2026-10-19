@@ -8,11 +8,13 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import os
 import base64
+import hashlib
 import time
 import json
 import io
 import re
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 
 try:
     from PIL import Image
@@ -131,8 +133,8 @@ OFFLINE_TEMPLATE_REGISTRY: Dict[str, Dict[str, Any]] = {
         "templateId": "PHYS_PROJECTILE",
         "recognizedLatex": "v_0 = 22\\text{ m/s}, \\alpha = 45^\\circ",
         "parameters": [
-            { "key": "v0", "label": "Vận tốc đầu (v₀)", "unit": "m/s", "defaultValue": 22.0, "min": 5.0, "max": 50.0, "step": 1.0 },
-            { "key": "alpha", "label": "Góc ném (α)", "unit": "độ", "defaultValue": 45.0, "min": 15.0, "max": 85.0, "step": 5.0 },
+            { "key": "v0", "label": "Vận tốc đầu (v₀)", "unit": "m/s", "defaultValue": 22.0, "min": 5.0, "max": 50.0, "step": 0.5 },
+            { "key": "alpha", "label": "Góc ném (α)", "unit": "độ", "defaultValue": 45.0, "min": 5.0, "max": 85.0, "step": 1.0 },
             { "key": "g", "label": "Gia tốc g", "unit": "m/s²", "defaultValue": 9.8, "min": 1.6, "max": 25.0, "step": 0.1 }
         ],
         "socraticQuestion": "Tại sao với cùng vận tốc đầu v₀, góc ném 45° lại cho tầm xa cực đại trên mặt đất bằng phẳng?",
@@ -343,6 +345,40 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
     return None
 
 
+# --------------------------------------------------------------------------------------
+# Latency-bounded Vision LLM (Checkpoint 1: visualization must mount in < 1.5s)
+# --------------------------------------------------------------------------------------
+_VISION_BUDGET_S = float(os.getenv("VISION_LLM_BUDGET_S", "1.1"))
+_VISION_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="vision-llm")
+_VISION_FUTURES: Dict[str, Any] = {}
+
+
+def classify_with_vision_budgeted(image_bytes: bytes, hint_text: Optional[str] = None, api_key: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """
+    Run classify_with_vision_llm with a hard latency budget. If the model is slower than the budget,
+    return None immediately (the caller falls back to the local RapidOCR/stroke pipeline, ~10ms)
+    while the LLM keeps working in the background; its late answer is cached by image hash so that
+    retrying the same crop is instant and more accurate.
+    """
+    key = hashlib.sha1(image_bytes + (hint_text or "").encode("utf-8", "ignore")).hexdigest()
+    fut = _VISION_FUTURES.get(key)
+    if fut is None:
+        fut = _VISION_POOL.submit(classify_with_vision_llm, image_bytes, hint_text, api_key)
+        _VISION_FUTURES[key] = fut
+        if len(_VISION_FUTURES) > 64:
+            for old in list(_VISION_FUTURES.keys())[:32]:
+                _VISION_FUTURES.pop(old, None)
+    try:
+        return fut.result(timeout=_VISION_BUDGET_S)
+    except FuturesTimeout:
+        print(f"[Vision LLM] Budget {_VISION_BUDGET_S}s exceeded -> local OCR fast-path (late result cached).")
+        return None
+    except Exception as e:
+        _VISION_FUTURES.pop(key, None)
+        print(f"[Vision LLM] Error -> local OCR fast-path: {e}")
+        return None
+
+
 def intelligent_fallback_matcher(
     image_bytes: Optional[bytes] = None,
     raw_strokes_json: Optional[str] = None,
@@ -462,26 +498,20 @@ async def compile_lasso(request: Request):
 
     image_size_kb = round(len(image_bytes) / 1024, 2) if image_bytes else 4.2
 
-    if image_bytes and len(image_bytes) > 0:
+    # Optional debug dump (opt-in only; never write to hard-coded paths in production)
+    if image_bytes and os.getenv("SOCRATIC_DEBUG_DUMP"):
         try:
-            with open("d:/Project/debug_last_lasso.png", "wb") as f:
+            dump_dir = os.getenv("SOCRATIC_DEBUG_DUMP")
+            os.makedirs(dump_dir, exist_ok=True)
+            with open(os.path.join(dump_dir, "debug_last_lasso.png"), "wb") as f:
                 f.write(image_bytes)
-            with open("d:/Project/debug_last_request.json", "w", encoding="utf-8") as f:
-                json.dump({
-                    "hint_text": hint_text,
-                    "hint_subject": hint_subject,
-                    "content_type": content_type,
-                    "size_bytes": len(image_bytes),
-                    "raw_strokes_json": raw_strokes_json
-                }, f, ensure_ascii=False, indent=2)
-            print(f"[DEBUG LASSO] Saved debug_last_lasso.png ({len(image_bytes)} bytes)")
         except Exception as de:
             print(f"[DEBUG LASSO] Save error: {str(de).encode('ascii', 'replace').decode()}")
 
-    # Step 1: Attempt Real Vision LLM (Gemini Flash / OpenAI)
+    # Step 1: Attempt Real Vision LLM (Gemini Flash / OpenAI) under a strict latency budget (<1.5s SLA)
     llm_result = None
     if image_bytes and len(image_bytes) > 0:
-        llm_result = classify_with_vision_llm(image_bytes, hint_text or hint_subject, api_key=custom_gemini_key)
+        llm_result = classify_with_vision_budgeted(image_bytes, hint_text or hint_subject, api_key=custom_gemini_key)
 
     if llm_result and "templateId" in llm_result:
         template_id = llm_result["templateId"]

@@ -180,56 +180,44 @@ export function compileFormulaToFunction(
 export const MathPlotEngine: React.FC<Props> = ({ blueprint, params }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const isComplexMath = useMemo(() => {
-    const f = (blueprint.recognizedLatex || '').toLowerCase();
-    const tid = blueprint.templateId as string;
-    return (
-      f.includes('\\int') ||
-      f.includes('int') ||
-      f.includes('\\pi') ||
-      f.includes('\\cos') ||
-      f.includes('cos') ||
-      tid === 'MATH_TRIG_WAVE' ||
-      tid === 'PYTHON_PLOT' ||
-      tid === 'MATH_INTEGRAL'
-    );
-  }, [blueprint.recognizedLatex, blueprint.templateId]);
-
-  const [viewMode, setViewMode] = useState<'PYTHON_SVG' | 'CANVAS'>(() =>
-    isComplexMath ? 'PYTHON_SVG' : 'CANVAS'
-  );
+  // 60FPS Canvas is ALWAYS the default: slider drags must repaint locally with 0 network calls.
+  // Python Neon (SymPy/Matplotlib) is an opt-in snapshot, fetched only when the user selects it,
+  // changes the formula while in that mode, or presses the refresh button — never on slider drags.
+  const [viewMode, setViewMode] = useState<'PYTHON_SVG' | 'CANVAS'>('CANVAS');
 
   const [svgData, setSvgData] = useState<string | null>(null);
   const [svgLoading, setSvgLoading] = useState(false);
   const [svgError, setSvgError] = useState<string | null>(null);
+  const [svgSnapshotInfo, setSvgSnapshotInfo] = useState<string>('');
+  const [svgRefreshTick, setSvgRefreshTick] = useState(0);
 
-  // Auto-switch to PYTHON_SVG if an integral or harmonic equation is provided
-  useEffect(() => {
-    if (isComplexMath) {
-      setViewMode('PYTHON_SVG');
-    }
-  }, [isComplexMath]);
+  // Always read the freshest slider values without making them an effect dependency.
+  const paramsRef = useRef(params);
+  paramsRef.current = params;
 
-  // Fetch dynamic dark-neon SVG from Python FastAPI backend
+  // Fetch dynamic dark-neon SVG from Python FastAPI backend (opt-in only)
   useEffect(() => {
+    if (viewMode !== 'PYTHON_SVG') return;
     let isCancelled = false;
 
     const fetchPythonPlot = async () => {
       setSvgLoading(true);
       setSvgError(null);
 
-      const a = params.a ?? params.A ?? 1;
-      const b = params.b ?? 0;
-      const c = params.c ?? params.omega ?? 0;
-      const d = params.d ?? params.phi ?? 0;
+      const p = paramsRef.current;
+      const a = p.a ?? p.A ?? 1;
+      const b = p.b ?? 0;
+      const c = p.c ?? p.omega ?? 0;
+      const d = p.d ?? p.phi ?? 0;
       const eq = blueprint.recognizedLatex || 'A * sin(x)';
+      setSvgSnapshotInfo(`a=${a}, b=${b}, c=${Number(Number(c).toFixed(2))}, d=${Number(Number(d).toFixed(2))}`);
 
       let res: Response | null = null;
       try {
         res = await fetch(`/api/v1/plot?equation=${encodeURIComponent(eq)}&a=${a}&b=${b}&c=${c}&d=${d}&format=json`);
       } catch (errProxy) {
         try {
-          res = await fetch(`http://localhost:8000/api/v1/plot?equation=${encodeURIComponent(eq)}&a=${a}&b=${b}&c=${c}&d=${d}&format=json`);
+          res = await fetch(`http://127.0.0.1:8000/api/v1/plot?equation=${encodeURIComponent(eq)}&a=${a}&b=${b}&c=${c}&d=${d}&format=json`);
         } catch (errDirect) {
           console.warn('[MathPlotEngine] Fetch error:', errDirect);
         }
@@ -274,7 +262,13 @@ export const MathPlotEngine: React.FC<Props> = ({ blueprint, params }: Props) =>
     return () => {
       isCancelled = true;
     };
-  }, [blueprint.recognizedLatex, params]);
+  }, [viewMode, blueprint.recognizedLatex, svgRefreshTick]);
+
+  // A new formula invalidates the previous Python snapshot.
+  useEffect(() => {
+    setSvgData(null);
+    setSvgError(null);
+  }, [blueprint.recognizedLatex]);
 
   // REAL, HIGH-FIDELITY 60FPS HTML5 CANVAS DRAWING (Zero Mock)
   useEffect(() => {
@@ -429,6 +423,17 @@ export const MathPlotEngine: React.FC<Props> = ({ blueprint, params }: Props) =>
           <span>{viewMode === 'PYTHON_SVG' ? 'Python SymPy Matplotlib (Chính xác 100%)' : '60FPS HTML5 Canvas (Xác thực thời gian thực)'}</span>
         </span>
         <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10">
+          {viewMode === 'PYTHON_SVG' && (
+            <button
+              type="button"
+              onClick={() => setSvgRefreshTick((t) => t + 1)}
+              title="Đồng bộ lại tham số hiện tại vào Python SymPy"
+              className="px-2 py-1 rounded-lg text-[10px] font-mono text-cyan-300 hover:bg-cyan-500/20 flex items-center gap-1 cursor-pointer"
+            >
+              <RefreshCw className={`w-3 h-3 ${svgLoading ? 'animate-spin' : ''}`} />
+              <span>Đồng bộ ({svgSnapshotInfo || 'mới'})</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setViewMode('PYTHON_SVG')}

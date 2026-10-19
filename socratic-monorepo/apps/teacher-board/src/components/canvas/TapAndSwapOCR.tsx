@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Edit3, Check, RefreshCw } from 'lucide-react';
+import { findAmbiguousTokens, swapTokenInFormula } from '../../utils/ocrConfusions';
 
 export interface TapAndSwapOCRProps {
   formula: string;
@@ -33,11 +34,21 @@ export const TapAndSwapOCR: React.FC<TapAndSwapOCRProps> = ({
     ? alternatives.filter((a) => a !== selectedFormula)
     : defaultMathAlternatives;
 
+  // Detect ambiguous tokens (Z↔2, n↔π, etc.) for 1-tap correction without keyboard
+  const confusions = useMemo(() => findAmbiguousTokens(selectedFormula), [selectedFormula]);
+
   const handleSelect = (alt: string) => {
     setSelectedFormula(alt);
     setEditInput(alt);
     onSwap(alt);
     setIsOpen(false);
+  };
+
+  const handleSwapToken = (target: string, repl: string) => {
+    const updated = swapTokenInFormula(selectedFormula, target, repl);
+    setSelectedFormula(updated);
+    setEditInput(updated);
+    onSwap(updated);
   };
 
   const handleSaveEdit = () => {
@@ -57,7 +68,6 @@ export const TapAndSwapOCR: React.FC<TapAndSwapOCRProps> = ({
             value={editInput}
             onChange={(e) => setEditInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
-            autoFocus
             className="bg-transparent text-cyan-300 font-mono text-sm focus:outline-none w-56"
             placeholder="VD: y = 2x + 1 hoặc y = x^2 - 4"
           />
@@ -90,6 +100,21 @@ export const TapAndSwapOCR: React.FC<TapAndSwapOCRProps> = ({
             </span>
           </div>
 
+          {/* Quick 1-tap Token Swap Chips (Zero Virtual Keyboard) */}
+          {confusions.slice(0, 2).map((conf) =>
+            conf.alternatives.slice(0, 1).map((alt) => (
+              <button
+                key={`${conf.token}-${alt}`}
+                type="button"
+                onClick={() => handleSwapToken(conf.token, alt)}
+                title={`Đổi ${conf.token} thành ${alt} chỉ trong 1 chạm`}
+                className="px-2 py-1 rounded-lg bg-cyan-950/80 hover:bg-cyan-500/30 border border-cyan-400/40 text-[10px] font-mono text-cyan-300 transition cursor-pointer flex items-center gap-1 active:scale-95"
+              >
+                <span>{conf.token} ⇄ {alt}</span>
+              </button>
+            ))
+          )}
+
           {/* Quick Edit Button */}
           <button
             onClick={() => {
@@ -110,6 +135,31 @@ export const TapAndSwapOCR: React.FC<TapAndSwapOCRProps> = ({
           data-testid="ocr-bubble-menu"
           className="absolute z-50 left-0 top-full mt-2 w-80 p-2.5 rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-cyan-500/40 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
         >
+          {confusions.length > 0 && (
+            <div className="mb-2 pb-2 border-b border-white/10">
+              <span className="text-[10px] font-medium text-amber-300 uppercase tracking-wider block mb-1">
+                Sửa lỗi nhận diện nhầm (1 chạm - Không cần phím):
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {confusions.map((conf) =>
+                  conf.alternatives.map((alt) => (
+                    <button
+                      key={`pop-${conf.token}-${alt}`}
+                      type="button"
+                      onClick={() => {
+                        handleSwapToken(conf.token, alt);
+                        setIsOpen(false);
+                      }}
+                      className="px-2 py-0.5 rounded-md bg-amber-950/70 hover:bg-amber-500/30 border border-amber-400/40 text-[11px] font-mono text-amber-200 cursor-pointer transition"
+                    >
+                      {conf.token} ⇄ {alt}
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between px-2 py-1">
             <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
               Phương án OCR thay thế:

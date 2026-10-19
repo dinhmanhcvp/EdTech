@@ -81,8 +81,15 @@ def verify_chemical_equation(equation_str: str) -> Dict[str, Any]:
         }
     """
     start_time = time.perf_counter()
+    # Normalize unicode subscripts and LaTeX notation
+    sub_map = str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")
+    norm_eq = equation_str.translate(sub_map)
+    norm_eq = re.sub(r'\\(?:rightarrow|to|longrightarrow)', '->', norm_eq)
+    norm_eq = re.sub(r'\\text\{([^}]+)\}', r'\1', norm_eq)
+    norm_eq = norm_eq.replace("_", "")
+
     arrow_pattern = r'->|=>|→|='
-    parts = re.split(arrow_pattern, equation_str)
+    parts = re.split(arrow_pattern, norm_eq)
     
     if len(parts) != 2:
         elapsed = (time.perf_counter() - start_time) * 1000

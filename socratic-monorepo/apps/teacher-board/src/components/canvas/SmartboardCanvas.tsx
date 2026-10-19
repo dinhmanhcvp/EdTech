@@ -458,7 +458,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         });
       } catch (fetchErr) {
         if (apiEndpoint.startsWith('/')) {
-          resp = await fetch(`http://localhost:8000${apiEndpoint}`, {
+          resp = await fetch(`http://127.0.0.1:8000${apiEndpoint}`, {
             method: 'POST',
             headers: requestHeaders,
             body: JSON.stringify(payload),
@@ -480,12 +480,16 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       const conf = data.ocr_result?.confidence ?? 0.98;
       const alts = data.ocr_result?.alternatives || bp.ocrAlternatives || [];
 
-      setPendingBlueprint(bp);
-      setReviewFormula(formula);
-      setReviewConfidence(conf);
-      setReviewThumbnailUrl(cropData ? cropData.dataUrl : thumbnailUrl);
-      setReviewAlternatives(alts);
-      setIsOcrReviewOpen(true);
+      const finalBp: SimulationBlueprint = {
+        ...bp,
+        recognizedLatex: formula,
+        ocrAlternatives: alts,
+      };
+
+      // CP1 Mandate: [✨ Trực quan hóa] always mounts SimulationWidget in <1.5s
+      setActiveBlueprint(finalBp);
+      setSelectedStrokes([]);
+      setLassoLoop([]);
       setFormulaInput('');
     } catch (err: any) {
       console.error('[Magic Lasso] Pipeline Error:', err);
@@ -575,12 +579,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         };
       }
 
-      setPendingBlueprint(fallbackBp);
-      setReviewFormula(fallbackBp.recognizedLatex);
-      setReviewConfidence(0.92);
-      setReviewThumbnailUrl(cropData ? cropData.dataUrl : thumbnailUrl);
-      setReviewAlternatives(fallbackBp.ocrAlternatives || []);
-      setIsOcrReviewOpen(true);
+      setActiveBlueprint(fallbackBp);
+      setSelectedStrokes([]);
+      setLassoLoop([]);
+      setFormulaInput('');
     } finally {
       setIsLoading(false);
     }
@@ -989,37 +991,37 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           onClick={() => handleVisualize('y = 2\\sin(3x)')}
           className="px-2.5 py-1 rounded-lg bg-cyan-950/40 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-mono text-[11px] transition cursor-pointer"
         >
-          📐 Đồ thị Sin
-        </button>
-        <button
-          onClick={() => handleVisualize('x = 5\\cos(2\\pi t + \\frac{\\pi}{2})')}
-          className="px-2.5 py-1 rounded-lg bg-indigo-950/40 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 font-mono text-[11px] transition cursor-pointer"
-        >
-          🌊 Dao động 5cos(2πt+π/2)
-        </button>
-        <button
-          onClick={() => handleVisualize('y = \\int x^3 dx')}
-          className="px-2.5 py-1 rounded-lg bg-teal-950/40 hover:bg-teal-500/20 border border-teal-500/30 text-teal-300 font-mono text-[11px] transition cursor-pointer"
-        >
-          ∫ Tích phân x³
+          📐 Toán: Đồ thị Sin
         </button>
         <button
           onClick={() => handleVisualize('ném xiên v0 = 22 m/s, alpha = 45 độ')}
           className="px-2.5 py-1 rounded-lg bg-sky-950/40 hover:bg-sky-500/20 border border-sky-500/30 text-sky-300 font-mono text-[11px] transition cursor-pointer"
         >
-          🚀 Ném xiên
+          🚀 Lý: Ném xiên
         </button>
         <button
           onClick={() => handleVisualize('4Fe + 3O2 -> 2Fe2O3')}
           className="px-2.5 py-1 rounded-lg bg-amber-950/40 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-mono text-[11px] transition cursor-pointer"
         >
-          ⚖️ Cân bằng Hóa
+          ⚖️ Hóa: Phản ứng & Cân bằng
         </button>
         <button
           onClick={() => handleVisualize('quang hợp nhiệt độ 25 độ C')}
           className="px-2.5 py-1 rounded-lg bg-emerald-950/40 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-mono text-[11px] transition cursor-pointer"
         >
-          🌿 Quang hợp 25°C
+          🌿 Sinh: Quang hợp 25°C
+        </button>
+        <button
+          onClick={() => handleVisualize('x = 5\\cos(2\\pi t + \\frac{\\pi}{2})')}
+          className="px-2.5 py-1 rounded-lg bg-indigo-950/40 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 font-mono text-[11px] transition cursor-pointer"
+        >
+          🌊 Lý: Dao động 5cos
+        </button>
+        <button
+          onClick={() => handleVisualize('y = \\int x^3 dx')}
+          className="px-2.5 py-1 rounded-lg bg-teal-950/40 hover:bg-teal-500/20 border border-teal-500/30 text-teal-300 font-mono text-[11px] transition cursor-pointer"
+        >
+          ∫ Toán: Tích phân x³
         </button>
       </div>
 

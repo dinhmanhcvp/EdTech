@@ -38,6 +38,21 @@ def verify_algebraic_equivalence(student_expr_str: str, expected_expr_str: str) 
     """
     start_time = time.perf_counter()
     
+    # Safety verification
+    try:
+        from symbolic.socratic_guard import is_safe_math_input
+        if not is_safe_math_input(student_expr_str):
+            elapsed = (time.perf_counter() - start_time) * 1000
+            return {
+                "is_equivalent": False,
+                "verification_time_ms": round(elapsed, 2),
+                "error_category": "UNSAFE_INPUT",
+                "simplified_diff": "blocked",
+                "feedback": "Biểu thức chứa ký tự hoặc cú pháp không hợp lệ trong khuôn khổ bài học."
+            }
+    except Exception:
+        pass
+
     # Fast path cleanups
     s_clean = student_expr_str.strip().replace(" ", "").replace("^", "**")
     e_clean = expected_expr_str.strip().replace(" ", "").replace("^", "**")
@@ -106,13 +121,13 @@ def verify_algebraic_equivalence(student_expr_str: str, expected_expr_str: str) 
             feedback = (
                 "Hình như em đã nhầm dấu (+/-) ở một trong các số hạng. Hãy kiểm tra lại chiều biến thiên!"
                 if is_sign_error else
-                f"Biểu thức chưa khớp. Khi trừ đi kết quả mẫu, phần dư còn lại là: {str(diff)}."
+                "Biểu thức chưa tương đương với biểu thức chuẩn. Em hãy kiểm tra lại hệ số và các bước khai triển!"
             )
             return {
                 "is_equivalent": False,
                 "verification_time_ms": round(elapsed, 2),
                 "error_category": error_cat,
-                "simplified_diff": str(diff),
+                "simplified_diff": "diff_hidden",
                 "feedback": feedback
             }
     except Exception as ex:

@@ -9,6 +9,7 @@ export interface MathNumpadProps {
   onSubmit: (val: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  tokenChips?: string[];
 }
 
 export const MathNumpad: React.FC<MathNumpadProps> = ({
@@ -17,8 +18,12 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
   onSubmit,
   disabled = false,
   placeholder = 'Nhập công thức / hệ số...',
+  tokenChips,
 }: MathNumpadProps) => {
   const [pasteBlockedWarning, setPasteBlockedWarning] = useState(false);
+
+  const defaultTokens = ['4Fe', '3O₂', '2Fe₂O₃', 'gt²', '½', 'v₀', 'cos(α)'];
+  const effectiveTokens = tokenChips && tokenChips.length > 0 ? tokenChips : defaultTokens;
 
   const handleKeyPress = (char: string) => {
     if (disabled) return;
@@ -54,6 +59,25 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
       className="w-full max-w-md bg-slate-900/90 rounded-2xl p-4 border border-white/10 shadow-xl flex flex-col gap-3 select-none"
       style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
     >
+      {/* Context Token Chips (Feature 5: Quick 1-tap tokens for mobile) */}
+      <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-black/30 rounded-xl border border-white/5">
+        <span className="text-[10px] font-mono text-cyan-400 px-1 font-semibold shrink-0">
+          ⚡ Token nhanh:
+        </span>
+        {effectiveTokens.map((token) => (
+          <button
+            key={token}
+            type="button"
+            data-testid={`token-chip-${token}`}
+            onClick={() => handleKeyPress(token)}
+            disabled={disabled}
+            className="px-2 py-1 rounded-lg bg-cyan-950/70 hover:bg-cyan-500/30 active:scale-95 border border-cyan-500/30 font-mono text-xs font-bold text-cyan-200 transition cursor-pointer disabled:opacity-40"
+          >
+            {token}
+          </button>
+        ))}
+      </div>
+
       {/* Formula Input Box with Strict Anti-Cheat onPaste Blocking */}
       <div className="relative">
         <input

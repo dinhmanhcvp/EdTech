@@ -305,4 +305,30 @@ describe('Smartboard Magic Lasso & 4 Deterministic Engines (Phase 3)', () => {
     fireEvent.click(confirmBtn);
     expect(onConfirm).toHaveBeenCalledWith('y = \\int x^3 dx');
   });
+
+  /**
+   * TEST 6: Zero-Fail Smart Chips, Split-View Toggle, & QR Modal (v3.0)
+   */
+  it('test_v3_zero_fail_smart_chips_and_split_view', async () => {
+    render(<SmartboardCanvas />);
+
+    // 1. Verify Split-View toggle button exists and toggles
+    const splitBtn = screen.getByTestId('btn-split-view-toggle');
+    expect(splitBtn).toBeTruthy();
+    expect(splitBtn.textContent).toContain('Nửa bảng');
+    fireEvent.click(splitBtn);
+    expect(splitBtn.textContent).toContain('Toàn bảng');
+
+    // 2. Verify QR Smart Notes packaging modal
+    const qrBtn = screen.getByTestId('btn-pack-smart-notes');
+    fireEvent.click(qrBtn);
+    const qrModal = screen.getByTestId('smart-notes-qr-modal');
+    expect(qrModal).toBeTruthy();
+    expect(screen.getByText('socratic.edu.vn/recap/12A1-09')).toBeTruthy();
+    expect(screen.getByTestId('btn-preview-student-view')).toBeTruthy();
+
+    // Close QR modal
+    fireEvent.click(screen.getByText('✕'));
+    expect(screen.queryByTestId('smart-notes-qr-modal')).toBeNull();
+  });
 });

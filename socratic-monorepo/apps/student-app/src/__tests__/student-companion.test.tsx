@@ -159,4 +159,119 @@ describe('Student Socratic Companion & Dashboards (Phase 4)', () => {
     expect(screen.getByText(/An đã kiên trì thử 4 lần/)).toBeTruthy();
     expect(screen.getByText(/Hôm nay con đã khám phá ra quy luật nào về Oxi?/)).toBeTruthy();
   });
+
+  /**
+   * TEST 5: Smart Token Numpad & Quiet Mode Causal Blocks (v3.0)
+   */
+  it('test_token_chips_and_quiet_mode_causal_blocks', () => {
+    const onChange = vi.fn();
+    const onSubmit = vi.fn();
+
+    // 1. Context Token Chips
+    render(
+      <MathNumpad
+        value=""
+        onChange={onChange}
+        onSubmit={onSubmit}
+        tokenChips={['4Fe', '3O₂', '2Fe₂O₃']}
+      />
+    );
+
+    const chip4Fe = screen.getByTestId('token-chip-4Fe');
+    fireEvent.click(chip4Fe);
+    expect(onChange).toHaveBeenCalledWith('4Fe');
+
+    // 2. Quiet Mode in ConceptCheckGate
+    const onPassGate = vi.fn();
+    render(
+      <ConceptCheckGate
+        onPassGate={onPassGate}
+        conceptTitle="Định luật Bảo toàn Khối lượng"
+        pointsAwarded={50}
+      />
+    );
+
+    const quietToggle = screen.getByTestId('quiet-mode-toggle');
+    fireEvent.click(quietToggle);
+    expect(screen.getByText(/Chế độ Yên tĩnh \(Bật\)/)).toBeTruthy();
+
+    const verifyBlocksBtn = screen.getByTestId('btn-verify-causal-blocks');
+    expect(verifyBlocksBtn).toBeTruthy();
+  });
+
+  /**
+   * TEST 6: Interactive Balance Scale & Micro-Step Lifeline (v3.0)
+   */
+  it('test_interactive_chemical_scale_and_lifeline_modal', () => {
+    const onAdjustLeft = vi.fn();
+    const onAdjustRight = vi.fn();
+    const onApply = vi.fn();
+
+    render(
+      <ChemicalBalanceScale
+        leftAtomsCount={6}
+        rightAtomsCount={6}
+        elementName="Oxi (O)"
+        feedbackText="Cân bằng"
+        onAdjustLeft={onAdjustLeft}
+        onAdjustRight={onAdjustRight}
+        onApplyBalanced={onApply}
+      />
+    );
+
+    const minusLeft = screen.getByTestId('adjust-left-minus');
+    fireEvent.click(minusLeft);
+    expect(onAdjustLeft).toHaveBeenCalledWith(-2);
+
+    const plusRight = screen.getByTestId('adjust-right-plus');
+    fireEvent.click(plusRight);
+    expect(onAdjustRight).toHaveBeenCalledWith(3);
+
+    const applyBtn = screen.getByTestId('apply-balanced-btn');
+    fireEvent.click(applyBtn);
+    expect(onApply).toHaveBeenCalled();
+  });
+
+  /**
+   * TEST 7: Homework-to-Board Push & Parent Fireworks Cheer (v3.0)
+   */
+  it('test_homework_to_board_push_and_parent_fireworks', () => {
+    // 1. Teacher Heatmap push to board button
+    render(
+      <TeacherHeatmap
+        students={[
+          {
+            name: 'Nguyễn Văn An',
+            mathWave: 'red',
+            physicsProjectile: 'green',
+            chemRedox: 'red',
+            bioStomata: 'green',
+            gritScore: 75,
+          },
+        ]}
+      />
+    );
+
+    const pushBtn = screen.getByTestId('push-to-board-btn');
+    fireEvent.click(pushBtn);
+
+    const toast = screen.getByTestId('pushed-board-toast');
+    expect(toast.textContent).toContain('Đã đẩy bài toán Cân bằng Oxi');
+
+    // 2. Parent Pulse fireworks cheer
+    render(
+      <ParentPulse
+        studentName="Nguyễn Văn An"
+        gritScore={92}
+        narrativeText="An làm chủ rất tốt dao động điều hòa"
+        conversationStarters={['Con thấy thế nào khi kéo con lắc?']}
+      />
+    );
+
+    const cheerBtn = screen.getByTestId('btn-cheer-fireworks');
+    fireEvent.click(cheerBtn);
+
+    const cheerToast = screen.getByTestId('cheer-toast');
+    expect(cheerToast.textContent).toContain('Đã bắn pháo hoa');
+  });
 });

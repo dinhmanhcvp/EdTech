@@ -16,6 +16,8 @@ export interface SimulationWidgetProps {
   onClose?: () => void;
   onParamChange?: (key: string, value: number) => void;
   onFormulaChange?: (newFormula: string) => void;
+  isSplitView?: boolean;
+  onToggleSplitView?: () => void;
 }
 
 function deriveParametersForFormula(
@@ -120,6 +122,8 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   onClose,
   onParamChange,
   onFormulaChange,
+  isSplitView = false,
+  onToggleSplitView,
 }: SimulationWidgetProps) => {
   const derived = useMemo(() => {
     if (blueprint.engine === 'MATH') {
@@ -279,6 +283,24 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Split-View Dock Toggle Button */}
+          {onToggleSplitView && (
+            <button
+              type="button"
+              data-testid="btn-widget-split-toggle"
+              onClick={onToggleSplitView}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl border text-xs font-semibold transition cursor-pointer active:scale-95 ${
+                isSplitView
+                  ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold shadow-lg shadow-cyan-500/25'
+                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300'
+              }`}
+              title="Ghim sang nửa bảng (Split-Screen): Trái viết phấn, Phải mô phỏng 60FPS"
+            >
+              <span>◫</span>
+              <span>{isSplitView ? 'Toàn màn hình' : 'Ghim nửa bảng'}</span>
+            </button>
+          )}
+
           {/* Smart Notes Export Button (Feature 5 / CP6) */}
           <button
             type="button"

@@ -35,6 +35,45 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
     feedback: string;
   } | null>(null);
 
+  // Lifeline Modal State (Feature 4 Phao Cứu Sinh)
+  const [showLifelineModal, setShowLifelineModal] = useState<boolean>(false);
+
+  const handleAdjustScaleLeft = (delta: number) => {
+    if (!balancePayload) return;
+    const newL = Math.max(2, balancePayload.leftAtoms + delta);
+    setBalancePayload({
+      ...balancePayload,
+      leftAtoms: newL,
+      feedback:
+        newL === balancePayload.rightAtoms
+          ? 'Hai vế đã thăng bằng số nguyên tử Oxi! Hãy áp dụng vào phương trình.'
+          : `Vế trái: ${newL} O, Vế phải: ${balancePayload.rightAtoms} O.`,
+    });
+  };
+
+  const handleAdjustScaleRight = (delta: number) => {
+    if (!balancePayload) return;
+    const newR = Math.max(3, balancePayload.rightAtoms + delta);
+    setBalancePayload({
+      ...balancePayload,
+      rightAtoms: newR,
+      feedback:
+        balancePayload.leftAtoms === newR
+          ? 'Hai vế đã thăng bằng số nguyên tử Oxi! Hãy áp dụng vào phương trình.'
+          : `Vế trái: ${balancePayload.leftAtoms} O, Vế phải: ${newR} O.`,
+    });
+  };
+
+  const handleApplyBalancedFormula = () => {
+    setFormulaInput('4Fe + 3O₂ → 2Fe₂O₃');
+    setBalancePayload({
+      leftAtoms: 6,
+      rightAtoms: 6,
+      element: 'Oxi (O)',
+      feedback: 'Cân bằng hoàn hảo! 6 nguyên tử Oxi ở cả hai vế.',
+    });
+  };
+
   const [steps, setSteps] = useState<StepItem[]>([
     {
       index: 1,
@@ -233,6 +272,9 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
                   rightAtomsCount={balancePayload.rightAtoms}
                   elementName={balancePayload.element}
                   feedbackText={balancePayload.feedback}
+                  onAdjustLeft={handleAdjustScaleLeft}
+                  onAdjustRight={handleAdjustScaleRight}
+                  onApplyBalanced={handleApplyBalancedFormula}
                 />
               </div>
             )}
@@ -245,6 +287,26 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
               disabled={isLoading}
               placeholder="VD: 4Fe + 3O₂ → 2Fe₂O₃"
             />
+
+            {/* Micro-Step Lifeline (Feature 4: Phao cứu sinh Socratic khi thử >= 2 lần) */}
+            {scaffoldAttempts >= 2 && (
+              <div
+                data-testid="lifeline-container"
+                className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-indigo-500/20 border border-amber-400/40 flex items-center justify-between gap-3 animate-in fade-in shadow-lg"
+              >
+                <div className="text-xs text-amber-200">
+                  <span className="font-bold">🛟 Gặp khó khăn?</span> Em đã thử {scaffoldAttempts} lần. Hãy bật Phao cứu sinh để chia nhỏ bài toán thành 2 bước siêu dễ!
+                </div>
+                <button
+                  type="button"
+                  data-testid="lifeline-btn"
+                  onClick={() => setShowLifelineModal(true)}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-bold transition cursor-pointer shadow-lg shadow-amber-500/25 shrink-0 active:scale-95 animate-pulse"
+                >
+                  🛟 Phao cứu sinh
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -354,6 +416,70 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
           <span className="font-mono font-extrabold text-lg text-amber-300">
             +{eurekaParticles} Particles
           </span>
+        </div>
+      )}
+
+      {/* Micro-Step Lifeline Modal (Feature 4: 50/50 Guided Choice) */}
+      {showLifelineModal && (
+        <div
+          data-testid="lifeline-dialog"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in"
+        >
+          <div className="w-full max-w-md bg-slate-900 border border-amber-500/40 rounded-3xl p-6 shadow-2xl flex flex-col gap-4 text-slate-100">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <span className="text-sm font-bold text-amber-300 flex items-center gap-2">
+                <span>🛟 Phao Cứu Sinh Socratic (Chia nhỏ bước)</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowLifelineModal(false)}
+                className="text-xs text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Để cân bằng số nguyên tử Oxi giữa <strong>2</strong> nguyên tử ở vế trái (O₂) và <strong>3</strong> nguyên tử ở vế phải (Fe₂O₃), em hãy chọn Bội chung nhỏ nhất (BCNN):
+            </p>
+
+            <div className="flex flex-col gap-2.5">
+              <button
+                type="button"
+                data-testid="lifeline-choice-correct"
+                onClick={() => {
+                  setFormulaInput('4Fe + 3O₂ → 2Fe₂O₃');
+                  setBalancePayload({
+                    leftAtoms: 6,
+                    rightAtoms: 6,
+                    element: 'Oxi (O)',
+                    feedback: 'Chính xác! BCNN của 2 và 3 là 6. Hệ số: 4Fe + 3O₂ → 2Fe₂O₃.',
+                  });
+                  setShowLifelineModal(false);
+                }}
+                className="p-3.5 rounded-2xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-400 text-left text-xs transition cursor-pointer flex flex-col gap-1 active:scale-98"
+              >
+                <span className="font-bold text-emerald-300">Phương án A: BCNN là 6</span>
+                <span className="text-[11px] text-slate-400">
+                  Nhân 3 cho O₂ (3×2=6) và nhân 2 cho Fe₂O₃ (2×3=6), sau đó nhân 4 cho Fe
+                </span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="lifeline-choice-wrong"
+                onClick={() => {
+                  alert('Chưa chính xác! Nếu cộng thêm 1 nguyên tử O thì vi phạm định luật bảo toàn liên kết. Hãy thử lại phương án khác nhé!');
+                }}
+                className="p-3.5 rounded-2xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-400 text-left text-xs transition cursor-pointer flex flex-col gap-1 active:scale-98"
+              >
+                <span className="font-bold text-slate-300">Phương án B: BCNN là 5</span>
+                <span className="text-[11px] text-slate-400">
+                  Cộng thêm 1 nguyên tử O vào vế trái (Sai bản chất phản ứng)
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

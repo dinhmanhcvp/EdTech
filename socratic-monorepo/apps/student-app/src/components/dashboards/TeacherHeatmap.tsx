@@ -18,6 +18,24 @@ export interface TeacherHeatmapProps {
 }
 
 export const TeacherHeatmap: React.FC<TeacherHeatmapProps> = ({ students }: TeacherHeatmapProps) => {
+  const [pushedToast, setPushedToast] = React.useState<string | null>(null);
+
+  const handlePushToBoard = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        'socratic_board_incoming_lesson',
+        JSON.stringify({
+          templateId: 'CHEM_BALANCE_SCALE',
+          formula: '4Fe + 3O2 -> 2Fe2O3',
+          source: 'TeacherHeatmap_Bottleneck_Alert',
+          timestamp: Date.now(),
+        })
+      );
+    }
+    setPushedToast('⚡ Đã đẩy bài toán Cân bằng Oxi (72% học sinh sai tối qua) lên Smartboard lớp!');
+    setTimeout(() => setPushedToast(null), 3500);
+  };
+
   const badgeClasses: Record<'green' | 'amber' | 'red', string> = {
     green: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
     amber: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
@@ -31,14 +49,34 @@ export const TeacherHeatmap: React.FC<TeacherHeatmapProps> = ({ students }: Teac
   };
 
   return (
-    <div className="bg-slate-900/80 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-xl">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-slate-900/80 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-xl relative">
+      {pushedToast && (
+        <div
+          data-testid="pushed-board-toast"
+          className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-2xl bg-emerald-500 text-slate-950 font-bold text-xs shadow-2xl flex items-center gap-2 animate-in fade-in"
+        >
+          <span>{pushedToast}</span>
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h3 className="text-base font-bold text-white">Ma trận Nhận thức KHTN</h3>
           <p className="text-xs text-slate-400">Dữ liệu thử sai tổng hợp từ 40 học sinh</p>
         </div>
-        <div className="bg-red-500/20 border border-red-500/30 px-3 py-1.5 rounded-xl text-red-300 text-xs font-semibold">
-          🚨 Cảnh báo điểm nghẽn: 72% kẹt ở cân bằng Oxi
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="bg-red-500/20 border border-red-500/30 px-3 py-1.5 rounded-xl text-red-300 text-xs font-semibold">
+            🚨 Cảnh báo điểm nghẽn: 72% kẹt ở cân bằng Oxi
+          </div>
+          <button
+            type="button"
+            data-testid="push-to-board-btn"
+            onClick={handlePushToBoard}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-bold transition cursor-pointer shadow-lg shadow-amber-500/20 active:scale-95"
+            title="Sáng mai lên lớp, bài toán này sẽ tự động nạp lên Smartboard lớp để chữa chung"
+          >
+            <span>⚡ Đẩy lên Bảng lớp</span>
+          </button>
         </div>
       </div>
 

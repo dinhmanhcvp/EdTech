@@ -20,6 +20,9 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({ blueprint, params }: Pro
     vx: 0,
     vy: 0,
     isApex: false,
+    deltaL: 0,
+    deltaH: 0,
+    hasDelta: false,
   });
 
   // Helper to draw vector arrows
@@ -210,14 +213,24 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({ blueprint, params }: Pro
         const metrics = computeProjectile(v0, alpha, g);
         const { tFlight, tApex, hMax, lMax, vx } = metrics;
 
+        // Baseline (defaultValue) for Ghost Trail comparison
+        const baseV0 = blueprint.parameters?.find((p) => p.key === 'v0')?.defaultValue ?? 22;
+        const baseAlpha = blueprint.parameters?.find((p) => p.key === 'alpha')?.defaultValue ?? 45;
+        const baseG = blueprint.parameters?.find((p) => p.key === 'g')?.defaultValue ?? 9.8;
+        const baseMetrics = computeProjectile(baseV0, baseAlpha, baseG);
+        const hasBaseDelta =
+          Math.abs(v0 - baseV0) > 0.05 ||
+          Math.abs(alpha - baseAlpha) > 0.05 ||
+          Math.abs(g - baseG) > 0.05;
+
         // Auto-scale canvas bounds to prevent overflow for any v0 (even 50+) or odd alpha (37°)
         const groundY = canvas.height - 35;
         const startX = 45;
         const availW = canvas.width - startX - 35;
         const availH = groundY - 45;
 
-        const maxRangeNeeded = Math.max(lMax, 15);
-        const maxHeightNeeded = Math.max(hMax, 8);
+        const maxRangeNeeded = Math.max(lMax, baseMetrics.lMax, 15);
+        const maxHeightNeeded = Math.max(hMax, baseMetrics.hMax, 8);
         const scaleX = availW / maxRangeNeeded;
         const scaleY = availH / maxHeightNeeded;
         const scale = Math.min(scaleX, scaleY);
@@ -230,8 +243,33 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({ blueprint, params }: Pro
         ctx.lineTo(canvas.width - 20, groundY);
         ctx.stroke();
 
+        // 1. Ghost Trail: Baseline Trajectory (Subtle dashed line)
+        if (hasBaseDelta) {
+          ctx.save();
+          ctx.setLineDash([4, 4]);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          const baseSteps = 50;
+          for (let i = 0; i <= baseSteps; i++) {
+            const st = (baseMetrics.tFlight * i) / baseSteps;
+            const px = startX + baseMetrics.xAt(st) * scale;
+            const py = groundY - baseMetrics.yAt(st) * scale;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+
+          // Baseline landing tag
+          const bLandX = startX + baseMetrics.lMax * scale;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+          ctx.font = '10px monospace';
+          ctx.fillText(`Gốc: ${baseMetrics.lMax.toFixed(1)}m`, bLandX - 25, groundY - 8);
+          ctx.restore();
+        }
+
         // Earth reference ghost trajectory when g != 9.8 (proves gravity change impact)
-        if (Math.abs(g - 9.8) > 0.1) {
+        if (Math.abs(g - 9.8) > 0.1 && !hasBaseDelta) {
           const earthMetrics = computeProjectile(v0, alpha, 9.8);
           ctx.save();
           ctx.setLineDash([3, 4]);
@@ -329,6 +367,9 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({ blueprint, params }: Pro
             vx: Number(vx.toFixed(1)),
             vy: Number(curVy.toFixed(1)),
             isApex: nearApex,
+            deltaL: Number((lMax - baseMetrics.lMax).toFixed(1)),
+            deltaH: Number((hMax - baseMetrics.hMax).toFixed(1)),
+            hasDelta: hasBaseDelta,
           });
         }
       }
@@ -344,7 +385,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({ blueprint, params }: Pro
     <div className="relative w-full max-w-[620px] flex flex-col items-center">
       {/* HUD overlay for PHYS_PROJECTILE */}
       {blueprint.templateId === 'PHYS_PROJECTILE' && (
-        <div className="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-md border border-cyan-500/30 rounded-xl px-3 py-1.5 flex items-center gap-3 text-[11px] font-mono text-cyan-300 pointer-events-none shadow-lg z-10">
+        <div className="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-md border border-cyan-500/30 rounded-xl px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-mono text-cyan-300 pointer-events-none shadow-lg z-10 flex-wrap">
           <div>
             <span className="text-slate-400">H_max:</span>{' '}
             <span className="text-amber-300 font-bold">{hud.hMax}m</span>
@@ -366,6 +407,19 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({ blueprint, params }: Pro
               {hud.vy} m/s {hud.isApex && '(ĐỈNH)'}
             </span>
           </div>
+
+          {/* Real-Time Ghost Trail Delta Comparison Badges */}
+          {hud.hasDelta && (
+            <>
+              <div className="w-[1px] h-3 bg-white/20" />
+              <div className="px-2 py-0.5 rounded bg-sky-500/20 border border-sky-400/40 text-sky-200 font-bold">
+                ΔTầm xa: {hud.deltaL >= 0 ? '+' : ''}{hud.deltaL}m
+              </div>
+              <div className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 font-bold">
+                ΔH_max: {hud.deltaH >= 0 ? '+' : ''}{hud.deltaH}m
+              </div>
+            </>
+          )}
         </div>
       )}
 

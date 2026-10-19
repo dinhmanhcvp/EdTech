@@ -314,6 +314,18 @@ export const MathPlotEngine: React.FC<Props> = ({ blueprint, params }: Props) =>
     // 3. Compile Real Math Function (Zero Mock)
     const compiled = compileFormulaToFunction(blueprint.recognizedLatex, params);
 
+    // Compute Baseline (defaultValue) parameters for Ghost Trail comparison
+    const baselineParams: Record<string, number> = {};
+    if (blueprint.parameters && Array.isArray(blueprint.parameters)) {
+      blueprint.parameters.forEach((p) => {
+        baselineParams[p.key] = p.defaultValue;
+      });
+    }
+    const baselineCompiled = compileFormulaToFunction(blueprint.recognizedLatex, baselineParams);
+    const hasParamDelta = Object.keys(baselineParams).some(
+      (k) => params[k] !== undefined && params[k] !== baselineParams[k]
+    );
+
     // Axis tick labels
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.font = '11px monospace';
@@ -321,7 +333,41 @@ export const MathPlotEngine: React.FC<Props> = ({ blueprint, params }: Props) =>
     ctx.fillText(compiled.yLabel, originX + 8, 16);
     ctx.fillText('O', originX - 14, originY + 16);
 
-    // 4. Shaded Area Under Curve for Integrals or Wave
+    // 4. Ghost Trail: Baseline Curve (Subtle dashed line)
+    if (hasParamDelta) {
+      ctx.save();
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      let baseFirst = true;
+
+      for (let px = 0; px <= width; px += 3) {
+        const mx = (px - originX) / scale;
+        const my = baselineCompiled.evalFn(mx);
+        const py = originY - my * scale;
+
+        if (!isNaN(py) && isFinite(py) && py >= -400 && py <= height + 400) {
+          if (baseFirst) {
+            ctx.moveTo(px, py);
+            baseFirst = false;
+          } else {
+            ctx.lineTo(px, py);
+          }
+        } else {
+          baseFirst = true;
+        }
+      }
+      ctx.stroke();
+
+      // Label Ghost Baseline
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.font = '10px monospace';
+      ctx.fillText('--- Gốc (Mặc định)', width - 130, 24);
+      ctx.restore();
+    }
+
+    // 5. Shaded Area Under Curve for Integrals or Wave
     if (compiled.shaded) {
       ctx.fillStyle = 'rgba(34, 211, 238, 0.18)';
       ctx.beginPath();
@@ -339,7 +385,7 @@ export const MathPlotEngine: React.FC<Props> = ({ blueprint, params }: Props) =>
       ctx.fill();
     }
 
-    // 5. Glow Neon Curve
+    // 6. Glow Neon Live Curve
     ctx.save();
     ctx.shadowColor = '#06b6d4';
     ctx.shadowBlur = 12;
@@ -390,12 +436,14 @@ export const MathPlotEngine: React.FC<Props> = ({ blueprint, params }: Props) =>
       ctx.fill();
     }
 
-    // 7. Curve Label Badge
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-    ctx.fillRect(15, 15, 260, 48);
-    ctx.strokeStyle = 'rgba(34, 211, 238, 0.4)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(15, 15, 260, 48);
+    // 7. Curve Label Badge with Real-Time Delta
+    const badgeW = hasParamDelta ? 310 : 260;
+    const badgeH = hasParamDelta ? 62 : 48;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+    ctx.fillRect(15, 15, badgeW, badgeH);
+    ctx.strokeStyle = hasParamDelta ? '#38bdf8' : 'rgba(34, 211, 238, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(15, 15, badgeW, badgeH);
 
     ctx.fillStyle = '#22d3ee';
     ctx.font = 'bold 12px monospace';
@@ -412,6 +460,31 @@ export const MathPlotEngine: React.FC<Props> = ({ blueprint, params }: Props) =>
       25,
       50
     );
+
+    // Delta Badge Line
+    if (hasParamDelta) {
+      let deltaSummary = '';
+      if (params.A !== undefined && baselineParams.A !== undefined) {
+        const dA = params.A - baselineParams.A;
+        deltaSummary += `ΔBiên độ A: ${dA >= 0 ? '+' : ''}${dA.toFixed(1)}  `;
+      }
+      if (params.omega !== undefined && baselineParams.omega !== undefined) {
+        const dW = params.omega - baselineParams.omega;
+        deltaSummary += `Δω: ${dW >= 0 ? '+' : ''}${dW.toFixed(1)} rad/s  `;
+      }
+      if (params.d !== undefined && baselineParams.d !== undefined) {
+        const dD = params.d - baselineParams.d;
+        deltaSummary += `ΔC: ${dD >= 0 ? '+' : ''}${dD.toFixed(1)}  `;
+      }
+      if (!deltaSummary && compiled.evalSlope) {
+        const dk = compiled.evalSlope(x0) - baselineCompiled.evalSlope(x0);
+        deltaSummary = `Δk: ${dk >= 0 ? '+' : ''}${dk.toFixed(2)}`;
+      }
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 10px monospace';
+      ctx.fillText(`⚡ ${deltaSummary || 'Đã hiệu chỉnh thông số'}`, 25, 66);
+    }
   }, [blueprint, params]);
 
   return (

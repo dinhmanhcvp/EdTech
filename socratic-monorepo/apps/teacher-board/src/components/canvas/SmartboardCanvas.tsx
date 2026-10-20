@@ -556,7 +556,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         ocrAlternatives: alts,
       };
 
-      // CP1 Mandate: [✨ Trực quan hóa] always mounts SimulationWidget in <1.5s
+      // CP1 Mandate: [Trực quan hóa] always mounts SimulationWidget in <1.5s
       setActiveBlueprint(finalBp);
       setSelectedStrokes([]);
       setLassoLoop([]);
@@ -762,56 +762,56 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   return (
     <div
       data-testid="smartboard-container"
-      className="relative w-full h-full min-h-[720px] bg-slate-950 text-slate-100 flex flex-col items-center justify-start p-4 select-none"
+      className="relative w-full h-full min-h-[720px] bg-zinc-950 text-zinc-100 flex flex-col items-center justify-start p-3 select-none"
     >
       {/* MASTER SMARTBOARD TOOLBAR */}
       <div
         data-testid="smartboard-toolbar"
-        className="flex flex-wrap items-center justify-between gap-3 px-6 py-3 rounded-3xl bg-slate-900/90 border border-white/15 backdrop-blur-xl shadow-2xl z-20 max-w-5xl w-full"
+        className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 shadow-lg z-20 max-w-5xl w-full"
       >
         {/* Left Section: Core Tools */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {/* Natural Pen */}
           <button
             data-testid="tool-pen"
             onClick={() => { setTool('PEN'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
               tool === 'PEN'
-                ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/25'
-                : 'bg-white/5 hover:bg-white/10 text-slate-300'
+                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
+                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
             }`}
-            title="Bút viết tự nhiên (Không tự nắn hình tròn)"
+            title="Bút viết tự nhiên"
           >
-            <Pen className="w-4 h-4" />
-            <span>Bút viết</span>
+            <Pen className="w-3.5 h-3.5" />
+            <span>Viết</span>
           </button>
 
           {/* Highlighter */}
           <button
             onClick={() => { setTool('HIGHLIGHTER'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
               tool === 'HIGHLIGHTER'
-                ? 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/25'
-                : 'bg-white/5 hover:bg-white/10 text-slate-300'
+                ? 'bg-zinc-800 text-amber-300 border-zinc-700 shadow-sm'
+                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
             }`}
-            title="Bút dạ quang đánh dấu"
+            title="Bút dạ quang"
           >
-            <Highlighter className="w-4 h-4" />
+            <Highlighter className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Dạ quang</span>
           </button>
 
-          {/* CHỨC NĂNG HÌNH TRÒN (CHỨC NĂNG RIÊNG, KHÔNG TỰ ĐỘNG NẮN CHỮ VIẾT) */}
+          {/* Hình tròn */}
           <button
             data-testid="tool-circle"
             onClick={() => { setTool('SHAPE'); setSelectedShape('CIRCLE'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
               tool === 'SHAPE' && selectedShape === 'CIRCLE'
-                ? 'bg-purple-500 text-slate-950 shadow-lg shadow-purple-500/25 font-bold'
-                : 'bg-white/5 hover:bg-white/10 text-slate-300'
+                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
+                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
             }`}
-            title="Chức năng vẽ hình tròn chuẩn xác (Kéo chuột/chạm trên bảng để vẽ)"
+            title="Vẽ hình tròn"
           >
-            <Circle className="w-4 h-4 text-purple-300" />
+            <Circle className="w-3.5 h-3.5" />
             <span>Hình tròn</span>
           </button>
 
@@ -819,14 +819,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="tool-line"
             onClick={() => { setTool('SHAPE'); setSelectedShape('LINE'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
               tool === 'SHAPE' && selectedShape === 'LINE'
-                ? 'bg-purple-500 text-slate-950 shadow-lg shadow-purple-500/25 font-bold'
-                : 'bg-white/5 hover:bg-white/10 text-slate-300'
+                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
+                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
             }`}
             title="Vẽ đoạn thẳng"
           >
-            <Minus className="w-4 h-4 text-purple-300" />
+            <Minus className="w-3.5 h-3.5" />
             <span className="hidden xl:inline">Đoạn thẳng</span>
           </button>
 
@@ -834,14 +834,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="tool-arrow"
             onClick={() => { setTool('SHAPE'); setSelectedShape('ARROW'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
               tool === 'SHAPE' && selectedShape === 'ARROW'
-                ? 'bg-purple-500 text-slate-950 shadow-lg shadow-purple-500/25 font-bold'
-                : 'bg-white/5 hover:bg-white/10 text-slate-300'
+                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
+                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
             }`}
             title="Vẽ mũi tên vector"
           >
-            <ArrowRight className="w-4 h-4 text-purple-300" />
+            <ArrowRight className="w-3.5 h-3.5" />
             <span className="hidden xl:inline">Mũi tên</span>
           </button>
 
@@ -849,14 +849,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="tool-rect"
             onClick={() => { setTool('SHAPE'); setSelectedShape('RECTANGLE'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
               tool === 'SHAPE' && selectedShape === 'RECTANGLE'
-                ? 'bg-purple-500 text-slate-950 shadow-lg shadow-purple-500/25 font-bold'
-                : 'bg-white/5 hover:bg-white/10 text-slate-300'
+                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
+                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
             }`}
             title="Vẽ hình chữ nhật"
           >
-            <Square className="w-4 h-4 text-purple-300" />
+            <Square className="w-3.5 h-3.5" />
             <span className="hidden xl:inline">Chữ nhật</span>
           </button>
 
@@ -864,42 +864,43 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="tool-lasso"
             onClick={() => setTool('LASSO')}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
               tool === 'LASSO'
-                ? 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/25'
-                : 'bg-white/5 hover:bg-white/10 text-slate-300'
+                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
+                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
             }`}
-            title="Magic Lasso: Khoanh tròn nét viết để gọi AI nhận diện"
+            title="Khoanh vùng nét viết để mô phỏng"
           >
-            <Lasso className="w-4 h-4" />
-            <span>Lasso</span>
+            <Lasso className="w-3.5 h-3.5" />
+            <span>Khoanh vùng AI</span>
           </button>
 
           {/* Eraser */}
           <button
+            data-testid="tool-eraser"
             onClick={() => { setTool('ERASER'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
               tool === 'ERASER'
-                ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/25'
-                : 'bg-white/5 hover:bg-white/10 text-slate-300'
+                ? 'bg-zinc-850 text-zinc-100 border-zinc-700'
+                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
             }`}
             title="Tẩy nét viết"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
             <span>Tẩy</span>
           </button>
         </div>
 
         {/* Center Section: Color Palette & Stroke Width */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {/* Color Dots */}
-          <div className="flex items-center gap-1 bg-black/40 px-2.5 py-1.5 rounded-2xl border border-white/10">
+          <div className="flex items-center gap-1.5 bg-zinc-950 px-2.5 py-1 rounded-md border border-zinc-800">
             {PALETTE.map((c) => (
               <button
                 key={c.value}
                 onClick={() => setStrokeColor(c.value)}
-                className={`w-5 h-5 rounded-full transition-transform cursor-pointer ${
-                  strokeColor === c.value ? 'scale-125 ring-2 ring-white ring-offset-2 ring-offset-slate-900' : 'hover:scale-110 opacity-70 hover:opacity-100'
+                className={`w-3.5 h-3.5 rounded-full transition-transform cursor-pointer ${
+                  strokeColor === c.value ? 'scale-125 ring-1 ring-zinc-300' : 'hover:scale-110 opacity-70 hover:opacity-100'
                 }`}
                 style={{ backgroundColor: c.value }}
                 title={c.name}
@@ -908,13 +909,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           </div>
 
           {/* Thickness Selector */}
-          <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-2xl border border-white/10">
+          <div className="flex items-center gap-1 bg-zinc-950 px-1.5 py-0.5 rounded-md border border-zinc-800">
             {STROKE_WIDTHS.map((sw) => (
               <button
                 key={sw.value}
                 onClick={() => setStrokeWidth(sw.value)}
-                className={`px-2 py-1 rounded-lg text-[10px] font-mono transition cursor-pointer ${
-                  strokeWidth === sw.value ? 'bg-cyan-500 text-black font-bold' : 'text-slate-400 hover:text-white'
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition cursor-pointer ${
+                  strokeWidth === sw.value ? 'bg-zinc-800 text-zinc-100 font-semibold' : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
                 {sw.label}
@@ -924,68 +925,68 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         </div>
 
         {/* Right Section: Board Management & Undo/Redo */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {/* Undo / Redo */}
           <button
             onClick={handleUndo}
             disabled={undoStack.length === 0}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 disabled:opacity-30 transition cursor-pointer"
+            className="p-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-zinc-400 disabled:opacity-30 border border-zinc-800 transition cursor-pointer"
             title="Hoàn tác (Undo)"
           >
-            <Undo2 className="w-4 h-4" />
+            <Undo2 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={handleRedo}
             disabled={redoStack.length === 0}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 disabled:opacity-30 transition cursor-pointer"
+            className="p-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-zinc-400 disabled:opacity-30 border border-zinc-800 transition cursor-pointer"
             title="Làm lại (Redo)"
           >
-            <Redo2 className="w-4 h-4" />
+            <Redo2 className="w-3.5 h-3.5" />
           </button>
 
           {/* Grid Toggle */}
           <button
             onClick={() => setGridPattern(gridPattern === 'DOTS' ? 'GRID' : (gridPattern === 'GRID' ? 'BLANK' : 'DOTS'))}
-            className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 text-xs transition cursor-pointer"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-zinc-400 text-xs border border-zinc-800 transition cursor-pointer"
             title="Đổi lưới nền: Lưới chấm / Ô ca-rô / Bảng trơn"
           >
-            <GridIcon className="w-3.5 h-3.5" />
+            <GridIcon className="w-3 h-3" />
             <span className="text-[10px] font-mono uppercase">{gridPattern}</span>
           </button>
 
-          {/* Ergonomic Split-View Toggle Button (v3.0) */}
+          {/* Ergonomic Split-View Toggle Button */}
           <button
             data-testid="btn-split-view-toggle"
             onClick={() => setIsSplitView((s) => !s)}
-            className={`flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs transition cursor-pointer ${
+            className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs border transition cursor-pointer ${
               isSplitView
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-semibold'
-                : 'bg-white/5 hover:bg-white/15 text-slate-300'
+                ? 'bg-zinc-800 text-sky-400 border-zinc-700 font-medium'
+                : 'bg-zinc-950 hover:bg-zinc-800 border-zinc-800 text-zinc-400'
             }`}
-            title="Ghim sang nửa bảng (Split-Screen): Trái viết phấn, Phải mô phỏng 60FPS"
+            title="Ghim sang nửa bảng (Split-Screen)"
           >
-            <span>◫</span>
+            <span className="font-mono">◫</span>
             <span className="text-[10px] hidden sm:inline">{isSplitView ? 'Nửa bảng' : 'Toàn bảng'}</span>
           </button>
 
-          {/* Pack Smart Notes & QR Recap Modal Button (v3.0) */}
+          {/* Pack Smart Notes & QR Recap Modal Button */}
           <button
             data-testid="btn-pack-smart-notes"
             onClick={() => setIsQrModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-semibold shadow-lg transition cursor-pointer active:scale-95"
-            title="Đóng gói Smart Notes & Tạo mã QR gửi học sinh cuối giờ"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs font-medium transition cursor-pointer"
+            title="Đóng gói Smart Notes & QR"
           >
-            <QrCode className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-[10px] hidden sm:inline">QR Smart Notes</span>
+            <QrCode className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="text-[10px] hidden sm:inline font-mono">QR Notes</span>
           </button>
 
           {/* Export Board */}
           <button
             onClick={handleExportBoard}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 transition cursor-pointer"
+            className="p-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 transition cursor-pointer"
             title="Tải ảnh bảng viết về máy"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
           </button>
 
           {/* Clear */}
@@ -1004,10 +1005,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               data-testid="top-toolbar-btn-visualize"
               onClick={() => handleVisualize()}
               disabled={isLoading}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-500 text-slate-950 shadow-lg shadow-cyan-500/30 hover:scale-105 active:scale-95 transition cursor-pointer ml-1 animate-pulse"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-zinc-100 hover:bg-white text-zinc-950 transition cursor-pointer ml-1"
             >
               {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-              <span>✨ Visualize ({selectedStrokes.length})</span>
+              <span>Visualize ({selectedStrokes.length})</span>
             </button>
           )}
         </div>
@@ -1017,7 +1018,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       {errorMessage && (
         <div
           data-testid="error-toast"
-          className="flex items-center justify-between gap-3 px-4 py-2.5 mt-2 w-full max-w-5xl rounded-2xl bg-rose-950/80 border border-rose-500/40 text-rose-200 text-xs shadow-xl backdrop-blur-md animate-in fade-in"
+          className="flex items-center justify-between gap-3 px-4 py-2 mt-2 w-full max-w-5xl rounded-md bg-zinc-950 border border-rose-500/40 text-rose-300 text-xs shadow-md animate-in fade-in"
         >
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
@@ -1025,7 +1026,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           </div>
           <button
             onClick={() => setErrorMessage(null)}
-            className="text-rose-400 hover:text-white font-bold px-2 py-0.5 rounded transition"
+            className="text-rose-400 hover:text-white font-mono px-2 py-0.5 rounded transition"
           >
             ✕
           </button>
@@ -1036,22 +1037,22 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       {voiceNotice && (
         <div
           data-testid="voice-notice-banner"
-          className="flex items-center gap-2 px-4 py-2 mt-2 w-full max-w-5xl rounded-2xl bg-indigo-950/80 border border-indigo-500/40 text-indigo-200 text-xs shadow-xl backdrop-blur-md animate-pulse"
+          className="flex items-center gap-2 px-4 py-2 mt-2 w-full max-w-5xl rounded-md bg-zinc-950 border border-zinc-700 text-zinc-200 text-xs shadow-md"
         >
-          <Mic className="w-4 h-4 text-indigo-400 shrink-0" />
+          <Mic className="w-3.5 h-3.5 text-sky-400 shrink-0" />
           <span>{voiceNotice}</span>
         </div>
       )}
 
-      {/* Floating Glassmorphism Lasso Action Bar (v3.0 Zero-Fail Instant Fallback) */}
+      {/* Floating Lasso Action Bar */}
       {selectedStrokes.length > 0 && (
         <div
           data-testid="lasso-action-bar"
-          className="flex flex-col gap-3 mt-3 px-5 py-3.5 rounded-3xl bg-slate-900/95 border border-cyan-500/40 backdrop-blur-2xl shadow-2xl z-20 max-w-5xl w-full animate-in fade-in slide-in-from-top-2 duration-200"
+          className="flex flex-col gap-2.5 mt-2 px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800 shadow-xl z-20 max-w-5xl w-full animate-in fade-in duration-150"
         >
           {/* Top Row: Preview, Voice Mic, Formula Input, Action Buttons */}
           <div className="flex flex-col md:flex-row items-center gap-3 w-full">
-            {/* Live Cropped Ink Preview (0ms Instant Preview) */}
+            {/* Live Cropped Ink Preview */}
             <div className="flex items-center gap-2.5 shrink-0">
               {thumbnailUrl ? (
                 <div className="relative group">
@@ -1059,41 +1060,41 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                     src={thumbnailUrl}
                     alt="OCR Preview"
                     data-testid="ocr-debug-thumbnail"
-                    className="w-16 h-10 object-contain rounded-lg border border-white/20 bg-white shadow-sm"
+                    className="w-16 h-10 object-contain rounded border border-zinc-700 bg-white shadow-sm"
                   />
-                  <span className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 text-[8px] font-mono font-bold text-cyan-400 bg-slate-950/90 px-1 rounded whitespace-nowrap">
+                  <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[8px] font-mono text-zinc-400 bg-zinc-950 px-1 rounded whitespace-nowrap border border-zinc-800">
                     0ms Crop
                   </span>
                 </div>
               ) : (
-                <div className="w-16 h-10 flex items-center justify-center rounded-lg border border-dashed border-white/20 bg-black/20 text-[10px] text-slate-500">
+                <div className="w-16 h-10 flex items-center justify-center rounded border border-dashed border-zinc-800 bg-zinc-950 text-[10px] text-zinc-500 font-mono">
                   Preview
                 </div>
               )}
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-cyan-300">
-                  Lasso chọn {selectedStrokes.length} nét
+                <span className="text-xs font-semibold text-zinc-200">
+                  Lasso {selectedStrokes.length} nét
                 </span>
-                <span className="text-[10px] text-slate-400">
-                  512x256 • Nền trắng tinh
+                <span className="text-[10px] text-zinc-500 font-mono">
+                  Nền trắng chuẩn hóa
                 </span>
               </div>
             </div>
 
-            {/* Voice-to-Blueprint Mic Button (Tier 1 Web Speech API) */}
+            {/* Voice-to-Blueprint Mic Button */}
             <button
               type="button"
               data-testid="voice-blueprint-mic-btn"
               onClick={handleVoiceDictation}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer shrink-0 border ${
                 isVoiceListening
-                  ? 'bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30'
-                  : 'bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-400/40 text-indigo-200'
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                  : 'bg-zinc-950 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
               }`}
-              title="Đọc công thức bằng giọng nói (Ví dụ: 'Vẽ đồ thị sin 2x' hoặc 'Ném xiên')"
+              title="Đọc công thức bằng giọng nói"
             >
-              {isVoiceListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-indigo-400" />}
-              <span>{isVoiceListening ? 'Đang nghe...' : '🎙️ Giọng nói'}</span>
+              {isVoiceListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-zinc-400" />}
+              <span>{isVoiceListening ? 'Đang nghe...' : 'Giọng nói'}</span>
             </button>
 
             {/* Formula Input Box */}
@@ -1107,7 +1108,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   if (e.key === 'Enter') handleVisualize();
                 }}
                 placeholder="Nhập công thức hoặc bấm micro / chọn môn bên dưới..."
-                className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400/60 font-mono transition"
+                className="w-full px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 font-mono transition"
               />
             </div>
 
@@ -1117,10 +1118,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 data-testid="btn-visualize"
                 onClick={() => handleVisualize()}
                 disabled={isLoading}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-500 text-slate-950 shadow-lg shadow-cyan-500/30 hover:scale-105 active:scale-95 transition cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium bg-zinc-100 hover:bg-white text-zinc-950 transition cursor-pointer shadow-sm"
               >
                 {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                <span>{isLoading ? 'Đang nhận diện...' : '✨ Trực quan hóa'}</span>
+                <span>{isLoading ? 'Đang nhận diện...' : 'Trực quan hóa'}</span>
               </button>
 
               <button
@@ -1129,109 +1130,109 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   setLassoLoop([]);
                   setFormulaInput('');
                 }}
-                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition cursor-pointer"
+                className="p-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition cursor-pointer"
                 title="Bỏ chọn"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
-          {/* Bottom Row: 4 1-Tap Smart Subject Chips (100% Offline / Deterministic - Zero Fail) */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10">
-            <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider shrink-0">
-              ⚡ Gợi ý tức thì (0ms Offline):
+          {/* Bottom Row: 4 1-Tap Smart Subject Chips (Zero Fail) */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-zinc-800">
+            <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider shrink-0">
+              Gợi ý tức thì (0ms):
             </span>
             <button
               type="button"
               data-testid="smart-chip-math"
               onClick={() => handleVisualize('y = 2\\sin(3x)')}
-              className="px-2.5 py-1 rounded-lg bg-cyan-950/60 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 text-[11px] font-mono transition cursor-pointer active:scale-95"
+              className="px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] font-mono transition cursor-pointer"
             >
-              📐 Đồ thị Toán (Sin 3x)
+              Toán (Sin 3x)
             </button>
             <button
               type="button"
               data-testid="smart-chip-physics"
               onClick={() => handleVisualize('ném xiên v0 = 22 m/s, alpha = 45 độ')}
-              className="px-2.5 py-1 rounded-lg bg-sky-950/60 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 text-[11px] font-mono transition cursor-pointer active:scale-95"
+              className="px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] font-mono transition cursor-pointer"
             >
-              🚀 Cơ học & Vector (Ném xiên)
+              Lý (Ném xiên)
             </button>
             <button
               type="button"
               data-testid="smart-chip-chemistry"
               onClick={() => handleVisualize('4Fe + 3O2 -> 2Fe2O3')}
-              className="px-2.5 py-1 rounded-lg bg-amber-950/60 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-[11px] font-mono transition cursor-pointer active:scale-95"
+              className="px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] font-mono transition cursor-pointer"
             >
-              🧪 Phản ứng & Cân bằng (Fe + O₂)
+              Hóa (Fe + O₂)
             </button>
             <button
               type="button"
               data-testid="smart-chip-biology"
               onClick={() => handleVisualize('quang hợp nhiệt độ 25 độ C')}
-              className="px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 text-[11px] font-mono transition cursor-pointer active:scale-95"
+              className="px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] font-mono transition cursor-pointer"
             >
-              🌿 Sinh lý Thực vật (Quang hợp 25°C)
+              Sinh (Quang hợp 25°C)
             </button>
             <button
               type="button"
               data-testid="smart-chip-rlc"
               onClick={() => handleVisualize('mạch rlc xoay chiều')}
-              className="px-2.5 py-1 rounded-lg bg-purple-950/60 hover:bg-purple-500/30 border border-purple-400/40 text-purple-200 text-[11px] font-mono transition cursor-pointer active:scale-95"
+              className="px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] font-mono transition cursor-pointer"
             >
-              ⚡ RLC & Phasor (Lớp 12)
+              RLC & Phasor (Lớp 12)
             </button>
             <button
               type="button"
               data-testid="smart-chip-titration"
               onClick={() => handleVisualize('chuẩn độ axit bazơ ph')}
-              className="px-2.5 py-1 rounded-lg bg-pink-950/60 hover:bg-pink-500/30 border border-pink-400/40 text-pink-200 text-[11px] font-mono transition cursor-pointer active:scale-95"
+              className="px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] font-mono transition cursor-pointer"
             >
-              💧 Chuẩn độ pH (Hóa 11-12)
+              Chuẩn độ pH (Hóa 11-12)
             </button>
           </div>
         </div>
       )}
 
-      {/* Quick Demo Preset Pills for Live Demo Guaranteed Triggering */}
-      <div className="flex flex-wrap items-center gap-2 mt-2 px-4 py-2 rounded-2xl bg-slate-900/50 border border-white/5 text-xs max-w-6xl w-full">
-        <span className="text-slate-400 font-medium text-[11px] shrink-0">Demo nhanh:</span>
+      {/* Quick Demo Preset Pills for Live Demo */}
+      <div className="flex flex-wrap items-center gap-1.5 mt-2 px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs max-w-6xl w-full">
+        <span className="text-zinc-500 font-mono text-[11px] uppercase tracking-wider shrink-0">Mẫu sẵn:</span>
         <button
           onClick={() => handleVisualize('y = 2\\sin(3x)')}
-          className="px-2.5 py-1 rounded-lg bg-cyan-950/40 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-mono text-[11px] transition cursor-pointer"
+          className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-[11px] transition cursor-pointer"
         >
-          📐 Toán: Đồ thị Sin
+          Toán: Đồ thị Sin
         </button>
         <button
           onClick={() => handleVisualize('ném xiên v0 = 22 m/s, alpha = 45 độ')}
-          className="px-2.5 py-1 rounded-lg bg-sky-950/40 hover:bg-sky-500/20 border border-sky-500/30 text-sky-300 font-mono text-[11px] transition cursor-pointer"
+          className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-[11px] transition cursor-pointer"
         >
-          🚀 Lý: Ném xiên
+          Lý: Ném xiên
         </button>
         <button
           onClick={() => handleVisualize('4Fe + 3O2 -> 2Fe2O3')}
-          className="px-2.5 py-1 rounded-lg bg-amber-950/40 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-mono text-[11px] transition cursor-pointer"
+          className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-[11px] transition cursor-pointer"
         >
-          ⚖️ Hóa: Phản ứng & Cân bằng
+          Hóa: Cân bằng Fe + O₂
         </button>
         <button
           onClick={() => handleVisualize('quang hợp nhiệt độ 25 độ C')}
-          className="px-2.5 py-1 rounded-lg bg-emerald-950/40 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-mono text-[11px] transition cursor-pointer"
+          className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-[11px] transition cursor-pointer"
         >
-          🌿 Sinh: Quang hợp 25°C
+          Sinh: Quang hợp
         </button>
         <button
           onClick={() => handleVisualize('x = 5\\cos(2\\pi t + \\frac{\\pi}{2})')}
-          className="px-2.5 py-1 rounded-lg bg-indigo-950/40 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 font-mono text-[11px] transition cursor-pointer"
+          className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-[11px] transition cursor-pointer"
         >
-          🌊 Lý: Dao động 5cos
+          Lý: Dao động 5cos
         </button>
         <button
           onClick={() => handleVisualize('y = \\int x^3 dx')}
-          className="px-2.5 py-1 rounded-lg bg-teal-950/40 hover:bg-teal-500/20 border border-teal-500/30 text-teal-300 font-mono text-[11px] transition cursor-pointer"
+          className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-[11px] transition cursor-pointer"
         >
-          ∫ Toán: Tích phân x³
+          Toán: Tích phân x³
         </button>
       </div>
 
@@ -1239,7 +1240,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       <div className="flex flex-col lg:flex-row items-start justify-center gap-4 mt-3 w-full max-w-7xl">
         {/* Drawing Canvas Area (Always visible, NEVER covered, high-def 1200x675) */}
         <div
-          className={`relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900/80 transition-all duration-300 ${
+          className={`relative rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 shadow-sm transition-all duration-200 ${
             activeBlueprint
               ? isSplitView
                 ? 'w-full lg:w-1/2'
@@ -1259,41 +1260,41 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           />
         </div>
 
-        {/* Side-by-Side Simulation Blueprint (Bên cạnh bảng, không che bảng) */}
+        {/* Side-by-Side Simulation Blueprint */}
         {activeBlueprint && (
           <div
             data-testid="active-simulation-modal"
-            className={`flex flex-col rounded-3xl overflow-hidden border border-white/15 bg-slate-900/95 backdrop-blur-2xl shadow-2xl animate-in fade-in transition-all duration-300 ${
+            className={`flex flex-col rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900/95 shadow-xl animate-in fade-in transition-all duration-200 ${
               isSplitView ? 'w-full lg:w-1/2' : 'w-full lg:w-[48%]'
             }`}
           >
             {/* Header bar with dedicated Close / Hide Visualize Button */}
-            <div className="flex items-center justify-between px-5 py-3 bg-slate-950/70 border-b border-white/10">
-              <span className="text-xs font-mono font-semibold text-cyan-400 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-cyan-300" />
-                <span>Mô phỏng Trực quan ({isSplitView ? 'Nửa bảng Phải' : 'Bên cạnh bảng'})</span>
+            <div className="flex items-center justify-between px-4 py-2 bg-zinc-950 border-b border-zinc-800">
+              <span className="text-xs font-mono font-medium text-zinc-300 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+                <span>Mô phỏng trực quan ({isSplitView ? 'Nửa bảng phải' : 'Bên cạnh'})</span>
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setIsSplitView(!isSplitView)}
-                  className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-mono transition cursor-pointer"
+                  className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 text-xs font-mono transition cursor-pointer"
                   title="Chuyển đổi tỷ lệ nửa bảng"
                 >
-                  {isSplitView ? '◫ 50-50' : '◫ Tự do'}
+                  {isSplitView ? '50:50' : 'Tự do'}
                 </button>
                 <button
                   data-testid="close-visualize-btn"
                   onClick={() => setActiveBlueprint(null)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-bold transition cursor-pointer"
+                  className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition cursor-pointer"
                   title="Tắt visualize để viết bảng toàn màn hình"
                 >
-                  <span>✕ Tắt</span>
+                  ✕ Đóng
                 </button>
               </div>
             </div>
 
-            <div className="p-3">
+            <div className="p-2.5">
               <SimulationWidget
                 blueprint={activeBlueprint}
                 onClose={() => setActiveBlueprint(null)}
@@ -1305,38 +1306,36 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         )}
       </div>
 
-      {/* 1-Tap QR Smart Notes Modal (v3.0) */}
+      {/* 1-Tap QR Smart Notes Modal */}
       {isQrModalOpen && (
         <div
           data-testid="smart-notes-qr-modal"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
         >
-          <div className="w-full max-w-md bg-slate-900 border border-cyan-500/40 rounded-3xl p-6 shadow-2xl flex flex-col gap-4 text-slate-100 relative">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-lg p-5 shadow-2xl flex flex-col gap-3.5 text-zinc-100 relative">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
               <div className="flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-emerald-400" />
-                <h3 className="font-bold text-base text-white">Đóng gói Smart Notes & QR</h3>
+                <QrCode className="w-4 h-4 text-emerald-400" />
+                <h3 className="font-semibold text-sm text-zinc-100 tracking-tight">Đóng gói Smart Notes & QR</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsQrModalOpen(false)}
-                className="p-1 rounded-lg bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white"
+                className="p-1 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800"
               >
                 ✕
               </button>
             </div>
 
             {/* QR Code Graphic (SVG) */}
-            <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl shadow-inner">
+            <div className="flex flex-col items-center justify-center p-3.5 bg-white rounded border border-zinc-800 shadow-sm">
               <svg
-                width="160"
-                height="160"
+                width="140"
+                height="140"
                 viewBox="0 0 100 100"
-                className="w-40 h-40"
+                className="w-36 h-36"
               >
-                {/* QR Pattern Representation */}
                 <rect width="100" height="100" fill="#ffffff" />
-                {/* Corner Eyes */}
                 <rect x="5" y="5" width="26" height="26" fill="#000000" />
                 <rect x="9" y="9" width="18" height="18" fill="#ffffff" />
                 <rect x="13" y="13" width="10" height="10" fill="#000000" />
@@ -1349,7 +1348,6 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 <rect x="9" y="73" width="18" height="18" fill="#ffffff" />
                 <rect x="13" y="77" width="10" height="10" fill="#000000" />
 
-                {/* Data modules */}
                 <rect x="36" y="8" width="8" height="8" fill="#000000" />
                 <rect x="48" y="12" width="6" height="10" fill="#000000" />
                 <rect x="58" y="6" width="6" height="8" fill="#000000" />
@@ -1370,26 +1368,26 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 <rect x="66" y="74" width="8" height="14" fill="#000000" />
                 <rect x="80" y="70" width="14" height="8" fill="#000000" />
               </svg>
-              <span className="text-[10px] font-mono font-bold text-slate-800 mt-2">
+              <span className="text-[10px] font-mono font-medium text-zinc-900 mt-1.5">
                 socratic.edu.vn/recap/12A1-09
               </span>
             </div>
 
             {/* Lesson Recap Info */}
-            <div className="bg-slate-950/80 p-3 rounded-2xl border border-white/10 text-xs flex flex-col gap-1.5">
-              <div className="flex justify-between text-slate-400">
+            <div className="bg-zinc-950 p-2.5 rounded-md border border-zinc-800 text-xs flex flex-col gap-1">
+              <div className="flex justify-between text-zinc-400">
                 <span>Lớp:</span>
-                <span className="text-white font-bold">12A1 • Tiết 3 KHTN</span>
+                <span className="text-zinc-200 font-mono">12A1 • Tiết 3 KHTN</span>
               </div>
-              <div className="flex justify-between text-slate-400">
+              <div className="flex justify-between text-zinc-400">
                 <span>Nội dung:</span>
-                <span className="text-cyan-300 font-mono">
+                <span className="text-zinc-200 font-mono">
                   {activeBlueprint?.recognizedLatex || 'Đồ thị & Dao động điều hòa'}
                 </span>
               </div>
-              <div className="flex justify-between text-slate-400">
+              <div className="flex justify-between text-zinc-400">
                 <span>Mô phỏng 60FPS:</span>
-                <span className="text-emerald-400 font-bold">Đã đóng gói tương tác</span>
+                <span className="text-emerald-400 font-mono">Đã đóng gói tương tác</span>
               </div>
             </div>
 
@@ -1402,7 +1400,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   setQrCopied(true);
                   setTimeout(() => setQrCopied(false), 2000);
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-slate-200 transition cursor-pointer flex items-center justify-center gap-1.5"
+                className="flex-1 py-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 transition cursor-pointer flex items-center justify-center gap-1.5"
               >
                 {qrCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
                 <span>{qrCopied ? 'Đã sao chép link' : 'Sao chép link'}</span>
@@ -1415,9 +1413,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   setIsQrModalOpen(false);
                   alert('Đang mở mô phỏng dưới góc nhìn Học sinh trên điện thoại!');
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 hover:to-indigo-400 text-slate-950 text-xs font-bold transition cursor-pointer shadow-lg shadow-cyan-500/20"
+                className="flex-1 py-1.5 rounded-md bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-medium transition cursor-pointer shadow-sm"
               >
-                📱 Mở góc nhìn HS
+                Mở góc nhìn HS
               </button>
             </div>
           </div>

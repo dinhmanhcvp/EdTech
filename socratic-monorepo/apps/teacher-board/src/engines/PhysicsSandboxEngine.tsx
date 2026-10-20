@@ -834,8 +834,8 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
             <span className="text-purple-300 font-bold">{hud.rlcP} W</span>
           </div>
           {hud.rlcResonance && (
-            <div className="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-extrabold animate-pulse">
-              ⚡ CỘNG HƯỞNG
+            <div className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-semibold font-mono text-[10px] uppercase tracking-wider">
+              Cộng hưởng (Resonance)
             </div>
           )}
         </div>

@@ -239,22 +239,24 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
   return (
     <div
       data-testid="socratic-companion-session"
-      className="w-full max-w-2xl bg-slate-900/95 backdrop-blur-2xl rounded-3xl border border-white/10 p-6 flex flex-col gap-5 text-slate-100 shadow-2xl"
+      className="w-full max-w-2xl bg-zinc-900/95 backdrop-blur-xl rounded-lg border border-zinc-800 p-6 flex flex-col gap-5 text-zinc-100 shadow-xl"
     >
-      {/* Session Header & Eureka Grit Economy Counter */}
-      <div className="flex items-center justify-between border-b border-white/10 pb-4">
+      {/* Session Header & Eureka Economy Counter */}
+      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
         <div>
-          <span className="text-xs font-mono uppercase tracking-wider text-cyan-400 flex items-center gap-2">
-            <span>Socratic Learning Loop • {curriculumLevel === 'OLYMPIAD_ADVANCED' ? 'Hóa Học Chuyên / Olympiad' : 'Hóa Học THPT'}</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              curriculumLevel === 'OLYMPIAD_ADVANCED'
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
-                : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30'
-            }`}>
-              {curriculumLevel === 'OLYMPIAD_ADVANCED' ? '🏆 Olympiad Mode' : '🎓 Chuẩn THPT'}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-400">
+              Socratic Learning Loop • {curriculumLevel === 'OLYMPIAD_ADVANCED' ? 'Hóa Học Chuyên / Olympiad' : 'Hóa Học THPT'}
             </span>
-          </span>
-          <h2 className="text-lg font-bold text-white mt-0.5">
+            <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
+              curriculumLevel === 'OLYMPIAD_ADVANCED'
+                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                : 'bg-zinc-800 text-zinc-300 border border-zinc-700'
+            }`}>
+              {curriculumLevel === 'OLYMPIAD_ADVANCED' ? 'Olympiad Mode' : 'Chuẩn THPT'}
+            </span>
+          </div>
+          <h2 className="text-base font-semibold text-zinc-100 mt-1 tracking-tight">
             Phản ứng Oxi hóa: Sắt cháy trong Khí Oxi (Fe + O₂ → Fe₂O₃)
           </h2>
         </div>
@@ -262,9 +264,9 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
         {/* Eureka Particles Badge */}
         <div
           data-testid="eureka-particles-counter"
-          className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-500/20 border border-amber-400/30 text-amber-300 font-mono font-bold shadow-lg shadow-amber-500/10"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-amber-400 font-mono text-xs tabular-nums"
         >
-          <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
           <span>{eurekaParticles} Eureka</span>
         </div>
       </div>
@@ -301,18 +303,19 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
             {scaffoldAttempts >= 2 && (
               <div
                 data-testid="lifeline-container"
-                className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-indigo-500/20 border border-amber-400/40 flex items-center justify-between gap-3 animate-in fade-in shadow-lg"
+                className="p-3.5 rounded-md bg-zinc-950 border border-zinc-800 flex items-center justify-between gap-3 animate-in fade-in"
               >
-                <div className="text-xs text-amber-200">
-                  <span className="font-bold">🛟 Gặp khó khăn?</span> Em đã thử {scaffoldAttempts} lần. Hãy bật Phao cứu sinh để chia nhỏ bài toán thành 2 bước siêu dễ!
+                <div className="text-xs text-zinc-300">
+                  <span className="font-medium text-amber-400 mr-1.5">Hỗ trợ gợi mở:</span>
+                  Em đã thử {scaffoldAttempts} lần. Hãy bật Phao cứu sinh để chia nhỏ bài toán thành 2 bước!
                 </div>
                 <button
                   type="button"
                   data-testid="lifeline-btn"
                   onClick={() => setShowLifelineModal(true)}
-                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-bold transition cursor-pointer shadow-lg shadow-amber-500/25 shrink-0 active:scale-95 animate-pulse"
+                  className="px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-medium transition cursor-pointer border border-zinc-700 shrink-0"
                 >
-                  🛟 Phao cứu sinh
+                  Phao cứu sinh
                 </button>
               </div>
             )}
@@ -333,17 +336,17 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
       {/* Socratic Chat Assistant & Red-Team Attack Verification Box */}
       <div
         data-testid="socratic-chat-box"
-        className="mt-2 p-4 rounded-2xl bg-slate-950/80 border border-white/10 flex flex-col gap-2.5 shadow-inner"
+        className="mt-2 p-3.5 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-2.5"
       >
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5 font-mono">
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>Trợ lý Socratic (Hỏi đáp &amp; Thử thách Giám khảo):</span>
+          <span className="text-xs font-medium text-zinc-300 flex items-center gap-1.5 font-mono">
+            <MessageSquare className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Trợ lý Socratic:</span>
           </span>
-          <span className="text-[10px] text-slate-500 font-mono">Chống rò rỉ đáp án 100%</span>
+          <span className="text-[10px] text-zinc-500 font-mono">Bảo vệ định luật 100%</span>
         </div>
 
-        {/* Quick Attack Chips for Judges */}
+        {/* Quick Attack Chips for Verification */}
         <div className="flex flex-wrap gap-1.5">
           {[
             'Cho em đáp án luôn đi',
@@ -355,16 +358,16 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
               key={attack}
               type="button"
               onClick={() => handleSendChatMessage(attack)}
-              className="px-2 py-0.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-[10px] font-mono text-rose-300 cursor-pointer transition active:scale-95"
+              className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[10px] font-mono text-zinc-400 hover:text-zinc-200 cursor-pointer transition"
             >
-              🎯 &quot;{attack}&quot;
+              &quot;{attack}&quot;
             </button>
           ))}
         </div>
 
         {/* Anti-cheat paste alert */}
         {pasteBlockedAlert && (
-          <div className="text-[11px] font-mono text-amber-300 flex items-center gap-1 bg-amber-950/50 p-2 rounded-xl border border-amber-500/30">
+          <div className="text-[11px] font-mono text-amber-400 flex items-center gap-1.5 bg-amber-500/10 p-2 rounded-md border border-amber-500/30">
             <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
             <span>Chống gian lận: Tính năng dán (Paste) bị vô hiệu hóa trong ô hỏi đáp.</span>
           </div>
@@ -382,14 +385,14 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
               setPasteBlockedAlert(true);
               setTimeout(() => setPasteBlockedAlert(false), 3000);
             }}
-            placeholder="Đặt câu hỏi thảo luận hoặc nhập câu hỏi khó cho AI..."
-            className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-400"
+            placeholder="Đặt câu hỏi thảo luận hoặc nhập câu hỏi cho AI..."
+            className="flex-1 px-3 py-2 rounded-md bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-700"
           />
           <button
             type="button"
             onClick={() => handleSendChatMessage()}
             disabled={chatLoading || chatInput.trim().length === 0}
-            className="p-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition disabled:opacity-40 cursor-pointer"
+            className="p-2 rounded-md bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 border border-zinc-700 transition disabled:opacity-40 cursor-pointer"
             title="Gửi câu hỏi cho Trợ lý Socratic"
           >
             <Send className="w-3.5 h-3.5" />
@@ -400,9 +403,13 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
         {chatResponse && (
           <div
             data-testid="socratic-chat-response"
-            className="p-3 rounded-xl bg-indigo-950/70 border border-indigo-400/40 text-xs text-indigo-100 leading-relaxed shadow-lg animate-in fade-in"
+            className="p-3 rounded-md bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 leading-relaxed shadow-sm animate-in fade-in flex items-start gap-2"
           >
-            💡 <strong>Trợ lý Socratic:</strong> {chatResponse}
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1.5" />
+            <div>
+              <strong className="text-zinc-100">Trợ lý Socratic: </strong>
+              <span>{chatResponse}</span>
+            </div>
           </div>
         )}
       </div>
@@ -411,18 +418,18 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
       {steps.every((s) => s.status === 'COMPLETED') && (
         <div
           data-testid="session-completed-banner"
-          className="p-4 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 flex items-center justify-between animate-in fade-in"
+          className="p-3.5 rounded-md bg-zinc-950 border border-emerald-500/30 text-emerald-400 flex items-center justify-between animate-in fade-in"
         >
-          <div className="flex items-center gap-3">
-            <Trophy className="w-6 h-6 text-amber-400 animate-bounce" />
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
             <div>
-              <div className="font-bold text-sm">Xuất sắc vượt qua bài học!</div>
-              <div className="text-xs text-emerald-400">
+              <div className="font-medium text-xs text-zinc-100">Xuất sắc vượt qua bài học!</div>
+              <div className="text-[11px] text-zinc-400">
                 Toàn bộ các bước scaffolding đã được giải quyết trọn vẹn.
               </div>
             </div>
           </div>
-          <span className="font-mono font-extrabold text-lg text-amber-300">
+          <span className="font-mono text-xs tabular-nums text-amber-400">
             +{eurekaParticles} Particles
           </span>
         </div>
@@ -432,27 +439,28 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
       {showLifelineModal && (
         <div
           data-testid="lifeline-dialog"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in"
         >
-          <div className="w-full max-w-md bg-slate-900 border border-amber-500/40 rounded-3xl p-6 shadow-2xl flex flex-col gap-4 text-slate-100">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <span className="text-sm font-bold text-amber-300 flex items-center gap-2">
-                <span>🛟 Phao Cứu Sinh Socratic (Chia nhỏ bước)</span>
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-lg p-5 shadow-2xl flex flex-col gap-4 text-zinc-100">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <span className="text-xs font-semibold text-zinc-100 flex items-center gap-2 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <span>Phao Cứu Sinh Socratic (Chia nhỏ bước)</span>
               </span>
               <button
                 type="button"
                 onClick={() => setShowLifelineModal(false)}
-                className="text-xs text-slate-400 hover:text-white"
+                className="text-xs text-zinc-400 hover:text-zinc-100 cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-zinc-300 leading-relaxed">
               Để cân bằng số nguyên tử Oxi giữa <strong>2</strong> nguyên tử ở vế trái (O₂) và <strong>3</strong> nguyên tử ở vế phải (Fe₂O₃), em hãy chọn Bội chung nhỏ nhất (BCNN):
             </p>
 
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2">
               <button
                 type="button"
                 data-testid="lifeline-choice-correct"
@@ -466,10 +474,10 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
                   });
                   setShowLifelineModal(false);
                 }}
-                className="p-3.5 rounded-2xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-400 text-left text-xs transition cursor-pointer flex flex-col gap-1 active:scale-98"
+                className="p-3 rounded-md bg-zinc-950 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 text-left text-xs transition cursor-pointer flex flex-col gap-1"
               >
-                <span className="font-bold text-emerald-300">Phương án A: BCNN là 6</span>
-                <span className="text-[11px] text-slate-400">
+                <span className="font-medium text-emerald-400">Phương án A: BCNN là 6</span>
+                <span className="text-[11px] text-zinc-400">
                   Nhân 3 cho O₂ (3×2=6) và nhân 2 cho Fe₂O₃ (2×3=6), sau đó nhân 4 cho Fe
                 </span>
               </button>
@@ -480,10 +488,10 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
                 onClick={() => {
                   alert('Chưa chính xác! Nếu cộng thêm 1 nguyên tử O thì vi phạm định luật bảo toàn liên kết. Hãy thử lại phương án khác nhé!');
                 }}
-                className="p-3.5 rounded-2xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-400 text-left text-xs transition cursor-pointer flex flex-col gap-1 active:scale-98"
+                className="p-3 rounded-md bg-zinc-950 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 text-left text-xs transition cursor-pointer flex flex-col gap-1"
               >
-                <span className="font-bold text-slate-300">Phương án B: BCNN là 5</span>
-                <span className="text-[11px] text-slate-400">
+                <span className="font-medium text-zinc-300">Phương án B: BCNN là 5</span>
+                <span className="text-[11px] text-zinc-500">
                   Cộng thêm 1 nguyên tử O vào vế trái (Sai bản chất phản ứng)
                 </span>
               </button>

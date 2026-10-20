@@ -50,8 +50,8 @@ export function computeProjectile(v0: number, alphaDeg: number, g: number = 9.8)
 }
 
 export const PLANETARY_GRAVITY = [
-  { name: 'Mặt Trăng', g: 1.62, icon: '🌑' },
-  { name: 'Sao Hỏa', g: 3.71, icon: '🪐' },
-  { name: 'Trái Đất', g: 9.8, icon: '🌍' },
-  { name: 'Sao Mộc', g: 24.79, icon: '⚡' },
+  { name: 'Mặt Trăng', g: 1.62, code: 'MOON' },
+  { name: 'Sao Hỏa', g: 3.71, code: 'MARS' },
+  { name: 'Trái Đất', g: 9.8, code: 'EARTH' },
+  { name: 'Sao Mộc', g: 24.79, code: 'JUPITER' },
 ];

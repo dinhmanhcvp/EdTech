@@ -64,100 +64,100 @@ export const SmartNotesViewer: React.FC = () => {
   return (
     <div
       data-testid="smart-notes-viewer"
-      className="w-full max-w-4xl bg-slate-900/95 backdrop-blur-2xl rounded-3xl border border-white/10 p-6 flex flex-col gap-6 text-slate-100 shadow-2xl"
+      className="w-full max-w-4xl bg-zinc-900/90 backdrop-blur-xl rounded-lg border border-zinc-800 p-6 flex flex-col gap-6 text-zinc-100 shadow-xl"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-wrap gap-2">
+      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4 flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/20">
-            <FileText className="w-5 h-5" />
+          <div className="w-8 h-8 rounded-md bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-300">
+            <FileText className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-extrabold text-base text-white flex items-center gap-2">
+            <h3 className="font-semibold text-sm text-zinc-100 flex items-center gap-2">
               Socratic Smart Notes (Tính năng 5)
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/30">
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-950 text-sky-400 border border-zinc-800">
                 Live Sync &lt;3s
               </span>
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-zinc-400">
               Biên bản bài giảng tự động chuẩn hóa từ Bảng Giáo viên sang Học sinh
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-950/60 border border-emerald-500/30">
-            <CheckCircle2 className="w-3.5 h-3.5" />
+          <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-950 border border-zinc-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span>Đồng bộ: {lastSyncTime}</span>
           </span>
           <button
             type="button"
             onClick={() => { setLoading(true); fetchLatestNote().finally(() => setLoading(false)); }}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition cursor-pointer"
+            className="p-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition cursor-pointer border border-zinc-700"
             title="Làm mới ghi chú"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
       {note ? (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           {/* Main Formula & Simulation Meta */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2 p-5 rounded-2xl bg-slate-950/80 border border-cyan-500/30 shadow-inner flex flex-col justify-between">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="md:col-span-2 p-4 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-                  <span className="font-mono uppercase tracking-wider text-cyan-400">
+                <div className="flex items-center justify-between text-xs text-zinc-400 mb-2 font-mono">
+                  <span className="uppercase tracking-wider text-sky-400 text-[11px]">
                     {note.engine} ENGINE • {note.template_id}
                   </span>
-                  <span className="text-[10px] font-mono">Độ trễ xuất: {note.export_ms ?? 12}ms</span>
+                  <span className="text-[10px] tabular-nums">Độ trễ xuất: {note.export_ms ?? 12}ms</span>
                 </div>
-                <div className="p-4 rounded-xl bg-slate-900/80 border border-white/5 font-mono text-lg text-cyan-200 text-center shadow-lg">
+                <div className="p-3.5 rounded-md bg-zinc-900 border border-zinc-800/80 font-mono text-base text-zinc-100 text-center">
                   {note.formula}
                 </div>
               </div>
-              <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-400">
+              <div className="mt-3 flex items-center gap-1.5 text-[11px] text-zinc-500 font-mono">
                 <Clock className="w-3.5 h-3.5" />
                 <span>Thời điểm ghi nhận: {note.created_at_iso || 'Vừa xong'}</span>
               </div>
             </div>
 
             {/* Active Parameters Card */}
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/5 flex flex-col justify-between">
+            <div className="p-4 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
               <div>
-                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                  <Atom className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-xs font-medium text-zinc-300 uppercase tracking-wider flex items-center gap-1.5 mb-2 font-mono">
+                  <Atom className="w-3.5 h-3.5 text-zinc-400" />
                   <span>Tham số thí nghiệm:</span>
                 </span>
                 <div className="flex flex-col gap-1.5">
                   {note.parameters && Object.keys(note.parameters).length > 0 ? (
                     Object.entries(note.parameters).map(([k, v]) => (
-                      <div key={k} className="flex justify-between items-center text-xs font-mono px-2 py-1 rounded bg-white/5">
-                        <span className="text-slate-400">{k}:</span>
-                        <span className="text-amber-300 font-bold">{v}</span>
+                      <div key={k} className="flex justify-between items-center text-xs font-mono px-2 py-0.5 rounded bg-zinc-900 border border-zinc-850">
+                        <span className="text-zinc-400">{k}:</span>
+                        <span className="text-sky-400 font-medium tabular-nums">{v}</span>
                       </div>
                     ))
                   ) : (
-                    <span className="text-xs text-slate-500">Mặc định</span>
+                    <span className="text-xs text-zinc-500">Mặc định</span>
                   )}
                 </div>
               </div>
-              <div className="text-[10px] text-slate-500 font-mono mt-3">
+              <div className="text-[10px] text-zinc-500 font-mono mt-3">
                 Xác thực 100% Deterministic (Zero Mock)
               </div>
             </div>
           </div>
 
           {/* Socratic Discussion Prompts */}
-          <div className="p-5 rounded-2xl bg-indigo-950/40 border border-indigo-500/30">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-amber-300" />
+          <div className="p-4 rounded-md bg-zinc-950 border border-zinc-800">
+            <h4 className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 flex items-center gap-2 mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
               <span>Câu hỏi thảo luận Socratic trên lớp:</span>
             </h4>
-            <ul className="list-disc list-inside space-y-1.5 text-xs text-indigo-100 leading-relaxed">
+            <ul className="list-disc list-inside space-y-1.5 text-xs text-zinc-200 leading-relaxed">
               {note.socratic_questions.map((q, idx) => (
-                <li key={idx} className="font-medium">
+                <li key={idx} className="font-normal text-zinc-300">
                   {q}
                 </li>
               ))}
@@ -165,15 +165,15 @@ export const SmartNotesViewer: React.FC = () => {
           </div>
 
           {/* Key Insights & Takeaways */}
-          <div className="p-5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-2 mb-2">
-              <BookOpen className="w-4 h-4 text-emerald-400" />
-              <span>Khái niệm & Bản chất cốt lõi:</span>
+          <div className="p-4 rounded-md bg-zinc-950 border border-zinc-800">
+            <h4 className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 flex items-center gap-2 mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>Khái niệm &amp; Bản chất cốt lõi:</span>
             </h4>
-            <div className="space-y-1.5 text-xs text-emerald-100 leading-relaxed">
+            <div className="space-y-1.5 text-xs text-zinc-300 leading-relaxed">
               {note.key_insights.map((ins, idx) => (
                 <div key={idx} className="flex items-start gap-2">
-                  <span className="text-emerald-400 font-bold">✓</span>
+                  <span className="text-emerald-400 font-bold font-mono">✓</span>
                   <span>{ins}</span>
                 </div>
               ))}
@@ -181,11 +181,11 @@ export const SmartNotesViewer: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-2">
-          <FileText className="w-8 h-8 text-slate-600 animate-pulse" />
-          <p className="text-sm font-medium">Chưa có bài giảng nào được xuất từ Smartboard.</p>
-          <p className="text-xs text-slate-500">
-            Giáo viên bấm nút <strong>&quot;📑 Xuất Smart Notes&quot;</strong> trên bảng để đồng bộ tức thì sang đây.
+        <div className="p-12 text-center text-zinc-400 flex flex-col items-center gap-2">
+          <FileText className="w-6 h-6 text-zinc-600" />
+          <p className="text-xs font-medium text-zinc-300">Chưa có bài giảng nào được xuất từ Smartboard.</p>
+          <p className="text-xs text-zinc-500">
+            Giáo viên bấm nút <strong>&quot;Xuất Bài Giảng&quot;</strong> trên bảng để đồng bộ tức thì sang đây.
           </p>
         </div>
       )}

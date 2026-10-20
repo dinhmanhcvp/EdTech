@@ -56,13 +56,13 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
   return (
     <div
       data-testid="math-numpad"
-      className="w-full max-w-md bg-slate-900/90 rounded-2xl p-4 border border-white/10 shadow-xl flex flex-col gap-3 select-none"
+      className="w-full max-w-md bg-zinc-900/90 rounded-lg p-4 border border-zinc-800 shadow-xl flex flex-col gap-3 select-none"
       style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
     >
-      {/* Context Token Chips (Feature 5: Quick 1-tap tokens for mobile) */}
-      <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-black/30 rounded-xl border border-white/5">
-        <span className="text-[10px] font-mono text-cyan-400 px-1 font-semibold shrink-0">
-          ⚡ Token nhanh:
+      {/* Context Token Chips */}
+      <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-zinc-950 rounded-md border border-zinc-800/80">
+        <span className="text-[10px] font-mono text-zinc-400 px-1 font-medium shrink-0">
+          Token nhanh:
         </span>
         {effectiveTokens.map((token) => (
           <button
@@ -71,7 +71,7 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
             data-testid={`token-chip-${token}`}
             onClick={() => handleKeyPress(token)}
             disabled={disabled}
-            className="px-2 py-1 rounded-lg bg-cyan-950/70 hover:bg-cyan-500/30 active:scale-95 border border-cyan-500/30 font-mono text-xs font-bold text-cyan-200 transition cursor-pointer disabled:opacity-40"
+            className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 active:scale-95 border border-zinc-800 font-mono text-xs text-sky-400 transition cursor-pointer disabled:opacity-40"
           >
             {token}
           </button>
@@ -87,14 +87,14 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
           readOnly
           onPaste={handlePasteAttempt}
           placeholder={placeholder}
-          className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-cyan-500/30 text-cyan-300 font-mono text-base font-semibold focus:outline-none focus:border-cyan-400 select-none"
+          className="w-full px-3.5 py-2.5 rounded-md bg-zinc-950 border border-zinc-800 text-sky-400 font-mono text-sm font-semibold focus:outline-none focus:border-zinc-700 select-none"
           style={{ userSelect: 'none' }}
         />
         {value.length > 0 && (
           <button
             data-testid="numpad-clear"
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400 hover:text-white px-2 py-1 rounded bg-white/10"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-zinc-400 hover:text-zinc-100 px-2 py-0.5 rounded bg-zinc-800"
           >
             Xóa
           </button>
@@ -105,15 +105,15 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
       {pasteBlockedWarning && (
         <div
           data-testid="paste-blocked-alert"
-          className="flex items-center gap-2 p-2.5 rounded-xl bg-red-500/20 border border-red-500/40 text-red-300 text-xs font-semibold animate-pulse"
+          className="flex items-center gap-2 p-2 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium"
         >
-          <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
+          <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
           <span>Chống gian lận: Tính năng dán (Paste) bị vô hiệu hóa để kích hoạt tư duy chủ động!</span>
         </div>
       )}
 
       {/* Touch-Friendly Virtual Math Keys */}
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-5 gap-1.5">
         {keys.map((row, rIdx) =>
           row.map((char, cIdx) => (
             <button
@@ -121,7 +121,7 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
               data-testid={`key-${char}`}
               onClick={() => handleKeyPress(char)}
               disabled={disabled}
-              className="h-11 rounded-xl bg-white/5 hover:bg-white/15 active:scale-95 border border-white/10 font-mono text-base font-bold text-slate-200 transition flex items-center justify-center cursor-pointer disabled:opacity-40"
+              className="h-10 rounded-md bg-zinc-950 hover:bg-zinc-800 active:scale-95 border border-zinc-800/90 font-mono text-xs font-medium text-zinc-200 transition flex items-center justify-center cursor-pointer disabled:opacity-40"
             >
               {char}
             </button>
@@ -130,14 +130,14 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
       </div>
 
       {/* Bottom Action Row: Backspace & Submit */}
-      <div className="grid grid-cols-2 gap-2 mt-1">
+      <div className="grid grid-cols-2 gap-2 mt-0.5">
         <button
           data-testid="numpad-backspace"
           onClick={handleBackspace}
           disabled={disabled || value.length === 0}
-          className="h-11 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/10 text-sm font-semibold text-slate-300 flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-40"
+          className="h-9 rounded-md bg-zinc-950 hover:bg-zinc-800 active:scale-95 border border-zinc-800 text-xs font-medium text-zinc-300 flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-40"
         >
-          <Delete className="w-4 h-4" />
+          <Delete className="w-3.5 h-3.5" />
           <span>Xóa lùi</span>
         </button>
 
@@ -145,9 +145,9 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
           data-testid="numpad-submit"
           onClick={() => onSubmit(value)}
           disabled={disabled || value.trim().length === 0}
-          className="h-11 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 active:scale-95 text-slate-950 font-bold text-sm flex items-center justify-center gap-1.5 transition cursor-pointer shadow-lg shadow-cyan-500/25 disabled:opacity-40"
+          className="h-9 rounded-md bg-zinc-100 hover:bg-white active:scale-95 text-zinc-950 font-medium text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-40 shadow-sm"
         >
-          <Send className="w-4 h-4" />
+          <Send className="w-3.5 h-3.5" />
           <span>Kiểm tra</span>
         </button>
       </div>

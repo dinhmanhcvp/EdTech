@@ -1,7 +1,7 @@
 /**
  * End-to-End User Flow Integration Test Suite
  * Scenario 1 (Teacher Flow):
- *   Draw equation -> Lasso select -> Click [✨ Visualize] -> Engine renders ->
+ *   Draw equation -> Lasso select -> Click [Trực quan hóa] -> Engine renders ->
  *   Click breathing Socratic lightbulb -> Drag Sandbox slider from 25 to 50 -> Click Reset.
  *
  * Scenario 2 (Student Anti-Cheat Flow):
@@ -23,7 +23,7 @@ describe('Socratic Vision Board v2.0 - End-to-End User Scenarios', () => {
 
   /**
    * SCENARIO 1: Teacher Smartboard Flow
-   * Draw equation -> Lasso select -> Click [✨ Visualize] -> Engine renders ->
+   * Draw equation -> Lasso select -> Click [Trực quan hóa] -> Engine renders ->
    * Click breathing Socratic lightbulb -> Drag Sandbox slider from 25 to 50 -> Click Reset.
    */
   it('Scenario 1: Full Teacher Smartboard Experience', async () => {
@@ -100,11 +100,11 @@ describe('Socratic Vision Board v2.0 - End-to-End User Scenarios', () => {
     fireEvent.pointerMove(canvas, { clientX: 80, clientY: 100 });
     fireEvent.pointerUp(canvas);
 
-    // 4. Floating [✨ Visualize] button appears
+    // 4. Floating [Trực quan hóa] button appears
     const visualizeBtn = await screen.findByTestId('btn-visualize');
     expect(visualizeBtn).toBeTruthy();
 
-    // Click [✨ Visualize]
+    // Click [Trực quan hóa]
     fireEvent.click(visualizeBtn);
 
     // 5. Assert Engine renders modal with SimulationWidget

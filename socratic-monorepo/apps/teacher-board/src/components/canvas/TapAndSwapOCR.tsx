@@ -62,55 +62,55 @@ export const TapAndSwapOCR: React.FC<TapAndSwapOCRProps> = ({
   return (
     <div className={`relative inline-block ${className}`}>
       {isEditing ? (
-        <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-cyan-400 shadow-xl">
+        <div className="flex items-center gap-1.5 bg-zinc-950 px-2.5 py-1 rounded-md border border-zinc-700">
           <input
             type="text"
             value={editInput}
             onChange={(e) => setEditInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
-            className="bg-transparent text-cyan-300 font-mono text-sm focus:outline-none w-56"
-            placeholder="VD: y = 2x + 1 hoặc y = x^2 - 4"
+            className="bg-transparent text-zinc-100 font-mono text-xs focus:outline-none w-56"
+            placeholder="y = 2x + 1 hoặc y = x^2 - 4"
           />
           <button
             onClick={handleSaveEdit}
-            className="p-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition cursor-pointer"
+            className="p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition cursor-pointer"
             title="Áp dụng công thức"
           >
-            <Check className="w-4 h-4" />
+            <Check className="w-3.5 h-3.5" />
           </button>
         </div>
       ) : (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Clickable OCR Token Header */}
           <div
             data-testid="ocr-token"
             onClick={() => setIsOpen(!isOpen)}
-            className="group flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-cyan-500/20 border border-white/20 hover:border-cyan-400 cursor-pointer transition select-none"
+            className="group flex items-center gap-2 px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 cursor-pointer transition select-none"
             title="Chạm để đổi phương án OCR hoặc sửa công thức"
           >
             <span
               data-testid="current-formula-display"
-              className="font-mono text-cyan-300 font-semibold text-base"
+              className="font-mono text-zinc-100 font-medium text-xs tracking-tight"
             >
               {selectedFormula}
             </span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30 font-sans group-hover:bg-cyan-500 group-hover:text-black transition flex items-center gap-1">
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/60 font-mono group-hover:text-zinc-200 transition flex items-center gap-1">
               <RefreshCw className="w-2.5 h-2.5" />
-              <span>Tap & Swap</span>
+              <span>Swap</span>
             </span>
           </div>
 
-          {/* Quick 1-tap Token Swap Chips (Zero Virtual Keyboard) */}
+          {/* Quick 1-tap Token Swap Chips */}
           {confusions.slice(0, 2).map((conf) =>
             conf.alternatives.slice(0, 1).map((alt) => (
               <button
                 key={`${conf.token}-${alt}`}
                 type="button"
                 onClick={() => handleSwapToken(conf.token, alt)}
-                title={`Đổi ${conf.token} thành ${alt} chỉ trong 1 chạm`}
-                className="px-2 py-1 rounded-lg bg-cyan-950/80 hover:bg-cyan-500/30 border border-cyan-400/40 text-[10px] font-mono text-cyan-300 transition cursor-pointer flex items-center gap-1 active:scale-95"
+                title={`Đổi ${conf.token} thành ${alt}`}
+                className="px-1.5 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[10px] font-mono text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
               >
-                <span>{conf.token} ⇄ {alt}</span>
+                {conf.token} ⇄ {alt}
               </button>
             ))
           )}
@@ -121,10 +121,10 @@ export const TapAndSwapOCR: React.FC<TapAndSwapOCRProps> = ({
               setEditInput(selectedFormula);
               setIsEditing(true);
             }}
-            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-cyan-300 transition cursor-pointer"
+            className="p-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
             title="Sửa trực tiếp công thức"
           >
-            <Edit3 className="w-3.5 h-3.5" />
+            <Edit3 className="w-3 h-3" />
           </button>
         </div>
       )}
@@ -133,12 +133,12 @@ export const TapAndSwapOCR: React.FC<TapAndSwapOCRProps> = ({
       {isOpen && !isEditing && (
         <div
           data-testid="ocr-bubble-menu"
-          className="absolute z-50 left-0 top-full mt-2 w-80 p-2.5 rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-cyan-500/40 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+          className="absolute z-50 left-0 top-full mt-1.5 w-80 p-2 rounded-md bg-zinc-950 border border-zinc-800 shadow-xl"
         >
           {confusions.length > 0 && (
-            <div className="mb-2 pb-2 border-b border-white/10">
-              <span className="text-[10px] font-medium text-amber-300 uppercase tracking-wider block mb-1">
-                Sửa lỗi nhận diện nhầm (1 chạm - Không cần phím):
+            <div className="mb-2 pb-2 border-b border-zinc-800">
+              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block mb-1">
+                Sửa ký tự nhầm:
               </span>
               <div className="flex flex-wrap gap-1">
                 {confusions.map((conf) =>
@@ -150,7 +150,7 @@ export const TapAndSwapOCR: React.FC<TapAndSwapOCRProps> = ({
                         handleSwapToken(conf.token, alt);
                         setIsOpen(false);
                       }}
-                      className="px-2 py-0.5 rounded-md bg-amber-950/70 hover:bg-amber-500/30 border border-amber-400/40 text-[11px] font-mono text-amber-200 cursor-pointer transition"
+                      className="px-1.5 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[10px] font-mono text-zinc-300 cursor-pointer transition"
                     >
                       {conf.token} ⇄ {alt}
                     </button>
@@ -160,18 +160,18 @@ export const TapAndSwapOCR: React.FC<TapAndSwapOCRProps> = ({
             </div>
           )}
 
-          <div className="flex items-center justify-between px-2 py-1">
-            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-              Phương án OCR thay thế:
+          <div className="flex items-center justify-between px-1 py-1">
+            <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+              Phương án thay thế:
             </span>
             <button
               onClick={() => {
                 setIsOpen(false);
                 setIsEditing(true);
               }}
-              className="text-[11px] text-cyan-400 hover:underline flex items-center gap-1 cursor-pointer"
+              className="text-[10px] text-zinc-400 hover:text-zinc-200 flex items-center gap-1 cursor-pointer font-mono"
             >
-              <Edit3 className="w-3 h-3" />
+              <Edit3 className="w-2.5 h-2.5" />
               <span>Tự nhập</span>
             </button>
           </div>
@@ -181,10 +181,10 @@ export const TapAndSwapOCR: React.FC<TapAndSwapOCRProps> = ({
                 key={idx}
                 data-testid={`ocr-alt-${idx}`}
                 onClick={() => handleSelect(alt)}
-                className="w-full text-left px-3 py-2 rounded-xl text-xs font-mono text-slate-200 hover:text-white hover:bg-cyan-500/20 hover:border-cyan-400/50 border border-transparent transition flex items-center justify-between cursor-pointer"
+                className="w-full text-left px-2 py-1.5 rounded text-xs font-mono text-zinc-300 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition flex items-center justify-between cursor-pointer"
               >
                 <span>{alt}</span>
-                <span className="text-[10px] text-cyan-400 font-sans px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-500/30">
+                <span className="text-[10px] text-zinc-500 font-mono px-1 py-0.2 rounded bg-zinc-900 border border-zinc-800">
                   Chọn
                 </span>
               </button>

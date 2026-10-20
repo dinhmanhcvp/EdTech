@@ -298,7 +298,7 @@ export const ChemistryLabEngine: React.FC<Props> = ({
         ctx.font = 'bold 15px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(
-          diff === 0 ? '✅ Cân bằng hoàn hảo (Định luật Bảo toàn Khối lượng)' : '⚠️ Hai vế chưa cân bằng số nguyên tử!',
+          diff === 0 ? '[Bảo toàn] Cân bằng hoàn hảo (Định luật Bảo toàn Khối lượng)' : '[Chưa cân bằng] Hai vế chưa cân bằng số nguyên tử!',
           cx,
           300
         );

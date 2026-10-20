@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { SimulationBlueprint, SimParamConfig, CurriculumLevel } from '@socratic/types';
-import { RotateCcw, Lightbulb, FileText, CheckCircle2 } from 'lucide-react';
+import { RotateCcw, FileText, CheckCircle2 } from 'lucide-react';
 import { MathPlotEngine } from '../../engines/MathPlotEngine';
 import { PhysicsSandboxEngine } from '../../engines/PhysicsSandboxEngine';
 import { ChemistryLabEngine } from '../../engines/ChemistryLabEngine';
@@ -88,140 +88,166 @@ function deriveParametersForFormula(
       { key: 'a', label: 'Hệ số a (x³)', unit: '', defaultValue: a, min: -5, max: 5, step: 0.5 },
       { key: 'b', label: 'Hệ số b (x²)', unit: '', defaultValue: b, min: -5, max: 5, step: 0.5 },
       { key: 'c', label: 'Hệ số c (x)', unit: '', defaultValue: c, min: -10, max: 10, step: 0.5 },
-      { key: 'd', label: 'Hệ số d (tự do)', unit: '', defaultValue: d, min: -10, max: 10, step: 0.5 },
-      { key: 'x0', label: 'Điểm tiếp điểm (x₀)', unit: '', defaultValue: 1.0, min: -5, max: 5, step: 0.5 },
+      { key: 'd', label: 'Hệ số tự do d', unit: '', defaultValue: d, min: -10, max: 10, step: 0.5 },
     ];
-    return { configs, values: { a, b, c, d, x0: 1.0 } };
-  } else if (b !== 0) {
-    const configs: SimParamConfig[] = [
-      { key: 'b', label: 'Hệ số a (x²)', unit: '', defaultValue: b, min: -5, max: 5, step: 0.5 },
-      { key: 'c', label: 'Hệ số b (x)', unit: '', defaultValue: c, min: -10, max: 10, step: 0.5 },
-      { key: 'd', label: 'Hệ số c (tự do)', unit: '', defaultValue: d, min: -10, max: 10, step: 0.5 },
-      { key: 'x0', label: 'Điểm tiếp điểm (x₀)', unit: '', defaultValue: 1.0, min: -5, max: 5, step: 0.5 },
-    ];
-    return { configs, values: { b, c, d, x0: 1.0 } };
-  } else if (c !== 0 || d !== 0) {
-    const configs: SimParamConfig[] = [
-      { key: 'c', label: 'Hệ số góc (k)', unit: '', defaultValue: c || 2, min: -10, max: 10, step: 0.5 },
-      { key: 'd', label: 'Tung độ gốc (d)', unit: '', defaultValue: d || 1, min: -10, max: 10, step: 0.5 },
-      { key: 'x0', label: 'Điểm tiếp điểm (x₀)', unit: '', defaultValue: 1.0, min: -5, max: 5, step: 0.5 },
-    ];
-    return { configs, values: { c: c || 2, d: d || 1, x0: 1.0 } };
+    return {
+      configs,
+      values: { a, b, c, d },
+    };
   }
 
-  // Fallback to whatever configs were passed or default
-  const values: Record<string, number> = {};
-  fallbackConfigs.forEach((p) => {
-    values[p.key] = p.defaultValue;
-  });
-  return { configs: fallbackConfigs, values };
+  if (b !== 0) {
+    const configs: SimParamConfig[] = [
+      { key: 'a', label: 'Hệ số a (x²)', unit: '', defaultValue: b, min: -5, max: 5, step: 0.5 },
+      { key: 'b', label: 'Hệ số b (x)', unit: '', defaultValue: c, min: -10, max: 10, step: 0.5 },
+      { key: 'c', label: 'Hệ số tự do c', unit: '', defaultValue: d, min: -10, max: 10, step: 0.5 },
+    ];
+    return {
+      configs,
+      values: { a: b, b: c, c: d },
+    };
+  }
+
+  return {
+    configs: fallbackConfigs,
+    values: fallbackConfigs.reduce((acc, p) => ({ ...acc, [p.key]: p.defaultValue }), {}),
+  };
 }
 
-function getCurriculumParameters(
+export function getCurriculumParameters(
   templateId: string,
-  engine: string,
-  baseConfigs: SimParamConfig[],
-  isOlympiad: boolean
+  baseParams: SimParamConfig[],
+  level: CurriculumLevel
 ): SimParamConfig[] {
-  if (!isOlympiad) return baseConfigs;
-  const extraConfigs: SimParamConfig[] = [];
-  if (templateId === 'PHYS_PROJECTILE') {
-    if (!baseConfigs.some((p) => p.key === 'k')) {
-      extraConfigs.push({
-        key: 'k',
-        label: 'Lực cản khí (k)',
-        unit: '',
-        defaultValue: 0.04,
-        min: 0.0,
-        max: 0.15,
-        step: 0.01,
-      });
-    }
-  } else if (templateId === 'PHYS_PENDULUM') {
-    if (!baseConfigs.some((p) => p.key === 'theta0')) {
-      extraConfigs.push({
-        key: 'theta0',
-        label: 'Góc ban đầu (θ₀)',
-        unit: '°',
-        defaultValue: 60.0,
-        min: 10.0,
-        max: 85.0,
-        step: 5.0,
-      });
-    }
-    if (!baseConfigs.some((p) => p.key === 'b')) {
-      extraConfigs.push({
-        key: 'b',
-        label: 'Cản nhớt (b)',
-        unit: '',
-        defaultValue: 0.08,
-        min: 0.0,
-        max: 0.3,
-        step: 0.02,
-      });
-    }
-  } else if (templateId === 'PHYS_RLC_PHASOR') {
-    return [
-      { key: 'R', label: 'Điện trở (R)', unit: 'Ω', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
-      { key: 'L', label: 'Độ tự cảm (L)', unit: 'H', defaultValue: 0.5, min: 0.1, max: 2.0, step: 0.1 },
-      { key: 'C', label: 'Điện dung (C)', unit: 'μF', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
-      { key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', defaultValue: 200.0, min: 50.0, max: 500.0, step: 10.0 },
-      { key: 'U', label: 'Điện áp (U)', unit: 'V', defaultValue: 120.0, min: 20.0, max: 240.0, step: 10.0 },
-    ];
-  } else if (engine === 'MATH') {
-    if (!baseConfigs.some((p) => p.key === 'm')) {
-      extraConfigs.push({
-        key: 'm',
-        label: 'Tham số m (Tương giao)',
-        unit: '',
-        defaultValue: 0.0,
-        min: -6.0,
-        max: 6.0,
-        step: 0.5,
-      });
-    }
-    if (!baseConfigs.some((p) => p.key === 'n')) {
-      extraConfigs.push({
-        key: 'n',
-        label: 'Bậc Taylor (n)',
-        unit: '',
-        defaultValue: 5.0,
-        min: 1.0,
-        max: 15.0,
-        step: 1.0,
-      });
-    }
-  } else if (templateId === 'CHEM_EQUILIBRIUM_TITRATION') {
-    return [
-      { key: 'Vb', label: 'Thể tích NaOH (V_b)', unit: 'mL', defaultValue: 20.0, min: 0.0, max: 50.0, step: 1.0 },
-      { key: 'Ca', label: 'Nồng độ HCl (C_a)', unit: 'M', defaultValue: 0.1, min: 0.05, max: 0.5, step: 0.05 },
-      { key: 'Cb', label: 'Nồng độ NaOH (C_b)', unit: 'M', defaultValue: 0.1, min: 0.05, max: 0.5, step: 0.05 },
-    ];
-  } else if (engine === 'BIOLOGY') {
-    if (!baseConfigs.some((p) => p.key === 'p')) {
-      extraConfigs.push({
-        key: 'p',
-        label: 'Tần số alen A (p)',
-        unit: '',
-        defaultValue: 0.6,
-        min: 0.1,
-        max: 0.9,
-        step: 0.05,
-      });
-    }
-    if (!baseConfigs.some((p) => p.key === 's')) {
-      extraConfigs.push({
-        key: 's',
-        label: 'Hệ số chọn lọc (s)',
-        unit: '',
-        defaultValue: 0.25,
-        min: 0.0,
-        max: 0.8,
-        step: 0.05,
-      });
-    }
+  if (level === 'THPT_STANDARD') {
+    return baseParams;
   }
-  return [...baseConfigs, ...extraConfigs];
+
+  const existingKeys = new Set(baseParams.map((p) => p.key));
+  const additions: SimParamConfig[] = [];
+
+  switch (templateId) {
+    case 'PHYS_PROJECTILE':
+      if (!existingKeys.has('k')) {
+        additions.push({
+          key: 'k',
+          label: 'Lực cản khí (k - RK4)',
+          unit: 'kg/s',
+          defaultValue: 0.05,
+          min: 0.0,
+          max: 0.25,
+          step: 0.01,
+        });
+      }
+      break;
+
+    case 'PHYS_PENDULUM':
+      if (!existingKeys.has('theta0')) {
+        additions.push({
+          key: 'theta0',
+          label: 'Góc lệch lớn (θ₀)',
+          unit: 'rad',
+          defaultValue: 1.2,
+          min: 0.1,
+          max: 2.8,
+          step: 0.1,
+        });
+      }
+      if (!existingKeys.has('b')) {
+        additions.push({
+          key: 'b',
+          label: 'Hệ số cản nhớt (b)',
+          unit: 'N·s/m',
+          defaultValue: 0.08,
+          min: 0.0,
+          max: 0.5,
+          step: 0.02,
+        });
+      }
+      break;
+
+    case 'PHYS_RLC_PHASOR':
+      if (!existingKeys.has('R')) {
+        additions.push({ key: 'R', label: 'Điện trở (R)', unit: 'Ω', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 });
+      }
+      if (!existingKeys.has('L')) {
+        additions.push({ key: 'L', label: 'Độ tự cảm (L)', unit: 'H', defaultValue: 0.5, min: 0.1, max: 2.0, step: 0.1 });
+      }
+      if (!existingKeys.has('C')) {
+        additions.push({ key: 'C', label: 'Điện dung (C)', unit: 'μF', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 });
+      }
+      if (!existingKeys.has('omega')) {
+        additions.push({ key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', defaultValue: 200.0, min: 50.0, max: 500.0, step: 10.0 });
+      }
+      break;
+
+    case 'MATH_TRIG_WAVE':
+    case 'MATH_POLYNOMIAL':
+      if (!existingKeys.has('m')) {
+        additions.push({
+          key: 'm',
+          label: 'Tham số nghiệm (m)',
+          unit: '',
+          defaultValue: 0.0,
+          min: -5.0,
+          max: 5.0,
+          step: 0.2,
+        });
+      }
+      if (!existingKeys.has('n')) {
+        additions.push({
+          key: 'n',
+          label: 'Bậc Taylor (n)',
+          unit: '',
+          defaultValue: 5,
+          min: 1,
+          max: 15,
+          step: 1,
+        });
+      }
+      break;
+
+    case 'CHEM_EQUILIBRIUM_TITRATION':
+      if (!existingKeys.has('Vb')) {
+        additions.push({
+          key: 'Vb',
+          label: 'Thể tích NaOH (V_b)',
+          unit: 'mL',
+          defaultValue: 20.0,
+          min: 0.0,
+          max: 50.0,
+          step: 1.0,
+        });
+      }
+      break;
+
+    case 'BIO_PHOTOSYNTHESIS':
+      if (!existingKeys.has('p')) {
+        additions.push({
+          key: 'p',
+          label: 'Tần số alen trội (p)',
+          unit: '',
+          defaultValue: 0.6,
+          min: 0.05,
+          max: 0.95,
+          step: 0.05,
+        });
+      }
+      if (!existingKeys.has('s')) {
+        additions.push({
+          key: 's',
+          label: 'Hệ số chọn lọc (s)',
+          unit: '',
+          defaultValue: 0.2,
+          min: 0.0,
+          max: 0.8,
+          step: 0.05,
+        });
+      }
+      break;
+  }
+
+  return [...baseParams, ...additions];
 }
 
 export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
@@ -231,94 +257,83 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   onFormulaChange,
   isSplitView = false,
   onToggleSplitView,
-}: SimulationWidgetProps) => {
+}) => {
+  const [activeFormula, setActiveFormula] = useState<string>(blueprint.recognizedLatex);
   const [curriculumLevel, setCurriculumLevel] = useState<CurriculumLevel>(
-    blueprint.curriculumLevel ?? 'THPT_STANDARD'
+    blueprint.curriculumLevel || 'THPT_STANDARD'
   );
-  const isOlympiad = curriculumLevel === 'OLYMPIAD_ADVANCED';
 
-  const derived = useMemo(() => {
-    let baseConfigs = blueprint.parameters;
-    if (blueprint.engine === 'MATH') {
-      const d = deriveParametersForFormula(blueprint.recognizedLatex, blueprint.parameters);
-      baseConfigs = d.configs;
-    }
-    const enrichedConfigs = getCurriculumParameters(
-      blueprint.templateId,
-      blueprint.engine,
-      baseConfigs,
-      isOlympiad
-    );
+  const { configs: derivedConfigs, values: derivedValues } = useMemo(() => {
+    return deriveParametersForFormula(activeFormula, blueprint.parameters);
+  }, [activeFormula, blueprint.parameters]);
 
-    const values = enrichedConfigs.reduce((acc: Record<string, number>, p: SimParamConfig) => {
-      acc[p.key] = p.defaultValue;
-      return acc;
-    }, {} as Record<string, number>);
-    return { configs: enrichedConfigs, values };
-  }, [blueprint, isOlympiad]);
+  const activeParameters = useMemo(() => {
+    return getCurriculumParameters(blueprint.templateId, derivedConfigs, curriculumLevel);
+  }, [blueprint.templateId, derivedConfigs, curriculumLevel]);
 
-  const [params, setParams] = useState<Record<string, number>>(derived.values);
-  const [showSocratic, setShowSocratic] = useState(false);
-  const [activeFormula, setActiveFormula] = useState(blueprint.recognizedLatex);
-  const [activeParameters, setActiveParameters] = useState<SimParamConfig[]>(derived.configs);
-
-  // Synchronize state when blueprint or curriculumLevel changes
-  useEffect(() => {
-    setActiveFormula(blueprint.recognizedLatex);
-    let baseConfigs = blueprint.parameters;
-    if (blueprint.engine === 'MATH') {
-      const d = deriveParametersForFormula(blueprint.recognizedLatex, blueprint.parameters);
-      baseConfigs = d.configs;
-    }
-    const enriched = getCurriculumParameters(
-      blueprint.templateId,
-      blueprint.engine,
-      baseConfigs,
-      isOlympiad
-    );
-    setActiveParameters(enriched);
-    setParams((prev) => {
-      const next = { ...prev };
-      enriched.forEach((p) => {
-        if (next[p.key] === undefined) {
-          next[p.key] = p.defaultValue;
-        }
-      });
-      return next;
+  const [params, setParams] = useState<Record<string, number>>(() => {
+    const initial: Record<string, number> = { ...derivedValues };
+    activeParameters.forEach((p) => {
+      if (initial[p.key] === undefined) initial[p.key] = p.defaultValue;
     });
-  }, [blueprint, isOlympiad]);
+    return initial;
+  });
 
-  const handleParamChange = (key: string, value: number) => {
-    setParams((prev: Record<string, number>) => {
-      const updated = { ...prev, [key]: value };
-      return updated;
-    });
-    if (onParamChange) {
-      onParamChange(key, value);
-    }
-  };
-
-  const [exporting, setExporting] = useState(false);
+  const [showSocratic, setShowSocratic] = useState<boolean>(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
 
-  const handleExportSmartNotes = async () => {
-    setExporting(true);
-    const t0 = performance.now();
-    const payload = {
-      formula: activeFormula,
-      template_id: blueprint.templateId,
-      engine: blueprint.engine,
-      parameters: params,
-      socratic_questions: [blueprint.socraticQuestion],
-      key_insights: [
-        `Mô hình ${blueprint.templateId} xác thực công thức: ${activeFormula}`,
-        `Tham số hoạt nghiệm: ${Object.entries(params).map(([k, v]) => `${k}=${v}`).join(', ')}`,
-      ],
-      class_id: '12A1',
-      student_id: 'all_students',
-    };
+  useEffect(() => {
+    setParams((prev) => {
+      const updated = { ...prev };
+      activeParameters.forEach((p) => {
+        if (updated[p.key] === undefined) {
+          updated[p.key] = p.defaultValue;
+        }
+      });
+      return updated;
+    });
+  }, [activeParameters]);
 
+  useEffect(() => {
+    setActiveFormula(blueprint.recognizedLatex);
+  }, [blueprint.recognizedLatex]);
+
+  const handleParamChange = (key: string, val: number) => {
+    setParams((prev) => ({ ...prev, [key]: val }));
+    onParamChange?.(key, val);
+  };
+
+  const handleFormulaSwap = (newFormula: string) => {
+    setActiveFormula(newFormula);
+    const { configs, values } = deriveParametersForFormula(newFormula, blueprint.parameters);
+    setParams(values);
+    onFormulaChange?.(newFormula);
+  };
+
+  const handleReset = () => {
+    const resetVals: Record<string, number> = {};
+    activeParameters.forEach((p) => {
+      resetVals[p.key] = p.defaultValue;
+    });
+    setParams(resetVals);
+    activeParameters.forEach((p) => onParamChange?.(p.key, p.defaultValue));
+  };
+
+  const handleExportSmartNotes = async () => {
     try {
+      const payload = {
+        formula: activeFormula,
+        template_id: blueprint.templateId,
+        engine: blueprint.engine,
+        parameters: params,
+        socratic_questions: [blueprint.socraticQuestion],
+        key_insights: [
+          `Mô phỏng ${blueprint.templateId} theo tham số thời gian thực`,
+          `Hệ thống phản xạ 60FPS không trễ API`,
+        ],
+        class_id: '12A1',
+      };
+
       let res: Response | null = null;
       try {
         res = await fetch('/api/v1/notes/export', {
@@ -333,50 +348,20 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
           body: JSON.stringify(payload),
         });
       }
-      const elapsed = Math.round(performance.now() - t0);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('socratic_smart_notes_latest', JSON.stringify({ ...payload, export_ms: elapsed }));
+
+      if (res && res.ok) {
+        setExportNotice('Đã xuất bài giảng sang Smart Notes cho học sinh (Port 3002)!');
+      } else {
+        setExportNotice('Đã lưu bài giảng cục bộ vào bộ nhớ lớp 12A1!');
       }
-      setExportNotice(`Đã đồng bộ Smart Notes sang HS & GV (${elapsed}ms)`);
-      setTimeout(() => setExportNotice(null), 3000);
     } catch {
-      const elapsed = Math.round(performance.now() - t0);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('socratic_smart_notes_latest', JSON.stringify({ ...payload, export_ms: elapsed }));
-      }
-      setExportNotice(`Đã lưu Smart Notes offline (${elapsed}ms)`);
-      setTimeout(() => setExportNotice(null), 3000);
-    } finally {
-      setExporting(false);
+      setExportNotice('Đã lưu bài giảng cục bộ vào bộ nhớ lớp 12A1!');
     }
+
+    setTimeout(() => setExportNotice(null), 3000);
   };
 
-  const handleReset = () => {
-    setParams(derived.values);
-    if (onParamChange) {
-      Object.entries(derived.values).forEach(([k, v]) => onParamChange(k, v));
-    }
-  };
-
-  const handleFormulaSwap = (newFormula: string) => {
-    setActiveFormula(newFormula);
-
-    if (blueprint.engine === 'MATH') {
-      const d = deriveParametersForFormula(newFormula, blueprint.parameters);
-      setActiveParameters(d.configs);
-      setParams(d.values);
-      if (onParamChange) {
-        Object.entries(d.values).forEach(([k, v]) => onParamChange(k, v));
-      }
-    }
-
-    if (onFormulaChange) {
-      onFormulaChange(newFormula);
-    }
-  };
-
-  // Active blueprint with updated formula
-  const activeBlueprint: SimulationBlueprint = useMemo(() => ({
+  const activeBlueprint = useMemo(() => ({
     ...blueprint,
     recognizedLatex: activeFormula,
     parameters: activeParameters,
@@ -385,17 +370,18 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   return (
     <div
       data-testid="simulation-widget"
-      className="relative w-full max-w-full rounded-3xl bg-slate-900/90 backdrop-blur-2xl border border-white/15 shadow-2xl text-slate-100 overflow-hidden select-none"
+      className="relative w-full max-w-full rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-100 shadow-xl overflow-hidden select-none"
     >
-      {/* Header + Breathing Socratic Cue (Feature 3) */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 flex-wrap gap-3">
+      {/* Header Bar */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800 bg-zinc-950/80 flex-wrap gap-2.5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono uppercase tracking-wider text-cyan-400">
-              {blueprint.engine} ENGINE • {blueprint.templateId}
+            <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 font-medium">
+              {blueprint.engine} • {blueprint.templateId}
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
-              ⚡ 0 Network Calls @60FPS
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              60 FPS • Local Engine
             </span>
           </div>
           <div className="mt-1">
@@ -406,41 +392,41 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             />
           </div>
           {activeFormula && (
-            <div className="mt-1.5 px-3 py-1 rounded-xl bg-slate-950/80 border border-cyan-500/20 text-cyan-100 text-sm inline-block">
+            <div className="mt-1 px-2.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs inline-block">
               <MathView latex={activeFormula} displayMode={false} />
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Segmented Curriculum Level Toggle: [🎓 Chuẩn THPT | 🏆 Chuyên sâu (Chuyên/HSG)] */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Segmented Curriculum Level Toggle: [Chuẩn THPT | Chuyên sâu (Chuyên/HSG)] */}
           <div
-            className="flex items-center bg-slate-950/80 p-1 rounded-2xl border border-white/10"
+            className="flex items-center bg-zinc-950 p-0.5 rounded-md border border-zinc-800"
             data-testid="curriculum-mode-toggle"
           >
             <button
               type="button"
               data-testid="btn-mode-standard"
               onClick={() => setCurriculumLevel('THPT_STANDARD')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+              className={`px-2.5 py-1 rounded text-xs transition cursor-pointer font-medium ${
                 curriculumLevel === 'THPT_STANDARD'
-                  ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-zinc-800 text-zinc-100 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              🎓 Chuẩn THPT
+              Chuẩn THPT
             </button>
             <button
               type="button"
               data-testid="btn-mode-olympiad"
               onClick={() => setCurriculumLevel('OLYMPIAD_ADVANCED')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-2.5 py-1 rounded text-xs transition cursor-pointer font-medium ${
                 curriculumLevel === 'OLYMPIAD_ADVANCED'
-                  ? 'bg-gradient-to-r from-amber-500 to-rose-600 text-slate-950 font-extrabold shadow-md shadow-amber-500/25'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-zinc-800 text-sky-400 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              <span>🏆 Chuyên sâu (Chuyên/HSG)</span>
+              Chuyên sâu (Chuyên/HSG)
             </button>
           </div>
 
@@ -450,58 +436,60 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               type="button"
               data-testid="btn-widget-split-toggle"
               onClick={onToggleSplitView}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl border text-xs font-semibold transition cursor-pointer active:scale-95 ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md border text-xs font-medium transition cursor-pointer ${
                 isSplitView
-                  ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold shadow-lg shadow-cyan-500/25'
-                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300'
+                  ? 'bg-zinc-800 text-sky-400 border-zinc-700'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
               }`}
-              title="Ghim sang nửa bảng (Split-Screen): Trái viết phấn, Phải mô phỏng 60FPS"
+              title="Ghim sang nửa bảng (Split-Screen)"
             >
-              <span>◫</span>
-              <span>{isSplitView ? 'Toàn màn hình' : 'Ghim nửa bảng'}</span>
+              <span className="font-mono">◫</span>
+              <span>{isSplitView ? 'Toàn bảng' : 'Nửa bảng'}</span>
             </button>
           )}
 
-          {/* Smart Notes Export Button (Feature 5 / CP6) */}
+          {/* Export Lecture to Smart Notes */}
           <button
             type="button"
-            data-testid="btn-export-smart-notes"
             onClick={handleExportSmartNotes}
-            disabled={exporting}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-teal-500/20 to-cyan-500/20 hover:from-teal-500/30 hover:to-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-xs font-semibold shadow-lg transition cursor-pointer active:scale-95"
-            title="Đồng bộ công thức chuẩn và dữ liệu bài học sang ứng dụng Học sinh & Giáo viên"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-medium transition cursor-pointer"
+            title="Đóng gói bài giảng & đẩy sang app học sinh"
           >
-            <FileText className="w-4 h-4 text-cyan-400" />
-            <span>{exporting ? 'Đang xuất...' : '📑 Xuất Smart Notes'}</span>
+            <FileText className="w-3.5 h-3.5" />
+            <span>Smart Notes</span>
           </button>
 
-          {/* Breathing Socratic lightbulb (Opt-in Cue) */}
-          <button
-            data-testid="socratic-cue-btn"
-            onClick={() => setShowSocratic(!showSocratic)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-500/20 border border-amber-400/50 text-amber-300 hover:bg-amber-500/30 transition cursor-pointer shadow-lg shadow-amber-500/10"
-            style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}
-            title="Mở câu hỏi thảo luận Socratic gợi mở"
-          >
-            <Lightbulb className="w-5 h-5 text-amber-300" />
-            <span className="text-sm font-medium">Gợi mở Socratic</span>
-          </button>
-
-          {/* Reset button (Feature 4) */}
+          {/* Reset button */}
           <button
             data-testid="reset-btn"
             onClick={handleReset}
-            className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition cursor-pointer"
-            title="Khôi phục thông số gốc"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs font-medium transition cursor-pointer"
+            title="Khôi phục thông số mặc định"
           >
-            <RotateCcw className="w-5 h-5 text-slate-300" />
+            <RotateCcw className="w-3 h-3" />
+            <span>Đặt lại</span>
+          </button>
+
+          {/* Breathing Socratic Cue Lightbulb */}
+          <button
+            data-testid="socratic-cue-btn"
+            onClick={() => setShowSocratic(!showSocratic)}
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 text-xs font-medium transition border cursor-pointer ${
+              showSocratic
+                ? 'bg-amber-500/10 text-amber-300 border-amber-500/40'
+                : 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800'
+            }`}
+            title="Câu hỏi gợi mở tư duy Socratic"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+            <span>Gợi ý Socratic</span>
           </button>
 
           {/* Close button if modal */}
           {onClose && (
             <button
               onClick={onClose}
-              className="px-3 py-2 rounded-2xl bg-white/5 hover:bg-red-500/20 hover:text-red-300 border border-white/10 text-xs transition cursor-pointer"
+              className="px-2 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 text-xs transition cursor-pointer"
             >
               ✕ Đóng
             </button>
@@ -511,51 +499,54 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
 
       {/* Export Toast Notification */}
       {exportNotice && (
-        <div className="mx-6 mt-3 px-4 py-2 rounded-xl bg-emerald-950/90 border border-emerald-400/40 text-emerald-200 text-xs font-mono flex items-center gap-2 shadow-lg animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="mx-4 mt-2 px-3 py-1.5 rounded-md bg-zinc-950 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
           <span>{exportNotice}</span>
         </div>
       )}
 
       {/* Planetary Gravity Presets for PHYS_PROJECTILE */}
       {blueprint.templateId === 'PHYS_PROJECTILE' && (
-        <div className="flex flex-wrap items-center gap-2 px-6 pt-3 pb-1 border-b border-white/5 bg-slate-950/40">
-          <span className="text-[11px] font-mono text-slate-400">Trọng lực hành tinh (g):</span>
+        <div className="flex flex-wrap items-center gap-1.5 px-4 py-2 border-b border-zinc-800 bg-zinc-950/60">
+          <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider">Trọng lực (g):</span>
           {[
-            { name: 'Mặt Trăng', g: 1.62, icon: '🌑' },
-            { name: 'Sao Hỏa', g: 3.71, icon: '🪐' },
-            { name: 'Trái Đất', g: 9.8, icon: '🌍' },
-            { name: 'Sao Mộc', g: 24.79, icon: '⚡' },
+            { name: 'Mặt Trăng', g: 1.62 },
+            { name: 'Sao Hỏa', g: 3.71 },
+            { name: 'Trái Đất', g: 9.8 },
+            { name: 'Sao Mộc', g: 24.79 },
           ].map((pl) => (
             <button
               key={pl.name}
               type="button"
               onClick={() => handleParamChange('g', pl.g)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-2 py-0.5 rounded text-xs font-mono transition cursor-pointer ${
                 params.g === pl.g
-                  ? 'bg-amber-400 text-slate-950 font-bold shadow-md shadow-amber-500/30'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+                  ? 'bg-zinc-800 text-sky-400 font-semibold border border-zinc-700'
+                  : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800'
               }`}
             >
-              <span>{pl.icon}</span>
               <span>{pl.name} ({pl.g} m/s²)</span>
             </button>
           ))}
         </div>
       )}
 
-      {/* Socratic Discussion Prompt (Dismissible by click or close button) */}
+      {/* Socratic Discussion Prompt */}
       {showSocratic && (
         <div
           data-testid="socratic-content"
           onClick={() => setShowSocratic(false)}
-          className="mx-6 mt-4 p-4 rounded-2xl bg-indigo-950/90 border border-indigo-400/40 text-indigo-100 text-base leading-relaxed flex items-start justify-between gap-3 shadow-2xl cursor-pointer hover:bg-indigo-950 transition"
+          className="mx-4 my-2 p-3 rounded-md bg-zinc-950 border border-amber-500/30 text-zinc-200 text-xs leading-relaxed flex items-start justify-between gap-3 shadow-md cursor-pointer hover:border-amber-500/50 transition"
           title="Bấm vào để thu gọn gợi ý Socratic"
         >
-          <div>
-            💡 <strong>Câu hỏi thảo luận:</strong> {blueprint.socraticQuestion}
-            <div className="text-[11px] text-indigo-300/80 mt-1 font-mono">
-              (Chạm vào hộp thoại hoặc nút ✕ bên phải để đóng)
+          <div className="flex items-start gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1 shrink-0" />
+            <div>
+              <span className="font-semibold text-amber-300">Câu hỏi gợi mở Socratic:</span>{' '}
+              <span className="text-zinc-200">{blueprint.socraticQuestion}</span>
+              <div className="text-[10px] text-zinc-500 mt-1 font-mono">
+                (Chạm vào hộp thoại hoặc nút ✕ bên phải để đóng)
+              </div>
             </div>
           </div>
           <button
@@ -564,7 +555,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               e.stopPropagation();
               setShowSocratic(false);
             }}
-            className="text-xs text-indigo-300 hover:text-white px-2 py-1 rounded-lg bg-white/10 cursor-pointer shrink-0"
+            className="text-[10px] font-mono text-zinc-400 hover:text-white px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 cursor-pointer shrink-0"
           >
             ✕ Đóng
           </button>
@@ -572,7 +563,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
       )}
 
       {/* 60FPS SIMULATION CANVAS RENDER AREA */}
-      <div className="p-6 flex justify-center items-center bg-slate-950/60" data-testid="engine-canvas-container">
+      <div className="p-4 flex justify-center items-center bg-zinc-950" data-testid="engine-canvas-container">
         {blueprint.engine === 'MATH' && (
           <MathPlotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
         )}
@@ -587,34 +578,34 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         )}
       </div>
 
-      {/* MACRO SLIDER CONTROLS (Feature 4 - 80x80px Touch Friendly Placed Below Canvas) */}
-      <div className="p-6 bg-slate-900/95 border-t border-white/10 grid grid-cols-2 gap-4" data-testid="macro-sliders-container">
+      {/* MACRO SLIDER CONTROLS (Linear-style precision scrubbers) */}
+      <div className="p-4 bg-zinc-900/90 border-t border-zinc-800 grid grid-cols-2 gap-2.5" data-testid="macro-sliders-container">
         {activeParameters.map((p: SimParamConfig) => {
           const currentVal = params[p.key] ?? p.defaultValue;
           return (
             <div
               key={p.key}
               data-testid={`param-box-${p.key}`}
-              className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col gap-2"
+              className="p-2.5 rounded-md bg-zinc-950/80 border border-zinc-800/80 flex flex-col gap-1.5 hover:border-zinc-700/80 transition-colors"
             >
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-slate-300">{p.label}</span>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-400 font-medium tracking-tight text-[11px]">{p.label}</span>
                 <span
                   data-testid={`param-val-${p.key}`}
-                  className="text-lg font-mono font-bold text-cyan-400"
+                  className="font-mono tabular-nums text-xs text-sky-400 font-semibold"
                 >
                   {currentVal} {p.unit}
                 </span>
               </div>
 
-              <div className="flex items-center gap-3">
-                {/* Large touch button [-] */}
+              <div className="flex items-center gap-2">
                 <button
                   data-testid={`slider-minus-${p.key}`}
+                  type="button"
                   onClick={() =>
                     handleParamChange(p.key, Math.max(p.min, Number((currentVal - p.step).toFixed(2))))
                   }
-                  className="w-12 h-12 min-w-[48px] rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-xl font-bold flex items-center justify-center cursor-pointer"
+                  className="w-6 h-6 rounded bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-xs font-mono text-zinc-300 border border-zinc-800 flex items-center justify-center cursor-pointer transition"
                 >
                   -
                 </button>
@@ -629,16 +620,16 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     handleParamChange(p.key, parseFloat(e.target.value))
                   }
-                  className="flex-1 h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                  className="flex-1 h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-sky-400"
                 />
 
-                {/* Large touch button [+] */}
                 <button
                   data-testid={`slider-plus-${p.key}`}
+                  type="button"
                   onClick={() =>
                     handleParamChange(p.key, Math.min(p.max, Number((currentVal + p.step).toFixed(2))))
                   }
-                  className="w-12 h-12 min-w-[48px] rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-xl font-bold flex items-center justify-center cursor-pointer"
+                  className="w-6 h-6 rounded bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-xs font-mono text-zinc-300 border border-zinc-800 flex items-center justify-center cursor-pointer transition"
                 >
                   +
                 </button>

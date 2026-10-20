@@ -7,12 +7,12 @@ import { ParentPulse } from '../components/dashboards/ParentPulse';
 import { SmartNotesViewer } from '../components/dashboards/SmartNotesViewer';
 import { GraduationCap, BarChart3, HeartHandshake, Compass, FileText } from 'lucide-react';
 
-function getAcademicRank(eureka: number): { title: string; badgeClass: string; icon: string } {
-  if (eureka >= 1000) return { title: 'Grandmaster / Quốc tế', badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40', icon: '👑' };
-  if (eureka >= 500) return { title: 'Đội tuyển Quốc gia (National Olympiad)', badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40', icon: '🏆' };
-  if (eureka >= 250) return { title: 'Đội tuyển Tỉnh (Provincial Team)', badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40', icon: '⭐' };
-  if (eureka >= 100) return { title: 'Varsity (Tuyển Trường)', badgeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40', icon: '🏅' };
-  return { title: 'Scholar (Tập sự THPT)', badgeClass: 'bg-slate-800 text-slate-300 border-white/10', icon: '📚' };
+function getAcademicRank(eureka: number): { title: string; badgeClass: string; dotClass: string } {
+  if (eureka >= 1000) return { title: 'Grandmaster / Quốc tế', badgeClass: 'bg-rose-500/10 text-rose-400 border-rose-500/30', dotClass: 'bg-rose-500' };
+  if (eureka >= 500) return { title: 'Đội tuyển Quốc gia (National Olympiad)', badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30', dotClass: 'bg-amber-400' };
+  if (eureka >= 250) return { title: 'Đội tuyển Tỉnh (Provincial Team)', badgeClass: 'bg-sky-500/10 text-sky-400 border-sky-500/30', dotClass: 'bg-sky-400' };
+  if (eureka >= 100) return { title: 'Varsity (Tuyển Trường)', badgeClass: 'bg-zinc-800 text-zinc-300 border-zinc-700', dotClass: 'bg-zinc-400' };
+  return { title: 'Scholar (Tập sự THPT)', badgeClass: 'bg-zinc-900 text-zinc-400 border-zinc-800', dotClass: 'bg-zinc-500' };
 }
 
 export default function StudentAppPage() {
@@ -62,105 +62,108 @@ export default function StudentAppPage() {
   const academicRank = getAcademicRank(totalEureka);
 
   return (
-    <main className="min-h-screen bg-slate-950 flex flex-col">
-      {/* Header */}
-      <header className="px-8 py-4 border-b border-white/10 bg-slate-900/80 backdrop-blur-xl flex items-center justify-between sticky top-0 z-50 flex-wrap gap-3">
+    <main className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col antialiased">
+      {/* Precision Header */}
+      <header className="h-11 border-b border-zinc-800/80 bg-zinc-950 px-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-slate-950 shadow-lg shadow-purple-500/20">
-            <GraduationCap className="w-5 h-5 font-bold" />
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs font-semibold tracking-widest text-zinc-100">
+              SOCRATIC
+            </span>
+            <span className="text-zinc-600 text-xs font-mono">/</span>
+            <span className="text-xs text-zinc-400 font-medium">Companion</span>
+            <span className="font-mono text-[10px] text-zinc-500 border border-zinc-800 px-1.5 py-0.5 rounded">
+              v4.0
+            </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-extrabold text-base tracking-tight text-white">
-                Socratic Companion <span className="text-purple-400 font-mono text-xs">v4.0 Olympiad</span>
-              </h1>
-              <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-mono font-bold flex items-center gap-1 ${academicRank.badgeClass}`}>
-                <span>{academicRank.icon}</span>
-                <span>{academicRank.title}</span>
-              </span>
-            </div>
-            <p className="text-xs text-slate-400">Quantum Research Terminal • Gia sư THPT & HSG • Săn Bẫy Đề Thi 2025+</p>
+
+          <div className="h-3.5 w-px bg-zinc-800" />
+
+          <div className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center gap-1.5 ${academicRank.badgeClass}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${academicRank.dotClass}`} />
+            <span>{academicRank.title}</span>
           </div>
         </div>
 
-        {/* Curriculum Toggle: [🎓 Chuẩn THPT | 🏆 Chuyên sâu (Chuyên/HSG)] */}
+        {/* Center: Curriculum Toggle */}
         <div
-          className="flex items-center bg-slate-950/80 p-1 rounded-2xl border border-white/10"
+          className="flex items-center bg-zinc-900 p-0.5 rounded-md border border-zinc-800"
           data-testid="student-curriculum-toggle"
         >
           <button
             type="button"
             data-testid="btn-student-mode-standard"
             onClick={() => setCurriculumLevel('THPT_STANDARD')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`px-3 py-1 rounded text-xs transition cursor-pointer ${
               curriculumLevel === 'THPT_STANDARD'
-                ? 'bg-purple-600 text-white font-bold shadow-md shadow-purple-600/30'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-zinc-800 text-zinc-100 font-medium shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            🎓 Chuẩn THPT
+            Chuẩn THPT
           </button>
           <button
             type="button"
             data-testid="btn-student-mode-olympiad"
             onClick={() => setCurriculumLevel('OLYMPIAD_ADVANCED')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1 rounded text-xs transition cursor-pointer flex items-center gap-1.5 ${
               curriculumLevel === 'OLYMPIAD_ADVANCED'
-                ? 'bg-gradient-to-r from-amber-500 to-rose-600 text-slate-950 font-extrabold shadow-md shadow-amber-500/25'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-zinc-800 text-amber-400 font-medium shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <span>🏆 Chuyên sâu (Chuyên/HSG)</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            <span>Chuyên sâu (Chuyên/HSG)</span>
           </button>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-2xl border border-white/10 flex-wrap">
+        {/* Right: Tab Switcher */}
+        <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-md border border-zinc-800">
           <button
             onClick={() => setActiveTab('COMPANION')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition cursor-pointer ${
               activeTab === 'COMPANION'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-zinc-800 text-zinc-100 font-medium'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <Compass className="w-4 h-4" />
+            <Compass className="w-3.5 h-3.5" />
             <span>Bài học Socratic</span>
           </button>
 
           <button
             onClick={() => setActiveTab('SMARTNOTES')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition cursor-pointer ${
               activeTab === 'SMARTNOTES'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-zinc-800 text-zinc-100 font-medium'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-3.5 h-3.5" />
             <span>Smart Notes (Tính năng 5)</span>
           </button>
 
           <button
             onClick={() => setActiveTab('HEATMAP')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition cursor-pointer ${
               activeTab === 'HEATMAP'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-zinc-800 text-zinc-100 font-medium'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <BarChart3 className="w-4 h-4" />
+            <BarChart3 className="w-3.5 h-3.5" />
             <span>Ma trận Giáo viên</span>
           </button>
 
           <button
             onClick={() => setActiveTab('PARENTPULSE')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition cursor-pointer ${
               activeTab === 'PARENTPULSE'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-zinc-800 text-zinc-100 font-medium'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <HeartHandshake className="w-4 h-4" />
+            <HeartHandshake className="w-3.5 h-3.5" />
             <span>Parent Pulse</span>
           </button>
         </div>

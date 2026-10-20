@@ -619,7 +619,7 @@ export const MathPlotEngine: React.FC<Props> = ({
 
       ctx.fillStyle = '#38bdf8';
       ctx.font = 'bold 10px monospace';
-      ctx.fillText(`⚡ ${deltaSummary || 'Đã hiệu chỉnh thông số'}`, 25, 66);
+      ctx.fillText(`${deltaSummary || 'Đã hiệu chỉnh thông số'}`, 25, 66);
     }
   }, [blueprint, params]);
 
@@ -627,17 +627,17 @@ export const MathPlotEngine: React.FC<Props> = ({
     <div className="flex flex-col items-center w-full max-w-[620px] gap-2">
       {/* Top Engine Mode Switcher */}
       <div className="flex items-center justify-between w-full px-2">
-        <span className="text-[11px] font-mono text-cyan-400 flex items-center gap-1.5">
-          <Activity className="w-3.5 h-3.5" />
-          <span>{viewMode === 'PYTHON_SVG' ? 'Python SymPy Matplotlib (Chính xác 100%)' : '60FPS HTML5 Canvas (Xác thực thời gian thực)'}</span>
+        <span className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
+          <Activity className="w-3.5 h-3.5 text-sky-400" />
+          <span>{viewMode === 'PYTHON_SVG' ? 'Python SymPy Matplotlib (Chính xác 100%)' : '60FPS HTML5 Canvas (Thời gian thực)'}</span>
         </span>
-        <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10">
+        <div className="flex items-center gap-1 bg-zinc-950 p-0.5 rounded-md border border-zinc-800">
           {viewMode === 'PYTHON_SVG' && (
             <button
               type="button"
               onClick={() => setSvgRefreshTick((t) => t + 1)}
               title="Đồng bộ lại tham số hiện tại vào Python SymPy"
-              className="px-2 py-1 rounded-lg text-[10px] font-mono text-cyan-300 hover:bg-cyan-500/20 flex items-center gap-1 cursor-pointer"
+              className="px-2 py-0.5 rounded text-[10px] font-mono text-zinc-400 hover:text-zinc-200 flex items-center gap-1 cursor-pointer"
             >
               <RefreshCw className={`w-3 h-3 ${svgLoading ? 'animate-spin' : ''}`} />
               <span>Đồng bộ ({svgSnapshotInfo || 'mới'})</span>
@@ -646,24 +646,24 @@ export const MathPlotEngine: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => setViewMode('PYTHON_SVG')}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition cursor-pointer ${
+            className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer font-medium ${
               viewMode === 'PYTHON_SVG'
-                ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-zinc-800 text-sky-400 font-semibold'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            🐍 Python Neon
+            Python SymPy
           </button>
           <button
             type="button"
             onClick={() => setViewMode('CANVAS')}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition cursor-pointer ${
+            className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer font-medium ${
               viewMode === 'CANVAS'
-                ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-zinc-800 text-sky-400 font-semibold'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            ⚡ 60FPS Canvas
+            60FPS Canvas
           </button>
         </div>
       </div>

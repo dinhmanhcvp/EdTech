@@ -33,35 +33,35 @@ export const LockedStepper: React.FC<LockedStepperProps> = ({
         return (
           <div
             key={st.index}
-            className={`p-3.5 rounded-md border transition-all duration-200 relative overflow-hidden ${
+            className={`p-3.5 rounded-xl border transition-all duration-200 relative overflow-hidden ${
               isCompleted
-                ? 'bg-zinc-950/60 border-zinc-800 text-zinc-300'
+                ? 'bg-[#F8F7F4] border-[#E6E4DD] text-stone-700'
                 : isActive
-                ? 'bg-zinc-900 border-zinc-700 text-zinc-100 shadow-sm'
-                : 'bg-zinc-950/40 border-zinc-900 text-zinc-500'
+                ? 'bg-white border-[#2563EB]/40 text-[#18181B] shadow-[0_2px_12px_-2px_rgba(37,99,235,0.08)] ring-1 ring-[#2563EB]/20'
+                : 'bg-[#F4F3EE]/60 border-[#E5E3DC] text-stone-400'
             }`}
           >
             {/* Header */}
             <div className={`flex items-center justify-between text-xs ${isLocked ? 'blur-[1px]' : ''}`}>
               <span className="font-medium flex items-center gap-2">
-                {isCompleted && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />}
-                {isActive && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />}
-                {isLocked && <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 shrink-0" />}
+                {isCompleted && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />}
+                {isActive && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />}
+                {isLocked && <span className="w-1.5 h-1.5 rounded-full bg-stone-400 shrink-0" />}
                 <span>Bước {st.index}: {st.title}</span>
               </span>
               <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
                 isCompleted
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                   : isActive
-                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                  : 'bg-zinc-900 text-zinc-600 border border-zinc-800'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 font-medium'
+                  : 'bg-stone-100 text-stone-500 border border-stone-200'
               }`}>
                 {isCompleted ? 'Đã vượt qua' : isActive ? 'Đang thực hiện' : 'Đang khóa'}
               </span>
             </div>
 
             {/* Description & Body (blurred if locked) */}
-            <p className={`text-xs text-zinc-400 mt-1.5 leading-relaxed ${isLocked ? 'blur-sm select-none pointer-events-none' : ''}`}>
+            <p className={`text-xs text-stone-600 mt-1.5 leading-relaxed ${isLocked ? 'blur-sm select-none pointer-events-none' : ''}`}>
               {st.description}
             </p>
 
@@ -69,9 +69,9 @@ export const LockedStepper: React.FC<LockedStepperProps> = ({
 
             {/* Frosted Glass Lock Overlay for CP4 */}
             {isLocked && (
-              <div className="absolute inset-0 bg-zinc-950/70 backdrop-blur-[2px] flex items-center justify-center p-2 rounded-md border border-zinc-800/40 pointer-events-none">
-                <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-zinc-900/90 border border-zinc-800 text-[11px] font-mono text-zinc-400 shadow-md">
-                  <span className="font-mono text-[9px] text-zinc-500 border border-zinc-700 px-1 py-0.2 rounded">LOCKED</span>
+              <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] flex items-center justify-center p-2 rounded-xl border border-[#E5E3DC]/60 pointer-events-none">
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/95 border border-[#DCD9D0] text-[11px] font-mono text-stone-600 shadow-xs">
+                  <span className="font-mono text-[9px] text-stone-500 border border-stone-300 bg-stone-50 px-1 py-0.2 rounded">LOCKED</span>
                   <span>Bước {st.index} bị khóa — Cần giải quyết bước trước</span>
                 </div>
               </div>

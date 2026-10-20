@@ -32,6 +32,26 @@ export const BioSystemEngine: React.FC<Props> = ({
       tickRef.current += 0.04;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // Daylight Technical Graph Paper Background
+      ctx.fillStyle = '#FCFBF9';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Fine millimeter grid
+      ctx.strokeStyle = '#EFECE6';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 20) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 20) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
       if (blueprint.templateId === 'BIO_HEART_CYCLE') {
         // Chu kỳ nhịp tim ECG: S(t) = 1 + A_sys * exp(-k*(t % (60/BPM))^2)
         const bpm = params.BPM ?? 75;
@@ -48,10 +68,8 @@ export const BioSystemEngine: React.FC<Props> = ({
         ctx.translate(cx, cy);
         ctx.scale(scaleFactor, scaleFactor);
 
-        // Heart shape
-        ctx.fillStyle = '#f43f5e';
-        ctx.shadowColor = '#e11d48';
-        ctx.shadowBlur = 20;
+        // Heart shape in Vermilion Rose
+        ctx.fillStyle = '#E11D48';
         ctx.beginPath();
         ctx.moveTo(0, 30);
         ctx.bezierCurveTo(-50, -30, -90, 40, 0, 95);
@@ -59,11 +77,11 @@ export const BioSystemEngine: React.FC<Props> = ({
         ctx.fill();
         ctx.restore();
 
-        // Draw live ECG graph on the right
+        // Draw live ECG graph on the right in Cobalt Blue
         const ecgX = 310;
         const ecgY = 160;
         const ecgW = 270;
-        ctx.strokeStyle = '#22d3ee';
+        ctx.strokeStyle = '#2563EB';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         for (let x = 0; x < ecgW; x += 3) {
@@ -79,10 +97,11 @@ export const BioSystemEngine: React.FC<Props> = ({
         }
         ctx.stroke();
 
-        ctx.fillStyle = '#e2e8f0';
+        ctx.fillStyle = '#18181B';
         ctx.font = 'bold 13px monospace';
         ctx.fillText(`Nhịp tim: ${bpm} BPM`, 20, 30);
-        ctx.font = '11px monospace';
+        ctx.font = '11px sans-serif';
+        ctx.fillStyle = '#57534E';
         ctx.fillText('Đang đập theo nhịp tâm thu/tâm trương', 310, 240);
 
       } else {
@@ -97,7 +116,7 @@ export const BioSystemEngine: React.FC<Props> = ({
           // Left: Organism Population Circle Sample
           // Right: 50 Generations Analytical Trajectory
           const divX = 260;
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+          ctx.strokeStyle = '#E6E4DD';
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(divX, 10);
@@ -105,7 +124,7 @@ export const BioSystemEngine: React.FC<Props> = ({
           ctx.stroke();
 
           // Left Header
-          ctx.fillStyle = '#10b981';
+          ctx.fillStyle = '#059669';
           ctx.font = 'bold 12px monospace';
           ctx.fillText('QUẦN THỂ SINH VẬT', 16, 25);
 
@@ -126,16 +145,17 @@ export const BioSystemEngine: React.FC<Props> = ({
               const ox = startX + col * 35;
               const oy = startY + row * 38;
 
-              ctx.fillStyle = isDominant ? '#10b981' : '#f43f5e';
+              ctx.fillStyle = isDominant ? '#059669' : '#E11D48';
               ctx.beginPath();
               ctx.arc(ox, oy, 11, 0, Math.PI * 2);
               ctx.fill();
             }
           }
 
-          ctx.fillStyle = '#cbd5e1';
+          ctx.fillStyle = '#18181B';
           ctx.font = '10px monospace';
           ctx.fillText(`Alen A (p): ${pAllel.toFixed(2)} | Alen a (q): ${qAllel.toFixed(2)}`, 16, canvas.height - 40);
+          ctx.fillStyle = '#57534E';
           ctx.fillText(`AA: ${p2.toFixed(2)} | Aa: ${twoPq.toFixed(2)} | aa: ${q2.toFixed(2)}`, 16, canvas.height - 22);
 
           // Right Panel: 50 Generation Analytical Trajectory Graph
@@ -146,12 +166,12 @@ export const BioSystemEngine: React.FC<Props> = ({
           const gW = gRight - gLeft;
           const gH = gBottom - gTop;
 
-          ctx.fillStyle = '#38bdf8';
+          ctx.fillStyle = '#2563EB';
           ctx.font = 'bold 12px monospace';
           ctx.fillText('DI TRUYỀN QUẦN THỂ QUA 50 THẾ HỆ', gLeft, 25);
 
           // Axes
-          ctx.strokeStyle = '#475569';
+          ctx.strokeStyle = '#94A3B8';
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.moveTo(gLeft, gBottom);
@@ -160,7 +180,7 @@ export const BioSystemEngine: React.FC<Props> = ({
           ctx.lineTo(gLeft, gBottom);
           ctx.stroke();
 
-          ctx.fillStyle = '#94a3b8';
+          ctx.fillStyle = '#57534E';
           ctx.font = '10px monospace';
           ctx.fillText('Thế hệ t', gRight - 45, gBottom + 20);
           ctx.fillText('Tần số', gLeft + 6, gTop - 6);
@@ -176,8 +196,8 @@ export const BioSystemEngine: React.FC<Props> = ({
             pHistory.push(currP);
           }
 
-          // Draw p(t) trajectory curve (emerald)
-          ctx.strokeStyle = '#10b981';
+          // Draw p(t) trajectory curve (Emerald)
+          ctx.strokeStyle = '#059669';
           ctx.lineWidth = 2.5;
           ctx.beginPath();
           pHistory.forEach((val, gen) => {
@@ -188,10 +208,10 @@ export const BioSystemEngine: React.FC<Props> = ({
           });
           ctx.stroke();
 
-          // Draw q(t) trajectory curve (rose dashed)
+          // Draw q(t) trajectory curve (Vermilion Rose dashed)
           ctx.save();
           ctx.setLineDash([3, 3]);
-          ctx.strokeStyle = '#f43f5e';
+          ctx.strokeStyle = '#E11D48';
           ctx.lineWidth = 2;
           ctx.beginPath();
           pHistory.forEach((val, gen) => {
@@ -204,10 +224,10 @@ export const BioSystemEngine: React.FC<Props> = ({
           ctx.restore();
 
           // Legend
-          ctx.fillStyle = '#10b981';
+          ctx.fillStyle = '#059669';
           ctx.font = 'bold 10px monospace';
           ctx.fillText('— Tần số p (Alen A)', gLeft + 20, gTop + 16);
-          ctx.fillStyle = '#f43f5e';
+          ctx.fillStyle = '#E11D48';
           ctx.fillText('--- Tần số q (Alen a)', gLeft + 160, gTop + 16);
 
         } else {
@@ -222,7 +242,7 @@ export const BioSystemEngine: React.FC<Props> = ({
           ctx.rotate(wiltAngle);
 
           const greenChannel = Math.round(197 - Math.max(0, temp - 35) * 4);
-          ctx.fillStyle = `rgb(${temp > 38 ? 210 : 34}, ${greenChannel}, 94)`;
+          ctx.fillStyle = `rgb(${temp > 38 ? 200 : 34}, ${greenChannel}, 94)`;
           ctx.beginPath();
           ctx.ellipse(0, 0, 110, 55, 0, 0, Math.PI * 2);
           ctx.fill();
@@ -232,7 +252,7 @@ export const BioSystemEngine: React.FC<Props> = ({
           const scX = 430;
           const scY = 170;
 
-          ctx.fillStyle = '#166534';
+          ctx.fillStyle = '#15803d';
           ctx.beginPath();
           ctx.ellipse(scX - stomataAperture / 2, scY, 18, 38, -0.15, 0, Math.PI * 2);
           ctx.fill();
@@ -241,15 +261,16 @@ export const BioSystemEngine: React.FC<Props> = ({
           ctx.ellipse(scX + stomataAperture / 2, scY, 18, 38, 0.15, 0, Math.PI * 2);
           ctx.fill();
 
-          ctx.fillStyle = '#022c22';
+          ctx.fillStyle = '#064e3b';
           ctx.beginPath();
           ctx.ellipse(scX, scY, stomataAperture / 2, 26, 0, 0, Math.PI * 2);
           ctx.fill();
 
-          ctx.fillStyle = '#e2e8f0';
+          ctx.fillStyle = '#18181B';
           ctx.font = 'bold 15px monospace';
           ctx.fillText(`Cường độ quang hợp: ${photosynthesisRate}%`, 40, 40);
           ctx.font = '12px sans-serif';
+          ctx.fillStyle = '#57534E';
           ctx.fillText(`Khí khổng: ${temp > 45 ? 'Đóng chặt chống mất nước' : 'Đang mở trao đổi khí'}`, 330, 250);
         }
       }
@@ -266,7 +287,7 @@ export const BioSystemEngine: React.FC<Props> = ({
       ref={canvasRef}
       width={620}
       height={340}
-      className="rounded-2xl bg-slate-950 border border-white/10 w-full object-contain"
+      className="rounded-2xl bg-[#FCFBF9] border border-[#E6E4DD] shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] w-full object-contain"
     />
   );
 };

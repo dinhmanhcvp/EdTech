@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi" className="dark">
+    <html lang="vi">
       <head>
         <link
           rel="stylesheet"
@@ -25,7 +25,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="bg-slate-950 text-slate-100 min-h-screen antialiased">
+      <body className="bg-[#F8F7F4] text-[#18181B] min-h-screen antialiased selection:bg-blue-100 selection:text-blue-900">
         {children}
       </body>
     </html>

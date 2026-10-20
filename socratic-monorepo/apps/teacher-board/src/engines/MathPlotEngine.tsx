@@ -288,10 +288,12 @@ export const MathPlotEngine: React.FC<Props> = ({
     const originY = height / 2;
     const scale = 36; // 36px = 1 unit
 
-    ctx.clearRect(0, 0, width, height);
+    // 0. Daylight Technical Graph Paper Background
+    ctx.fillStyle = '#FCFBF9';
+    ctx.fillRect(0, 0, width, height);
 
-    // 1. Grid Oxy
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    // 1. Fine Millimeter Grid
+    ctx.strokeStyle = '#EFECE6';
     ctx.lineWidth = 1;
     for (let x = originX % scale; x < width; x += scale) {
       ctx.beginPath();
@@ -307,8 +309,8 @@ export const MathPlotEngine: React.FC<Props> = ({
     }
 
     // 2. Axes Ox, Oy
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#94A3B8';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(0, originY);
     ctx.lineTo(width, originY);
@@ -332,18 +334,18 @@ export const MathPlotEngine: React.FC<Props> = ({
     );
 
     // Axis tick labels
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.font = '11px monospace';
+    ctx.fillStyle = '#64748B';
+    ctx.font = '11px "JetBrains Mono", monospace';
     ctx.fillText(compiled.xLabel, width - 24, originY - 8);
     ctx.fillText(compiled.yLabel, originX + 8, 16);
     ctx.fillText('O', originX - 14, originY + 16);
 
-    // 4. Ghost Trail: Baseline Curve (Subtle dashed line)
+    // 4. Ghost Trail: Baseline Curve (Subtle dashed slate line)
     if (hasParamDelta) {
       ctx.save();
       ctx.setLineDash([5, 5]);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#94A3B8';
+      ctx.lineWidth = 1.75;
       ctx.beginPath();
       let baseFirst = true;
 
@@ -366,15 +368,15 @@ export const MathPlotEngine: React.FC<Props> = ({
       ctx.stroke();
 
       // Label Ghost Baseline
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-      ctx.font = '10px monospace';
-      ctx.fillText('--- Gốc (Mặc định)', width - 130, 24);
+      ctx.fillStyle = '#64748B';
+      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.fillText('--- Trạng thái gốc', width - 128, 24);
       ctx.restore();
     }
 
     // 5. Shaded Area Under Curve for Integrals or Wave
     if (compiled.shaded) {
-      ctx.fillStyle = 'rgba(34, 211, 238, 0.18)';
+      ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
       ctx.beginPath();
       const startX = compiled.varSymbol === 't' ? originX : originX - 2 * scale;
       const endX = compiled.varSymbol === 't' ? originX + 3.14 * scale : originX + 2 * scale;
@@ -390,12 +392,10 @@ export const MathPlotEngine: React.FC<Props> = ({
       ctx.fill();
     }
 
-    // 6. Glow Neon Live Curve
+    // 6. Active Curve: Crisp Cobalt Blue anti-aliased stroke
     ctx.save();
-    ctx.shadowColor = '#06b6d4';
-    ctx.shadowBlur = 12;
-    ctx.strokeStyle = '#22d3ee';
-    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = '#2563EB';
+    ctx.lineWidth = 2.75;
     ctx.beginPath();
     let first = true;
 
@@ -418,7 +418,7 @@ export const MathPlotEngine: React.FC<Props> = ({
     ctx.stroke();
     ctx.restore();
 
-    // 6. Tangent line at x0 (if polynomial)
+    // 7. Tangent line at x0 (if polynomial)
     const x0 = params.x0 ?? 1.0;
     if (compiled.evalSlope && !compiled.isIntegral && compiled.varSymbol === 'x') {
       const y0 = compiled.evalFn(x0);
@@ -426,7 +426,7 @@ export const MathPlotEngine: React.FC<Props> = ({
       const ptX = originX + x0 * scale;
       const ptY = originY - y0 * scale;
 
-      ctx.strokeStyle = '#f59e0b';
+      ctx.strokeStyle = '#D97706';
       ctx.lineWidth = 2;
       ctx.beginPath();
       const span = 80;
@@ -435,9 +435,9 @@ export const MathPlotEngine: React.FC<Props> = ({
       ctx.stroke();
 
       // Tangent point marker
-      ctx.fillStyle = '#f59e0b';
+      ctx.fillStyle = '#D97706';
       ctx.beginPath();
-      ctx.arc(ptX, ptY, 5, 0, Math.PI * 2);
+      ctx.arc(ptX, ptY, 4.5, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -451,20 +451,18 @@ export const MathPlotEngine: React.FC<Props> = ({
     if (hasParamM && compiled.varSymbol === 'x' && !compiled.isIntegral) {
       const myPix = originY - paramM * scale;
 
-      // Draw horizontal scanning line y = m
+      // Draw horizontal scanning line y = m in Vermilion Rose
       ctx.save();
       ctx.setLineDash([5, 4]);
-      ctx.strokeStyle = '#facc15';
-      ctx.lineWidth = 2.2;
-      ctx.shadowColor = '#facc15';
-      ctx.shadowBlur = 8;
+      ctx.strokeStyle = '#E11D48';
+      ctx.lineWidth = 2.0;
       ctx.beginPath();
       ctx.moveTo(0, myPix);
       ctx.lineTo(width, myPix);
       ctx.stroke();
       ctx.restore();
 
-      ctx.fillStyle = '#facc15';
+      ctx.fillStyle = '#E11D48';
       ctx.font = 'bold 11px monospace';
       ctx.fillText(`y = m (${paramM.toFixed(1)})`, width - 110, myPix - 6);
 
@@ -492,20 +490,22 @@ export const MathPlotEngine: React.FC<Props> = ({
         }
       }
 
-      // Draw glowing intersection points
+      // Draw crisp porcelain intersection points
       foundRoots.forEach((root, idx) => {
         const rPixX = originX + root * scale;
         const rPixY = originY - paramM * scale;
         ctx.save();
-        ctx.fillStyle = '#facc15';
-        ctx.shadowColor = '#facc15';
-        ctx.shadowBlur = 12;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.strokeStyle = '#E11D48';
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.arc(rPixX, rPixY, 6, 0, Math.PI * 2);
+        ctx.arc(rPixX, rPixY, 5.5, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
         ctx.restore();
 
-        ctx.fillStyle = '#ffffff';
+        // White callout badge
+        ctx.fillStyle = '#18181B';
         ctx.font = 'bold 10px monospace';
         ctx.fillText(`x${idx + 1}=${root.toFixed(2)}`, rPixX - 18, rPixY - 10);
       });
@@ -543,10 +543,8 @@ export const MathPlotEngine: React.FC<Props> = ({
 
       ctx.save();
       ctx.setLineDash([4, 4]);
-      ctx.strokeStyle = '#e879f9';
-      ctx.lineWidth = 2.2;
-      ctx.shadowColor = '#e879f9';
-      ctx.shadowBlur = 8;
+      ctx.strokeStyle = '#059669';
+      ctx.lineWidth = 2.0;
       ctx.beginPath();
       let firstT = true;
       for (let px = originX - 3.5 * scale; px <= originX + 3.5 * scale; px += 3) {
@@ -565,25 +563,26 @@ export const MathPlotEngine: React.FC<Props> = ({
       ctx.stroke();
       ctx.restore();
 
-      ctx.fillStyle = '#e879f9';
+      ctx.fillStyle = '#059669';
       ctx.font = 'bold 10px monospace';
       ctx.fillText(`Taylor bậc ${taylorN}`, width - 110, 45);
     }
 
-    // 7. Curve Label Badge with Real-Time Delta
-    const badgeW = hasParamDelta ? 310 : 260;
+    // 7. Curve Label Badge with Real-Time Delta (Porcelain Daylight Card)
+    const badgeW = hasParamDelta ? 320 : 270;
     const badgeH = hasParamDelta ? 62 : 48;
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
     ctx.fillRect(15, 15, badgeW, badgeH);
-    ctx.strokeStyle = hasParamDelta ? '#38bdf8' : 'rgba(34, 211, 238, 0.4)';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#E6E4DD';
+    ctx.lineWidth = 1;
     ctx.strokeRect(15, 15, badgeW, badgeH);
 
-    ctx.fillStyle = '#22d3ee';
+    ctx.fillStyle = '#2563EB';
     ctx.font = 'bold 12px monospace';
     ctx.fillText(compiled.curveTitle, 25, 34);
 
-    ctx.fillStyle = '#94a3b8';
+    ctx.fillStyle = '#57534E';
     ctx.font = '10px sans-serif';
     ctx.fillText(
       foundRoots.length > 0
@@ -617,27 +616,28 @@ export const MathPlotEngine: React.FC<Props> = ({
         deltaSummary = `Δk: ${dk >= 0 ? '+' : ''}${dk.toFixed(2)}`;
       }
 
-      ctx.fillStyle = '#38bdf8';
+      ctx.fillStyle = '#D97706';
       ctx.font = 'bold 10px monospace';
       ctx.fillText(`${deltaSummary || 'Đã hiệu chỉnh thông số'}`, 25, 66);
     }
+    ctx.restore();
   }, [blueprint, params]);
 
   return (
     <div className="flex flex-col items-center w-full max-w-[620px] gap-2">
       {/* Top Engine Mode Switcher */}
       <div className="flex items-center justify-between w-full px-2">
-        <span className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
-          <Activity className="w-3.5 h-3.5 text-sky-400" />
+        <span className="text-[11px] font-mono text-stone-500 flex items-center gap-1.5">
+          <Activity className="w-3.5 h-3.5 text-blue-600" />
           <span>{viewMode === 'PYTHON_SVG' ? 'Python SymPy Matplotlib (Chính xác 100%)' : '60FPS HTML5 Canvas (Thời gian thực)'}</span>
         </span>
-        <div className="flex items-center gap-1 bg-zinc-950 p-0.5 rounded-md border border-zinc-800">
+        <div className="flex items-center gap-1 bg-[#F2F0EA] p-1 rounded-lg border border-[#E6E4DD]">
           {viewMode === 'PYTHON_SVG' && (
             <button
               type="button"
               onClick={() => setSvgRefreshTick((t) => t + 1)}
               title="Đồng bộ lại tham số hiện tại vào Python SymPy"
-              className="px-2 py-0.5 rounded text-[10px] font-mono text-zinc-400 hover:text-zinc-200 flex items-center gap-1 cursor-pointer"
+              className="px-2 py-0.5 rounded text-[10px] font-mono text-stone-600 hover:text-stone-900 flex items-center gap-1 cursor-pointer"
             >
               <RefreshCw className={`w-3 h-3 ${svgLoading ? 'animate-spin' : ''}`} />
               <span>Đồng bộ ({svgSnapshotInfo || 'mới'})</span>
@@ -648,8 +648,8 @@ export const MathPlotEngine: React.FC<Props> = ({
             onClick={() => setViewMode('PYTHON_SVG')}
             className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer font-medium ${
               viewMode === 'PYTHON_SVG'
-                ? 'bg-zinc-800 text-sky-400 font-semibold'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white shadow-sm text-stone-900 font-semibold'
+                : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             Python SymPy
@@ -659,8 +659,8 @@ export const MathPlotEngine: React.FC<Props> = ({
             onClick={() => setViewMode('CANVAS')}
             className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer font-medium ${
               viewMode === 'CANVAS'
-                ? 'bg-zinc-800 text-sky-400 font-semibold'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white shadow-sm text-stone-900 font-semibold'
+                : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             60FPS Canvas
@@ -669,12 +669,12 @@ export const MathPlotEngine: React.FC<Props> = ({
       </div>
 
       {/* RENDER VIEW AREA */}
-      <div className="relative w-full aspect-[620/340] rounded-2xl bg-slate-950 border border-white/10 shadow-inner overflow-hidden flex items-center justify-center">
+      <div className="relative w-full aspect-[620/340] rounded-2xl bg-[#FCFBF9] border border-[#E6E4DD] shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] overflow-hidden flex items-center justify-center">
         {/* Python Neon SVG View */}
         {viewMode === 'PYTHON_SVG' && (
           <div className="w-full h-full flex items-center justify-center p-1">
             {svgLoading && !svgData && (
-              <div className="flex items-center gap-2 text-cyan-400 text-xs font-mono">
+              <div className="flex items-center gap-2 text-blue-600 text-xs font-mono">
                 <RefreshCw className="w-4 h-4 animate-spin" />
                 <span>Đang render đồ thị SymPy Python...</span>
               </div>
@@ -685,11 +685,11 @@ export const MathPlotEngine: React.FC<Props> = ({
                 dangerouslySetInnerHTML={{ __html: svgData }}
               />
             ) : svgError ? (
-              <div className="flex flex-col items-center gap-1 text-xs text-rose-300 p-4 text-center">
+              <div className="flex flex-col items-center gap-1 text-xs text-rose-600 p-4 text-center">
                 <span>{svgError}</span>
                 <button
                   onClick={() => setViewMode('CANVAS')}
-                  className="mt-2 px-3 py-1 rounded-lg bg-white/10 text-cyan-300 text-[11px] hover:bg-white/20"
+                  className="mt-2 px-3 py-1 rounded-lg bg-stone-100 border border-stone-200 text-stone-700 text-[11px] hover:bg-stone-200"
                 >
                   Chuyển sang 60FPS Canvas
                 </button>

@@ -176,6 +176,26 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
       timeRef.current += 0.02;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // Daylight Technical Graph Paper Background
+      ctx.fillStyle = '#FCFBF9';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Fine millimeter grid
+      ctx.strokeStyle = '#EFECE6';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 20) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 20) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
       // ==============================================================
       // 1. PHYS_RLC_PHASOR: Điện xoay chiều & Giản đồ Fresnel (Lớp 12 & Chuyên)
       // ==============================================================
@@ -210,7 +230,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         const leftCenterY = 175;
 
         // Divider
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.strokeStyle = '#E6E4DD';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(305, 10);
@@ -218,15 +238,15 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ctx.stroke();
 
         // Left Panel Header
-        ctx.fillStyle = '#38bdf8';
+        ctx.fillStyle = '#2563EB';
         ctx.font = 'bold 12px monospace';
         ctx.fillText('GIẢN ĐỒ FRESNEL (PHASOR)', 18, 22);
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#57534E';
         ctx.font = '10px monospace';
         ctx.fillText('Trục I làm chuẩn (nằm ngang)', 18, 36);
 
         // Reference axes at left center
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.strokeStyle = '#CBD5E1';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(leftCenterX - 110, leftCenterY);
@@ -246,34 +266,32 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
         // Vectors from origin:
         // 1. Current vector I reference
-        drawVector(ctx, leftCenterX, leftCenterY, leftCenterX + 45, leftCenterY, '#22c55e', 'i');
+        drawVector(ctx, leftCenterX, leftCenterY, leftCenterX + 45, leftCenterY, '#059669', 'i');
 
         // 2. U_R (along I, horizontal)
-        drawVector(ctx, leftCenterX, leftCenterY, leftCenterX + urPix, leftCenterY, '#10b981', `U_R (${U_R.toFixed(0)}V)`);
+        drawVector(ctx, leftCenterX, leftCenterY, leftCenterX + urPix, leftCenterY, '#059669', `U_R (${U_R.toFixed(0)}V)`);
 
         // 3. U_L (leads by +90 deg, pointing UP)
-        drawVector(ctx, leftCenterX, leftCenterY, leftCenterX, leftCenterY - ulPix, '#f59e0b', `U_L (${U_L.toFixed(0)}V)`);
+        drawVector(ctx, leftCenterX, leftCenterY, leftCenterX, leftCenterY - ulPix, '#D97706', `U_L (${U_L.toFixed(0)}V)`);
 
         // 4. U_C (lags by -90 deg, pointing DOWN)
-        drawVector(ctx, leftCenterX, leftCenterY, leftCenterX, leftCenterY + ucPix, '#ec4899', `U_C (${U_C.toFixed(0)}V)`);
+        drawVector(ctx, leftCenterX, leftCenterY, leftCenterX, leftCenterY + ucPix, '#E11D48', `U_C (${U_C.toFixed(0)}V)`);
 
         // 5. U_LC = U_L + U_C (vertical resultant)
-        drawVector(ctx, leftCenterX + urPix, leftCenterY, leftCenterX + urPix, leftCenterY - ulcPix, '#a855f7', 'U_LC', true);
+        drawVector(ctx, leftCenterX + urPix, leftCenterY, leftCenterX + urPix, leftCenterY - ulcPix, '#6366F1', 'U_LC', true);
 
-        // 6. Total U resultant (gold glowing vector)
+        // 6. Total U resultant (Cobalt Blue / Amber vector)
         ctx.save();
-        ctx.shadowColor = '#eab308';
-        ctx.shadowBlur = isResonant ? 16 : 8;
-        drawVector(ctx, leftCenterX, leftCenterY, leftCenterX + urPix, leftCenterY - ulcPix, '#eab308', `U (${U.toFixed(0)}V)`);
+        drawVector(ctx, leftCenterX, leftCenterY, leftCenterX + urPix, leftCenterY - ulcPix, isResonant ? '#D97706' : '#2563EB', `U (${U.toFixed(0)}V)`);
         ctx.restore();
 
         // Phase angle arc φ
-        ctx.strokeStyle = '#38bdf8';
+        ctx.strokeStyle = '#2563EB';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(leftCenterX, leftCenterY, 32, -Math.max(0, phi), -Math.min(0, phi), phi < 0);
         ctx.stroke();
-        ctx.fillStyle = '#38bdf8';
+        ctx.fillStyle = '#2563EB';
         ctx.font = '10px monospace';
         const phiDeg = (phi * 180) / Math.PI;
         ctx.fillText(`φ = ${phiDeg.toFixed(1)}°`, leftCenterX + 38, leftCenterY - (phiDeg * 0.3));
@@ -287,12 +305,12 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         const plotH = plotBottom - plotTop;
 
         // Header
-        ctx.fillStyle = '#f59e0b';
+        ctx.fillStyle = '#D97706';
         ctx.font = 'bold 12px monospace';
         ctx.fillText('ĐƯỜNG CONG CỘNG HƯỞNG I(ω)', plotLeft, 22);
 
         // Axes
-        ctx.strokeStyle = '#475569';
+        ctx.strokeStyle = '#94A3B8';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(plotLeft, plotBottom);
@@ -302,7 +320,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ctx.stroke();
 
         // X and Y axis labels
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#57534E';
         ctx.font = '10px monospace';
         ctx.fillText('ω (rad/s)', plotRight - 45, plotBottom + 20);
         ctx.fillText('I (A)', plotLeft + 6, plotTop - 8);
@@ -312,7 +330,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         const maxW = 500;
         const iMaxRes = U / R;
 
-        ctx.strokeStyle = '#06b6d4';
+        ctx.strokeStyle = '#2563EB';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         let first = true;
@@ -338,14 +356,14 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           const resX = plotLeft + ((omega0 - minW) / (maxW - minW)) * plotW;
           ctx.save();
           ctx.setLineDash([3, 3]);
-          ctx.strokeStyle = '#eab308';
+          ctx.strokeStyle = '#D97706';
           ctx.beginPath();
           ctx.moveTo(resX, plotTop);
           ctx.lineTo(resX, plotBottom);
           ctx.stroke();
           ctx.restore();
 
-          ctx.fillStyle = '#eab308';
+          ctx.fillStyle = '#D97706';
           ctx.font = 'bold 10px monospace';
           ctx.fillText(`ω₀ = ${omega0.toFixed(0)}`, resX - 25, plotTop + 14);
         }
@@ -355,12 +373,13 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         const curPy = plotBottom - (I / iMaxRes) * (plotH * 0.9);
 
         ctx.save();
-        ctx.fillStyle = isResonant ? '#eab308' : '#38bdf8';
-        ctx.shadowColor = isResonant ? '#eab308' : '#38bdf8';
-        ctx.shadowBlur = 12;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.strokeStyle = isResonant ? '#D97706' : '#2563EB';
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.arc(curPx, curPy, 6, 0, Math.PI * 2);
+        ctx.arc(curPx, curPy, 5.5, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
         ctx.restore();
 
         // Update HUD
@@ -414,7 +433,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           const bobY = leftPivotY + pixelL * Math.cos(theta);
 
           // Divider
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+          ctx.strokeStyle = '#E6E4DD';
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(295, 10);
@@ -422,38 +441,37 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           ctx.stroke();
 
           // Left Panel: Pendulum Motion
-          ctx.fillStyle = '#38bdf8';
+          ctx.fillStyle = '#2563EB';
           ctx.font = 'bold 12px monospace';
           ctx.fillText('RK4 CON LẮC GÓC LỚN', 16, 22);
 
           // String
-          ctx.strokeStyle = '#94a3b8';
+          ctx.strokeStyle = '#78716C';
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.moveTo(leftPivotX, leftPivotY);
           ctx.lineTo(bobX, bobY);
           ctx.stroke();
 
-          // Bob
-          ctx.fillStyle = '#38bdf8';
-          ctx.shadowColor = '#0284c7';
-          ctx.shadowBlur = 10;
+          // Bob - Tactile Porcelain
+          ctx.fillStyle = '#FFFFFF';
+          ctx.strokeStyle = '#2563EB';
+          ctx.lineWidth = 2.5;
           ctx.beginPath();
           ctx.arc(bobX, bobY, 15, 0, Math.PI * 2);
           ctx.fill();
-          ctx.shadowBlur = 0;
+          ctx.stroke();
 
           // Vectors: Velocity, Tension, Weight
           const v = L * omega;
-          drawVector(ctx, bobX, bobY, bobX + v * 18 * Math.cos(theta), bobY - v * 18 * Math.sin(theta), '#22c55e', 'v');
-          drawVector(ctx, bobX, bobY, bobX, bobY + 45, '#f43f5e', 'P');
+          drawVector(ctx, bobX, bobY, bobX + v * 18 * Math.cos(theta), bobY - v * 18 * Math.sin(theta), '#059669', 'v');
+          drawVector(ctx, bobX, bobY, bobX, bobY + 45, '#E11D48', 'P');
 
           // Mechanical Energy Telemetry
           const W_kin = 0.5 * m * Math.pow(L * omega, 2);
           const W_pot = m * g * L * (1 - Math.cos(theta));
-          const W_tot = W_kin + W_pot;
 
-          ctx.fillStyle = '#cbd5e1';
+          ctx.fillStyle = '#57534E';
           ctx.font = '10px monospace';
           ctx.fillText(`θ: ${((theta * 180) / Math.PI).toFixed(1)}°`, 16, canvas.height - 35);
           ctx.fillText(`W_đ: ${W_kin.toFixed(1)}J | W_t: ${W_pot.toFixed(1)}J`, 16, canvas.height - 20);
@@ -464,15 +482,15 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           const pScaleTheta = 70; // px per rad
           const pScaleOmega = 22; // px per rad/s
 
-          ctx.fillStyle = '#f59e0b';
+          ctx.fillStyle = '#D97706';
           ctx.font = 'bold 12px monospace';
           ctx.fillText('KHÔNG GIAN PHA (PHASE PORTRAIT)', 310, 22);
-          ctx.fillStyle = '#94a3b8';
+          ctx.fillStyle = '#57534E';
           ctx.font = '10px monospace';
           ctx.fillText('Đạo hàm vận tốc góc (ω) theo li độ góc (θ)', 310, 36);
 
           // Phase axes
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+          ctx.strokeStyle = '#94A3B8';
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(pOriginX - 130, pOriginY);
@@ -481,14 +499,14 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           ctx.lineTo(pOriginX, pOriginY + 110);
           ctx.stroke();
 
-          ctx.fillStyle = '#94a3b8';
+          ctx.fillStyle = '#57534E';
           ctx.font = '10px monospace';
           ctx.fillText('θ (rad)', pOriginX + 105, pOriginY + 15);
           ctx.fillText('ω (rad/s)', pOriginX + 8, pOriginY - 95);
 
           // Draw Phase Trajectory Trail (Orbit spiral)
           if (phaseTrailRef.current.length > 1) {
-            ctx.strokeStyle = '#a855f7';
+            ctx.strokeStyle = '#6366F1';
             ctx.lineWidth = 1.8;
             ctx.beginPath();
             phaseTrailRef.current.forEach((pt, i) => {
@@ -503,13 +521,13 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           // Current state dot
           const curPx = pOriginX + theta * pScaleTheta;
           const curPy = pOriginY - omega * pScaleOmega;
-          ctx.fillStyle = '#38bdf8';
-          ctx.shadowColor = '#38bdf8';
-          ctx.shadowBlur = 10;
+          ctx.fillStyle = '#FFFFFF';
+          ctx.strokeStyle = '#2563EB';
+          ctx.lineWidth = 2.5;
           ctx.beginPath();
           ctx.arc(curPx, curPy, 5, 0, Math.PI * 2);
           ctx.fill();
-          ctx.shadowBlur = 0;
+          ctx.stroke();
 
         } else {
           // Standard Single View: Harmonic/Damped Pendulum
@@ -519,20 +537,23 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           const bobX = pivotX + pixelL * Math.sin(theta);
           const bobY = pivotY + pixelL * Math.cos(theta);
 
-          ctx.strokeStyle = '#94a3b8';
+          ctx.strokeStyle = '#78716C';
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.moveTo(pivotX, pivotY);
           ctx.lineTo(bobX, bobY);
           ctx.stroke();
 
-          ctx.fillStyle = '#38bdf8';
+          ctx.fillStyle = '#FFFFFF';
+          ctx.strokeStyle = '#2563EB';
+          ctx.lineWidth = 2.5;
           ctx.beginPath();
           ctx.arc(bobX, bobY, 18, 0, Math.PI * 2);
           ctx.fill();
+          ctx.stroke();
 
-          drawVector(ctx, bobX, bobY, bobX, bobY + 55, '#f43f5e', 'P');
-          drawVector(ctx, bobX, bobY, bobX - 45 * Math.sin(theta), bobY - 45 * Math.cos(theta), '#a855f7', 'T');
+          drawVector(ctx, bobX, bobY, bobX, bobY + 55, '#E11D48', 'P');
+          drawVector(ctx, bobX, bobY, bobX - 45 * Math.sin(theta), bobY - 45 * Math.cos(theta), '#6366F1', 'T');
         }
 
       // ==============================================================
@@ -550,9 +571,9 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         const topX = originX + rampLen * Math.cos(alpha);
         const topY = originY - rampLen * Math.sin(alpha);
 
-        ctx.strokeStyle = '#64748b';
-        ctx.fillStyle = 'rgba(100, 116, 139, 0.15)';
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#94A3B8';
+        ctx.fillStyle = '#F2F0EA';
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(originX, originY);
         ctx.lineTo(topX, originY);
@@ -569,11 +590,11 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ctx.save();
         ctx.translate(blockX, blockY);
         ctx.rotate(-alpha);
-        ctx.fillStyle = '#38bdf8';
+        ctx.fillStyle = '#2563EB';
         ctx.fillRect(-20, -25, 40, 25);
-        drawVector(ctx, 0, 0, 0, 50, '#f43f5e', 'P');
-        drawVector(ctx, 0, 0, 0, -40, '#22c55e', 'N');
-        drawVector(ctx, 0, 0, 35, 0, '#f59e0b', 'F_ms');
+        drawVector(ctx, 0, 0, 0, 50, '#E11D48', 'P');
+        drawVector(ctx, 0, 0, 0, -40, '#059669', 'N');
+        drawVector(ctx, 0, 0, 35, 0, '#D97706', 'F_ms');
         ctx.restore();
 
       } else if (blueprint.templateId === 'PHYS_OPTICS_LENS') {
@@ -584,22 +605,22 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         const lensX = canvas.width / 2;
         const axisY = canvas.height / 2;
 
-        ctx.strokeStyle = '#475569';
+        ctx.strokeStyle = '#94A3B8';
         ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.moveTo(20, axisY); ctx.lineTo(canvas.width - 20, axisY); ctx.stroke();
 
-        ctx.strokeStyle = '#06b6d4';
+        ctx.strokeStyle = '#2563EB';
         ctx.lineWidth = 3;
         ctx.beginPath(); ctx.moveTo(lensX, axisY - 120); ctx.lineTo(lensX, axisY + 120); ctx.stroke();
 
-        ctx.fillStyle = '#f59e0b';
+        ctx.fillStyle = '#D97706';
         ctx.beginPath(); ctx.arc(lensX - f, axisY, 4, 0, Math.PI * 2); ctx.fill();
         ctx.fillText('F', lensX - f - 5, axisY + 18);
         ctx.beginPath(); ctx.arc(lensX + f, axisY, 4, 0, Math.PI * 2); ctx.fill();
         ctx.fillText("F'", lensX + f - 5, axisY + 18);
 
         const objX = lensX - d;
-        drawVector(ctx, objX, axisY, objX, axisY - h, '#38bdf8', 'AB');
+        drawVector(ctx, objX, axisY, objX, axisY - h, '#2563EB', 'AB');
 
         if (Math.abs(d - f) > 5) {
           const dPrime = (d * f) / (d - f);
@@ -607,7 +628,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           const imgX = lensX + dPrime;
           const imgY = axisY - hPrime;
 
-          ctx.strokeStyle = 'rgba(250, 204, 21, 0.6)';
+          ctx.strokeStyle = '#D97706';
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.moveTo(objX, axisY - h);
@@ -621,7 +642,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           ctx.lineTo(imgX, imgY);
           ctx.stroke();
 
-          drawVector(ctx, imgX, axisY, imgX, imgY, '#ec4899', "A'B'");
+          drawVector(ctx, imgX, axisY, imgX, imgY, '#E11D48', "A'B'");
         }
 
       // ==============================================================
@@ -660,7 +681,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         const scale = Math.min(scaleX, scaleY);
 
         // Ground line
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.strokeStyle = '#94A3B8';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(20, groundY);
@@ -670,8 +691,8 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         // 1. Ghost Trail: Baseline Trajectory
         if (hasBaseDelta) {
           ctx.save();
-          ctx.setLineDash([4, 4]);
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+          ctx.setLineDash([5, 5]);
+          ctx.strokeStyle = '#94A3B8';
           ctx.lineWidth = 2;
           ctx.beginPath();
           for (let step = 0; step <= 60; step++) {
@@ -686,13 +707,17 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           }
           ctx.stroke();
           ctx.restore();
+
+          ctx.fillStyle = '#94A3B8';
+          ctx.font = '10px sans-serif';
+          ctx.fillText('Trạng thái gốc', startX + baseMetrics.vx * baseMetrics.tFlight * 0.4 * scale, groundY - 10);
         }
 
         // 2. Active Trajectory: Either Vacuum or Olympiad Air Drag (RK4)
         if (kDrag > 0) {
           const rk4Res = computeProjectileRK4(v0, alpha, g, kDrag);
-          ctx.strokeStyle = '#38bdf8';
-          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#2563EB';
+          ctx.lineWidth = 2.75;
           ctx.beginPath();
           rk4Res.points.forEach((pt, i) => {
             const px = startX + pt.x * scale;
@@ -703,13 +728,13 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           ctx.stroke();
 
           // Label
-          ctx.fillStyle = '#38bdf8';
+          ctx.fillStyle = '#2563EB';
           ctx.font = '10px monospace';
           ctx.fillText(`Cản khí: k=${kDrag} | L=${rk4Res.lMax.toFixed(1)}m`, startX + 10, 40);
         } else {
           // Pure vacuum parabola
-          ctx.strokeStyle = '#38bdf8';
-          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#2563EB';
+          ctx.lineWidth = 2.75;
           ctx.beginPath();
           for (let step = 0; step <= 80; step++) {
             const tRatio = step / 80;
@@ -724,26 +749,26 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           ctx.stroke();
         }
 
-        // Animated Ball
+        // Animated Ball - Tactile Porcelain
         const tLoop = tFlight > 0 ? (timeRef.current * 0.8) % tFlight : 0;
         const curX = startX + vx * tLoop * scale;
         const curYVal = (v0 * Math.sin((alpha * Math.PI) / 180)) * tLoop - 0.5 * g * tLoop * tLoop;
         const curY = groundY - Math.max(0, curYVal) * scale;
         const curVy = v0 * Math.sin((alpha * Math.PI) / 180) - g * tLoop;
 
-        ctx.fillStyle = '#f59e0b';
-        ctx.shadowColor = '#f59e0b';
-        ctx.shadowBlur = 10;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.strokeStyle = '#2563EB';
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.arc(curX, curY, 8, 0, Math.PI * 2);
+        ctx.arc(curX, curY, 7, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.stroke();
 
         // Vectors
         const vScale = 1.6;
-        drawVector(ctx, curX, curY, curX + vx * vScale, curY, '#34d399', 'vx');
+        drawVector(ctx, curX, curY, curX + vx * vScale, curY, '#059669', 'vx');
         if (Math.abs(curVy) > 0.5) {
-          drawVector(ctx, curX, curY, curX, curY - curVy * vScale, '#f43f5e', 'vy');
+          drawVector(ctx, curX, curY, curX, curY - curVy * vScale, '#E11D48', 'vy');
         }
 
         // Update HUD
@@ -774,36 +799,36 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
     <div className="relative w-full max-w-[620px] flex flex-col items-center">
       {/* HUD overlay for PHYS_PROJECTILE */}
       {blueprint.templateId === 'PHYS_PROJECTILE' && (
-        <div className="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-md border border-cyan-500/30 rounded-xl px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-mono text-cyan-300 pointer-events-none shadow-lg z-10 flex-wrap">
+        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md border border-[#E6E4DD] rounded-xl px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-mono text-stone-800 pointer-events-none shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] z-10 flex-wrap">
           <div>
-            <span className="text-slate-400">H_max:</span>{' '}
-            <span className="text-amber-300 font-bold">{hud.hMax}m</span>
+            <span className="text-stone-500">H_max:</span>{' '}
+            <span className="text-stone-900 font-bold tabular-nums">{hud.hMax}m</span>
           </div>
-          <div className="w-[1px] h-3 bg-white/10" />
+          <div className="w-[1px] h-3 bg-stone-200" />
           <div>
-            <span className="text-slate-400">L_max:</span>{' '}
-            <span className="text-emerald-300 font-bold">{hud.lMax}m</span>
+            <span className="text-stone-500">L_max:</span>{' '}
+            <span className="text-stone-900 font-bold tabular-nums">{hud.lMax}m</span>
           </div>
-          <div className="w-[1px] h-3 bg-white/10" />
+          <div className="w-[1px] h-3 bg-stone-200" />
           <div>
-            <span className="text-slate-400">T_bay:</span>{' '}
-            <span className="text-cyan-200">{hud.tFlight}s</span>
+            <span className="text-stone-500">T_bay:</span>{' '}
+            <span className="text-stone-900 font-bold tabular-nums">{hud.tFlight}s</span>
           </div>
-          <div className="w-[1px] h-3 bg-white/10" />
+          <div className="w-[1px] h-3 bg-stone-200" />
           <div>
-            <span className="text-slate-400">vy:</span>{' '}
-            <span className={hud.isApex ? 'text-amber-400 font-bold' : 'text-rose-400'}>
+            <span className="text-stone-500">vy:</span>{' '}
+            <span className={hud.isApex ? 'text-amber-600 font-bold tabular-nums' : 'text-rose-600 font-bold tabular-nums'}>
               {hud.vy} m/s {hud.isApex && '(ĐỈNH)'}
             </span>
           </div>
 
           {hud.hasDelta && (
             <>
-              <div className="w-[1px] h-3 bg-white/20" />
-              <div className="px-2 py-0.5 rounded bg-sky-500/20 border border-sky-400/40 text-sky-200 font-bold">
+              <div className="w-[1px] h-3 bg-stone-200" />
+              <div className="px-2 py-0.5 rounded bg-[#FEF3C7] border border-[#FDE68A] text-[#92400E] font-bold tabular-nums">
                 ΔTầm xa: {hud.deltaL >= 0 ? '+' : ''}{hud.deltaL}m
               </div>
-              <div className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 font-bold">
+              <div className="px-2 py-0.5 rounded bg-[#FEF3C7] border border-[#FDE68A] text-[#92400E] font-bold tabular-nums">
                 ΔH_max: {hud.deltaH >= 0 ? '+' : ''}{hud.deltaH}m
               </div>
             </>
@@ -813,28 +838,28 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
       {/* HUD overlay for PHYS_RLC_PHASOR */}
       {blueprint.templateId === 'PHYS_RLC_PHASOR' && (
-        <div className="absolute top-3 right-3 bg-slate-900/95 backdrop-blur-md border border-amber-500/30 rounded-xl px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-mono text-amber-300 pointer-events-none shadow-lg z-10 flex-wrap">
+        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md border border-[#E6E4DD] rounded-xl px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-mono text-stone-800 pointer-events-none shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] z-10 flex-wrap">
           <div>
-            <span className="text-slate-400">Tổng trở Z:</span>{' '}
-            <span className="text-cyan-300 font-bold">{hud.rlcZ} Ω</span>
+            <span className="text-stone-500">Tổng trở Z:</span>{' '}
+            <span className="text-stone-900 font-bold tabular-nums">{hud.rlcZ} Ω</span>
           </div>
-          <div className="w-[1px] h-3 bg-white/10" />
+          <div className="w-[1px] h-3 bg-stone-200" />
           <div>
-            <span className="text-slate-400">Dòng I:</span>{' '}
-            <span className="text-emerald-300 font-bold">{hud.rlcI} A</span>
+            <span className="text-stone-500">Dòng I:</span>{' '}
+            <span className="text-stone-900 font-bold tabular-nums">{hud.rlcI} A</span>
           </div>
-          <div className="w-[1px] h-3 bg-white/10" />
+          <div className="w-[1px] h-3 bg-stone-200" />
           <div>
-            <span className="text-slate-400">cos φ:</span>{' '}
-            <span className="text-amber-300 font-bold">{hud.rlcCosPhi}</span>
+            <span className="text-stone-500">cos φ:</span>{' '}
+            <span className="text-stone-900 font-bold tabular-nums">{hud.rlcCosPhi}</span>
           </div>
-          <div className="w-[1px] h-3 bg-white/10" />
+          <div className="w-[1px] h-3 bg-stone-200" />
           <div>
-            <span className="text-slate-400">Công suất P:</span>{' '}
-            <span className="text-purple-300 font-bold">{hud.rlcP} W</span>
+            <span className="text-stone-500">Công suất P:</span>{' '}
+            <span className="text-stone-900 font-bold tabular-nums">{hud.rlcP} W</span>
           </div>
           {hud.rlcResonance && (
-            <div className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-semibold font-mono text-[10px] uppercase tracking-wider">
+            <div className="px-2 py-0.5 rounded bg-[#FEF3C7] border border-[#FDE68A] text-[#92400E] font-semibold font-mono text-[10px] uppercase tracking-wider">
               Cộng hưởng (Resonance)
             </div>
           )}
@@ -845,7 +870,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ref={canvasRef}
         width={620}
         height={340}
-        className="rounded-2xl bg-slate-950 border border-white/10 w-full object-contain shadow-inner"
+        className="rounded-2xl bg-[#FCFBF9] border border-[#E6E4DD] w-full object-contain shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)]"
       />
     </div>
   );

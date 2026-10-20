@@ -56,12 +56,12 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
   return (
     <div
       data-testid="math-numpad"
-      className="w-full max-w-md bg-zinc-900/90 rounded-lg p-4 border border-zinc-800 shadow-xl flex flex-col gap-3 select-none"
+      className="w-full max-w-md bg-white/95 rounded-xl p-4 border border-[#E6E4DD] shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] flex flex-col gap-3 select-none font-sans"
       style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
     >
       {/* Context Token Chips */}
-      <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-zinc-950 rounded-md border border-zinc-800/80">
-        <span className="text-[10px] font-mono text-zinc-400 px-1 font-medium shrink-0">
+      <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-[#F4F3EE] rounded-lg border border-[#E5E3DC]">
+        <span className="text-[10px] font-mono text-stone-500 px-1 font-medium shrink-0">
           Token nhanh:
         </span>
         {effectiveTokens.map((token) => (
@@ -71,7 +71,7 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
             data-testid={`token-chip-${token}`}
             onClick={() => handleKeyPress(token)}
             disabled={disabled}
-            className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 active:scale-95 border border-zinc-800 font-mono text-xs text-sky-400 transition cursor-pointer disabled:opacity-40"
+            className="px-2 py-0.5 rounded-md bg-white hover:bg-stone-50 active:translate-y-px border border-[#DCD9D0] font-mono text-xs text-blue-600 font-medium transition cursor-pointer disabled:opacity-40 shadow-2xs"
           >
             {token}
           </button>
@@ -87,14 +87,14 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
           readOnly
           onPaste={handlePasteAttempt}
           placeholder={placeholder}
-          className="w-full px-3.5 py-2.5 rounded-md bg-zinc-950 border border-zinc-800 text-sky-400 font-mono text-sm font-semibold focus:outline-none focus:border-zinc-700 select-none"
+          className="w-full px-3.5 py-2.5 rounded-lg bg-[#FCFBF9] border border-[#DCD9D0] text-blue-700 font-mono text-sm font-semibold focus:outline-none focus:border-blue-500 select-none shadow-inner"
           style={{ userSelect: 'none' }}
         />
         {value.length > 0 && (
           <button
             data-testid="numpad-clear"
             onClick={handleClear}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-zinc-400 hover:text-zinc-100 px-2 py-0.5 rounded bg-zinc-800"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-stone-600 hover:text-stone-900 px-2 py-0.5 rounded bg-stone-100 hover:bg-stone-200 border border-stone-200 transition"
           >
             Xóa
           </button>
@@ -105,14 +105,14 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
       {pasteBlockedWarning && (
         <div
           data-testid="paste-blocked-alert"
-          className="flex items-center gap-2 p-2 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium"
+          className="flex items-center gap-2 p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium"
         >
-          <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+          <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
           <span>Chống gian lận: Tính năng dán (Paste) bị vô hiệu hóa để kích hoạt tư duy chủ động!</span>
         </div>
       )}
 
-      {/* Touch-Friendly Virtual Math Keys */}
+      {/* Touch-Friendly Virtual Math Keys (Tactile Porcelain Keycaps) */}
       <div className="grid grid-cols-5 gap-1.5">
         {keys.map((row, rIdx) =>
           row.map((char, cIdx) => (
@@ -121,7 +121,7 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
               data-testid={`key-${char}`}
               onClick={() => handleKeyPress(char)}
               disabled={disabled}
-              className="h-10 rounded-md bg-zinc-950 hover:bg-zinc-800 active:scale-95 border border-zinc-800/90 font-mono text-xs font-medium text-zinc-200 transition flex items-center justify-center cursor-pointer disabled:opacity-40"
+              className="h-10 rounded-lg bg-white hover:bg-stone-50 active:translate-y-px border border-[#DCD9D0] font-mono text-xs font-semibold text-stone-800 transition flex items-center justify-center cursor-pointer disabled:opacity-40 shadow-2xs"
             >
               {char}
             </button>
@@ -135,7 +135,7 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
           data-testid="numpad-backspace"
           onClick={handleBackspace}
           disabled={disabled || value.length === 0}
-          className="h-9 rounded-md bg-zinc-950 hover:bg-zinc-800 active:scale-95 border border-zinc-800 text-xs font-medium text-zinc-300 flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-40"
+          className="h-9 rounded-lg bg-white hover:bg-stone-50 active:translate-y-px border border-[#DCD9D0] text-xs font-medium text-stone-700 flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-40 shadow-2xs"
         >
           <Delete className="w-3.5 h-3.5" />
           <span>Xóa lùi</span>
@@ -145,7 +145,7 @@ export const MathNumpad: React.FC<MathNumpadProps> = ({
           data-testid="numpad-submit"
           onClick={() => onSubmit(value)}
           disabled={disabled || value.trim().length === 0}
-          className="h-9 rounded-md bg-zinc-100 hover:bg-white active:scale-95 text-zinc-950 font-medium text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-40 shadow-sm"
+          className="h-9 rounded-lg bg-blue-600 hover:bg-blue-700 active:translate-y-px text-white font-medium text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-40 shadow-xs"
         >
           <Send className="w-3.5 h-3.5" />
           <span>Kiểm tra</span>

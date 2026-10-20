@@ -181,12 +181,12 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
   return (
     <div
       data-testid="concept-check-gate"
-      className="p-5 rounded-lg bg-zinc-900 border border-zinc-800 shadow-xl flex flex-col gap-4 text-zinc-100"
+      className="p-5 rounded-xl bg-white/95 border border-[#E6E4DD] shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] flex flex-col gap-4 text-[#18181B] font-sans"
     >
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-          <h4 className="font-semibold text-xs tracking-tight text-zinc-200 uppercase font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+          <h4 className="font-semibold text-xs tracking-tight text-stone-700 uppercase font-mono">
             Cổng Kiểm Tra Khái Niệm Ngược (Reverse Gate)
           </h4>
         </div>
@@ -202,8 +202,8 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
             }}
             className={`px-2.5 py-1 rounded-md text-[11px] font-mono transition cursor-pointer border ${
               isTrapHunterMode
-                ? 'bg-zinc-800 text-amber-400 border-zinc-700 font-medium'
-                : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border-zinc-800'
+                ? 'bg-white text-amber-800 border-amber-300 font-semibold shadow-xs'
+                : 'bg-[#F2F0EA] text-stone-600 hover:text-stone-900 border-[#E5E3DC]'
             }`}
             title="Đặc sản format thi THPT Quốc gia 2025+: Câu hỏi trắc nghiệm Đúng/Sai 4 ý"
           >
@@ -221,8 +221,8 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
             }}
             className={`px-2.5 py-1 rounded-md text-[11px] font-mono transition cursor-pointer border ${
               isQuietMode
-                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 font-medium'
-                : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border-zinc-800'
+                ? 'bg-white text-stone-900 border-stone-300 font-semibold shadow-xs'
+                : 'bg-[#F2F0EA] text-stone-600 hover:text-stone-900 border-[#E5E3DC]'
             }`}
             title="Chuyển chế độ yên tĩnh khi học ở thư viện / ban đêm"
           >
@@ -230,25 +230,25 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
           </button>
           <span
             data-testid="eureka-reward-badge"
-            className="text-xs font-mono tabular-nums px-2.5 py-0.5 rounded-md bg-zinc-950 text-amber-400 border border-zinc-800"
+            className="text-xs font-mono tabular-nums px-2.5 py-0.5 rounded-md bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A] font-semibold"
           >
             +{pointsAwarded} Eureka Particles
           </span>
         </div>
       </div>
 
-      <p className="text-xs text-zinc-400 leading-relaxed">
+      <p className="text-xs text-stone-600 leading-relaxed font-serif italic">
         {isTrapHunterMode
           ? 'Thử thách Bẫy Đề Thi THPT 2025+: Biện luận Đúng / Sai cho 4 mệnh đề dưới đây:'
           : isQuietMode
           ? 'Sắp xếp 3 khối tư duy nhân quả theo đúng trình tự diễn biến phản ứng:'
-          : <>Để hoàn thành bài học, hãy dùng giọng nói giải thích bản chất: <strong className="text-zinc-200">{conceptTitle}</strong></>}
+          : <>Để hoàn thành bài học, hãy dùng giọng nói giải thích bản chất: <strong className="text-[#18181B] font-semibold">{conceptTitle}</strong></>}
       </p>
 
       {/* TRAP HUNTER MODE: Format 2025+ True/False 4-Statement */}
       {isTrapHunterMode ? (
-        <div className="flex flex-col gap-2.5 p-3.5 rounded-md bg-zinc-950 border border-zinc-800">
-          <div className="text-xs font-medium text-zinc-300 flex items-center gap-1.5 font-mono">
+        <div className="flex flex-col gap-2.5 p-3.5 rounded-xl bg-[#F4F3EE] border border-[#E5E3DC]">
+          <div className="text-xs font-semibold text-stone-700 flex items-center gap-1.5 font-mono">
             <span>Thử thách Đúng/Sai (Format Đề Thi THPT 2025-2026):</span>
           </div>
           <div className="flex flex-col gap-1.5">
@@ -256,19 +256,19 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
               <div
                 key={stmt.id}
                 data-testid={`trap-stmt-${stmt.id}`}
-                className="p-2.5 rounded-md bg-zinc-900 border border-zinc-800/80 flex flex-col md:flex-row md:items-center justify-between gap-2"
+                className="p-2.5 rounded-lg bg-white border border-[#E5E3DC] flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-2xs"
               >
-                <span className="text-xs text-zinc-300">{stmt.label}</span>
+                <span className="text-xs text-stone-800">{stmt.label}</span>
                 <div className="flex items-center gap-1 shrink-0 font-mono">
                   <button
                     type="button"
                     data-testid={`btn-stmt-${stmt.id}-true`}
                     onClick={() => handleSelectTrapOption(stmt.id, true)}
                     disabled={isPassed}
-                    className={`px-2.5 py-0.5 rounded text-xs transition cursor-pointer ${
+                    className={`px-2.5 py-0.5 rounded-md text-xs transition cursor-pointer active:translate-y-px ${
                       stmt.userVal === true
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-medium'
-                        : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold shadow-xs'
+                        : 'bg-[#F8F7F4] text-stone-600 hover:text-stone-900 border border-[#DCD9D0]'
                     }`}
                   >
                     ĐÚNG
@@ -278,10 +278,10 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
                     data-testid={`btn-stmt-${stmt.id}-false`}
                     onClick={() => handleSelectTrapOption(stmt.id, false)}
                     disabled={isPassed}
-                    className={`px-2.5 py-0.5 rounded text-xs transition cursor-pointer ${
+                    className={`px-2.5 py-0.5 rounded-md text-xs transition cursor-pointer active:translate-y-px ${
                       stmt.userVal === false
-                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 font-medium'
-                        : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700'
+                        ? 'bg-rose-50 text-rose-700 border border-rose-300 font-semibold shadow-xs'
+                        : 'bg-[#F8F7F4] text-stone-600 hover:text-stone-900 border border-[#DCD9D0]'
                     }`}
                   >
                     SAI
@@ -296,31 +296,31 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
             data-testid="btn-verify-trap-statements"
             onClick={verifyTrapStatements}
             disabled={isPassed}
-            className="mt-1 py-2 rounded-md bg-zinc-100 hover:bg-white active:scale-98 text-xs font-medium text-zinc-950 transition cursor-pointer disabled:opacity-50"
+            className="mt-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:translate-y-px text-xs font-medium text-white transition cursor-pointer disabled:opacity-50 shadow-xs"
           >
             {isPassed ? 'Đã vượt qua 4 bẫy đề thi' : 'Nộp bài kiểm tra 4 mệnh đề Đúng/Sai'}
           </button>
         </div>
       ) : isQuietMode ? (
-        <div className="flex flex-col gap-1.5 p-3 rounded-md bg-zinc-950 border border-zinc-800">
+        <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-[#F4F3EE] border border-[#E5E3DC]">
           {causalBlocks.map((block, idx) => (
             <div
               key={block.id}
               data-testid={`causal-block-${block.id}`}
-              className="flex items-center justify-between gap-3 p-2.5 rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition"
+              className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-white border border-[#E5E3DC] hover:border-stone-400 transition shadow-2xs"
             >
               <div className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded bg-zinc-800 text-zinc-300 text-[11px] font-mono flex items-center justify-center shrink-0">
+                <span className="w-5 h-5 rounded bg-[#F2F0EA] border border-[#E5E3DC] text-stone-700 text-[11px] font-mono flex items-center justify-center shrink-0 font-semibold">
                   {idx + 1}
                 </span>
-                <span className="text-xs text-zinc-300">{block.text}</span>
+                <span className="text-xs text-stone-800">{block.text}</span>
               </div>
               <div className="flex items-center gap-1 shrink-0 font-mono">
                 <button
                   type="button"
                   onClick={() => moveBlock(idx, 'UP')}
                   disabled={idx === 0 || isPassed}
-                  className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 disabled:opacity-20 cursor-pointer"
+                  className="px-2 py-0.5 rounded-md bg-white hover:bg-stone-50 active:translate-y-px border border-[#DCD9D0] text-xs text-stone-700 disabled:opacity-20 cursor-pointer shadow-2xs"
                   title="Di chuyển lên"
                 >
                   ↑
@@ -329,7 +329,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
                   type="button"
                   onClick={() => moveBlock(idx, 'DOWN')}
                   disabled={idx === causalBlocks.length - 1 || isPassed}
-                  className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 disabled:opacity-20 cursor-pointer"
+                  className="px-2 py-0.5 rounded-md bg-white hover:bg-stone-50 active:translate-y-px border border-[#DCD9D0] text-xs text-stone-700 disabled:opacity-20 cursor-pointer shadow-2xs"
                   title="Di chuyển xuống"
                 >
                   ↓
@@ -343,7 +343,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
             data-testid="btn-verify-causal-blocks"
             onClick={verifyCausalBlocks}
             disabled={isPassed}
-            className="mt-1 py-2 rounded-md bg-zinc-100 hover:bg-white active:scale-98 text-xs font-medium text-zinc-950 transition cursor-pointer disabled:opacity-50"
+            className="mt-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:translate-y-px text-xs font-medium text-white transition cursor-pointer disabled:opacity-50 shadow-xs"
           >
             {isPassed ? 'Đã hoàn thành thử thách' : 'Kiểm tra trình tự nhân quả'}
           </button>
@@ -356,12 +356,12 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
             data-testid="voice-record-btn"
             onClick={isRecording ? stopListening : startListening}
             disabled={isPassed}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer ${
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm ${
               isPassed
-                ? 'bg-zinc-800 text-emerald-400 border border-emerald-500/40'
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
                 : isRecording
                 ? 'bg-rose-600 text-white animate-pulse'
-                : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700'
+                : 'bg-[#F2F0EA] hover:bg-[#EAE7DF] text-stone-700 border border-[#DCD9D0]'
             }`}
           >
             {isPassed ? (
@@ -373,7 +373,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
             )}
           </button>
 
-          <span className="text-xs text-zinc-400">
+          <span className="text-xs text-stone-500 font-serif italic">
             {isPassed
               ? 'Đã vượt qua cổng kiểm tra'
               : isRecording
@@ -392,14 +392,14 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
           onChange={(e) => setTranscript(e.target.value)}
           placeholder="Hoặc gõ lời giải thích bằng bàn phím..."
           disabled={isPassed}
-          className="flex-1 px-3 py-2 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-700"
+          className="flex-1 px-3 py-2 rounded-lg bg-[#FCFBF9] border border-[#DCD9D0] text-xs text-[#18181B] placeholder:text-stone-400 focus:outline-none focus:border-blue-500"
         />
         <button
           type="button"
           data-testid="btn-verify-explanation"
           onClick={() => verifyExplanation(transcript)}
           disabled={isPassed || transcript.trim().length === 0}
-          className="px-3.5 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-xs font-medium text-zinc-200 border border-zinc-700 transition disabled:opacity-40 cursor-pointer"
+          className="px-3.5 py-2 rounded-lg bg-[#18181B] hover:bg-stone-800 active:translate-y-px text-xs font-medium text-white transition disabled:opacity-40 cursor-pointer shadow-xs"
         >
           Xác nhận
         </button>
@@ -409,10 +409,10 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
       {feedback && (
         <div
           data-testid="concept-feedback"
-          className={`p-3 rounded-md text-xs leading-relaxed border ${
+          className={`p-3 rounded-lg text-xs leading-relaxed border ${
             isPassed
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-              : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-amber-50 border-amber-200 text-amber-800'
           }`}
         >
           {feedback}

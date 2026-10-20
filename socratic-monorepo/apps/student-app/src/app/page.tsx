@@ -8,11 +8,11 @@ import { SmartNotesViewer } from '../components/dashboards/SmartNotesViewer';
 import { GraduationCap, BarChart3, HeartHandshake, Compass, FileText } from 'lucide-react';
 
 function getAcademicRank(eureka: number): { title: string; badgeClass: string; dotClass: string } {
-  if (eureka >= 1000) return { title: 'Grandmaster / Quốc tế', badgeClass: 'bg-rose-500/10 text-rose-400 border-rose-500/30', dotClass: 'bg-rose-500' };
-  if (eureka >= 500) return { title: 'Đội tuyển Quốc gia (National Olympiad)', badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30', dotClass: 'bg-amber-400' };
-  if (eureka >= 250) return { title: 'Đội tuyển Tỉnh (Provincial Team)', badgeClass: 'bg-sky-500/10 text-sky-400 border-sky-500/30', dotClass: 'bg-sky-400' };
-  if (eureka >= 100) return { title: 'Varsity (Tuyển Trường)', badgeClass: 'bg-zinc-800 text-zinc-300 border-zinc-700', dotClass: 'bg-zinc-400' };
-  return { title: 'Scholar (Tập sự THPT)', badgeClass: 'bg-zinc-900 text-zinc-400 border-zinc-800', dotClass: 'bg-zinc-500' };
+  if (eureka >= 1000) return { title: 'Grandmaster / Quốc tế', badgeClass: 'bg-rose-50 text-rose-700 border-rose-200', dotClass: 'bg-rose-600' };
+  if (eureka >= 500) return { title: 'Đội tuyển Quốc gia (National Olympiad)', badgeClass: 'bg-amber-50 text-amber-800 border-amber-200', dotClass: 'bg-amber-600' };
+  if (eureka >= 250) return { title: 'Đội tuyển Tỉnh (Provincial Team)', badgeClass: 'bg-blue-50 text-blue-700 border-blue-200', dotClass: 'bg-blue-600' };
+  if (eureka >= 100) return { title: 'Varsity (Tuyển Trường)', badgeClass: 'bg-stone-100 text-stone-700 border-stone-200', dotClass: 'bg-stone-500' };
+  return { title: 'Scholar (Tập sự THPT)', badgeClass: 'bg-stone-100 text-stone-600 border-stone-200', dotClass: 'bg-stone-400' };
 }
 
 export default function StudentAppPage() {
@@ -62,22 +62,22 @@ export default function StudentAppPage() {
   const academicRank = getAcademicRank(totalEureka);
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col antialiased">
+    <main className="min-h-screen bg-[#F8F7F4] text-[#18181B] flex flex-col antialiased font-sans">
       {/* Precision Header */}
-      <header className="h-11 border-b border-zinc-800/80 bg-zinc-950 px-4 flex items-center justify-between sticky top-0 z-50">
+      <header className="h-12 border-b border-[#E6E4DD] bg-white/90 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-50 shadow-[0_1px_8px_-1px_rgba(20,20,19,0.03)]">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-semibold tracking-widest text-zinc-100">
+            <span className="font-mono text-xs font-semibold tracking-widest text-[#18181B]">
               SOCRATIC
             </span>
-            <span className="text-zinc-600 text-xs font-mono">/</span>
-            <span className="text-xs text-zinc-400 font-medium">Companion</span>
-            <span className="font-mono text-[10px] text-zinc-500 border border-zinc-800 px-1.5 py-0.5 rounded">
+            <span className="text-stone-400 text-xs font-mono">/</span>
+            <span className="text-xs text-stone-600 font-medium">Companion</span>
+            <span className="font-mono text-[10px] text-stone-500 border border-[#E5E3DC] bg-[#F2F0EA] px-1.5 py-0.5 rounded">
               v4.0
             </span>
           </div>
 
-          <div className="h-3.5 w-px bg-zinc-800" />
+          <div className="h-3.5 w-px bg-[#E6E4DD]" />
 
           <div className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center gap-1.5 ${academicRank.badgeClass}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${academicRank.dotClass}`} />
@@ -87,17 +87,17 @@ export default function StudentAppPage() {
 
         {/* Center: Curriculum Toggle */}
         <div
-          className="flex items-center bg-zinc-900 p-0.5 rounded-md border border-zinc-800"
+          className="flex items-center bg-[#F2F0EA] p-0.5 rounded-lg border border-[#E5E3DC]"
           data-testid="student-curriculum-toggle"
         >
           <button
             type="button"
             data-testid="btn-student-mode-standard"
             onClick={() => setCurriculumLevel('THPT_STANDARD')}
-            className={`px-3 py-1 rounded text-xs transition cursor-pointer ${
+            className={`px-3 py-1 rounded-md text-xs transition cursor-pointer ${
               curriculumLevel === 'THPT_STANDARD'
-                ? 'bg-zinc-800 text-zinc-100 font-medium shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white text-stone-900 font-medium shadow-xs'
+                : 'text-stone-500 hover:text-stone-800'
             }`}
           >
             Chuẩn THPT
@@ -106,25 +106,25 @@ export default function StudentAppPage() {
             type="button"
             data-testid="btn-student-mode-olympiad"
             onClick={() => setCurriculumLevel('OLYMPIAD_ADVANCED')}
-            className={`px-3 py-1 rounded text-xs transition cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1 rounded-md text-xs transition cursor-pointer flex items-center gap-1.5 ${
               curriculumLevel === 'OLYMPIAD_ADVANCED'
-                ? 'bg-zinc-800 text-amber-400 font-medium shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white text-amber-800 font-medium shadow-xs'
+                : 'text-stone-500 hover:text-stone-800'
             }`}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
             <span>Chuyên sâu (Chuyên/HSG)</span>
           </button>
         </div>
 
         {/* Right: Tab Switcher */}
-        <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-md border border-zinc-800">
+        <div className="flex items-center gap-1 bg-[#F2F0EA] p-0.5 rounded-lg border border-[#E5E3DC]">
           <button
             onClick={() => setActiveTab('COMPANION')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
               activeTab === 'COMPANION'
-                ? 'bg-zinc-800 text-zinc-100 font-medium'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white text-stone-900 font-medium shadow-xs'
+                : 'text-stone-500 hover:text-stone-800'
             }`}
           >
             <Compass className="w-3.5 h-3.5" />
@@ -133,10 +133,10 @@ export default function StudentAppPage() {
 
           <button
             onClick={() => setActiveTab('SMARTNOTES')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
               activeTab === 'SMARTNOTES'
-                ? 'bg-zinc-800 text-zinc-100 font-medium'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white text-stone-900 font-medium shadow-xs'
+                : 'text-stone-500 hover:text-stone-800'
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
@@ -145,10 +145,10 @@ export default function StudentAppPage() {
 
           <button
             onClick={() => setActiveTab('HEATMAP')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
               activeTab === 'HEATMAP'
-                ? 'bg-zinc-800 text-zinc-100 font-medium'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white text-stone-900 font-medium shadow-xs'
+                : 'text-stone-500 hover:text-stone-800'
             }`}
           >
             <BarChart3 className="w-3.5 h-3.5" />
@@ -157,10 +157,10 @@ export default function StudentAppPage() {
 
           <button
             onClick={() => setActiveTab('PARENTPULSE')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
               activeTab === 'PARENTPULSE'
-                ? 'bg-zinc-800 text-zinc-100 font-medium'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white text-stone-900 font-medium shadow-xs'
+                : 'text-stone-500 hover:text-stone-800'
             }`}
           >
             <HeartHandshake className="w-3.5 h-3.5" />

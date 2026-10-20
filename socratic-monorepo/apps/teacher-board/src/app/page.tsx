@@ -95,29 +95,29 @@ export default function UnifiedPlatformPage() {
   };
 
   return (
-    <main className="w-screen h-screen overflow-hidden bg-zinc-950 text-zinc-100 flex flex-col select-none">
-      {/* 1. TOP COMMAND HEADER (Linear / Vercel Precision Style: 44px h-11) */}
-      <header className="h-11 border-b border-zinc-800/80 bg-zinc-950 px-4 flex items-center justify-between shrink-0 z-50">
+    <main className="w-screen h-screen overflow-hidden bg-[#F8F7F4] text-[#18181B] flex flex-col select-none font-sans">
+      {/* 1. TOP COMMAND HEADER (Editorial Daylight: 48px h-12) */}
+      <header className="h-12 border-b border-[#E6E4DD] bg-white/90 backdrop-blur-md px-5 flex items-center justify-between shrink-0 z-50">
         {/* Left: Minimal Wordmark & Lesson Title */}
         <div className="flex items-center gap-2">
-          <span className="font-mono text-xs tracking-widest text-zinc-100 font-semibold">
+          <span className="font-mono text-xs tracking-widest text-stone-900 font-bold">
             SOCRATIC
           </span>
-          <span className="text-zinc-700 font-mono text-xs">/</span>
-          <span className="text-xs text-zinc-400 font-medium tracking-tight">
+          <span className="text-stone-300 font-mono text-xs">/</span>
+          <span className="text-xs text-stone-600 font-medium tracking-tight">
             Dao động điều hòa & Cơ học giải tích
           </span>
         </div>
 
         {/* Center: Unified Mode Switcher (Segmented Control) */}
-        <div className="flex items-center bg-zinc-900 border border-zinc-800 p-0.5 rounded-md">
+        <div className="flex items-center bg-[#F2F0EA] border border-[#E6E4DD] p-1 rounded-lg">
           <button
             type="button"
             onClick={() => setActiveMode('BOARD')}
-            className={`px-3 py-1 rounded text-xs transition cursor-pointer font-medium ${
+            className={`px-3 py-1 rounded-md text-xs transition cursor-pointer font-medium ${
               activeMode === 'BOARD'
-                ? 'bg-zinc-800 text-zinc-100 font-semibold shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white text-stone-900 font-semibold shadow-xs'
+                : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             01. Bảng Tương Tác & Mô Phỏng
@@ -125,10 +125,10 @@ export default function UnifiedPlatformPage() {
           <button
             type="button"
             onClick={() => setActiveMode('SOCRATIC')}
-            className={`px-3 py-1 rounded text-xs transition cursor-pointer font-medium ${
+            className={`px-3 py-1 rounded-md text-xs transition cursor-pointer font-medium ${
               activeMode === 'SOCRATIC'
-                ? 'bg-zinc-800 text-zinc-100 font-semibold shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white text-stone-900 font-semibold shadow-xs'
+                : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             02. Gia Sư Socratic 1:1
@@ -136,10 +136,10 @@ export default function UnifiedPlatformPage() {
           <button
             type="button"
             onClick={() => setActiveMode('ANALYTICS')}
-            className={`px-3 py-1 rounded text-xs transition cursor-pointer font-medium ${
+            className={`px-3 py-1 rounded-md text-xs transition cursor-pointer font-medium ${
               activeMode === 'ANALYTICS'
-                ? 'bg-zinc-800 text-zinc-100 font-semibold shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-white text-stone-900 font-semibold shadow-xs'
+                : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             03. Phân Tích Lớp Học & Smart Notes
@@ -150,17 +150,17 @@ export default function UnifiedPlatformPage() {
         <div className="flex items-center gap-2.5">
           {/* Curriculum Depth Segmented Toggle */}
           <div
-            className="flex items-center bg-zinc-900 border border-zinc-800 p-0.5 rounded-md"
+            className="flex items-center bg-[#F2F0EA] border border-[#E6E4DD] p-1 rounded-lg"
             data-testid="curriculum-mode-toggle"
           >
             <button
               type="button"
               data-testid="btn-mode-standard"
               onClick={() => setCurriculumLevel('THPT_STANDARD')}
-              className={`px-2.5 py-1 rounded text-xs transition cursor-pointer font-medium ${
+              className={`px-2.5 py-1 rounded-md text-xs transition cursor-pointer font-medium ${
                 curriculumLevel === 'THPT_STANDARD'
-                  ? 'bg-zinc-800 text-zinc-100 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-white text-stone-900 font-semibold shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               Chuẩn THPT
@@ -169,10 +169,10 @@ export default function UnifiedPlatformPage() {
               type="button"
               data-testid="btn-mode-olympiad"
               onClick={() => setCurriculumLevel('OLYMPIAD_ADVANCED')}
-              className={`px-2.5 py-1 rounded text-xs transition cursor-pointer font-medium ${
+              className={`px-2.5 py-1 rounded-md text-xs transition cursor-pointer font-medium ${
                 curriculumLevel === 'OLYMPIAD_ADVANCED'
-                  ? 'bg-zinc-800 text-sky-400 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-white text-blue-700 font-semibold shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               Chuyên / HSG
@@ -183,9 +183,9 @@ export default function UnifiedPlatformPage() {
           <button
             type="button"
             onClick={handleExportLecture}
-            className="text-xs border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 px-3 py-1 rounded-md text-zinc-200 font-medium transition cursor-pointer flex items-center gap-1.5"
+            className="text-xs border border-[#DCD9D0] bg-white hover:bg-stone-50 px-3 py-1.5 rounded-lg text-stone-700 font-medium shadow-xs transition cursor-pointer flex items-center gap-1.5"
           >
-            <Download className="w-3.5 h-3.5 text-zinc-400" />
+            <Download className="w-3.5 h-3.5 text-stone-500" />
             <span>Xuất Bài Giảng</span>
           </button>
         </div>
@@ -193,11 +193,11 @@ export default function UnifiedPlatformPage() {
 
       {/* Export Toast Notice */}
       {lessonExportNotice && (
-        <div className="bg-zinc-900 border-b border-emerald-500/30 px-4 py-1.5 text-xs font-mono text-emerald-300 flex items-center justify-between z-40">
+        <div className="bg-[#ECFDF5] border-b border-[#A7F3D0] px-4 py-1.5 text-xs font-mono text-[#065F46] flex items-center justify-between z-40">
           <span>{lessonExportNotice}</span>
           <button
             onClick={() => setLessonExportNotice(null)}
-            className="text-zinc-500 hover:text-zinc-300 font-mono"
+            className="text-emerald-700 hover:text-emerald-900 font-mono"
           >
             ✕
           </button>
@@ -205,7 +205,7 @@ export default function UnifiedPlatformPage() {
       )}
 
       {/* 2. UNIFIED WORKSPACE VIEW AREA (100% height minus header) */}
-      <div className="flex-1 h-[calc(100vh-44px)] overflow-hidden relative">
+      <div className="flex-1 h-[calc(100vh-48px)] overflow-hidden relative">
         {/* MODE 01: Interactive Board & Precision Lab Studio */}
         <div className={`w-full h-full ${activeMode === 'BOARD' ? 'block' : 'hidden'}`}>
           <SmartboardCanvas

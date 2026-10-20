@@ -45,12 +45,12 @@ export interface SmartboardCanvasProps {
 }
 
 const PALETTE = [
-  { name: 'Trắng phấn', value: '#ffffff' },
-  { name: 'Xanh Neon', value: '#22d3ee' },
-  { name: 'Vàng rực', value: '#facc15' },
-  { name: 'Hồng/Đỏ', value: '#f43f5e' },
-  { name: 'Xanh lá', value: '#4ade80' },
-  { name: 'Tím Pastel', value: '#c084fc' },
+  { name: 'Mực than', value: '#18181B' },
+  { name: 'Xanh Cobalt', value: '#2563EB' },
+  { name: 'Đỏ Vermilion', value: '#E11D48' },
+  { name: 'Hổ phách', value: '#D97706' },
+  { name: 'Xanh Ngọc', value: '#059669' },
+  { name: 'Tím Indigo', value: '#6366F1' },
 ];
 
 const STROKE_WIDTHS = [
@@ -66,7 +66,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 }) => {
   const [tool, setTool] = useState<CanvasTool>('PEN');
   const [selectedShape, setSelectedShape] = useState<ShapeType>('CIRCLE');
-  const [strokeColor, setStrokeColor] = useState<string>('#ffffff');
+  const [strokeColor, setStrokeColor] = useState<string>('#18181B');
   const [strokeWidth, setStrokeWidth] = useState<number>(3.5);
   const [gridPattern, setGridPattern] = useState<GridPattern>('DOTS');
 
@@ -129,9 +129,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Warm Alabaster Paper Surface Fill
+    ctx.fillStyle = '#F8F7F4';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     // 1. Draw Grid Pattern
     if (gridPattern === 'DOTS') {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.fillStyle = '#E5E3DC';
       for (let x = 20; x < canvas.width; x += 28) {
         for (let y = 20; y < canvas.height; y += 28) {
           ctx.beginPath();
@@ -140,7 +144,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         }
       }
     } else if (gridPattern === 'GRID') {
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.strokeStyle = '#EFECE6';
       ctx.lineWidth = 1;
       for (let x = 0; x < canvas.width; x += 32) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
@@ -156,14 +160,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       const isSelected = selectedStrokes.some((s) => s.id === stroke.id);
 
       ctx.save();
-      ctx.strokeStyle = isSelected ? '#38bdf8' : stroke.color;
+      ctx.strokeStyle = isSelected ? '#2563EB' : stroke.color;
       ctx.lineWidth = stroke.width + (isSelected ? 2 : 0);
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-
-      // Chalk / glowing soft effect
-      ctx.shadowColor = stroke.color;
-      ctx.shadowBlur = stroke.color.includes('rgba') ? 0 : 3;
 
       ctx.beginPath();
       ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
@@ -179,10 +179,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       ctx.save();
       if (tool === 'LASSO') {
         ctx.setLineDash([6, 6]);
-        ctx.strokeStyle = '#f59e0b';
+        ctx.strokeStyle = '#2563EB';
         ctx.lineWidth = 2.5;
       } else if (tool === 'HIGHLIGHTER') {
-        ctx.strokeStyle = 'rgba(250, 204, 21, 0.35)';
+        ctx.strokeStyle = 'rgba(254, 240, 138, 0.5)';
         ctx.lineWidth = 18;
         ctx.lineCap = 'square';
       } else {
@@ -762,12 +762,12 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   return (
     <div
       data-testid="smartboard-container"
-      className="relative w-full h-full min-h-[720px] bg-zinc-950 text-zinc-100 flex flex-col items-center justify-start p-3 select-none"
+      className="relative w-full h-full min-h-[720px] bg-[#F8F7F4] text-[#18181B] flex flex-col items-center justify-start p-3 select-none"
     >
       {/* MASTER SMARTBOARD TOOLBAR */}
       <div
         data-testid="smartboard-toolbar"
-        className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 shadow-lg z-20 max-w-5xl w-full"
+        className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-2 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] z-20 max-w-5xl w-full"
       >
         {/* Left Section: Core Tools */}
         <div className="flex items-center gap-1">
@@ -775,10 +775,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="tool-pen"
             onClick={() => { setTool('PEN'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
               tool === 'PEN'
-                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
-                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
+                ? 'bg-[#F2F0EA] text-stone-900 border-[#DCD9D0] font-semibold shadow-xs'
+                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
             }`}
             title="Bút viết tự nhiên"
           >
@@ -789,10 +789,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           {/* Highlighter */}
           <button
             onClick={() => { setTool('HIGHLIGHTER'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
               tool === 'HIGHLIGHTER'
-                ? 'bg-zinc-800 text-amber-300 border-zinc-700 shadow-sm'
-                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
+                ? 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A] font-semibold shadow-xs'
+                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
             }`}
             title="Bút dạ quang"
           >
@@ -804,10 +804,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="tool-circle"
             onClick={() => { setTool('SHAPE'); setSelectedShape('CIRCLE'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
               tool === 'SHAPE' && selectedShape === 'CIRCLE'
-                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
-                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
+                ? 'bg-[#F2F0EA] text-stone-900 border-[#DCD9D0] font-semibold shadow-xs'
+                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
             }`}
             title="Vẽ hình tròn"
           >
@@ -819,10 +819,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="tool-line"
             onClick={() => { setTool('SHAPE'); setSelectedShape('LINE'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
               tool === 'SHAPE' && selectedShape === 'LINE'
-                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
-                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
+                ? 'bg-[#F2F0EA] text-stone-900 border-[#DCD9D0] font-semibold shadow-xs'
+                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
             }`}
             title="Vẽ đoạn thẳng"
           >
@@ -834,10 +834,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="tool-arrow"
             onClick={() => { setTool('SHAPE'); setSelectedShape('ARROW'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
               tool === 'SHAPE' && selectedShape === 'ARROW'
-                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
-                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
+                ? 'bg-[#F2F0EA] text-stone-900 border-[#DCD9D0] font-semibold shadow-xs'
+                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
             }`}
             title="Vẽ mũi tên vector"
           >
@@ -849,10 +849,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="tool-rect"
             onClick={() => { setTool('SHAPE'); setSelectedShape('RECTANGLE'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
               tool === 'SHAPE' && selectedShape === 'RECTANGLE'
-                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
-                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
+                ? 'bg-[#F2F0EA] text-stone-900 border-[#DCD9D0] font-semibold shadow-xs'
+                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
             }`}
             title="Vẽ hình chữ nhật"
           >
@@ -864,10 +864,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="tool-lasso"
             onClick={() => setTool('LASSO')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
               tool === 'LASSO'
-                ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
-                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
+                ? 'bg-blue-50 text-blue-700 border-blue-200 font-semibold shadow-xs'
+                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
             }`}
             title="Khoanh vùng nét viết để mô phỏng"
           >
@@ -879,10 +879,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="tool-eraser"
             onClick={() => { setTool('ERASER'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
               tool === 'ERASER'
-                ? 'bg-zinc-850 text-zinc-100 border-zinc-700'
-                : 'bg-zinc-950 hover:bg-zinc-850 border-zinc-800 text-zinc-400'
+                ? 'bg-[#F2F0EA] text-stone-900 border-[#DCD9D0] font-semibold shadow-xs'
+                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
             }`}
             title="Tẩy nét viết"
           >
@@ -894,13 +894,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         {/* Center Section: Color Palette & Stroke Width */}
         <div className="flex items-center gap-2.5">
           {/* Color Dots */}
-          <div className="flex items-center gap-1.5 bg-zinc-950 px-2.5 py-1 rounded-md border border-zinc-800">
+          <div className="flex items-center gap-1.5 bg-[#F2F0EA] px-2.5 py-1 rounded-lg border border-[#E6E4DD]">
             {PALETTE.map((c) => (
               <button
                 key={c.value}
                 onClick={() => setStrokeColor(c.value)}
-                className={`w-3.5 h-3.5 rounded-full transition-transform cursor-pointer ${
-                  strokeColor === c.value ? 'scale-125 ring-1 ring-zinc-300' : 'hover:scale-110 opacity-70 hover:opacity-100'
+                className={`w-4 h-4 rounded-full transition-transform cursor-pointer border border-black/10 ${
+                  strokeColor === c.value ? 'scale-125 ring-2 ring-stone-900' : 'hover:scale-110 opacity-75 hover:opacity-100'
                 }`}
                 style={{ backgroundColor: c.value }}
                 title={c.name}
@@ -909,13 +909,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           </div>
 
           {/* Thickness Selector */}
-          <div className="flex items-center gap-1 bg-zinc-950 px-1.5 py-0.5 rounded-md border border-zinc-800">
+          <div className="flex items-center gap-1 bg-[#F2F0EA] px-1.5 py-0.5 rounded-lg border border-[#E6E4DD]">
             {STROKE_WIDTHS.map((sw) => (
               <button
                 key={sw.value}
                 onClick={() => setStrokeWidth(sw.value)}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition cursor-pointer ${
-                  strokeWidth === sw.value ? 'bg-zinc-800 text-zinc-100 font-semibold' : 'text-zinc-500 hover:text-zinc-300'
+                className={`px-2 py-0.5 rounded-md text-[10px] font-mono transition cursor-pointer ${
+                  strokeWidth === sw.value ? 'bg-white text-stone-900 font-semibold shadow-xs' : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
                 {sw.label}
@@ -930,7 +930,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             onClick={handleUndo}
             disabled={undoStack.length === 0}
-            className="p-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-zinc-400 disabled:opacity-30 border border-zinc-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-700 disabled:opacity-30 border border-[#DCD9D0] shadow-xs transition cursor-pointer"
             title="Hoàn tác (Undo)"
           >
             <Undo2 className="w-3.5 h-3.5" />
@@ -938,7 +938,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             onClick={handleRedo}
             disabled={redoStack.length === 0}
-            className="p-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-zinc-400 disabled:opacity-30 border border-zinc-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-700 disabled:opacity-30 border border-[#DCD9D0] shadow-xs transition cursor-pointer"
             title="Làm lại (Redo)"
           >
             <Redo2 className="w-3.5 h-3.5" />
@@ -947,7 +947,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           {/* Grid Toggle */}
           <button
             onClick={() => setGridPattern(gridPattern === 'DOTS' ? 'GRID' : (gridPattern === 'GRID' ? 'BLANK' : 'DOTS'))}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-zinc-400 text-xs border border-zinc-800 transition cursor-pointer"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-700 text-xs border border-[#DCD9D0] shadow-xs transition cursor-pointer"
             title="Đổi lưới nền: Lưới chấm / Ô ca-rô / Bảng trơn"
           >
             <GridIcon className="w-3 h-3" />
@@ -958,10 +958,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="btn-split-view-toggle"
             onClick={() => setIsSplitView((s) => !s)}
-            className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs border transition cursor-pointer ${
+            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs border transition cursor-pointer ${
               isSplitView
-                ? 'bg-zinc-800 text-sky-400 border-zinc-700 font-medium'
-                : 'bg-zinc-950 hover:bg-zinc-800 border-zinc-800 text-zinc-400'
+                ? 'bg-blue-50 text-blue-700 border-blue-200 font-semibold shadow-xs'
+                : 'bg-white hover:bg-stone-50 border-[#DCD9D0] text-stone-700 shadow-xs'
             }`}
             title="Ghim sang nửa bảng (Split-Screen)"
           >
@@ -973,17 +973,17 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="btn-pack-smart-notes"
             onClick={() => setIsQrModalOpen(true)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs font-medium transition cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-stone-50 border border-[#DCD9D0] text-stone-700 text-xs font-medium shadow-xs transition cursor-pointer"
             title="Đóng gói Smart Notes & QR"
           >
-            <QrCode className="w-3.5 h-3.5 text-zinc-400" />
+            <QrCode className="w-3.5 h-3.5 text-stone-600" />
             <span className="text-[10px] hidden sm:inline font-mono">QR Notes</span>
           </button>
 
           {/* Export Board */}
           <button
             onClick={handleExportBoard}
-            className="p-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-700 border border-[#DCD9D0] shadow-xs transition cursor-pointer"
             title="Tải ảnh bảng viết về máy"
           >
             <Download className="w-3.5 h-3.5" />
@@ -993,10 +993,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <button
             data-testid="tool-clear"
             onClick={handleClear}
-            className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition cursor-pointer"
+            className="p-1.5 rounded-lg bg-white hover:bg-rose-50 text-stone-600 hover:text-rose-600 border border-[#DCD9D0] shadow-xs transition cursor-pointer"
             title="Xóa toàn bộ bảng"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
 
           {/* Top-bar Quick Visualize Trigger (when strokes selected) */}
@@ -1005,7 +1005,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               data-testid="top-toolbar-btn-visualize"
               onClick={() => handleVisualize()}
               disabled={isLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-zinc-100 hover:bg-white text-zinc-950 transition cursor-pointer ml-1"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white transition cursor-pointer ml-1 shadow-sm font-semibold"
             >
               {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
               <span>Visualize ({selectedStrokes.length})</span>
@@ -1018,15 +1018,15 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       {errorMessage && (
         <div
           data-testid="error-toast"
-          className="flex items-center justify-between gap-3 px-4 py-2 mt-2 w-full max-w-5xl rounded-md bg-zinc-950 border border-rose-500/40 text-rose-300 text-xs shadow-md animate-in fade-in"
+          className="flex items-center justify-between gap-3 px-4 py-2 mt-2 w-full max-w-5xl rounded-xl bg-[#FFF1F2] border border-[#FECDD3] text-[#9F1239] text-xs shadow-sm animate-in fade-in"
         >
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
             <span className="font-medium">{errorMessage}</span>
           </div>
           <button
             onClick={() => setErrorMessage(null)}
-            className="text-rose-400 hover:text-white font-mono px-2 py-0.5 rounded transition"
+            className="text-rose-600 hover:text-rose-900 font-mono px-2 py-0.5 rounded transition"
           >
             ✕
           </button>
@@ -1037,9 +1037,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       {voiceNotice && (
         <div
           data-testid="voice-notice-banner"
-          className="flex items-center gap-2 px-4 py-2 mt-2 w-full max-w-5xl rounded-md bg-zinc-950 border border-zinc-700 text-zinc-200 text-xs shadow-md"
+          className="flex items-center gap-2 px-4 py-2 mt-2 w-full max-w-5xl rounded-xl bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E40AF] text-xs shadow-sm"
         >
-          <Mic className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+          <Mic className="w-3.5 h-3.5 text-blue-600 shrink-0" />
           <span>{voiceNotice}</span>
         </div>
       )}
@@ -1048,7 +1048,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       {selectedStrokes.length > 0 && (
         <div
           data-testid="lasso-action-bar"
-          className="flex flex-col gap-2.5 mt-2 px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800 shadow-xl z-20 max-w-5xl w-full animate-in fade-in duration-150"
+          className="flex flex-col gap-2.5 mt-2 px-4 py-3 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] shadow-[0_8px_30px_rgb(0,0,0,0.08)] z-20 max-w-5xl w-full animate-in fade-in duration-150"
         >
           {/* Top Row: Preview, Voice Mic, Formula Input, Action Buttons */}
           <div className="flex flex-col md:flex-row items-center gap-3 w-full">
@@ -1060,23 +1060,23 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                     src={thumbnailUrl}
                     alt="OCR Preview"
                     data-testid="ocr-debug-thumbnail"
-                    className="w-16 h-10 object-contain rounded border border-zinc-700 bg-white shadow-sm"
+                    className="w-16 h-10 object-contain rounded-lg border border-[#E6E4DD] bg-[#FCFBF9] shadow-xs"
                   />
-                  <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[8px] font-mono text-zinc-400 bg-zinc-950 px-1 rounded whitespace-nowrap border border-zinc-800">
+                  <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[8px] font-mono text-stone-500 bg-white px-1 rounded whitespace-nowrap border border-[#E6E4DD]">
                     0ms Crop
                   </span>
                 </div>
               ) : (
-                <div className="w-16 h-10 flex items-center justify-center rounded border border-dashed border-zinc-800 bg-zinc-950 text-[10px] text-zinc-500 font-mono">
+                <div className="w-16 h-10 flex items-center justify-center rounded-lg border border-dashed border-[#E6E4DD] bg-[#F8F7F4] text-[10px] text-stone-400 font-mono">
                   Preview
                 </div>
               )}
               <div className="flex flex-col">
-                <span className="text-xs font-semibold text-zinc-200">
+                <span className="text-xs font-semibold text-stone-900">
                   Lasso {selectedStrokes.length} nét
                 </span>
-                <span className="text-[10px] text-zinc-500 font-mono">
-                  Nền trắng chuẩn hóa
+                <span className="text-[10px] text-stone-500 font-mono">
+                  Nền giấy chuẩn hóa
                 </span>
               </div>
             </div>
@@ -1086,14 +1086,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               type="button"
               data-testid="voice-blueprint-mic-btn"
               onClick={handleVoiceDictation}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer shrink-0 border ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer shrink-0 border ${
                 isVoiceListening
-                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                  : 'bg-zinc-950 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  : 'bg-white hover:bg-stone-50 border-[#DCD9D0] text-stone-700 shadow-xs'
               }`}
               title="Đọc công thức bằng giọng nói"
             >
-              {isVoiceListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-zinc-400" />}
+              {isVoiceListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-stone-500" />}
               <span>{isVoiceListening ? 'Đang nghe...' : 'Giọng nói'}</span>
             </button>
 
@@ -1108,7 +1108,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   if (e.key === 'Enter') handleVisualize();
                 }}
                 placeholder="Nhập công thức hoặc bấm micro / chọn môn bên dưới..."
-                className="w-full px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 font-mono transition"
+                className="w-full px-3 py-1.5 rounded-lg bg-[#F8F7F4] border border-[#E6E4DD] text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-blue-500 font-mono transition"
               />
             </div>
 
@@ -1118,7 +1118,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 data-testid="btn-visualize"
                 onClick={() => handleVisualize()}
                 disabled={isLoading}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium bg-zinc-100 hover:bg-white text-zinc-950 transition cursor-pointer shadow-sm"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition cursor-pointer shadow-sm"
               >
                 {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                 <span>{isLoading ? 'Đang nhận diện...' : 'Trực quan hóa'}</span>
@@ -1130,7 +1130,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   setLassoLoop([]);
                   setFormulaInput('');
                 }}
-                className="p-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition cursor-pointer"
+                className="p-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-500 hover:text-stone-900 border border-[#DCD9D0] shadow-xs transition cursor-pointer"
                 title="Bỏ chọn"
               >
                 <X className="w-3.5 h-3.5" />
@@ -1139,15 +1139,15 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           </div>
 
           {/* Bottom Row: 4 1-Tap Smart Subject Chips (Zero Fail) */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-zinc-800">
-            <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#E6E4DD]">
+            <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider shrink-0">
               Gợi ý tức thì (0ms):
             </span>
             <button
               type="button"
               data-testid="smart-chip-math"
               onClick={() => handleVisualize('y = 2\\sin(3x)')}
-              className="px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] font-mono transition cursor-pointer"
+              className="px-2 py-0.5 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-700 text-[11px] font-mono transition cursor-pointer"
             >
               Toán (Sin 3x)
             </button>
@@ -1155,7 +1155,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               type="button"
               data-testid="smart-chip-physics"
               onClick={() => handleVisualize('ném xiên v0 = 22 m/s, alpha = 45 độ')}
-              className="px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] font-mono transition cursor-pointer"
+              className="px-2 py-0.5 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-700 text-[11px] font-mono transition cursor-pointer"
             >
               Lý (Ném xiên)
             </button>
@@ -1163,7 +1163,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               type="button"
               data-testid="smart-chip-chemistry"
               onClick={() => handleVisualize('4Fe + 3O2 -> 2Fe2O3')}
-              className="px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] font-mono transition cursor-pointer"
+              className="px-2 py-0.5 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-700 text-[11px] font-mono transition cursor-pointer"
             >
               Hóa (Fe + O₂)
             </button>
@@ -1171,7 +1171,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               type="button"
               data-testid="smart-chip-biology"
               onClick={() => handleVisualize('quang hợp nhiệt độ 25 độ C')}
-              className="px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] font-mono transition cursor-pointer"
+              className="px-2 py-0.5 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-700 text-[11px] font-mono transition cursor-pointer"
             >
               Sinh (Quang hợp 25°C)
             </button>
@@ -1179,7 +1179,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               type="button"
               data-testid="smart-chip-rlc"
               onClick={() => handleVisualize('mạch rlc xoay chiều')}
-              className="px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] font-mono transition cursor-pointer"
+              className="px-2 py-0.5 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-700 text-[11px] font-mono transition cursor-pointer"
             >
               RLC & Phasor (Lớp 12)
             </button>
@@ -1187,7 +1187,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               type="button"
               data-testid="smart-chip-titration"
               onClick={() => handleVisualize('chuẩn độ axit bazơ ph')}
-              className="px-2 py-0.5 rounded bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] font-mono transition cursor-pointer"
+              className="px-2 py-0.5 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-700 text-[11px] font-mono transition cursor-pointer"
             >
               Chuẩn độ pH (Hóa 11-12)
             </button>
@@ -1196,41 +1196,41 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       )}
 
       {/* Quick Demo Preset Pills for Live Demo */}
-      <div className="flex flex-wrap items-center gap-1.5 mt-2 px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs max-w-6xl w-full">
-        <span className="text-zinc-500 font-mono text-[11px] uppercase tracking-wider shrink-0">Mẫu sẵn:</span>
+      <div className="flex flex-wrap items-center gap-1.5 mt-2 px-3 py-1.5 rounded-xl bg-white/90 border border-[#E6E4DD] text-xs max-w-6xl w-full shadow-xs">
+        <span className="text-stone-500 font-mono text-[11px] uppercase tracking-wider shrink-0">Mẫu sẵn:</span>
         <button
           onClick={() => handleVisualize('y = 2\\sin(3x)')}
-          className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-[11px] transition cursor-pointer"
+          className="px-2 py-0.5 rounded-md bg-[#F4F3EE] hover:bg-[#EAE7DF] border border-[#E5E3DC] text-stone-700 font-mono text-[11px] transition cursor-pointer"
         >
           Toán: Đồ thị Sin
         </button>
         <button
           onClick={() => handleVisualize('ném xiên v0 = 22 m/s, alpha = 45 độ')}
-          className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-[11px] transition cursor-pointer"
+          className="px-2 py-0.5 rounded-md bg-[#F4F3EE] hover:bg-[#EAE7DF] border border-[#E5E3DC] text-stone-700 font-mono text-[11px] transition cursor-pointer"
         >
           Lý: Ném xiên
         </button>
         <button
           onClick={() => handleVisualize('4Fe + 3O2 -> 2Fe2O3')}
-          className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-[11px] transition cursor-pointer"
+          className="px-2 py-0.5 rounded-md bg-[#F4F3EE] hover:bg-[#EAE7DF] border border-[#E5E3DC] text-stone-700 font-mono text-[11px] transition cursor-pointer"
         >
           Hóa: Cân bằng Fe + O₂
         </button>
         <button
           onClick={() => handleVisualize('quang hợp nhiệt độ 25 độ C')}
-          className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-[11px] transition cursor-pointer"
+          className="px-2 py-0.5 rounded-md bg-[#F4F3EE] hover:bg-[#EAE7DF] border border-[#E5E3DC] text-stone-700 font-mono text-[11px] transition cursor-pointer"
         >
           Sinh: Quang hợp
         </button>
         <button
           onClick={() => handleVisualize('x = 5\\cos(2\\pi t + \\frac{\\pi}{2})')}
-          className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-[11px] transition cursor-pointer"
+          className="px-2 py-0.5 rounded-md bg-[#F4F3EE] hover:bg-[#EAE7DF] border border-[#E5E3DC] text-stone-700 font-mono text-[11px] transition cursor-pointer"
         >
           Lý: Dao động 5cos
         </button>
         <button
           onClick={() => handleVisualize('y = \\int x^3 dx')}
-          className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-[11px] transition cursor-pointer"
+          className="px-2 py-0.5 rounded-md bg-[#F4F3EE] hover:bg-[#EAE7DF] border border-[#E5E3DC] text-stone-700 font-mono text-[11px] transition cursor-pointer"
         >
           Toán: Tích phân x³
         </button>
@@ -1240,7 +1240,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       <div className="flex flex-col lg:flex-row items-start justify-center gap-4 mt-3 w-full max-w-7xl">
         {/* Drawing Canvas Area (Always visible, NEVER covered, high-def 1200x675) */}
         <div
-          className={`relative rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 shadow-sm transition-all duration-200 ${
+          className={`relative rounded-2xl overflow-hidden border border-[#E6E4DD] bg-[#F8F7F4] shadow-sm transition-all duration-200 ${
             activeBlueprint
               ? isSplitView
                 ? 'w-full lg:w-1/2'
@@ -1264,21 +1264,21 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         {activeBlueprint && (
           <div
             data-testid="active-simulation-modal"
-            className={`flex flex-col rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900/95 shadow-xl animate-in fade-in transition-all duration-200 ${
+            className={`flex flex-col rounded-2xl overflow-hidden border border-[#E6E4DD] bg-white shadow-xl animate-in fade-in transition-all duration-200 ${
               isSplitView ? 'w-full lg:w-1/2' : 'w-full lg:w-[48%]'
             }`}
           >
             {/* Header bar with dedicated Close / Hide Visualize Button */}
-            <div className="flex items-center justify-between px-4 py-2 bg-zinc-950 border-b border-zinc-800">
-              <span className="text-xs font-mono font-medium text-zinc-300 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+            <div className="flex items-center justify-between px-4 py-2 bg-[#FCFBF9] border-b border-[#E6E4DD]">
+              <span className="text-xs font-mono font-medium text-stone-700 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                 <span>Mô phỏng trực quan ({isSplitView ? 'Nửa bảng phải' : 'Bên cạnh'})</span>
               </span>
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setIsSplitView(!isSplitView)}
-                  className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 text-xs font-mono transition cursor-pointer"
+                  className="px-2 py-0.5 rounded-md bg-white hover:bg-stone-50 border border-[#DCD9D0] text-stone-700 text-xs font-mono shadow-xs transition cursor-pointer"
                   title="Chuyển đổi tỷ lệ nửa bảng"
                 >
                   {isSplitView ? '50:50' : 'Tự do'}
@@ -1286,7 +1286,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 <button
                   data-testid="close-visualize-btn"
                   onClick={() => setActiveBlueprint(null)}
-                  className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition cursor-pointer"
+                  className="px-2 py-0.5 rounded-md bg-white hover:bg-stone-50 border border-[#DCD9D0] text-stone-600 hover:text-stone-900 text-xs font-medium shadow-xs transition cursor-pointer"
                   title="Tắt visualize để viết bảng toàn màn hình"
                 >
                   ✕ Đóng
@@ -1294,7 +1294,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               </div>
             </div>
 
-            <div className="p-2.5">
+            <div className="p-2.5 bg-[#F8F7F4]">
               <SimulationWidget
                 blueprint={activeBlueprint}
                 onClose={() => setActiveBlueprint(null)}
@@ -1310,25 +1310,25 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       {isQrModalOpen && (
         <div
           data-testid="smart-notes-qr-modal"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-150"
         >
-          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-lg p-5 shadow-2xl flex flex-col gap-3.5 text-zinc-100 relative">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+          <div className="w-full max-w-md bg-white border border-[#E6E4DD] rounded-2xl p-5 shadow-2xl flex flex-col gap-3.5 text-stone-900 relative">
+            <div className="flex items-center justify-between border-b border-[#E6E4DD] pb-2.5">
               <div className="flex items-center gap-2">
-                <QrCode className="w-4 h-4 text-emerald-400" />
-                <h3 className="font-semibold text-sm text-zinc-100 tracking-tight">Đóng gói Smart Notes & QR</h3>
+                <QrCode className="w-4 h-4 text-emerald-600" />
+                <h3 className="font-semibold text-sm text-stone-900 tracking-tight">Đóng gói Smart Notes & QR</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsQrModalOpen(false)}
-                className="p-1 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800"
+                className="p-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] text-stone-600 hover:text-stone-900 border border-[#E6E4DD]"
               >
                 ✕
               </button>
             </div>
 
             {/* QR Code Graphic (SVG) */}
-            <div className="flex flex-col items-center justify-center p-3.5 bg-white rounded border border-zinc-800 shadow-sm">
+            <div className="flex flex-col items-center justify-center p-3.5 bg-white rounded-xl border border-[#E6E4DD] shadow-xs">
               <svg
                 width="140"
                 height="140"
@@ -1368,26 +1368,26 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 <rect x="66" y="74" width="8" height="14" fill="#000000" />
                 <rect x="80" y="70" width="14" height="8" fill="#000000" />
               </svg>
-              <span className="text-[10px] font-mono font-medium text-zinc-900 mt-1.5">
+              <span className="text-[10px] font-mono font-medium text-stone-800 mt-1.5">
                 socratic.edu.vn/recap/12A1-09
               </span>
             </div>
 
             {/* Lesson Recap Info */}
-            <div className="bg-zinc-950 p-2.5 rounded-md border border-zinc-800 text-xs flex flex-col gap-1">
-              <div className="flex justify-between text-zinc-400">
+            <div className="bg-[#F8F7F4] p-3 rounded-xl border border-[#E6E4DD] text-xs flex flex-col gap-1.5">
+              <div className="flex justify-between text-stone-600">
                 <span>Lớp:</span>
-                <span className="text-zinc-200 font-mono">12A1 • Tiết 3 KHTN</span>
+                <span className="text-stone-900 font-mono font-medium">12A1 • Tiết 3 KHTN</span>
               </div>
-              <div className="flex justify-between text-zinc-400">
+              <div className="flex justify-between text-stone-600">
                 <span>Nội dung:</span>
-                <span className="text-zinc-200 font-mono">
+                <span className="text-stone-900 font-mono font-medium">
                   {activeBlueprint?.recognizedLatex || 'Đồ thị & Dao động điều hòa'}
                 </span>
               </div>
-              <div className="flex justify-between text-zinc-400">
+              <div className="flex justify-between text-stone-600">
                 <span>Mô phỏng 60FPS:</span>
-                <span className="text-emerald-400 font-mono">Đã đóng gói tương tác</span>
+                <span className="text-emerald-700 font-mono font-medium">Đã đóng gói tương tác</span>
               </div>
             </div>
 
@@ -1400,9 +1400,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   setQrCopied(true);
                   setTimeout(() => setQrCopied(false), 2000);
                 }}
-                className="flex-1 py-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 transition cursor-pointer flex items-center justify-center gap-1.5"
+                className="flex-1 py-2 rounded-xl bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-xs font-medium text-stone-700 transition cursor-pointer flex items-center justify-center gap-1.5"
               >
-                {qrCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
+                {qrCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
                 <span>{qrCopied ? 'Đã sao chép link' : 'Sao chép link'}</span>
               </button>
 
@@ -1413,7 +1413,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   setIsQrModalOpen(false);
                   alert('Đang mở mô phỏng dưới góc nhìn Học sinh trên điện thoại!');
                 }}
-                className="flex-1 py-1.5 rounded-md bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-medium transition cursor-pointer shadow-sm"
+                className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition cursor-pointer shadow-sm"
               >
                 Mở góc nhìn HS
               </button>

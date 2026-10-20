@@ -370,16 +370,16 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   return (
     <div
       data-testid="simulation-widget"
-      className="relative w-full max-w-full rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-100 shadow-xl overflow-hidden select-none"
+      className="relative w-full max-w-full rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] text-stone-900 shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] overflow-hidden select-none"
     >
       {/* Header Bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800 bg-zinc-950/80 flex-wrap gap-2.5">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#E6E4DD] bg-[#FCFBF9]/90 backdrop-blur-sm flex-wrap gap-2.5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 font-medium">
+            <span className="text-[11px] font-mono uppercase tracking-widest text-stone-500 font-medium">
               {blueprint.engine} • {blueprint.templateId}
             </span>
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded bg-[#F2F0EA] border border-[#E6E4DD] text-stone-600 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               60 FPS • Local Engine
             </span>
@@ -392,7 +392,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             />
           </div>
           {activeFormula && (
-            <div className="mt-1 px-2.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs inline-block">
+            <div className="mt-1 px-2.5 py-0.5 rounded bg-[#F8F7F4] border border-[#E6E4DD] text-stone-800 text-xs inline-block">
               <MathView latex={activeFormula} displayMode={false} />
             </div>
           )}
@@ -401,7 +401,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           {/* Segmented Curriculum Level Toggle: [Chuẩn THPT | Chuyên sâu (Chuyên/HSG)] */}
           <div
-            className="flex items-center bg-zinc-950 p-0.5 rounded-md border border-zinc-800"
+            className="flex items-center bg-[#F2F0EA] p-1 rounded-lg border border-[#E6E4DD]"
             data-testid="curriculum-mode-toggle"
           >
             <button
@@ -410,8 +410,8 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               onClick={() => setCurriculumLevel('THPT_STANDARD')}
               className={`px-2.5 py-1 rounded text-xs transition cursor-pointer font-medium ${
                 curriculumLevel === 'THPT_STANDARD'
-                  ? 'bg-zinc-800 text-zinc-100 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-white shadow-sm text-stone-900 font-semibold'
+                  : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               Chuẩn THPT
@@ -422,8 +422,8 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               onClick={() => setCurriculumLevel('OLYMPIAD_ADVANCED')}
               className={`px-2.5 py-1 rounded text-xs transition cursor-pointer font-medium ${
                 curriculumLevel === 'OLYMPIAD_ADVANCED'
-                  ? 'bg-zinc-800 text-sky-400 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-white shadow-sm text-blue-700 font-semibold'
+                  : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               Chuyên sâu (Chuyên/HSG)
@@ -436,10 +436,10 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               type="button"
               data-testid="btn-widget-split-toggle"
               onClick={onToggleSplitView}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md border text-xs font-medium transition cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium transition cursor-pointer ${
                 isSplitView
-                  ? 'bg-zinc-800 text-sky-400 border-zinc-700'
-                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
+                  ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm'
+                  : 'bg-white hover:bg-stone-50 border-[#DCD9D0] text-stone-700 shadow-sm'
               }`}
               title="Ghim sang nửa bảng (Split-Screen)"
             >
@@ -452,10 +452,10 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
           <button
             type="button"
             onClick={handleExportSmartNotes}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-medium transition cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white hover:bg-stone-50 border border-[#DCD9D0] text-stone-700 hover:text-stone-900 text-xs font-medium shadow-sm transition cursor-pointer"
             title="Đóng gói bài giảng & đẩy sang app học sinh"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-3.5 h-3.5 text-stone-600" />
             <span>Smart Notes</span>
           </button>
 
@@ -463,10 +463,10 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
           <button
             data-testid="reset-btn"
             onClick={handleReset}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs font-medium transition cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-stone-50 border border-[#DCD9D0] text-stone-700 text-xs font-medium shadow-sm transition cursor-pointer"
             title="Khôi phục thông số mặc định"
           >
-            <RotateCcw className="w-3 h-3" />
+            <RotateCcw className="w-3 h-3 text-stone-600" />
             <span>Đặt lại</span>
           </button>
 
@@ -474,14 +474,14 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
           <button
             data-testid="socratic-cue-btn"
             onClick={() => setShowSocratic(!showSocratic)}
-            className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 text-xs font-medium transition border cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-xs font-medium transition border cursor-pointer shadow-sm ${
               showSocratic
-                ? 'bg-amber-500/10 text-amber-300 border-amber-500/40'
-                : 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800'
+                ? 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]'
+                : 'bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50'
             }`}
             title="Câu hỏi gợi mở tư duy Socratic"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
             <span>Gợi ý Socratic</span>
           </button>
 
@@ -489,7 +489,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="px-2 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 text-xs transition cursor-pointer"
+              className="px-2 py-1 rounded-lg bg-white hover:bg-stone-50 text-stone-600 hover:text-stone-900 border border-[#DCD9D0] text-xs shadow-sm transition cursor-pointer"
             >
               ✕ Đóng
             </button>
@@ -499,16 +499,16 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
 
       {/* Export Toast Notification */}
       {exportNotice && (
-        <div className="mx-4 mt-2 px-3 py-1.5 rounded-md bg-zinc-950 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="mx-4 mt-2 px-3 py-1.5 rounded-lg bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] text-xs font-mono flex items-center gap-2 shadow-sm">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
           <span>{exportNotice}</span>
         </div>
       )}
 
       {/* Planetary Gravity Presets for PHYS_PROJECTILE */}
       {blueprint.templateId === 'PHYS_PROJECTILE' && (
-        <div className="flex flex-wrap items-center gap-1.5 px-4 py-2 border-b border-zinc-800 bg-zinc-950/60">
-          <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider">Trọng lực (g):</span>
+        <div className="flex flex-wrap items-center gap-1.5 px-4 py-2 border-b border-[#E6E4DD] bg-[#F8F7F4]">
+          <span className="text-[11px] font-mono text-stone-500 uppercase tracking-wider">Trọng lực (g):</span>
           {[
             { name: 'Mặt Trăng', g: 1.62 },
             { name: 'Sao Hỏa', g: 3.71 },
@@ -519,10 +519,10 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               key={pl.name}
               type="button"
               onClick={() => handleParamChange('g', pl.g)}
-              className={`px-2 py-0.5 rounded text-xs font-mono transition cursor-pointer ${
+              className={`px-2 py-0.5 rounded-md text-xs font-mono transition cursor-pointer ${
                 params.g === pl.g
-                  ? 'bg-zinc-800 text-sky-400 font-semibold border border-zinc-700'
-                  : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800'
+                  ? 'bg-white text-blue-700 font-semibold border border-blue-200 shadow-sm'
+                  : 'bg-[#F2F0EA] hover:bg-[#EAE7DF] text-stone-600 border border-[#E6E4DD]'
               }`}
             >
               <span>{pl.name} ({pl.g} m/s²)</span>
@@ -531,20 +531,24 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         </div>
       )}
 
-      {/* Socratic Discussion Prompt */}
+      {/* Socratic Discussion Prompt (Editorial Margin Note) */}
       {showSocratic && (
         <div
           data-testid="socratic-content"
           onClick={() => setShowSocratic(false)}
-          className="mx-4 my-2 p-3 rounded-md bg-zinc-950 border border-amber-500/30 text-zinc-200 text-xs leading-relaxed flex items-start justify-between gap-3 shadow-md cursor-pointer hover:border-amber-500/50 transition"
+          className="mx-4 my-2.5 p-3.5 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E] text-xs leading-relaxed flex items-start justify-between gap-3 shadow-sm cursor-pointer hover:border-amber-400 transition"
           title="Bấm vào để thu gọn gợi ý Socratic"
         >
-          <div className="flex items-start gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1 shrink-0" />
+          <div className="flex items-start gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-amber-500 mt-1 shrink-0" />
             <div>
-              <span className="font-semibold text-amber-300">Câu hỏi gợi mở Socratic:</span>{' '}
-              <span className="text-zinc-200">{blueprint.socraticQuestion}</span>
-              <div className="text-[10px] text-zinc-500 mt-1 font-mono">
+              <div className="font-serif italic font-bold text-[#92400E] text-[13px] mb-0.5">
+                Câu hỏi gợi mở Socratic
+              </div>
+              <p className="font-serif text-[#78350F] text-sm leading-snug">
+                {blueprint.socraticQuestion}
+              </p>
+              <div className="text-[10px] text-amber-700/70 mt-1.5 font-mono">
                 (Chạm vào hộp thoại hoặc nút ✕ bên phải để đóng)
               </div>
             </div>
@@ -555,7 +559,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               e.stopPropagation();
               setShowSocratic(false);
             }}
-            className="text-[10px] font-mono text-zinc-400 hover:text-white px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 cursor-pointer shrink-0"
+            className="text-[10px] font-mono text-[#92400E] hover:text-[#78350F] px-2 py-0.5 rounded-md bg-white border border-[#FDE68A] shadow-xs cursor-pointer shrink-0"
           >
             ✕ Đóng
           </button>
@@ -563,7 +567,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
       )}
 
       {/* 60FPS SIMULATION CANVAS RENDER AREA */}
-      <div className="p-4 flex justify-center items-center bg-zinc-950" data-testid="engine-canvas-container">
+      <div className="p-4 flex justify-center items-center bg-[#F8F7F4]" data-testid="engine-canvas-container">
         {blueprint.engine === 'MATH' && (
           <MathPlotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
         )}
@@ -578,21 +582,21 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         )}
       </div>
 
-      {/* MACRO SLIDER CONTROLS (Linear-style precision scrubbers) */}
-      <div className="p-4 bg-zinc-900/90 border-t border-zinc-800 grid grid-cols-2 gap-2.5" data-testid="macro-sliders-container">
+      {/* MACRO SLIDER CONTROLS (Tactile Parameter Scrubbers) */}
+      <div className="p-4 bg-[#FCFBF9] border-t border-[#E6E4DD] grid grid-cols-2 gap-3" data-testid="macro-sliders-container">
         {activeParameters.map((p: SimParamConfig) => {
           const currentVal = params[p.key] ?? p.defaultValue;
           return (
             <div
               key={p.key}
               data-testid={`param-box-${p.key}`}
-              className="p-2.5 rounded-md bg-zinc-950/80 border border-zinc-800/80 flex flex-col gap-1.5 hover:border-zinc-700/80 transition-colors"
+              className="p-3 rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] flex flex-col gap-2 hover:border-[#DCD9D0] transition-colors"
             >
               <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-400 font-medium tracking-tight text-[11px]">{p.label}</span>
+                <span className="text-stone-700 font-medium tracking-tight text-[11px]">{p.label}</span>
                 <span
                   data-testid={`param-val-${p.key}`}
-                  className="font-mono tabular-nums text-xs text-sky-400 font-semibold"
+                  className="font-mono tabular-nums text-xs text-blue-600 font-bold"
                 >
                   {currentVal} {p.unit}
                 </span>
@@ -605,7 +609,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
                   onClick={() =>
                     handleParamChange(p.key, Math.max(p.min, Number((currentVal - p.step).toFixed(2))))
                   }
-                  className="w-6 h-6 rounded bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-xs font-mono text-zinc-300 border border-zinc-800 flex items-center justify-center cursor-pointer transition"
+                  className="w-7 h-7 rounded-lg bg-white border border-[#DCD9D0] shadow-sm text-stone-700 hover:bg-stone-50 active:translate-y-px text-xs font-mono font-bold flex items-center justify-center cursor-pointer transition"
                 >
                   -
                 </button>
@@ -620,7 +624,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     handleParamChange(p.key, parseFloat(e.target.value))
                   }
-                  className="flex-1 h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-sky-400"
+                  className="flex-1 h-1.5 bg-[#E5E3DC] rounded-lg appearance-none cursor-pointer accent-blue-600"
                 />
 
                 <button
@@ -629,7 +633,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
                   onClick={() =>
                     handleParamChange(p.key, Math.min(p.max, Number((currentVal + p.step).toFixed(2))))
                   }
-                  className="w-6 h-6 rounded bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-xs font-mono text-zinc-300 border border-zinc-800 flex items-center justify-center cursor-pointer transition"
+                  className="w-7 h-7 rounded-lg bg-white border border-[#DCD9D0] shadow-sm text-stone-700 hover:bg-stone-50 active:translate-y-px text-xs font-mono font-bold flex items-center justify-center cursor-pointer transition"
                 >
                   +
                 </button>

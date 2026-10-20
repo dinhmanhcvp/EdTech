@@ -62,6 +62,38 @@ export default function TeacherSmartboardPage() {
       ],
       socraticQuestion: 'Nếu giữ nguyên biên độ A = 2 nhưng tăng tần số góc ω lên gấp đôi, đồ thị hình sin sẽ bị nén lại hay giãn ra theo trục hoành?',
     },
+    PHYS_RLC_PHASOR: {
+      engine: 'PHYSICS',
+      templateId: 'PHYS_RLC_PHASOR',
+      recognizedLatex: 'u = U_0\\cos(\\omega t + \\varphi), \\quad \\text{Mạch RLC nối tiếp}',
+      ocrAlternatives: [
+        'u = U_0 cos(omega*t)',
+        'i = I_0 cos(omega*t - phi)',
+      ],
+      parameters: [
+        { key: 'R', label: 'Điện trở (R)', unit: 'Ω', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
+        { key: 'L', label: 'Độ tự cảm (L)', unit: 'H', defaultValue: 0.5, min: 0.1, max: 2.0, step: 0.1 },
+        { key: 'C', label: 'Điện dung (C)', unit: 'μF', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
+        { key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', defaultValue: 200.0, min: 50.0, max: 500.0, step: 10.0 },
+        { key: 'U', label: 'Điện áp (U)', unit: 'V', defaultValue: 120.0, min: 20.0, max: 240.0, step: 10.0 },
+      ],
+      socraticQuestion: 'Khi điều chỉnh tần số góc ω tiến dần về giá trị cộng hưởng ω₀ = 1/√(LC), góc lệch pha φ giữa u và i sẽ biến đổi thế nào và vì sao công suất mạch đạt cực đại?',
+      curriculumLevel: 'OLYMPIAD_ADVANCED',
+    },
+    CHEM_EQUILIBRIUM_TITRATION: {
+      engine: 'CHEMISTRY',
+      templateId: 'CHEM_EQUILIBRIUM_TITRATION',
+      recognizedLatex: '\\text{HCl} + \\text{NaOH} \\rightarrow \\text{NaCl} + \\text{H}_2\\text{O}, \\quad \\text{Chuẩn độ pH}',
+      ocrAlternatives: [
+        'HCl + NaOH -> NaCl + H2O',
+        'CH3COOH + NaOH -> CH3COONa + H2O',
+      ],
+      parameters: [
+        { key: 'Vb', label: 'Thể tích NaOH (V_b)', unit: 'mL', defaultValue: 20.0, min: 0.0, max: 50.0, step: 1.0 },
+      ],
+      socraticQuestion: 'Tại sao tại điểm tương đương (V_NaOH = 25mL), đường cong pH lại có một bước nhảy vọt dốc đứng thay vì biến thiên từ từ?',
+      curriculumLevel: 'OLYMPIAD_ADVANCED',
+    },
   };
 
   return (

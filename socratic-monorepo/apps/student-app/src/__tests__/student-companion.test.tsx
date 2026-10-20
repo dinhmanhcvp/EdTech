@@ -274,4 +274,38 @@ describe('Student Socratic Companion & Dashboards (Phase 4)', () => {
     const cheerToast = screen.getByTestId('cheer-toast');
     expect(cheerToast.textContent).toContain('Đã bắn pháo hoa');
   });
+
+  /**
+   * TEST 8: Olympiad Edition: Format 2025+ Trap Hunter Mode (True/False 4-Statement)
+   */
+  it('test_trap_hunter_mode_2025_evaluates_four_statements', () => {
+    const onPass = vi.fn();
+    render(<ConceptCheckGate onPassGate={onPass} />);
+
+    // Toggle Trap Hunter mode
+    const toggle = screen.getByTestId('trap-hunter-toggle');
+    fireEvent.click(toggle);
+
+    // Verify 4 statements are displayed
+    expect(screen.getByTestId('trap-stmt-a')).toBeTruthy();
+    expect(screen.getByTestId('trap-stmt-b')).toBeTruthy();
+    expect(screen.getByTestId('trap-stmt-c')).toBeTruthy();
+    expect(screen.getByTestId('trap-stmt-d')).toBeTruthy();
+
+    // Select answers: a: True, b: True, c: False, d: True
+    fireEvent.click(screen.getByTestId('btn-stmt-a-true'));
+    fireEvent.click(screen.getByTestId('btn-stmt-b-true'));
+    fireEvent.click(screen.getByTestId('btn-stmt-c-false'));
+    fireEvent.click(screen.getByTestId('btn-stmt-d-true'));
+
+    // Submit
+    const submitBtn = screen.getByTestId('btn-verify-trap-statements');
+    fireEvent.click(submitBtn);
+
+    // Verify pass
+    expect(onPass).toHaveBeenCalledWith(50);
+    const feedback = screen.getByTestId('concept-feedback');
+    expect(feedback.textContent).toContain('Xuất sắc! Em đã vượt qua toàn bộ 4 bẫy đề thi THPT 2025+');
+  });
 });
+

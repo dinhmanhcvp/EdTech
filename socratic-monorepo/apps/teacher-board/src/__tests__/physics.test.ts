@@ -43,3 +43,46 @@ describe('Deterministic Physics Engine: Projectile Motion (CP2)', () => {
     expect(names).toContain('Sao Mộc');
   });
 });
+
+describe('Olympiad-Grade Physics & Chemistry Formulas (v4.0)', () => {
+  it('calculates correct RLC resonance frequency and impedance', () => {
+    const R = 50.0; // Ohm
+    const L = 0.5; // Henry
+    const C = 50.0 * 1e-6; // 50 uF = 50e-6 F
+    const omega0 = 1.0 / Math.sqrt(L * C); // ~200 rad/s
+    expect(omega0).toBeCloseTo(200, 0);
+
+    // At resonance: omega = omega0 => Z_L = Z_C => Z = R
+    const Z_L = omega0 * L;
+    const Z_C = 1.0 / (omega0 * C);
+    expect(Z_L).toBeCloseTo(Z_C, 2);
+    const Z_res = Math.sqrt(R * R + Math.pow(Z_L - Z_C, 2));
+    expect(Z_res).toBeCloseTo(R, 2);
+    const cosPhi = R / Z_res;
+    expect(cosPhi).toBeCloseTo(1.0, 4); // Max power factor at resonance!
+  });
+
+  it('determines acid-base titration equivalence point at pH = 7.0 for strong acid-base', () => {
+    const Va = 25.0; // mL
+    const Ca = 0.1; // M
+    const Cb = 0.1; // M
+    const Veq = (Ca * Va) / Cb; // 25.0 mL
+    expect(Veq).toBe(25.0);
+
+    // Before equivalence point (Vb = 20 mL)
+    const Vb_before = 20.0;
+    const remH = (Ca * Va - Cb * Vb_before) / (Va + Vb_before);
+    const pH_before = -Math.log10(remH);
+    expect(pH_before).toBeLessThan(7.0);
+    expect(pH_before).toBeCloseTo(1.95, 1);
+
+    // After equivalence point (Vb = 30 mL)
+    const Vb_after = 30.0;
+    const remOH = (Cb * Vb_after - Ca * Va) / (Va + Vb_after);
+    const pOH_after = -Math.log10(remOH);
+    const pH_after = 14.0 - pOH_after;
+    expect(pH_after).toBeGreaterThan(7.0);
+    expect(pH_after).toBeCloseTo(11.96, 1);
+  });
+});
+

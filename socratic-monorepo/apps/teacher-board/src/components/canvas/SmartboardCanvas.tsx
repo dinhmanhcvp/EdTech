@@ -622,6 +622,34 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           ],
           socraticQuestion: 'Em cần chọn bội chung nhỏ nhất là mấy để số Oxi hai vế thăng bằng?',
         };
+      } else if (h.includes('rlc') || h.includes('điện') || h.includes('phasor') || h.includes('fresnel')) {
+        fallbackBp = {
+          engine: 'PHYSICS',
+          templateId: 'PHYS_RLC_PHASOR',
+          recognizedLatex: 'u = U_0\\cos(\\omega t + \\varphi), \\quad \\text{Mạch RLC}',
+          ocrAlternatives: ['u = U_0\\cos(\\omega t)', 'i = I_0\\cos(\\omega t - \\varphi)'],
+          parameters: [
+            { key: 'R', label: 'Điện trở (R)', unit: 'Ω', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
+            { key: 'L', label: 'Độ tự cảm (L)', unit: 'H', defaultValue: 0.5, min: 0.1, max: 2.0, step: 0.1 },
+            { key: 'C', label: 'Điện dung (C)', unit: 'μF', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
+            { key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', defaultValue: 200.0, min: 50.0, max: 500.0, step: 10.0 },
+            { key: 'U', label: 'Điện áp (U)', unit: 'V', defaultValue: 120.0, min: 20.0, max: 240.0, step: 10.0 },
+          ],
+          socraticQuestion: 'Khi điều chỉnh tần số góc ω tiến dần về giá trị cộng hưởng ω₀ = 1/√(LC), góc lệch pha φ biến đổi thế nào?',
+          curriculumLevel: 'OLYMPIAD_ADVANCED',
+        };
+      } else if (h.includes('chuẩn độ') || h.includes('titration') || h.includes('ph')) {
+        fallbackBp = {
+          engine: 'CHEMISTRY',
+          templateId: 'CHEM_EQUILIBRIUM_TITRATION',
+          recognizedLatex: '\\text{HCl} + \\text{NaOH} \\rightarrow \\text{NaCl} + \\text{H}_2\\text{O}, \\quad \\text{Chuẩn độ pH}',
+          ocrAlternatives: ['HCl + NaOH -> NaCl + H2O'],
+          parameters: [
+            { key: 'Vb', label: 'Thể tích NaOH (V_b)', unit: 'mL', defaultValue: 20.0, min: 0.0, max: 50.0, step: 1.0 },
+          ],
+          socraticQuestion: 'Tại sao tại điểm tương đương (V_NaOH = 25mL), đường cong pH lại có một bước nhảy vọt dốc đứng?',
+          curriculumLevel: 'OLYMPIAD_ADVANCED',
+        };
       } else if (h.includes('quang') || h.includes('25') || h.includes('lá') || h.includes('cây')) {
         fallbackBp = {
           engine: 'BIOLOGY',
@@ -1145,6 +1173,22 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               className="px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 text-[11px] font-mono transition cursor-pointer active:scale-95"
             >
               🌿 Sinh lý Thực vật (Quang hợp 25°C)
+            </button>
+            <button
+              type="button"
+              data-testid="smart-chip-rlc"
+              onClick={() => handleVisualize('mạch rlc xoay chiều')}
+              className="px-2.5 py-1 rounded-lg bg-purple-950/60 hover:bg-purple-500/30 border border-purple-400/40 text-purple-200 text-[11px] font-mono transition cursor-pointer active:scale-95"
+            >
+              ⚡ RLC & Phasor (Lớp 12)
+            </button>
+            <button
+              type="button"
+              data-testid="smart-chip-titration"
+              onClick={() => handleVisualize('chuẩn độ axit bazơ ph')}
+              className="px-2.5 py-1 rounded-lg bg-pink-950/60 hover:bg-pink-500/30 border border-pink-400/40 text-pink-200 text-[11px] font-mono transition cursor-pointer active:scale-95"
+            >
+              💧 Chuẩn độ pH (Hóa 11-12)
             </button>
           </div>
         </div>

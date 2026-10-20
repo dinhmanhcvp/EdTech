@@ -7,9 +7,18 @@ import { ParentPulse } from '../components/dashboards/ParentPulse';
 import { SmartNotesViewer } from '../components/dashboards/SmartNotesViewer';
 import { GraduationCap, BarChart3, HeartHandshake, Compass, FileText } from 'lucide-react';
 
+function getAcademicRank(eureka: number): { title: string; badgeClass: string; icon: string } {
+  if (eureka >= 1000) return { title: 'Grandmaster / Quốc tế', badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40', icon: '👑' };
+  if (eureka >= 500) return { title: 'Đội tuyển Quốc gia (National Olympiad)', badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40', icon: '🏆' };
+  if (eureka >= 250) return { title: 'Đội tuyển Tỉnh (Provincial Team)', badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40', icon: '⭐' };
+  if (eureka >= 100) return { title: 'Varsity (Tuyển Trường)', badgeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40', icon: '🏅' };
+  return { title: 'Scholar (Tập sự THPT)', badgeClass: 'bg-slate-800 text-slate-300 border-white/10', icon: '📚' };
+}
+
 export default function StudentAppPage() {
   const [activeTab, setActiveTab] = useState<'COMPANION' | 'SMARTNOTES' | 'HEATMAP' | 'PARENTPULSE'>('COMPANION');
   const [totalEureka, setTotalEureka] = useState<number>(0);
+  const [curriculumLevel, setCurriculumLevel] = useState<'THPT_STANDARD' | 'OLYMPIAD_ADVANCED'>('THPT_STANDARD');
 
   const defaultStudents: StudentMastery[] = [
     { name: 'Nguyễn Văn An', mathWave: 'green', physicsProjectile: 'green', chemRedox: 'red', bioStomata: 'amber', gritScore: 88 },
@@ -32,7 +41,6 @@ export default function StudentAppPage() {
         if (res && res.ok) {
           const data = await res.json();
           if (data.students && Array.isArray(data.students)) {
-            // Map to StudentMastery interface
             const mapped: StudentMastery[] = data.students.map((s: any) => ({
               name: s.name,
               mathWave: s.steps?.[0] === 'passed' ? 'green' : 'amber',
@@ -51,6 +59,8 @@ export default function StudentAppPage() {
     fetchHeatmap();
   }, []);
 
+  const academicRank = getAcademicRank(totalEureka);
+
   return (
     <main className="min-h-screen bg-slate-950 flex flex-col">
       {/* Header */}
@@ -62,14 +72,46 @@ export default function StudentAppPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-extrabold text-base tracking-tight text-white">
-                Socratic Companion <span className="text-purple-400 font-mono text-xs">v2.0</span>
+                Socratic Companion <span className="text-purple-400 font-mono text-xs">v4.0 Olympiad</span>
               </h1>
-              <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[10px] font-mono font-bold">
-                Port 3002
+              <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-mono font-bold flex items-center gap-1 ${academicRank.badgeClass}`}>
+                <span>{academicRank.icon}</span>
+                <span>{academicRank.title}</span>
               </span>
             </div>
-            <p className="text-xs text-slate-400">Ứng dụng Học sinh • Scaffolding chống gian lận • Kinh tế Hạt Eureka</p>
+            <p className="text-xs text-slate-400">Quantum Research Terminal • Gia sư THPT & HSG • Săn Bẫy Đề Thi 2025+</p>
           </div>
+        </div>
+
+        {/* Curriculum Toggle: [🎓 Chuẩn THPT | 🏆 Chuyên sâu (Chuyên/HSG)] */}
+        <div
+          className="flex items-center bg-slate-950/80 p-1 rounded-2xl border border-white/10"
+          data-testid="student-curriculum-toggle"
+        >
+          <button
+            type="button"
+            data-testid="btn-student-mode-standard"
+            onClick={() => setCurriculumLevel('THPT_STANDARD')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+              curriculumLevel === 'THPT_STANDARD'
+                ? 'bg-purple-600 text-white font-bold shadow-md shadow-purple-600/30'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            🎓 Chuẩn THPT
+          </button>
+          <button
+            type="button"
+            data-testid="btn-student-mode-olympiad"
+            onClick={() => setCurriculumLevel('OLYMPIAD_ADVANCED')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+              curriculumLevel === 'OLYMPIAD_ADVANCED'
+                ? 'bg-gradient-to-r from-amber-500 to-rose-600 text-slate-950 font-extrabold shadow-md shadow-amber-500/25'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>🏆 Chuyên sâu (Chuyên/HSG)</span>
+          </button>
         </div>
 
         {/* Tab Switcher */}
@@ -128,7 +170,10 @@ export default function StudentAppPage() {
       <div className="flex-1 p-6 flex flex-col items-center justify-center">
         {activeTab === 'COMPANION' && (
           <div className="w-full flex justify-center">
-            <SocraticCompanionSession onSessionComplete={(pts) => setTotalEureka(pts)} />
+            <SocraticCompanionSession
+              onSessionComplete={(pts) => setTotalEureka(pts)}
+              curriculumLevel={curriculumLevel}
+            />
           </div>
         )}
 

@@ -2,12 +2,13 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { SimulationBlueprint } from '@socratic/types';
+import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { Activity, RefreshCw } from 'lucide-react';
 
 interface Props {
   blueprint: SimulationBlueprint;
   params: Record<string, number>;
+  curriculumLevel?: CurriculumLevel;
 }
 
 export interface EvaluatedFunction {
@@ -177,7 +178,11 @@ export function compileFormulaToFunction(
   };
 }
 
-export const MathPlotEngine: React.FC<Props> = ({ blueprint, params }: Props) => {
+export const MathPlotEngine: React.FC<Props> = ({
+  blueprint,
+  params,
+  curriculumLevel = blueprint.curriculumLevel ?? 'THPT_STANDARD',
+}: Props) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // 60FPS Canvas is ALWAYS the default: slider drags must repaint locally with 0 network calls.
@@ -436,6 +441,135 @@ export const MathPlotEngine: React.FC<Props> = ({ blueprint, params }: Props) =>
       ctx.fill();
     }
 
+    // ==============================================================
+    // 7. OLYMPIAD UPGRADE: Parameter m Intersection Line (y = m) & Root Solver
+    // ==============================================================
+    const hasParamM = params.m !== undefined || curriculumLevel === 'OLYMPIAD_ADVANCED';
+    const paramM = params.m ?? 0.0;
+    let foundRoots: number[] = [];
+
+    if (hasParamM && compiled.varSymbol === 'x' && !compiled.isIntegral) {
+      const myPix = originY - paramM * scale;
+
+      // Draw horizontal scanning line y = m
+      ctx.save();
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = '#facc15';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(0, myPix);
+      ctx.lineTo(width, myPix);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = '#facc15';
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText(`y = m (${paramM.toFixed(1)})`, width - 110, myPix - 6);
+
+      // Numerical Root Finding for f(x) - m = 0 on [-5, 5]
+      const scanStep = 0.04;
+      for (let rx = -5; rx <= 5; rx += scanStep) {
+        const y1 = compiled.evalFn(rx) - paramM;
+        const y2 = compiled.evalFn(rx + scanStep) - paramM;
+        if (y1 * y2 <= 0) {
+          // Bisection 6 iterations
+          let low = rx, high = rx + scanStep;
+          for (let it = 0; it < 6; it++) {
+            const mid = (low + high) / 2;
+            if ((compiled.evalFn(low) - paramM) * (compiled.evalFn(mid) - paramM) <= 0) {
+              high = mid;
+            } else {
+              low = mid;
+            }
+          }
+          const root = (low + high) / 2;
+          // Avoid duplicates
+          if (!foundRoots.some((r) => Math.abs(r - root) < 0.15)) {
+            foundRoots.push(root);
+          }
+        }
+      }
+
+      // Draw glowing intersection points
+      foundRoots.forEach((root, idx) => {
+        const rPixX = originX + root * scale;
+        const rPixY = originY - paramM * scale;
+        ctx.save();
+        ctx.fillStyle = '#facc15';
+        ctx.shadowColor = '#facc15';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(rPixX, rPixY, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px monospace';
+        ctx.fillText(`x${idx + 1}=${root.toFixed(2)}`, rPixX - 18, rPixY - 10);
+      });
+    }
+
+    // ==============================================================
+    // 8. OLYMPIAD UPGRADE: Taylor Series Approximation P_n(x)
+    // ==============================================================
+    const taylorN = params.n ?? (curriculumLevel === 'OLYMPIAD_ADVANCED' ? 5 : 0);
+    if (taylorN > 0 && (blueprint.templateId === 'MATH_TRIG_WAVE' || compiled.varSymbol === 'x')) {
+      const isSin = (blueprint.recognizedLatex || '').toLowerCase().includes('sin');
+      const A = params.A ?? 2.0;
+
+      // Taylor expansion for sin or cos around x=0
+      const evalTaylor = (xVal: number) => {
+        let sum = 0;
+        if (isSin) {
+          for (let k = 0; k < Math.min(7, Math.ceil(taylorN / 2)); k++) {
+            let term = Math.pow(-1, k) * Math.pow(xVal, 2 * k + 1);
+            let fact = 1;
+            for (let f = 1; f <= 2 * k + 1; f++) fact *= f;
+            sum += term / fact;
+          }
+          return A * sum;
+        } else {
+          for (let k = 0; k < Math.min(7, Math.ceil(taylorN / 2)); k++) {
+            let term = Math.pow(-1, k) * Math.pow(xVal, 2 * k);
+            let fact = 1;
+            for (let f = 1; f <= 2 * k; f++) fact *= f;
+            sum += term / fact;
+          }
+          return A * sum;
+        }
+      };
+
+      ctx.save();
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = '#e879f9';
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = '#e879f9';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      let firstT = true;
+      for (let px = originX - 3.5 * scale; px <= originX + 3.5 * scale; px += 3) {
+        const mx = (px - originX) / scale;
+        const my = evalTaylor(mx);
+        const py = originY - my * scale;
+        if (py >= -200 && py <= height + 200) {
+          if (firstT) {
+            ctx.moveTo(px, py);
+            firstT = false;
+          } else {
+            ctx.lineTo(px, py);
+          }
+        }
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = '#e879f9';
+      ctx.font = 'bold 10px monospace';
+      ctx.fillText(`Taylor bậc ${taylorN}`, width - 110, 45);
+    }
+
     // 7. Curve Label Badge with Real-Time Delta
     const badgeW = hasParamDelta ? 310 : 260;
     const badgeH = hasParamDelta ? 62 : 48;
@@ -452,7 +586,9 @@ export const MathPlotEngine: React.FC<Props> = ({ blueprint, params }: Props) =>
     ctx.fillStyle = '#94a3b8';
     ctx.font = '10px sans-serif';
     ctx.fillText(
-      compiled.isIntegral
+      foundRoots.length > 0
+        ? `Biện luận y = m (${paramM.toFixed(1)}): ${foundRoots.length} nghiệm thực (${foundRoots.map((r) => r.toFixed(2)).join(', ')})`
+        : compiled.isIntegral
         ? 'Tích phân xác thực (Đã tính nguyên hàm)'
         : compiled.varSymbol === 't'
         ? 'Dao động điều hòa xác thực theo thời gian t'

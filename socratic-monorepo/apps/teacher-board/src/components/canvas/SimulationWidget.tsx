@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { SimulationBlueprint, SimParamConfig } from '@socratic/types';
+import { SimulationBlueprint, SimParamConfig, CurriculumLevel } from '@socratic/types';
 import { RotateCcw, Lightbulb, FileText, CheckCircle2 } from 'lucide-react';
 import { MathPlotEngine } from '../../engines/MathPlotEngine';
 import { PhysicsSandboxEngine } from '../../engines/PhysicsSandboxEngine';
@@ -117,6 +117,113 @@ function deriveParametersForFormula(
   return { configs: fallbackConfigs, values };
 }
 
+function getCurriculumParameters(
+  templateId: string,
+  engine: string,
+  baseConfigs: SimParamConfig[],
+  isOlympiad: boolean
+): SimParamConfig[] {
+  if (!isOlympiad) return baseConfigs;
+  const extraConfigs: SimParamConfig[] = [];
+  if (templateId === 'PHYS_PROJECTILE') {
+    if (!baseConfigs.some((p) => p.key === 'k')) {
+      extraConfigs.push({
+        key: 'k',
+        label: 'Lực cản khí (k)',
+        unit: '',
+        defaultValue: 0.04,
+        min: 0.0,
+        max: 0.15,
+        step: 0.01,
+      });
+    }
+  } else if (templateId === 'PHYS_PENDULUM') {
+    if (!baseConfigs.some((p) => p.key === 'theta0')) {
+      extraConfigs.push({
+        key: 'theta0',
+        label: 'Góc ban đầu (θ₀)',
+        unit: '°',
+        defaultValue: 60.0,
+        min: 10.0,
+        max: 85.0,
+        step: 5.0,
+      });
+    }
+    if (!baseConfigs.some((p) => p.key === 'b')) {
+      extraConfigs.push({
+        key: 'b',
+        label: 'Cản nhớt (b)',
+        unit: '',
+        defaultValue: 0.08,
+        min: 0.0,
+        max: 0.3,
+        step: 0.02,
+      });
+    }
+  } else if (templateId === 'PHYS_RLC_PHASOR') {
+    return [
+      { key: 'R', label: 'Điện trở (R)', unit: 'Ω', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
+      { key: 'L', label: 'Độ tự cảm (L)', unit: 'H', defaultValue: 0.5, min: 0.1, max: 2.0, step: 0.1 },
+      { key: 'C', label: 'Điện dung (C)', unit: 'μF', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
+      { key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', defaultValue: 200.0, min: 50.0, max: 500.0, step: 10.0 },
+      { key: 'U', label: 'Điện áp (U)', unit: 'V', defaultValue: 120.0, min: 20.0, max: 240.0, step: 10.0 },
+    ];
+  } else if (engine === 'MATH') {
+    if (!baseConfigs.some((p) => p.key === 'm')) {
+      extraConfigs.push({
+        key: 'm',
+        label: 'Tham số m (Tương giao)',
+        unit: '',
+        defaultValue: 0.0,
+        min: -6.0,
+        max: 6.0,
+        step: 0.5,
+      });
+    }
+    if (!baseConfigs.some((p) => p.key === 'n')) {
+      extraConfigs.push({
+        key: 'n',
+        label: 'Bậc Taylor (n)',
+        unit: '',
+        defaultValue: 5.0,
+        min: 1.0,
+        max: 15.0,
+        step: 1.0,
+      });
+    }
+  } else if (templateId === 'CHEM_EQUILIBRIUM_TITRATION') {
+    return [
+      { key: 'Vb', label: 'Thể tích NaOH (V_b)', unit: 'mL', defaultValue: 20.0, min: 0.0, max: 50.0, step: 1.0 },
+      { key: 'Ca', label: 'Nồng độ HCl (C_a)', unit: 'M', defaultValue: 0.1, min: 0.05, max: 0.5, step: 0.05 },
+      { key: 'Cb', label: 'Nồng độ NaOH (C_b)', unit: 'M', defaultValue: 0.1, min: 0.05, max: 0.5, step: 0.05 },
+    ];
+  } else if (engine === 'BIOLOGY') {
+    if (!baseConfigs.some((p) => p.key === 'p')) {
+      extraConfigs.push({
+        key: 'p',
+        label: 'Tần số alen A (p)',
+        unit: '',
+        defaultValue: 0.6,
+        min: 0.1,
+        max: 0.9,
+        step: 0.05,
+      });
+    }
+    if (!baseConfigs.some((p) => p.key === 's')) {
+      extraConfigs.push({
+        key: 's',
+        label: 'Hệ số chọn lọc (s)',
+        unit: '',
+        defaultValue: 0.25,
+        min: 0.0,
+        max: 0.8,
+        step: 0.05,
+      });
+    }
+  }
+  return [...baseConfigs, ...extraConfigs];
+}
+
 export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   blueprint,
   onClose,
@@ -125,38 +232,61 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   isSplitView = false,
   onToggleSplitView,
 }: SimulationWidgetProps) => {
+  const [curriculumLevel, setCurriculumLevel] = useState<CurriculumLevel>(
+    blueprint.curriculumLevel ?? 'THPT_STANDARD'
+  );
+  const isOlympiad = curriculumLevel === 'OLYMPIAD_ADVANCED';
+
   const derived = useMemo(() => {
+    let baseConfigs = blueprint.parameters;
     if (blueprint.engine === 'MATH') {
-      return deriveParametersForFormula(blueprint.recognizedLatex, blueprint.parameters);
+      const d = deriveParametersForFormula(blueprint.recognizedLatex, blueprint.parameters);
+      baseConfigs = d.configs;
     }
-    const values = blueprint.parameters.reduce((acc: Record<string, number>, p: SimParamConfig) => {
+    const enrichedConfigs = getCurriculumParameters(
+      blueprint.templateId,
+      blueprint.engine,
+      baseConfigs,
+      isOlympiad
+    );
+
+    const values = enrichedConfigs.reduce((acc: Record<string, number>, p: SimParamConfig) => {
       acc[p.key] = p.defaultValue;
       return acc;
     }, {} as Record<string, number>);
-    return { configs: blueprint.parameters, values };
-  }, [blueprint]);
+    return { configs: enrichedConfigs, values };
+  }, [blueprint, isOlympiad]);
 
   const [params, setParams] = useState<Record<string, number>>(derived.values);
   const [showSocratic, setShowSocratic] = useState(false);
   const [activeFormula, setActiveFormula] = useState(blueprint.recognizedLatex);
   const [activeParameters, setActiveParameters] = useState<SimParamConfig[]>(derived.configs);
 
-  // Synchronize state when blueprint changes
+  // Synchronize state when blueprint or curriculumLevel changes
   useEffect(() => {
     setActiveFormula(blueprint.recognizedLatex);
+    let baseConfigs = blueprint.parameters;
     if (blueprint.engine === 'MATH') {
       const d = deriveParametersForFormula(blueprint.recognizedLatex, blueprint.parameters);
-      setActiveParameters(d.configs);
-      setParams(d.values);
-    } else {
-      setActiveParameters(blueprint.parameters);
-      const vals = blueprint.parameters.reduce((acc: Record<string, number>, p: SimParamConfig) => {
-        acc[p.key] = p.defaultValue;
-        return acc;
-      }, {} as Record<string, number>);
-      setParams(vals);
+      baseConfigs = d.configs;
     }
-  }, [blueprint]);
+    const enriched = getCurriculumParameters(
+      blueprint.templateId,
+      blueprint.engine,
+      baseConfigs,
+      isOlympiad
+    );
+    setActiveParameters(enriched);
+    setParams((prev) => {
+      const next = { ...prev };
+      enriched.forEach((p) => {
+        if (next[p.key] === undefined) {
+          next[p.key] = p.defaultValue;
+        }
+      });
+      return next;
+    });
+  }, [blueprint, isOlympiad]);
 
   const handleParamChange = (key: string, value: number) => {
     setParams((prev: Record<string, number>) => {
@@ -283,6 +413,37 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Segmented Curriculum Level Toggle: [🎓 Chuẩn THPT | 🏆 Chuyên sâu (Chuyên/HSG)] */}
+          <div
+            className="flex items-center bg-slate-950/80 p-1 rounded-2xl border border-white/10"
+            data-testid="curriculum-mode-toggle"
+          >
+            <button
+              type="button"
+              data-testid="btn-mode-standard"
+              onClick={() => setCurriculumLevel('THPT_STANDARD')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                curriculumLevel === 'THPT_STANDARD'
+                  ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              🎓 Chuẩn THPT
+            </button>
+            <button
+              type="button"
+              data-testid="btn-mode-olympiad"
+              onClick={() => setCurriculumLevel('OLYMPIAD_ADVANCED')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                curriculumLevel === 'OLYMPIAD_ADVANCED'
+                  ? 'bg-gradient-to-r from-amber-500 to-rose-600 text-slate-950 font-extrabold shadow-md shadow-amber-500/25'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <span>🏆 Chuyên sâu (Chuyên/HSG)</span>
+            </button>
+          </div>
+
           {/* Split-View Dock Toggle Button */}
           {onToggleSplitView && (
             <button
@@ -413,16 +574,16 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
       {/* 60FPS SIMULATION CANVAS RENDER AREA */}
       <div className="p-6 flex justify-center items-center bg-slate-950/60" data-testid="engine-canvas-container">
         {blueprint.engine === 'MATH' && (
-          <MathPlotEngine blueprint={activeBlueprint} params={params} />
+          <MathPlotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
         )}
         {blueprint.engine === 'PHYSICS' && (
-          <PhysicsSandboxEngine blueprint={activeBlueprint} params={params} />
+          <PhysicsSandboxEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
         )}
         {blueprint.engine === 'CHEMISTRY' && (
-          <ChemistryLabEngine blueprint={activeBlueprint} params={params} />
+          <ChemistryLabEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
         )}
         {blueprint.engine === 'BIOLOGY' && (
-          <BioSystemEngine blueprint={activeBlueprint} params={params} />
+          <BioSystemEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
         )}
       </div>
 

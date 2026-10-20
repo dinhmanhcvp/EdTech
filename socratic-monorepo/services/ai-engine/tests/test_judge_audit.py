@@ -16,7 +16,11 @@ from fastapi.testclient import TestClient
 from main import app
 from symbolic.socratic_guard import evaluate_student_message, is_safe_math_input
 from symbolic.chem_balancer import verify_chemical_equation
-from symbolic.sympy_verifier import verify_algebraic_equivalence
+from symbolic.sympy_verifier import (
+    verify_algebraic_equivalence,
+    check_dimensional_inconsistency,
+    check_limiting_case
+)
 
 client = TestClient(app)
 
@@ -136,3 +140,41 @@ def test_sympy_zero_diff_leak_and_safe_math():
     assert res_mismatch["is_equivalent"] is False
     assert "3*x + 6" not in res_mismatch["feedback"]
     assert "phần dư còn lại là" not in res_mismatch["feedback"]
+
+
+def test_dimensional_inconsistency_guard_olympiad():
+    """
+    Olympiad/High-School Guard:
+    Catch dimensional inconsistencies before calling symbolic solver or LLM.
+    e.g. adding velocity v0 (m/s) with acceleration g (m/s^2),
+    or velocity v0 (m/s) with displacement 1/2*g*t^2 (m).
+    """
+    # Inconsistent: v0 (m/s) + g (m/s^2)
+    err1 = check_dimensional_inconsistency("v = v0 + g")
+    assert err1 is not None
+    assert "lỗi thứ nguyên" in err1.lower() or "dimensional" in err1.lower()
+
+    # Inconsistent: v0 (m/s) + 1/2*g*t^2 (m)
+    res_inconsistent = verify_algebraic_equivalence("v = v0 + 1/2*g*t^2", "v = v0 + g*t")
+    assert res_inconsistent["is_equivalent"] is False
+    assert res_inconsistent["error_category"] == "DIMENSIONAL_INCONSISTENCY"
+    assert "thứ nguyên" in res_inconsistent["feedback"].lower()
+
+    # Consistent dimensions: h = v0*t + 1/2*g*t^2 (both terms on RHS have dimension L)
+    err2 = check_dimensional_inconsistency("h = v0*t + 1/2*g*t^2")
+    assert err2 is None
+
+
+def test_limiting_case_analysis_olympiad():
+    """
+    Olympiad Limiting Case Verification:
+    Tests asymptotic evaluation e.g. limit of 1/(1 + k*t) as t -> oo or k -> 0.
+    """
+    lim_k0 = check_limiting_case("1 / (1 + k*t)", "k", 0)
+    assert lim_k0["supported"] is True
+    assert lim_k0["limit_result"] == "1"
+
+    lim_t_inf = check_limiting_case("v0 / (1 + b*t)", "t", float("inf"))
+    assert lim_t_inf["supported"] is True
+    assert lim_t_inf["limit_result"] == "0"
+

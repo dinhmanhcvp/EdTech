@@ -250,6 +250,36 @@ OFFLINE_TEMPLATE_REGISTRY: Dict[str, Dict[str, Any]] = {
         "socraticQuestion": "Khi cơ thể vận động mạnh, nhịp tim tăng lên 150 BPM nhằm mục đích sinh học gì đối với các mô cơ bắp?",
         "targetParam": "BPM",
         "subject": "BIOLOGY"
+    },
+    # 13. VẬT LÝ: ĐIỆN XOAY CHIỀU RLC & GIẢN ĐỒ FRESNEL (LỚP 12 & CHUYÊN)
+    "PHYS_RLC_PHASOR": {
+        "engine": "PHYSICS",
+        "templateId": "PHYS_RLC_PHASOR",
+        "recognizedLatex": "u = U_0\\cos(\\omega t + \\varphi), \\quad \\text{Mạch RLC}",
+        "parameters": [
+            { "key": "R", "label": "Điện trở (R)", "unit": "Ω", "defaultValue": 50.0, "min": 10.0, "max": 200.0, "step": 10.0 },
+            { "key": "L", "label": "Độ tự cảm (L)", "unit": "H", "defaultValue": 0.5, "min": 0.1, "max": 2.0, "step": 0.1 },
+            { "key": "C", "label": "Điện dung (C)", "unit": "μF", "defaultValue": 50.0, "min": 10.0, "max": 200.0, "step": 10.0 },
+            { "key": "omega", "label": "Tần số góc (ω)", "unit": "rad/s", "defaultValue": 200.0, "min": 50.0, "max": 500.0, "step": 10.0 },
+            { "key": "U", "label": "Điện áp (U)", "unit": "V", "defaultValue": 120.0, "min": 20.0, "max": 240.0, "step": 10.0 }
+        ],
+        "socraticQuestion": "Khi điều chỉnh tần số góc ω tiến dần về giá trị cộng hưởng ω₀ = 1/√(LC), góc lệch pha φ giữa u và i sẽ biến đổi thế nào và vì sao công suất mạch đạt cực đại?",
+        "targetParam": "omega",
+        "subject": "PHYSICS"
+    },
+    # 14. HÓA HỌC: CHUẨN ĐỘ AXIT - BAZƠ & ĐƯỜNG CONG pH (HÓA 11-12 & CHUYÊN)
+    "CHEM_EQUILIBRIUM_TITRATION": {
+        "engine": "CHEMISTRY",
+        "templateId": "CHEM_EQUILIBRIUM_TITRATION",
+        "recognizedLatex": "\\text{HCl} + \\text{NaOH} \\rightarrow \\text{NaCl} + \\text{H}_2\\text{O}, \\quad \\text{Chuẩn độ pH}",
+        "parameters": [
+            { "key": "Vb", "label": "Thể tích NaOH (V_b)", "unit": "mL", "defaultValue": 20.0, "min": 0.0, "max": 50.0, "step": 1.0 },
+            { "key": "Ca", "label": "Nồng độ HCl (C_a)", "unit": "M", "defaultValue": 0.1, "min": 0.05, "max": 0.5, "step": 0.05 },
+            { "key": "Cb", "label": "Nồng độ NaOH (C_b)", "unit": "M", "defaultValue": 0.1, "min": 0.05, "max": 0.5, "step": 0.05 }
+        ],
+        "socraticQuestion": "Tại sao tại điểm tương đương (V_NaOH = 25mL), đường cong pH lại có một bước nhảy vọt dốc đứng thay vì biến thiên từ từ?",
+        "targetParam": "Vb",
+        "subject": "CHEMISTRY"
     }
 }
 

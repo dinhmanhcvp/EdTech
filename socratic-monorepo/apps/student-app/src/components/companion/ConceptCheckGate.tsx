@@ -32,11 +32,64 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
 
   // Quiet Mode State (Feature 6.4 Upgrade)
   const [isQuietMode, setIsQuietMode] = useState(false);
+  const [isTrapHunterMode, setIsTrapHunterMode] = useState(false);
+
   const [causalBlocks, setCausalBlocks] = useState([
     { id: 2, step: 'Bước B', text: 'Diễn biến: Các nguyên tử Fe và O tái tổ hợp tạo phân tử gỉ sắt Fe₂O₃ mới' },
     { id: 1, step: 'Bước A', text: 'Chất tham gia: Các liên kết Fe-Fe và O=O bị bẻ gãy khi đốt nóng' },
     { id: 3, step: 'Bước C', text: 'Bảo toàn: Tổng số nguyên tử Fe và O trước và sau phản ứng không đổi ➔ Khối lượng bảo toàn' },
   ]);
+
+  // Format 2025+ True/False Statements (Săn Bẫy Đề Thi THPT Quốc Gia)
+  const [trapStatements, setTrapStatements] = useState([
+    {
+      id: 'a',
+      label: 'a) Tỉ lệ số mol phản ứng giữa Fe và O₂ là 4 : 3 để tạo ra 2 mol Fe₂O₃.',
+      correctVal: true,
+      userVal: null as boolean | null,
+    },
+    {
+      id: 'b',
+      label: 'b) Theo Định luật Bảo toàn Khối lượng, tổng số mol nguyên tử trước và sau phản ứng không đổi.',
+      correctVal: true,
+      userVal: null as boolean | null,
+    },
+    {
+      id: 'c',
+      label: 'c) Khi tăng nhiệt độ, số nguyên tử Oxi ở vế sản phẩm sẽ tự tăng lên để cân bằng áp suất.',
+      correctVal: false,
+      userVal: null as boolean | null,
+    },
+    {
+      id: 'd',
+      label: 'd) Đốt 4 mol Fe trong 2 mol O₂ thì O₂ phản ứng hết và Fe còn dư sau phản ứng.',
+      correctVal: true,
+      userVal: null as boolean | null,
+    },
+  ]);
+
+  const handleSelectTrapOption = (id: string, val: boolean) => {
+    if (isPassed) return;
+    setTrapStatements((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, userVal: val } : s))
+    );
+  };
+
+  const verifyTrapStatements = () => {
+    const allAnswered = trapStatements.every((s) => s.userVal !== null);
+    if (!allAnswered) {
+      setFeedback('Em hãy chọn Đúng hoặc Sai cho cả 4 mệnh đề trước khi nộp bài!');
+      return;
+    }
+    const allCorrect = trapStatements.every((s) => s.userVal === s.correctVal);
+    if (allCorrect) {
+      setIsPassed(true);
+      setFeedback(`🎉 Xuất sắc! Em đã vượt qua toàn bộ 4 bẫy đề thi THPT 2025+. Nhận +${pointsAwarded} Eureka Particles!`);
+      onPassGate(pointsAwarded);
+    } else {
+      setFeedback('Có mệnh đề chưa chính xác! Em hãy suy luận lại điều kiện biên và tỉ lệ hóa học nhé.');
+    }
+  };
 
   const moveBlock = (index: number, direction: 'UP' | 'DOWN') => {
     if (isPassed) return;
@@ -137,12 +190,35 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
             Cổng Kiểm Tra Khái Niệm Ngược (Reverse Gate)
           </h4>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Trap Hunter 2025+ Toggle */}
+          <button
+            type="button"
+            data-testid="trap-hunter-toggle"
+            onClick={() => {
+              const next = !isTrapHunterMode;
+              setIsTrapHunterMode(next);
+              if (next) setIsQuietMode(false);
+            }}
+            className={`px-2.5 py-1 rounded-xl text-[11px] font-mono transition cursor-pointer border ${
+              isTrapHunterMode
+                ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-md shadow-amber-500/25'
+                : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10'
+            }`}
+            title="Đặc sản format thi THPT Quốc gia 2025+: Câu hỏi trắc nghiệm Đúng/Sai 4 ý"
+          >
+            {isTrapHunterMode ? '🎯 Săn Bẫy THPT (Bật)' : '🎯 Săn Bẫy (Format 2025+)'}
+          </button>
+
           {/* Quiet Mode Toggle */}
           <button
             type="button"
             data-testid="quiet-mode-toggle"
-            onClick={() => setIsQuietMode(!isQuietMode)}
+            onClick={() => {
+              const next = !isQuietMode;
+              setIsQuietMode(next);
+              if (next) setIsTrapHunterMode(false);
+            }}
             className={`px-2.5 py-1 rounded-xl text-[11px] font-mono transition cursor-pointer border ${
               isQuietMode
                 ? 'bg-purple-600 text-white border-purple-400 font-bold'
@@ -162,13 +238,70 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
       </div>
 
       <p className="text-xs text-slate-300 leading-relaxed">
-        {isQuietMode
+        {isTrapHunterMode
+          ? 'Thử thách Bẫy Đề Thi THPT 2025+: Biện luận Đúng / Sai cho 4 mệnh đề dưới đây:'
+          : isQuietMode
           ? 'Sắp xếp 3 khối tư duy nhân quả theo đúng trình tự diễn biến phản ứng:'
           : <>Để hoàn thành bài học, hãy dùng giọng nói giải thích bản chất: <strong>{conceptTitle}</strong></>}
       </p>
 
-      {/* QUIET MODE: Causal Blocks Ordering */}
-      {isQuietMode ? (
+      {/* TRAP HUNTER MODE: Format 2025+ True/False 4-Statement */}
+      {isTrapHunterMode ? (
+        <div className="flex flex-col gap-2.5 p-4 rounded-2xl bg-slate-950/80 border border-amber-500/30">
+          <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+            <span>🎯 Thử thách Đúng/Sai (Format Đề Thi THPT 2025-2026):</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {trapStatements.map((stmt) => (
+              <div
+                key={stmt.id}
+                data-testid={`trap-stmt-${stmt.id}`}
+                className="p-3 rounded-xl bg-white/5 border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-2"
+              >
+                <span className="text-xs text-slate-200">{stmt.label}</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    data-testid={`btn-stmt-${stmt.id}-true`}
+                    onClick={() => handleSelectTrapOption(stmt.id, true)}
+                    disabled={isPassed}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      stmt.userVal === true
+                        ? 'bg-emerald-500 text-slate-950'
+                        : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                    }`}
+                  >
+                    ĐÚNG
+                  </button>
+                  <button
+                    type="button"
+                    data-testid={`btn-stmt-${stmt.id}-false`}
+                    onClick={() => handleSelectTrapOption(stmt.id, false)}
+                    disabled={isPassed}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      stmt.userVal === false
+                        ? 'bg-rose-500 text-white'
+                        : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                    }`}
+                  >
+                    SAI
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            data-testid="btn-verify-trap-statements"
+            onClick={verifyTrapStatements}
+            disabled={isPassed}
+            className="mt-2 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 active:scale-95 text-xs font-bold text-slate-950 transition cursor-pointer shadow-lg shadow-amber-500/20 disabled:opacity-50"
+          >
+            {isPassed ? '✅ Đã vượt qua 4 bẫy đề thi' : 'Nộp bài kiểm tra 4 mệnh đề Đúng/Sai'}
+          </button>
+        </div>
+      ) : isQuietMode ? (
         <div className="flex flex-col gap-2 p-3 rounded-2xl bg-slate-950/70 border border-purple-500/20">
           {causalBlocks.map((block, idx) => (
             <div

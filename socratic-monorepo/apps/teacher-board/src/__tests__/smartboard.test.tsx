@@ -331,4 +331,39 @@ describe('Smartboard Magic Lasso & 4 Deterministic Engines (Phase 3)', () => {
     fireEvent.click(screen.getByText('✕'));
     expect(screen.queryByTestId('smart-notes-qr-modal')).toBeNull();
   });
+
+  /**
+   * TEST 7: Curriculum Level Toggle in SimulationWidget (v4.0 Olympiad Edition)
+   */
+  it('test_curriculum_mode_toggle_standard_vs_olympiad', () => {
+    const blueprint: SimulationBlueprint = {
+      engine: 'PHYSICS',
+      templateId: 'PHYS_PROJECTILE',
+      recognizedLatex: 'v_0 = 22\\text{ m/s}, \\alpha = 45^\\circ',
+      parameters: [
+        { key: 'v0', label: 'Vận tốc đầu (v₀)', unit: 'm/s', defaultValue: 22.0, min: 5.0, max: 50.0, step: 1.0 },
+        { key: 'alpha', label: 'Góc ném (α)', unit: 'độ', defaultValue: 45.0, min: 15.0, max: 85.0, step: 5.0 },
+      ],
+      socraticQuestion: 'Tại sao góc ném 45° lại cho tầm xa cực đại?',
+    };
+
+    render(<SimulationWidget blueprint={blueprint} />);
+
+    // Check toggle exists
+    const toggle = screen.getByTestId('curriculum-mode-toggle');
+    expect(toggle).toBeTruthy();
+
+    const standardBtn = screen.getByTestId('btn-mode-standard');
+    const olympiadBtn = screen.getByTestId('btn-mode-olympiad');
+
+    expect(standardBtn.textContent).toContain('Chuẩn THPT');
+    expect(olympiadBtn.textContent).toContain('Chuyên sâu');
+
+    // Switch to Olympiad mode
+    fireEvent.click(olympiadBtn);
+
+    // In Olympiad mode, secondary parameters (like air drag k) are unlocked
+    expect(screen.getByTestId('param-box-k')).toBeTruthy();
+  });
 });
+

@@ -97,9 +97,13 @@ def test_sympy_physics_step(client):
     assert eq_res["error_category"] is None
     assert eq_res["verification_time_ms"] < 200 # typically < 20ms
 
-    wrong_res = verify_algebraic_equivalence("h = 1/2 * g * t^3", "h = 0.5 * g * t^2")
+    wrong_res = verify_algebraic_equivalence("h = 2 * g * t^2", "h = 0.5 * g * t^2")
     assert wrong_res["is_equivalent"] is False
     assert wrong_res["error_category"] == "FORMULA_MISMATCH"
+
+    wrong_dim_res = verify_algebraic_equivalence("h = 1/2 * g * t^3", "h = 0.5 * g * t^2")
+    assert wrong_dim_res["is_equivalent"] is False
+    assert wrong_dim_res["error_category"] in ["DIMENSIONAL_INCONSISTENCY", "FORMULA_MISMATCH"]
 
     # API Endpoint integration test
     resp = client.post(

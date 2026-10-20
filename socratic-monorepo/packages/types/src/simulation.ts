@@ -2,6 +2,8 @@
 
 export type EngineType = 'MATH' | 'PHYSICS' | 'CHEMISTRY' | 'BIOLOGY';
 
+export type CurriculumLevel = 'THPT_STANDARD' | 'OLYMPIAD_ADVANCED';
+
 export type TemplateId =
   | 'MATH_FUNC_2D'
   | 'MATH_TRIG_WAVE'
@@ -10,9 +12,11 @@ export type TemplateId =
   | 'PHYS_PENDULUM'
   | 'PHYS_INCLINED'
   | 'PHYS_OPTICS_LENS'
+  | 'PHYS_RLC_PHASOR'
   | 'CHEM_REACTION_LAB'
   | 'CHEM_BALANCE_SCALE'
   | 'CHEM_MOLECULE_2D3D'
+  | 'CHEM_EQUILIBRIUM_TITRATION'
   | 'BIO_PHOTOSYNTHESIS'
   | 'BIO_HEART_CYCLE';
 
@@ -41,4 +45,5 @@ export interface SimulationBlueprint {
   };
   parameters: SimParamConfig[];
   socraticQuestion: string;
+  curriculumLevel?: CurriculumLevel;
 }

@@ -10,11 +10,13 @@ import { Sparkles, Trophy, MessageSquare, Send, ShieldAlert } from 'lucide-react
 export interface SocraticCompanionSessionProps {
   onSessionComplete?: (totalEureka: number) => void;
   apiEndpoint?: string;
+  curriculumLevel?: 'THPT_STANDARD' | 'OLYMPIAD_ADVANCED';
 }
 
 export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> = ({
   onSessionComplete,
   apiEndpoint = 'http://127.0.0.1:8000/api/v1/companion/evaluate-step',
+  curriculumLevel = 'THPT_STANDARD',
 }: SocraticCompanionSessionProps) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [eurekaParticles, setEurekaParticles] = useState<number>(0);
@@ -242,11 +244,18 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
       {/* Session Header & Eureka Grit Economy Counter */}
       <div className="flex items-center justify-between border-b border-white/10 pb-4">
         <div>
-          <span className="text-xs font-mono uppercase tracking-wider text-cyan-400">
-            Socratic Learning Loop • KHTN Lớp 8
+          <span className="text-xs font-mono uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+            <span>Socratic Learning Loop • {curriculumLevel === 'OLYMPIAD_ADVANCED' ? 'Hóa Học Chuyên / Olympiad' : 'Hóa Học THPT'}</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              curriculumLevel === 'OLYMPIAD_ADVANCED'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
+                : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30'
+            }`}>
+              {curriculumLevel === 'OLYMPIAD_ADVANCED' ? '🏆 Olympiad Mode' : '🎓 Chuẩn THPT'}
+            </span>
           </span>
           <h2 className="text-lg font-bold text-white mt-0.5">
-            Phản ứng Oxi hóa: Sắt cháy trong Khí Oxi
+            Phản ứng Oxi hóa: Sắt cháy trong Khí Oxi (Fe + O₂ → Fe₂O₃)
           </h2>
         </div>
 

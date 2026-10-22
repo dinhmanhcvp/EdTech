@@ -3,11 +3,12 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { SimulationBlueprint, SimParamConfig, CurriculumLevel } from '@socratic/types';
-import { RotateCcw, FileText, CheckCircle2 } from 'lucide-react';
+import { RotateCcw, FileText, CheckCircle2, Sparkles } from 'lucide-react';
 import { MathPlotEngine } from '../../engines/MathPlotEngine';
 import { PhysicsSandboxEngine } from '../../engines/PhysicsSandboxEngine';
 import { ChemistryLabEngine } from '../../engines/ChemistryLabEngine';
 import { BioSystemEngine } from '../../engines/BioSystemEngine';
+import { AIGeneratedVisualEngine } from './AIGeneratedVisualEngine';
 import { TapAndSwapOCR } from './TapAndSwapOCR';
 import { MathView } from '../common/MathView';
 
@@ -259,6 +260,9 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   onToggleSplitView,
 }) => {
   const [activeFormula, setActiveFormula] = useState<string>(blueprint.recognizedLatex);
+  const [renderMode, setRenderMode] = useState<'ENGINE' | 'AI_VISUAL'>(
+    blueprint.custom_interactive_svg ? 'ENGINE' : 'ENGINE'
+  );
   const [curriculumLevel, setCurriculumLevel] = useState<CurriculumLevel>(
     blueprint.curriculumLevel || 'THPT_STANDARD'
   );
@@ -399,6 +403,38 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Segmented Render Mode Toggle: [Mô hình Engine Chuẩn | Đồ họa AI Sinh động] */}
+          <div
+            className="flex items-center bg-[#F2F0EA] p-1 rounded-lg border border-[#E6E4DD]"
+            data-testid="render-mode-toggle"
+          >
+            <button
+              type="button"
+              data-testid="btn-mode-engine"
+              onClick={() => setRenderMode('ENGINE')}
+              className={`px-2.5 py-1 rounded text-xs transition cursor-pointer font-medium ${
+                renderMode === 'ENGINE'
+                  ? 'bg-white shadow-sm text-stone-900 font-semibold'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              Mô hình Engine Chuẩn
+            </button>
+            <button
+              type="button"
+              data-testid="btn-mode-ai-visual"
+              onClick={() => setRenderMode('AI_VISUAL')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs transition cursor-pointer font-medium ${
+                renderMode === 'AI_VISUAL'
+                  ? 'bg-white shadow-sm text-blue-700 font-semibold'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              <Sparkles className="w-3 h-3 text-blue-600" />
+              <span>Đồ họa AI Sinh động</span>
+            </button>
+          </div>
+
           {/* Segmented Curriculum Level Toggle: [Chuẩn THPT | Chuyên sâu (Chuyên/HSG)] */}
           <div
             className="flex items-center bg-[#F2F0EA] p-1 rounded-lg border border-[#E6E4DD]"
@@ -568,17 +604,27 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
 
       {/* 60FPS SIMULATION CANVAS RENDER AREA */}
       <div className="p-4 flex justify-center items-center bg-[#F8F7F4]" data-testid="engine-canvas-container">
-        {blueprint.engine === 'MATH' && (
-          <MathPlotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
-        )}
-        {blueprint.engine === 'PHYSICS' && (
-          <PhysicsSandboxEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
-        )}
-        {blueprint.engine === 'CHEMISTRY' && (
-          <ChemistryLabEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
-        )}
-        {blueprint.engine === 'BIOLOGY' && (
-          <BioSystemEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
+        {renderMode === 'AI_VISUAL' ? (
+          <AIGeneratedVisualEngine
+            blueprint={activeBlueprint}
+            params={params}
+            svgContent={blueprint.custom_interactive_svg}
+          />
+        ) : (
+          <>
+            {blueprint.engine === 'MATH' && (
+              <MathPlotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
+            )}
+            {blueprint.engine === 'PHYSICS' && (
+              <PhysicsSandboxEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
+            )}
+            {blueprint.engine === 'CHEMISTRY' && (
+              <ChemistryLabEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
+            )}
+            {blueprint.engine === 'BIOLOGY' && (
+              <BioSystemEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
+            )}
+          </>
         )}
       </div>
 

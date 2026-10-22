@@ -66,6 +66,8 @@ class SimulationBlueprint(BaseModel):
     parameters: List[SimParamConfig]
     socraticQuestion: str
     meta: Optional[Dict[str, Any]] = None
+    custom_interactive_svg: Optional[str] = None
+    ai_visual_description: Optional[str] = None
 
 
 class UnifiedLassoResponse(BaseModel):
@@ -280,8 +282,240 @@ OFFLINE_TEMPLATE_REGISTRY: Dict[str, Dict[str, Any]] = {
         "socraticQuestion": "Tại sao tại điểm tương đương (V_NaOH = 25mL), đường cong pH lại có một bước nhảy vọt dốc đứng thay vì biến thiên từ từ?",
         "targetParam": "Vb",
         "subject": "CHEMISTRY"
+    },
+    # 15. SINH HỌC: 3D DNA DOUBLE HELIX & HELICASE REPLICATION FORK
+    "BIO_DNA_HELIX": {
+        "engine": "BIOLOGY",
+        "templateId": "BIO_DNA_HELIX",
+        "recognizedLatex": "\\text{DNA Replication: } 5' \\to 3', \\quad A=T, \\, G\\equiv C",
+        "parameters": [
+            { "key": "unzipProgress", "label": "Tháo xoắn Helicase", "unit": "%", "defaultValue": 25.0, "min": 0.0, "max": 100.0, "step": 5.0 },
+            { "key": "turnCount", "label": "Số chu kỳ xoắn", "unit": "vòng", "defaultValue": 3.0, "min": 1.0, "max": 6.0, "step": 1.0 }
+        ],
+        "socraticQuestion": "Tại sao liên kết hydro giữa A-T lại dễ bị bẻ gãy hơn G-C trong quá trình tháo xoắn của enzyme Helicase?",
+        "targetParam": "unzipProgress",
+        "subject": "BIOLOGY"
+    },
+    # 16. VẬT LÝ: BỂ SÓNG GIAO THOA 2 NGUỒN KẾT HỢP
+    "PHYS_RIPPLE_TANK": {
+        "engine": "PHYSICS",
+        "templateId": "PHYS_RIPPLE_TANK",
+        "recognizedLatex": "u_M = 2A \\cos\\left(\\frac{\\pi(d_2 - d_1)}{\\lambda}\\right) \\cos(\\omega t)",
+        "parameters": [
+            { "key": "lambda", "label": "Bước sóng (λ)", "unit": "px", "defaultValue": 24.0, "min": 10.0, "max": 60.0, "step": 2.0 },
+            { "key": "f", "label": "Tần số dao động (f)", "unit": "Hz", "defaultValue": 2.5, "min": 1.0, "max": 5.0, "step": 0.5 },
+            { "key": "d", "label": "Khoảng cách 2 nguồn (d)", "unit": "px", "defaultValue": 130.0, "min": 60.0, "max": 240.0, "step": 10.0 },
+            { "key": "deltaPhi", "label": "Độ lệch pha (Δφ)", "unit": "rad", "defaultValue": 0.0, "min": -3.14, "max": 3.14, "step": 0.314 }
+        ],
+        "socraticQuestion": "Khi hai nguồn dao động cùng pha, những điểm có hiệu đường đi d₂ - d₁ = kλ sẽ dao động với biên độ cực đại hay cực tiểu?",
+        "targetParam": "lambda",
+        "subject": "PHYSICS"
     }
 }
+
+
+def generate_bespoke_interactive_svg(topic: str, recognized_latex: str = "", parameters: Optional[List[Dict[str, Any]]] = None) -> str:
+    """
+    Generates rich, publication-grade interactive SVG for any STEM topic,
+    with CSS variables (--param-<key>) and live annotations.
+    """
+    t_lower = (topic or recognized_latex or "").lower()
+
+    # 1. CARDIAC ANATOMY / CẤU TẠO TIM / HEART CYCLE
+    if any(k in t_lower for k in ["tim", "heart", "cardiac", "wiggers", "nhịp"]):
+        return (
+            '<svg viewBox="0 0 620 340" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">'
+            '<defs>'
+            '<radialGradient id="heartGrad" cx="40%" cy="35%" r="65%">'
+            '<stop offset="0%" stop-color="#FB7185"/>'
+            '<stop offset="60%" stop-color="#E11D48"/>'
+            '<stop offset="100%" stop-color="#881337"/>'
+            '</radialGradient>'
+            '<linearGradient id="aortaGrad" x1="0" y1="0" x2="1" y2="1">'
+            '<stop offset="0%" stop-color="#E11D48"/><stop offset="100%" stop-color="#9F1239"/>'
+            '</linearGradient>'
+            '<linearGradient id="venaCavaGrad" x1="0" y1="0" x2="0" y2="1">'
+            '<stop offset="0%" stop-color="#0284C7"/><stop offset="100%" stop-color="#0369A1"/>'
+            '</linearGradient>'
+            '<filter id="shadowFilter" x="-10%" y="-10%" width="120%" height="120%">'
+            '<feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.08"/>'
+            '</filter>'
+            '</defs>'
+            '<style>'
+            '@keyframes heartbeat { 0% { transform: scale(1); } 14% { transform: scale(1.06); } 28% { transform: scale(1); } 42% { transform: scale(1.04); } 70% { transform: scale(1); } }'
+            '.heart-muscle { transform-origin: 200px 175px; animation: heartbeat calc(60s / var(--param-BPM, 75)) infinite ease-in-out; }'
+            '</style>'
+            '<rect width="620" height="340" rx="16" fill="#FCFBF9" stroke="#E6E4DD" stroke-width="1.5"/>'
+            '<g class="heart-muscle" filter="url(#shadowFilter)">'
+            '<path d="M 130 50 L 130 110 Q 130 130 150 140" fill="none" stroke="url(#venaCavaGrad)" stroke-width="22" stroke-linecap="round"/>'
+            '<path d="M 180 120 Q 180 40 230 45 Q 260 50 260 120" fill="none" stroke="url(#aortaGrad)" stroke-width="26" stroke-linecap="round"/>'
+            '<path d="M 210 40 L 210 20 M 230 42 L 230 18 M 250 48 L 250 24" stroke="url(#aortaGrad)" stroke-width="8" stroke-linecap="round"/>'
+            '<path d="M 200 110 C 130 70 80 140 100 200 C 120 250 200 290 200 290 C 200 290 280 250 300 200 C 320 140 270 70 200 110 Z" fill="url(#heartGrad)"/>'
+            '<path d="M 200 120 Q 200 200 200 285" stroke="#4C0519" stroke-width="4" stroke-dasharray="4,4"/>'
+            '<path d="M 110 170 Q 200 180 290 170" stroke="#4C0519" stroke-width="3" stroke-dasharray="3,3"/>'
+            '</g>'
+            '<g font-family="monospace" font-size="10" font-weight="bold" fill="#0F172A">'
+            '<rect x="25" y="80" width="85" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/><text x="32" y="95" fill="#0284C7">TĨNH MẠCH CHỦ</text>'
+            '<rect x="25" y="150" width="75" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/><text x="32" y="165">TÂM NHĨ PHẢI</text>'
+            '<rect x="25" y="220" width="75" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/><text x="32" y="235">TÂM THẤT PHẢI</text>'
+            '<rect x="280" y="80" width="90" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/><text x="287" y="95" fill="#E11D48">ĐỘNG MẠCH CHỦ</text>'
+            '<rect x="280" y="150" width="75" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/><text x="287" y="165">TÂM NHĨ TRÁI</text>'
+            '<rect x="280" y="220" width="75" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/><text x="287" y="235">TÂM THẤT TRÁI</text>'
+            '</g>'
+            '<g transform="translate(390, 25)">'
+            '<rect width="210" height="290" rx="12" fill="#FFFFFF" stroke="#E6E4DD"/>'
+            '<text x="16" y="26" font-family="monospace" font-size="11" font-weight="bold" fill="#0F172A">CHU TRÌNH TIM &amp; ECG</text>'
+            '<line x1="16" y1="36" x2="194" y2="36" stroke="#E2E8F0"/>'
+            '<path d="M 16 90 L 55 90 L 62 82 L 68 90 L 76 90 L 82 110 L 92 40 L 100 98 L 106 90 L 130 90 L 145 78 L 160 90 L 194 90" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round"/>'
+            '<text x="16" y="125" font-family="sans-serif" font-size="10" fill="#57534E">Áp suất Thất trái: 120 mmHg</text>'
+            '<text x="16" y="145" font-family="sans-serif" font-size="10" fill="#57534E">Thể tích nhát bóp: 70 mL</text>'
+            '<text x="16" y="165" font-family="sans-serif" font-size="10" fill="#57534E">Cung lượng tim: 5.2 L/phút</text>'
+            '<rect x="16" y="195" width="178" height="75" rx="8" fill="#FFFBEB" stroke="#FDE68A"/>'
+            '<text x="26" y="215" font-family="monospace" font-size="10" font-weight="bold" fill="#92400E">ĐỒNG BỘ SLIDER (BPM):</text>'
+            '<text x="26" y="235" font-family="sans-serif" font-size="10" fill="#78350F">Trái tim co bóp theo tần số nhịp</text>'
+            '<text x="26" y="252" font-family="sans-serif" font-size="10" fill="#78350F">học sinh điều chỉnh trên thanh trượt.</text>'
+            '</g>'
+            '</svg>'
+        )
+
+    # 2. GALVANIC CELL / PIN ĐIỆN HÓA / VOLTA
+    if any(k in t_lower for k in ["galvani", "pin", "volta", "electrochemical", "điện hóa", "cực"]):
+        return (
+            '<svg viewBox="0 0 620 340" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">'
+            '<defs>'
+            '<linearGradient id="znBeaker" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E2E8F0" stop-opacity="0.5"/><stop offset="100%" stop-color="#CBD5E1" stop-opacity="0.8"/></linearGradient>'
+            '<linearGradient id="cuBeaker" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#93C5FD" stop-opacity="0.6"/><stop offset="100%" stop-color="#2563EB" stop-opacity="0.7"/></linearGradient>'
+            '<linearGradient id="znElectrode" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#94A3B8"/><stop offset="50%" stop-color="#E2E8F0"/><stop offset="100%" stop-color="#64748B"/></linearGradient>'
+            '<linearGradient id="cuElectrode" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#B45309"/><stop offset="50%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#78350F"/></linearGradient>'
+            '</defs>'
+            '<rect width="620" height="340" rx="16" fill="#FCFBF9" stroke="#E6E4DD" stroke-width="1.5"/>'
+            '<rect x="70" y="140" width="130" height="150" rx="6" fill="url(#znBeaker)" stroke="#94A3B8" stroke-width="2"/>'
+            '<rect x="110" y="90" width="22" height="160" rx="2" fill="url(#znElectrode)" stroke="#475569"/>'
+            '<text x="121" y="80" font-family="monospace" font-size="11" font-weight="bold" fill="#0F172A" text-anchor="middle">Zn (-)</text>'
+            '<text x="135" y="270" font-family="monospace" font-size="9" fill="#334155" text-anchor="middle">Dung dịch ZnSO₄ 1M</text>'
+            '<rect x="290" y="140" width="130" height="150" rx="6" fill="url(#cuBeaker)" stroke="#94A3B8" stroke-width="2"/>'
+            '<rect x="350" y="90" width="22" height="160" rx="2" fill="url(#cuElectrode)" stroke="#78350F"/>'
+            '<text x="361" y="80" font-family="monospace" font-size="11" font-weight="bold" fill="#92400E" text-anchor="middle">Cu (+)</text>'
+            '<text x="355" y="270" font-family="monospace" font-size="9" fill="#1E3A8A" text-anchor="middle">Dung dịch CuSO₄ 1M</text>'
+            '<path d="M 165 210 L 165 110 Q 165 95 180 95 L 310 95 Q 325 95 325 110 L 325 210" fill="none" stroke="#F1F5F9" stroke-width="18" stroke-linecap="round"/>'
+            '<path d="M 165 210 L 165 110 Q 165 95 180 95 L 310 95 Q 325 95 325 110 L 325 210" fill="none" stroke="#E2E8F0" stroke-width="14" stroke-linecap="round"/>'
+            '<text x="245" y="115" font-family="monospace" font-size="9" font-weight="bold" fill="#475569" text-anchor="middle">CẦU MUỐI (KNO₃)</text>'
+            '<path d="M 121 90 L 121 40 L 220 40" fill="none" stroke="#1E293B" stroke-width="2.5"/>'
+            '<path d="M 270 40 L 361 40 L 361 90" fill="none" stroke="#1E293B" stroke-width="2.5"/>'
+            '<circle cx="245" cy="40" r="22" fill="#FFFFFF" stroke="#0F172A" stroke-width="2"/>'
+            '<text x="245" y="44" font-family="monospace" font-size="10" font-weight="bold" fill="#E11D48" text-anchor="middle">1.10 V</text>'
+            '<text x="245" y="24" font-family="sans-serif" font-size="8" fill="#64748B" text-anchor="middle">VÔN KẾ</text>'
+            '<g transform="translate(440, 25)">'
+            '<rect width="165" height="290" rx="12" fill="#FFFFFF" stroke="#E6E4DD"/>'
+            '<text x="14" y="26" font-family="monospace" font-size="11" font-weight="bold" fill="#0F172A">PIN ĐIỆN HÓA DANIELL</text>'
+            '<line x1="14" y1="36" x2="151" y2="36" stroke="#E2E8F0"/>'
+            '<text x="14" y="65" font-family="monospace" font-size="10" font-weight="bold" fill="#0284C7">ANODE (Oxi hóa):</text>'
+            '<text x="14" y="82" font-family="sans-serif" font-size="9" fill="#334155">Zn → Zn²⁺ + 2e⁻</text>'
+            '<text x="14" y="115" font-family="monospace" font-size="10" font-weight="bold" fill="#D97706">CATHODE (Khử):</text>'
+            '<text x="14" y="132" font-family="sans-serif" font-size="9" fill="#334155">Cu²⁺ + 2e⁻ → Cu</text>'
+            '<text x="14" y="165" font-family="monospace" font-size="10" font-weight="bold" fill="#059669">PHƯƠNG TRÌNH PIN:</text>'
+            '<text x="14" y="182" font-family="sans-serif" font-size="9" fill="#334155">Zn + Cu²⁺ → Zn²⁺ + Cu</text>'
+            '<rect x="14" y="210" width="137" height="65" rx="6" fill="#F8FAFC" stroke="#E2E8F0"/>'
+            '<text x="22" y="230" font-family="monospace" font-size="10" font-weight="bold" fill="#0F172A">E° = E°(+) - E°(-)</text>'
+            '<text x="22" y="248" font-family="monospace" font-size="10" fill="#2563EB">E° = 0.34 - (-0.76)</text>'
+            '<text x="22" y="264" font-family="monospace" font-size="11" font-weight="bold" fill="#E11D48">= +1.10 V</text>'
+            '</g>'
+            '</svg>'
+        )
+
+    # 3. KREBS CYCLE / CHU TRÌNH KREBS
+    if any(k in t_lower for k in ["krebs", "citric", "axit citric", "tca", "hô hấp"]):
+        return (
+            '<svg viewBox="0 0 620 340" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">'
+            '<rect width="620" height="340" rx="16" fill="#FCFBF9" stroke="#E6E4DD" stroke-width="1.5"/>'
+            '<g transform="translate(210, 175)">'
+            '<circle cx="0" cy="0" r="105" fill="none" stroke="#10B981" stroke-width="4" stroke-dasharray="8,4"/>'
+            '<text x="0" y="-8" font-family="monospace" font-size="13" font-weight="bold" fill="#0F172A" text-anchor="middle">CHU TRÌNH KREBS</text>'
+            '<text x="0" y="10" font-family="monospace" font-size="9" fill="#64748B" text-anchor="middle">(Axit Citric / TCA Cycle)</text>'
+            '<rect x="-40" y="-140" width="80" height="24" rx="4" fill="#FEF3C7" stroke="#FDE68A"/><text x="0" y="-124" font-family="monospace" font-size="9" font-weight="bold" fill="#92400E" text-anchor="middle">Acetyl-CoA (2C)</text>'
+            '<rect x="55" y="-105" width="75" height="24" rx="4" fill="#DCFCE7" stroke="#86EFAC"/><text x="92" y="-89" font-family="monospace" font-size="9" font-weight="bold" fill="#166534" text-anchor="middle">Citrate (6C)</text>'
+            '<rect x="75" y="10" width="85" height="24" rx="4" fill="#DCFCE7" stroke="#86EFAC"/><text x="117" y="26" font-family="monospace" font-size="9" font-weight="bold" fill="#166534" text-anchor="middle">α-Ketoglutarate(5C)</text>'
+            '<rect x="25" y="85" width="85" height="24" rx="4" fill="#DCFCE7" stroke="#86EFAC"/><text x="67" y="101" font-family="monospace" font-size="9" font-weight="bold" fill="#166534" text-anchor="middle">Succinate (4C)</text>'
+            '<rect x="-115" y="75" width="75" height="24" rx="4" fill="#DCFCE7" stroke="#86EFAC"/><text x="-78" y="91" font-family="monospace" font-size="9" font-weight="bold" fill="#166534" text-anchor="middle">Malate (4C)</text>'
+            '<rect x="-135" y="-60" width="90" height="24" rx="4" fill="#DCFCE7" stroke="#86EFAC"/><text x="-90" y="-44" font-family="monospace" font-size="9" font-weight="bold" fill="#166534" text-anchor="middle">Oxaloacetate (4C)</text>'
+            '</g>'
+            '<g transform="translate(420, 25)">'
+            '<rect width="185" height="290" rx="12" fill="#FFFFFF" stroke="#E6E4DD"/>'
+            '<text x="16" y="26" font-family="monospace" font-size="11" font-weight="bold" fill="#0F172A">NĂNG LƯỢNG THU ĐƯỢC</text>'
+            '<line x1="16" y1="36" x2="169" y2="36" stroke="#E2E8F0"/>'
+            '<rect x="16" y="75" width="153" height="32" rx="6" fill="#EFF6FF" stroke="#BFDBFE"/><text x="26" y="96" font-family="monospace" font-size="11" font-weight="bold" fill="#1E40AF">3 NADH (+7.5 ATP)</text>'
+            '<rect x="16" y="115" width="153" height="32" rx="6" fill="#FEF3C7" stroke="#FDE68A"/><text x="26" y="136" font-family="monospace" font-size="11" font-weight="bold" fill="#92400E">1 FADH₂ (+1.5 ATP)</text>'
+            '<rect x="16" y="155" width="153" height="32" rx="6" fill="#ECFDF5" stroke="#A7F3D0"/><text x="26" y="176" font-family="monospace" font-size="11" font-weight="bold" fill="#065F46">1 ATP / GTP (SLP)</text>'
+            '<rect x="16" y="195" width="153" height="32" rx="6" fill="#F1F5F9" stroke="#E2E8F0"/><text x="26" y="216" font-family="monospace" font-size="11" font-weight="bold" fill="#475569">2 CO₂ (Thải khí)</text>'
+            '<text x="16" y="255" font-family="monospace" font-size="10" font-weight="bold" fill="#059669">TỔNG: ~10 ATP / Acetyl-CoA</text>'
+            '</g>'
+            '</svg>'
+        )
+
+    # 4. EYE OPTICS & MYOPIA / TẬT CẬN THỊ / MẮT
+    if any(k in t_lower for k in ["mắt", "cận thị", "viễn thị", "eye", "tật"]):
+        return (
+            '<svg viewBox="0 0 620 340" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">'
+            '<rect width="620" height="340" rx="16" fill="#FCFBF9" stroke="#E6E4DD" stroke-width="1.5"/>'
+            '<g transform="translate(230, 170)">'
+            '<circle cx="0" cy="0" r="95" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/>'
+            '<path d="M 0 -95 A 95 95 0 0 1 0 95" fill="none" stroke="#F59E0B" stroke-width="4"/>'
+            '<text x="75" y="4" font-family="monospace" font-size="9" font-weight="bold" fill="#D97706" text-anchor="middle">VÕNG MẠC</text>'
+            '<path d="M -70 -65 C -115 -35 -115 35 -70 65" fill="#E0F2FE" stroke="#38BDF8" stroke-width="2.5"/>'
+            '<text x="-95" y="-75" font-family="monospace" font-size="9" fill="#0284C7">GIÁC MẠC</text>'
+            '<ellipse cx="-55" cy="0" rx="8" ry="42" fill="#BAE6FD" stroke="#0284C7" stroke-width="2"/>'
+            '<text x="-55" y="58" font-family="monospace" font-size="9" fill="#0284C7" text-anchor="middle">THỂ THỦY TINH</text>'
+            '<line x1="-180" y1="0" x2="105" y2="0" stroke="#94A3B8" stroke-width="1" stroke-dasharray="4,4"/>'
+            '<path d="M -180 -35 L -55 -35 L 50 0 L 95 25" fill="none" stroke="#E11D48" stroke-width="2"/>'
+            '<path d="M -180 35 L -55 35 L 50 0 L 95 -25" fill="none" stroke="#E11D48" stroke-width="2"/>'
+            '<circle cx="50" cy="0" r="4" fill="#E11D48"/>'
+            '<text x="50" y="-12" font-family="monospace" font-size="9" font-weight="bold" fill="#E11D48" text-anchor="middle">Tiêu điểm F\'</text>'
+            '<text x="50" y="16" font-family="sans-serif" font-size="8" fill="#E11D48" text-anchor="middle">(Hội tụ trước võng mạc)</text>'
+            '</g>'
+            '<g transform="translate(420, 25)">'
+            '<rect width="185" height="290" rx="12" fill="#FFFFFF" stroke="#E6E4DD"/>'
+            '<text x="16" y="26" font-family="monospace" font-size="11" font-weight="bold" fill="#0F172A">QUANG HỌC MẮT</text>'
+            '<line x1="16" y1="36" x2="169" y2="36" stroke="#E2E8F0"/>'
+            '<rect x="16" y="50" width="153" height="32" rx="6" fill="#FEE2E2" stroke="#FECACA"/>'
+            '<text x="24" y="70" font-family="monospace" font-size="11" font-weight="bold" fill="#B91C1C">TẬT CẬN THỊ (MYOPIA)</text>'
+            '<text x="16" y="105" font-family="sans-serif" font-size="10" font-weight="bold" fill="#334155">Nguyên nhân:</text>'
+            '<text x="16" y="122" font-family="sans-serif" font-size="9" fill="#57534E">• Thể thủy tinh quá phồng</text>'
+            '<text x="16" y="138" font-family="sans-serif" font-size="9" fill="#57534E">• Trục trước-sau nhãn cầu dài</text>'
+            '<text x="16" y="154" font-family="sans-serif" font-size="9" fill="#57534E">• F\' nằm trước màng lưới</text>'
+            '<text x="16" y="185" font-family="sans-serif" font-size="10" font-weight="bold" fill="#059669">Cách khắc phục:</text>'
+            '<rect x="16" y="198" width="153" height="42" rx="6" fill="#ECFDF5" stroke="#A7F3D0"/>'
+            '<text x="24" y="216" font-family="monospace" font-size="10" font-weight="bold" fill="#065F46">Đeo Kính Phân kỳ</text>'
+            '<text x="24" y="231" font-family="sans-serif" font-size="8.5" fill="#047857">(f &lt; 0) để lùi ảnh về võng mạc</text>'
+            '<text x="16" y="265" font-family="monospace" font-size="9.5" fill="#64748B">D = 1/f &lt; 0 (Diop âm)</text>'
+            '</g>'
+            '</svg>'
+        )
+
+    # 5. GENERAL ADAPTIVE SCIENTIFIC SVG FALLBACK
+    return (
+        '<svg viewBox="0 0 620 340" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">'
+        '<rect width="620" height="340" rx="16" fill="#FCFBF9" stroke="#E6E4DD" stroke-width="1.5"/>'
+        '<rect x="25" y="25" width="340" height="290" rx="12" fill="#FFFFFF" stroke="#E2E8F0"/>'
+        '<circle cx="195" cy="170" r="85" fill="none" stroke="#2563EB" stroke-width="3" stroke-dasharray="6,4"/>'
+        '<circle cx="195" cy="170" r="55" fill="none" stroke="#059669" stroke-width="2.5"/>'
+        '<circle cx="195" cy="170" r="18" fill="#2563EB"/>'
+        '<text x="195" y="174" font-family="monospace" font-size="10" font-weight="bold" fill="#FFFFFF" text-anchor="middle">CORE</text>'
+        '<text x="45" y="55" font-family="monospace" font-size="12" font-weight="bold" fill="#0F172A">' + (recognized_latex or topic or 'MÔ HÌNH KHOA HỌC') + '</text>'
+        '<g transform="translate(390, 25)">'
+        '<rect width="205" height="290" rx="12" fill="#FFFFFF" stroke="#E6E4DD"/>'
+        '<text x="16" y="26" font-family="monospace" font-size="11" font-weight="bold" fill="#0F172A">THÔNG SỐ &amp; BẢNG ĐIỀU KHIỂN</text>'
+        '<line x1="16" y1="36" x2="189" y2="36" stroke="#E2E8F0"/>'
+        '<text x="16" y="65" font-family="sans-serif" font-size="10" fill="#64748B">Khung cảnh AI Sinh động:</text>'
+        '<text x="16" y="82" font-family="monospace" font-size="11" font-weight="bold" fill="#2563EB">Vector SVG Đa tầng</text>'
+        '<text x="16" y="115" font-family="sans-serif" font-size="10" fill="#64748B">Độ mượt tương tác:</text>'
+        '<text x="16" y="132" font-family="monospace" font-size="11" font-weight="bold" fill="#059669">60 FPS Hardware Scaled</text>'
+        '<rect x="16" y="170" width="173" height="95" rx="8" fill="#F8FAFC" stroke="#E2E8F0"/>'
+        '<text x="26" y="195" font-family="monospace" font-size="10" font-weight="bold" fill="#334155">ĐIỀU CHỈNH THAM SỐ:</text>'
+        '<text x="26" y="215" font-family="sans-serif" font-size="9" fill="#64748B">Sử dụng các thanh trượt bên dưới</text>'
+        '<text x="26" y="230" font-family="sans-serif" font-size="9" fill="#64748B">để cập nhật trực tiếp mô hình.</text>'
+        '</g>'
+        '</svg>'
+    )
 
 
 def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None, api_key: Optional[str] = None) -> Optional[Dict[str, Any]]:
@@ -420,7 +654,15 @@ def intelligent_fallback_matcher(
     # 1. Direct Keyword / Preset matching on hint
     matched_template = None
     if hint:
-        if any(k in hint for k in ["quang hợp", "quang hop", "photo", "quang", "lá", "la", "cây", "cay", "stomata", "sinh học", "sinh hoc"]):
+        if any(k in hint for k in ["dna", "adn", "double helix", "helicase", "chạc sao chép", "xoắn kép"]):
+            matched_template = "BIO_DNA_HELIX"
+        elif any(k in hint for k in ["giao thoa", "ripple", "bể sóng", "sóng nước", "hai nguồn"]):
+            matched_template = "PHYS_RIPPLE_TANK"
+        elif any(k in hint for k in ["rlc", "fresnel", "điện xoay chiều", "cộng hưởng"]):
+            matched_template = "PHYS_RLC_PHASOR"
+        elif any(k in hint for k in ["chuẩn độ", "titration", "ph", "naoh"]):
+            matched_template = "CHEM_EQUILIBRIUM_TITRATION"
+        elif any(k in hint for k in ["quang hợp", "quang hop", "photo", "quang", "lá", "la", "cây", "cay", "stomata", "sinh học", "sinh hoc"]):
             matched_template = "BIO_PHOTOSYNTHESIS"
         elif any(k in hint for k in ["tim", "heart", "ecg", "bpm", "nhịp", "nhip", "pulse"]):
             matched_template = "BIO_HEART_CYCLE"
@@ -566,6 +808,11 @@ async def compile_lasso(request: Request):
             parameters.append(param_obj)
 
         expr_list = [recognized_latex] if recognized_latex else item.get("expressions")
+        ai_svg = generate_bespoke_interactive_svg(
+            topic=item.get("templateId", ""),
+            recognized_latex=recognized_latex,
+            parameters=[p.dict() for p in parameters]
+        )
         blueprint = SimulationBlueprint(
             engine=item["engine"],
             templateId=item["templateId"],
@@ -574,6 +821,8 @@ async def compile_lasso(request: Request):
             expressions=expr_list,
             parameters=parameters,
             socraticQuestion=socratic_q,
+            custom_interactive_svg=ai_svg,
+            ai_visual_description=f"Mô hình AI đồ họa sinh động cho {item['templateId']}",
             meta={
                 "isolated_crop_size_kb": image_size_kb,
                 "inference_time_ms": 320.0,
@@ -643,6 +892,12 @@ async def compile_lasso(request: Request):
     if item["recognizedLatex"] not in alts:
         alts.append(item["recognizedLatex"])
 
+    ai_svg = generate_bespoke_interactive_svg(
+        topic=hint_text or hint_subject or item.get("templateId", ""),
+        recognized_latex=final_latex,
+        parameters=[p.dict() for p in parameters]
+    )
+
     blueprint = SimulationBlueprint(
         engine=item["engine"],
         templateId=item["templateId"],
@@ -651,6 +906,8 @@ async def compile_lasso(request: Request):
         expressions=expressions,
         parameters=parameters,
         socraticQuestion=item["socraticQuestion"],
+        custom_interactive_svg=ai_svg,
+        ai_visual_description=f"Mô hình AI đồ họa sinh động cho {item['templateId']}",
         meta={
             "isolated_crop_size_kb": image_size_kb,
             "inference_time_ms": recognition.get("latency_ms", 12.5),

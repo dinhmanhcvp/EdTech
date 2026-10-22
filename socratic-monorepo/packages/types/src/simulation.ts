@@ -13,12 +13,15 @@ export type TemplateId =
   | 'PHYS_INCLINED'
   | 'PHYS_OPTICS_LENS'
   | 'PHYS_RLC_PHASOR'
+  | 'PHYS_RIPPLE_TANK'
   | 'CHEM_REACTION_LAB'
   | 'CHEM_BALANCE_SCALE'
   | 'CHEM_MOLECULE_2D3D'
   | 'CHEM_EQUILIBRIUM_TITRATION'
   | 'BIO_PHOTOSYNTHESIS'
-  | 'BIO_HEART_CYCLE';
+  | 'BIO_HEART_CYCLE'
+  | 'BIO_DNA_HELIX'
+  | string;
 
 export interface SimParamConfig {
   key: string;
@@ -42,8 +45,11 @@ export interface SimulationBlueprint {
     liquidColorStart?: string;
     liquidColorEnd?: string;
     smiles?: string;
+    [key: string]: any;
   };
   parameters: SimParamConfig[];
   socraticQuestion: string;
   curriculumLevel?: CurriculumLevel;
+  custom_interactive_svg?: string; // AI Generative Interactive SVG Payload
+  ai_visual_description?: string; // AI artwork breakdown and educational annotations
 }

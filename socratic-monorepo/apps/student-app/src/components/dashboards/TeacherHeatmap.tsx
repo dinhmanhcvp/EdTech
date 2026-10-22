@@ -32,8 +32,32 @@ export const TeacherHeatmap: React.FC<TeacherHeatmapProps> = ({ students }: Teac
         })
       );
     }
+
     setPushedToast('Đã đẩy bài toán Cân bằng Oxi (72% học sinh sai tối qua) lên Smartboard lớp!');
     setTimeout(() => setPushedToast(null), 3500);
+
+    try {
+      const payload = {
+        student_id: 'HS02',
+        student_name: 'Trần Thị Bình',
+        subject: 'CHEMISTRY',
+        step_index: 2,
+        status: 'friction',
+        concept: 'Đẩy bài toán Cân bằng Oxi lên Bảng lớp (72% điểm nghẽn)',
+      };
+
+      fetch('/api/v1/heatmap/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch(() => {
+        fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).catch(() => {});
+      });
+    } catch {}
   };
 
   const badgeClasses: Record<'green' | 'amber' | 'red', string> = {

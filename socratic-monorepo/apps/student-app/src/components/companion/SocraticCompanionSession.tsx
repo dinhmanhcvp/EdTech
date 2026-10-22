@@ -137,6 +137,29 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
           })
         );
         setCurrentStep(2);
+
+        // Telemetry dispatch
+        try {
+          const evPayload = {
+            student_id: 'HS01',
+            student_name: 'Nguyễn Văn An',
+            subject: 'CHEMISTRY',
+            step_index: 1,
+            status: 'passed',
+            concept: 'Cân bằng Oxi Fe + O₂',
+          };
+          fetch('/api/v1/heatmap/event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(evPayload),
+          }).catch(() => {
+            fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(evPayload),
+            }).catch(() => {});
+          });
+        } catch {}
       } else {
         // Imbalanced! Increment struggle attempt for Grit economy
         setScaffoldAttempts((c) => c + 1);
@@ -150,6 +173,29 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
           element: 'Oxi (O)',
           feedback: evalData.socratic_feedback || 'Vế phải đang có 3 Oxi trong khi vế trái chỉ có 2. Hãy tìm BCNN là 6!',
         });
+
+        // Telemetry friction dispatch
+        try {
+          const evPayload = {
+            student_id: 'HS01',
+            student_name: 'Nguyễn Văn An',
+            subject: 'CHEMISTRY',
+            step_index: 1,
+            status: 'friction',
+            concept: 'Cân bằng Oxi Fe + O₂ (Thử sai)',
+          };
+          fetch('/api/v1/heatmap/event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(evPayload),
+          }).catch(() => {
+            fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(evPayload),
+            }).catch(() => {});
+          });
+        } catch {}
       }
     } catch (err) {
       // Deterministic client fallback if backend is offline in test
@@ -197,6 +243,28 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
         return s;
       })
     );
+
+    try {
+      const evPayload = {
+        student_id: 'HS01',
+        student_name: 'Nguyễn Văn An',
+        subject: 'CHEMISTRY',
+        step_index: 2,
+        status: 'passed',
+        concept: 'Vượt qua Cổng Khái Niệm Ngược (Reverse Gate Pass)',
+      };
+      fetch('/api/v1/heatmap/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(evPayload),
+      }).catch(() => {
+        fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(evPayload),
+        }).catch(() => {});
+      });
+    } catch {}
   };
 
   const handleSendChatMessage = async (msgToSend?: string) => {

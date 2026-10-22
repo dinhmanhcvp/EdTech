@@ -425,6 +425,54 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     a.click();
   };
 
+  // Pack Smart Notes & QR Recap auto-sync to backend
+  const handleOpenQrModal = async () => {
+    setIsQrModalOpen(true);
+    try {
+      const payload = {
+        formula: activeBlueprint?.recognizedLatex || 'y = 2\\sin(3x)',
+        template_id: activeBlueprint?.templateId || 'MATH_TRIG_WAVE',
+        engine: activeBlueprint?.engine || 'MATH',
+        parameters: activeBlueprint?.parameters
+          ? Object.fromEntries(activeBlueprint.parameters.map((p) => [p.key, p.defaultValue]))
+          : { A: 2.0, omega: 3.0 },
+        socratic_questions: [
+          activeBlueprint?.socraticQuestion || 'Quan sát sự biến thiên của hàm số khi thay đổi tham số.'
+        ],
+        key_insights: [
+          'Đã đồng bộ trực tiếp từ Bảng Smartboard sang App học sinh qua Live Sync API',
+          'Mô phỏng 60FPS đã được đóng gói và nạp vào Smart Notes'
+        ],
+        class_id: '12A1',
+        student_id: 'all_students',
+      };
+
+      let res: Response | null = null;
+      try {
+        res = await fetch('/api/v1/notes/export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch {
+        res = await fetch('http://127.0.0.1:8000/api/v1/notes/export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (res && res.ok) {
+        const data = await res.json();
+        if (typeof window !== 'undefined' && data.note) {
+          localStorage.setItem('socratic_smart_notes_latest', JSON.stringify(data.note));
+        }
+      }
+    } catch (err) {
+      console.warn('[SmartboardCanvas] QR Notes auto-export fallback:', err);
+    }
+  };
+
   // Voice-to-Blueprint Web Speech API Handler (v3.0)
   const handleVoiceDictation = () => {
     if (isVoiceListening) {
@@ -972,7 +1020,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           {/* Pack Smart Notes & QR Recap Modal Button */}
           <button
             data-testid="btn-pack-smart-notes"
-            onClick={() => setIsQrModalOpen(true)}
+            onClick={handleOpenQrModal}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-stone-50 border border-[#DCD9D0] text-stone-700 text-xs font-medium shadow-xs transition cursor-pointer"
             title="Đóng gói Smart Notes & QR"
           >
@@ -1411,7 +1459,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 data-testid="btn-preview-student-view"
                 onClick={() => {
                   setIsQrModalOpen(false);
-                  alert('Đang mở mô phỏng dưới góc nhìn Học sinh trên điện thoại!');
+                  if (typeof window !== 'undefined') {
+                    window.open('http://localhost:3002', '_blank');
+                  }
                 }}
                 className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition cursor-pointer shadow-sm"
               >

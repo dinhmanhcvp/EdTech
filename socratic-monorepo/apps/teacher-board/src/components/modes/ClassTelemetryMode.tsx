@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Send, QrCode, FileText, Check, ArrowUpRight, BarChart2, ShieldCheck, Activity } from 'lucide-react';
 
 export interface StudentMastery {
@@ -14,8 +14,12 @@ export interface StudentMastery {
 
 export const ClassTelemetryMode: React.FC = () => {
   const [pushedToast, setPushedToast] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [bottleneckText, setBottleneckText] = useState<string>('28.0% Cân bằng Oxi (Fe + O₂)');
+  const [masteryPct, setMasteryPct] = useState<number>(84.2);
+  const [avgGrit, setAvgGrit] = useState<number>(89.6);
 
-  const students: StudentMastery[] = [
+  const defaultStudents: StudentMastery[] = [
     { name: 'Nguyễn Văn An', mathWave: 'green', physicsProjectile: 'green', chemRedox: 'red', bioStomata: 'amber', gritScore: 88 },
     { name: 'Trần Thị Mai', mathWave: 'green', physicsProjectile: 'amber', chemRedox: 'green', bioStomata: 'green', gritScore: 95 },
     { name: 'Lê Hoàng Nam', mathWave: 'amber', physicsProjectile: 'red', chemRedox: 'red', bioStomata: 'green', gritScore: 74 },
@@ -24,9 +28,147 @@ export const ClassTelemetryMode: React.FC = () => {
     { name: 'Vũ Hoàng Bách', mathWave: 'amber', physicsProjectile: 'green', chemRedox: 'green', bioStomata: 'amber', gritScore: 84 },
   ];
 
-  const handlePushToBoard = (topic: string) => {
-    setPushedToast(`Đã đồng bộ bài toán '${topic}' lên Smartboard lớp 12A1!`);
-    setTimeout(() => setPushedToast(null), 3000);
+  const [students, setStudents] = useState<StudentMastery[]>(defaultStudents);
+
+  const fetchTelemetry = async () => {
+    setIsLoading(true);
+    try {
+      let res: Response | null = null;
+      try {
+        res = await fetch('/api/v1/heatmap');
+      } catch {
+        res = await fetch('http://127.0.0.1:8000/api/v1/heatmap');
+      }
+
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data.students && Array.isArray(data.students)) {
+          const mapped: StudentMastery[] = data.students.map((s: any) => ({
+            name: s.name,
+            mathWave: s.steps?.[0] === 'passed' ? 'green' : 'amber',
+            physicsProjectile: s.steps?.[1] === 'passed' ? 'green' : 'red',
+            chemRedox: s.status === 'STUCK' ? 'red' : 'green',
+            bioStomata: s.steps?.[3] === 'passed' ? 'green' : 'amber',
+            gritScore: s.status === 'MASTERED' ? 95 : (s.friction_count > 2 ? 78 : 88),
+          }));
+          if (mapped.length > 0) {
+            setStudents(mapped);
+            const totalGrit = mapped.reduce((acc, st) => acc + st.gritScore, 0);
+            setAvgGrit(Number((totalGrit / mapped.length).toFixed(1)));
+            const masteredCount = mapped.filter((st) => st.chemRedox === 'green').length;
+            setMasteryPct(Number(((masteredCount / mapped.length) * 100).toFixed(1)));
+          }
+        }
+        if (data.bottleneck) {
+          setBottleneckText(data.bottleneck);
+        }
+      }
+    } catch (err) {
+      console.warn('[ClassTelemetryMode] Telemetry fetch fallback:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTelemetry();
+    const interval = setInterval(fetchTelemetry, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handlePushToBoard = async (topic: string) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(
+          'socratic_board_incoming_lesson',
+          JSON.stringify({
+            templateId: 'CHEM_BALANCE_SCALE',
+            formula: '4Fe + 3O2 -> 2Fe2O3',
+            topic,
+            timestamp: Date.now(),
+          })
+        );
+      }
+
+      const payload = {
+        student_id: 'HS02',
+        student_name: 'Trần Thị Bình',
+        subject: 'CHEMISTRY',
+        step_index: 2,
+        status: 'friction',
+        concept: topic,
+      };
+
+      try {
+        await fetch('/api/v1/heatmap/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch {
+        await fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      setPushedToast(`Đã đồng bộ bài toán '${topic}' lên Smartboard lớp 12A1 qua Backend Live Sync!`);
+    } catch {
+      setPushedToast(`Đã lưu bài toán '${topic}' vào bộ nhớ cục bộ lớp 12A1!`);
+    }
+    setTimeout(() => setPushedToast(null), 3500);
+    fetchTelemetry();
+  };
+
+  const handleExportSmartNotes = async () => {
+    try {
+      const payload = {
+        formula: '4Fe + 3O2 -> 2Fe2O3',
+        template_id: 'CHEM_BALANCE_SCALE',
+        engine: 'CHEMISTRY',
+        parameters: { c1: 4, c2: 3, c3: 2 },
+        socratic_questions: [
+          'Tại sao số nguyên tử Oxi ở 2 vế phải bằng nhau?',
+          'Làm sao để số nguyên tử Oxi ở 2 vế thăng bằng khi một bên là O2 và một bên là Fe2O3?'
+        ],
+        key_insights: [
+          'Định luật bảo toàn khối lượng và bảo toàn nguyên tố Lomonosov',
+          'BCNN của 2 và 3 là 6, do đó hệ số O2 là 3 và Fe2O3 là 2',
+          '72% học sinh vượt qua bẫy sau khi quan sát cân đĩa nguyên tử'
+        ],
+        class_id: '12A1',
+        student_id: 'all_students'
+      };
+
+      let res: Response | null = null;
+      try {
+        res = await fetch('/api/v1/notes/export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch {
+        res = await fetch('http://127.0.0.1:8000/api/v1/notes/export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (res && res.ok) {
+        const data = await res.json();
+        if (typeof window !== 'undefined' && data.note) {
+          localStorage.setItem('socratic_smart_notes_latest', JSON.stringify(data.note));
+        }
+        setPushedToast(`Đã xuất Smart Notes (ID: ${data.note_id}) sang ứng dụng Học sinh (${data.export_ms}ms)!`);
+      } else {
+        setPushedToast('Đã xuất Smart Notes sang bộ nhớ cục bộ lớp 12A1!');
+      }
+    } catch {
+      setPushedToast('Đã xuất Smart Notes sang bộ nhớ cục bộ lớp 12A1!');
+    }
+    setTimeout(() => setPushedToast(null), 3500);
   };
 
   const getStatusBadge = (status: 'green' | 'amber' | 'red') => {
@@ -72,7 +214,7 @@ export const ClassTelemetryMode: React.FC = () => {
             Tỷ lệ Nắm vững Lớp
           </span>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-mono font-bold text-[#18181B] tabular-nums">84.2%</span>
+            <span className="text-2xl font-mono font-bold text-[#18181B] tabular-nums">{masteryPct}%</span>
             <span className="text-xs font-mono text-emerald-600 font-medium">+5.4% so với tuần trước</span>
           </div>
         </div>
@@ -82,7 +224,7 @@ export const ClassTelemetryMode: React.FC = () => {
             Chỉ số Bền bỉ (Grit)
           </span>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-mono font-bold text-emerald-600 tabular-nums">89.6</span>
+            <span className="text-2xl font-mono font-bold text-emerald-600 tabular-nums">{avgGrit}</span>
             <span className="text-xs font-mono text-stone-500">/ 100 điểm chuẩn</span>
           </div>
         </div>
@@ -92,8 +234,7 @@ export const ClassTelemetryMode: React.FC = () => {
             Điểm nghẽn Cực trị & Biên
           </span>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-mono font-bold text-rose-600 tabular-nums">28.0%</span>
-            <span className="text-xs font-mono text-stone-500">Cân bằng Oxi (Fe + O₂)</span>
+            <span className="text-sm font-mono font-bold text-rose-600 truncate">{bottleneckText}</span>
           </div>
         </div>
 
@@ -195,7 +336,7 @@ export const ClassTelemetryMode: React.FC = () => {
             </div>
             <button
               type="button"
-              onClick={() => handlePushToBoard('Smart Notes 12A1')}
+              onClick={handleExportSmartNotes}
               className="w-full py-2 px-3 rounded-lg bg-white hover:bg-stone-50 active:translate-y-px border border-[#DCD9D0] text-stone-700 text-xs font-medium transition cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
             >
               <FileText className="w-3.5 h-3.5 text-stone-500" />

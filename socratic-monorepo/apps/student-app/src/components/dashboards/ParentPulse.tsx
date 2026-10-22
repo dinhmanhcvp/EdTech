@@ -20,9 +20,36 @@ export const ParentPulse: React.FC<ParentPulseProps> = ({
 }: ParentPulseProps) => {
   const [showCheer, setShowCheer] = React.useState(false);
 
-  const handleSendFireworks = () => {
+  const handleSendFireworks = async () => {
     setShowCheer(true);
     setTimeout(() => setShowCheer(false), 3500);
+
+    try {
+      const payload = {
+        student_id: 'HS01',
+        student_name: studentName,
+        subject: 'PARENT_PULSE',
+        step_index: 4,
+        status: 'passed',
+        concept: 'Phụ huynh bắn pháo hoa động viên nỗ lực kiên trì (Parent Cheer)',
+      };
+
+      try {
+        await fetch('/api/v1/heatmap/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch {
+        await fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+    } catch (err) {
+      console.warn('[ParentPulse] Heatmap event dispatch error:', err);
+    }
   };
 
   return (

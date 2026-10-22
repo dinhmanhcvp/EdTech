@@ -33,23 +33,100 @@ export const SocraticWorkspaceMode: React.FC<SocraticWorkspaceModeProps> = ({
   });
   const [trapVerified, setTrapVerified] = useState<boolean | null>(null);
 
-  // Parse coefficients from student answer
+  // Evaluate step via FastAPI AI Backend with ChemBalancer & SymPy
   const handleEvaluateStep = async () => {
     const ans = step1Input.trim();
     if (!ans) return;
 
-    // Check if balanced: 4Fe + 3O2 -> 2Fe2O3
-    const isBalanced =
-      (ans.includes('4') && ans.includes('3') && ans.includes('2')) ||
-      ans === '4Fe + 3O2 -> 2Fe2O3' ||
-      ans === '4Fe + 3O₂ → 2Fe₂O₃';
-
     setStep1Submitted(true);
+    const cleanAnswer = ans.replace(/\s+/g, ' ').replace(/→/g, '->').replace(/₂/g, '2').replace(/₃/g, '3');
+
+    try {
+      let resp: Response | null = null;
+      try {
+        resp = await fetch('/api/v1/companion/evaluate-step', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            student_id: 'teacher_board_demo',
+            session_id: 'session_socratic_mode',
+            subject: 'CHEMISTRY',
+            step_index: 1,
+            input_type: 'EQUATION',
+            student_answer: cleanAnswer,
+            expected_answer: '4Fe + 3O2 -> 2Fe2O3',
+            curriculum_level: curriculumLevel,
+          }),
+        });
+      } catch {
+        resp = await fetch('http://127.0.0.1:8000/api/v1/companion/evaluate-step', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            student_id: 'teacher_board_demo',
+            session_id: 'session_socratic_mode',
+            subject: 'CHEMISTRY',
+            step_index: 1,
+            input_type: 'EQUATION',
+            student_answer: cleanAnswer,
+            expected_answer: '4Fe + 3O2 -> 2Fe2O3',
+            curriculum_level: curriculumLevel,
+          }),
+        });
+      }
+
+      if (resp && resp.ok) {
+        const data = await resp.json();
+        if (data.is_step_correct) {
+          setStep1Correct(true);
+          setLeftAtoms({ Fe: 4, O: 6 });
+          setRightAtoms({ Fe: 4, O: 6 });
+          setFeedback(data.socratic_feedback || 'Chính xác tuyệt đối! Cả hai vế đều có 4 Fe và 6 O (Định luật Bảo toàn khối lượng).');
+          setEurekaPoints((pts) => pts + (data.eureka_points_delta || 50));
+        } else {
+          setStep1Correct(false);
+          const debugPayload = data.visual_debugger?.payload;
+          if (debugPayload && debugPayload.left_atoms && debugPayload.right_atoms) {
+            setLeftAtoms({ Fe: debugPayload.left_atoms.Fe || 1, O: debugPayload.left_atoms.O || 2 });
+            setRightAtoms({ Fe: debugPayload.right_atoms.Fe || 2, O: debugPayload.right_atoms.O || 3 });
+          } else {
+            setLeftAtoms({ Fe: 1, O: 2 });
+            setRightAtoms({ Fe: 2, O: 3 });
+          }
+          setFeedback(data.socratic_feedback || 'Vế phải có 3 nguyên tử Oxi, trong khi vế trái mới có 2. Bội chung nhỏ nhất của 2 và 3 là 6. Em hãy thử lại!');
+        }
+
+        // Live telemetry dispatch to backend
+        try {
+          fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              student_id: 'HS01',
+              student_name: 'Nguyễn Văn An',
+              subject: 'CHEMISTRY',
+              step_index: 1,
+              status: data.is_step_correct ? 'passed' : 'friction',
+              concept: 'Cân bằng Oxi Fe + O₂',
+            }),
+          });
+        } catch {}
+        return;
+      }
+    } catch (e) {
+      console.warn('[SocraticWorkspaceMode] Backend offline, fallback to deterministic calculation', e);
+    }
+
+    // Client-side fallback if backend unreachable
+    const isBalanced =
+      (cleanAnswer.includes('4') && cleanAnswer.includes('3') && cleanAnswer.includes('2')) ||
+      cleanAnswer === '4Fe + 3O2 -> 2Fe2O3';
+
     if (isBalanced) {
       setStep1Correct(true);
       setLeftAtoms({ Fe: 4, O: 6 });
       setRightAtoms({ Fe: 4, O: 6 });
-      setFeedback('Chính xác tuyệt đối! Cả hai vế đều có 4 nguyên tử Fe và 6 nguyên tử Oxi (Định luật Bảo toàn khối lượng).');
+      setFeedback('Chính xác tuyệt đối! Cả hai vế đều có 4 nguyên tử Fe và 6 nguyên tử Oxi.');
       setEurekaPoints((pts) => pts + 50);
     } else {
       setStep1Correct(false);
@@ -79,6 +156,28 @@ export const SocraticWorkspaceMode: React.FC<SocraticWorkspaceModeProps> = ({
     setTrapVerified(isCorrect);
     if (isCorrect) {
       setEurekaPoints((pts) => pts + 30);
+
+      try {
+        const evPayload = {
+          student_id: 'HS01',
+          student_name: 'Nguyễn Văn An',
+          subject: 'CHEMISTRY',
+          step_index: 2,
+          status: 'passed',
+          concept: 'Săn Bẫy THPT 2025+ (Bản chất Lomonosov)',
+        };
+        fetch('/api/v1/heatmap/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(evPayload),
+        }).catch(() => {
+          fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(evPayload),
+          }).catch(() => {});
+        });
+      } catch {}
     }
   };
 

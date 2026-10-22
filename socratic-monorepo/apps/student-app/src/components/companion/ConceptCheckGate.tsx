@@ -86,6 +86,28 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
       setIsPassed(true);
       setFeedback(`Xuất sắc! Em đã vượt qua toàn bộ 4 bẫy đề thi THPT 2025+. Nhận +${pointsAwarded} Eureka Particles!`);
       onPassGate(pointsAwarded);
+
+      try {
+        const evPayload = {
+          student_id: 'HS01',
+          student_name: 'Nguyễn Văn An',
+          subject: 'CHEMISTRY',
+          step_index: 2,
+          status: 'passed',
+          concept: 'Săn Bẫy THPT 2025+ (Format Đúng/Sai)',
+        };
+        fetch('/api/v1/heatmap/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(evPayload),
+        }).catch(() => {
+          fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(evPayload),
+          }).catch(() => {});
+        });
+      } catch {}
     } else {
       setFeedback('Có mệnh đề chưa chính xác! Em hãy suy luận lại điều kiện biên và tỉ lệ hóa học nhé.');
     }
@@ -108,6 +130,28 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
       setIsPassed(true);
       setFeedback(`Xuất sắc! Chuỗi nhân quả bản chất hoàn toàn chính xác. Em nhận được +${pointsAwarded} Eureka Particles!`);
       onPassGate(pointsAwarded);
+
+      try {
+        const evPayload = {
+          student_id: 'HS01',
+          student_name: 'Nguyễn Văn An',
+          subject: 'CHEMISTRY',
+          step_index: 2,
+          status: 'passed',
+          concept: 'Chuỗi Nhân Quả Bản Chất (Causal Blocks)',
+        };
+        fetch('/api/v1/heatmap/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(evPayload),
+        }).catch(() => {
+          fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(evPayload),
+          }).catch(() => {});
+        });
+      } catch {}
     } else {
       setFeedback('Thứ tự chuỗi nhân quả chưa đúng! Gợi ý: [Chất tham gia] ➔ [Tái tổ hợp liên kết] ➔ [Bảo toàn số nguyên tử].');
     }
@@ -176,6 +220,49 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
     } else {
       setFeedback(`Em đã nói đúng một phần, nhưng còn thiếu các khái niệm then chốt: ${missing.join(', ')}. Hãy giải thích rõ hơn!`);
     }
+
+    // Call backend verify-voice-gate & heatmap telemetry in background
+    const payload = {
+      transcript: text,
+      transcribed_speech: text,
+      concept: conceptTitle,
+      expected_keywords: targetKeywords,
+      scaffold_attempts: 1,
+    };
+
+    fetch('/api/v1/companion/verify-voice-gate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          if (data.feedback) setFeedback(data.feedback);
+          if (data.passed) {
+            const evPayload = {
+              student_id: 'HS01',
+              student_name: 'Nguyễn Văn An',
+              subject: 'CHEMISTRY',
+              step_index: 2,
+              status: 'passed',
+              concept: conceptTitle,
+            };
+            fetch('/api/v1/heatmap/event', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(evPayload),
+            }).catch(() => {});
+          }
+        }
+      })
+      .catch(() => {
+        fetch('http://127.0.0.1:8000/api/v1/companion/verify-voice-gate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).catch(() => {});
+      });
   };
 
   return (

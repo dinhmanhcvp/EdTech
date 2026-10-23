@@ -4,6 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { Sparkles, Layers, RotateCw, Eye } from 'lucide-react';
+import { formatCanvasMath } from '../utils/canvasMath';
 
 interface Props {
   blueprint: SimulationBlueprint;
@@ -429,10 +430,10 @@ export const ChemistryLabEngine: React.FC<Props> = ({
         ctx.textAlign = 'left';
         ctx.fillStyle = '#18181B';
         ctx.font = 'bold 12px monospace';
-        ctx.fillText(`MÔ HÌNH KHÔNG GIAN 3D PBR: ${selectedMolecule}`, 18, 26);
+        ctx.fillText(formatCanvasMath(`MÔ HÌNH KHÔNG GIAN 3D PBR: ${selectedMolecule}`), 18, 26);
         ctx.font = '10px monospace';
         ctx.fillStyle = '#71717A';
-        ctx.fillText(`Nhiệt độ T: ${tempKelvin}K (Dao động nhiệt) • Kéo chuột để xoay 360°`, 18, 42);
+        ctx.fillText(formatCanvasMath(`Nhiệt độ T: ${tempKelvin}K (Dao động nhiệt) • Kéo chuột để xoay 360°`), 18, 42);
 
       // ==============================================================
       // 2. MODE B: HIGH-CRAFT REACTION GLASSWARE & ARRHENIUS CURVE
@@ -553,7 +554,7 @@ export const ChemistryLabEngine: React.FC<Props> = ({
         // Header
         ctx.fillStyle = '#2563EB';
         ctx.font = 'bold 12px monospace';
-        ctx.fillText('GIẢN ĐỒ NĂNG LƯỢNG HOẠT HÓA (ARRHENIUS PROFILE)', eLeft, 24);
+        ctx.fillText(formatCanvasMath('GIẢN ĐỒ NĂNG LƯỢNG HOẠT HÓA (ARRHENIUS PROFILE)'), eLeft, 24);
 
         // Axes
         ctx.strokeStyle = '#94A3B8';
@@ -567,8 +568,8 @@ export const ChemistryLabEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#57534E';
         ctx.font = '10px monospace';
-        ctx.fillText('Tiến trình phản ứng', eRight - 85, eBottom + 20);
-        ctx.fillText('Thế năng E (kJ/mol)', eLeft + 8, eTop - 6);
+        ctx.fillText(formatCanvasMath('Tiến trình phản ứng'), eRight - 85, eBottom + 20);
+        ctx.fillText(formatCanvasMath('Thế năng E (kJ/mol)'), eLeft + 8, eTop - 6);
 
         // Energy levels
         const rLevel = eBottom - 0.42 * eH; // Reactants
@@ -601,19 +602,19 @@ export const ChemistryLabEngine: React.FC<Props> = ({
           // Catalyst Energy Drop Annotation
           ctx.fillStyle = '#2563EB';
           ctx.font = 'bold 10px monospace';
-          ctx.fillText(`↓ Ea giảm khi có xúc tác (ΔEa = 45 kJ)`, eLeft + 175, catEaPeak - 6);
+          ctx.fillText(formatCanvasMath(`↓ Ea giảm khi có xúc tác (ΔEa = 45 kJ)`), eLeft + 175, catEaPeak - 6);
         }
 
         // Reactants & Products Labels
         ctx.fillStyle = '#18181B';
         ctx.font = 'bold 11px monospace';
-        ctx.fillText('Chất tham gia (Fe + O₂)', eLeft + 10, rLevel - 8);
-        ctx.fillText('Sản phẩm (Fe₂O₃)', eRight - 105, pLevel - 8);
+        ctx.fillText(formatCanvasMath('Chất tham gia (Fe + O₂)'), eLeft + 10, rLevel - 8);
+        ctx.fillText(formatCanvasMath('Sản phẩm (Fe₂O₃)'), eRight - 105, pLevel - 8);
 
         // Exothermic ΔH readout
         ctx.fillStyle = '#059669';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText('Tỏa nhiệt: ΔH = -824.2 kJ/mol', eLeft + 30, canvas.height - 12);
+        ctx.fillText(formatCanvasMath('Tỏa nhiệt: ΔH = -824.2 kJ/mol'), eLeft + 30, canvas.height - 12);
 
       // ==============================================================
       // 3. MODE C: ACID-BASE TITRATION & PH CURVE
@@ -713,7 +714,7 @@ export const ChemistryLabEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#2563EB';
         ctx.font = 'bold 12px monospace';
-        ctx.fillText('ĐƯỜNG CONG CHUẨN ĐỘ AXIT - BAZƠ', pLeft, 24);
+        ctx.fillText(formatCanvasMath('ĐƯỜNG CONG CHUẨN ĐỘ AXIT - BAZƠ'), pLeft, 24);
 
         ctx.strokeStyle = '#94A3B8';
         ctx.lineWidth = 1.5;
@@ -758,7 +759,7 @@ export const ChemistryLabEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#18181B';
         ctx.font = 'bold 11px monospace';
-        ctx.fillText(`pH hiện tại: ${pH.toFixed(2)} (${indicatorName})`, pLeft + 15, canvas.height - 15);
+        ctx.fillText(formatCanvasMath(`pH hiện tại: ${pH.toFixed(2)} (${indicatorName})`), pLeft + 15, canvas.height - 15);
 
       // ==============================================================
       // 4. MODE D: CHEMICAL BALANCE SCALE (Bảo toàn khối lượng)

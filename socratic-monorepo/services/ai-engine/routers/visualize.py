@@ -656,25 +656,25 @@ def intelligent_fallback_matcher(
     if hint:
         if any(k in hint for k in ["dna", "adn", "double helix", "helicase", "chạc sao chép", "xoắn kép"]):
             matched_template = "BIO_DNA_HELIX"
-        elif any(k in hint for k in ["giao thoa", "ripple", "bể sóng", "sóng nước", "hai nguồn"]):
+        elif any(k in hint for k in ["giao thoa", "ripple", "bể sóng", "sóng nước", "hai nguồn", "d_2 - d_1", "d2 - d1", "d2-d1", "lambda", "\\lambda", "k\\lambda", "2a\\cos"]):
             matched_template = "PHYS_RIPPLE_TANK"
-        elif any(k in hint for k in ["rlc", "fresnel", "điện xoay chiều", "cộng hưởng"]):
+        elif any(k in hint for k in ["rlc", "fresnel", "điện xoay chiều", "cộng hưởng", "z_l", "z_c", "omega l", "1/omega c", "z ="]):
             matched_template = "PHYS_RLC_PHASOR"
-        elif any(k in hint for k in ["chuẩn độ", "titration", "ph", "naoh"]):
+        elif any(k in hint for k in ["chuẩn độ", "titration", "ph", "naoh", "hcl"]):
             matched_template = "CHEM_EQUILIBRIUM_TITRATION"
         elif any(k in hint for k in ["quang hợp", "quang hop", "photo", "quang", "lá", "la", "cây", "cay", "stomata", "sinh học", "sinh hoc"]):
             matched_template = "BIO_PHOTOSYNTHESIS"
         elif any(k in hint for k in ["tim", "heart", "ecg", "bpm", "nhịp", "nhip", "pulse"]):
             matched_template = "BIO_HEART_CYCLE"
-        elif any(k in hint for k in ["fe", "cân bằng", "can bang", "balance", "scale", "o2", "fe2o3"]):
+        elif any(k in hint for k in ["fe", "cân bằng", "can bang", "balance", "scale", "o2", "fe2o3", "fe3o4", "hno3", "redox", "oxi"]):
             matched_template = "CHEM_BALANCE_SCALE"
         elif any(k in hint for k in ["mg", "hcl", "phản ứng", "phan ung", "acid", "axit", "bọt", "bot", "rate", "nồng độ", "nong do"]):
             matched_template = "CHEM_REACTION_LAB"
-        elif any(k in hint for k in ["ném", "nem", "projectile", "v0", "vo", "parabol", "parabola", "quỹ đạo", "quy dao", "alpha"]):
+        elif any(k in hint for k in ["ném", "nem", "projectile", "v0", "vo", "parabol", "parabola", "quỹ đạo", "quy dao", "alpha", "v_0", "y = -"]):
             matched_template = "PHYS_PROJECTILE"
-        elif any(k in hint for k in ["con lắc", "con lac", "pendulum", "dây", "day", "chu kỳ", "chu ky"]):
+        elif any(k in hint for k in ["con lắc", "con lac", "pendulum", "dây", "day", "chu kỳ", "chu ky", "l/g", "m/k", "theta", "\\theta", "rk4", "s_0"]):
             matched_template = "PHYS_PENDULUM"
-        elif any(k in hint for k in ["nghiêng", "nghieng", "incline", "ma sát", "ma sat", "trượt", "truot", "mu"]):
+        elif any(k in hint for k in ["nghiêng", "nghieng", "incline", "ma sát", "ma sat", "trượt", "truot", "mu", "\\mu", "f_ms", "fms", "mg\\sin", "mg\\cos"]):
             matched_template = "PHYS_INCLINED"
         elif any(k in hint for k in ["thấu kính", "thau kinh", "lens", "1/f", "tiêu cự", "tieu cu"]):
             matched_template = "PHYS_OPTICS_LENS"
@@ -682,7 +682,7 @@ def intelligent_fallback_matcher(
             matched_template = "MATH_TRIG_WAVE"
         elif any(k in hint for k in ["elip", "ellipse", "conic", "tròn", "tron"]):
             matched_template = "MATH_CONIC_2D"
-        elif any(k in hint for k in ["x^", "x2", "x3", "y =", "y=", "f(x)", "hàm", "ham", "int", "tích phân", "tich phan"]):
+        elif any(k in hint for k in ["x^", "x2", "x3", "y =", "y=", "f(x)", "hàm", "ham", "int", "tích phân", "tich phan", "nguyên hàm"]):
             matched_template = "MATH_FUNC_2D"
 
     # 2. Run Blackboard OCR Engine (RapidOCR + Stroke vector analysis)

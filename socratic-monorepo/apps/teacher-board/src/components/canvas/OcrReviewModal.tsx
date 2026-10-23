@@ -224,7 +224,7 @@ export const OcrReviewModal: React.FC<OcrReviewModalProps> = ({
                     : 'bg-white hover:bg-stone-50 text-stone-700 border border-[#DCD9D0] shadow-2xs'
                 }`}
               >
-                {alt}
+                <MathView latex={alt} displayMode={false} />
               </button>
             ))}
           </div>

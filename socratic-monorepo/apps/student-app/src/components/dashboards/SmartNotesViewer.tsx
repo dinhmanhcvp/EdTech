@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { FileText, Sparkles, Clock, CheckCircle2, RefreshCw, BookOpen, Atom } from 'lucide-react';
+import { MathView } from '../common/MathView';
+import { MathText, FormulaBlock } from '../ui/MathText';
 
 export interface SmartNoteData {
   id?: string;
@@ -113,8 +115,8 @@ export const SmartNotesViewer: React.FC = () => {
                   </span>
                   <span className="text-[10px] tabular-nums">Độ trễ xuất: {note.export_ms ?? 12}ms</span>
                 </div>
-                <div className="p-3.5 rounded-lg bg-white border border-[#DCD9D0] font-mono text-base font-semibold text-[#18181B] text-center shadow-xs">
-                  {note.formula}
+                <div className="p-3.5 rounded-lg bg-white border border-[#DCD9D0] text-base font-medium text-[#18181B] text-center shadow-xs overflow-x-auto">
+                  <FormulaBlock latex={note.formula} displayMode={true} />
                 </div>
               </div>
               <div className="mt-3 flex items-center gap-1.5 text-[11px] text-stone-500 font-mono">
@@ -134,7 +136,7 @@ export const SmartNotesViewer: React.FC = () => {
                   {note.parameters && Object.keys(note.parameters).length > 0 ? (
                     Object.entries(note.parameters).map(([k, v]) => (
                       <div key={k} className="flex justify-between items-center text-xs font-mono px-2 py-0.5 rounded-md bg-white border border-[#E5E3DC]">
-                        <span className="text-stone-500">{k}:</span>
+                        <span className="text-stone-500"><MathText text={k} />:</span>
                         <span className="text-blue-600 font-bold tabular-nums">{v}</span>
                       </div>
                     ))
@@ -158,7 +160,7 @@ export const SmartNotesViewer: React.FC = () => {
             <ul className="list-disc list-inside space-y-1.5 text-xs text-stone-800 leading-relaxed font-serif italic">
               {note.socratic_questions.map((q, idx) => (
                 <li key={idx} className="font-normal text-stone-800">
-                  {q}
+                  <MathText text={q} />
                 </li>
               ))}
             </ul>
@@ -174,7 +176,7 @@ export const SmartNotesViewer: React.FC = () => {
               {note.key_insights.map((ins, idx) => (
                 <div key={idx} className="flex items-start gap-2">
                   <span className="text-emerald-600 font-bold font-mono">✓</span>
-                  <span>{ins}</span>
+                  <span><MathText text={ins} /></span>
                 </div>
               ))}
             </div>

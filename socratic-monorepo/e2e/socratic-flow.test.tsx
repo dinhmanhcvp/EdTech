@@ -144,9 +144,9 @@ describe('Socratic Vision Board v2.0 - End-to-End User Scenarios', () => {
     // Mock companion evaluate-step API
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, options) => {
       const body = JSON.parse((options?.body as string) || '{}');
-      const ans = body.student_answer;
+      const ans = (body.student_answer || '').toUpperCase();
 
-      if (ans.includes('4Fe') && ans.includes('3O2') && ans.includes('2Fe2O3')) {
+      if (ans.includes('4FE') && ans.includes('3O2') && ans.includes('2FE2O3')) {
         // Balanced
         return {
           ok: true,
@@ -184,7 +184,12 @@ describe('Socratic Vision Board v2.0 - End-to-End User Scenarios', () => {
       }
     });
 
-    render(<SocraticCompanionSession onSessionComplete={onSessionComplete} />);
+    render(
+      <SocraticCompanionSession
+        onSessionComplete={onSessionComplete}
+        initialProblemId="CHEMISTRY_BALANCE"
+      />
+    );
 
     // 1. Initial State: Step 1 is ACTIVE, Step 2 is LOCKED
     expect(screen.getByText(/Bước 1: Cân bằng phương trình Hóa học/)).toBeTruthy();

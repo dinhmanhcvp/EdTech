@@ -3,8 +3,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
+import { AUTO_INK_SCENES, AutoInkScene } from '../../utils/autoInkPresets';
 import { SimulationWidget } from './SimulationWidget';
 import { OcrReviewModal } from './OcrReviewModal';
+import { MathView } from '../common/MathView';
+import { FormulaBlock, MathText } from '../ui/MathText';
 import { SimulationBlueprint } from '@socratic/types';
 import {
   Pen,
@@ -101,6 +104,76 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [reviewThumbnailUrl, setReviewThumbnailUrl] = useState<string | null>(null);
   const [reviewAlternatives, setReviewAlternatives] = useState<string[]>([]);
 
+  // Auto-Ink Calligraphy & 450ms Shimmer States (Apple-Keynote Showcase)
+  const [activeAutoScene, setActiveAutoScene] = useState<string | null>(null);
+  const [isAutoInking, setIsAutoInking] = useState<boolean>(false);
+  const [isCompilingShimmer, setIsCompilingShimmer] = useState<boolean>(false);
+  const [compilingScene, setCompilingScene] = useState<AutoInkScene | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
+  // Studio Handwriting Recorder & Tracing Guide States
+  const [isStudioRecorderOpen, setIsStudioRecorderOpen] = useState<boolean>(false);
+  const [showWatermarkGuide, setShowWatermarkGuide] = useState<boolean>(false);
+  const [selectedRecordSlot, setSelectedRecordSlot] = useState<string>('SCENE_1_PHYSICS');
+  const [recorderNotice, setRecorderNotice] = useState<string | null>(null);
+  const [hasCustomSlots, setHasCustomSlots] = useState<Record<string, boolean>>({});
+
+  // Hydrate custom handwriting slots from both localStorage and server disk API
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const initialSlots: Record<string, boolean> = {};
+    const localPendingUpload: Record<string, any> = {};
+
+    AUTO_INK_SCENES.forEach((s) => {
+      const localVal = localStorage.getItem(`socratic_user_ink_${s.id}`);
+      if (localVal) {
+        initialSlots[s.id] = true;
+        try {
+          localPendingUpload[s.id] = JSON.parse(localVal);
+        } catch {}
+      }
+    });
+    setHasCustomSlots(initialSlots);
+
+    // Fetch disk-saved ink from API to guarantee cross-reload persistence
+    if (process.env.NODE_ENV === 'test') return;
+
+    fetch('/api/v1/canvas/user-ink')
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((diskData: Record<string, any>) => {
+        if (!diskData || typeof diskData !== 'object') return;
+        const updatedSlots = { ...initialSlots };
+
+        Object.keys(diskData).forEach((slotId) => {
+          if (diskData[slotId] && Array.isArray(diskData[slotId])) {
+            updatedSlots[slotId] = true;
+            try {
+              localStorage.setItem(`socratic_user_ink_${slotId}`, JSON.stringify(diskData[slotId]));
+            } catch {}
+          }
+        });
+
+        // If local storage had takes not yet on server disk, upload them now
+        const slotsToSyncToDisk: Record<string, any> = {};
+        Object.keys(localPendingUpload).forEach((slotId) => {
+          if (!diskData[slotId]) {
+            slotsToSyncToDisk[slotId] = localPendingUpload[slotId];
+          }
+        });
+
+        if (Object.keys(slotsToSyncToDisk).length > 0) {
+          fetch('/api/v1/canvas/user-ink', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ allSlots: slotsToSyncToDisk }),
+          }).catch((err) => console.warn('Sync to disk error:', err));
+        }
+
+        setHasCustomSlots(updatedSlots);
+      })
+      .catch((err) => console.warn('Failed to load user saved ink from disk:', err));
+  }, []);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
 
@@ -152,6 +225,36 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       for (let y = 0; y < canvas.height; y += 32) {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
       }
+    }
+
+    // 1b. Draw Tracing Watermark Guide (faint hairline guide for user practice/tracing)
+    if (showWatermarkGuide) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(100, 116, 139, 0.38)';
+      ctx.fillStyle = 'rgba(100, 116, 139, 0.65)';
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([4, 4]);
+
+      // Faintly draw all preset strokes for the chosen slot to allow tracing letter-by-letter
+      const targetPreset = AUTO_INK_SCENES.find((s) => s.id === selectedRecordSlot);
+      if (targetPreset) {
+        for (const stroke of targetPreset.strokes) {
+          if (stroke.points.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+            for (let i = 1; i < stroke.points.length; i++) {
+              ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+            }
+            ctx.stroke();
+          }
+        }
+      }
+
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
+      ctx.fillText(`VIỀN MỜ HƯỚNG DẪN • Cầm bút/chuột viết đè theo nét đứt này, sau đó bấm [Lưu Vào Kịch Bản]`, 24, 28);
+      ctx.restore();
     }
 
     // 2. Draw Committed Strokes
@@ -245,11 +348,225 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       }
       ctx.restore();
     }
-  }, [strokes, currentStroke, selectedStrokes, tool, strokeColor, strokeWidth, gridPattern, shapeStart, shapeCurrent, selectedShape]);
+
+    // 5. Draw Magic Lasso Loop (Freehand or Auto-Ink Selected)
+    if (lassoLoop.length > 2) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
+      ctx.strokeStyle = '#2563EB';
+      ctx.lineWidth = 2.0;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(lassoLoop[0].x, lassoLoop[0].y);
+      for (let i = 1; i < lassoLoop.length; i++) {
+        ctx.lineTo(lassoLoop[i].x, lassoLoop[i].y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+  }, [strokes, currentStroke, selectedStrokes, lassoLoop, tool, strokeColor, strokeWidth, gridPattern, shapeStart, shapeCurrent, selectedShape, showWatermarkGuide, selectedRecordSlot]);
 
   useEffect(() => {
     redraw();
   }, [redraw, activeBlueprint]);
+
+  // Auto-Ink Calligraphy Runner (Smooth ~800ms natural ink playback)
+  const triggerAutoInk = useCallback((sceneId: string) => {
+    const scene = AUTO_INK_SCENES.find((s) => s.id === sceneId);
+    if (!scene) return;
+
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    setActiveAutoScene(sceneId);
+    setActiveBlueprint(null);
+    setLassoLoop([]);
+    setSelectedStrokes([]);
+    setIsAutoInking(true);
+    setIsCompilingShimmer(false);
+
+    let fullStrokes = scene.strokes;
+    let targetLasso = scene.lassoLoop;
+
+    // Check if user has recorded an authentic custom handwriting take for this slot
+    if (typeof window !== 'undefined') {
+      const savedInk = localStorage.getItem(`socratic_user_ink_${sceneId}`);
+      if (savedInk) {
+        try {
+          const parsed = JSON.parse(savedInk);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            fullStrokes = parsed;
+
+            // Compute dynamic bounding box to generate smooth organic lasso loop
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const s of fullStrokes) {
+              if (s.points && Array.isArray(s.points)) {
+                for (const p of s.points) {
+                  if (p.x < minX) minX = p.x;
+                  if (p.y < minY) minY = p.y;
+                  if (p.x > maxX) maxX = p.x;
+                  if (p.y > maxY) maxY = p.y;
+                }
+              }
+            }
+
+            if (Number.isFinite(minX) && minX < maxX) {
+              const pad = 28;
+              const x1 = Math.max(10, minX - pad);
+              const y1 = Math.max(10, minY - pad);
+              const x2 = maxX + pad;
+              const y2 = maxY + pad;
+              const cx = (x1 + x2) / 2;
+              const cy = (y1 + y2) / 2;
+              const rx = (x2 - x1) / 2;
+              const ry = (y2 - y1) / 2;
+
+              const loop: Point[] = [];
+              for (let i = 0; i < 16; i++) {
+                const theta = (i / 16) * Math.PI * 2;
+                loop.push({
+                  x: Math.round(cx + rx * Math.cos(theta)),
+                  y: Math.round(cy + ry * Math.sin(theta)),
+                });
+              }
+              targetLasso = loop;
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to parse saved user ink for', sceneId, e);
+        }
+      }
+    }
+
+    const totalPoints = fullStrokes.reduce((acc, s) => acc + (s.points?.length || 0), 0);
+    const durationMs = 800;
+    const startTime = performance.now();
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / durationMs);
+
+      const targetPoints = Math.floor(progress * totalPoints);
+      let budget = targetPoints;
+      const progressiveStrokes: Stroke[] = [];
+
+      for (const stroke of fullStrokes) {
+        if (budget <= 0) break;
+        const pts = stroke.points || [];
+        if (budget >= pts.length) {
+          progressiveStrokes.push(stroke);
+          budget -= pts.length;
+        } else {
+          progressiveStrokes.push({
+            ...stroke,
+            points: pts.slice(0, Math.max(2, budget)),
+          });
+          budget = 0;
+        }
+      }
+
+      setStrokes(progressiveStrokes);
+
+      if (progress < 1) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        // Step 1: Commit full strokes
+        setStrokes(fullStrokes);
+        setIsAutoInking(false);
+
+        // Step 2: Render Magic Lasso Loop
+        setLassoLoop(targetLasso);
+        setSelectedStrokes(fullStrokes);
+
+        // Step 3: Trigger 450ms AI Semantic Compiling Shimmer
+        setIsCompilingShimmer(true);
+        setCompilingScene(scene);
+
+        setTimeout(() => {
+          setIsCompilingShimmer(false);
+          setActiveBlueprint(scene.blueprint);
+        }, 450);
+      }
+    };
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+  }, []);
+
+  // Custom handwriting recorder actions
+  const handleSaveCustomWriting = useCallback(() => {
+    if (strokes.length === 0) {
+      setRecorderNotice('Chưa có nét viết nào trên bảng. Bạn hãy viết hoặc vẽ thử trước khi lưu!');
+      setTimeout(() => setRecorderNotice(null), 3000);
+      return;
+    }
+    try {
+      localStorage.setItem(`socratic_user_ink_${selectedRecordSlot}`, JSON.stringify(strokes));
+      setHasCustomSlots((prev) => ({ ...prev, [selectedRecordSlot]: true }));
+      setRecorderNotice(`Đã lưu vĩnh viễn nét viết thật cho Slot ${selectedRecordSlot}! Khi tải lại trang (F5) hoặc quay video, nét viết thật của bạn luôn được giữ nguyên.`);
+
+      // Persist to server disk storage (permanent cross-session persistence)
+      fetch('/api/v1/canvas/user-ink', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slotId: selectedRecordSlot, strokes }),
+      }).catch((err) => console.warn('Disk save warning:', err));
+
+      setTimeout(() => setRecorderNotice(null), 4000);
+    } catch (e) {
+      setRecorderNotice('Không thể lưu nét viết vào bộ nhớ trình duyệt.');
+      setTimeout(() => setRecorderNotice(null), 3000);
+    }
+  }, [strokes, selectedRecordSlot]);
+
+  const handleResetSlotToDefault = useCallback((slotId: string) => {
+    try {
+      localStorage.removeItem(`socratic_user_ink_${slotId}`);
+      setHasCustomSlots((prev) => ({ ...prev, [slotId]: false }));
+      setRecorderNotice(`Đã khôi phục về mẫu viết mặc định của hệ thống cho Slot ${slotId}.`);
+
+      // Remove from server disk storage
+      fetch(`/api/v1/canvas/user-ink?slotId=${encodeURIComponent(slotId)}`, {
+        method: 'DELETE',
+      }).catch((err) => console.warn('Disk reset warning:', err));
+
+      setTimeout(() => setRecorderNotice(null), 3000);
+    } catch (e) {
+      console.warn(e);
+    }
+  }, []);
+
+  // Global Director Hotkeys (1, 2, 3, 4)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        return;
+      }
+
+      if (e.key === '1') {
+        e.preventDefault();
+        triggerAutoInk('SCENE_1_PHYSICS');
+      } else if (e.key === '2') {
+        e.preventDefault();
+        triggerAutoInk('SCENE_2_CHEMISTRY');
+      } else if (e.key === '3') {
+        e.preventDefault();
+        triggerAutoInk('SCENE_3_BIOLOGY');
+      } else if (e.key === '4') {
+        e.preventDefault();
+        triggerAutoInk('SCENE_4_MATH');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, [triggerAutoInk]);
 
   // Pointer Interaction
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -613,10 +930,171 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       console.error('[Magic Lasso] Pipeline Error:', err);
       setErrorMessage(`Lỗi nhận diện (${err?.message || 'Không kết nối được server'}). Đã kích hoạt mô phỏng offline.`);
 
-      // Fallback heuristics:
+      // Comprehensive fallback heuristics: dynamically map ANY written formula to its exact knowledge visualizer
       let fallbackBp: SimulationBlueprint;
       const h = effectiveHint.toLowerCase();
-      if (h.includes('sin') || h.includes('cos') || h.includes('wave') || h.includes('dao động') || h.includes('harmonic')) {
+
+      // 1. Giao thoa sóng 3D (Ripple Tank)
+      if (
+        h.includes('giao thoa') || h.includes('ripple') || h.includes('sóng nước') ||
+        h.includes('d_2 - d_1') || h.includes('d2 - d1') || h.includes('d2-d1') ||
+        h.includes('lambda') || h.includes('\\lambda') || h.includes('k\\lambda') ||
+        h.includes('hai nguồn') || h.includes('2a\\cos') || h.includes('2a \\cos')
+      ) {
+        fallbackBp = {
+          engine: 'PHYSICS',
+          templateId: 'PHYS_RIPPLE_TANK',
+          recognizedLatex: 'u_M = 2A \\cos\\left(\\frac{\\pi(d_2 - d_1)}{\\lambda}\\right) \\cos(\\omega t)',
+          ocrAlternatives: ['u_M = 2A \\cos(\\pi(d_2 - d_1)/\\lambda) \\cos(\\omega t)', 'd_2 - d_1 = k\\lambda'],
+          parameters: [
+            { key: 'lambda', label: 'Bước sóng (λ)', unit: 'px', defaultValue: 24.0, min: 10.0, max: 60.0, step: 2.0 },
+            { key: 'f', label: 'Tần số dao động (f)', unit: 'Hz', defaultValue: 2.5, min: 1.0, max: 5.0, step: 0.5 },
+            { key: 'd', label: 'Khoảng cách 2 nguồn (d)', unit: 'px', defaultValue: 130.0, min: 60.0, max: 240.0, step: 10.0 },
+            { key: 'deltaPhi', label: 'Độ lệch pha (Δφ)', unit: 'rad', defaultValue: 0.0, min: -3.14, max: 3.14, step: 0.314 },
+          ],
+          socraticQuestion: 'Khi hai nguồn dao động cùng pha, những điểm có hiệu khoảng cách d₂ - d₁ = kλ sẽ dao động với biên độ cực đại hay cực tiểu?',
+          curriculumLevel: 'THPT_STANDARD',
+        };
+      }
+      // 2. Con lắc đơn vi phân RK4 (Pendulum)
+      else if (
+        h.includes('con lắc') || h.includes('con lac') || h.includes('pendulum') ||
+        h.includes('l/g') || h.includes('m/k') || h.includes('\\ddot{\\theta}') ||
+        h.includes('chu kỳ') || (h.includes('t = 2') && h.includes('pi')) ||
+        h.includes('s_0\\cos') || h.includes('rk4')
+      ) {
+        fallbackBp = {
+          engine: 'PHYSICS',
+          templateId: 'PHYS_PENDULUM',
+          recognizedLatex: 'T = 2\\pi\\sqrt{\\frac{l}{g}}, \\quad \\ddot{\\theta} + \\frac{g}{L}\\sin\\theta = 0',
+          ocrAlternatives: ['T = 2\\pi\\sqrt{l/g}', '\\ddot{\\theta} + (g/L)\\sin\\theta = 0'],
+          parameters: [
+            { key: 'L', label: 'Chiều dài dây (L)', unit: 'm', defaultValue: 2.0, min: 0.5, max: 5.0, step: 0.1 },
+            { key: 'theta0', label: 'Góc lệch đầu (θ₀)', unit: 'rad', defaultValue: 0.5, min: 0.1, max: 2.8, step: 0.1 },
+            { key: 'g', label: 'Trọng trường (g)', unit: 'm/s²', defaultValue: 9.8, min: 1.6, max: 25.0, step: 0.1 },
+            { key: 'b', label: 'Lực cản môi trường (b)', unit: '', defaultValue: 0.02, min: 0.0, max: 0.2, step: 0.01 },
+          ],
+          socraticQuestion: 'Khi tăng góc lệch ban đầu θ₀ lên góc lớn (> 30°), chu kỳ dao động thực tế có còn tuân theo công thức gần đúng T = 2π√(l/g) không?',
+          curriculumLevel: 'OLYMPIAD_ADVANCED',
+        };
+      }
+      // 3. Cơ học Mặt phẳng nghiêng & Ma sát trượt (Inclined Plane)
+      else if (
+        h.includes('nghiêng') || h.includes('nghieng') || h.includes('incline') ||
+        h.includes('ma sát') || h.includes('ma sat') || h.includes('\\mu') || h.includes('mu') ||
+        h.includes('f_{ms}') || h.includes('fms') || h.includes('mg\\sin') || h.includes('mg\\cos')
+      ) {
+        fallbackBp = {
+          engine: 'PHYSICS',
+          templateId: 'PHYS_INCLINED',
+          recognizedLatex: 'a = g(\\sin\\alpha - \\mu\\cos\\alpha)',
+          ocrAlternatives: ['a = g(\\sin\\alpha - \\mu\\cos\\alpha)', 'N = mg\\cos\\alpha', 'F_{ms} = \\mu N'],
+          parameters: [
+            { key: 'alpha', label: 'Góc nghiêng (α)', unit: 'độ', defaultValue: 30.0, min: 5.0, max: 75.0, step: 5.0 },
+            { key: 'mu', label: 'Hệ số ma sát (μ)', unit: '', defaultValue: 0.15, min: 0.0, max: 0.8, step: 0.05 },
+            { key: 'm', label: 'Khối lượng vật (m)', unit: 'kg', defaultValue: 2.0, min: 0.5, max: 10.0, step: 0.5 },
+            { key: 'g', label: 'Gia tốc g', unit: 'm/s²', defaultValue: 9.8, min: 1.6, max: 25.0, step: 0.1 },
+          ],
+          socraticQuestion: 'Điều kiện nào giữa góc nghiêng α và hệ số ma sát μ để vật bắt đầu trượt xuống (tan α > μ)?',
+          curriculumLevel: 'THPT_STANDARD',
+        };
+      }
+      // 4. Chuyển động ném xiên trong trọng trường (Projectile)
+      else if (h.includes('ném') || h.includes('nem') || h.includes('v0') || h.includes('v_0') || h.includes('projectile') || h.includes('parabol')) {
+        fallbackBp = {
+          engine: 'PHYSICS',
+          templateId: 'PHYS_PROJECTILE',
+          recognizedLatex: 'v_0 = 22\\text{ m/s}, \\quad \\alpha = 45^\\circ',
+          ocrAlternatives: ['v_0 = 22\\text{ m/s}, \\alpha = 45^\\circ', 'y = -\\frac{g}{2v_0^2\\cos^2\\alpha}x^2 + x\\tan\\alpha'],
+          parameters: [
+            { key: 'v0', label: 'Vận tốc đầu (v₀)', unit: 'm/s', defaultValue: 22.0, min: 5.0, max: 50.0, step: 1.0 },
+            { key: 'alpha', label: 'Góc ném (α)', unit: 'độ', defaultValue: 45.0, min: 15.0, max: 85.0, step: 5.0 },
+            { key: 'g', label: 'Gia tốc g', unit: 'm/s²', defaultValue: 9.8, min: 1.6, max: 25.0, step: 0.1 },
+          ],
+          socraticQuestion: 'Tại sao với cùng vận tốc đầu v₀, góc ném 45° lại cho tầm xa cực đại trên mặt phẳng nằm ngang?',
+        };
+      }
+      // 5. Mạch điện xoay chiều RLC & Giản đồ Fresnel
+      else if (
+        h.includes('rlc') || h.includes('fresnel') || h.includes('điện xoay chiều') ||
+        h.includes('cộng hưởng') || h.includes('z_l') || h.includes('z_c') ||
+        h.includes('z =') || h.includes('omega') || h.includes('phasor')
+      ) {
+        fallbackBp = {
+          engine: 'PHYSICS',
+          templateId: 'PHYS_RLC_PHASOR',
+          recognizedLatex: 'Z = \\sqrt{R^2 + (Z_L - Z_C)^2}, \\quad u = U_0\\cos(\\omega t + \\varphi)',
+          ocrAlternatives: ['Z = \\sqrt{R^2 + (Z_L - Z_C)^2}', 'u = U_0\\cos(\\omega t)', 'i = I_0\\cos(\\omega t - \\varphi)'],
+          parameters: [
+            { key: 'R', label: 'Điện trở (R)', unit: 'Ω', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
+            { key: 'L', label: 'Độ tự cảm (L)', unit: 'H', defaultValue: 0.5, min: 0.1, max: 2.0, step: 0.1 },
+            { key: 'C', label: 'Điện dung (C)', unit: 'μF', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
+            { key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', defaultValue: 200.0, min: 50.0, max: 500.0, step: 10.0 },
+            { key: 'U', label: 'Điện áp (U)', unit: 'V', defaultValue: 120.0, min: 20.0, max: 240.0, step: 10.0 },
+          ],
+          socraticQuestion: 'Khi điều chỉnh tần số góc ω tiến dần về giá trị cộng hưởng ω₀ = 1/√(LC), góc lệch pha φ và công suất P biến đổi thế nào?',
+          curriculumLevel: 'OLYMPIAD_ADVANCED',
+        };
+      }
+      // 6. Cân bằng phản ứng Oxi hóa - Khử (Chemistry Redox Balance Scale)
+      else if (h.includes('fe') || h.includes('cân') || h.includes('o2') || h.includes('hno3') || h.includes('redox') || h.includes('oxi')) {
+        fallbackBp = {
+          engine: 'CHEMISTRY',
+          templateId: 'CHEM_BALANCE_SCALE',
+          recognizedLatex: '4\\text{Fe} + 3\\text{O}_2 \\rightarrow 2\\text{Fe}_2\\text{O}_3',
+          ocrAlternatives: ['4\\text{Fe} + 3\\text{O}_2 \\rightarrow 2\\text{Fe}_2\\text{O}_3', '3\\text{Fe}_3\\text{O}_4 + 28\\text{HNO}_3 \\rightarrow 9\\text{Fe(NO}_3)_3 + \\text{NO} + 14\\text{H}_2\\text{O}'],
+          parameters: [
+            { key: 'c1', label: 'Hệ số Fe', unit: '', defaultValue: 4.0, min: 1.0, max: 6.0, step: 1.0 },
+            { key: 'c2', label: 'Hệ số O₂', unit: '', defaultValue: 3.0, min: 1.0, max: 6.0, step: 1.0 },
+            { key: 'c3', label: 'Hệ số Fe₂O₃', unit: '', defaultValue: 2.0, min: 1.0, max: 4.0, step: 1.0 },
+          ],
+          socraticQuestion: 'Em cần chọn bội chung nhỏ nhất là mấy để số nguyên tử và điện tích electron hai vế thăng bằng?',
+        };
+      }
+      // 7. Chuẩn độ axit - bazơ & Đường cong pH
+      else if (h.includes('chuẩn độ') || h.includes('titration') || h.includes('ph') || h.includes('naoh') || h.includes('hcl')) {
+        fallbackBp = {
+          engine: 'CHEMISTRY',
+          templateId: 'CHEM_EQUILIBRIUM_TITRATION',
+          recognizedLatex: '\\text{HCl} + \\text{NaOH} \\rightarrow \\text{NaCl} + \\text{H}_2\\text{O}, \\quad \\text{Chuẩn độ pH}',
+          ocrAlternatives: ['HCl + NaOH -> NaCl + H2O'],
+          parameters: [
+            { key: 'Vb', label: 'Thể tích NaOH (V_b)', unit: 'mL', defaultValue: 20.0, min: 0.0, max: 50.0, step: 1.0 },
+          ],
+          socraticQuestion: 'Tại sao tại điểm tương đương (V_NaOH = 25mL), đường cong pH lại có một bước nhảy vọt dốc đứng?',
+          curriculumLevel: 'OLYMPIAD_ADVANCED',
+        };
+      }
+      // 8. Cơ chế phân tử nhân đôi ADN (DNA Replication Helix)
+      else if (h.includes('dna') || h.includes('adn') || h.includes('helicase') || h.includes('xoắn')) {
+        fallbackBp = {
+          engine: 'BIOLOGY',
+          templateId: 'BIO_DNA_HELIX',
+          recognizedLatex: '\\text{DNA Replication: } 5\' \\to 3\', \\quad A=T, \\, G\\equiv C',
+          ocrAlternatives: ['A=T, G=C', '5\' -> 3\' Helicase'],
+          parameters: [
+            { key: 'unzipProgress', label: 'Tháo xoắn Helicase', unit: '%', defaultValue: 25.0, min: 0.0, max: 100.0, step: 5.0 },
+            { key: 'turnCount', label: 'Số chu kỳ xoắn', unit: 'vòng', defaultValue: 3.0, min: 1.0, max: 6.0, step: 1.0 },
+          ],
+          socraticQuestion: 'Tại sao liên kết hydro giữa A-T lại dễ bị bẻ gãy hơn G-C trong quá trình tháo xoắn của enzyme Helicase?',
+        };
+      }
+      // 9. Quang hợp và trao đổi chất thực vật
+      else if (h.includes('quang') || h.includes('25') || h.includes('lá') || h.includes('cây') || h.includes('photo')) {
+        fallbackBp = {
+          engine: 'BIOLOGY',
+          templateId: 'BIO_PHOTOSYNTHESIS',
+          recognizedLatex: '\\text{Quang hợp: } Rate = f(T = 25.0^\\circ\\text{C}, I = 70.0\\%)',
+          ocrAlternatives: ['Rate = f(T = 25^\\circ\\text{C}, I = 70\\%)'],
+          parameters: [
+            { key: 'temperature', label: 'Nhiệt độ (T)', unit: '°C', defaultValue: 25.0, min: 0.0, max: 60.0, step: 5.0 },
+            { key: 'light', label: 'Cường độ sáng (I)', unit: '%', defaultValue: 70.0, min: 10.0, max: 100.0, step: 5.0 },
+          ],
+          socraticQuestion: 'Tại sao khi nhiệt độ vượt quá 45°C, cường độ quang hợp lại giảm dốc đứng do biến tính enzyme?',
+        };
+      }
+      // 10. Hàm số lượng giác & Sóng điều hòa (Math Trig Wave)
+      else if (h.includes('sin') || h.includes('cos') || h.includes('wave') || h.includes('dao động') || h.includes('harmonic')) {
         fallbackBp = {
           engine: 'MATH',
           templateId: 'MATH_TRIG_WAVE',
@@ -630,7 +1108,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           ],
           socraticQuestion: 'Nếu giữ nguyên biên độ A = 2 nhưng tăng tần số góc ω lên gấp đôi, đồ thị sẽ thay đổi như thế nào?',
         };
-      } else if (h.includes('int') || h.includes('\\int') || h.includes('tích phân')) {
+      }
+      // 11. Giải tích & Khảo sát hàm số (Math Func 2D)
+      else if (h.includes('int') || h.includes('\\int') || h.includes('tích phân') || h.includes('nguyên hàm')) {
         fallbackBp = {
           engine: 'MATH',
           templateId: 'MATH_FUNC_2D',
@@ -644,73 +1124,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           ],
           socraticQuestion: 'Nguyên hàm của x³ là x⁴/4 + C. Diện tích dưới đường cong thay đổi như thế nào khi x tăng?',
         };
-      } else if (h.includes('ném') || h.includes('v0') || h.includes('projectile')) {
-        fallbackBp = {
-          engine: 'PHYSICS',
-          templateId: 'PHYS_PROJECTILE',
-          recognizedLatex: 'v_0 = 22\\text{ m/s}, \\alpha = 45^\\circ',
-          ocrAlternatives: ['v_0 = 22\\text{ m/s}, \\alpha = 45^\\circ'],
-          parameters: [
-            { key: 'v0', label: 'Vận tốc đầu (v₀)', unit: 'm/s', defaultValue: 22.0, min: 5.0, max: 50.0, step: 1.0 },
-            { key: 'alpha', label: 'Góc ném (α)', unit: 'độ', defaultValue: 45.0, min: 15.0, max: 85.0, step: 5.0 },
-            { key: 'g', label: 'Gia tốc g', unit: 'm/s²', defaultValue: 9.8, min: 1.6, max: 25.0, step: 0.1 },
-          ],
-          socraticQuestion: 'Tại sao với cùng vận tốc đầu v₀, góc ném 45° lại cho tầm xa cực đại?',
-        };
-      } else if (h.includes('fe') || h.includes('cân') || h.includes('o2')) {
-        fallbackBp = {
-          engine: 'CHEMISTRY',
-          templateId: 'CHEM_BALANCE_SCALE',
-          recognizedLatex: '4\\text{Fe} + 3\\text{O}_2 \\rightarrow 2\\text{Fe}_2\\text{O}_3',
-          ocrAlternatives: ['4\\text{Fe} + 3\\text{O}_2 \\rightarrow 2\\text{Fe}_2\\text{O}_3'],
-          parameters: [
-            { key: 'c1', label: 'Hệ số Fe', unit: '', defaultValue: 4.0, min: 1.0, max: 6.0, step: 1.0 },
-            { key: 'c2', label: 'Hệ số O₂', unit: '', defaultValue: 3.0, min: 1.0, max: 6.0, step: 1.0 },
-            { key: 'c3', label: 'Hệ số Fe₂O₃', unit: '', defaultValue: 2.0, min: 1.0, max: 4.0, step: 1.0 },
-          ],
-          socraticQuestion: 'Em cần chọn bội chung nhỏ nhất là mấy để số Oxi hai vế thăng bằng?',
-        };
-      } else if (h.includes('rlc') || h.includes('điện') || h.includes('phasor') || h.includes('fresnel')) {
-        fallbackBp = {
-          engine: 'PHYSICS',
-          templateId: 'PHYS_RLC_PHASOR',
-          recognizedLatex: 'u = U_0\\cos(\\omega t + \\varphi), \\quad \\text{Mạch RLC}',
-          ocrAlternatives: ['u = U_0\\cos(\\omega t)', 'i = I_0\\cos(\\omega t - \\varphi)'],
-          parameters: [
-            { key: 'R', label: 'Điện trở (R)', unit: 'Ω', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
-            { key: 'L', label: 'Độ tự cảm (L)', unit: 'H', defaultValue: 0.5, min: 0.1, max: 2.0, step: 0.1 },
-            { key: 'C', label: 'Điện dung (C)', unit: 'μF', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
-            { key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', defaultValue: 200.0, min: 50.0, max: 500.0, step: 10.0 },
-            { key: 'U', label: 'Điện áp (U)', unit: 'V', defaultValue: 120.0, min: 20.0, max: 240.0, step: 10.0 },
-          ],
-          socraticQuestion: 'Khi điều chỉnh tần số góc ω tiến dần về giá trị cộng hưởng ω₀ = 1/√(LC), góc lệch pha φ biến đổi thế nào?',
-          curriculumLevel: 'OLYMPIAD_ADVANCED',
-        };
-      } else if (h.includes('chuẩn độ') || h.includes('titration') || h.includes('ph')) {
-        fallbackBp = {
-          engine: 'CHEMISTRY',
-          templateId: 'CHEM_EQUILIBRIUM_TITRATION',
-          recognizedLatex: '\\text{HCl} + \\text{NaOH} \\rightarrow \\text{NaCl} + \\text{H}_2\\text{O}, \\quad \\text{Chuẩn độ pH}',
-          ocrAlternatives: ['HCl + NaOH -> NaCl + H2O'],
-          parameters: [
-            { key: 'Vb', label: 'Thể tích NaOH (V_b)', unit: 'mL', defaultValue: 20.0, min: 0.0, max: 50.0, step: 1.0 },
-          ],
-          socraticQuestion: 'Tại sao tại điểm tương đương (V_NaOH = 25mL), đường cong pH lại có một bước nhảy vọt dốc đứng?',
-          curriculumLevel: 'OLYMPIAD_ADVANCED',
-        };
-      } else if (h.includes('quang') || h.includes('25') || h.includes('lá') || h.includes('cây')) {
-        fallbackBp = {
-          engine: 'BIOLOGY',
-          templateId: 'BIO_PHOTOSYNTHESIS',
-          recognizedLatex: '\\text{Quang hợp: } Rate = f(T = 25.0^\\circ\\text{C}, I = 70.0\\%)',
-          ocrAlternatives: ['Rate = f(T = 25^\\circ\\text{C}, I = 70\\%)'],
-          parameters: [
-            { key: 'temperature', label: 'Nhiệt độ (T)', unit: '°C', defaultValue: 25.0, min: 0.0, max: 60.0, step: 5.0 },
-            { key: 'light', label: 'Cường độ sáng (I)', unit: '%', defaultValue: 70.0, min: 10.0, max: 100.0, step: 5.0 },
-          ],
-          socraticQuestion: 'Tại sao khi nhiệt độ vượt quá 45°C, cường độ quang hợp lại giảm dốc đứng?',
-        };
-      } else {
+      }
+      // Default: Khảo sát hàm số đa thức
+      else {
         fallbackBp = {
           engine: 'MATH',
           templateId: 'MATH_FUNC_2D',
@@ -810,7 +1226,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   return (
     <div
       data-testid="smartboard-container"
-      className="relative w-full h-full min-h-[720px] bg-[#F8F7F4] text-[#18181B] flex flex-col items-center justify-start p-3 select-none"
+      className="relative w-full min-h-full bg-[#F8F7F4] text-[#18181B] flex flex-col items-center justify-start p-3 pb-32 select-none"
     >
       {/* MASTER SMARTBOARD TOOLBAR */}
       <div
@@ -1028,6 +1444,26 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             <span className="text-[10px] hidden sm:inline font-mono">QR Notes</span>
           </button>
 
+          {/* Studio Handwriting Recorder Toggle */}
+          <button
+            data-testid="btn-studio-recorder-toggle"
+            onClick={() => setIsStudioRecorderOpen((o) => !o)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs border transition cursor-pointer ${
+              isStudioRecorderOpen
+                ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold shadow-xs'
+                : 'bg-white hover:bg-stone-50 border-[#DCD9D0] text-stone-700 shadow-xs'
+            }`}
+            title="Phòng thu nét viết: Luyện theo viền mờ & lưu bản viết thật cho video demo"
+          >
+            <Pen className="w-3.5 h-3.5 text-amber-600" />
+            <span className="font-medium text-[10px] hidden sm:inline">Phòng Thu Nét</span>
+            {Object.values(hasCustomSlots).filter(Boolean).length > 0 && (
+              <span className="bg-emerald-600 text-white text-[9px] font-mono px-1 py-0.2 rounded-full font-bold">
+                {Object.values(hasCustomSlots).filter(Boolean).length}/4
+              </span>
+            )}
+          </button>
+
           {/* Export Board */}
           <button
             onClick={handleExportBoard}
@@ -1061,6 +1497,215 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           )}
         </div>
       </div>
+
+      {/* STUDIO HANDWRITING RECORDER CONSOLE */}
+      {isStudioRecorderOpen && (
+        <div
+          data-testid="studio-recorder-console"
+          className="flex flex-col gap-3 mt-2 px-4 py-3 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] shadow-[0_8px_30px_rgb(0,0,0,0.06)] z-25 max-w-5xl w-full animate-in fade-in duration-150"
+        >
+          {/* Top Row: Title, Description, and Close Button */}
+          <div className="flex items-center justify-between border-b border-[#E6E4DD] pb-2">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-md bg-stone-900 text-white font-mono text-[10px] uppercase font-bold tracking-wider">
+                Demo Studio
+              </span>
+              <h3 className="text-xs font-semibold text-stone-900">
+                Phòng Thu & Lưu Nét Viết Demo (One-Take Handwriting Recorder)
+              </h3>
+              <span className="text-[11px] text-stone-500 hidden md:inline">
+                • Bật viền mờ để viết đè theo mẫu rồi bấm [Lưu Vào Kịch Bản]
+              </span>
+            </div>
+            <button
+              onClick={() => setIsStudioRecorderOpen(false)}
+              className="p-1 rounded-lg text-stone-400 hover:text-stone-800 hover:bg-stone-100 transition"
+              title="Đóng phòng thu"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Slot Tabs */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-mono uppercase text-stone-500 font-semibold shrink-0">
+              Chọn Kịch Bản:
+            </span>
+            {AUTO_INK_SCENES.map((scene, idx) => {
+              const hotkey = idx + 1;
+              const isSelected = selectedRecordSlot === scene.id;
+              const hasCustom = hasCustomSlots[scene.id];
+              return (
+                <button
+                  key={scene.id}
+                  type="button"
+                  data-testid={`studio-slot-btn-${hotkey}`}
+                  onClick={() => setSelectedRecordSlot(scene.id)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition cursor-pointer border ${
+                    isSelected
+                      ? 'bg-[#18181B] text-white border-[#18181B] font-medium shadow-xs'
+                      : 'bg-[#F8F7F4] hover:bg-[#EFECE6] border-[#E6E4DD] text-stone-700'
+                  }`}
+                >
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-mono font-bold ${
+                    isSelected ? 'bg-white text-stone-900' : 'bg-stone-200 text-stone-700'
+                  }`}>
+                    {hotkey}
+                  </span>
+                  <span>{scene.shortLabel}</span>
+                  {hasCustom ? (
+                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-full ${
+                      isSelected ? 'bg-emerald-400 text-stone-950 font-bold' : 'bg-emerald-100 text-emerald-800 font-semibold'
+                    }`}>
+                      Đã lưu nét thật ✓
+                    </span>
+                  ) : (
+                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-full ${
+                      isSelected ? 'bg-stone-700 text-stone-300' : 'bg-stone-100 text-stone-500'
+                    }`}>
+                      Mặc định
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Prompt description for selected slot */}
+          <div className="bg-[#F8F7F4] border border-[#E6E4DD] rounded-xl px-3 py-2 text-xs text-stone-700 flex flex-wrap items-center gap-2.5">
+            <span className="text-[10px] font-bold text-blue-700 uppercase bg-blue-50 px-2 py-0.5 rounded border border-blue-200 shrink-0">
+              Công thức mẫu:
+            </span>
+            <div className="flex flex-wrap items-center gap-2.5">
+              {selectedRecordSlot === 'SCENE_1_PHYSICS' && (
+                <>
+                  <span className="text-stone-600 font-medium">Vật lý:</span>
+                  <div className="bg-white px-2 py-0.5 rounded border border-[#E6E4DD] shadow-2xs">
+                    <MathView latex="Z = \sqrt{R^2 + (Z_L - Z_C)^2}" displayMode={false} />
+                  </div>
+                  <span className="text-stone-400">&</span>
+                  <div className="bg-white px-2 py-0.5 rounded border border-[#E6E4DD] shadow-2xs">
+                    <MathView latex="v_0 = 24\text{ m/s}, \quad \alpha = 45^\circ" displayMode={false} />
+                  </div>
+                </>
+              )}
+              {selectedRecordSlot === 'SCENE_2_CHEMISTRY' && (
+                <>
+                  <span className="text-stone-600 font-medium">Hóa học:</span>
+                  <div className="bg-white px-2 py-0.5 rounded border border-[#E6E4DD] shadow-2xs">
+                    <MathView latex="\text{N}_2 + 3\text{H}_2 \rightleftharpoons 2\text{NH}_3 \quad (\Delta H < 0)" displayMode={false} />
+                  </div>
+                  <span className="text-stone-400">&</span>
+                  <div className="bg-white px-2 py-0.5 rounded border border-[#E6E4DD] shadow-2xs">
+                    <MathView latex="4\text{Fe} + 3\text{O}_2 \rightarrow 2\text{Fe}_2\text{O}_3" displayMode={false} />
+                  </div>
+                </>
+              )}
+              {selectedRecordSlot === 'SCENE_3_BIOLOGY' && (
+                <>
+                  <span className="text-stone-600 font-medium">Sinh học:</span>
+                  <div className="bg-white px-2 py-0.5 rounded border border-[#E6E4DD] shadow-2xs">
+                    <MathView latex="6\text{CO}_2 + 6\text{H}_2\text{O} \rightarrow \text{C}_6\text{H}_{12}\text{O}_6 + 6\text{O}_2" displayMode={false} />
+                  </div>
+                  <span className="text-stone-400">&</span>
+                  <div className="bg-white px-2 py-0.5 rounded border border-[#E6E4DD] shadow-2xs">
+                    <MathView latex="\text{ADN}: A = T, \quad G = X" displayMode={false} />
+                  </div>
+                </>
+              )}
+              {selectedRecordSlot === 'SCENE_4_MATH' && (
+                <>
+                  <span className="text-stone-600 font-medium">Toán học:</span>
+                  <div className="bg-white px-2 py-0.5 rounded border border-[#E6E4DD] shadow-2xs">
+                    <MathView latex="y = \int_{-2}^{2} (x^3 - 3x)\,dx" displayMode={false} />
+                  </div>
+                  <span className="text-stone-400">&</span>
+                  <div className="bg-white px-2 py-0.5 rounded border border-[#E6E4DD] shadow-2xs">
+                    <MathView latex="f'(x) = 3x^2 - 3 = 0 \iff x = \pm 1" displayMode={false} />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Action Row */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#F2F0EA]">
+            {/* Left Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                data-testid="btn-toggle-watermark"
+                onClick={() => setShowWatermarkGuide((w) => !w)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+                  showWatermarkGuide
+                    ? 'bg-blue-50 text-blue-700 border-blue-200 font-semibold'
+                    : 'bg-white hover:bg-stone-50 border-[#DCD9D0] text-stone-700'
+                }`}
+                title="Bật/Tắt viền mờ mẫu trên bảng viết"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>{showWatermarkGuide ? 'Đang bật viền mờ mẫu' : 'Bật viền mờ mẫu'}</span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="btn-clear-for-practice"
+                onClick={handleClear}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-white hover:bg-stone-50 border border-[#DCD9D0] text-stone-700 transition cursor-pointer"
+                title="Xóa các nét trên bảng để viết lại"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-stone-500" />
+                <span>Xóa để viết lại</span>
+              </button>
+            </div>
+
+            {/* Right Controls: Save & Playback */}
+            <div className="flex items-center gap-2">
+              {hasCustomSlots[selectedRecordSlot] && (
+                <button
+                  type="button"
+                  data-testid="btn-reset-slot"
+                  onClick={() => handleResetSlotToDefault(selectedRecordSlot)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs text-rose-700 hover:bg-rose-50 border border-rose-200 transition cursor-pointer"
+                  title="Xóa bản viết tay đã lưu và quay lại mẫu hệ thống"
+                >
+                  Khôi phục mẫu gốc
+                </button>
+              )}
+
+              <button
+                type="button"
+                data-testid="btn-test-playback"
+                onClick={() => triggerAutoInk(selectedRecordSlot)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#DCD9D0] text-stone-800 transition cursor-pointer"
+                title="Chạy thử chuyển động viết và kích hoạt mô phỏng"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-stone-600" />
+                <span>Phát thử (Test 0.8s)</span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="btn-save-custom-ink"
+                onClick={handleSaveCustomWriting}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition cursor-pointer"
+                title="Lưu lại các nét vừa viết trên bảng cho kịch bản này"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Lưu Bản Viết Này Vào Kịch Bản</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Recorder Notice Banner */}
+          {recorderNotice && (
+            <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono">
+              <span>{recorderNotice}</span>
+              <button onClick={() => setRecorderNotice(null)} className="text-emerald-800 font-bold">✕</button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Visible Error Toast Banner */}
       {errorMessage && (
@@ -1145,8 +1790,21 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               <span>{isVoiceListening ? 'Đang nghe...' : 'Giọng nói'}</span>
             </button>
 
-            {/* Formula Input Box */}
-            <div className="flex-1 flex items-center gap-2 w-full md:w-auto">
+            {/* Formula Input Box with Floating Live KaTeX Preview Pill */}
+            <div className="relative flex-1 flex items-center gap-2 w-full md:w-auto">
+              {formulaInput.trim().length > 0 && (
+                <div
+                  data-testid="live-teacher-formula-preview"
+                  className="absolute -top-11 left-0 bg-white/95 backdrop-blur-md px-3 py-1 rounded-lg border border-blue-200 shadow-md flex items-center gap-2 text-xs z-30 animate-in fade-in"
+                >
+                  <span className="text-[10px] font-mono text-blue-700 font-bold uppercase tracking-wider shrink-0">
+                    Xem trước:
+                  </span>
+                  <div className="overflow-x-auto max-w-sm text-stone-900 font-semibold">
+                    <FormulaBlock latex={formulaInput} />
+                  </div>
+                </div>
+              )}
               <input
                 type="text"
                 data-testid="lasso-formula-input"
@@ -1155,7 +1813,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleVisualize();
                 }}
-                placeholder="Nhập công thức hoặc bấm micro / chọn môn bên dưới..."
+                placeholder="Nhập công thức bất kỳ (ném xiên, giao thoa sóng, con lắc, RLC, Fe+O2, tích phân...)"
                 className="w-full px-3 py-1.5 rounded-lg bg-[#F8F7F4] border border-[#E6E4DD] text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-blue-500 font-mono transition"
               />
             </div>
@@ -1186,102 +1844,141 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             </div>
           </div>
 
-          {/* Bottom Row: 4 1-Tap Smart Subject Chips (Zero Fail) */}
+          {/* Bottom Row: 1-Tap Smart Topic Chips (Zero Fail, Instant Routing) */}
           <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#E6E4DD]">
             <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider shrink-0">
               Gợi ý tức thì (0ms):
             </span>
             <button
               type="button"
-              data-testid="smart-chip-math"
-              onClick={() => handleVisualize('y = 2\\sin(3x)')}
-              className="px-2 py-0.5 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-700 text-[11px] font-mono transition cursor-pointer"
+              data-testid="smart-chip-physics"
+              onClick={() => handleVisualize('v_0 = 22\\text{ m/s}, \\quad \\alpha = 45^\\circ \\quad (\\text{Ném xiên})')}
+              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
             >
-              Toán (Sin 3x)
+              <FormulaBlock latex="v_0 = 22\text{ m/s}, \alpha = 45^\circ" />
             </button>
             <button
               type="button"
-              data-testid="smart-chip-physics"
-              onClick={() => handleVisualize('ném xiên v0 = 22 m/s, alpha = 45 độ')}
-              className="px-2 py-0.5 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-700 text-[11px] font-mono transition cursor-pointer"
+              data-testid="smart-chip-ripple"
+              onClick={() => handleVisualize('d_2 - d_1 = k\\lambda \\quad (\\text{Giao thoa sóng})')}
+              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
             >
-              Lý (Ném xiên)
+              <FormulaBlock latex="d_2 - d_1 = k\lambda" />
+            </button>
+            <button
+              type="button"
+              data-testid="smart-chip-pendulum"
+              onClick={() => handleVisualize('T = 2\\pi\\sqrt{\\frac{l}{g}} \\quad (\\text{Con lắc đơn})')}
+              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
+            >
+              <FormulaBlock latex="T = 2\pi\sqrt{l/g}" />
+            </button>
+            <button
+              type="button"
+              data-testid="smart-chip-rlc"
+              onClick={() => handleVisualize('Z = \\sqrt{R^2 + (Z_L - Z_C)^2} \\quad (\\text{Mạch RLC})')}
+              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
+            >
+              <FormulaBlock latex="Z = \sqrt{R^2 + (Z_L - Z_C)^2}" />
+            </button>
+            <button
+              type="button"
+              data-testid="smart-chip-incline"
+              onClick={() => handleVisualize('a = g(\\sin\\alpha - \\mu\\cos\\alpha) \\quad (\\text{Mặt phẳng nghiêng})')}
+              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
+            >
+              <FormulaBlock latex="a = g(\sin\alpha - \mu\cos\alpha)" />
+            </button>
+            <button
+              type="button"
+              data-testid="smart-chip-math"
+              onClick={() => handleVisualize('y = 2\\sin(3x)')}
+              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
+            >
+              <FormulaBlock latex="y = 2\sin(3x)" />
             </button>
             <button
               type="button"
               data-testid="smart-chip-chemistry"
-              onClick={() => handleVisualize('4Fe + 3O2 -> 2Fe2O3')}
-              className="px-2 py-0.5 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-700 text-[11px] font-mono transition cursor-pointer"
+              onClick={() => handleVisualize('4\\text{Fe} + 3\\text{O}_2 \\rightarrow 2\\text{Fe}_2\\text{O}_3')}
+              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
             >
-              Hóa (Fe + O₂)
+              <FormulaBlock latex="4\text{Fe} + 3\text{O}_2 \rightarrow 2\text{Fe}_2\text{O}_3" />
             </button>
             <button
               type="button"
               data-testid="smart-chip-biology"
               onClick={() => handleVisualize('quang hợp nhiệt độ 25 độ C')}
-              className="px-2 py-0.5 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-700 text-[11px] font-mono transition cursor-pointer"
+              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
             >
-              Sinh (Quang hợp 25°C)
-            </button>
-            <button
-              type="button"
-              data-testid="smart-chip-rlc"
-              onClick={() => handleVisualize('mạch rlc xoay chiều')}
-              className="px-2 py-0.5 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-700 text-[11px] font-mono transition cursor-pointer"
-            >
-              RLC & Phasor (Lớp 12)
+              <FormulaBlock latex="\text{Quang hợp: } T = 25^\circ\text{C}" />
             </button>
             <button
               type="button"
               data-testid="smart-chip-titration"
               onClick={() => handleVisualize('chuẩn độ axit bazơ ph')}
-              className="px-2 py-0.5 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-700 text-[11px] font-mono transition cursor-pointer"
+              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
             >
-              Chuẩn độ pH (Hóa 11-12)
+              <FormulaBlock latex="\text{Chuẩn độ pH (HCl + NaOH)}" />
             </button>
           </div>
         </div>
       )}
 
-      {/* Quick Demo Preset Pills for Live Demo */}
-      <div className="flex flex-wrap items-center gap-1.5 mt-2 px-3 py-1.5 rounded-xl bg-white/90 border border-[#E6E4DD] text-xs max-w-6xl w-full shadow-xs">
-        <span className="text-stone-500 font-mono text-[11px] uppercase tracking-wider shrink-0">Mẫu sẵn:</span>
-        <button
-          onClick={() => handleVisualize('y = 2\\sin(3x)')}
-          className="px-2 py-0.5 rounded-md bg-[#F4F3EE] hover:bg-[#EAE7DF] border border-[#E5E3DC] text-stone-700 font-mono text-[11px] transition cursor-pointer"
-        >
-          Toán: Đồ thị Sin
-        </button>
-        <button
-          onClick={() => handleVisualize('ném xiên v0 = 22 m/s, alpha = 45 độ')}
-          className="px-2 py-0.5 rounded-md bg-[#F4F3EE] hover:bg-[#EAE7DF] border border-[#E5E3DC] text-stone-700 font-mono text-[11px] transition cursor-pointer"
-        >
-          Lý: Ném xiên
-        </button>
-        <button
-          onClick={() => handleVisualize('4Fe + 3O2 -> 2Fe2O3')}
-          className="px-2 py-0.5 rounded-md bg-[#F4F3EE] hover:bg-[#EAE7DF] border border-[#E5E3DC] text-stone-700 font-mono text-[11px] transition cursor-pointer"
-        >
-          Hóa: Cân bằng Fe + O₂
-        </button>
-        <button
-          onClick={() => handleVisualize('quang hợp nhiệt độ 25 độ C')}
-          className="px-2 py-0.5 rounded-md bg-[#F4F3EE] hover:bg-[#EAE7DF] border border-[#E5E3DC] text-stone-700 font-mono text-[11px] transition cursor-pointer"
-        >
-          Sinh: Quang hợp
-        </button>
-        <button
-          onClick={() => handleVisualize('x = 5\\cos(2\\pi t + \\frac{\\pi}{2})')}
-          className="px-2 py-0.5 rounded-md bg-[#F4F3EE] hover:bg-[#EAE7DF] border border-[#E5E3DC] text-stone-700 font-mono text-[11px] transition cursor-pointer"
-        >
-          Lý: Dao động 5cos
-        </button>
-        <button
-          onClick={() => handleVisualize('y = \\int x^3 dx')}
-          className="px-2 py-0.5 rounded-md bg-[#F4F3EE] hover:bg-[#EAE7DF] border border-[#E5E3DC] text-stone-700 font-mono text-[11px] transition cursor-pointer"
-        >
-          Toán: Tích phân x³
-        </button>
+      {/* DIRECTOR SCENE SWITCHER BAR (Apple Keynote One-Take Recording Engine) */}
+      <div
+        data-testid="director-scene-switcher-bar"
+        className="flex flex-wrap items-center justify-between gap-2 mt-2 px-3.5 py-2 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] text-xs max-w-6xl w-full shadow-sm"
+      >
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="font-mono text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-[#18181B] text-white">
+            Director Hotkeys (1-4)
+          </span>
+          {isAutoInking && (
+            <span className="text-[11px] font-mono text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
+              Đang viết thư pháp 0.8s...
+            </span>
+          )}
+          {isCompilingShimmer && (
+            <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+              AI Compiling 450ms...
+            </span>
+          )}
+        </div>
+
+        {/* 4 Scene Buttons */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {AUTO_INK_SCENES.map((scene, idx) => {
+            const hotkey = idx + 1;
+            const isActive = activeAutoScene === scene.id;
+            return (
+              <button
+                key={scene.id}
+                type="button"
+                data-testid={`director-scene-btn-${hotkey}`}
+                onClick={() => triggerAutoInk(scene.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-xs transition cursor-pointer border ${
+                  isActive
+                    ? 'bg-blue-600 text-white border-blue-700 font-semibold shadow-xs'
+                    : 'bg-[#F4F3EE] hover:bg-[#EAE7DF] border-[#E5E3DC] text-stone-700 hover:text-stone-900'
+                }`}
+                title={`Kích hoạt kịch bản mẫu ${scene.shortLabel} (Phím ${hotkey})`}
+              >
+                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  isActive ? 'bg-white text-blue-600' : 'bg-white border border-[#DCD9D0] text-stone-600'
+                }`}>
+                  {hotkey}
+                </span>
+                <span className="font-sans font-medium text-[11px]">{scene.shortLabel}</span>
+                {hasCustomSlots[scene.id] && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-200" title="Đã lưu nét thật của bạn" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Smartboard Canvas & Side-by-Side Ergonomic Split-View Workspace */}
@@ -1289,7 +1986,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         {/* Drawing Canvas Area (Always visible, NEVER covered, high-def 1200x675) */}
         <div
           className={`relative rounded-2xl overflow-hidden border border-[#E6E4DD] bg-[#F8F7F4] shadow-sm transition-all duration-200 ${
-            activeBlueprint
+            activeBlueprint || isCompilingShimmer
               ? isSplitView
                 ? 'w-full lg:w-1/2'
                 : 'w-full lg:w-[52%]'
@@ -1308,16 +2005,84 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           />
         </div>
 
+        {/* 450ms AI Semantic Compiling Skeleton Shimmer Card */}
+        {isCompilingShimmer && (
+          <div
+            data-testid="ai-semantic-compiling-shimmer"
+            className={`flex flex-col rounded-2xl border border-blue-200 bg-white shadow-xl animate-in fade-in transition-all duration-150 max-h-[calc(100vh-140px)] overflow-y-auto ${
+              isSplitView ? 'w-full lg:w-1/2' : 'w-full lg:w-[48%]'
+            }`}
+          >
+            <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-2.5 bg-blue-50/95 backdrop-blur-sm border-b border-blue-100">
+              <span className="text-xs font-mono font-semibold text-blue-800 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
+                <span>AI Semantic Compiling (450ms)...</span>
+              </span>
+              <span className="text-[10px] font-mono text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-md font-semibold">
+                60FPS Studio Dock
+              </span>
+            </div>
+            <div className="p-6 flex flex-col gap-4 bg-[#FCFBF9]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100/80 border border-blue-200 flex items-center justify-center text-blue-600 animate-pulse shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-stone-900 font-sans">
+                    Biên dịch Nét viết sang Mô hình 60FPS
+                  </div>
+                  <div className="text-[11px] font-mono text-stone-500 mt-0.5">
+                    {compilingScene?.title || 'Đang trích xuất cấu trúc và giải tích...'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Glowing Shimmer Progress Bar */}
+              <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden relative">
+                <div className="bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 h-full w-full animate-pulse" />
+              </div>
+
+              {/* Shimmer Placeholder Metrics */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="p-3 bg-white rounded-xl border border-[#E6E4DD] flex flex-col gap-1">
+                  <span className="text-[10px] font-mono uppercase text-stone-400">Động học / Không gian</span>
+                  <div className="h-4 bg-stone-100 rounded animate-pulse w-3/4" />
+                </div>
+                <div className="p-3 bg-white rounded-xl border border-[#E6E4DD] flex flex-col gap-1">
+                  <span className="text-[10px] font-mono uppercase text-stone-400">Giải tích / KaTeX</span>
+                  <div className="h-4 bg-stone-100 rounded animate-pulse w-2/3" />
+                </div>
+              </div>
+
+              {/* Token Badges */}
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-[#E6E4DD]">
+                <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E6E4DD] text-[11px] font-mono text-stone-700 flex items-center gap-1.5 shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  KaTeX Tokenized
+                </span>
+                <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E6E4DD] text-[11px] font-mono text-stone-700 flex items-center gap-1.5 shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  Dual-View Ready
+                </span>
+                <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E6E4DD] text-[11px] font-mono text-stone-700 flex items-center gap-1.5 shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  Socratic Cue Armed
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Side-by-Side Simulation Blueprint */}
-        {activeBlueprint && (
+        {activeBlueprint && !isCompilingShimmer && (
           <div
             data-testid="active-simulation-modal"
-            className={`flex flex-col rounded-2xl overflow-hidden border border-[#E6E4DD] bg-white shadow-xl animate-in fade-in transition-all duration-200 ${
+            className={`flex flex-col rounded-2xl border border-[#E6E4DD] bg-white shadow-xl animate-in fade-in transition-all duration-200 max-h-[calc(100vh-140px)] overflow-y-auto ${
               isSplitView ? 'w-full lg:w-1/2' : 'w-full lg:w-[48%]'
             }`}
           >
             {/* Header bar with dedicated Close / Hide Visualize Button */}
-            <div className="flex items-center justify-between px-4 py-2 bg-[#FCFBF9] border-b border-[#E6E4DD]">
+            <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-2 bg-[#FCFBF9]/95 backdrop-blur-sm border-b border-[#E6E4DD]">
               <span className="text-xs font-mono font-medium text-stone-700 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                 <span>Mô phỏng trực quan ({isSplitView ? 'Nửa bảng phải' : 'Bên cạnh'})</span>
@@ -1427,10 +2192,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 <span>Lớp:</span>
                 <span className="text-stone-900 font-mono font-medium">12A1 • Tiết 3 KHTN</span>
               </div>
-              <div className="flex justify-between text-stone-600">
+              <div className="flex justify-between items-center text-stone-600">
                 <span>Nội dung:</span>
-                <span className="text-stone-900 font-mono font-medium">
-                  {activeBlueprint?.recognizedLatex || 'Đồ thị & Dao động điều hòa'}
+                <span className="text-stone-900 font-medium">
+                  {activeBlueprint?.recognizedLatex ? (
+                    <MathView latex={activeBlueprint.recognizedLatex} displayMode={false} />
+                  ) : (
+                    'Đồ thị & Dao động điều hòa'
+                  )}
                 </span>
               </div>
               <div className="flex justify-between text-stone-600">

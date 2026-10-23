@@ -27,6 +27,20 @@ export const AIGeneratedVisualEngine: React.FC<Props> = ({
       return blueprint.custom_interactive_svg;
     }
 
+    const cleanLabel = (blueprint.recognizedLatex || 'AI SCIENTIFIC VISUALIZER')
+      .replace(/\\int/g, '∫')
+      .replace(/\\sqrt\{([^}]+)\}/g, '√($1)')
+      .replace(/\\rightarrow/g, '→')
+      .replace(/\\longrightarrow/g, '→')
+      .replace(/\\rightleftharpoons/g, '⇌')
+      .replace(/\\Delta/g, 'Δ')
+      .replace(/\\pi/g, 'π')
+      .replace(/\\alpha/g, 'α')
+      .replace(/\\omega/g, 'ω')
+      .replace(/\\text\{([^}]+)\}/g, '$1')
+      .replace(/\\quad/g, ' ')
+      .replace(/\\,/g, ' ');
+
     // Default scientific high-craft fallback SVG
     return `
       <svg viewBox="0 0 620 340" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -52,7 +66,7 @@ export const AIGeneratedVisualEngine: React.FC<Props> = ({
         <rect x="35" y="32" width="280" height="38" rx="8" fill="#FFFFFF" stroke="#E6E4DD" />
         <circle cx="52" cy="51" r="5" fill="#2563EB" />
         <text x="68" y="55" font-family="monospace" font-size="12" font-weight="bold" fill="#0F172A">
-          ${blueprint.recognizedLatex || 'AI SCIENTIFIC VISUALIZER'}
+          ${cleanLabel}
         </text>
 
         <!-- Dynamic Visual Apparatus -->

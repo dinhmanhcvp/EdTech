@@ -4,6 +4,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { Activity, RefreshCw } from 'lucide-react';
+import { formatCanvasMath } from '../utils/canvasMath';
 
 interface Props {
   blueprint: SimulationBlueprint;
@@ -35,6 +36,27 @@ export function compileFormulaToFunction(
 ): EvaluatedFunction {
   const raw = (rawFormula || '').trim();
   const fLower = raw.toLowerCase();
+
+  // 0. RIEMANN INTEGRAL & CUBIC PARAMETRIC: \int_a^b (x^3 - 3x + m) dx or f(x) = x^3 - 3x + m
+  if (fLower.includes('x^3 - 3x') || fLower.includes('riemann') || raw.includes('\\int_a^b')) {
+    const a = params.a ?? 1.0;
+    const b = params.b ?? 0.0;
+    const c = params.c ?? -3.0;
+    const d = params.d ?? 1.0;
+
+    return {
+      evalFn: (x: number) => a * Math.pow(x, 3) + b * Math.pow(x, 2) + c * x + d,
+      evalSlope: (x: number) => 3 * a * Math.pow(x, 2) + 2 * b * x + c,
+      isIntegral: false,
+      varSymbol: 'x',
+      xMin: -3.5,
+      xMax: 3.5,
+      xLabel: 'x',
+      yLabel: 'y = f(x)',
+      curveTitle: `f(x) = ${a !== 1 ? a : ''}x³ ${c !== 0 ? (c > 0 ? `+ ${c}x` : `- ${Math.abs(c)}x`) : ''} ${d !== 0 ? (d > 0 ? `+ ${d}` : `- ${Math.abs(d)}`) : ''}`,
+      shaded: false,
+    };
+  }
 
   // 1. INTEGRAL EQUATIONS: \int x^3 dx, \int x^2 dx, \int x dx, etc.
   const intMatch = raw.match(/\\?int\s*(.*?)(?:\s*[\.,]?\s*d([xXtT])|\s*$)/i);
@@ -336,8 +358,8 @@ export const MathPlotEngine: React.FC<Props> = ({
     // Axis tick labels
     ctx.fillStyle = '#64748B';
     ctx.font = '11px "JetBrains Mono", monospace';
-    ctx.fillText(compiled.xLabel, width - 24, originY - 8);
-    ctx.fillText(compiled.yLabel, originX + 8, 16);
+    ctx.fillText(formatCanvasMath(compiled.xLabel), width - 24, originY - 8);
+    ctx.fillText(formatCanvasMath(compiled.yLabel), originX + 8, 16);
     ctx.fillText('O', originX - 14, originY + 16);
 
     // 4. Ghost Trail: Baseline Curve (Subtle dashed slate line)
@@ -374,8 +396,83 @@ export const MathPlotEngine: React.FC<Props> = ({
       ctx.restore();
     }
 
-    // 5. Shaded Area Under Curve for Integrals or Wave
-    if (compiled.shaded) {
+    // 5. Riemann Integral Rectangles (Scene 4 / Calculus partitions)
+    const isRiemannMode =
+      params.n !== undefined ||
+      (blueprint.recognizedLatex || '').toLowerCase().includes('riemann') ||
+      (blueprint.recognizedLatex || '').includes('\\int_a^b');
+
+    if (isRiemannMode && compiled.varSymbol === 'x') {
+      const N = Math.max(4, Math.min(80, Math.round(params.n ?? 16)));
+      const xA = -1.8;
+      const xB = 1.8;
+      const dx = (xB - xA) / N;
+      let riemannSum = 0;
+
+      for (let i = 0; i < N; i++) {
+        const xi = xA + i * dx;
+        const xMid = xi + 0.5 * dx;
+        const yi = compiled.evalFn(xMid);
+        riemannSum += yi * dx;
+
+        const pixLeft = originX + xi * scale;
+        const pixWidth = dx * scale;
+        const pixBottom = originY;
+        const pixTop = originY - yi * scale;
+
+        ctx.save();
+        ctx.fillStyle = i % 2 === 0 ? 'rgba(37, 99, 235, 0.16)' : 'rgba(37, 99, 235, 0.22)';
+        ctx.strokeStyle = 'rgba(37, 99, 235, 0.45)';
+        ctx.lineWidth = 1;
+
+        if (yi >= 0) {
+          ctx.fillRect(pixLeft, pixTop, pixWidth, pixBottom - pixTop);
+          ctx.strokeRect(pixLeft, pixTop, pixWidth, pixBottom - pixTop);
+        } else {
+          ctx.fillRect(pixLeft, pixBottom, pixWidth, pixTop - pixBottom);
+          ctx.strokeRect(pixLeft, pixBottom, pixWidth, pixTop - pixBottom);
+        }
+
+        // Center sample node marker
+        ctx.fillStyle = '#2563EB';
+        ctx.beginPath();
+        ctx.arc(originX + xMid * scale, originY - yi * scale, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Exact analytical definite integral of ax^3 + bx^2 + cx + d
+      const aCoeff = params.a ?? 1.0;
+      const bCoeff = params.b ?? 0.0;
+      const cCoeff = params.c ?? -3.0;
+      const dCoeff = params.d ?? 1.0;
+      const antiDeriv = (val: number) =>
+        (aCoeff * Math.pow(val, 4)) / 4 +
+        (bCoeff * Math.pow(val, 3)) / 3 +
+        (cCoeff * Math.pow(val, 2)) / 2 +
+        dCoeff * val;
+      const exactIntegral = antiDeriv(xB) - antiDeriv(xA);
+      const absError = Math.abs(riemannSum - exactIntegral);
+
+      // Floating Riemann Telemetry Glass Badge
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.strokeStyle = '#DCD9D0';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(16, 16, 350, 26, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#18181B';
+      ctx.font = 'bold 10px "JetBrains Mono", monospace';
+      ctx.fillText(
+        formatCanvasMath(`Riemann N=${N}  |  S_N=${riemannSum.toFixed(3)}  |  I=${exactIntegral.toFixed(3)}  |  Δ=${absError.toFixed(4)}`),
+        24,
+        33
+      );
+      ctx.restore();
+    } else if (compiled.shaded) {
       ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
       ctx.beginPath();
       const startX = compiled.varSymbol === 't' ? originX : originX - 2 * scale;
@@ -464,7 +561,7 @@ export const MathPlotEngine: React.FC<Props> = ({
 
       ctx.fillStyle = '#E11D48';
       ctx.font = 'bold 11px monospace';
-      ctx.fillText(`y = m (${paramM.toFixed(1)})`, width - 110, myPix - 6);
+      ctx.fillText(formatCanvasMath(`y = m (${paramM.toFixed(1)})`), width - 110, myPix - 6);
 
       // Numerical Root Finding for f(x) - m = 0 on [-5, 5]
       const scanStep = 0.04;
@@ -507,7 +604,7 @@ export const MathPlotEngine: React.FC<Props> = ({
         // White callout badge
         ctx.fillStyle = '#18181B';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText(`x${idx + 1}=${root.toFixed(2)}`, rPixX - 18, rPixY - 10);
+        ctx.fillText(formatCanvasMath(`x${idx + 1}=${root.toFixed(2)}`), rPixX - 18, rPixY - 10);
       });
     }
 
@@ -565,7 +662,7 @@ export const MathPlotEngine: React.FC<Props> = ({
 
       ctx.fillStyle = '#059669';
       ctx.font = 'bold 10px monospace';
-      ctx.fillText(`Taylor bậc ${taylorN}`, width - 110, 45);
+      ctx.fillText(formatCanvasMath(`Taylor bậc ${taylorN}`), width - 110, 45);
     }
 
     // 7. Curve Label Badge with Real-Time Delta (Porcelain Daylight Card)
@@ -580,18 +677,20 @@ export const MathPlotEngine: React.FC<Props> = ({
 
     ctx.fillStyle = '#2563EB';
     ctx.font = 'bold 12px monospace';
-    ctx.fillText(compiled.curveTitle, 25, 34);
+    ctx.fillText(formatCanvasMath(compiled.curveTitle), 25, 34);
 
     ctx.fillStyle = '#57534E';
     ctx.font = '10px sans-serif';
     ctx.fillText(
-      foundRoots.length > 0
-        ? `Biện luận y = m (${paramM.toFixed(1)}): ${foundRoots.length} nghiệm thực (${foundRoots.map((r) => r.toFixed(2)).join(', ')})`
-        : compiled.isIntegral
-        ? 'Tích phân xác thực (Đã tính nguyên hàm)'
-        : compiled.varSymbol === 't'
-        ? 'Dao động điều hòa xác thực theo thời gian t'
-        : `Hệ số góc tại x₀ = ${x0}: k = ${Number(compiled.evalSlope(x0).toFixed(2))}`,
+      formatCanvasMath(
+        foundRoots.length > 0
+          ? `Biện luận y = m (${paramM.toFixed(1)}): ${foundRoots.length} nghiệm thực (${foundRoots.map((r) => r.toFixed(2)).join(', ')})`
+          : compiled.isIntegral
+          ? 'Tích phân xác thực (Đã tính nguyên hàm)'
+          : compiled.varSymbol === 't'
+          ? 'Dao động điều hòa xác thực theo thời gian t'
+          : `Hệ số góc tại x₀ = ${x0}: k = ${Number(compiled.evalSlope(x0).toFixed(2))}`
+      ),
       25,
       50
     );
@@ -618,7 +717,7 @@ export const MathPlotEngine: React.FC<Props> = ({
 
       ctx.fillStyle = '#D97706';
       ctx.font = 'bold 10px monospace';
-      ctx.fillText(`${deltaSummary || 'Đã hiệu chỉnh thông số'}`, 25, 66);
+      ctx.fillText(formatCanvasMath(`${deltaSummary || 'Đã hiệu chỉnh thông số'}`), 25, 66);
     }
     ctx.restore();
   }, [blueprint, params]);

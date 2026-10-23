@@ -307,5 +307,59 @@ describe('Student Socratic Companion & Dashboards (Phase 4)', () => {
     const feedback = screen.getByTestId('concept-feedback');
     expect(feedback.textContent).toContain('Xuất sắc! Em đã vượt qua toàn bộ 4 bẫy đề thi THPT 2025+');
   });
+
+  /**
+   * TEST 9: Multi-Subject Problem Bank & 3-Tab Diagnostic Workbench (Mode 02 Upgrade)
+   */
+  it('test_socratic_multi_subject_problem_bank_and_3tab_workbench', () => {
+    render(<SocraticCompanionSession />);
+
+    // 1. Initial problem is Physics Incline
+    expect(screen.getByText('Chuyển động trên Mặt phẳng nghiêng có Ma sát & Bảo toàn Cơ năng')).toBeTruthy();
+    expect(screen.getByTestId('visual-debugger-workbench')).toBeTruthy();
+
+    // 2. Switch to Chemistry
+    const chemTab = screen.getByTestId('problem-tab-chemistry');
+    fireEvent.click(chemTab);
+    expect(screen.getByText('Cân bằng Oxi hóa - Khử Bảo toàn Electron & Chuyển dịch Le Chatelier')).toBeTruthy();
+
+    // 3. Switch to Math
+    const mathTab = screen.getByTestId('problem-tab-math');
+    fireEvent.click(mathTab);
+    expect(screen.getByText('Cực trị Hàm bậc ba Đối xứng qua Gốc tọa độ & Tích phân Riemann')).toBeTruthy();
+
+    // 4. Test 3 tabs in Left Diagnostic Workbench
+    const tabDimensional = screen.getByTestId('tab-dimensional-audit');
+    fireEvent.click(tabDimensional);
+    expect(screen.getByText(/Kiểm tra Thứ nguyên & Điều kiện Biên/)).toBeTruthy();
+
+    const tabGraph = screen.getByTestId('tab-knowledge-graph');
+    fireEvent.click(tabGraph);
+    expect(screen.getByText(/Sơ đồ Phân rã Tư duy & Năng lực/)).toBeTruthy();
+  });
+
+  /**
+   * TEST 10: Director Triggers & Red-Team Guardrail Shield
+   */
+  it('test_director_triggers_and_guardrail_shield', () => {
+    render(<SocraticCompanionSession />);
+
+    // 1. Click Director Trigger 1: Begging for answer (Guardrail)
+    const guardrailBtn = screen.getByTestId('director-guardrail-btn');
+    fireEvent.click(guardrailBtn);
+
+    const guardrailCard = screen.getByTestId('guardrail-alert-card');
+    expect(guardrailCard).toBeTruthy();
+    expect(guardrailCard.textContent).toContain('KHIÊN BẢO VỆ SOCRATIC');
+
+    // 2. Click Director Trigger 4: Jump to Concept Gate
+    const jumpGateBtn = screen.getByTestId('director-jump-gate-btn');
+    fireEvent.click(jumpGateBtn);
+
+    const gate = screen.getByTestId('concept-check-gate');
+    expect(gate).toBeTruthy();
+    const waveform = screen.getByTestId('voice-defense-waveform');
+    expect(waveform).toBeTruthy();
+  });
 });
 

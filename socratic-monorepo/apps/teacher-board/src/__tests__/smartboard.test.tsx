@@ -365,5 +365,85 @@ describe('Smartboard Magic Lasso & 4 Deterministic Engines (Phase 3)', () => {
     // In Olympiad mode, secondary parameters (like air drag k) are unlocked
     expect(screen.getByTestId('param-box-k')).toBeTruthy();
   });
+
+  /**
+   * TEST 8: Dynamic Physics Knowledge Routing from Formulas & Content Label (v4.5)
+   * Verify entering any formula automatically points to the exact physics visualizer,
+   * and verifies the UI displays 'Nội dung Vật lý' with specific topic title.
+   */
+  it('test_formula_auto_routes_to_physics_knowledge_topic', () => {
+    // 1. Initial Projectile Blueprint
+    const projectileBp: SimulationBlueprint = {
+      engine: 'PHYSICS',
+      templateId: 'PHYS_PROJECTILE',
+      recognizedLatex: 'v_0 = 22\\text{ m/s}, \\quad \\alpha = 45^\\circ',
+      parameters: [
+        { key: 'v0', label: 'v₀', unit: 'm/s', defaultValue: 22, min: 5, max: 50, step: 1 },
+      ],
+      socraticQuestion: 'Tại sao góc 45° cho tầm xa lớn nhất?',
+    };
+
+    const { rerender } = render(<SimulationWidget blueprint={projectileBp} />);
+
+    // Assert ribbon shows "Nội dung Vật lý" and topic title
+    expect(screen.getByText('Nội dung Vật lý:')).toBeTruthy();
+    expect(screen.getByText('Chuyển động Ném xiên trong Trọng trường')).toBeTruthy();
+
+    // 2. Rerender with Wave Interference formula (d2 - d1 = k*lambda)
+    const rippleBp: SimulationBlueprint = {
+      engine: 'PHYSICS',
+      templateId: 'PHYSICS',
+      recognizedLatex: 'd_2 - d_1 = k\\lambda \\quad (\\text{Giao thoa sóng})',
+      parameters: [
+        { key: 'lambda', label: 'Bước sóng', unit: 'px', defaultValue: 24, min: 10, max: 60, step: 2 },
+      ],
+      socraticQuestion: 'Hai nguồn cùng pha thì cực đại giao thoa nằm ở đâu?',
+    };
+
+    rerender(<SimulationWidget blueprint={rippleBp} />);
+    expect(screen.getByText('Giao thoa Sóng cơ học (2 Nguồn kết hợp)')).toBeTruthy();
+
+    // 3. Rerender with Pendulum formula (T = 2pi*sqrt(l/g))
+    const pendulumBp: SimulationBlueprint = {
+      engine: 'PHYSICS',
+      templateId: 'PHYSICS',
+      recognizedLatex: 'T = 2\\pi\\sqrt{\\frac{l}{g}} \\quad (\\text{Con lắc đơn})',
+      parameters: [
+        { key: 'L', label: 'Chiều dài', unit: 'm', defaultValue: 2, min: 0.5, max: 5, step: 0.1 },
+      ],
+      socraticQuestion: 'Chu kỳ con lắc phụ thuộc vào yếu tố nào?',
+    };
+
+    rerender(<SimulationWidget blueprint={pendulumBp} />);
+    expect(screen.getByText('Dao động Con lắc đơn (RK4 vi phân)')).toBeTruthy();
+
+    // 4. Rerender with Inclined plane formula (a = g(sin alpha - mu*cos alpha))
+    const inclineBp: SimulationBlueprint = {
+      engine: 'PHYSICS',
+      templateId: 'PHYSICS',
+      recognizedLatex: 'a = g(\\sin\\alpha - \\mu\\cos\\alpha) \\quad (\\text{Mặt phẳng nghiêng})',
+      parameters: [
+        { key: 'alpha', label: 'Góc nghiêng', unit: 'độ', defaultValue: 30, min: 5, max: 75, step: 5 },
+      ],
+      socraticQuestion: 'Điều kiện để vật bắt đầu trượt là gì?',
+    };
+
+    rerender(<SimulationWidget blueprint={inclineBp} />);
+    expect(screen.getByText('Mặt phẳng nghiêng & Ma sát trượt')).toBeTruthy();
+
+    // 5. Rerender with RLC formula (Z = sqrt(R^2 + (ZL - ZC)^2))
+    const rlcBp: SimulationBlueprint = {
+      engine: 'PHYSICS',
+      templateId: 'PHYSICS',
+      recognizedLatex: 'Z = \\sqrt{R^2 + (Z_L - Z_C)^2} \\quad (\\text{Mạch RLC})',
+      parameters: [
+        { key: 'R', label: 'Điện trở', unit: 'Ω', defaultValue: 50, min: 10, max: 200, step: 10 },
+      ],
+      socraticQuestion: 'Hiện tượng cộng hưởng xảy ra khi nào?',
+    };
+
+    rerender(<SimulationWidget blueprint={rlcBp} />);
+    expect(screen.getByText('Mạch Dao động RLC & Giản đồ Fresnel')).toBeTruthy();
+  });
 });
 

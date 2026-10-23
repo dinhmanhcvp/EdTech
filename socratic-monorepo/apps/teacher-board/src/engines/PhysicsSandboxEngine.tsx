@@ -5,6 +5,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { computeProjectile } from '../utils/physics';
 import { Waves, Zap, Compass, ArrowUpRight, Scale } from 'lucide-react';
+import { formatCanvasMath } from '../utils/canvasMath';
+import { MathText } from '../components/ui/MathText';
 
 interface Props {
   blueprint: SimulationBlueprint;
@@ -183,7 +185,121 @@ function drawMetallicSpring(
   ctx.restore();
 }
 
-type PhysicsMode = 'AUTO' | 'PROJECTILE' | 'PENDULUM' | 'RIPPLE_TANK' | 'RLC_PHASOR' | 'OPTICS_LENS' | 'INCLINED';
+export type PhysicsMode = 'AUTO' | 'PROJECTILE' | 'PENDULUM' | 'RIPPLE_TANK' | 'RLC_PHASOR' | 'OPTICS_LENS' | 'INCLINED';
+
+export const PHYSICS_CONTENT_MAP: Record<Exclude<PhysicsMode, 'AUTO'>, {
+  shortTitle: string;
+  badgeLabel: string;
+  fullTopic: string;
+}> = {
+  PROJECTILE: {
+    shortTitle: 'Ném xiên (Parabol)',
+    badgeLabel: 'Chuyển động Ném xiên trong Trọng trường',
+    fullTopic: 'VẬT LÝ 10 • NÉM XIÊN VI PHÂN & TRỌNG TRƯỜNG',
+  },
+  RIPPLE_TANK: {
+    shortTitle: 'Giao thoa Sóng',
+    badgeLabel: 'Giao thoa Sóng cơ học (2 Nguồn kết hợp)',
+    fullTopic: 'VẬT LÝ 11 • GIAO THOA SÓNG NƯỚC 3D (d₂ - d₁ = kλ)',
+  },
+  PENDULUM: {
+    shortTitle: 'Con lắc đơn',
+    badgeLabel: 'Dao động Con lắc đơn (RK4 vi phân)',
+    fullTopic: 'VẬT LÝ 11 • CON LẮC ĐƠN PHI TUYẾN GÓC LỚN',
+  },
+  RLC_PHASOR: {
+    shortTitle: 'Mạch điện RLC',
+    badgeLabel: 'Mạch Dao động RLC & Giản đồ Fresnel',
+    fullTopic: 'VẬT LÝ 12 • DÒNG ĐIỆN XOAY CHIỀU & CỘNG HƯỞNG',
+  },
+  INCLINED: {
+    shortTitle: 'Mặt phẳng nghiêng',
+    badgeLabel: 'Mặt phẳng nghiêng & Ma sát trượt',
+    fullTopic: 'VẬT LÝ 10 • ĐỘNG LỰC HỌC & ĐỊNH LUẬT II NEWTON',
+  },
+  OPTICS_LENS: {
+    shortTitle: 'Quang học Thấu kính',
+    badgeLabel: 'Quang hình học: Thấu kính mỏng & Tiêu cự',
+    fullTopic: 'VẬT LÝ 11 • QUANG HÌNH HỌC (1/f = 1/d + 1/d\')',
+  },
+};
+
+export function detectPhysicsModeFromFormula(formula: string, templateId?: string): Exclude<PhysicsMode, 'AUTO'> {
+  const f = (formula || '').toLowerCase();
+  const t = templateId || '';
+
+  // 1. Giao thoa sóng cơ học
+  if (
+    t === 'PHYS_RIPPLE_TANK' ||
+    f.includes('giao thoa') || f.includes('ripple') || f.includes('sóng nước') ||
+    f.includes('d_2 - d_1') || f.includes('d2 - d1') || f.includes('d2-d1') ||
+    f.includes('lambda') || f.includes('\\lambda') || f.includes('k\\lambda') ||
+    f.includes('hai nguồn') || f.includes('cực đại giao thoa') || f.includes('cực tiểu giao thoa') ||
+    f.includes('2a\\cos') || f.includes('2a \\cos')
+  ) {
+    return 'RIPPLE_TANK';
+  }
+
+  // 2. Con lắc đơn vi phân RK4
+  if (
+    t === 'PHYS_PENDULUM' ||
+    f.includes('con lắc') || f.includes('con lac') || f.includes('pendulum') ||
+    f.includes('2\\pi\\sqrt') || f.includes('l/g') || f.includes('m/k') ||
+    f.includes('\\ddot{\\theta}') || f.includes('\\theta') || f.includes('theta') ||
+    f.includes('dây') || f.includes('s_0\\cos') || f.includes('s_0') || f.includes('rk4')
+  ) {
+    return 'PENDULUM';
+  }
+
+  // 3. Mạch dao động RLC & Giản đồ Fresnel
+  if (
+    t === 'PHYS_RLC_PHASOR' ||
+    f.includes('rlc') || f.includes('fresnel') || f.includes('điện xoay chiều') ||
+    f.includes('z =') || f.includes('z_l') || f.includes('z_c') ||
+    f.includes('\\omega l') || f.includes('1/\\omega c') || f.includes('cộng hưởng') ||
+    f.includes('u_0\\cos') || f.includes('u = u_0')
+  ) {
+    return 'RLC_PHASOR';
+  }
+
+  // 4. Mặt phẳng nghiêng & Ma sát trượt
+  if (
+    t === 'PHYS_INCLINED' ||
+    f.includes('nghiêng') || f.includes('nghieng') || f.includes('incline') ||
+    f.includes('ma sát') || f.includes('ma sat') ||
+    f.includes('\\mu') || f.includes('mu') || f.includes('f_{ms}') || f.includes('fms') ||
+    f.includes('mg\\sin') || f.includes('mg\\cos') || f.includes('g(\\sin')
+  ) {
+    return 'INCLINED';
+  }
+
+  // 5. Quang học thấu kính
+  if (
+    t === 'PHYS_OPTICS_LENS' ||
+    f.includes('thấu kính') || f.includes('thau kinh') || f.includes('lens') ||
+    f.includes('1/f') || f.includes('tiêu cự')
+  ) {
+    return 'OPTICS_LENS';
+  }
+
+  // 6. Chuyển động ném xiên trong trọng trường
+  if (
+    t === 'PHYS_PROJECTILE' ||
+    f.includes('ném') || f.includes('nem') || f.includes('projectile') ||
+    f.includes('v_0') || f.includes('v0') || f.includes('parabol') ||
+    (f.includes('\\alpha') && (f.includes('cos') || f.includes('sin') || f.includes('g')))
+  ) {
+    return 'PROJECTILE';
+  }
+
+  // Fallback based on templateId
+  if (t === 'PHYS_RIPPLE_TANK') return 'RIPPLE_TANK';
+  if (t === 'PHYS_RLC_PHASOR') return 'RLC_PHASOR';
+  if (t === 'PHYS_PENDULUM') return 'PENDULUM';
+  if (t === 'PHYS_INCLINED') return 'INCLINED';
+  if (t === 'PHYS_OPTICS_LENS') return 'OPTICS_LENS';
+  return 'PROJECTILE';
+}
 
 export const PhysicsSandboxEngine: React.FC<Props> = ({
   blueprint,
@@ -201,8 +317,13 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
   const pendulumStateRef = useRef<{ theta: number; omega: number }>({ theta: 0.5, omega: 0 });
   const phaseTrailRef = useRef<{ theta: number; omega: number }[]>([]);
 
-  // View Mode
+  // View Mode: AUTO automatically maps incoming formulas to the correct knowledge topic
   const [activeMode, setActiveMode] = useState<PhysicsMode>('AUTO');
+
+  // Reset activeMode to AUTO when a new formula or template arrives so it dynamically points to that knowledge
+  useEffect(() => {
+    setActiveMode('AUTO');
+  }, [blueprint.recognizedLatex, blueprint.templateId]);
 
   const [hud, setHud] = useState({
     hMax: 0,
@@ -227,16 +348,11 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
   const isOlympiad = curriculumLevel === 'OLYMPIAD_ADVANCED';
 
-  // Determine active mode
-  const currentMode = React.useMemo<PhysicsMode>(() => {
+  // Determine active mode automatically from formula
+  const currentMode = React.useMemo<Exclude<PhysicsMode, 'AUTO'>>(() => {
     if (activeMode !== 'AUTO') return activeMode;
-    if (blueprint.templateId === 'PHYS_RIPPLE_TANK') return 'RIPPLE_TANK';
-    if (blueprint.templateId === 'PHYS_RLC_PHASOR') return 'RLC_PHASOR';
-    if (blueprint.templateId === 'PHYS_PENDULUM') return 'PENDULUM';
-    if (blueprint.templateId === 'PHYS_OPTICS_LENS') return 'OPTICS_LENS';
-    if (blueprint.templateId === 'PHYS_INCLINED') return 'INCLINED';
-    return 'PROJECTILE';
-  }, [activeMode, blueprint.templateId]);
+    return detectPhysicsModeFromFormula(blueprint.recognizedLatex || '', blueprint.templateId);
+  }, [activeMode, blueprint.recognizedLatex, blueprint.templateId]);
 
   // Helper to draw laser-sharp vector arrows with glass readouts
   const drawVector = (
@@ -272,7 +388,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
     // Laser pill label
     ctx.font = 'bold 10px monospace';
-    ctx.fillText(label, x2 + 5, y2 - 4);
+    ctx.fillText(formatCanvasMath(label), x2 + 5, y2 - 4);
     ctx.restore();
   };
 
@@ -432,10 +548,10 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#D97706';
         ctx.font = 'bold 12px monospace';
-        ctx.fillText('BIÊN ĐỘ GIAO THOA (A_max = 2A)', rLeft, 25);
+        ctx.fillText(formatCanvasMath('BIÊN ĐỘ GIAO THOA (A_max = 2A)'), rLeft, 25);
         ctx.fillStyle = '#57534E';
         ctx.font = '9px monospace';
-        ctx.fillText('Cực đại: d₂ - d₁ = kλ | Cực tiểu: d₂ - d₁ = (k+0.5)λ', rLeft, 38);
+        ctx.fillText(formatCanvasMath('Cực đại: d₂ - d₁ = kλ | Cực tiểu: d₂ - d₁ = (k+0.5)λ'), rLeft, 38);
 
         // Axes
         ctx.strokeStyle = '#94A3B8';
@@ -449,9 +565,9 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#57534E';
         ctx.font = '9px monospace';
-        ctx.fillText('Tọa độ x (cm)', rRight - 65, rMidY + 16);
-        ctx.fillText('+2A', rLeft + 6, rTop + 10);
-        ctx.fillText('-2A', rLeft + 6, rBottom - 6);
+        ctx.fillText(formatCanvasMath('Tọa độ x (cm)'), rRight - 65, rMidY + 16);
+        ctx.fillText(formatCanvasMath('+2A'), rLeft + 6, rTop + 10);
+        ctx.fillText(formatCanvasMath('-2A'), rLeft + 6, rBottom - 6);
 
         // Draw Amplitude envelope curve across central line
         ctx.strokeStyle = '#0284C7';
@@ -471,8 +587,8 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         // Telemetry badges
         ctx.fillStyle = '#0F172A';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText(`Bước sóng λ: ${lambda}px | f: ${freq}Hz`, 16, canvas.height - 18);
-        ctx.fillText(`Khoảng cách 2 nguồn d: ${sourceDist}px (${(sourceDist / lambda).toFixed(1)}λ)`, 16, canvas.height - 6);
+        ctx.fillText(formatCanvasMath(`Bước sóng λ: ${lambda}px | f: ${freq}Hz`), 16, canvas.height - 18);
+        ctx.fillText(formatCanvasMath(`Khoảng cách 2 nguồn d: ${sourceDist}px (${(sourceDist / lambda).toFixed(1)}λ)`), 16, canvas.height - 6);
 
       // ==============================================================
       // 2. PHYS_RLC_PHASOR: Fresnel Vector Phasor Studio (Điện xoay chiều)
@@ -512,7 +628,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#2563EB';
         ctx.font = 'bold 12px monospace';
-        ctx.fillText('GIẢN ĐỒ FRESNEL (PHASOR)', 18, 22);
+        ctx.fillText(formatCanvasMath('GIẢN ĐỒ FRESNEL (PHASOR)'), 18, 22);
 
         // Reference axes
         ctx.strokeStyle = '#CBD5E1';
@@ -552,7 +668,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#E11D48';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText(`φ: ${((phi * 180) / Math.PI).toFixed(1)}°`, leftCenterX + 38, leftCenterY - 6);
+        ctx.fillText(formatCanvasMath(`φ: ${((phi * 180) / Math.PI).toFixed(1)}°`), leftCenterX + 38, leftCenterY - 6);
 
         // Right Panel: Resonance Curve I(omega)
         const plotLeft = 330;
@@ -564,7 +680,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#059669';
         ctx.font = 'bold 12px monospace';
-        ctx.fillText('ĐƯỜNG CONG CỘNG HƯỞNG I(ω)', plotLeft, 22);
+        ctx.fillText(formatCanvasMath('ĐƯỜNG CONG CỘNG HƯỞNG I(ω)'), plotLeft, 22);
 
         // Curve axes
         ctx.strokeStyle = '#94A3B8';
@@ -657,7 +773,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
           ctx.fillStyle = '#2563EB';
           ctx.font = 'bold 12px monospace';
-          ctx.fillText('RK4 CON LẮC GÓC LỚN', 16, 22);
+          ctx.fillText(formatCanvasMath('RK4 CON LẮC GÓC LỚN'), 16, 22);
 
           // Right Panel: Phase Space Portrait
           const pOriginX = 450;
@@ -667,7 +783,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
           ctx.fillStyle = '#D97706';
           ctx.font = 'bold 12px monospace';
-          ctx.fillText('KHÔNG GIAN PHA (PHASE PORTRAIT)', 310, 22);
+          ctx.fillText(formatCanvasMath('KHÔNG GIAN PHA (PHASE PORTRAIT)'), 310, 22);
 
           // Phase axes
           ctx.strokeStyle = '#94A3B8';
@@ -730,9 +846,9 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#0F172A';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText(`θ: ${((theta * 180) / Math.PI).toFixed(1)}° | ω: ${omega.toFixed(2)} rad/s`, 16, canvas.height - 25);
+        ctx.fillText(formatCanvasMath(`θ: ${((theta * 180) / Math.PI).toFixed(1)}° | ω: ${omega.toFixed(2)} rad/s`), 16, canvas.height - 25);
         ctx.fillStyle = '#57534E';
-        ctx.fillText(`W_đ: ${wKin.toFixed(2)}J | W_t: ${wPot.toFixed(2)}J | Cơ năng: ${wTotal.toFixed(2)}J`, 16, canvas.height - 10);
+        ctx.fillText(formatCanvasMath(`W_đ: ${wKin.toFixed(2)}J | W_t: ${wPot.toFixed(2)}J | Cơ năng: ${wTotal.toFixed(2)}J`), 16, canvas.height - 10);
 
       // ==============================================================
       // 4. PHYS_OPTICS_LENS: Optical Bench & Real/Virtual Rays
@@ -795,7 +911,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
           ctx.fillStyle = '#0F172A';
           ctx.font = 'bold 10px monospace';
-          ctx.fillText(`d' = ${dPrime.toFixed(1)}px (${dPrime > 0 ? 'Ảnh thật' : 'Ảnh ảo'}) | Độ phóng đại k = ${(-dPrime / d).toFixed(2)}`, 20, 30);
+          ctx.fillText(formatCanvasMath(`d' = ${dPrime.toFixed(1)}px (${dPrime > 0 ? 'Ảnh thật' : 'Ảnh ảo'}) | Độ phóng đại k = ${(-dPrime / d).toFixed(2)}`), 20, 30);
         }
 
       // ==============================================================
@@ -851,7 +967,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#0F172A';
         ctx.font = 'bold 11px monospace';
-        ctx.fillText(`Gia tốc trượt: a = ${a.toFixed(2)} m/s² | Góc nghiêng α: ${((alpha * 180) / Math.PI).toFixed(0)}°`, 20, 30);
+        ctx.fillText(formatCanvasMath(`Gia tốc trượt: a = ${a.toFixed(2)} m/s² | Góc nghiêng α: ${((alpha * 180) / Math.PI).toFixed(0)}°`), 20, 30);
 
       // ==============================================================
       // 6. PHYS_PROJECTILE: Projectile with Air Drag & Glowing Comet Trail
@@ -970,15 +1086,21 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
   return (
     <div className="relative w-full max-w-[620px] flex flex-col items-center">
-      {/* Subject Mode Switcher Ribbon */}
+      {/* Subject Content Ribbon */}
       <div className="w-full flex items-center justify-between px-3 py-1.5 mb-2 bg-white/95 backdrop-blur-md rounded-xl border border-[#E6E4DD] shadow-[0_2px_12px_-2px_rgba(20,20,19,0.04)] flex-wrap gap-2">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-semibold">Chế độ Vật lý:</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-semibold">
+            Nội dung Vật lý:
+          </span>
+          <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-800 text-xs font-semibold font-mono border border-stone-200">
+            {PHYSICS_CONTENT_MAP[currentMode]?.badgeLabel || 'Chuyển động Ném xiên trong Trọng trường'}
+          </span>
         </div>
 
         <div className="flex items-center gap-1 flex-wrap">
           <button
             type="button"
+            data-testid="mode-btn-projectile"
             onClick={() => setActiveMode('PROJECTILE')}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
               currentMode === 'PROJECTILE'
@@ -987,11 +1109,12 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
             }`}
           >
             <ArrowUpRight className="w-3.5 h-3.5 text-blue-600" />
-            <span>Ném xiên Comet</span>
+            <span>Ném xiên (Parabol)</span>
           </button>
 
           <button
             type="button"
+            data-testid="mode-btn-ripple"
             onClick={() => setActiveMode('RIPPLE_TANK')}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
               currentMode === 'RIPPLE_TANK'
@@ -1000,11 +1123,12 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
             }`}
           >
             <Waves className="w-3.5 h-3.5 text-sky-600" />
-            <span>Giao thoa Sóng 3D</span>
+            <span>Giao thoa Sóng</span>
           </button>
 
           <button
             type="button"
+            data-testid="mode-btn-pendulum"
             onClick={() => setActiveMode('PENDULUM')}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
               currentMode === 'PENDULUM'
@@ -1013,11 +1137,12 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
             }`}
           >
             <Compass className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Con lắc RK4</span>
+            <span>Con lắc đơn</span>
           </button>
 
           <button
             type="button"
+            data-testid="mode-btn-rlc"
             onClick={() => setActiveMode('RLC_PHASOR')}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
               currentMode === 'RLC_PHASOR'
@@ -1026,11 +1151,12 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
             }`}
           >
             <Zap className="w-3.5 h-3.5 text-amber-600" />
-            <span>Fresnel RLC</span>
+            <span>Mạch điện RLC</span>
           </button>
 
           <button
             type="button"
+            data-testid="mode-btn-inclined"
             onClick={() => setActiveMode('INCLINED')}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
               currentMode === 'INCLINED'
@@ -1047,32 +1173,32 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
       {/* Pill-shaped Glass HUD Overlay for PHYS_PROJECTILE */}
       {currentMode === 'PROJECTILE' && (
         <div className="absolute top-14 left-3 bg-white/95 backdrop-blur-md border border-[#E6E4DD] rounded-xl px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-mono text-stone-800 pointer-events-none shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] z-10 flex-wrap">
-          <div>
-            <span className="text-stone-500">H_max:</span>{' '}
+          <div className="flex items-center gap-1">
+            <span className="text-stone-500"><MathText text="H_{\max}:" /></span>{' '}
             <span className="text-stone-900 font-bold tabular-nums">{hud.hMax}m</span>
           </div>
           <div className="w-[1px] h-3 bg-stone-200" />
-          <div>
-            <span className="text-stone-500">L_max:</span>{' '}
+          <div className="flex items-center gap-1">
+            <span className="text-stone-500"><MathText text="L_{\max}:" /></span>{' '}
             <span className="text-stone-900 font-bold tabular-nums">{hud.lMax}m</span>
           </div>
           <div className="w-[1px] h-3 bg-stone-200" />
-          <div>
-            <span className="text-stone-500">T_bay:</span>{' '}
+          <div className="flex items-center gap-1">
+            <span className="text-stone-500"><MathText text="t_{\text{bay}}:" /></span>{' '}
             <span className="text-stone-900 font-bold tabular-nums">{hud.tFlight}s</span>
           </div>
           <div className="w-[1px] h-3 bg-stone-200" />
-          <div>
-            <span className="text-stone-500">W_đ:</span>{' '}
+          <div className="flex items-center gap-1">
+            <span className="text-stone-500"><MathText text="W_đ:" /></span>{' '}
             <span className="text-emerald-700 font-bold tabular-nums">{hud.wKin}J</span>
           </div>
           <div className="w-[1px] h-3 bg-stone-200" />
-          <div>
-            <span className="text-stone-500">W_t:</span>{' '}
+          <div className="flex items-center gap-1">
+            <span className="text-stone-500"><MathText text="W_t:" /></span>{' '}
             <span className="text-rose-700 font-bold tabular-nums">{hud.wPot}J</span>
           </div>
           <div className="w-[1px] h-3 bg-stone-200" />
-          <div>
+          <div className="flex items-center gap-1">
             <span className="text-stone-500">Cơ năng W:</span>{' '}
             <span className="text-blue-700 font-bold tabular-nums">{hud.wTotal}J</span>
           </div>
@@ -1082,22 +1208,22 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
       {/* Pill-shaped Glass HUD Overlay for PHYS_RLC_PHASOR */}
       {currentMode === 'RLC_PHASOR' && (
         <div className="absolute top-14 right-3 bg-white/95 backdrop-blur-md border border-[#E6E4DD] rounded-xl px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-mono text-stone-800 pointer-events-none shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] z-10 flex-wrap">
-          <div>
+          <div className="flex items-center gap-1">
             <span className="text-stone-500">Tổng trở Z:</span>{' '}
             <span className="text-stone-900 font-bold tabular-nums">{hud.rlcZ} Ω</span>
           </div>
           <div className="w-[1px] h-3 bg-stone-200" />
-          <div>
+          <div className="flex items-center gap-1">
             <span className="text-stone-500">Dòng I:</span>{' '}
             <span className="text-stone-900 font-bold tabular-nums">{hud.rlcI} A</span>
           </div>
           <div className="w-[1px] h-3 bg-stone-200" />
-          <div>
-            <span className="text-stone-500">cos φ:</span>{' '}
+          <div className="flex items-center gap-1">
+            <span className="text-stone-500"><MathText text="\cos\varphi:" /></span>{' '}
             <span className="text-stone-900 font-bold tabular-nums">{hud.rlcCosPhi}</span>
           </div>
           <div className="w-[1px] h-3 bg-stone-200" />
-          <div>
+          <div className="flex items-center gap-1">
             <span className="text-stone-500">Công suất P:</span>{' '}
             <span className="text-stone-900 font-bold tabular-nums">{hud.rlcP} W</span>
           </div>

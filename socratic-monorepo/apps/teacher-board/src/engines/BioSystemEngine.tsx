@@ -4,6 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { Dna, Leaf, Heart, GitBranch, Rotate3d } from 'lucide-react';
+import { formatCanvasMath } from '../utils/canvasMath';
 
 interface Props {
   blueprint: SimulationBlueprint;
@@ -936,9 +937,9 @@ export const BioSystemEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#18181B';
         ctx.font = '10px monospace';
-        ctx.fillText(`Alen A (p): ${pAllel.toFixed(2)} | Alen a (q): ${qAllel.toFixed(2)}`, 16, canvas.height - 40);
+        ctx.fillText(formatCanvasMath(`Alen A (p): ${pAllel.toFixed(2)} | Alen a (q): ${qAllel.toFixed(2)}`), 16, canvas.height - 40);
         ctx.fillStyle = '#57534E';
-        ctx.fillText(`AA: ${p2.toFixed(2)} | Aa: ${twoPq.toFixed(2)} | aa: ${q2.toFixed(2)}`, 16, canvas.height - 22);
+        ctx.fillText(formatCanvasMath(`AA: ${p2.toFixed(2)} | Aa: ${twoPq.toFixed(2)} | aa: ${q2.toFixed(2)}`), 16, canvas.height - 22);
 
         // Right Panel: 50 Generations Analytical Trajectory Graph
         const gLeft = 285;
@@ -950,7 +951,7 @@ export const BioSystemEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#2563EB';
         ctx.font = 'bold 12px monospace';
-        ctx.fillText('DI TRUYỀN QUẦN THỂ QUA 50 THẾ HỆ', gLeft, 25);
+        ctx.fillText(formatCanvasMath('DI TRUYỀN QUẦN THỂ QUA 50 THẾ HỆ'), gLeft, 25);
 
         // Axes
         ctx.strokeStyle = '#94A3B8';
@@ -1002,9 +1003,9 @@ export const BioSystemEngine: React.FC<Props> = ({
         // Legend
         ctx.fillStyle = '#059669';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText('— Tần số p (Alen A)', gLeft + 20, gTop + 16);
+        ctx.fillText(formatCanvasMath('— Tần số p (Alen A)'), gLeft + 20, gTop + 16);
         ctx.fillStyle = '#E11D48';
-        ctx.fillText('--- Tần số q (Alen a)', gLeft + 160, gTop + 16);
+        ctx.fillText(formatCanvasMath('--- Tần số q (Alen a)'), gLeft + 160, gTop + 16);
       }
 
       animId = requestAnimationFrame(render);

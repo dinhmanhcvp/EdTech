@@ -11,6 +11,7 @@ import { BioSystemEngine } from '../../engines/BioSystemEngine';
 import { AIGeneratedVisualEngine } from './AIGeneratedVisualEngine';
 import { TapAndSwapOCR } from './TapAndSwapOCR';
 import { MathView } from '../common/MathView';
+import { MathText } from '../ui/MathText';
 
 export interface SimulationWidgetProps {
   blueprint: SimulationBlueprint;
@@ -251,6 +252,49 @@ export function getCurriculumParameters(
   return [...baseParams, ...additions];
 }
 
+function getTopicDisplayName(blueprint: SimulationBlueprint): string {
+  const t = blueprint.templateId;
+  const f = (blueprint.recognizedLatex || '').toLowerCase();
+  
+  if (t === 'PHYS_PROJECTILE' || f.includes('ném') || f.includes('projectile') || f.includes('v_0') || f.includes('parabol')) {
+    return 'VẬT LÝ • CHUYỂN ĐỘNG NÉM XIÊN TRONG TRỌNG TRƯỜNG';
+  }
+  if (t === 'PHYS_RIPPLE_TANK' || f.includes('giao thoa') || f.includes('ripple') || f.includes('d_2 - d_1') || f.includes('lambda')) {
+    return 'VẬT LÝ • HIỆN TƯỢNG GIAO THOA SÓNG CƠ HỌC (2 NGUỒN)';
+  }
+  if (t === 'PHYS_PENDULUM' || f.includes('con lắc') || f.includes('pendulum') || f.includes('l/g') || f.includes('theta')) {
+    return 'VẬT LÝ • DAO ĐỘNG CON LẮC ĐƠN VI PHÂN (RK4)';
+  }
+  if (t === 'PHYS_RLC_PHASOR' || f.includes('rlc') || f.includes('fresnel') || f.includes('z =') || f.includes('cộng hưởng')) {
+    return 'VẬT LÝ • MẠCH ĐIỆN XOAY CHIỀU RLC & GIẢN ĐỒ FRESNEL';
+  }
+  if (t === 'PHYS_INCLINED' || f.includes('nghiêng') || f.includes('ma sát') || f.includes('mu') || f.includes('incline')) {
+    return 'VẬT LÝ • CƠ HỌC MẶT PHẲNG NGHIÊNG & MA SÁT';
+  }
+  if (t === 'PHYS_OPTICS_LENS' || f.includes('thấu kính') || f.includes('lens') || f.includes('1/f')) {
+    return 'VẬT LÝ • QUANG HÌNH HỌC: THẤU KÍNH MỎNG';
+  }
+  if (t === 'CHEM_BALANCE_SCALE' || f.includes('fe') || f.includes('cân bằng') || f.includes('hno3')) {
+    return 'HÓA HỌC • CÂN BẰNG PHẢN ỨNG OXI HÓA - KHỬ';
+  }
+  if (t === 'CHEM_EQUILIBRIUM_TITRATION' || f.includes('chuẩn độ') || f.includes('ph') || f.includes('titration')) {
+    return 'HÓA HỌC • CHUẨN ĐỘ DUNG DỊCH & BƯỚC NHẢY pH';
+  }
+  if (t === 'BIO_PHOTOSYNTHESIS' || f.includes('quang hợp') || f.includes('lá') || f.includes('stomata')) {
+    return 'SINH HỌC • QUANG HỢP & TRAO ĐỔI KHÍ THỰC VẬT';
+  }
+  if (t === 'BIO_DNA_HELIX' || f.includes('dna') || f.includes('adn') || f.includes('helicase')) {
+    return 'SINH HỌC • CƠ CHẾ NHÂN ĐÔI ADN & SAO CHÉP';
+  }
+  if (t === 'MATH_TRIG_WAVE' || f.includes('sin') || f.includes('cos') || f.includes('dao động')) {
+    return 'TOÁN HỌC • HÀM SỐ LƯỢNG GIÁC & SÓNG ĐIỀU HÒA';
+  }
+  if (t === 'MATH_FUNC_2D' || f.includes('x^3') || f.includes('x^2') || f.includes('tích phân') || f.includes('int')) {
+    return 'TOÁN HỌC • GIẢI TÍCH ĐỒ THỊ & KHẢO SÁT HÀM SỐ';
+  }
+  return `${blueprint.engine} • ${blueprint.templateId}`;
+}
+
 export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   blueprint,
   onClose,
@@ -381,7 +425,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-mono uppercase tracking-widest text-stone-500 font-medium">
-              {blueprint.engine} • {blueprint.templateId}
+              {getTopicDisplayName(activeBlueprint)}
             </span>
             <span className="inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded bg-[#F2F0EA] border border-[#E6E4DD] text-stone-600 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -395,11 +439,6 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               onSwap={handleFormulaSwap}
             />
           </div>
-          {activeFormula && (
-            <div className="mt-1 px-2.5 py-0.5 rounded bg-[#F8F7F4] border border-[#E6E4DD] text-stone-800 text-xs inline-block">
-              <MathView latex={activeFormula} displayMode={false} />
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -582,7 +621,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
                 Câu hỏi gợi mở Socratic
               </div>
               <p className="font-serif text-[#78350F] text-sm leading-snug">
-                {blueprint.socraticQuestion}
+                <MathText text={blueprint.socraticQuestion} />
               </p>
               <div className="text-[10px] text-amber-700/70 mt-1.5 font-mono">
                 (Chạm vào hộp thoại hoặc nút ✕ bên phải để đóng)
@@ -639,7 +678,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               className="p-3 rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] flex flex-col gap-2 hover:border-[#DCD9D0] transition-colors"
             >
               <div className="flex justify-between items-center text-xs">
-                <span className="text-stone-700 font-medium tracking-tight text-[11px]">{p.label}</span>
+                <span className="text-stone-700 font-medium tracking-tight text-[11px]"><MathText text={p.label} /></span>
                 <span
                   data-testid={`param-val-${p.key}`}
                   className="font-mono tabular-nums text-xs text-blue-600 font-bold"

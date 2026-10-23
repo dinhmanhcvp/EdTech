@@ -3,6 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { Edit3, Check, RefreshCw } from 'lucide-react';
 import { findAmbiguousTokens, swapTokenInFormula } from '../../utils/ocrConfusions';
+import { MathView } from '../common/MathView';
+import { FormulaBlock } from '../ui/MathText';
 
 export interface TapAndSwapOCRProps {
   formula: string;
@@ -88,13 +90,13 @@ export const TapAndSwapOCR: React.FC<TapAndSwapOCRProps> = ({
             className="group flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white hover:bg-stone-50 border border-[#DCD9D0] cursor-pointer transition select-none shadow-2xs"
             title="Chạm để đổi phương án OCR hoặc sửa công thức"
           >
-            <span
+            <div
               data-testid="current-formula-display"
-              className="font-mono text-[#18181B] font-semibold text-xs tracking-tight"
+              className="text-[#18181B] text-xs font-medium max-w-md overflow-x-auto"
             >
-              {selectedFormula}
-            </span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#F2F0EA] text-stone-600 border border-[#E5E3DC] font-mono group-hover:text-stone-900 transition flex items-center gap-1 font-medium">
+              <FormulaBlock latex={selectedFormula} displayMode={false} />
+            </div>
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#F2F0EA] text-stone-600 border border-[#E5E3DC] font-mono group-hover:text-stone-900 transition flex items-center gap-1 font-medium shrink-0">
               <RefreshCw className="w-2.5 h-2.5" />
               <span>Swap</span>
             </span>
@@ -181,10 +183,12 @@ export const TapAndSwapOCR: React.FC<TapAndSwapOCRProps> = ({
                 key={idx}
                 data-testid={`ocr-alt-${idx}`}
                 onClick={() => handleSelect(alt)}
-                className="w-full text-left px-2 py-1.5 rounded-lg text-xs font-mono text-stone-700 hover:text-[#18181B] hover:bg-[#F8F7F4] border border-transparent hover:border-[#E5E3DC] transition flex items-center justify-between cursor-pointer"
+                className="w-full text-left px-2 py-1.5 rounded-lg text-xs text-stone-700 hover:text-[#18181B] hover:bg-[#F8F7F4] border border-transparent hover:border-[#E5E3DC] transition flex items-center justify-between cursor-pointer"
               >
-                <span>{alt}</span>
-                <span className="text-[10px] text-stone-500 font-mono px-1 py-0.2 rounded bg-[#F2F0EA] border border-[#E5E3DC]">
+                <div className="overflow-x-auto py-0.5">
+                  <FormulaBlock latex={alt} displayMode={false} />
+                </div>
+                <span className="text-[10px] text-stone-500 font-mono px-1 py-0.2 rounded bg-[#F2F0EA] border border-[#E5E3DC] shrink-0 ml-2">
                   Chọn
                 </span>
               </button>

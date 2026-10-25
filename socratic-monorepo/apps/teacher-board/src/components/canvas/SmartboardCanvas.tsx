@@ -3,8 +3,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
+import { routeLocally, makeSolidBlueprint } from '../../utils/localRouter';
+import { detectSolidFromStrokes } from '../../utils/sketchSolid';
 import { AUTO_INK_SCENES, AutoInkScene } from '../../utils/autoInkPresets';
+import { layoutTypeset, typesetStroke, sourceStrokes, bboxOfStrokes, latexToPlain, type ConvertLine } from '../../utils/inkConvert';
 import { SimulationWidget } from './SimulationWidget';
+import { InkConvertPanel } from './InkConvertPanel';
 import { OcrReviewModal } from './OcrReviewModal';
 import { MathView } from '../common/MathView';
 import { FormulaBlock, MathText } from '../ui/MathText';
@@ -35,7 +39,11 @@ import {
   FileText,
   Check,
   Share2,
+  Wand2,
+  Pencil,
 } from 'lucide-react';
+
+const ERASE_R = 14; // bán kính tẩy (đơn vị canvas)
 
 export type CanvasTool = 'PEN' | 'HIGHLIGHTER' | 'SHAPE' | 'LASSO' | 'ERASER';
 export type ShapeType = 'CIRCLE' | 'LINE' | 'ARROW' | 'RECTANGLE';
@@ -78,12 +86,21 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [redoStack, setRedoStack] = useState<Stroke[][]>([]);
 
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
+  const [eraserHover, setEraserHover] = useState<Point | null>(null);
   const [shapeStart, setShapeStart] = useState<Point | null>(null);
   const [shapeCurrent, setShapeCurrent] = useState<Point | null>(null);
 
   const [lassoLoop, setLassoLoop] = useState<Point[]>([]);
   const [selectedStrokes, setSelectedStrokes] = useState<Stroke[]>([]);
+  // Chuyển chữ viết tay → công thức chuẩn: nguồn nét (hoặc công thức đang sửa)
+  const [convertCtx, setConvertCtx] = useState<{ source: Stroke[]; editing?: { id: string; latex: string; text: string } | null } | null>(null);
+  const [boardScale, setBoardScale] = useState(1);
+  const boardWrapRef = useRef<HTMLDivElement | null>(null);
   const [activeBlueprint, setActiveBlueprint] = useState<SimulationBlueprint | null>(initialBlueprint);
+  // Bảng luôn được gắn sẵn (chỉ ẩn khi sang Mode 02/03), nên khi Mode 03 đẩy bài mới lên thì phải nạp lại mẫu.
+  useEffect(() => {
+    if (initialBlueprint) setActiveBlueprint(initialBlueprint);
+  }, [initialBlueprint]);
   const [isLoading, setIsLoading] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [formulaInput, setFormulaInput] = useState<string>('');
@@ -179,8 +196,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
   // Debug Preview Thumbnail generator (Off-screen render)
   useEffect(() => {
-    if (selectedStrokes.length > 0) {
-      exportIsolatedWebp(selectedStrokes)
+    if (sourceStrokes(selectedStrokes).length > 0) {
+      exportIsolatedWebp(sourceStrokes(selectedStrokes))
         .then((res) => {
           setThumbnailUrl(res.dataUrl);
         })
@@ -193,118 +210,175 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     }
   }, [selectedStrokes]);
 
-  // Redraw canvas with full high-performance rendering
+  // ---- Vẽ nét: làm mượt bằng đường cong bậc 2 qua trung điểm; có áp lực bút thì đổi độ dày theo từng đoạn ----
+  const paintStroke = (ctx: CanvasRenderingContext2D, pts: Point[], color: string, width: number) => {
+    if (pts.length < 2) return;
+    ctx.strokeStyle = color;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    const pressured = pts.some((p) => p.p !== undefined && p.p > 0 && p.p !== 0.5);
+    if (pressured) {
+      for (let i = 1; i < pts.length; i++) {
+        const a = pts[i - 1];
+        const b = pts[i];
+        const pr = ((a.p ?? 0.5) + (b.p ?? 0.5)) / 2;
+        ctx.lineWidth = Math.max(0.8, width * (0.45 + 1.1 * pr));
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+      return;
+    }
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    if (pts.length === 2) {
+      ctx.lineTo(pts[1].x, pts[1].y);
+    } else {
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i].x + pts[i + 1].x) / 2;
+        const my = (pts[i].y + pts[i + 1].y) / 2;
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+      }
+      const last = pts[pts.length - 1];
+      ctx.lineTo(last.x, last.y);
+    }
+    ctx.stroke();
+  };
+
+  // Lớp nền đã vẽ sẵn (giấy + lưới + nét đã chốt): chỉ vẽ lại khi các thứ này đổi, còn nét đang viết chỉ chồng lên trên
+  const baseCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const baseKeyRef = useRef<unknown[] | null>(null);
+
+  const renderBase = useCallback(
+    (w: number, h: number) => {
+      let base = baseCanvasRef.current;
+      if (!base) {
+        base = document.createElement('canvas');
+        baseCanvasRef.current = base;
+      }
+      if (base.width !== w || base.height !== h) {
+        base.width = w;
+        base.height = h;
+      }
+      const ctx = base.getContext('2d');
+      if (!ctx) return null;
+      ctx.clearRect(0, 0, w, h);
+
+      // Warm Alabaster Paper Surface Fill
+      ctx.fillStyle = '#F8F7F4';
+      ctx.fillRect(0, 0, w, h);
+
+      // 1. Grid pattern
+      if (gridPattern === 'DOTS') {
+        ctx.fillStyle = '#E5E3DC';
+        ctx.beginPath();
+        for (let x = 20; x < w; x += 28) {
+          for (let y = 20; y < h; y += 28) {
+            ctx.moveTo(x + 1.2, y);
+            ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+          }
+        }
+        ctx.fill();
+      } else if (gridPattern === 'GRID') {
+        ctx.strokeStyle = '#EFECE6';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = 0; x < w; x += 32) {
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+        }
+        for (let y = 0; y < h; y += 32) {
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+        }
+        ctx.stroke();
+      }
+
+      // 1b. Tracing watermark guide (phòng thu nét)
+      if (showWatermarkGuide) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(100, 116, 139, 0.38)';
+        ctx.fillStyle = 'rgba(100, 116, 139, 0.65)';
+        ctx.lineWidth = 1.8;
+        ctx.setLineDash([4, 4]);
+        const targetPreset = AUTO_INK_SCENES.find((s) => s.id === selectedRecordSlot);
+        if (targetPreset) {
+          for (const stroke of targetPreset.strokes) {
+            if (stroke.points.length > 1) {
+              ctx.beginPath();
+              ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+              for (let i = 1; i < stroke.points.length; i++) ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#475569';
+        ctx.font = 'bold 11px "JetBrains Mono", monospace';
+        ctx.fillText(`VIỀN MỜ HƯỚNG DẪN • Cầm bút/chuột viết đè theo nét đứt này, sau đó bấm [Lưu Vào Kịch Bản]`, 24, 28);
+        ctx.restore();
+      }
+
+      // 2. Committed strokes
+      const selIds = new Set(selectedStrokes.map((s) => s.id));
+      for (const stroke of strokes) {
+        if (stroke.typeset || stroke.points.length < 2) continue;
+        const isSelected = selIds.has(stroke.id);
+        paintStroke(ctx, stroke.points, isSelected ? '#2563EB' : stroke.color, stroke.width + (isSelected ? 2 : 0));
+      }
+      return base;
+    },
+    [strokes, selectedStrokes, gridPattern, showWatermarkGuide, selectedRecordSlot],
+  );
+
+  // Redraw: blit lớp nền rồi vẽ nét đang viết / hình xem trước / vòng lasso / vòng tẩy
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Warm Alabaster Paper Surface Fill
-    ctx.fillStyle = '#F8F7F4';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // 1. Draw Grid Pattern
-    if (gridPattern === 'DOTS') {
-      ctx.fillStyle = '#E5E3DC';
-      for (let x = 20; x < canvas.width; x += 28) {
-        for (let y = 20; y < canvas.height; y += 28) {
-          ctx.beginPath();
-          ctx.arc(x, y, 1.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    } else if (gridPattern === 'GRID') {
-      ctx.strokeStyle = '#EFECE6';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < canvas.width; x += 32) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-      }
-      for (let y = 0; y < canvas.height; y += 32) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-      }
+    const key = [strokes, selectedStrokes, gridPattern, showWatermarkGuide, selectedRecordSlot, canvas.width, canvas.height];
+    const prevKey = baseKeyRef.current;
+    let base = baseCanvasRef.current;
+    if (!base || !prevKey || prevKey.length !== key.length || key.some((k, i) => k !== prevKey[i])) {
+      base = renderBase(canvas.width, canvas.height);
+      baseKeyRef.current = key;
+    }
+    if (base) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(base, 0, 0);
     }
 
-    // 1b. Draw Tracing Watermark Guide (faint hairline guide for user practice/tracing)
-    if (showWatermarkGuide) {
-      ctx.save();
-      ctx.strokeStyle = 'rgba(100, 116, 139, 0.38)';
-      ctx.fillStyle = 'rgba(100, 116, 139, 0.65)';
-      ctx.lineWidth = 1.8;
-      ctx.setLineDash([4, 4]);
-
-      // Faintly draw all preset strokes for the chosen slot to allow tracing letter-by-letter
-      const targetPreset = AUTO_INK_SCENES.find((s) => s.id === selectedRecordSlot);
-      if (targetPreset) {
-        for (const stroke of targetPreset.strokes) {
-          if (stroke.points.length > 1) {
-            ctx.beginPath();
-            ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
-            for (let i = 1; i < stroke.points.length; i++) {
-              ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
-            }
-            ctx.stroke();
-          }
-        }
-      }
-
-      ctx.setLineDash([]);
-      ctx.fillStyle = '#475569';
-      ctx.font = 'bold 11px "JetBrains Mono", monospace';
-      ctx.fillText(`VIỀN MỜ HƯỚNG DẪN • Cầm bút/chuột viết đè theo nét đứt này, sau đó bấm [Lưu Vào Kịch Bản]`, 24, 28);
-      ctx.restore();
-    }
-
-    // 2. Draw Committed Strokes
-    for (const stroke of strokes) {
-      if (stroke.points.length < 2) continue;
-      const isSelected = selectedStrokes.some((s) => s.id === stroke.id);
-
-      ctx.save();
-      ctx.strokeStyle = isSelected ? '#2563EB' : stroke.color;
-      ctx.lineWidth = stroke.width + (isSelected ? 2 : 0);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      ctx.beginPath();
-      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
-      for (let i = 1; i < stroke.points.length; i++) {
-        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
-      }
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // 3. Draw Active Freehand Stroke
+    // 3. Active freehand stroke
     if (currentStroke.length > 1) {
       ctx.save();
       if (tool === 'LASSO') {
         ctx.setLineDash([6, 6]);
         ctx.strokeStyle = '#2563EB';
         ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(currentStroke[0].x, currentStroke[0].y);
+        for (let i = 1; i < currentStroke.length; i++) ctx.lineTo(currentStroke[i].x, currentStroke[i].y);
+        ctx.stroke();
       } else if (tool === 'HIGHLIGHTER') {
         ctx.strokeStyle = 'rgba(254, 240, 138, 0.5)';
         ctx.lineWidth = 18;
         ctx.lineCap = 'square';
+        ctx.beginPath();
+        ctx.moveTo(currentStroke[0].x, currentStroke[0].y);
+        for (let i = 1; i < currentStroke.length; i++) ctx.lineTo(currentStroke[i].x, currentStroke[i].y);
+        ctx.stroke();
       } else {
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = strokeWidth;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        paintStroke(ctx, currentStroke, strokeColor, strokeWidth);
       }
-
-      ctx.beginPath();
-      ctx.moveTo(currentStroke[0].x, currentStroke[0].y);
-      for (let i = 1; i < currentStroke.length; i++) {
-        ctx.lineTo(currentStroke[i].x, currentStroke[i].y);
-      }
-      ctx.stroke();
       ctx.restore();
     }
 
-    // 4. Draw Shape Preview
+    // 4. Shape preview
     if (tool === 'SHAPE' && shapeStart && shapeCurrent) {
       ctx.save();
       ctx.strokeStyle = strokeColor;
@@ -349,7 +423,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       ctx.restore();
     }
 
-    // 5. Draw Magic Lasso Loop (Freehand or Auto-Ink Selected)
+    // 5. Magic Lasso loop
     if (lassoLoop.length > 2) {
       ctx.save();
       ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
@@ -358,15 +432,26 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       ctx.setLineDash([6, 6]);
       ctx.beginPath();
       ctx.moveTo(lassoLoop[0].x, lassoLoop[0].y);
-      for (let i = 1; i < lassoLoop.length; i++) {
-        ctx.lineTo(lassoLoop[i].x, lassoLoop[i].y);
-      }
+      for (let i = 1; i < lassoLoop.length; i++) ctx.lineTo(lassoLoop[i].x, lassoLoop[i].y);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
       ctx.restore();
     }
-  }, [strokes, currentStroke, selectedStrokes, lassoLoop, tool, strokeColor, strokeWidth, gridPattern, shapeStart, shapeCurrent, selectedShape, showWatermarkGuide, selectedRecordSlot]);
+
+    // 6. Vòng tẩy
+    if (tool === 'ERASER' && eraserHover) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(24,24,27,0.55)';
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(eraserHover.x, eraserHover.y, ERASE_R, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+  }, [strokes, currentStroke, selectedStrokes, lassoLoop, tool, strokeColor, strokeWidth, gridPattern, shapeStart, shapeCurrent, selectedShape, showWatermarkGuide, selectedRecordSlot, renderBase, eraserHover]);
 
   useEffect(() => {
     redraw();
@@ -568,22 +653,80 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     };
   }, [triggerAutoInk]);
 
-  // Pointer Interaction
-  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = e.currentTarget;
+  // Pointer Interaction — bút/ngón tay/chuột, bắt con trỏ (không đứt nét khi ra ngoài), nhận mọi điểm trung gian, áp lực bút, chống chạm lòng bàn tay
+  const activePointerRef = useRef<number | null>(null);
+  const lastPenAtRef = useRef(0);
+  const livePointsRef = useRef<Point[]>([]);
+  const frameRef = useRef<number | null>(null);
+  const moveRef = useRef<{ last: Point; saved: boolean } | null>(null);
+  const eraserGestureRef = useRef(false);
+
+  const toBoard = (canvas: HTMLCanvasElement, clientX: number, clientY: number, pressure?: number, pen = false): Point => {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / (rect.width || 1);
-    const scaleY = canvas.height / (rect.height || 1);
-    const pt: Point = {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
-    };
+    const sx = canvas.width / (rect.width || 1);
+    const sy = canvas.height / (rect.height || 1);
+    const pt: Point = { x: (clientX - rect.left) * sx, y: (clientY - rect.top) * sy };
+    if (pen && pressure !== undefined && pressure > 0) pt.p = pressure;
+    return pt;
+  };
+
+  const flushLive = () => {
+    frameRef.current = null;
+    setCurrentStroke(livePointsRef.current.slice());
+  };
+  const scheduleLive = () => {
+    if (frameRef.current === null) frameRef.current = requestAnimationFrame(flushLive);
+  };
+
+  const selectionBox = () => {
+    const bb = bboxOfStrokes(selectedStrokes);
+    const pad = 14;
+    return { x0: bb.x0 - pad, y0: bb.y0 - pad, x1: bb.x1 + pad, y1: bb.y1 + pad };
+  };
+
+  const moveSelectionBy = (dx: number, dy: number) => {
+    const ids = new Set(selectedStrokes.map((s) => s.id));
+    const shift = (s: Stroke): Stroke => (ids.has(s.id) ? { ...s, points: s.points.map((p) => ({ ...p, x: p.x + dx, y: p.y + dy })) } : s);
+    setStrokes((prev) => prev.map(shift));
+    setSelectedStrokes((prev) => prev.map(shift));
+    setLassoLoop((prev) => prev.map((p) => ({ x: p.x + dx, y: p.y + dy })));
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    // chống chạm lòng bàn tay: khi vừa dùng bút thì bỏ qua cảm ứng ngón/lòng bàn tay; chỉ nhận một con trỏ mỗi lúc
+    if (e.pointerType === 'pen') lastPenAtRef.current = performance.now();
+    if (e.pointerType === 'touch' && performance.now() - lastPenAtRef.current < 1500) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (activePointerRef.current !== null && activePointerRef.current !== e.pointerId) return;
+
+    const canvas = e.currentTarget;
+    activePointerRef.current = e.pointerId;
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch {
+      /* bỏ qua: một số trình duyệt/jsdom không hỗ trợ */
+    }
+    const pt = toBoard(canvas, e.clientX, e.clientY, e.pressure, e.pointerType === 'pen');
     isDrawingRef.current = true;
 
-    if (tool === 'ERASER') {
-      // Touch-to-erase
+    // đầu tẩy của bút (nút 32) hoặc công cụ Tẩy
+    const eraserByPen = e.pointerType === 'pen' && (e.buttons & 32) !== 0;
+    eraserGestureRef.current = tool === 'ERASER' || eraserByPen;
+
+    if (eraserGestureRef.current) {
+      saveToUndo();
       eraseAtPoint(pt);
+      setEraserHover(pt);
       return;
+    }
+
+    // Kéo vùng đã chọn bằng Lasso: nhấn vào bên trong khung vùng chọn → di chuyển
+    if (tool === 'LASSO' && selectedStrokes.length > 0) {
+      const b = selectionBox();
+      if (pt.x >= b.x0 && pt.x <= b.x1 && pt.y >= b.y0 && pt.y <= b.y1) {
+        moveRef.current = { last: pt, saved: false };
+        return;
+      }
     }
 
     if (tool === 'SHAPE') {
@@ -592,36 +735,90 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       return;
     }
 
+    livePointsRef.current = [pt];
     setCurrentStroke([pt]);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawingRef.current) return;
     const canvas = e.currentTarget;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / (rect.width || 1);
-    const scaleY = canvas.height / (rect.height || 1);
-    const pt: Point = {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
-    };
+    if (!isDrawingRef.current) {
+      if (tool === 'ERASER' && e.pointerType !== 'touch') setEraserHover(toBoard(canvas, e.clientX, e.clientY));
+      return;
+    }
+    if (activePointerRef.current !== e.pointerId) return;
 
-    if (tool === 'ERASER') {
-      eraseAtPoint(pt);
+    // mọi điểm trung gian giữa hai khung hình → nét mượt, không "gãy khúc" khi vẽ nhanh
+    const native = e.nativeEvent as PointerEvent;
+    const events = typeof native.getCoalescedEvents === 'function' && native.getCoalescedEvents().length > 0 ? native.getCoalescedEvents() : [native];
+    const pen = e.pointerType === 'pen';
+    const pts = events.map((ev) => toBoard(canvas, ev.clientX, ev.clientY, ev.pressure, pen));
+
+    if (eraserGestureRef.current) {
+      for (const p of pts) eraseAtPoint(p);
+      setEraserHover(pts[pts.length - 1]);
+      return;
+    }
+
+    if (moveRef.current) {
+      const m = moveRef.current;
+      const last = pts[pts.length - 1];
+      const dx = last.x - m.last.x;
+      const dy = last.y - m.last.y;
+      if (!m.saved && Math.hypot(dx, dy) > 1) {
+        saveToUndo();
+        m.saved = true;
+      }
+      if (m.saved) {
+        moveSelectionBy(dx, dy);
+        m.last = last;
+      }
       return;
     }
 
     if (tool === 'SHAPE') {
-      setShapeCurrent(pt);
+      setShapeCurrent(pts[pts.length - 1]);
       return;
     }
 
-    setCurrentStroke((prev) => [...prev, pt]);
+    const live = livePointsRef.current;
+    for (const p of pts) {
+      const q = live[live.length - 1];
+      if (!q || Math.hypot(p.x - q.x, p.y - q.y) >= 1.2) live.push(p);
+    }
+    scheduleLive();
   };
 
-  const handlePointerUp = () => {
+  const endPointer = (e: React.PointerEvent<HTMLCanvasElement>, cancelled = false) => {
+    if (activePointerRef.current !== null && e.pointerId !== undefined && activePointerRef.current !== e.pointerId) return;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* bỏ qua */
+    }
+    activePointerRef.current = null;
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    commitPointer(cancelled);
+  };
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => endPointer(e, false);
+  const handlePointerCancel = (e: React.PointerEvent<HTMLCanvasElement>) => endPointer(e, true);
+
+  const commitPointer = (cancelled: boolean) => {
     if (!isDrawingRef.current) return;
     isDrawingRef.current = false;
+
+    if (eraserGestureRef.current) {
+      eraserGestureRef.current = false;
+      return;
+    }
+    if (moveRef.current) {
+      moveRef.current = null;
+      return;
+    }
+    const stroke = livePointsRef.current;
+    livePointsRef.current = [];
 
     // 1. Commit Shape
     if (tool === 'SHAPE' && shapeStart && shapeCurrent) {
@@ -631,7 +828,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       const y2 = shapeCurrent.y;
       const dist = Math.hypot(x2 - x1, y2 - y1);
 
-      if (dist > 8) {
+      if (!cancelled && dist > 8) {
         let pts: Point[] = [];
         if (selectedShape === 'CIRCLE') {
           const r = dist;
@@ -664,7 +861,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       return;
     }
 
-    if (currentStroke.length < 2) {
+    // chấm tròn: chạm một lần bằng bút → vẽ một dấu chấm (cần cho dấu chấm của i, dấu thập phân, dấu nhân)
+    let pts = stroke;
+    if (pts.length === 1 && (tool === 'PEN')) {
+      const p = pts[0];
+      pts = [p, { ...p, x: p.x + 0.1, y: p.y + 0.1 }];
+    }
+    if (cancelled || pts.length < 2) {
       setCurrentStroke([]);
       return;
     }
@@ -674,7 +877,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       saveToUndo();
       const rawStroke: Stroke = {
         id: `stroke-${Date.now()}-${Math.random()}`,
-        points: currentStroke,
+        points: pts,
         color: tool === 'HIGHLIGHTER' ? 'rgba(250, 204, 21, 0.4)' : strokeColor,
         width: tool === 'HIGHLIGHTER' ? 18 : strokeWidth,
       };
@@ -684,7 +887,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       setCurrentStroke([]);
     } else if (tool === 'LASSO') {
       // Magic Lasso Vector Hit-testing (Forgiving: >=25% points OR >=30% BBox overlap + 24px pad)
-      const loop = currentStroke;
+      const loop = pts;
       setLassoLoop(loop);
       const enclosed = filterEnclosedStrokes(strokes, loop);
       setSelectedStrokes(enclosed);
@@ -692,13 +895,66 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     }
   };
 
+  // Tẩy từng đoạn: chỉ cắt phần nét nằm trong bán kính tẩy, phần còn lại giữ nguyên (tách thành nét mới)
   const eraseAtPoint = (pt: Point) => {
-    setStrokes((prev) =>
-      prev.filter((stroke) => {
-        // If any point is within 20px, delete stroke
-        return !stroke.points.some((p) => Math.hypot(p.x - pt.x, p.y - pt.y) < 22);
-      })
-    );
+    setStrokes((prev) => {
+      let changed = false;
+      const next: Stroke[] = [];
+      for (const stroke of prev) {
+        if (stroke.typeset) {
+          const t = stroke.typeset;
+          const a = stroke.points[0];
+          if (pt.x >= a.x - ERASE_R && pt.x <= a.x + t.w + ERASE_R && pt.y >= a.y - ERASE_R && pt.y <= a.y + t.h + ERASE_R) {
+            changed = true; // chạm vào công thức chuẩn → xóa cả khối
+            continue;
+          }
+          next.push(stroke);
+          continue;
+        }
+        // nhanh: bỏ qua nét ở xa
+        let near = false;
+        for (let i = 0; i < stroke.points.length; i++) {
+          const p = stroke.points[i];
+          if (Math.abs(p.x - pt.x) < ERASE_R + 12 && Math.abs(p.y - pt.y) < ERASE_R + 12) {
+            near = true;
+            break;
+          }
+        }
+        if (!near) {
+          next.push(stroke);
+          continue;
+        }
+        // làm dày điểm để không "nhảy" qua bán kính tẩy khi bút di chuyển nhanh
+        const dense: Point[] = [];
+        for (let i = 0; i < stroke.points.length; i++) {
+          const b = stroke.points[i];
+          if (i > 0) {
+            const a = stroke.points[i - 1];
+            const n = Math.floor(Math.hypot(b.x - a.x, b.y - a.y) / 5);
+            for (let k = 1; k <= n; k++) dense.push({ x: a.x + ((b.x - a.x) * k) / (n + 1), y: a.y + ((b.y - a.y) * k) / (n + 1) });
+          }
+          dense.push(b);
+        }
+        const pieces: Point[][] = [];
+        let cur: Point[] = [];
+        let hit = false;
+        for (const p of dense) {
+          if (Math.hypot(p.x - pt.x, p.y - pt.y) < ERASE_R) {
+            hit = true;
+            if (cur.length > 1) pieces.push(cur);
+            cur = [];
+          } else cur.push(p);
+        }
+        if (cur.length > 1) pieces.push(cur);
+        if (!hit) {
+          next.push(stroke);
+          continue;
+        }
+        changed = true;
+        pieces.forEach((pts, k) => next.push({ ...stroke, id: `${stroke.id}~${k}-${Math.random().toString(36).slice(2, 6)}`, points: pts }));
+      }
+      return changed ? next : prev;
+    });
   };
 
   const saveToUndo = () => {
@@ -732,12 +988,116 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     setActiveBlueprint(null);
   };
 
+  // ---------- Chữ viết tay → văn bản & công thức chuẩn ----------
+  const flashError = (msg: string, ms = 3500) => {
+    setErrorMessage(msg);
+    setTimeout(() => setErrorMessage((cur) => (cur === msg ? null : cur)), ms);
+  };
+
+  const openConvert = () => {
+    const src = sourceStrokes(selectedStrokes.length > 0 ? selectedStrokes : strokes);
+    if (src.length === 0) {
+      flashError('Chưa có nét viết nào để chuyển. Hãy viết công thức lên bảng (hoặc khoanh vùng nét cần chuyển) rồi bấm lại.');
+      return;
+    }
+    setConvertCtx({ source: src });
+  };
+
+  const applyConvert = (lines: ConvertLine[], mode: 'replace' | 'insert') => {
+    const ctx = convertCtx;
+    if (!ctx) return;
+    saveToUndo();
+    if (ctx.editing) {
+      const edit = ctx.editing;
+      const l = lines[0];
+      setStrokes((prev) =>
+        prev.map((s) =>
+          s.id === edit.id && s.typeset
+            ? { ...s, typeset: { ...s.typeset, latex: l.latex, text: l.text, w: Math.max(s.typeset.size, l.latex.length * s.typeset.size * 0.5) } }
+            : s,
+        ),
+      );
+    } else {
+      const placements = layoutTypeset(lines, ctx.source, mode);
+      const ink = ctx.source.find((s) => /^#/.test(s.color))?.color ?? '#18181B';
+      const made = placements.map((p) => typesetStroke(p, ink));
+      const drop = new Set(mode === 'replace' ? ctx.source.map((s) => s.id) : []);
+      setStrokes((prev) => [...prev.filter((s) => !drop.has(s.id)), ...made]);
+    }
+    setSelectedStrokes([]);
+    setLassoLoop([]);
+    setConvertCtx(null);
+  };
+
+  const typesetDragRef = useRef<{ id: string; sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
+  const onTypesetGripDown = (e: React.PointerEvent<HTMLElement>, s: Stroke) => {
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    typesetDragRef.current = { id: s.id, sx: e.clientX, sy: e.clientY, ox: s.points[0].x, oy: s.points[0].y, moved: false };
+  };
+  const onTypesetGripMove = (e: React.PointerEvent<HTMLElement>) => {
+    const d = typesetDragRef.current;
+    if (!d) return;
+    const dx = (e.clientX - d.sx) / (boardScale || 1);
+    const dy = (e.clientY - d.sy) / (boardScale || 1);
+    if (!d.moved && Math.hypot(dx, dy) < 2) return;
+    if (!d.moved) {
+      d.moved = true;
+      saveToUndo();
+    }
+    setStrokes((prev) => prev.map((s) => (s.id === d.id ? { ...s, points: [{ x: Math.max(0, Math.min(1180, d.ox + dx)), y: Math.max(0, Math.min(650, d.oy + dy)) }] } : s)));
+  };
+  const onTypesetGripUp = () => {
+    typesetDragRef.current = null;
+  };
+  const deleteTypeset = (id: string) => {
+    saveToUndo();
+    setStrokes((prev) => prev.filter((s) => s.id !== id));
+    setSelectedStrokes((prev) => prev.filter((s) => s.id !== id));
+  };
+  const handleDeleteSelection = () => {
+    if (selectedStrokes.length === 0) return;
+    saveToUndo();
+    const ids = new Set(selectedStrokes.map((s) => s.id));
+    setStrokes((prev) => prev.filter((s) => !ids.has(s.id)));
+    setSelectedStrokes([]);
+    setLassoLoop([]);
+  };
+
+  // Theo dõi tỉ lệ hiển thị của bảng (canvas 1200 px → chiều rộng thật) để đặt công thức đúng cỡ
+  useEffect(() => {
+    const el = boardWrapRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setBoardScale((el.clientWidth || 1200) / 1200));
+    ro.observe(el);
+    setBoardScale((el.clientWidth || 1200) / 1200);
+    return () => ro.disconnect();
+  }, []);
+
   // Export board as clean PNG
   const handleExportBoard = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    // Công thức chuẩn nằm ở lớp DOM: ghép vào ảnh xuất dưới dạng văn bản (Unicode) để không bị mất
+    const out = document.createElement('canvas');
+    out.width = canvas.width;
+    out.height = canvas.height;
+    const octx = out.getContext('2d');
+    let href = canvas.toDataURL('image/png');
+    if (octx) {
+      octx.drawImage(canvas, 0, 0);
+      for (const s of strokes) {
+        if (!s.typeset) continue;
+        octx.fillStyle = s.color;
+        octx.font = `italic ${Math.round(s.typeset.size)}px "Times New Roman", serif`;
+        octx.textBaseline = 'top';
+        const lines = (s.typeset.text || latexToPlain(s.typeset.latex)).split('\n');
+        lines.forEach((ln, i) => octx.fillText(ln, s.points[0].x, s.points[0].y + i * s.typeset!.size * 1.2));
+      }
+      href = out.toDataURL('image/png');
+    }
     const a = document.createElement('a');
-    a.href = canvas.toDataURL('image/png');
+    a.href = href;
     a.download = `socratic-board-${Date.now()}.png`;
     a.click();
   };
@@ -853,14 +1213,43 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     setIsLoading(true);
     setErrorMessage(null);
 
-    const effectiveHint = overrideHint || formulaInput || '';
+    // Công thức đã gõ chuẩn (typeset) được chọn → dùng luôn LaTeX của nó làm gợi ý, khỏi phải nhận dạng lại
+    const typesetHint = selectedStrokes
+      .filter((s) => s.typeset)
+      .map((s) => s.typeset!.latex)
+      .join(' \\\\ ');
+    const inkSelected = sourceStrokes(selectedStrokes);
+    const effectiveHint = overrideHint || formulaInput || typesetHint || '';
+
+    // Định tuyến cục bộ (0 ms, 0 API): nhiều hàm số → đồ thị đa hàm; tên khối hình học → khối 3D.
+    const localBp = routeLocally(effectiveHint);
+    if (localBp) {
+      setActiveBlueprint(localBp);
+      setSelectedStrokes([]);
+      setLassoLoop([]);
+      setFormulaInput('');
+      setIsLoading(false);
+      return;
+    }
+    // Hình khối vẽ tay (lập phương, hộp, chóp, lăng trụ): nhận ngay trên máy từ cấu trúc nét, không cần AI
+    if (!effectiveHint.trim() && inkSelected.length >= 4) {
+      const sk = detectSolidFromStrokes(inkSelected);
+      if (sk && sk.confidence >= 0.7) {
+        setActiveBlueprint(makeSolidBlueprint(sk.kind, sk.dims));
+        setSelectedStrokes([]);
+        setLassoLoop([]);
+        setFormulaInput('');
+        setIsLoading(false);
+        return;
+      }
+    }
     let cropData: { blob: Blob; dataUrl: string; sizeKb: number } | null = null;
 
     try {
       // 1. High-Contrast Thick-Stroke Off-screen crop (min 512x256, 8px ink, #FFFFFF background)
-      if (selectedStrokes.length > 0) {
+      if (inkSelected.length > 0) {
         try {
-          cropData = await exportIsolatedWebp(selectedStrokes);
+          cropData = await exportIsolatedWebp(inkSelected);
         } catch (err) {
           cropData = { blob: new Blob([]), dataUrl: 'data:image/png;base64,mock', sizeKb: 3.5 };
         }
@@ -871,7 +1260,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         image_base64: cropData ? cropData.dataUrl : '',
         hint_text: effectiveHint,
         hint_subject: effectiveHint,
-        raw_strokes_json: JSON.stringify(selectedStrokes),
+        raw_strokes_json: JSON.stringify(inkSelected),
         gemini_api_key: storedGeminiKey,
       };
 
@@ -1339,6 +1728,17 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             <span>Khoanh vùng AI</span>
           </button>
 
+          {/* Chữ viết tay → văn bản & công thức chuẩn */}
+          <button
+            data-testid="tool-convert-ink"
+            onClick={openConvert}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border bg-white hover:bg-violet-50 border-transparent hover:border-violet-200 text-stone-600 hover:text-violet-700"
+            title="Chuyển chữ viết tay (đã khoanh hoặc cả bảng) thành văn bản và công thức chuẩn"
+          >
+            <Wand2 className="w-3.5 h-3.5" />
+            <span>Chữ → Công thức</span>
+          </button>
+
           {/* Eraser */}
           <button
             data-testid="tool-eraser"
@@ -1497,6 +1897,26 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           )}
         </div>
       </div>
+
+      {/* CHỮ VIẾT TAY → CÔNG THỨC CHUẨN */}
+      {convertCtx && (
+        <InkConvertPanel
+          source={convertCtx.source}
+          editing={convertCtx.editing ?? null}
+          onClose={() => setConvertCtx(null)}
+          onApply={applyConvert}
+          onVisualizeLocal={(bp) => {
+            setActiveBlueprint(bp);
+            setSelectedStrokes([]);
+            setLassoLoop([]);
+            setConvertCtx(null);
+          }}
+          onVisualizeAi={(latex) => {
+            setConvertCtx(null);
+            handleVisualize(latex);
+          }}
+        />
+      )}
 
       {/* STUDIO HANDWRITING RECORDER CONSOLE */}
       {isStudioRecorderOpen && (
@@ -1741,7 +2161,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       {selectedStrokes.length > 0 && (
         <div
           data-testid="lasso-action-bar"
-          className="flex flex-col gap-2.5 mt-2 px-4 py-3 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] shadow-[0_8px_30px_rgb(0,0,0,0.08)] z-20 max-w-5xl w-full animate-in fade-in duration-150"
+          className="fixed bottom-[72px] left-1/2 -translate-x-1/2 flex flex-col gap-2.5 px-4 py-3 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] shadow-[0_12px_40px_rgb(0,0,0,0.14)] z-40 w-[min(1024px,calc(100vw-24px))] animate-in fade-in duration-150"
         >
           {/* Top Row: Preview, Voice Mic, Formula Input, Action Buttons */}
           <div className="flex flex-col md:flex-row items-center gap-3 w-full">
@@ -1773,6 +2193,18 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 </span>
               </div>
             </div>
+
+            {/* Chuyển nét viết thành công thức chuẩn */}
+            <button
+              type="button"
+              data-testid="btn-convert-ink"
+              onClick={openConvert}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer shrink-0 border bg-violet-50 hover:bg-violet-100 border-violet-200 text-violet-700"
+              title="Chuyển chữ viết tay đã khoanh thành văn bản & công thức chuẩn"
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>Chuyển thành công thức</span>
+            </button>
 
             {/* Voice-to-Blueprint Mic Button */}
             <button
@@ -1985,6 +2417,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       <div className="flex flex-col lg:flex-row items-start justify-center gap-4 mt-3 w-full max-w-7xl">
         {/* Drawing Canvas Area (Always visible, NEVER covered, high-def 1200x675) */}
         <div
+          ref={boardWrapRef}
           className={`relative rounded-2xl overflow-hidden border border-[#E6E4DD] bg-[#F8F7F4] shadow-sm transition-all duration-200 ${
             activeBlueprint || isCompilingShimmer
               ? isSplitView
@@ -2001,8 +2434,88 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
-            className="cursor-crosshair touch-none w-full h-auto block"
+            onPointerCancel={handlePointerCancel}
+            onPointerLeave={() => setEraserHover(null)}
+            className={`${tool === 'ERASER' ? 'cursor-none' : tool === 'LASSO' && selectedStrokes.length > 0 ? 'cursor-move' : 'cursor-crosshair'} touch-none w-full h-auto block`}
           />
+
+          {/* Lớp công thức chuẩn (KaTeX) đặt trên canvas; chỉ phần tay cầm nhận chuột nên bút vẫn viết xuyên qua được */}
+          <div className="absolute inset-0 pointer-events-none" data-testid="typeset-layer">
+            {strokes
+              .filter((s) => s.typeset)
+              .map((s) => {
+                const t = s.typeset!;
+                const picked = selectedStrokes.some((q) => q.id === s.id);
+                return (
+                  <div
+                    key={s.id}
+                    data-testid="typeset-item"
+                    data-latex={t.latex}
+                    className="absolute"
+                    style={{
+                      left: `${(s.points[0].x / 1200) * 100}%`,
+                      top: `${(s.points[0].y / 675) * 100}%`,
+                      fontSize: Math.max(8, t.size * boardScale),
+                      color: s.color,
+                      lineHeight: 1.3,
+                      whiteSpace: 'nowrap',
+                      outline: picked ? '2px solid #2563EB' : 'none',
+                      outlineOffset: 3,
+                      borderRadius: 4,
+                    }}
+                  >
+                    <div className="pointer-events-auto absolute left-0 -top-[22px] flex items-center gap-px rounded-md bg-white/90 border border-[#DCD9D0] shadow-sm text-[10px] opacity-40 hover:opacity-100 transition-opacity" style={{ fontSize: 11 }}>
+                      <span
+                        data-testid="typeset-grip"
+                        title="Kéo để di chuyển"
+                        onPointerDown={(e) => onTypesetGripDown(e, s)}
+                        onPointerMove={onTypesetGripMove}
+                        onPointerUp={onTypesetGripUp}
+                        className="px-1.5 cursor-grab active:cursor-grabbing select-none touch-none text-stone-500"
+                      >
+                        ⠿
+                      </span>
+                      <button
+                        data-testid="typeset-edit"
+                        title="Sửa công thức"
+                        onClick={() => setConvertCtx({ source: [], editing: { id: s.id, latex: t.latex, text: t.text } })}
+                        className="px-1 py-0.5 hover:bg-stone-100 text-stone-600"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button data-testid="typeset-delete" title="Xóa" onClick={() => deleteTypeset(s.id)} className="px-1 py-0.5 hover:bg-rose-50 text-stone-600 hover:text-rose-600">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <MathView latex={t.latex} />
+                  </div>
+                );
+              })}
+
+            {/* Thanh công cụ nổi quanh vùng đang chọn */}
+            {selectedStrokes.length > 0 && !convertCtx && (() => {
+              const bb = bboxOfStrokes(selectedStrokes);
+              const left = Math.max(0.5, Math.min(60, (bb.x0 / 1200) * 100));
+              const top = Math.max(0.5, ((bb.y0 - 52) / 675) * 100);
+              return (
+                <div
+                  data-testid="selection-toolbar"
+                  className="pointer-events-auto absolute flex items-center gap-1 rounded-xl bg-white/95 backdrop-blur border border-[#DCD9D0] shadow-lg px-1.5 py-1"
+                  style={{ left: `${left}%`, top: `${top}%` }}
+                >
+                  <button data-testid="sel-btn-convert" onClick={openConvert} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-violet-700 hover:bg-violet-50 transition">
+                    <Wand2 className="w-3.5 h-3.5" /> Chuyển thành công thức
+                  </button>
+                  <button data-testid="sel-btn-visualize" onClick={() => handleVisualize()} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-blue-700 hover:bg-blue-50 transition">
+                    <Sparkles className="w-3.5 h-3.5" /> Trực quan hóa
+                  </button>
+                  <button data-testid="sel-btn-delete" onClick={handleDeleteSelection} title="Xóa vùng chọn" className="p-1 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 transition">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })()}
+          </div>
         </div>
 
         {/* 450ms AI Semantic Compiling Skeleton Shimmer Card */}
@@ -2109,6 +2622,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
             <div className="p-2.5 bg-[#F8F7F4]">
               <SimulationWidget
+                key={`${activeBlueprint.templateId}|${activeBlueprint.recognizedLatex}|${(activeBlueprint.expressions || []).join('|')}`}
                 blueprint={activeBlueprint}
                 onClose={() => setActiveBlueprint(null)}
                 isSplitView={isSplitView}

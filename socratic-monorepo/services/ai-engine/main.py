@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.visualize import router as visualize_router
 from routers.companion import router as companion_router
 from routers.classroom import router as classroom_router
+from routers.recognize_ink import router as recognize_ink_router
 
 app = FastAPI(
     title="Socratic Vision Board - Deterministic & Socratic AI Engine",
@@ -41,6 +42,7 @@ app.add_middleware(
 app.include_router(visualize_router)
 app.include_router(companion_router)
 app.include_router(classroom_router)
+app.include_router(recognize_ink_router)
 
 from fastapi.responses import Response, JSONResponse
 from graph_engine import generate_neon_graph

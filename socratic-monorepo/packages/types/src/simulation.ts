@@ -1,6 +1,6 @@
 // packages/types/src/simulation.ts
 
-export type EngineType = 'MATH' | 'PHYSICS' | 'CHEMISTRY' | 'BIOLOGY';
+export type EngineType = 'MATH' | 'PHYSICS' | 'CHEMISTRY' | 'BIOLOGY' | 'GEOMETRY';
 
 export type CurriculumLevel = 'THPT_STANDARD' | 'OLYMPIAD_ADVANCED';
 
@@ -8,6 +8,8 @@ export type TemplateId =
   | 'MATH_FUNC_2D'
   | 'MATH_TRIG_WAVE'
   | 'MATH_CONIC_2D'
+  | 'MATH_GRAPH' // đồ thị nhiều hàm, tham số tự sinh (expressions: ["y = x^2 - 3", "y = A sin x + B"])
+  | 'GEO_SOLID' // khối đa diện 3D tương tác (meta.solid: 'cube' | 'box' | 'pyramid' | ...)
   | 'PHYS_PROJECTILE'
   | 'PHYS_PENDULUM'
   | 'PHYS_INCLINED'

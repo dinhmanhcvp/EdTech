@@ -17,6 +17,8 @@ if (typeof HTMLCanvasElement !== 'undefined') {
         arc: () => {},
         ellipse: () => {},
         bezierCurveTo: () => {},
+        quadraticCurveTo: () => {},
+        drawImage: () => {},
         stroke: () => {},
         fill: () => {},
         save: () => {},

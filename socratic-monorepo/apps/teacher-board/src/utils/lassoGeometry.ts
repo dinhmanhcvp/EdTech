@@ -9,6 +9,19 @@
 export interface Point {
   x: number;
   y: number;
+  /** Áp lực bút 0..1 (bút cảm ứng); không có với chuột/ngón tay. */
+  p?: number;
+}
+
+/** Đối tượng "công thức chuẩn" thay thế nét viết tay: neo tại points[0] (góc trên-trái), vẽ bằng KaTeX phía trên canvas. */
+export interface TypesetMeta {
+  latex: string;
+  text: string;
+  /** cỡ chữ theo đơn vị canvas (px của bảng 1200×675) */
+  size: number;
+  /** cạnh phải/dưới ước lượng, đơn vị canvas — để chọn bằng lasso và tẩy */
+  w: number;
+  h: number;
 }
 
 export interface Stroke {
@@ -16,6 +29,7 @@ export interface Stroke {
   points: Point[];
   color: string;
   width: number;
+  typeset?: TypesetMeta;
 }
 
 export interface BoundingBox {

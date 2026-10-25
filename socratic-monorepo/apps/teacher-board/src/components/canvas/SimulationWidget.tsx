@@ -10,6 +10,7 @@ import { GeometryEngine } from '../../engines/GeometryEngine';
 import { PunnettEngine, HardyWeinbergEngine, LinearProgrammingEngine, CobwebEngine } from '../../engines/StemModelEngines';
 import { VseprEngine, LeChatelierEngine, DaniellEngine } from '../../engines/ChemEngines';
 import { StomataEngine, OsmosisEngine, OperonLacEngine, BoxplotEngine, VariationTableEngine } from '../../engines/MoreStemEngines';
+import { GasEngine, DoublePendulumEngine, CoriolisEngine, FraunhoferEngine } from '../../engines/PhysEngines';
 import { PhysicsSandboxEngine } from '../../engines/PhysicsSandboxEngine';
 import { ChemistryLabEngine } from '../../engines/ChemistryLabEngine';
 import { BioSystemEngine } from '../../engines/BioSystemEngine';
@@ -268,6 +269,10 @@ function getTopicDisplayName(blueprint: SimulationBlueprint): string {
   // Engine mới nhận dạng theo templateId trước, tránh bị các từ khóa (sin, x^2…) kéo sang chủ đề khác.
   if (t === 'MATH_GRAPH') return 'TOÁN HỌC • ĐỒ THỊ HÀM SỐ NHIỀU ĐƯỜNG & GIAO ĐIỂM';
   if (t === 'GEO_SOLID') return 'TOÁN HỌC • HÌNH HỌC KHÔNG GIAN: KHỐI ĐA DIỆN 3D';
+  if (t === 'PHYS_GAS_STATE_PV') return 'VẬT LÍ • KHÍ LÍ TƯỞNG: ĐỒ THỊ p–V & CHU TRÌNH NHIỆT';
+  if (t === 'PHYS_DOUBLE_PENDULUM') return 'VẬT LÍ • CON LẮC KÉP: HỖN LOẠN TẤT ĐỊNH';
+  if (t === 'PHYS_CORIOLIS_FORCE') return 'VẬT LÍ • LỰC CORIOLIS TRONG HỆ QUY CHIẾU QUAY';
+  if (t === 'PHYS_FRAUNHOFER_DIFF') return 'VẬT LÍ • NHIỄU XẠ FRAUNHOFER N KHE';
   if (t === 'CHEM_MOLECULE_3D') return 'HÓA HỌC • HÌNH HỌC PHÂN TỬ 3D (VSEPR)';
   if (t === 'CHEM_LE_CHATELIER_GAS') return 'HÓA HỌC • CHUYỂN DỊCH CÂN BẰNG LE CHATELIER';
   if (t === 'CHEM_GALVANIC_DANIELL') return 'HÓA HỌC • PIN ĐIỆN HÓA GALVANI & PHƯƠNG TRÌNH NERNST';
@@ -321,7 +326,8 @@ function getTopicDisplayName(blueprint: SimulationBlueprint): string {
 }
 
 /** Engine tự vẽ thanh điều khiển riêng (hàm, tham số, bật/tắt) nên không dùng thanh trượt macro. */
-const SELF_CONTROLLED = new Set(['MATH_GRAPH', 'GEO_SOLID', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE', 'BIO_STOMATA_GAS', 'BIO_OSMOSIS_CELL', 'BIO_OPERON_LAC', 'CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL']);
+const PHYS_OWN = ['PHYS_GAS_STATE_PV', 'PHYS_DOUBLE_PENDULUM', 'PHYS_CORIOLIS_FORCE', 'PHYS_FRAUNHOFER_DIFF'];
+const SELF_CONTROLLED = new Set(['PHYS_GAS_STATE_PV', 'PHYS_DOUBLE_PENDULUM', 'PHYS_CORIOLIS_FORCE', 'PHYS_FRAUNHOFER_DIFF','MATH_GRAPH', 'GEO_SOLID', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE', 'BIO_STOMATA_GAS', 'BIO_OSMOSIS_CELL', 'BIO_OPERON_LAC', 'CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL']);
 
 export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   blueprint,
@@ -709,7 +715,11 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.engine === 'GEOMETRY' && (
               <GeometryEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
-            {blueprint.engine === 'PHYSICS' && (
+            {blueprint.templateId === 'PHYS_GAS_STATE_PV' && <GasEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'PHYS_DOUBLE_PENDULUM' && <DoublePendulumEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'PHYS_CORIOLIS_FORCE' && <CoriolisEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'PHYS_FRAUNHOFER_DIFF' && <FraunhoferEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.engine === 'PHYSICS' && !PHYS_OWN.includes(blueprint.templateId) && (
               <PhysicsSandboxEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
             {blueprint.engine === 'CHEMISTRY' && !['CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL'].includes(blueprint.templateId) && (

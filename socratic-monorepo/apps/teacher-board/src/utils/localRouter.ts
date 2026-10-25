@@ -10,6 +10,7 @@ import {latexToExpr, normalizeMathInput, parseEquation, toLatex} from './mathExp
 import {parseCross, parseGenotypeFreqs, parseLP, parseRecurrence} from './stemModels';
 import {matchBioKeywords} from './bioModels';
 import {matchChemKeywords} from './chemModels';
+import {matchPhysKeywords} from './physicsModels';
 import {parseBoxplot, parseVariationTable} from './mathModels';
 
 /** Tách "y = x^2 - 3; y = A sin x + B" thành từng phương trình. */
@@ -215,6 +216,16 @@ export function matchStemModel(text: string): SimulationBlueprint | null {
       CHEM_GALVANIC_DANIELL: 'Vai trò của cầu muối là gì, và điện thế của pin thay đổi thế nào khi pin dần cạn?',
     };
     return {...stemBase, engine: 'CHEMISTRY', templateId: chem.templateId, recognizedLatex: `\\text{${chem.title}}`, meta: chem.meta, socraticQuestion: q[chem.templateId], curriculumLevel: 'THPT_STANDARD'};
+  }
+  const phys = matchPhysKeywords(raw);
+  if (phys) {
+    const q: Record<string, string> = {
+      PHYS_GAS_STATE_PV: 'Tại sao khi nén piston giữ nhiệt độ không đổi, áp suất lại tăng tỉ lệ nghịch? Trên đồ thị p–V, diện tích bên trong chu trình biểu diễn đại lượng vật lí nào?',
+      PHYS_DOUBLE_PENDULUM: 'Tại sao 2 con lắc kép thả lệch nhau chỉ 0,001 rad lại rẽ nhánh quỹ đạo sau vài giây, trong khi con lắc đơn thì không?',
+      PHYS_CORIOLIS_FORCE: 'Tại sao trong bão ở Bắc bán cầu, luồng không khí luôn xoáy ngược chiều kim đồng hồ? Trong hệ quán tính, vật có thật sự bị cong không?',
+      PHYS_FRAUNHOFER_DIFF: 'Tại sao tăng số khe N lại làm các vạch cực đại chính hẹp lại và sáng rực rỡ, còn giữa hai vạch xuất hiện N − 2 cực đại phụ rất yếu?',
+    };
+    return {...stemBase, engine: 'PHYSICS', templateId: phys.templateId, recognizedLatex: `\\text{${phys.title}}`, meta: phys.meta, socraticQuestion: q[phys.templateId], curriculumLevel: 'THPT_STANDARD'};
   }
   const freqs = parseGenotypeFreqs(raw);
   if (freqs && (/hardy|weinberg|quần thể|quan the|alen|cân bằng di truyền/i.test(raw) || /\d\s*%?\s*(?:AA|Aa|aa)\b/.test(raw))) {

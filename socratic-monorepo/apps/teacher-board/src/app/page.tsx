@@ -113,6 +113,19 @@ export default function UnifiedPlatformPage() {
       ],
       socraticQuestion: 'Tại sao với cùng vận tốc đầu v₀, góc ném 45° lại cho tầm xa cực đại trên mặt đất bằng phẳng?',
     },
+    PHYS_INCLINED: {
+      engine: 'PHYSICS',
+      templateId: 'PHYS_INCLINED',
+      // Không ghi sin/cos ở đây: SimulationWidget sẽ tưởng là sóng điều hòa và thay mất thanh trượt α, μ, m.
+      recognizedLatex: '\\mu = 0{,}2,\\ \\alpha = 30^\\circ \\quad \\text{Mặt phẳng nghiêng có ma sát}',
+      ocrAlternatives: ['mu = 0.2, alpha = 30°', 'mu = 0.3, alpha = 30°'],
+      parameters: [
+        { key: 'alpha', label: 'Góc nghiêng (α)', unit: 'độ', defaultValue: 30.0, min: 5.0, max: 80.0, step: 1.0 },
+        { key: 'mu', label: 'Hệ số ma sát (μ)', unit: '', defaultValue: 0.2, min: 0.0, max: 1.0, step: 0.05 },
+        { key: 'm', label: 'Khối lượng (m)', unit: 'kg', defaultValue: 2.0, min: 0.5, max: 10.0, step: 0.5 },
+      ],
+      socraticQuestion: 'Khi tăng dần góc nghiêng α, đến giá trị nào thì vật bắt đầu trượt? Điều kiện biên đó phụ thuộc vào khối lượng m hay không?',
+    },
     MATH_TRIG_WAVE: {
       engine: 'MATH',
       templateId: 'MATH_TRIG_WAVE',
@@ -205,15 +218,11 @@ export default function UnifiedPlatformPage() {
   return (
     <main className="w-screen h-screen overflow-hidden bg-[#F8F7F4] text-[#18181B] flex flex-col select-none font-sans relative">
       {/* 1. TOP COMMAND HEADER (Editorial Daylight: 48px h-12) */}
-      <header className="h-12 border-b border-[#E6E4DD] bg-white/95 backdrop-blur-md px-5 flex items-center justify-between shrink-0 z-50">
+      <header className="h-10 border-b border-[#E6E4DD] bg-white/95 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-50">
         {/* Left: Minimal Wordmark & Lesson Title */}
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs tracking-widest text-stone-900 font-bold">
             SOCRATIC VISION BOARD
-          </span>
-          <span className="text-stone-300 font-mono text-xs">/</span>
-          <span className="text-xs text-stone-600 font-medium tracking-tight">
-            Khoa học Tự nhiên & Không gian Pha 60FPS
           </span>
         </div>
 
@@ -302,7 +311,7 @@ export default function UnifiedPlatformPage() {
             title="Cài đặt Gemini 2.0 Flash Vision Key"
           >
             <Settings className="w-3.5 h-3.5 text-stone-500" />
-            <span className="hidden sm:inline">Cài đặt AI</span>
+            <span className="hidden 2xl:inline">Cài đặt AI</span>
             {geminiKeyStatus?.has_key && (
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Key đã kết nối" />
             )}
@@ -316,7 +325,7 @@ export default function UnifiedPlatformPage() {
             className="text-xs border border-[#DCD9D0] bg-white hover:bg-stone-50 px-3 py-1.5 rounded-lg text-stone-800 font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
           >
             <QrCode className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Xuất Bài Giảng (Smart Notes)</span>
+            <span className="hidden 2xl:inline">Xuất bài giảng</span>
           </button>
         </div>
       </header>
@@ -335,7 +344,7 @@ export default function UnifiedPlatformPage() {
       )}
 
       {/* 2. UNIFIED WORKSPACE VIEW AREA (100% height minus header) */}
-      <div className="flex-1 h-[calc(100vh-48px)] overflow-y-auto relative">
+      <div className="flex-1 h-[calc(100vh-40px)] overflow-y-auto relative">
         {/* MODE 01: Interactive Board & Precision Lab Studio */}
         <div className={`w-full min-h-full ${activeMode === 'BOARD' ? 'block' : 'hidden'}`}>
           <SmartboardCanvas
@@ -359,59 +368,6 @@ export default function UnifiedPlatformPage() {
             onOpenQrNotes={handleOpenSmartNotesModal}
           />
         </div>
-      </div>
-
-      {/* 3. FLOATING DIRECTOR PILL DOCK (Apple Keynote Recording Control) */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-[#E6E4DD] shadow-lg text-xs">
-        <span className="text-[10px] font-mono uppercase text-stone-500 font-semibold px-1.5">
-          Director:
-        </span>
-        <button
-          type="button"
-          onClick={() => setActiveMode('BOARD')}
-          className={`px-2.5 py-1 rounded-full font-mono text-[11px] transition cursor-pointer border ${
-            activeMode === 'BOARD'
-              ? 'bg-[#18181B] text-white border-[#18181B] font-semibold'
-              : 'bg-[#F4F3EE] hover:bg-[#EAE7DF] border-[#E5E3DC] text-stone-700'
-          }`}
-          title="Chuyển sang Mode 01: Bảng thông minh"
-        >
-          01. Bảng lớp (1-4)
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveMode('SOCRATIC')}
-          className={`px-2.5 py-1 rounded-full font-mono text-[11px] transition cursor-pointer border ${
-            activeMode === 'SOCRATIC'
-              ? 'bg-[#18181B] text-white border-[#18181B] font-semibold'
-              : 'bg-[#F4F3EE] hover:bg-[#EAE7DF] border-[#E5E3DC] text-stone-700'
-          }`}
-          title="Chuyển sang Mode 02: Gia sư Socratic 1:1"
-        >
-          02. Socratic 1:1 (R/V)
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveMode('ANALYTICS')}
-          className={`px-2.5 py-1 rounded-full font-mono text-[11px] transition cursor-pointer border ${
-            activeMode === 'ANALYTICS'
-              ? 'bg-[#18181B] text-white border-[#18181B] font-semibold'
-              : 'bg-[#F4F3EE] hover:bg-[#EAE7DF] border-[#E5E3DC] text-stone-700'
-          }`}
-          title="Chuyển sang Mode 03: Bản đồ nhiệt lớp"
-        >
-          03. Bản đồ nhiệt
-        </button>
-        <span className="w-px h-3.5 bg-stone-300 mx-1" />
-        <button
-          type="button"
-          onClick={handleOpenSmartNotesModal}
-          className="px-2.5 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-mono text-[11px] transition cursor-pointer flex items-center gap-1"
-          title="Mở Modal QR Smart Notes"
-        >
-          <QrCode className="w-3 h-3 text-emerald-600" />
-          <span>QR Smart Notes</span>
-        </button>
       </div>
 
       {/* 4. EDITORIAL 1-TAP QR SMART NOTES MODAL */}

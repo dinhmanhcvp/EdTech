@@ -7,6 +7,7 @@ import { RotateCcw, FileText, CheckCircle2, Sparkles } from 'lucide-react';
 import { MathPlotEngine } from '../../engines/MathPlotEngine';
 import { GraphEngine } from '../../engines/GraphEngine';
 import { GeometryEngine } from '../../engines/GeometryEngine';
+import { PunnettEngine, HardyWeinbergEngine, LinearProgrammingEngine, CobwebEngine } from '../../engines/StemModelEngines';
 import { PhysicsSandboxEngine } from '../../engines/PhysicsSandboxEngine';
 import { ChemistryLabEngine } from '../../engines/ChemistryLabEngine';
 import { BioSystemEngine } from '../../engines/BioSystemEngine';
@@ -20,6 +21,10 @@ export interface SimulationWidgetProps {
   onClose?: () => void;
   onParamChange?: (key: string, value: number) => void;
   onFormulaChange?: (newFormula: string) => void;
+  /** tham số do nơi khác (giáo viên / học sinh được giao quyền) đẩy tới qua phòng học */
+  remoteParams?: Record<string, number>;
+  /** khóa thanh trượt (học sinh chưa được giao quyền) */
+  locked?: boolean;
   isSplitView?: boolean;
   onToggleSplitView?: () => void;
 }
@@ -261,6 +266,10 @@ function getTopicDisplayName(blueprint: SimulationBlueprint): string {
   // Engine mới nhận dạng theo templateId trước, tránh bị các từ khóa (sin, x^2…) kéo sang chủ đề khác.
   if (t === 'MATH_GRAPH') return 'TOÁN HỌC • ĐỒ THỊ HÀM SỐ NHIỀU ĐƯỜNG & GIAO ĐIỂM';
   if (t === 'GEO_SOLID') return 'TOÁN HỌC • HÌNH HỌC KHÔNG GIAN: KHỐI ĐA DIỆN 3D';
+  if (t === 'MATH_LINEAR_PROGRAMMING') return 'TOÁN HỌC • QUY HOẠCH TUYẾN TÍNH & MIỀN NGHIỆM';
+  if (t === 'MATH_COBWEB_CHAOS') return 'TOÁN HỌC • DÃY SỐ QUY NẠP & ĐỒ THỊ MẠNG NHỆN';
+  if (t === 'BIO_PUNNETT_SQUARE') return 'SINH HỌC • QUY LUẬT DI TRUYỀN MENĐEN (BẢNG PUNNETT)';
+  if (t === 'BIO_HARDY_WEINBERG') return 'SINH HỌC • CÂN BẰNG DI TRUYỀN QUẦN THỂ HARDY–WEINBERG';
 
   if (t === 'PHYS_PROJECTILE' || f.includes('ném') || f.includes('projectile') || f.includes('v_0') || f.includes('parabol')) {
     return 'VẬT LÝ • CHUYỂN ĐỘNG NÉM XIÊN TRONG TRỌNG TRƯỜNG';
@@ -302,13 +311,15 @@ function getTopicDisplayName(blueprint: SimulationBlueprint): string {
 }
 
 /** Engine tự vẽ thanh điều khiển riêng (hàm, tham số, bật/tắt) nên không dùng thanh trượt macro. */
-const SELF_CONTROLLED = new Set(['MATH_GRAPH', 'GEO_SOLID']);
+const SELF_CONTROLLED = new Set(['MATH_GRAPH', 'GEO_SOLID', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG']);
 
 export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   blueprint,
   onClose,
   onParamChange,
   onFormulaChange,
+  remoteParams,
+  locked = false,
   isSplitView = false,
   onToggleSplitView,
 }) => {
@@ -354,6 +365,13 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   useEffect(() => {
     setActiveFormula(blueprint.recognizedLatex);
   }, [blueprint.recognizedLatex]);
+
+  // áp tham số từ xa (đồng bộ lớp học) mà không bắn ngược onParamChange
+  const remoteKey = remoteParams ? JSON.stringify(remoteParams) : '';
+  useEffect(() => {
+    if (!remoteKey) return;
+    setParams((prev) => ({ ...prev, ...(JSON.parse(remoteKey) as Record<string, number>) }));
+  }, [remoteKey]);
 
   const handleParamChange = (key: string, val: number) => {
     setParams((prev) => ({ ...prev, [key]: val }));
@@ -663,7 +681,11 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.engine === 'MATH' && blueprint.templateId === 'MATH_GRAPH' && (
               <GraphEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
-            {blueprint.engine === 'MATH' && blueprint.templateId !== 'MATH_GRAPH' && (
+            {blueprint.templateId === 'MATH_LINEAR_PROGRAMMING' && <LinearProgrammingEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'MATH_COBWEB_CHAOS' && <CobwebEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'BIO_PUNNETT_SQUARE' && <PunnettEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'BIO_HARDY_WEINBERG' && <HardyWeinbergEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.engine === 'MATH' && !['MATH_GRAPH', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS'].includes(blueprint.templateId) && (
               <MathPlotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
             {blueprint.engine === 'GEOMETRY' && (
@@ -675,7 +697,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.engine === 'CHEMISTRY' && (
               <ChemistryLabEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
-            {blueprint.engine === 'BIOLOGY' && (
+            {blueprint.engine === 'BIOLOGY' && !['BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG'].includes(blueprint.templateId) && (
               <BioSystemEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
           </>
@@ -683,7 +705,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
       </div>
 
       {/* MACRO SLIDER CONTROLS (Tactile Parameter Scrubbers) */}
-      <div className={`p-4 bg-[#FCFBF9] border-t border-[#E6E4DD] grid grid-cols-2 gap-3 ${SELF_CONTROLLED.has(blueprint.templateId) ? 'hidden' : ''}`} data-testid="macro-sliders-container">
+      <div className={`p-4 bg-[#FCFBF9] border-t border-[#E6E4DD] grid grid-cols-2 gap-3 ${SELF_CONTROLLED.has(blueprint.templateId) ? 'hidden' : ''} ${locked ? 'pointer-events-none opacity-60' : ''}`} data-locked={locked} data-testid="macro-sliders-container">
         {activeParameters.map((p: SimParamConfig) => {
           const currentVal = params[p.key] ?? p.defaultValue;
           return (

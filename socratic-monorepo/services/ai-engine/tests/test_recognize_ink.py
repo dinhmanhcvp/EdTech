@@ -98,3 +98,24 @@ def test_endpoint_model_failure_is_503(client, monkeypatch):
     monkeypatch.setattr(ri, "recognize_with_gemini", lambda *a, **k: None)
     resp = client.post("/api/v1/canvas/recognize-ink", json={"image_base64": _png_b64()}, headers={"x-gemini-api-key": "k"})
     assert resp.status_code == 503
+
+
+# ---------------------------------------------------------------- prompt biên dịch cho Gemini Vision
+def test_vision_prompt_has_disambiguation_and_subject_lock():
+    from routers.visualize import build_vision_prompt
+
+    base = build_vision_prompt("v0 = 20 m/s")
+    assert "Cross-subject disambiguation" in base and "LOCKED" not in base
+    assert "Teacher Hint / Context: v0 = 20 m/s" in base
+    locked = build_vision_prompt(None, "biology")
+    assert "LOCKED the subject to Sinh học" in locked
+    assert "Teacher Hint / Context: None" in locked
+
+
+def test_vision_prompt_only_uses_registry_template_ids():
+    import re
+    from routers.visualize import build_vision_prompt, OFFLINE_TEMPLATE_REGISTRY
+
+    ids = set(re.findall(r"\b(?:MATH|PHYS|CHEM|BIO)_[A-Z0-9_]+\b", build_vision_prompt("x", "MATH")))
+    assert ids, "prompt phải liệt kê template"
+    assert ids <= set(OFFLINE_TEMPLATE_REGISTRY), f"template không có trong Registry: {ids - set(OFFLINE_TEMPLATE_REGISTRY)}"

@@ -16,6 +16,7 @@ import {
 import {MathView} from '../common/MathView';
 import {detectSolidFromStrokes} from '../../utils/sketchSolid';
 import {makeSolidBlueprint, SOLID_TITLES} from '../../utils/localRouter';
+import {detectSubject, SUBJECT_LABEL} from '../../utils/subjectContext';
 import type {SimulationBlueprint} from '@socratic/types';
 
 export interface InkConvertPanelProps {
@@ -152,6 +153,8 @@ export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({source, editing
 
   const joinedLatex = lines.map((l) => l.latex.trim()).filter(Boolean).join(String.raw` \\ `);
   const joinedText = lines.map((l) => (l.text || latexToPlain(l.latex)).trim()).filter(Boolean).join('\n');
+  const subj = useMemo(() => detectSubject(`${joinedLatex}
+${joinedText}`), [joinedLatex, joinedText]);
   const viz = useMemo(() => (joinedLatex ? localVisualization(joinedLatex) : null), [joinedLatex]);
   const conf = lines.length ? lines.reduce((s, l) => s + l.confidence, 0) / lines.length : 0;
   const unsure = !editing && engine === 'local' && (conf < 0.45 || lines.some((l) => l.valid === false));
@@ -246,6 +249,11 @@ export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({source, editing
             </div>
           )}
 
+          {subj.subject && (
+            <div className="text-[11px] text-stone-600" data-testid="ink-convert-subject">
+              Nhận ra môn <b>{SUBJECT_LABEL[subj.subject]}</b> — dấu hiệu: {subj.evidence.join(', ')}.
+            </div>
+          )}
           {sketch && sketch.confidence >= 0.7 && (
             <div className="flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2" data-testid="ink-convert-sketch">
               <span className="text-xs text-emerald-900">

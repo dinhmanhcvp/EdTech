@@ -50,3 +50,25 @@ describe('localRouter: định tuyến cục bộ', () => {
     expect(bp.meta?.solid).toBe('cube');
   });
 });
+
+describe('localRouter: mô hình STEM từ cú pháp viết tay', () => {
+  it('phép lai Menđen → Punnett', () => {
+    const bp = routeLocally('P: AaBb x AaBb');
+    expect(bp?.templateId).toBe('BIO_PUNNETT_SQUARE');
+    expect(bp?.meta?.cross).toEqual({p1: 'AaBb', p2: 'AaBb'});
+  });
+  it('tần số kiểu gen → Hardy–Weinberg; q² đơn lẻ KHÔNG bị bắt nhầm', () => {
+    expect(routeLocally('0,04AA + 0,32Aa + 0,64aa = 1')?.templateId).toBe('BIO_HARDY_WEINBERG');
+    expect(routeLocally('quần thể có q^2 = 0,16')?.templateId).toBe('BIO_HARDY_WEINBERG');
+    expect(routeLocally('q^2 = 0,16')?.templateId).not.toBe('BIO_HARDY_WEINBERG');
+  });
+  it('hệ bất phương trình + mục tiêu → quy hoạch tuyến tính; hàm số thường vẫn ra đồ thị', () => {
+    expect(routeLocally('x + y <= 4; 2x + y <= 6; x >= 0; y >= 0; max F = 3x + 2y')?.templateId).toBe('MATH_LINEAR_PROGRAMMING');
+    expect(routeLocally('y = x^2 - 3', {explicitGraph: true})?.templateId).toBe('MATH_GRAPH');
+  });
+  it('dãy số quy nạp → mạng nhện', () => {
+    const bp = routeLocally('x_{n+1} = r x_n (1 - x_n)');
+    expect(bp?.templateId).toBe('MATH_COBWEB_CHAOS');
+    expect((bp?.meta?.recurrence as {params: string[]}).params).toEqual(['r']);
+  });
+});

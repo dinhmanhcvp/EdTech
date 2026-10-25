@@ -4,3 +4,5 @@ sympy
 fastapi
 uvicorn
 python-multipart
+pillow
+google-generativeai

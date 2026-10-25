@@ -518,34 +518,61 @@ def generate_bespoke_interactive_svg(topic: str, recognized_latex: str = "", par
     )
 
 
-def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None, api_key: Optional[str] = None) -> Optional[Dict[str, Any]]:
-    gemini_key = api_key or os.getenv("GEMINI_API_KEY")
-    openai_key = os.getenv("OPENAI_API_KEY")
+SUBJECT_NAMES = {
+    "MATH": "Toán học (Mathematics)",
+    "PHYSICS": "Vật lí (Physics)",
+    "CHEMISTRY": "Hóa học (Chemistry)",
+    "BIOLOGY": "Sinh học (Biology)",
+}
 
-    if not gemini_key and not openai_key:
-        return None
+DISAMBIGUATION_RULES = (
+    "Cross-subject disambiguation (use units and context as fingerprints):\n"
+    "- Units m/s, m/s^2, rad/s, N, J, W, Hz => Physics. Units M, mol/L, mL, pH, kJ/mol, reaction arrows => Chemistry. "
+    "Units mmHg, BPM, bp, kb, genotype symbols AA/Aa/aa, words like ADN, ATP, khi khong => Biology. "
+    "Only x, y, f(x), integral, lim, sin/cos without units => Mathematics.\n"
+    "- Symbol T: with N or a hanging string => string tension (PHYS_PENDULUM); with 2*pi*sqrt(L/g) or seconds => period (PHYS_PENDULUM); "
+    "with degC/K or pV=nRT => temperature (CHEM_REACTION_LAB).\n"
+    "- Symbol k: with f'(x0)/tangent => math slope (MATH_FUNC_2D); with N/m or a coil => spring constant (PHYS_PENDULUM); "
+    "with v=k[A]^a => rate constant (CHEM_REACTION_LAB).\n"
+    "- A parabola with axes Oxy and y=ax^2+bx+c => MATH_FUNC_2D; with v0, alpha or a ground line => PHYS_PROJECTILE.\n"
+    "- An ellipse with x^2/a^2+y^2/b^2=1 => MATH_CONIC_2D.\n"
+    "- Zigzag coil => PHYS_PENDULUM (spring); Y-shaped fork or 'Helicase' => BIO_DNA_HELIX; two bean shapes facing each other, "
+    "'khi khong', 'quang hop' => BIO_PHOTOSYNTHESIS; P-QRS-T wave, 'BPM', 'chu ky tim' => BIO_HEART_CYCLE; "
+    "balance scale or unbalanced equation like Fe+O2 => CHEM_BALANCE_SCALE.\n"
+)
 
-    few_shot_prompt = (
-        "You are an expert STEM handwriting classifier. Classify the user's handwritten equation/drawing into ONE of these 10 exact template IDs:\n"
+
+def build_vision_prompt(hint_text=None, subject_lock=None):
+    """Prompt cho Gemini: danh sách template có trong Registry + quy tắc phân giải nhập nhằng + môn học giáo viên đã khóa."""
+    lock = SUBJECT_NAMES.get((subject_lock or "").upper())
+    lock_line = (
+        f"The teacher has LOCKED the subject to {lock}. Choose a template of that subject whenever the writing is ambiguous.\n\n"
+        if lock
+        else ""
+    )
+    return (
+        "You are an expert STEM handwriting classifier. Classify the user's handwritten equation/drawing into ONE of these exact template IDs:\n"
         "- MATH_TRIG_WAVE (y = 2sin(3x), sin, cos, waves, oscillation)\n"
         "- MATH_FUNC_2D (y = 2x+1, y = ax^3+bx^2+cx+d, linear, parabola, cubic, polynomials)\n"
         "- MATH_CONIC_2D (x^2/a^2 + y^2/b^2 = 1, ellipse, circle)\n"
         "- PHYS_PROJECTILE (v0, g, projectile, parabola, ném, lực, arrow/ball)\n"
-        "- PHYS_PENDULUM (pendulum, con lắc, L, circle on string)\n"
+        "- PHYS_PENDULUM (pendulum, con lắc, spring, lò xo, L, circle on string)\n"
         "- PHYS_INCLINED (a = g(sin(alpha) - mu*cos(alpha)), inclined plane, mặt phẳng nghiêng, ma sát)\n"
         "- PHYS_OPTICS_LENS (1/f = 1/d + 1/d', thấu kính)\n"
         "- CHEM_REACTION_LAB (Rate = [C]*exp(-Ea/RT), HCl, Mg, chemical reaction, gas bubbles)\n"
         "- CHEM_BALANCE_SCALE (Fe + O2 -> Fe2O3, chemical equation balance)\n"
-        "- BIO_PHOTOSYNTHESIS (Rate = f(T, I), photosynthesis, quang hợp, 25°C, leaf, cây)\n"
+        "- BIO_PHOTOSYNTHESIS (Rate = f(T, I), photosynthesis, quang hợp, 25°C, leaf, cây, stomata)\n"
         "- BIO_HEART_CYCLE (ECG, BPM, tim, heart)\n\n"
-        f"Teacher Hint / Context: {hint_text or 'None'}\n\n"
+        + lock_line
+        + f"Teacher Hint / Context: {hint_text or 'None'}\n\n"
         "Mapping rules:\n"
         "1. If handwriting looks like sin, cos, wave, y = ... -> MATH_TRIG_WAVE or MATH_FUNC_2D\n"
         "2. If handwriting looks like v0, g, projectile, parabola, ném, lực, arrow/ball -> PHYS_PROJECTILE\n"
         "3. If handwriting looks like pendulum, con lắc, L, circle on string -> PHYS_PENDULUM\n"
         "4. If handwriting looks like HCl, Mg, Fe, O2, +, ->, beaker, bubbles -> CHEM_REACTION_LAB or CHEM_BALANCE_SCALE\n"
         "5. If handwriting looks like 25°C, quang hợp, leaf, cây, tim, heart -> BIO_PHOTOSYNTHESIS or BIO_HEART_CYCLE\n\n"
-        "Return STRICTLY valid JSON with:\n"
+        + DISAMBIGUATION_RULES
+        + "\nReturn STRICTLY valid JSON with:\n"
         "{\n"
         '  "templateId": "...",\n'
         '  "recognizedLatex": "...",\n'
@@ -554,6 +581,16 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
         '  "socraticQuestion": "..."\n'
         "}"
     )
+
+
+def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None, api_key: Optional[str] = None, subject_lock: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    gemini_key = api_key or os.getenv("GEMINI_API_KEY")
+    openai_key = os.getenv("OPENAI_API_KEY")
+
+    if not gemini_key and not openai_key:
+        return None
+
+    few_shot_prompt = build_vision_prompt(hint_text, subject_lock)
 
     # 1. Try Gemini
     if gemini_key:
@@ -617,17 +654,17 @@ _VISION_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="vision-llm"
 _VISION_FUTURES: Dict[str, Any] = {}
 
 
-def classify_with_vision_budgeted(image_bytes: bytes, hint_text: Optional[str] = None, api_key: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def classify_with_vision_budgeted(image_bytes: bytes, hint_text: Optional[str] = None, api_key: Optional[str] = None, subject_lock: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """
     Run classify_with_vision_llm with a hard latency budget. If the model is slower than the budget,
     return None immediately (the caller falls back to the local RapidOCR/stroke pipeline, ~10ms)
     while the LLM keeps working in the background; its late answer is cached by image hash so that
     retrying the same crop is instant and more accurate.
     """
-    key = hashlib.sha1(image_bytes + (hint_text or "").encode("utf-8", "ignore")).hexdigest()
+    key = hashlib.sha1(image_bytes + (hint_text or "").encode("utf-8", "ignore") + (subject_lock or "").encode("utf-8", "ignore")).hexdigest()
     fut = _VISION_FUTURES.get(key)
     if fut is None:
-        fut = _VISION_POOL.submit(classify_with_vision_llm, image_bytes, hint_text, api_key)
+        fut = _VISION_POOL.submit(classify_with_vision_llm, image_bytes, hint_text, api_key, subject_lock)
         _VISION_FUTURES[key] = fut
         if len(_VISION_FUTURES) > 64:
             for old in list(_VISION_FUTURES.keys())[:32]:
@@ -729,6 +766,7 @@ async def compile_lasso(request: Request):
     image_base64 = None
     hint_text = None
     hint_subject = None
+    subject_lock = None
     raw_strokes_json = None
 
     if "application/json" in content_type:
@@ -738,6 +776,7 @@ async def compile_lasso(request: Request):
             hint_text = body.get("hint_text")
             hint_subject = body.get("hint_subject") or hint_text
             custom_gemini_key = body.get("gemini_api_key") or custom_gemini_key
+            subject_lock = body.get("subject_lock")
             raw_strokes_json = body.get("raw_strokes_json")
             if isinstance(raw_strokes_json, (dict, list)):
                 raw_strokes_json = json.dumps(raw_strokes_json)
@@ -749,6 +788,7 @@ async def compile_lasso(request: Request):
             hint_subject = form.get("hint_subject")
             hint_text = form.get("hint_text") or hint_subject
             custom_gemini_key = form.get("gemini_api_key") or custom_gemini_key
+            subject_lock = form.get("subject_lock")
             raw_strokes_json = form.get("raw_strokes_json")
             image_base64 = form.get("image_base64")
             image_file = form.get("image")
@@ -783,7 +823,7 @@ async def compile_lasso(request: Request):
     # Step 1: Attempt Real Vision LLM (Gemini Flash / OpenAI) under a strict latency budget (<1.5s SLA)
     llm_result = None
     if image_bytes and len(image_bytes) > 0:
-        llm_result = classify_with_vision_budgeted(image_bytes, hint_text or hint_subject, api_key=custom_gemini_key)
+        llm_result = classify_with_vision_budgeted(image_bytes, hint_text or hint_subject, api_key=custom_gemini_key, subject_lock=subject_lock)
 
     if llm_result and "templateId" in llm_result:
         template_id = llm_result["templateId"]

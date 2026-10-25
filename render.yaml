@@ -1,0 +1,18 @@
+# Render Blueprint — máy chủ AI (FastAPI) của Socratic Vision Board.
+# Dùng: Render Dashboard → New → Blueprint → chọn repo này. Chi tiết: socratic-monorepo/DEPLOY.md
+services:
+  - type: web
+    name: socratic-ai-engine
+    runtime: python
+    plan: free
+    rootDir: socratic-monorepo/services/ai-engine
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      # Khóa Gemini (tùy chọn). Không ghi vào tệp: nhập tay trong Dashboard sau khi Blueprint tạo dịch vụ.
+      - key: GEMINI_API_KEY
+        sync: false

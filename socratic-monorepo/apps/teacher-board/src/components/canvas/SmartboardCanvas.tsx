@@ -5,10 +5,17 @@ import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry'
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
 import { routeLocally, makeSolidBlueprint } from '../../utils/localRouter';
 import { detectSolidFromStrokes } from '../../utils/sketchSolid';
+import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
+import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
+import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
 import { AUTO_INK_SCENES, AutoInkScene } from '../../utils/autoInkPresets';
 import { layoutTypeset, typesetStroke, sourceStrokes, bboxOfStrokes, latexToPlain, type ConvertLine } from '../../utils/inkConvert';
 import { SimulationWidget } from './SimulationWidget';
 import { InkConvertPanel } from './InkConvertPanel';
+import { SmartboardDock, AiFab } from './SmartboardDock';
+import { ClassroomPanel } from './ClassroomPanel';
+import { useClassroom } from '../../hooks/useClassroom';
+import { slimBlueprint } from '../../utils/classroomState';
 import { OcrReviewModal } from './OcrReviewModal';
 import { MathView } from '../common/MathView';
 import { FormulaBlock, MathText } from '../ui/MathText';
@@ -95,6 +102,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   // Chuyển chữ viết tay → công thức chuẩn: nguồn nét (hoặc công thức đang sửa)
   const [convertCtx, setConvertCtx] = useState<{ source: Stroke[]; editing?: { id: string; latex: string; text: string } | null } | null>(null);
   const [boardScale, setBoardScale] = useState(1);
+  // lớp học BYOD
+  const room = useClassroom();
+  const [isClassroomOpen, setIsClassroomOpen] = useState(false);
+  // khóa môn học (bộ chọn phân môn nhanh): ép ngữ cảnh nhận diện cho bộ biên dịch AI
+  const [subjectLock, setSubjectLock] = useState<Subject | null>(null);
+  // phương án thay thế khi hình phác thảo mơ hồ (Tap & Swap)
+  const [sketchAlts, setSketchAlts] = useState<{ label: string; run: () => void }[] | null>(null);
   const boardWrapRef = useRef<HTMLDivElement | null>(null);
   const [activeBlueprint, setActiveBlueprint] = useState<SimulationBlueprint | null>(initialBlueprint);
   // Bảng luôn được gắn sẵn (chỉ ẩn khi sang Mode 02/03), nên khi Mode 03 đẩy bài mới lên thì phải nạp lại mẫu.
@@ -456,6 +470,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   useEffect(() => {
     redraw();
   }, [redraw, activeBlueprint]);
+
+  // Giáo viên bật/đổi mô phỏng → học sinh trong phòng thấy ngay
+  useEffect(() => {
+    if (room.state.role === 'teacher' && room.state.status === 'open' && activeBlueprint) {
+      room.send({ type: 'BLUEPRINT', blueprint: slimBlueprint(activeBlueprint) });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeBlueprint, room.state.status, room.state.role]);
 
   // Auto-Ink Calligraphy Runner (Smooth ~800ms natural ink playback)
   const triggerAutoInk = useCallback((sceneId: string) => {
@@ -980,6 +1002,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   };
 
   const handleClear = () => {
+    setSketchAlts(null);
     if (strokes.length > 0) saveToUndo();
     setStrokes([]);
     setSelectedStrokes([]);
@@ -1208,6 +1231,30 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   };
 
   // On-demand AI Magic Lasso Compiler
+  const runSketchAction = (kind: SketchKind, others: SketchKind[]) => {
+    const act = (k: SketchKind, extra = false) => (extra ? SKETCH_EXTRA[k] : SKETCH_ACTIONS[k]());
+    const exec = (a: { label: string; blueprint?: SimulationBlueprint; hint?: string } | undefined) => {
+      if (!a) return;
+      if (a.blueprint) {
+        setActiveBlueprint(a.blueprint);
+        setSelectedStrokes([]);
+        setLassoLoop([]);
+      } else if (a.hint) {
+        handleVisualize(a.hint);
+      }
+    };
+    const main = act(kind);
+    const list = [{ label: main!.label, run: () => exec(main) }];
+    const extra = act(kind, true);
+    if (extra) list.push({ label: extra.label, run: () => exec(extra) });
+    for (const k of others) {
+      const a = act(k);
+      if (a) list.push({ label: a.label, run: () => exec(a) });
+    }
+    setSketchAlts(list.length > 1 ? list : null);
+    exec(main);
+  };
+
   const handleVisualize = async (overrideHint?: string) => {
     if (selectedStrokes.length === 0 && !overrideHint) return;
     setIsLoading(true);
@@ -1243,6 +1290,15 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         return;
       }
     }
+    // Hình phác thảo STEM (lò xo, sóng, parabol, elip, mạch điện, chạc Y, khí khổng): nhận ngay trên máy
+    if (!effectiveHint.trim() && inkSelected.length >= 1 && inkSelected.length <= 3) {
+      const sk = recognizeSketch(inkSelected.map((s) => ({ points: s.points })));
+      if (sk) {
+        setIsLoading(false);
+        runSketchAction(sk.best.kind, sk.alternatives.map((a) => a.kind));
+        return;
+      }
+    }
     let cropData: { blob: Blob; dataUrl: string; sizeKb: number } | null = null;
 
     try {
@@ -1262,6 +1318,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         hint_subject: effectiveHint,
         raw_strokes_json: JSON.stringify(inkSelected),
         gemini_api_key: storedGeminiKey,
+        subject_lock: subjectLock,
       };
 
       const requestHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -1615,289 +1672,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   return (
     <div
       data-testid="smartboard-container"
-      className="relative w-full min-h-full bg-[#F8F7F4] text-[#18181B] flex flex-col items-center justify-start p-3 pb-32 select-none"
+      className="relative w-full min-h-screen bg-[#F8F7F4] text-[#18181B] flex flex-col items-center justify-start p-2 pb-28 select-none"
     >
-      {/* MASTER SMARTBOARD TOOLBAR */}
-      <div
-        data-testid="smartboard-toolbar"
-        className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-2 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] z-20 max-w-5xl w-full"
-      >
-        {/* Left Section: Core Tools */}
-        <div className="flex items-center gap-1">
-          {/* Natural Pen */}
-          <button
-            data-testid="tool-pen"
-            onClick={() => { setTool('PEN'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
-              tool === 'PEN'
-                ? 'bg-[#F2F0EA] text-stone-900 border-[#DCD9D0] font-semibold shadow-xs'
-                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
-            }`}
-            title="Bút viết tự nhiên"
-          >
-            <Pen className="w-3.5 h-3.5" />
-            <span>Viết</span>
-          </button>
-
-          {/* Highlighter */}
-          <button
-            onClick={() => { setTool('HIGHLIGHTER'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
-              tool === 'HIGHLIGHTER'
-                ? 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A] font-semibold shadow-xs'
-                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
-            }`}
-            title="Bút dạ quang"
-          >
-            <Highlighter className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Dạ quang</span>
-          </button>
-
-          {/* Hình tròn */}
-          <button
-            data-testid="tool-circle"
-            onClick={() => { setTool('SHAPE'); setSelectedShape('CIRCLE'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
-              tool === 'SHAPE' && selectedShape === 'CIRCLE'
-                ? 'bg-[#F2F0EA] text-stone-900 border-[#DCD9D0] font-semibold shadow-xs'
-                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
-            }`}
-            title="Vẽ hình tròn"
-          >
-            <Circle className="w-3.5 h-3.5" />
-            <span>Hình tròn</span>
-          </button>
-
-          {/* Đoạn thẳng */}
-          <button
-            data-testid="tool-line"
-            onClick={() => { setTool('SHAPE'); setSelectedShape('LINE'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
-              tool === 'SHAPE' && selectedShape === 'LINE'
-                ? 'bg-[#F2F0EA] text-stone-900 border-[#DCD9D0] font-semibold shadow-xs'
-                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
-            }`}
-            title="Vẽ đoạn thẳng"
-          >
-            <Minus className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">Đoạn thẳng</span>
-          </button>
-
-          {/* Mũi tên */}
-          <button
-            data-testid="tool-arrow"
-            onClick={() => { setTool('SHAPE'); setSelectedShape('ARROW'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
-              tool === 'SHAPE' && selectedShape === 'ARROW'
-                ? 'bg-[#F2F0EA] text-stone-900 border-[#DCD9D0] font-semibold shadow-xs'
-                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
-            }`}
-            title="Vẽ mũi tên vector"
-          >
-            <ArrowRight className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">Mũi tên</span>
-          </button>
-
-          {/* Hình chữ nhật */}
-          <button
-            data-testid="tool-rect"
-            onClick={() => { setTool('SHAPE'); setSelectedShape('RECTANGLE'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
-              tool === 'SHAPE' && selectedShape === 'RECTANGLE'
-                ? 'bg-[#F2F0EA] text-stone-900 border-[#DCD9D0] font-semibold shadow-xs'
-                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
-            }`}
-            title="Vẽ hình chữ nhật"
-          >
-            <Square className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">Chữ nhật</span>
-          </button>
-
-          {/* Magic Lasso */}
-          <button
-            data-testid="tool-lasso"
-            onClick={() => setTool('LASSO')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
-              tool === 'LASSO'
-                ? 'bg-blue-50 text-blue-700 border-blue-200 font-semibold shadow-xs'
-                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
-            }`}
-            title="Khoanh vùng nét viết để mô phỏng"
-          >
-            <Lasso className="w-3.5 h-3.5" />
-            <span>Khoanh vùng AI</span>
-          </button>
-
-          {/* Chữ viết tay → văn bản & công thức chuẩn */}
-          <button
-            data-testid="tool-convert-ink"
-            onClick={openConvert}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border bg-white hover:bg-violet-50 border-transparent hover:border-violet-200 text-stone-600 hover:text-violet-700"
-            title="Chuyển chữ viết tay (đã khoanh hoặc cả bảng) thành văn bản và công thức chuẩn"
-          >
-            <Wand2 className="w-3.5 h-3.5" />
-            <span>Chữ → Công thức</span>
-          </button>
-
-          {/* Eraser */}
-          <button
-            data-testid="tool-eraser"
-            onClick={() => { setTool('ERASER'); setSelectedStrokes([]); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
-              tool === 'ERASER'
-                ? 'bg-[#F2F0EA] text-stone-900 border-[#DCD9D0] font-semibold shadow-xs'
-                : 'bg-white hover:bg-stone-50 border-transparent text-stone-600 hover:text-stone-900'
-            }`}
-            title="Tẩy nét viết"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>Tẩy</span>
-          </button>
-        </div>
-
-        {/* Center Section: Color Palette & Stroke Width */}
-        <div className="flex items-center gap-2.5">
-          {/* Color Dots */}
-          <div className="flex items-center gap-1.5 bg-[#F2F0EA] px-2.5 py-1 rounded-lg border border-[#E6E4DD]">
-            {PALETTE.map((c) => (
-              <button
-                key={c.value}
-                onClick={() => setStrokeColor(c.value)}
-                className={`w-4 h-4 rounded-full transition-transform cursor-pointer border border-black/10 ${
-                  strokeColor === c.value ? 'scale-125 ring-2 ring-stone-900' : 'hover:scale-110 opacity-75 hover:opacity-100'
-                }`}
-                style={{ backgroundColor: c.value }}
-                title={c.name}
-              />
-            ))}
-          </div>
-
-          {/* Thickness Selector */}
-          <div className="flex items-center gap-1 bg-[#F2F0EA] px-1.5 py-0.5 rounded-lg border border-[#E6E4DD]">
-            {STROKE_WIDTHS.map((sw) => (
-              <button
-                key={sw.value}
-                onClick={() => setStrokeWidth(sw.value)}
-                className={`px-2 py-0.5 rounded-md text-[10px] font-mono transition cursor-pointer ${
-                  strokeWidth === sw.value ? 'bg-white text-stone-900 font-semibold shadow-xs' : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                {sw.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Section: Board Management & Undo/Redo */}
-        <div className="flex items-center gap-1">
-          {/* Undo / Redo */}
-          <button
-            onClick={handleUndo}
-            disabled={undoStack.length === 0}
-            className="p-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-700 disabled:opacity-30 border border-[#DCD9D0] shadow-xs transition cursor-pointer"
-            title="Hoàn tác (Undo)"
-          >
-            <Undo2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={handleRedo}
-            disabled={redoStack.length === 0}
-            className="p-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-700 disabled:opacity-30 border border-[#DCD9D0] shadow-xs transition cursor-pointer"
-            title="Làm lại (Redo)"
-          >
-            <Redo2 className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Grid Toggle */}
-          <button
-            onClick={() => setGridPattern(gridPattern === 'DOTS' ? 'GRID' : (gridPattern === 'GRID' ? 'BLANK' : 'DOTS'))}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-700 text-xs border border-[#DCD9D0] shadow-xs transition cursor-pointer"
-            title="Đổi lưới nền: Lưới chấm / Ô ca-rô / Bảng trơn"
-          >
-            <GridIcon className="w-3 h-3" />
-            <span className="text-[10px] font-mono uppercase">{gridPattern}</span>
-          </button>
-
-          {/* Ergonomic Split-View Toggle Button */}
-          <button
-            data-testid="btn-split-view-toggle"
-            onClick={() => setIsSplitView((s) => !s)}
-            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs border transition cursor-pointer ${
-              isSplitView
-                ? 'bg-blue-50 text-blue-700 border-blue-200 font-semibold shadow-xs'
-                : 'bg-white hover:bg-stone-50 border-[#DCD9D0] text-stone-700 shadow-xs'
-            }`}
-            title="Ghim sang nửa bảng (Split-Screen)"
-          >
-            <span className="font-mono">◫</span>
-            <span className="text-[10px] hidden sm:inline">{isSplitView ? 'Nửa bảng' : 'Toàn bảng'}</span>
-          </button>
-
-          {/* Pack Smart Notes & QR Recap Modal Button */}
-          <button
-            data-testid="btn-pack-smart-notes"
-            onClick={handleOpenQrModal}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-stone-50 border border-[#DCD9D0] text-stone-700 text-xs font-medium shadow-xs transition cursor-pointer"
-            title="Đóng gói Smart Notes & QR"
-          >
-            <QrCode className="w-3.5 h-3.5 text-stone-600" />
-            <span className="text-[10px] hidden sm:inline font-mono">QR Notes</span>
-          </button>
-
-          {/* Studio Handwriting Recorder Toggle */}
-          <button
-            data-testid="btn-studio-recorder-toggle"
-            onClick={() => setIsStudioRecorderOpen((o) => !o)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs border transition cursor-pointer ${
-              isStudioRecorderOpen
-                ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold shadow-xs'
-                : 'bg-white hover:bg-stone-50 border-[#DCD9D0] text-stone-700 shadow-xs'
-            }`}
-            title="Phòng thu nét viết: Luyện theo viền mờ & lưu bản viết thật cho video demo"
-          >
-            <Pen className="w-3.5 h-3.5 text-amber-600" />
-            <span className="font-medium text-[10px] hidden sm:inline">Phòng Thu Nét</span>
-            {Object.values(hasCustomSlots).filter(Boolean).length > 0 && (
-              <span className="bg-emerald-600 text-white text-[9px] font-mono px-1 py-0.2 rounded-full font-bold">
-                {Object.values(hasCustomSlots).filter(Boolean).length}/4
-              </span>
-            )}
-          </button>
-
-          {/* Export Board */}
-          <button
-            onClick={handleExportBoard}
-            className="p-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-700 border border-[#DCD9D0] shadow-xs transition cursor-pointer"
-            title="Tải ảnh bảng viết về máy"
-          >
-            <Download className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Clear */}
-          <button
-            data-testid="tool-clear"
-            onClick={handleClear}
-            className="p-1.5 rounded-lg bg-white hover:bg-rose-50 text-stone-600 hover:text-rose-600 border border-[#DCD9D0] shadow-xs transition cursor-pointer"
-            title="Xóa toàn bộ bảng"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Top-bar Quick Visualize Trigger (when strokes selected) */}
-          {selectedStrokes.length > 0 && (
-            <button
-              data-testid="top-toolbar-btn-visualize"
-              onClick={() => handleVisualize()}
-              disabled={isLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white transition cursor-pointer ml-1 shadow-sm font-semibold"
-            >
-              {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-              <span>Visualize ({selectedStrokes.length})</span>
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* CHỮ VIẾT TAY → CÔNG THỨC CHUẨN */}
       {convertCtx && (
         <InkConvertPanel
@@ -2161,7 +1937,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       {selectedStrokes.length > 0 && (
         <div
           data-testid="lasso-action-bar"
-          className="fixed bottom-[72px] left-1/2 -translate-x-1/2 flex flex-col gap-2.5 px-4 py-3 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] shadow-[0_12px_40px_rgb(0,0,0,0.14)] z-40 w-[min(1024px,calc(100vw-24px))] animate-in fade-in duration-150"
+          className="fixed bottom-[100px] left-1/2 -translate-x-1/2 flex flex-col gap-2.5 px-4 py-3 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] shadow-[0_12px_40px_rgb(0,0,0,0.14)] z-40 w-[min(1024px,calc(100vw-24px))] animate-in fade-in duration-150"
         >
           {/* Top Row: Preview, Voice Mic, Formula Input, Action Buttons */}
           <div className="flex flex-col md:flex-row items-center gap-3 w-full">
@@ -2278,6 +2054,27 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
           {/* Bottom Row: 1-Tap Smart Topic Chips (Zero Fail, Instant Routing) */}
           <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#E6E4DD]">
+            <div className="flex items-center gap-1 shrink-0" data-testid="subject-lock">
+              <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider">Môn:</span>
+              <button
+                data-testid="subject-auto"
+                onClick={() => setSubjectLock(null)}
+                className={`px-2 py-0.5 rounded-full text-[11px] border transition ${subjectLock === null ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-[#DCD9D0] hover:bg-stone-50'}`}
+              >
+                Tự động
+              </button>
+              {([['MATH', '#2563EB'], ['PHYSICS', '#7C3AED'], ['CHEMISTRY', '#D97706'], ['BIOLOGY', '#059669']] as [Subject, string][]).map(([k, c]) => (
+                <button
+                  key={k}
+                  data-testid={`subject-${k.toLowerCase()}`}
+                  onClick={() => setSubjectLock(subjectLock === k ? null : k)}
+                  className="px-2 py-0.5 rounded-full text-[11px] border font-medium transition"
+                  style={subjectLock === k ? { background: c, color: '#fff', borderColor: c } : { color: c, borderColor: `${c}66`, background: `${c}0f` }}
+                >
+                  {SUBJECT_LABEL[k]}
+                </button>
+              ))}
+            </div>
             <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider shrink-0">
               Gợi ý tức thì (0ms):
             </span>
@@ -2357,64 +2154,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         </div>
       )}
 
-      {/* DIRECTOR SCENE SWITCHER BAR (Apple Keynote One-Take Recording Engine) */}
-      <div
-        data-testid="director-scene-switcher-bar"
-        className="flex flex-wrap items-center justify-between gap-2 mt-2 px-3.5 py-2 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] text-xs max-w-6xl w-full shadow-sm"
-      >
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="font-mono text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-[#18181B] text-white">
-            Director Hotkeys (1-4)
-          </span>
-          {isAutoInking && (
-            <span className="text-[11px] font-mono text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
-              Đang viết thư pháp 0.8s...
-            </span>
-          )}
-          {isCompilingShimmer && (
-            <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-              AI Compiling 450ms...
-            </span>
-          )}
-        </div>
-
-        {/* 4 Scene Buttons */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          {AUTO_INK_SCENES.map((scene, idx) => {
-            const hotkey = idx + 1;
-            const isActive = activeAutoScene === scene.id;
-            return (
-              <button
-                key={scene.id}
-                type="button"
-                data-testid={`director-scene-btn-${hotkey}`}
-                onClick={() => triggerAutoInk(scene.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-xs transition cursor-pointer border ${
-                  isActive
-                    ? 'bg-blue-600 text-white border-blue-700 font-semibold shadow-xs'
-                    : 'bg-[#F4F3EE] hover:bg-[#EAE7DF] border-[#E5E3DC] text-stone-700 hover:text-stone-900'
-                }`}
-                title={`Kích hoạt kịch bản mẫu ${scene.shortLabel} (Phím ${hotkey})`}
-              >
-                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                  isActive ? 'bg-white text-blue-600' : 'bg-white border border-[#DCD9D0] text-stone-600'
-                }`}>
-                  {hotkey}
-                </span>
-                <span className="font-sans font-medium text-[11px]">{scene.shortLabel}</span>
-                {hasCustomSlots[scene.id] && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-200" title="Đã lưu nét thật của bạn" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Smartboard Canvas & Side-by-Side Ergonomic Split-View Workspace */}
-      <div className="flex flex-col lg:flex-row items-start justify-center gap-4 mt-3 w-full max-w-7xl">
+      <div className="flex flex-col lg:flex-row items-start justify-center gap-3 mt-1 w-full max-w-[1500px]">
         {/* Drawing Canvas Area (Always visible, NEVER covered, high-def 1200x675) */}
         <div
           ref={boardWrapRef}
@@ -2423,7 +2164,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               ? isSplitView
                 ? 'w-full lg:w-1/2'
                 : 'w-full lg:w-[52%]'
-              : 'w-full max-w-6xl'
+              : 'w-full max-w-[1400px]'
           }`}
         >
           <canvas
@@ -2438,6 +2179,25 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             onPointerLeave={() => setEraserHover(null)}
             className={`${tool === 'ERASER' ? 'cursor-none' : tool === 'LASSO' && selectedStrokes.length > 0 ? 'cursor-move' : 'cursor-crosshair'} touch-none w-full h-auto block`}
           />
+
+          {sketchAlts && (
+            <div data-testid="sketch-alts" className="absolute left-3 top-3 z-20 flex flex-wrap items-center gap-1.5 rounded-xl bg-white/95 backdrop-blur border border-[#DCD9D0] shadow-md px-2.5 py-1.5">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500">Hình giống</span>
+              {sketchAlts.map((a, i) => (
+                <button
+                  key={a.label}
+                  data-testid={`sketch-alt-${i}`}
+                  onClick={a.run}
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition border ${i === 0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50'}`}
+                >
+                  {a.label}
+                </button>
+              ))}
+              <button onClick={() => setSketchAlts(null)} className="ml-1 text-stone-400 hover:text-stone-700" title="Ẩn">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           {/* Lớp công thức chuẩn (KaTeX) đặt trên canvas; chỉ phần tay cầm nhận chuột nên bút vẫn viết xuyên qua được */}
           <div className="absolute inset-0 pointer-events-none" data-testid="typeset-layer">
@@ -2624,6 +2384,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               <SimulationWidget
                 key={`${activeBlueprint.templateId}|${activeBlueprint.recognizedLatex}|${(activeBlueprint.expressions || []).join('|')}`}
                 blueprint={activeBlueprint}
+                remoteParams={room.state.role === 'teacher' ? room.state.params : undefined}
+                onParamChange={(k, v) => {
+                  if (room.state.role === 'teacher') room.send({ type: 'SLIDER', key: k, value: v });
+                }}
                 onClose={() => setActiveBlueprint(null)}
                 isSplitView={isSplitView}
                 onToggleSplitView={() => setIsSplitView(!isSplitView)}
@@ -2632,6 +2396,62 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           </div>
         )}
       </div>
+
+      {/* THANH TÁC VỤ BẢNG THÔNG MINH + NÚT AI NỔI */}
+      <SmartboardDock
+        tool={tool}
+        onTool={(t) => {
+          setTool(t);
+          if (t !== 'LASSO') setSelectedStrokes([]);
+        }}
+        selectedShape={selectedShape}
+        onShape={(sh) => {
+          setTool('SHAPE');
+          setSelectedShape(sh);
+          setSelectedStrokes([]);
+        }}
+        strokeColor={strokeColor}
+        onColor={setStrokeColor}
+        strokeWidth={strokeWidth}
+        onWidth={setStrokeWidth}
+        palette={PALETTE}
+        widths={STROKE_WIDTHS}
+        canUndo={undoStack.length > 0}
+        canRedo={redoStack.length > 0}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        gridPattern={gridPattern}
+        onCycleGrid={() => setGridPattern(gridPattern === 'DOTS' ? 'GRID' : gridPattern === 'GRID' ? 'BLANK' : 'DOTS')}
+        onClear={handleClear}
+        onExport={handleExportBoard}
+        isSplitView={isSplitView}
+        onToggleSplit={() => setIsSplitView((v) => !v)}
+        onOpenQr={handleOpenQrModal}
+        isRecorderOpen={isStudioRecorderOpen}
+        onToggleRecorder={() => setIsStudioRecorderOpen((o) => !o)}
+        customSlotCount={Object.values(hasCustomSlots).filter(Boolean).length}
+        scenes={AUTO_INK_SCENES.map((sc, i) => ({ id: sc.id, shortLabel: sc.shortLabel, hotkey: i + 1, active: activeAutoScene === sc.id, custom: !!hasCustomSlots[sc.id] }))}
+        onScene={triggerAutoInk}
+        busyLabel={isAutoInking ? 'Đang viết thư pháp…' : isCompilingShimmer ? 'AI đang biên dịch…' : null}
+        onOpenClassroom={() => setIsClassroomOpen(true)}
+        classroomStudents={room.state.role === 'teacher' && room.state.roomId ? room.state.studentCount : null}
+      />
+      <AiFab
+        selectionCount={selectedStrokes.length}
+        busy={isLoading}
+        listening={isVoiceListening}
+        onConvert={openConvert}
+        onVisualize={() => {
+          if (selectedStrokes.length > 0) handleVisualize();
+          else {
+            setTool('LASSO');
+            flashError('Hãy khoanh vùng nét viết hoặc hình vẽ cần trực quan hóa, rồi chạm lại nút này.');
+          }
+        }}
+        onLasso={() => setTool('LASSO')}
+        onVoice={handleVoiceDictation}
+      />
+      {isClassroomOpen && <ClassroomPanel room={room} templateId={activeBlueprint?.templateId ?? null} onClose={() => setIsClassroomOpen(false)} />}
 
       {/* 1-Tap QR Smart Notes Modal */}
       {isQrModalOpen && (

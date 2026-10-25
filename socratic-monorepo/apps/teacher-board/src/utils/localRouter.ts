@@ -7,6 +7,7 @@
  */
 import {SimulationBlueprint} from '@socratic/types';
 import {latexToExpr, normalizeMathInput, parseEquation, toLatex} from './mathExpr';
+import {parseCross, parseGenotypeFreqs, parseLP, parseRecurrence} from './stemModels';
 
 /** Tách "y = x^2 - 3; y = A sin x + B" thành từng phương trình. */
 export function splitEquations(text: string): string[] {
@@ -127,12 +128,72 @@ export function makeSolidBlueprint(kind: SolidKind, dims?: {a?: number; b?: numb
   };
 }
 
+// ------------------------------------------------------------------ mô hình STEM từ cú pháp giáo viên viết
+const stemBase = {parameters: [] as SimulationBlueprint['parameters'], ocrAlternatives: [] as string[]};
+
+/** Lai Menđen, cân bằng Hardy–Weinberg, quy hoạch tuyến tính, dãy số quy nạp (mạng nhện). Trả null nếu không chắc. */
+export function matchStemModel(text: string): SimulationBlueprint | null {
+  const raw = text || '';
+  const rec = parseRecurrence(raw);
+  if (rec) {
+    return {
+      ...stemBase,
+      engine: 'MATH',
+      templateId: 'MATH_COBWEB_CHAOS',
+      recognizedLatex: `${rec.name}_{n+1} = f(${rec.name}_n)`,
+      expressions: [raw],
+      meta: {recurrence: rec},
+      socraticQuestion: 'Dãy số hội tụ khi nào? Hãy thử thay đổi tham số và xem điểm bất động ổn định mất tính ổn định ra sao: ngưỡng nào làm dãy rẽ nhánh rồi hỗn loạn?',
+      curriculumLevel: 'OLYMPIAD_ADVANCED',
+    };
+  }
+  const lp = parseLP(raw);
+  if (lp) {
+    return {
+      ...stemBase,
+      engine: 'MATH',
+      templateId: 'MATH_LINEAR_PROGRAMMING',
+      recognizedLatex: '\\text{Quy hoạch tuyến tính}',
+      expressions: [raw],
+      socraticQuestion: 'Tại sao giá trị lớn nhất (nhỏ nhất) của F luôn đạt tại một đỉnh của miền đa giác lồi mà không phải ở giữa miền?',
+      curriculumLevel: 'THPT_STANDARD',
+    };
+  }
+  const cross = parseCross(raw);
+  if (cross) {
+    return {
+      ...stemBase,
+      engine: 'BIOLOGY',
+      templateId: 'BIO_PUNNETT_SQUARE',
+      recognizedLatex: `P: ${cross.p1} \\times ${cross.p2}`,
+      meta: {cross},
+      socraticQuestion: 'Tỉ lệ kiểu hình thay đổi thế nào nếu hai gen liên kết hoàn toàn thay vì phân li độc lập? Hãy kéo tần số hoán vị gen f để kiểm chứng.',
+      curriculumLevel: 'THPT_STANDARD',
+    };
+  }
+  const freqs = parseGenotypeFreqs(raw);
+  if (freqs && (/hardy|weinberg|quần thể|quan the|alen|cân bằng di truyền/i.test(raw) || /\d\s*%?\s*(?:AA|Aa|aa)\b/.test(raw))) {
+    return {
+      ...stemBase,
+      engine: 'BIOLOGY',
+      templateId: 'BIO_HARDY_WEINBERG',
+      recognizedLatex: 'p^2 + 2pq + q^2 = 1',
+      meta: {freqs},
+      socraticQuestion: 'Quần thể này có đang cân bằng di truyền không? Nếu có di nhập gen hoặc chọn lọc thì tần số alen p thay đổi theo hướng nào?',
+      curriculumLevel: 'THPT_STANDARD',
+    };
+  }
+  return null;
+}
+
 /**
  * Định tuyến theo văn bản. `explicit` = người dùng bấm "Vẽ đồ thị" (chấp nhận cả một hàm đơn).
  * Mặc định chỉ tự định tuyến khi chắc chắn: từ ≥ 2 hàm, đường cong ẩn (conic), hoặc có tên khối hình học.
  */
 export function routeLocally(text: string, opts: {explicitGraph?: boolean} = {}): SimulationBlueprint | null {
   const raw = text || '';
+  const stem = matchStemModel(raw);
+  if (stem) return stem;
   const solid = matchSolidWord(raw);
   const g = matchGraphEquations(raw);
   if (solid && !g) return makeSolidBlueprint(solid);

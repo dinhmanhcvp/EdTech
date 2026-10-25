@@ -34,6 +34,23 @@ Thư mục này chứa toàn bộ các nghiên cứu chuẩn mực về chương
    - **Phần 4**: **Mã nguồn mẫu Component Floating Screen Overlay** (React/TypeScript component tạo lớp phủ màn hình trong suốt đè lên PowerPoint/PDF và kích hoạt Magic Lasso).
    - **Phần 5**: **Giao thức đồng bộ hai chiều phòng học BYOD** (Socket.io/WebRTC protocol đồng bộ slider, giao quyền điều khiển và thăm dò Socratic).
 
+4. **[NGHE_THUAT_RENDER_TRUC_QUAN_DANG_CAP_PRO.md](./NGHE_THUAT_RENDER_TRUC_QUAN_DANG_CAP_PRO.md)**:
+   - **Phần 1**: Phân tích nguyên nhân "nét vẽ Python đơn thuần" và cách khắc phục triệt để.
+   - **Phần 2**: Bộ 6 trụ cột thiết kế thị giác đẳng cấp (Retina 4K, PBR Depth, Glow huỳnh quang, Chuyển động lò xo, Glassmorphism, Bảng màu tạp chí khoa học).
+   - **Phần 3**: Kỹ thuật render sắc nét 4K Retina chống vỡ hạt trên Smartboard 75"-86" (Hi-DPI Sub-pixel Canvas Buffer).
+   - **Phần 4**: Kỹ xảo ánh sáng PBR (Physically Based Rendering) cho quả cầu 3D, bóng đổ tiếp xúc mặt đất và Shader quầng sáng huỳnh quang Neon Bloom.
+   - **Phần 5**: Động lực học chuyển động hữu cơ (Bộ lọc lò xo giảm chấn bậc 2 SpringDamper, Vệt sáng sao băng huỳnh quang Phosphor Trail Fade).
+   - **Phần 6**: Đặc tả chi tiết nâng cấp hình ảnh cho 4 Engine STEM (Đồ thị Gradient vũ trụ, Lò xo thép kim loại 3D, Bể sóng Caustic, Thủy tinh khúc xạ & Phân tử men gốm 3D, Quả tim co bóp sinh học, ADN Cyberpunk).
+   - **Phần 7**: Mã nguồn module `StemProRenderer.ts` dùng ngay trong monorepo.
+
+5. **[KIEN_TRUC_HOA_TRON_BANG_TRANSPARENT_HOLOGRAPHIC_HUD.md](./KIEN_TRUC_HOA_TRON_BANG_TRANSPARENT_HOLOGRAPHIC_HUD.md)**:
+   - **Phần 1**: **Triết lý "Living Ink & Zero-Box"** - Xóa bỏ 100% nền hộp chữ nhật che khuất bảng; mô phỏng hòa trộn tự nhiên trực tiếp vào mặt bảng đen/xanh phấn hoặc bảng trắng bút dạ.
+   - **Phần 2**: **Tương tác trực tiếp bằng bút (Direct Kinetic Manipulation)** - Cầm bút chạm trực tiếp vào vật thể: kéo quả bóng ném xiên như bắn ná, kéo nén lò xo, xoay lộn phân tử 3D, kéo tách chạc ADN như mở khóa áo mà không cần dùng thanh trượt gián tiếp.
+   - **Phần 3**: **Giải thuật phóng to / thu nhỏ / xoay tự do đa điểm** - Ma trận Affine Transform kết hợp cử chỉ 2 ngón tay Pinch-to-Zoom; độ sắc nét vô cực (Infinite Vector Sharpness) từ 20% đến 400%; khung neo định vị Hologram HUD Sci-Fi `[  ]`.
+   - **Phần 4**: **Hiệu ứng biến hình "Nét phấn sống dậy" (Ink Morphing Animation)** - Chuyển hóa nét phấn vẽ tay thành mô phỏng chuyển động trong 350ms.
+   - **Phần 5**: Hệ thống màu sắc Cyber-Academic (Cyber Cyan, Solar Amber, Bio Emerald, Laser Crimson).
+   - **Phần 6**: Mã nguồn module `LivingHologramCanvas.tsx` hoàn chỉnh dùng ngay trong monorepo.
+
 ---
 
 ### Hướng dẫn Ánh xạ Mã nguồn vào Hệ thống

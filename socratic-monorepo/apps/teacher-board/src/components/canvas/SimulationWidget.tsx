@@ -8,6 +8,8 @@ import { MathPlotEngine } from '../../engines/MathPlotEngine';
 import { GraphEngine } from '../../engines/GraphEngine';
 import { GeometryEngine } from '../../engines/GeometryEngine';
 import { PunnettEngine, HardyWeinbergEngine, LinearProgrammingEngine, CobwebEngine } from '../../engines/StemModelEngines';
+import { VseprEngine, LeChatelierEngine, DaniellEngine } from '../../engines/ChemEngines';
+import { StomataEngine, OsmosisEngine, OperonLacEngine, BoxplotEngine, VariationTableEngine } from '../../engines/MoreStemEngines';
 import { PhysicsSandboxEngine } from '../../engines/PhysicsSandboxEngine';
 import { ChemistryLabEngine } from '../../engines/ChemistryLabEngine';
 import { BioSystemEngine } from '../../engines/BioSystemEngine';
@@ -266,6 +268,14 @@ function getTopicDisplayName(blueprint: SimulationBlueprint): string {
   // Engine mới nhận dạng theo templateId trước, tránh bị các từ khóa (sin, x^2…) kéo sang chủ đề khác.
   if (t === 'MATH_GRAPH') return 'TOÁN HỌC • ĐỒ THỊ HÀM SỐ NHIỀU ĐƯỜNG & GIAO ĐIỂM';
   if (t === 'GEO_SOLID') return 'TOÁN HỌC • HÌNH HỌC KHÔNG GIAN: KHỐI ĐA DIỆN 3D';
+  if (t === 'CHEM_MOLECULE_3D') return 'HÓA HỌC • HÌNH HỌC PHÂN TỬ 3D (VSEPR)';
+  if (t === 'CHEM_LE_CHATELIER_GAS') return 'HÓA HỌC • CHUYỂN DỊCH CÂN BẰNG LE CHATELIER';
+  if (t === 'CHEM_GALVANIC_DANIELL') return 'HÓA HỌC • PIN ĐIỆN HÓA GALVANI & PHƯƠNG TRÌNH NERNST';
+  if (t === 'MATH_STAT_BOXPLOT') return 'TOÁN HỌC • THỐNG KÊ: BIỂU ĐỒ HỘP – RÂU & NGOẠI LAI';
+  if (t === 'MATH_VARIATION_TABLE') return 'TOÁN HỌC • BẢNG BIẾN THIÊN → ĐỒ THỊ HÀM SỐ';
+  if (t === 'BIO_STOMATA_GAS') return 'SINH HỌC • CƠ CHẾ ĐÓNG MỞ KHÍ KHỔNG';
+  if (t === 'BIO_OSMOSIS_CELL') return 'SINH HỌC • THẨM THẤU & CO NGUYÊN SINH';
+  if (t === 'BIO_OPERON_LAC') return 'SINH HỌC • ĐIỀU HÒA GEN: OPERON LAC';
   if (t === 'MATH_LINEAR_PROGRAMMING') return 'TOÁN HỌC • QUY HOẠCH TUYẾN TÍNH & MIỀN NGHIỆM';
   if (t === 'MATH_COBWEB_CHAOS') return 'TOÁN HỌC • DÃY SỐ QUY NẠP & ĐỒ THỊ MẠNG NHỆN';
   if (t === 'BIO_PUNNETT_SQUARE') return 'SINH HỌC • QUY LUẬT DI TRUYỀN MENĐEN (BẢNG PUNNETT)';
@@ -311,7 +321,7 @@ function getTopicDisplayName(blueprint: SimulationBlueprint): string {
 }
 
 /** Engine tự vẽ thanh điều khiển riêng (hàm, tham số, bật/tắt) nên không dùng thanh trượt macro. */
-const SELF_CONTROLLED = new Set(['MATH_GRAPH', 'GEO_SOLID', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG']);
+const SELF_CONTROLLED = new Set(['MATH_GRAPH', 'GEO_SOLID', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE', 'BIO_STOMATA_GAS', 'BIO_OSMOSIS_CELL', 'BIO_OPERON_LAC', 'CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL']);
 
 export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   blueprint,
@@ -685,7 +695,15 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.templateId === 'MATH_COBWEB_CHAOS' && <CobwebEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {blueprint.templateId === 'BIO_PUNNETT_SQUARE' && <PunnettEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {blueprint.templateId === 'BIO_HARDY_WEINBERG' && <HardyWeinbergEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
-            {blueprint.engine === 'MATH' && !['MATH_GRAPH', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS'].includes(blueprint.templateId) && (
+            {blueprint.templateId === 'BIO_STOMATA_GAS' && <StomataEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'BIO_OSMOSIS_CELL' && <OsmosisEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'BIO_OPERON_LAC' && <OperonLacEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'CHEM_MOLECULE_3D' && <VseprEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'CHEM_LE_CHATELIER_GAS' && <LeChatelierEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'CHEM_GALVANIC_DANIELL' && <DaniellEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'MATH_STAT_BOXPLOT' && <BoxplotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.templateId === 'MATH_VARIATION_TABLE' && <VariationTableEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
+            {blueprint.engine === 'MATH' && !['MATH_GRAPH', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE'].includes(blueprint.templateId) && (
               <MathPlotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
             {blueprint.engine === 'GEOMETRY' && (
@@ -694,10 +712,10 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.engine === 'PHYSICS' && (
               <PhysicsSandboxEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
-            {blueprint.engine === 'CHEMISTRY' && (
+            {blueprint.engine === 'CHEMISTRY' && !['CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL'].includes(blueprint.templateId) && (
               <ChemistryLabEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
-            {blueprint.engine === 'BIOLOGY' && !['BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG'].includes(blueprint.templateId) && (
+            {blueprint.engine === 'BIOLOGY' && !['BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG', 'BIO_STOMATA_GAS', 'BIO_OSMOSIS_CELL', 'BIO_OPERON_LAC'].includes(blueprint.templateId) && (
               <BioSystemEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
           </>

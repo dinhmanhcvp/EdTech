@@ -15,7 +15,7 @@ interface Props {
 const PALETTE = ['#2563EB', '#E11D48', '#059669', '#D97706', '#7C3AED', '#0891B2', '#DB2777', '#4D7C0F'];
 const pct = (v: number) => `${fmtNum(v * 100, 3)}%`;
 
-const Slider: React.FC<{label: React.ReactNode; value: number; min: number; max: number; step: number; onChange: (v: number) => void; testid: string; fmt?: (v: number) => string}> = ({label, value, min, max, step, onChange, testid, fmt}) => (
+export const Slider: React.FC<{label: React.ReactNode; value: number; min: number; max: number; step: number; onChange: (v: number) => void; testid: string; fmt?: (v: number) => string}> = ({label, value, min, max, step, onChange, testid, fmt}) => (
   <label className="flex items-center gap-3 text-xs text-stone-700">
     <span className="w-28 shrink-0 font-medium">{label}</span>
     <input data-testid={testid} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className="flex-1 h-3 accent-blue-600 cursor-pointer" />

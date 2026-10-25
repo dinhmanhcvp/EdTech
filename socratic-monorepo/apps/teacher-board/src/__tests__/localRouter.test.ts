@@ -72,3 +72,26 @@ describe('localRouter: mô hình STEM từ cú pháp viết tay', () => {
     expect((bp?.meta?.recurrence as {params: string[]}).params).toEqual(['r']);
   });
 });
+
+describe('localRouter: Sinh học & thống kê mới', () => {
+  it('từ khóa Sinh học → engine đúng', () => {
+    expect(routeLocally('Khí khổng')?.templateId).toBe('BIO_STOMATA_GAS');
+    expect(routeLocally('Co nguyên sinh, ưu trương 10% NaCl')?.meta).toEqual({cellType: 'plant', cOut: 10});
+    expect(routeLocally('Operon Lac')?.templateId).toBe('BIO_OPERON_LAC');
+  });
+  it('boxplot từ năm số tóm tắt hoặc dãy số liệu', () => {
+    expect(routeLocally('Q1 = 5, Q2 = 8, Q3 = 12, Min = 2, Max = 20')?.templateId).toBe('MATH_STAT_BOXPLOT');
+    expect(routeLocally('Biểu đồ hộp của mẫu số liệu: 3, 5, 7, 8, 12, 15, 18, 21')?.templateId).toBe('MATH_STAT_BOXPLOT');
+  });
+  it('bảng biến thiên viết ba dòng → bảng biến thiên', () => {
+    const bp = routeLocally("Bảng biến thiên\nx | -∞ -1 1 +∞\ny' | + 0 - 0 +\ny | -∞ ↗ 3 ↘ -1 ↗ +∞");
+    expect(bp?.templateId).toBe('MATH_VARIATION_TABLE');
+    expect((bp?.meta?.table as {points: unknown[]}).points).toHaveLength(2);
+  });
+  it('không bắt nhầm hàm số, hệ bất phương trình hay chữ thường', () => {
+    expect(routeLocally('y = x^2 - 3', {explicitGraph: true})?.templateId).toBe('MATH_GRAPH');
+    expect(routeLocally('x + y <= 4; x >= 0; y >= 0; max F = x + y')?.templateId).toBe('MATH_LINEAR_PROGRAMMING');
+    expect(routeLocally('xin chào các em')).toBeNull();
+    expect(routeLocally('dãy số 1 2 3 4 5 6')).toBeNull();
+  });
+});

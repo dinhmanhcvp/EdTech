@@ -8,6 +8,9 @@
 import {SimulationBlueprint} from '@socratic/types';
 import {latexToExpr, normalizeMathInput, parseEquation, toLatex} from './mathExpr';
 import {parseCross, parseGenotypeFreqs, parseLP, parseRecurrence} from './stemModels';
+import {matchBioKeywords} from './bioModels';
+import {matchChemKeywords} from './chemModels';
+import {parseBoxplot, parseVariationTable} from './mathModels';
 
 /** Tách "y = x^2 - 3; y = A sin x + B" thành từng phương trình. */
 export function splitEquations(text: string): string[] {
@@ -170,6 +173,48 @@ export function matchStemModel(text: string): SimulationBlueprint | null {
       socraticQuestion: 'Tỉ lệ kiểu hình thay đổi thế nào nếu hai gen liên kết hoàn toàn thay vì phân li độc lập? Hãy kéo tần số hoán vị gen f để kiểm chứng.',
       curriculumLevel: 'THPT_STANDARD',
     };
+  }
+  const vt = /biến thiên|bảng/i.test(raw) || /^\s*x\s*[|:]/im.test(raw) ? parseVariationTable(raw) : null;
+  if (vt) {
+    return {
+      ...stemBase,
+      engine: 'MATH',
+      templateId: 'MATH_VARIATION_TABLE',
+      recognizedLatex: '\\text{Bảng biến thiên}',
+      meta: {table: vt},
+      socraticQuestion: "Nếu f′(x) không đổi dấu khi đi qua x₀ thì x₀ có phải là điểm cực trị không? Hãy kéo tiếp tuyến qua các điểm cực trị để kiểm chứng.",
+      curriculumLevel: 'THPT_STANDARD',
+    };
+  }
+  const box = parseBoxplot(raw);
+  if (box) {
+    return {
+      ...stemBase,
+      engine: 'MATH',
+      templateId: 'MATH_STAT_BOXPLOT',
+      recognizedLatex: '\\text{Biểu đồ hộp}',
+      meta: {input: box},
+      socraticQuestion: 'Khoảng tứ phân vị ΔQ = Q₃ − Q₁ cho biết điều gì về độ phân tán của dữ liệu? Vì sao một giá trị ngoại lai làm trung bình đổi nhiều nhưng hầu như không làm trung vị đổi?',
+      curriculumLevel: 'THPT_STANDARD',
+    };
+  }
+  const bio = matchBioKeywords(raw);
+  if (bio) {
+    const q: Record<string, string> = {
+      BIO_STOMATA_GAS: 'Tại sao khi nhiệt độ vượt quá 45 °C, tế bào hạt đậu mất nước và lỗ khí đóng kín? Điều đó ảnh hưởng thế nào tới quang hợp?',
+      BIO_OSMOSIS_CELL: 'Tại sao tế bào thực vật trong dung dịch nhược trương chỉ trương căng mà không vỡ như hồng cầu?',
+      BIO_OPERON_LAC: 'Khi môi trường có cả glucose và lactose, vi khuẩn sẽ ưu tiên sử dụng loại đường nào trước? Cơ chế phân tử nào quyết định điều đó?',
+    };
+    return {...stemBase, engine: 'BIOLOGY', templateId: bio.templateId, recognizedLatex: `\\text{${bio.title}}`, meta: bio.meta, socraticQuestion: q[bio.templateId], curriculumLevel: 'THPT_STANDARD'};
+  }
+  const chem = matchChemKeywords(raw);
+  if (chem) {
+    const q: Record<string, string> = {
+      CHEM_MOLECULE_3D: 'Tại sao góc liên kết trong phân tử nước chỉ còn 104,5° thay vì 109,5° của tứ diện đều?',
+      CHEM_LE_CHATELIER_GAS: 'Khi nén piston làm tăng áp suất, màu nâu đỏ của khí đậm lên hay nhạt đi? Hãy quan sát cả khoảnh khắc ngay sau khi nén và lúc cân bằng mới được thiết lập.',
+      CHEM_GALVANIC_DANIELL: 'Vai trò của cầu muối là gì, và điện thế của pin thay đổi thế nào khi pin dần cạn?',
+    };
+    return {...stemBase, engine: 'CHEMISTRY', templateId: chem.templateId, recognizedLatex: `\\text{${chem.title}}`, meta: chem.meta, socraticQuestion: q[chem.templateId], curriculumLevel: 'THPT_STANDARD'};
   }
   const freqs = parseGenotypeFreqs(raw);
   if (freqs && (/hardy|weinberg|quần thể|quan the|alen|cân bằng di truyền/i.test(raw) || /\d\s*%?\s*(?:AA|Aa|aa)\b/.test(raw))) {

@@ -8,6 +8,7 @@
     "jsx": "react-jsx",
     "strict": true,
     "target": "ES2022",
+    "module": "ESNext",
     "lib": ["ES2022", "DOM"],
     "moduleResolution": "node",
     "esModuleInterop": true,

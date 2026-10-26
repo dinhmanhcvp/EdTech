@@ -86,7 +86,11 @@ def compute_keyword_similarity(text: str, keywords: List[str]) -> float:
     return matches / max(len(keywords), 1)
 
 
-def lookup_semantic_cache(query: str, subject_context: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def lookup_semantic_cache(
+    query: str,
+    subject_context: Optional[str] = None,
+    threshold: float = 0.5,
+) -> Optional[Dict[str, Any]]:
     """
     Looks up pre-indexed scaffolding in local vector cache.
     Returns scaffolding template if confidence/similarity > 0.90 equivalent, else None.
@@ -113,7 +117,7 @@ def lookup_semantic_cache(query: str, subject_context: Optional[str] = None) -> 
             max_score = score
             best_match = tpl
             
-    if max_score >= 0.5:  # High enough keyword overlap
+    if max_score >= threshold:  # High enough keyword overlap
         sim_val = round(0.90 + (max_score * 0.09), 2)
         return {
             "matched_cache_id": best_match["id"],

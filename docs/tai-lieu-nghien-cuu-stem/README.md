@@ -51,6 +51,28 @@ Thư mục này chứa toàn bộ các nghiên cứu chuẩn mực về chương
    - **Phần 5**: Hệ thống màu sắc Cyber-Academic (Cyber Cyan, Solar Amber, Bio Emerald, Laser Crimson).
    - **Phần 6**: Mã nguồn module `LivingHologramCanvas.tsx` hoàn chỉnh dùng ngay trong monorepo.
 
+6. **[NGHIEN_CUU_HOAN_THIEN_TOAN_DIEN_HE_THONG_STEM_HOLOGRAPHIC.md](./NGHIEN_CUU_HOAN_THIEN_TOAN_DIEN_HE_THONG_STEM_HOLOGRAPHIC.md)**:
+   - **Phần 1**: Tổng quan giải quyết triệt để 5 "căn bệnh cố hữu" của phần mềm mô phỏng (hộp che chữ, nô lệ thanh trượt, đồ thị thô ráp, tê liệt ngoại tuyến, đơn con trỏ).
+   - **Phần 2**: Kiến trúc tương tác bút & đa điểm đa người dùng đồng thời (Multi-User Multi-Pen Kinematics), ảo hóa phiên Pointer ID, tương tác hai tay (Bimanual).
+   - **Phần 3**: Công nghệ hòa trộn trực quan không nền (Sub-pixel Alpha Compositing, Blend modes `screen`/`multiply`, Khung định vị HUD biến mất sau 1.5s).
+   - **Phần 4**: Giải thuật phóng to/thu nhỏ Affine bất biến trọng tâm (Focal-invariant Pinch Zoom) và Đa cấp chi tiết động học (LOD).
+   - **Phần 5**: Hệ thống âm thanh phản hồi xúc giác thủ tục Web Audio API (Zero-asset, trễ < 2ms, Haptic Snap, RLC Hum, Pink Noise Bubbles).
+   - **Phần 6**: Tối ưu hóa phần cứng ngoại tuyến trường học (Android/Windows OPS, Dynamic Resolution Scaling, Dirty Region Redraw, 100% Offline-First).
+   - **Phần 7**: Giao thức ghi & tua lại bài giảng vector siêu nhẹ (Vector Event Journaling < 2.5MB / tiết học 45 phút, Live Interactive Replay).
+   - **Phần 8**: Tầng gợi mở Socratic tự thích ứng theo thời gian thực (Real-time Adaptive Socratic Prompting).
+   - **Phần 9**: Đặc tả kỹ thuật & phương trình 6 template STEM chuyên sâu cuối cùng (Hoàn tất 40/40 Master Catalog: Oxyz 3D, Tích phân tròn xoay, Khung xương hữu cơ, Cơ chế $S_N2$, Bơm Proton & ATP Synthase ti thể, Động thái quần thể Lotka-Volterra).
+   - **Phần 10**: Mã nguồn module TypeScript `HolographicStemCore.ts` hoàn chỉnh.
+
+7. **[NGHIEN_CUU_AI_TUTOR_GIA_SU_SAU_GIO_HOC.md](./NGHIEN_CUU_AI_TUTOR_GIA_SU_SAU_GIO_HOC.md)**:
+   - **Phần 1**: Bối cảnh thực tiễn & Điểm gãy nhận thức trong tự học sau giờ học (Bẫy giải hộ đáp án của ChatGPT/Photomath, Bức tường 9 giờ tối, Đứt gãy thông tin giữa lớp học và ở nhà).
+   - **Phần 2**: Khung lý thuyết sư phạm & Nguyên tắc Ma sát nhận thức có chủ đích (Intentional Cognitive Friction, Hàng rào Socratic Guardrails chống sụp đổ giàn giáo, Ma trận gợi mở 4 cấp độ).
+   - **Phần 3**: Mô hình toán học Truy vết Tri thức (Bayesian Knowledge Tracing - BKT ước lượng xác suất thành thạo từng kỹ năng con, Deep Knowledge Tracing - DKT nắm bắt liên môn Toán - Lý - Hóa).
+   - **Phần 4**: Cầu nối Bục giảng - Về nhà qua Vector Journaling Replay (Học sinh can thiệp trực tiếp vào mô phỏng động lực học mà giáo viên đã vẽ trên lớp).
+   - **Phần 5**: Đặc tả 4 Chế độ tương tác của AI Tutor (Socratic Homework Solver, Home Sandbox, Spaced Repetition Drill, ParentPulse & Teacher Dashboard).
+   - **Phần 6**: Kiến trúc Kỹ thuật Web & Tối ưu hóa Offline-First với IndexedDB.
+   - **Phần 7**: Bộ chỉ số thực nghiệm đo lường hiệu quả (Productive Struggle Time, Scaffolding Efficiency Ratio, Knowledge Retention Rate).
+   - **Phần 8**: 4 Câu hỏi nghiên cứu mở rộng dành cho học sinh.
+
 ---
 
 ### Hướng dẫn Ánh xạ Mã nguồn vào Hệ thống
@@ -61,4 +83,5 @@ Thư mục này chứa toàn bộ các nghiên cứu chuẩn mực về chương
 - **Bộ máy kết xuất Vật lý**: [`apps/teacher-board/src/engines/PhysicsSandboxEngine.tsx`](../../socratic-monorepo/apps/teacher-board/src/engines/PhysicsSandboxEngine.tsx)
 - **Bộ máy kết xuất Hóa học**: [`apps/teacher-board/src/engines/ChemistryLabEngine.tsx`](../../socratic-monorepo/apps/teacher-board/src/engines/ChemistryLabEngine.tsx)
 - **Bộ máy kết xuất Sinh học**: [`apps/teacher-board/src/engines/BioSystemEngine.tsx`](../../socratic-monorepo/apps/teacher-board/src/engines/BioSystemEngine.tsx)
+- **Bộ module Hologram lõi**: [`apps/teacher-board/src/components/canvas/LivingHologramCanvas.tsx`](../../socratic-monorepo/apps/teacher-board/src/components/canvas/LivingHologramCanvas.tsx)
 - **Widget Sửa lỗi Học sinh**: [`apps/student-app/src/components/companion/`](../../socratic-monorepo/apps/student-app/src/components/companion/)

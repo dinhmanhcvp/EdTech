@@ -202,5 +202,71 @@ describe('Hologram Interaction & Zero-Background Direct Blackboard Manipulation'
     expect(dynamicCue.textContent).toContain('Gợi Mở Tư Duy Tức Thời');
     expect(dynamicCue.textContent).toContain('Tầm Bắn Xa Cực Đại Lý Thuyết');
   });
+
+  /**
+   * TEST 8: Touch Anywhere Dragging (Seamless Blackboard Manipulation)
+   */
+  it('supports dragging hologram by touching anywhere on the widget except input sliders', () => {
+    const onGripDown = vi.fn();
+    const onGripMove = vi.fn();
+    const onGripUp = vi.fn();
+
+    render(
+      <SimulationWidget
+        blueprint={testBlueprint}
+        displayMode="HOLOGRAM"
+        onGripPointerDown={onGripDown}
+        onGripPointerMove={onGripMove}
+        onGripPointerUp={onGripUp}
+      />
+    );
+
+    const widget = screen.getByTestId('simulation-widget');
+
+    // 1. Touch anywhere on the canvas container -> should trigger dragging
+    const canvasContainer = screen.getByTestId('engine-canvas-container');
+    fireEvent.pointerDown(canvasContainer, { clientX: 300, clientY: 200 });
+    expect(onGripDown).toHaveBeenCalled();
+
+    // 2. Touch on an input range slider -> should NOT trigger dragging so user can scrub parameters
+    onGripDown.mockClear();
+    const slider = screen.getByTestId('slider-L');
+    fireEvent.pointerDown(slider, { clientX: 150, clientY: 400 });
+    expect(onGripDown).not.toHaveBeenCalled();
+  });
+
+  /**
+   * TEST 9: Streamlined Chalk Visualization & Hidden Bulky Taskbars in HOLOGRAM Mode
+   */
+  it('hides cumbersome feature taskbars in HOLOGRAM mode, leaving only visualization and chalk parameters', () => {
+    render(
+      <SimulationWidget
+        blueprint={testBlueprint}
+        displayMode="HOLOGRAM"
+      />
+    );
+
+    const widget = screen.getByTestId('simulation-widget');
+    // Transparent zero-background chalk ink
+    expect(widget.className).toContain('bg-transparent');
+    expect(widget.className).toContain('border-0');
+    expect(widget.className).toContain('shadow-none');
+
+    // Canvas container must be zero-background transparent
+    const canvasContainer = screen.getByTestId('engine-canvas-container');
+    expect(canvasContainer.className).toContain('bg-transparent');
+
+    // Bulky taskbars (render-mode, curriculum-mode) should be hidden from visual display
+    const renderModeToggle = screen.getByTestId('render-mode-toggle');
+    expect(renderModeToggle.parentElement?.className).toContain('hidden');
+
+    // Visual parameters must remain visible
+    const sliderContainer = screen.getByTestId('macro-sliders-container');
+    expect(sliderContainer).toBeInTheDocument();
+    expect(sliderContainer.className).toContain('bg-transparent');
+    expect(screen.getByTestId('param-box-L')).toBeInTheDocument();
+    expect(screen.getByTestId('param-box-theta0')).toBeInTheDocument();
+  });
 });
+
 

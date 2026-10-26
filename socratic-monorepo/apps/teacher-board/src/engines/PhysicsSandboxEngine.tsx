@@ -12,6 +12,7 @@ interface Props {
   blueprint: SimulationBlueprint;
   params: Record<string, number>;
   curriculumLevel?: CurriculumLevel;
+  isHologram?: boolean;
 }
 
 interface TrailPoint {
@@ -305,6 +306,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
   blueprint,
   params,
   curriculumLevel = blueprint.curriculumLevel ?? 'THPT_STANDARD',
+  isHologram = false,
 }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const timeRef = useRef<number>(0);
@@ -415,24 +417,42 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
       const t = timeRef.current;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Warm Alabaster Technical Graph Paper
-      ctx.fillStyle = '#FCFBF9';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (!isHologram) {
+        // Warm Alabaster Technical Graph Paper
+        ctx.fillStyle = '#FCFBF9';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Millimeter grid
-      ctx.strokeStyle = '#EFECE6';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < canvas.width; x += 20) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < canvas.height; y += 20) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
+        // Millimeter grid
+        ctx.strokeStyle = '#EFECE6';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 20) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += 20) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+      } else {
+        // Zero-background chalk grid directly on board
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 20) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += 20) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
       }
 
       // ==============================================================
@@ -1087,7 +1107,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
   return (
     <div className="relative w-full max-w-[620px] flex flex-col items-center">
       {/* Subject Content Ribbon */}
-      <div className="w-full flex items-center justify-between px-3 py-1.5 mb-2 bg-white/95 backdrop-blur-md rounded-xl border border-[#E6E4DD] shadow-[0_2px_12px_-2px_rgba(20,20,19,0.04)] flex-wrap gap-2">
+      <div className={isHologram ? "hidden" : "w-full flex items-center justify-between px-3 py-1.5 mb-2 bg-white/95 backdrop-blur-md rounded-xl border border-[#E6E4DD] shadow-[0_2px_12px_-2px_rgba(20,20,19,0.04)] flex-wrap gap-2"}>
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-semibold">
             Nội dung Vật lý:
@@ -1172,60 +1192,68 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
       {/* Pill-shaped Glass HUD Overlay for PHYS_PROJECTILE */}
       {currentMode === 'PROJECTILE' && (
-        <div className="absolute top-14 left-3 bg-white/95 backdrop-blur-md border border-[#E6E4DD] rounded-xl px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-mono text-stone-800 pointer-events-none shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] z-10 flex-wrap">
+        <div className={`absolute top-2 left-3 rounded-xl px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-mono pointer-events-none z-10 flex-wrap ${
+          isHologram
+            ? 'bg-stone-900/10 dark:bg-black/30 backdrop-blur-xs border border-stone-400/20 text-stone-800 dark:text-stone-200 shadow-none'
+            : 'bg-white/95 backdrop-blur-md border border-[#E6E4DD] text-stone-800 shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)]'
+        }`}>
           <div className="flex items-center gap-1">
             <span className="text-stone-500"><MathText text="H_{\max}:" /></span>{' '}
-            <span className="text-stone-900 font-bold tabular-nums">{hud.hMax}m</span>
+            <span className="text-stone-900 dark:text-stone-100 font-bold tabular-nums">{hud.hMax}m</span>
           </div>
-          <div className="w-[1px] h-3 bg-stone-200" />
+          <div className="w-[1px] h-3 bg-stone-300 dark:bg-stone-700" />
           <div className="flex items-center gap-1">
             <span className="text-stone-500"><MathText text="L_{\max}:" /></span>{' '}
-            <span className="text-stone-900 font-bold tabular-nums">{hud.lMax}m</span>
+            <span className="text-stone-900 dark:text-stone-100 font-bold tabular-nums">{hud.lMax}m</span>
           </div>
-          <div className="w-[1px] h-3 bg-stone-200" />
+          <div className="w-[1px] h-3 bg-stone-300 dark:bg-stone-700" />
           <div className="flex items-center gap-1">
             <span className="text-stone-500"><MathText text="t_{\text{bay}}:" /></span>{' '}
-            <span className="text-stone-900 font-bold tabular-nums">{hud.tFlight}s</span>
+            <span className="text-stone-900 dark:text-stone-100 font-bold tabular-nums">{hud.tFlight}s</span>
           </div>
-          <div className="w-[1px] h-3 bg-stone-200" />
+          <div className="w-[1px] h-3 bg-stone-300 dark:bg-stone-700" />
           <div className="flex items-center gap-1">
             <span className="text-stone-500"><MathText text="W_đ:" /></span>{' '}
-            <span className="text-emerald-700 font-bold tabular-nums">{hud.wKin}J</span>
+            <span className="text-emerald-700 dark:text-emerald-400 font-bold tabular-nums">{hud.wKin}J</span>
           </div>
-          <div className="w-[1px] h-3 bg-stone-200" />
+          <div className="w-[1px] h-3 bg-stone-300 dark:bg-stone-700" />
           <div className="flex items-center gap-1">
             <span className="text-stone-500"><MathText text="W_t:" /></span>{' '}
-            <span className="text-rose-700 font-bold tabular-nums">{hud.wPot}J</span>
+            <span className="text-rose-700 dark:text-rose-400 font-bold tabular-nums">{hud.wPot}J</span>
           </div>
-          <div className="w-[1px] h-3 bg-stone-200" />
+          <div className="w-[1px] h-3 bg-stone-300 dark:bg-stone-700" />
           <div className="flex items-center gap-1">
             <span className="text-stone-500">Cơ năng W:</span>{' '}
-            <span className="text-blue-700 font-bold tabular-nums">{hud.wTotal}J</span>
+            <span className="text-blue-700 dark:text-cyan-400 font-bold tabular-nums">{hud.wTotal}J</span>
           </div>
         </div>
       )}
 
       {/* Pill-shaped Glass HUD Overlay for PHYS_RLC_PHASOR */}
       {currentMode === 'RLC_PHASOR' && (
-        <div className="absolute top-14 right-3 bg-white/95 backdrop-blur-md border border-[#E6E4DD] rounded-xl px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-mono text-stone-800 pointer-events-none shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] z-10 flex-wrap">
+        <div className={`absolute top-2 right-3 rounded-xl px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-mono pointer-events-none z-10 flex-wrap ${
+          isHologram
+            ? 'bg-stone-900/10 dark:bg-black/30 backdrop-blur-xs border border-stone-400/20 text-stone-800 dark:text-stone-200 shadow-none'
+            : 'bg-white/95 backdrop-blur-md border border-[#E6E4DD] text-stone-800 shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)]'
+        }`}>
           <div className="flex items-center gap-1">
             <span className="text-stone-500">Tổng trở Z:</span>{' '}
-            <span className="text-stone-900 font-bold tabular-nums">{hud.rlcZ} Ω</span>
+            <span className="text-stone-900 dark:text-stone-100 font-bold tabular-nums">{hud.rlcZ} Ω</span>
           </div>
-          <div className="w-[1px] h-3 bg-stone-200" />
+          <div className="w-[1px] h-3 bg-stone-300 dark:bg-stone-700" />
           <div className="flex items-center gap-1">
             <span className="text-stone-500">Dòng I:</span>{' '}
-            <span className="text-stone-900 font-bold tabular-nums">{hud.rlcI} A</span>
+            <span className="text-stone-900 dark:text-stone-100 font-bold tabular-nums">{hud.rlcI} A</span>
           </div>
-          <div className="w-[1px] h-3 bg-stone-200" />
+          <div className="w-[1px] h-3 bg-stone-300 dark:bg-stone-700" />
           <div className="flex items-center gap-1">
             <span className="text-stone-500"><MathText text="\cos\varphi:" /></span>{' '}
-            <span className="text-stone-900 font-bold tabular-nums">{hud.rlcCosPhi}</span>
+            <span className="text-stone-900 dark:text-stone-100 font-bold tabular-nums">{hud.rlcCosPhi}</span>
           </div>
-          <div className="w-[1px] h-3 bg-stone-200" />
+          <div className="w-[1px] h-3 bg-stone-300 dark:bg-stone-700" />
           <div className="flex items-center gap-1">
             <span className="text-stone-500">Công suất P:</span>{' '}
-            <span className="text-stone-900 font-bold tabular-nums">{hud.rlcP} W</span>
+            <span className="text-stone-900 dark:text-stone-100 font-bold tabular-nums">{hud.rlcP} W</span>
           </div>
           {hud.rlcResonance && (
             <div className="px-2 py-0.5 rounded bg-[#FEF3C7] border border-[#FDE68A] text-[#92400E] font-semibold font-mono text-[10px] uppercase tracking-wider">
@@ -1239,7 +1267,11 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ref={canvasRef}
         width={620}
         height={340}
-        className="rounded-2xl bg-[#FCFBF9] border border-[#E6E4DD] w-full object-contain shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)]"
+        className={
+          isHologram
+            ? "w-full object-contain bg-transparent border-0 shadow-none"
+            : "rounded-2xl bg-[#FCFBF9] border border-[#E6E4DD] w-full object-contain shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)]"
+        }
       />
     </div>
   );

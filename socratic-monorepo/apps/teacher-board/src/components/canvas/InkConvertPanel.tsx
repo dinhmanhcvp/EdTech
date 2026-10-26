@@ -1,7 +1,7 @@
 'use client';
 
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {Check, ClipboardCopy, Sparkles, X, Wand2, LineChart, Loader2, ArrowRightLeft, Type} from 'lucide-react';
+import {Check, ClipboardCopy, Sparkles, X, Wand2, LineChart, Loader2, ArrowRightLeft, Type, GraduationCap, AlertTriangle} from 'lucide-react';
 import type {Stroke} from '../../utils/lassoGeometry';
 import {exportIsolatedWebp} from '../../utils/isolatedExporter';
 import {
@@ -17,6 +17,7 @@ import {MathView} from '../common/MathView';
 import {detectSolidFromStrokes} from '../../utils/sketchSolid';
 import {makeSolidBlueprint, SOLID_TITLES} from '../../utils/localRouter';
 import {detectSubject, SUBJECT_LABEL} from '../../utils/subjectContext';
+import {findAmbiguousTokens, swapTokenInFormula} from '../../utils/ocrConfusions';
 import type {SimulationBlueprint} from '@socratic/types';
 
 export interface InkConvertPanelProps {
@@ -28,6 +29,8 @@ export interface InkConvertPanelProps {
   onApply: (lines: ConvertLine[], mode: 'replace' | 'insert') => void;
   onVisualizeLocal: (bp: SimulationBlueprint) => void;
   onVisualizeAi: (latex: string) => void;
+  /** Enables the reviewed student-solution grading flow. */
+  enableGrading?: boolean;
 }
 
 /** Bàn phím ký hiệu: [nhãn, đoạn chèn, số ký tự lùi con trỏ về sau khi chèn] */
@@ -57,7 +60,7 @@ const KEYS: [string, string, number][] = [
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
-export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({source, editing, onClose, onApply, onVisualizeLocal, onVisualizeAi}) => {
+export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({source, editing, onClose, onApply, onVisualizeLocal, onVisualizeAi, enableGrading = false}) => {
   const src = useMemo(() => sourceStrokes(source), [source]);
   const sketch = useMemo(() => (editing || src.length < 4 ? null : detectSolidFromStrokes(src.map((x) => ({points: x.points})))), [src, editing]);
   const local = useMemo<ConvertResult | null>(() => (editing || !src.length ? null : recognizeLocal(src)), [src, editing]);
@@ -70,6 +73,11 @@ export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({source, editing
   const [edited, setEdited] = useState(false);
   const [thumb, setThumb] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [expectedAnswer, setExpectedAnswer] = useState('');
+  const [gradeState, setGradeState] = useState<'idle' | 'loading' | 'needs_clarification' | 'graded' | 'error'>('idle');
+  const [gradeFeedback, setGradeFeedback] = useState('');
+  const [gradeCorrect, setGradeCorrect] = useState<boolean | null>(null);
+  const [gradeOptions, setGradeOptions] = useState<string[]>([]);
   const focusRef = useRef<{i: number; el: HTMLInputElement | null}>({i: 0, el: null});
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -174,6 +182,48 @@ ${joinedText}`), [joinedLatex, joinedText]);
       .filter((l) => l.latex.trim())
       .map((l) => ({...l, text: l.text || latexToPlain(l.latex)}));
     if (out.length) onApply(out, mode);
+  };
+
+  const gradeSolution = async () => {
+    if (!joinedLatex.trim() || !expectedAnswer.trim()) return;
+    setGradeState('loading');
+    setGradeFeedback('');
+    setGradeCorrect(null);
+    try {
+      const alternatives = lines.flatMap((line) => line.alternatives.map((a) => a.latex));
+      const response = await fetch('/api/v1/companion/grade-solution', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          solution_latex: joinedLatex,
+          expected_answer: expectedAnswer,
+          subject: subj.subject ?? 'MATH',
+          ocr_confidence: conf,
+          alternatives,
+        }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json() as {
+        status: 'GRADED' | 'NEEDS_CLARIFICATION';
+        feedback?: string;
+        is_correct?: boolean;
+        options?: string[];
+      };
+      setGradeState(result.status === 'GRADED' ? 'graded' : 'needs_clarification');
+      setGradeFeedback(result.feedback ?? '');
+      setGradeCorrect(result.is_correct ?? null);
+      setGradeOptions(result.options ?? []);
+    } catch {
+      setGradeState('error');
+      setGradeFeedback('Không kết nối được máy chấm. Giữ nguyên bài để giáo viên kiểm tra thủ công.');
+    }
+  };
+
+  const chooseGradeOption = (option: string) => {
+    if (!lines.length) return;
+    setLine(0, {latex: option, text: latexToPlain(option)});
+    setGradeState('idle');
+    setGradeFeedback('');
   };
 
   return (
@@ -308,9 +358,76 @@ ${joinedText}`), [joinedLatex, joinedText]);
                     ))}
                   </div>
                 )}
+                {/* 1-Tap Ambiguous OCR Tokens Swap Chips khi confidence thấp hoặc cần soát */}
+                {(l.confidence < 0.85 || l.valid === false) && findAmbiguousTokens(l.latex).length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-amber-50/70 border border-amber-200/80" data-testid={`ink-convert-confusions-${i}`}>
+                    <span className="text-[10px] font-mono font-medium text-amber-800">
+                      Sửa ký tự nghi ngờ:
+                    </span>
+                    {findAmbiguousTokens(l.latex).map((conf) =>
+                      conf.alternatives.map((alt) => (
+                        <button
+                          key={`${conf.token}-${alt}`}
+                          type="button"
+                          onClick={() => {
+                            const updated = swapTokenInFormula(l.latex, conf.token, alt);
+                            setLine(i, { latex: updated, text: latexToPlain(updated) });
+                          }}
+                          className="px-2 py-0.5 rounded-md bg-white hover:bg-amber-100 border border-amber-300 text-xs font-mono text-amber-900 transition cursor-pointer shadow-2xs active:translate-y-px"
+                          title={`Đổi ${conf.token} thành ${alt}`}
+                        >
+                          {conf.token} ⇄ {alt}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
+
+          {enableGrading && !editing && (
+            <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-3 flex flex-col gap-2" data-testid="solution-grading-panel">
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center"><GraduationCap className="w-4 h-4" /></span>
+                <div>
+                  <h3 className="text-xs font-semibold text-violet-950">Chấm bài chữa trên bảng</h3>
+                  <p className="text-[10px] text-violet-800/70">Chỉ chấm sau khi LaTeX và đáp án chuẩn đã rõ ràng.</p>
+                </div>
+                <span className={`ml-auto text-[10px] font-mono px-2 py-0.5 rounded-md border ${conf < 0.72 ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
+                  OCR {pct(conf)}
+                </span>
+              </div>
+              <input
+                data-testid="solution-expected-input"
+                value={expectedAnswer}
+                onChange={(e) => { setExpectedAnswer(e.target.value); setGradeState('idle'); }}
+                placeholder="Đáp án chuẩn / biểu thức cần đối chiếu"
+                className="w-full px-2.5 py-2 rounded-lg bg-white border border-violet-200 text-xs font-mono text-stone-900 focus:outline-none focus:border-violet-500"
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  data-testid="solution-grade-btn"
+                  onClick={gradeSolution}
+                  disabled={!joinedLatex.trim() || !expectedAnswer.trim() || gradeState === 'loading'}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white text-xs font-semibold transition"
+                >
+                  {gradeState === 'loading' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <GraduationCap className="w-3.5 h-3.5" />}
+                  {gradeState === 'loading' ? 'Đang chấm…' : 'Chấm bài'}
+                </button>
+                {gradeState === 'needs_clarification' && <span className="text-[10px] text-amber-800 inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Cần xác nhận ký hiệu</span>}
+                {gradeState === 'graded' && <span className={`text-xs font-semibold ${gradeCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>{gradeCorrect ? 'Đúng' : 'Cần sửa'}</span>}
+              </div>
+              {gradeFeedback && <p data-testid="solution-grade-feedback" className="text-xs text-stone-700 bg-white/80 border border-violet-100 rounded-lg px-2.5 py-2">{gradeFeedback}</p>}
+              {gradeState === 'needs_clarification' && gradeOptions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5" data-testid="solution-grade-options">
+                  <span className="text-[10px] text-stone-500 self-center">Có thể là:</span>
+                  {gradeOptions.map((option) => <button key={option} type="button" onClick={() => chooseGradeOption(option)} className="px-2 py-1 rounded-md bg-white border border-violet-200 hover:bg-violet-100 text-xs font-mono">{option}</button>)}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Bàn phím ký hiệu */}
           <div className="flex flex-col gap-1.5">

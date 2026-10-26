@@ -11,7 +11,7 @@ import re
 from symbolic.sympy_verifier import verify_algebraic_equivalence
 from symbolic.chem_balancer import verify_chemical_equation
 from symbolic.socratic_guard import evaluate_student_message, normalize_text
-from cache.chroma_semantic_cache import lookup_semantic_cache
+from cache.chroma_cache import lookup_chroma_cache
 from llm.provider_adapter import generate_socratic_guidance
 
 router = APIRouter(prefix="/api/v1/companion", tags=["Socratic Student Companion"])
@@ -68,6 +68,28 @@ class VoiceGateResponse(BaseModel):
     eureka_awarded: int
     eureka_points_awarded: int = 0
     feedback: str
+
+
+class GradeSolutionRequest(BaseModel):
+    """A reviewed handwriting solution sent for deterministic/Socratic grading."""
+    solution_latex: str
+    expected_answer: str
+    subject: str = "MATH"
+    ocr_confidence: float = 1.0
+    alternatives: List[str] = []
+    student_id: Optional[str] = "board_student"
+    session_id: Optional[str] = "board_solution"
+
+
+class GradeSolutionResponse(BaseModel):
+    status: str  # GRADED | NEEDS_CLARIFICATION
+    recognized_latex: str
+    confidence: float
+    options: List[str] = []
+    is_correct: Optional[bool] = None
+    verification_source: Optional[str] = None
+    feedback: str
+    visual_debugger: Optional[VisualDebuggerConfig] = None
 
 
 # Grit economy: productive struggle is rewarded more than a lucky one-shot answer.
@@ -196,7 +218,7 @@ async def evaluate_step(req: EvaluateStepRequest):
     # =========================================================================
     # TIER 2: CHROMADB SEMANTIC CACHE LOOKUP (0 API CALL, >0.90 SIMILARITY)
     # =========================================================================
-    cache_hit = lookup_semantic_cache(answer, subj)
+    cache_hit = lookup_chroma_cache(answer, subj)
     if cache_hit:
         scaff = cache_hit["scaffolding"]
         debugger = None
@@ -230,6 +252,49 @@ async def evaluate_step(req: EvaluateStepRequest):
         socratic_feedback=sanitized_feedback,
         visual_debugger=None,
         eureka_points_delta=5
+    )
+
+
+@router.post("/grade-solution", response_model=GradeSolutionResponse)
+async def grade_solution(req: GradeSolutionRequest):
+    """Grade a lassoed student solution only after OCR ambiguity is resolved.
+
+    The backend deliberately refuses to grade low-confidence text. This prevents
+    a guessed symbol from becoming a false teacher judgement.
+    """
+    solution = req.solution_latex.strip()
+    expected = req.expected_answer.strip()
+    confidence = max(0.0, min(1.0, req.ocr_confidence))
+    options = list(dict.fromkeys([x.strip() for x in req.alternatives if x.strip()]))[:6]
+    if solution and solution not in options:
+        options.insert(0, solution)
+
+    if not solution or not expected or confidence < 0.72:
+        return GradeSolutionResponse(
+            status="NEEDS_CLARIFICATION",
+            recognized_latex=solution,
+            confidence=confidence,
+            options=options,
+            feedback="Chưa chấm vì ký hiệu nhận diện chưa đủ chắc chắn. Hãy chọn phương án đúng hoặc nhập lại LaTeX trước khi chấm.",
+        )
+
+    evaluation = await evaluate_step(EvaluateStepRequest(
+        student_id=req.student_id,
+        session_id=req.session_id,
+        subject=req.subject,
+        input_type="EQUATION",
+        student_answer=solution,
+        expected_answer=expected,
+    ))
+    return GradeSolutionResponse(
+        status="GRADED",
+        recognized_latex=solution,
+        confidence=confidence,
+        options=options,
+        is_correct=evaluation.is_step_correct,
+        verification_source=evaluation.verification_source,
+        feedback=evaluation.socratic_feedback,
+        visual_debugger=evaluation.visual_debugger,
     )
 
 

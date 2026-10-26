@@ -75,3 +75,27 @@ describe('inkRecognizer: phân loại ký hiệu đơn', () => {
     for (let i = 1; i < c.length; i++) expect(c[i].cost).toBeGreaterThanOrEqual(c[i - 1].cost);
   });
 });
+
+describe('inkRecognizer: nét bảng thật có nhiễu và đảo thứ tự nét', () => {
+  it('giữ đúng công thức khi điểm bị rung và lặp', () => {
+    const base = toStrokes(FX.lin1.variants[0]);
+    const noisy = base.map((s, si) => ({
+      points: s.points.flatMap((p, i) => [
+        {x: p.x + Math.sin(i * 1.7 + si) * 1.8, y: p.y + Math.cos(i * 1.3) * 1.4},
+        i % 4 === 0 ? {x: p.x + 0.1, y: p.y + 0.1} : null,
+      ].filter(Boolean) as Pt[]),
+    }));
+    const result = recognizeInk(noisy);
+    expect(canon(result.latex)).toBe(EXPECT.lin1);
+  });
+
+  it('không phụ thuộc thứ tự hai nét của dấu bằng', () => {
+    const base = toStrokes(FX.lin1.variants[0]);
+    const swapped = [...base];
+    const eqStart = swapped.findIndex((s) => s.points.length > 10 && Math.abs(s.points[0].y - s.points[s.points.length - 1].y) < 8);
+    if (eqStart >= 0 && eqStart + 1 < swapped.length) {
+      [swapped[eqStart], swapped[eqStart + 1]] = [swapped[eqStart + 1], swapped[eqStart]];
+    }
+    expect(canon(recognizeInk(swapped).latex)).toBe(EXPECT.lin1);
+  });
+});

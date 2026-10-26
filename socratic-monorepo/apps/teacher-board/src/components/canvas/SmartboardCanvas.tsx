@@ -9,7 +9,7 @@ import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
 import { AUTO_INK_SCENES, AutoInkScene } from '../../utils/autoInkPresets';
-import { layoutTypeset, typesetStroke, sourceStrokes, bboxOfStrokes, latexToPlain, type ConvertLine } from '../../utils/inkConvert';
+import { layoutTypeset, typesetStroke, sourceStrokes, bboxOfStrokes, latexToPlain, type ConvertLine, recognizeLocal, type ConvertResult } from '../../utils/inkConvert';
 import { SimulationWidget } from './SimulationWidget';
 import { InkConvertPanel } from './InkConvertPanel';
 import { SmartboardDock, AiFab } from './SmartboardDock';
@@ -17,6 +17,7 @@ import { ClassroomPanel } from './ClassroomPanel';
 import { useClassroom } from '../../hooks/useClassroom';
 import { slimBlueprint } from '../../utils/classroomState';
 import { OcrReviewModal } from './OcrReviewModal';
+import { findAmbiguousTokens } from '../../utils/ocrConfusions';
 import { MathView } from '../common/MathView';
 import { FormulaBlock, MathText } from '../ui/MathText';
 import { SimulationBlueprint } from '@socratic/types';
@@ -77,6 +78,229 @@ const STROKE_WIDTHS = [
   { label: 'Đậm', value: 9.0 },
 ];
 
+/**
+ * Bộ định tuyến công thức STEM tức thì (Instant STEM Blueprint Matcher: 0ms, 0 API).
+ * Nhận dạng ngay các phương trình và mẫu STEM viết tay / gõ chuẩn, kích hoạt mô phỏng lập tức.
+ */
+export function matchInstantStemBlueprint(effectiveHint: string): SimulationBlueprint | null {
+  const raw = (effectiveHint || '').trim();
+  if (!raw) return null;
+
+  // 1. Kiểm tra bộ định tuyến mô hình nâng cao & khối 3D (Oxyz, Punnett, Hardy-Weinberg, Recurrence, LP, Solids...)
+  const direct = routeLocally(raw);
+  if (direct) return direct;
+
+  const h = raw.toLowerCase();
+
+  // 2. Giao thoa sóng 3D (Ripple Tank)
+  if (
+    h.includes('giao thoa') || h.includes('ripple') || h.includes('sóng nước') ||
+    h.includes('d_2 - d_1') || h.includes('d2 - d1') || h.includes('d2-d1') ||
+    h.includes('lambda') || h.includes('\\lambda') || h.includes('k\\lambda') ||
+    h.includes('hai nguồn') || h.includes('2a\\cos') || h.includes('2a \\cos')
+  ) {
+    return {
+      engine: 'PHYSICS',
+      templateId: 'PHYS_RIPPLE_TANK',
+      recognizedLatex: 'u_M = 2A \\cos\\left(\\frac{\\pi(d_2 - d_1)}{\\lambda}\\right) \\cos(\\omega t)',
+      ocrAlternatives: ['u_M = 2A \\cos(\\pi(d_2 - d_1)/\\lambda) \\cos(\\omega t)', 'd_2 - d_1 = k\\lambda'],
+      parameters: [
+        { key: 'lambda', label: 'Bước sóng (λ)', unit: 'px', defaultValue: 24.0, min: 10.0, max: 60.0, step: 2.0 },
+        { key: 'f', label: 'Tần số dao động (f)', unit: 'Hz', defaultValue: 2.5, min: 1.0, max: 5.0, step: 0.5 },
+        { key: 'd', label: 'Khoảng cách 2 nguồn (d)', unit: 'px', defaultValue: 130.0, min: 60.0, max: 240.0, step: 10.0 },
+        { key: 'deltaPhi', label: 'Độ lệch pha (Δφ)', unit: 'rad', defaultValue: 0.0, min: -3.14, max: 3.14, step: 0.314 },
+      ],
+      socraticQuestion: 'Khi hai nguồn dao động cùng pha, những điểm có hiệu khoảng cách d₂ - d₁ = kλ sẽ dao động với biên độ cực đại hay cực tiểu?',
+      curriculumLevel: 'THPT_STANDARD',
+    };
+  }
+
+  // 3. Con lắc đơn vi phân RK4 (Pendulum)
+  if (
+    h.includes('con lắc') || h.includes('con lac') || h.includes('pendulum') ||
+    h.includes('l/g') || h.includes('m/k') || h.includes('\\ddot{\\theta}') ||
+    h.includes('chu kỳ') || (h.includes('t = 2') && h.includes('pi')) ||
+    h.includes('s_0\\cos') || h.includes('rk4')
+  ) {
+    return {
+      engine: 'PHYSICS',
+      templateId: 'PHYS_PENDULUM',
+      recognizedLatex: 'T = 2\\pi\\sqrt{\\frac{l}{g}}, \\quad \\ddot{\\theta} + \\frac{g}{L}\\sin\\theta = 0',
+      ocrAlternatives: ['T = 2\\pi\\sqrt{l/g}', '\\ddot{\\theta} + (g/L)\\sin\\theta = 0'],
+      parameters: [
+        { key: 'L', label: 'Chiều dài dây (L)', unit: 'm', defaultValue: 2.0, min: 0.5, max: 5.0, step: 0.1 },
+        { key: 'theta0', label: 'Góc lệch đầu (θ₀)', unit: 'rad', defaultValue: 0.5, min: 0.1, max: 2.8, step: 0.1 },
+        { key: 'g', label: 'Trọng trường (g)', unit: 'm/s²', defaultValue: 9.8, min: 1.6, max: 25.0, step: 0.1 },
+        { key: 'b', label: 'Lực cản môi trường (b)', unit: '', defaultValue: 0.02, min: 0.0, max: 0.2, step: 0.01 },
+      ],
+      socraticQuestion: 'Khi tăng góc lệch ban đầu θ₀ lên góc lớn (> 30°), chu kỳ dao động thực tế có còn tuân theo công thức gần đúng T = 2π√(l/g) không?',
+      curriculumLevel: 'OLYMPIAD_ADVANCED',
+    };
+  }
+
+  // 4. Cơ học Mặt phẳng nghiêng & Ma sát trượt (Inclined Plane)
+  if (
+    h.includes('nghiêng') || h.includes('nghieng') || h.includes('incline') ||
+    h.includes('ma sát') || h.includes('ma sat') || h.includes('\\mu') || h.includes('mu') ||
+    h.includes('f_{ms}') || h.includes('fms') || h.includes('mg\\sin') || h.includes('mg\\cos')
+  ) {
+    return {
+      engine: 'PHYSICS',
+      templateId: 'PHYS_INCLINED',
+      recognizedLatex: 'a = g(\\sin\\alpha - \\mu\\cos\\alpha)',
+      ocrAlternatives: ['a = g(\\sin\\alpha - \\mu\\cos\\alpha)', 'N = mg\\cos\\alpha', 'F_{ms} = \\mu N'],
+      parameters: [
+        { key: 'alpha', label: 'Góc nghiêng (α)', unit: 'độ', defaultValue: 30.0, min: 5.0, max: 75.0, step: 5.0 },
+        { key: 'mu', label: 'Hệ số ma sát (μ)', unit: '', defaultValue: 0.15, min: 0.0, max: 0.8, step: 0.05 },
+        { key: 'm', label: 'Khối lượng vật (m)', unit: 'kg', defaultValue: 2.0, min: 0.5, max: 10.0, step: 0.5 },
+        { key: 'g', label: 'Gia tốc g', unit: 'm/s²', defaultValue: 9.8, min: 1.6, max: 25.0, step: 0.1 },
+      ],
+      socraticQuestion: 'Điều kiện nào giữa góc nghiêng α và hệ số ma sát μ để vật bắt đầu trượt xuống (tan α > μ)?',
+      curriculumLevel: 'THPT_STANDARD',
+    };
+  }
+
+  // 5. Chuyển động ném xiên trong trọng trường (Projectile)
+  if (h.includes('ném') || h.includes('nem') || h.includes('v0') || h.includes('v_0') || h.includes('projectile') || h.includes('parabol')) {
+    return {
+      engine: 'PHYSICS',
+      templateId: 'PHYS_PROJECTILE',
+      recognizedLatex: 'v_0 = 22\\text{ m/s}, \\quad \\alpha = 45^\\circ',
+      ocrAlternatives: ['v_0 = 22\\text{ m/s}, \\alpha = 45^\\circ', 'y = -\\frac{g}{2v_0^2\\cos^2\\alpha}x^2 + x\\tan\\alpha'],
+      parameters: [
+        { key: 'v0', label: 'Vận tốc đầu (v₀)', unit: 'm/s', defaultValue: 22.0, min: 5.0, max: 50.0, step: 1.0 },
+        { key: 'alpha', label: 'Góc ném (α)', unit: 'độ', defaultValue: 45.0, min: 15.0, max: 85.0, step: 5.0 },
+        { key: 'g', label: 'Gia tốc g', unit: 'm/s²', defaultValue: 9.8, min: 1.6, max: 25.0, step: 0.1 },
+      ],
+      socraticQuestion: 'Tại sao với cùng vận tốc đầu v₀, góc ném 45° lại cho tầm xa cực đại trên mặt phẳng nằm ngang?',
+    };
+  }
+
+  // 6. Mạch điện xoay chiều RLC & Giản đồ Fresnel
+  if (
+    h.includes('rlc') || h.includes('fresnel') || h.includes('điện xoay chiều') ||
+    h.includes('cộng hưởng') || h.includes('z_l') || h.includes('z_c') ||
+    h.includes('z =') || h.includes('omega') || h.includes('phasor')
+  ) {
+    return {
+      engine: 'PHYSICS',
+      templateId: 'PHYS_RLC_PHASOR',
+      recognizedLatex: 'Z = \\sqrt{R^2 + (Z_L - Z_C)^2}, \\quad u = U_0\\cos(\\omega t + \\varphi)',
+      ocrAlternatives: ['Z = \\sqrt{R^2 + (Z_L - Z_C)^2}', 'u = U_0\\cos(\\omega t)', 'i = I_0\\cos(\\omega t - \\varphi)'],
+      parameters: [
+        { key: 'R', label: 'Điện trở (R)', unit: 'Ω', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
+        { key: 'L', label: 'Độ tự cảm (L)', unit: 'H', defaultValue: 0.5, min: 0.1, max: 2.0, step: 0.1 },
+        { key: 'C', label: 'Điện dung (C)', unit: 'μF', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
+        { key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', defaultValue: 200.0, min: 50.0, max: 500.0, step: 10.0 },
+        { key: 'U', label: 'Điện áp (U)', unit: 'V', defaultValue: 120.0, min: 20.0, max: 240.0, step: 10.0 },
+      ],
+      socraticQuestion: 'Khi điều chỉnh tần số góc ω tiến dần về giá trị cộng hưởng ω₀ = 1/√(LC), góc lệch pha φ và công suất P biến đổi thế nào?',
+      curriculumLevel: 'OLYMPIAD_ADVANCED',
+    };
+  }
+
+  // 7. Cân bằng phản ứng Oxi hóa - Khử
+  if (h.includes('fe') || h.includes('cân') || h.includes('o2') || h.includes('hno3') || h.includes('redox') || h.includes('oxi')) {
+    return {
+      engine: 'CHEMISTRY',
+      templateId: 'CHEM_BALANCE_SCALE',
+      recognizedLatex: '4\\text{Fe} + 3\\text{O}_2 \\rightarrow 2\\text{Fe}_2\\text{O}_3',
+      ocrAlternatives: ['4\\text{Fe} + 3\\text{O}_2 \\rightarrow 2\\text{Fe}_2\\text{O}_3', '3\\text{Fe}_3\\text{O}_4 + 28\\text{HNO}_3 \\rightarrow 9\\text{Fe(NO}_3)_3 + \\text{NO} + 14\\text{H}_2\\text{O}'],
+      parameters: [
+        { key: 'c1', label: 'Hệ số Fe', unit: '', defaultValue: 4.0, min: 1.0, max: 6.0, step: 1.0 },
+        { key: 'c2', label: 'Hệ số O₂', unit: '', defaultValue: 3.0, min: 1.0, max: 6.0, step: 1.0 },
+        { key: 'c3', label: 'Hệ số Fe₂O₃', unit: '', defaultValue: 2.0, min: 1.0, max: 4.0, step: 1.0 },
+      ],
+      socraticQuestion: 'Em cần chọn bội chung nhỏ nhất là mấy để số nguyên tử và điện tích electron hai vế thăng bằng?',
+    };
+  }
+
+  // 8. Chuẩn độ axit - bazơ & Đường cong pH
+  if (h.includes('chuẩn độ') || h.includes('titration') || h.includes('ph') || h.includes('naoh') || h.includes('hcl')) {
+    return {
+      engine: 'CHEMISTRY',
+      templateId: 'CHEM_EQUILIBRIUM_TITRATION',
+      recognizedLatex: '\\text{HCl} + \\text{NaOH} \\rightarrow \\text{NaCl} + \\text{H}_2\\text{O}, \\quad \\text{Chuẩn độ pH}',
+      ocrAlternatives: ['HCl + NaOH -> NaCl + H2O'],
+      parameters: [
+        { key: 'Vb', label: 'Thể tích NaOH (V_b)', unit: 'mL', defaultValue: 20.0, min: 0.0, max: 50.0, step: 1.0 },
+      ],
+      socraticQuestion: 'Tại sao tại điểm tương đương (V_NaOH = 25mL), đường cong pH lại có một bước nhảy vọt dốc đứng?',
+      curriculumLevel: 'OLYMPIAD_ADVANCED',
+    };
+  }
+
+  // 9. Cơ chế phân tử nhân đôi ADN
+  if (h.includes('dna') || h.includes('adn') || h.includes('helicase') || h.includes('xoắn')) {
+    return {
+      engine: 'BIOLOGY',
+      templateId: 'BIO_DNA_HELIX',
+      recognizedLatex: '\\text{DNA Replication: } 5\' \\to 3\', \\quad A=T, \\, G\\equiv C',
+      ocrAlternatives: ['A=T, G=C', '5\' -> 3\' Helicase'],
+      parameters: [
+        { key: 'unzipProgress', label: 'Tháo xoắn Helicase', unit: '%', defaultValue: 25.0, min: 0.0, max: 100.0, step: 5.0 },
+        { key: 'turnCount', label: 'Số chu kỳ xoắn', unit: 'vòng', defaultValue: 3.0, min: 1.0, max: 6.0, step: 1.0 },
+      ],
+      socraticQuestion: 'Tại sao liên kết hydro giữa A-T lại dễ bị bẻ gãy hơn G-C trong quá trình tháo xoắn của enzyme Helicase?',
+    };
+  }
+
+  // 10. Quang hợp và trao đổi chất thực vật
+  if (h.includes('quang') || h.includes('25') || h.includes('lá') || h.includes('cây') || h.includes('photo')) {
+    return {
+      engine: 'BIOLOGY',
+      templateId: 'BIO_PHOTOSYNTHESIS',
+      recognizedLatex: '\\text{Quang hợp: } Rate = f(T = 25.0^\\circ\\text{C}, I = 70.0\\%)',
+      ocrAlternatives: ['Rate = f(T = 25^\\circ\\text{C}, I = 70\\%)'],
+      parameters: [
+        { key: 'temperature', label: 'Nhiệt độ (T)', unit: '°C', defaultValue: 25.0, min: 0.0, max: 60.0, step: 5.0 },
+        { key: 'light', label: 'Cường độ sáng (I)', unit: '%', defaultValue: 70.0, min: 10.0, max: 100.0, step: 5.0 },
+      ],
+      socraticQuestion: 'Tại sao khi nhiệt độ vượt quá 45°C, cường độ quang hợp lại giảm dốc đứng do biến tính enzyme?',
+    };
+  }
+
+  // 11. Hàm số lượng giác & Sóng điều hòa
+  if (h.includes('sin') || h.includes('cos') || h.includes('wave') || h.includes('dao động') || h.includes('harmonic')) {
+    return {
+      engine: 'MATH',
+      templateId: 'MATH_TRIG_WAVE',
+      recognizedLatex: raw || 'y = 2\\sin(3x)',
+      ocrAlternatives: ['y = 2\\sin(3x)', 'x = 5\\cos(2\\pi t + \\frac{\\pi}{2})', 'y = 2\\cos(3x)'],
+      parameters: [
+        { key: 'A', label: 'Biên độ (A)', unit: 'cm', defaultValue: 2.0, min: 0.5, max: 5.0, step: 0.5 },
+        { key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', defaultValue: 3.0, min: 1.0, max: 10.0, step: 1.0 },
+        { key: 'phi', label: 'Pha ban đầu (φ)', unit: 'rad', defaultValue: 0.0, min: -3.14, max: 3.14, step: 0.1 },
+        { key: 'D', label: 'Độ lệch trục (D)', unit: '', defaultValue: 0.0, min: -3.0, max: 3.0, step: 0.5 },
+      ],
+      socraticQuestion: 'Nếu giữ nguyên biên độ A = 2 nhưng tăng tần số góc ω lên gấp đôi, đồ thị sẽ thay đổi như thế nào?',
+    };
+  }
+
+  // 12. Giải tích & Khảo sát hàm số (Math Func 2D)
+  if (h.includes('int') || h.includes('\\int') || h.includes('tích phân') || h.includes('nguyên hàm')) {
+    return {
+      engine: 'MATH',
+      templateId: 'MATH_FUNC_2D',
+      recognizedLatex: raw || 'y = \\int x^3 dx',
+      ocrAlternatives: ['y = \\int x^3 dx', 'y = \\int x^2 dx', 'y = x^2 - 4'],
+      parameters: [
+        { key: 'a', label: 'Hệ số a (x³)', unit: '', defaultValue: 1, min: -5, max: 5, step: 0.5 },
+        { key: 'b', label: 'Hệ số b (x²)', unit: '', defaultValue: 0, min: -5, max: 5, step: 0.5 },
+        { key: 'c', label: 'Hệ số c (x)', unit: '', defaultValue: 0, min: -10, max: 10, step: 0.5 },
+        { key: 'd', label: 'Hằng số tích phân C', unit: '', defaultValue: 0, min: -10, max: 10, step: 0.5 },
+      ],
+      socraticQuestion: 'Nguyên hàm của x³ là x⁴/4 + C. Diện tích dưới đường cong thay đổi như thế nào khi x tăng?',
+    };
+  }
+
+  // 13. Đồ thị hàm số phẳng (nếu là hàm số y = ... hoặc phương trình ẩn)
+  const graphMatch = routeLocally(raw, { explicitGraph: true });
+  if (graphMatch) return graphMatch;
+
+  return null;
+}
+
 export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   onApiCallSpy,
   apiEndpoint = '/api/v1/canvas/compile-lasso',
@@ -99,6 +323,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
   const [lassoLoop, setLassoLoop] = useState<Point[]>([]);
   const [selectedStrokes, setSelectedStrokes] = useState<Stroke[]>([]);
+  const [instantResult, setInstantResult] = useState<ConvertResult | null>(null);
   // Chuyển chữ viết tay → công thức chuẩn: nguồn nét (hoặc công thức đang sửa)
   const [convertCtx, setConvertCtx] = useState<{ source: Stroke[]; editing?: { id: string; latex: string; text: string } | null } | null>(null);
   const [boardScale, setBoardScale] = useState(1);
@@ -154,13 +379,21 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     };
   };
 
+  const handleHoloPointerDownAnywhere = (e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('input, button, select, textarea, [data-interactive="true"]')) {
+      return;
+    }
+    handleHoloGripDown(e);
+  };
+
   const handleHoloGripMove = (e: React.PointerEvent) => {
     if (!isDraggingHoloRef.current) return;
     const dx = (e.clientX - holoDragStartRef.current.startX) / (boardScale || 1);
     const dy = (e.clientY - holoDragStartRef.current.startY) / (boardScale || 1);
     setHoloPosition({
-      x: Math.max(0, Math.min(800, Math.round(holoDragStartRef.current.origX + dx))),
-      y: Math.max(0, Math.min(450, Math.round(holoDragStartRef.current.origY + dy))),
+      x: Math.max(0, Math.min(1000, Math.round(holoDragStartRef.current.origX + dx))),
+      y: Math.max(0, Math.min(550, Math.round(holoDragStartRef.current.origY + dy))),
     });
   };
 
@@ -178,6 +411,15 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [reviewConfidence, setReviewConfidence] = useState<number>(0.98);
   const [reviewThumbnailUrl, setReviewThumbnailUrl] = useState<string | null>(null);
   const [reviewAlternatives, setReviewAlternatives] = useState<string[]>([]);
+  // Temporal Scene Chunking (Pre-Clear Commit) để bảo toàn bài học cả tiết qua các lần xóa bảng
+  const [recordedScenes, setRecordedScenes] = useState<Array<{
+    id: string;
+    timestamp: number;
+    strokeCount: number;
+    recognizedLatex?: string;
+    templateId?: string;
+    previewSummary: string;
+  }>>([]);
 
   // Auto-Ink Calligraphy & 450ms Shimmer States (Apple-Keynote Showcase)
   const [activeAutoScene, setActiveAutoScene] = useState<string | null>(null);
@@ -252,10 +494,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
 
-  // Debug Preview Thumbnail generator (Off-screen render)
+  // Debug Preview Thumbnail & Instant Recognition Engine (Off-screen render & < 30ms OCR)
   useEffect(() => {
-    if (sourceStrokes(selectedStrokes).length > 0) {
-      exportIsolatedWebp(sourceStrokes(selectedStrokes))
+    const src = sourceStrokes(selectedStrokes);
+    if (src.length > 0) {
+      exportIsolatedWebp(src)
         .then((res) => {
           setThumbnailUrl(res.dataUrl);
         })
@@ -263,8 +506,27 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           console.warn('Thumbnail generation failed:', err);
           setThumbnailUrl(null);
         });
+
+      try {
+        const res = recognizeLocal(src);
+        if (res && res.lines.length > 0 && res.lines.some((l) => l.latex.trim().length > 0)) {
+          setInstantResult(res);
+          const fullLatex = res.lines.map((l) => l.latex).join(' \\\\ ');
+          setFormulaInput((prev) => {
+            if (!prev.trim()) {
+              return fullLatex;
+            }
+            return prev;
+          });
+        } else {
+          setInstantResult(null);
+        }
+      } catch (err) {
+        setInstantResult(null);
+      }
     } else {
       setThumbnailUrl(null);
+      setInstantResult(null);
     }
   }, [selectedStrokes]);
 
@@ -1047,6 +1309,21 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
   const handleClear = () => {
     setSketchAlts(null);
+    // Pre-Clear Commit: Tự động kết đọng cảnh bài giảng vào chuỗi nhật ký tiết học trước khi xóa bảng
+    if (strokes.length > 0 || activeBlueprint) {
+      const sceneId = `scene-${Date.now()}`;
+      setRecordedScenes((prev) => [
+        ...prev,
+        {
+          id: sceneId,
+          timestamp: Date.now(),
+          strokeCount: strokes.length,
+          recognizedLatex: activeBlueprint?.recognizedLatex,
+          templateId: activeBlueprint?.templateId,
+          previewSummary: activeBlueprint?.socraticQuestion || `Phân cảnh ${prev.length + 1} (${strokes.length} nét viết)`,
+        },
+      ]);
+    }
     if (strokes.length > 0) saveToUndo();
     setStrokes([]);
     setSelectedStrokes([]);
@@ -1310,12 +1587,23 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       .map((s) => s.typeset!.latex)
       .join(' \\\\ ');
     const inkSelected = sourceStrokes(selectedStrokes);
-    const effectiveHint = overrideHint || formulaInput || typesetHint || '';
+    let detectedInstantLatex = instantResult ? instantResult.lines.map((l) => l.latex).join(' \\\\ ') : '';
+    if (!detectedInstantLatex && !overrideHint && !formulaInput && inkSelected.length > 0) {
+      try {
+        const localRec = recognizeLocal(inkSelected);
+        if (localRec && localRec.lines.length > 0) {
+          detectedInstantLatex = localRec.lines.map((l) => l.latex).join(' \\\\ ');
+        }
+      } catch (e) {
+        // bỏ qua nếu lỗi
+      }
+    }
+    const effectiveHint = overrideHint || formulaInput || typesetHint || detectedInstantLatex || '';
 
-    // Định tuyến cục bộ (0 ms, 0 API): nhiều hàm số → đồ thị đa hàm; tên khối hình học → khối 3D.
-    const localBp = routeLocally(effectiveHint);
-    if (localBp) {
-      setActiveBlueprint(localBp);
+    // Định tuyến tức thì cục bộ (< 25ms, 0 API): nhận ra ngay công thức STEM và đồ thị mà không cần chờ mạng
+    const instantBp = matchInstantStemBlueprint(effectiveHint);
+    if (instantBp) {
+      setActiveBlueprint(instantBp);
       setSelectedStrokes([]);
       setLassoLoop([]);
       setFormulaInput('');
@@ -1411,225 +1699,43 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         ocrAlternatives: alts,
       };
 
-      // CP1 Mandate: [Trực quan hóa] always mounts SimulationWidget in <1.5s
-      setActiveBlueprint(finalBp);
-      setSelectedStrokes([]);
-      setLassoLoop([]);
-      setFormulaInput('');
+      // Kiểm tra độ tin cậy của ký hiệu / công thức nhận diện:
+      // Nếu confidence < 0.85 hoặc (conf < 0.92 và có ký tự có nguy cơ nhầm lẫn) -> mở OcrReviewModal để người dùng sửa hoặc chọn ký tự thay thế
+      // Nếu confidence bình thường (>= 0.85) -> chuyển thẳng sang mô phỏng không làm gián đoạn bài giảng
+      const ambiguousTokens = findAmbiguousTokens(formula);
+      const isLowConfidence = conf < 0.85 || (conf < 0.92 && ambiguousTokens.length > 0);
+
+      if (isLowConfidence) {
+        setPendingBlueprint(finalBp);
+        setReviewFormula(formula);
+        setReviewConfidence(conf);
+        setReviewThumbnailUrl(cropData ? cropData.dataUrl : null);
+        setReviewAlternatives(alts);
+        setIsOcrReviewOpen(true);
+      } else {
+        // CP1 Mandate: [Trực quan hóa] always mounts SimulationWidget in <1.5s
+        setActiveBlueprint(finalBp);
+        setSelectedStrokes([]);
+        setLassoLoop([]);
+        setFormulaInput('');
+      }
     } catch (err: any) {
       console.error('[Magic Lasso] Pipeline Error:', err);
       setErrorMessage(`Lỗi nhận diện (${err?.message || 'Không kết nối được server'}). Đã kích hoạt mô phỏng offline.`);
 
       // Comprehensive fallback heuristics: dynamically map ANY written formula to its exact knowledge visualizer
-      let fallbackBp: SimulationBlueprint;
-      const h = effectiveHint.toLowerCase();
-
-      // 1. Giao thoa sóng 3D (Ripple Tank)
-      if (
-        h.includes('giao thoa') || h.includes('ripple') || h.includes('sóng nước') ||
-        h.includes('d_2 - d_1') || h.includes('d2 - d1') || h.includes('d2-d1') ||
-        h.includes('lambda') || h.includes('\\lambda') || h.includes('k\\lambda') ||
-        h.includes('hai nguồn') || h.includes('2a\\cos') || h.includes('2a \\cos')
-      ) {
-        fallbackBp = {
-          engine: 'PHYSICS',
-          templateId: 'PHYS_RIPPLE_TANK',
-          recognizedLatex: 'u_M = 2A \\cos\\left(\\frac{\\pi(d_2 - d_1)}{\\lambda}\\right) \\cos(\\omega t)',
-          ocrAlternatives: ['u_M = 2A \\cos(\\pi(d_2 - d_1)/\\lambda) \\cos(\\omega t)', 'd_2 - d_1 = k\\lambda'],
-          parameters: [
-            { key: 'lambda', label: 'Bước sóng (λ)', unit: 'px', defaultValue: 24.0, min: 10.0, max: 60.0, step: 2.0 },
-            { key: 'f', label: 'Tần số dao động (f)', unit: 'Hz', defaultValue: 2.5, min: 1.0, max: 5.0, step: 0.5 },
-            { key: 'd', label: 'Khoảng cách 2 nguồn (d)', unit: 'px', defaultValue: 130.0, min: 60.0, max: 240.0, step: 10.0 },
-            { key: 'deltaPhi', label: 'Độ lệch pha (Δφ)', unit: 'rad', defaultValue: 0.0, min: -3.14, max: 3.14, step: 0.314 },
-          ],
-          socraticQuestion: 'Khi hai nguồn dao động cùng pha, những điểm có hiệu khoảng cách d₂ - d₁ = kλ sẽ dao động với biên độ cực đại hay cực tiểu?',
-          curriculumLevel: 'THPT_STANDARD',
-        };
-      }
-      // 2. Con lắc đơn vi phân RK4 (Pendulum)
-      else if (
-        h.includes('con lắc') || h.includes('con lac') || h.includes('pendulum') ||
-        h.includes('l/g') || h.includes('m/k') || h.includes('\\ddot{\\theta}') ||
-        h.includes('chu kỳ') || (h.includes('t = 2') && h.includes('pi')) ||
-        h.includes('s_0\\cos') || h.includes('rk4')
-      ) {
-        fallbackBp = {
-          engine: 'PHYSICS',
-          templateId: 'PHYS_PENDULUM',
-          recognizedLatex: 'T = 2\\pi\\sqrt{\\frac{l}{g}}, \\quad \\ddot{\\theta} + \\frac{g}{L}\\sin\\theta = 0',
-          ocrAlternatives: ['T = 2\\pi\\sqrt{l/g}', '\\ddot{\\theta} + (g/L)\\sin\\theta = 0'],
-          parameters: [
-            { key: 'L', label: 'Chiều dài dây (L)', unit: 'm', defaultValue: 2.0, min: 0.5, max: 5.0, step: 0.1 },
-            { key: 'theta0', label: 'Góc lệch đầu (θ₀)', unit: 'rad', defaultValue: 0.5, min: 0.1, max: 2.8, step: 0.1 },
-            { key: 'g', label: 'Trọng trường (g)', unit: 'm/s²', defaultValue: 9.8, min: 1.6, max: 25.0, step: 0.1 },
-            { key: 'b', label: 'Lực cản môi trường (b)', unit: '', defaultValue: 0.02, min: 0.0, max: 0.2, step: 0.01 },
-          ],
-          socraticQuestion: 'Khi tăng góc lệch ban đầu θ₀ lên góc lớn (> 30°), chu kỳ dao động thực tế có còn tuân theo công thức gần đúng T = 2π√(l/g) không?',
-          curriculumLevel: 'OLYMPIAD_ADVANCED',
-        };
-      }
-      // 3. Cơ học Mặt phẳng nghiêng & Ma sát trượt (Inclined Plane)
-      else if (
-        h.includes('nghiêng') || h.includes('nghieng') || h.includes('incline') ||
-        h.includes('ma sát') || h.includes('ma sat') || h.includes('\\mu') || h.includes('mu') ||
-        h.includes('f_{ms}') || h.includes('fms') || h.includes('mg\\sin') || h.includes('mg\\cos')
-      ) {
-        fallbackBp = {
-          engine: 'PHYSICS',
-          templateId: 'PHYS_INCLINED',
-          recognizedLatex: 'a = g(\\sin\\alpha - \\mu\\cos\\alpha)',
-          ocrAlternatives: ['a = g(\\sin\\alpha - \\mu\\cos\\alpha)', 'N = mg\\cos\\alpha', 'F_{ms} = \\mu N'],
-          parameters: [
-            { key: 'alpha', label: 'Góc nghiêng (α)', unit: 'độ', defaultValue: 30.0, min: 5.0, max: 75.0, step: 5.0 },
-            { key: 'mu', label: 'Hệ số ma sát (μ)', unit: '', defaultValue: 0.15, min: 0.0, max: 0.8, step: 0.05 },
-            { key: 'm', label: 'Khối lượng vật (m)', unit: 'kg', defaultValue: 2.0, min: 0.5, max: 10.0, step: 0.5 },
-            { key: 'g', label: 'Gia tốc g', unit: 'm/s²', defaultValue: 9.8, min: 1.6, max: 25.0, step: 0.1 },
-          ],
-          socraticQuestion: 'Điều kiện nào giữa góc nghiêng α và hệ số ma sát μ để vật bắt đầu trượt xuống (tan α > μ)?',
-          curriculumLevel: 'THPT_STANDARD',
-        };
-      }
-      // 4. Chuyển động ném xiên trong trọng trường (Projectile)
-      else if (h.includes('ném') || h.includes('nem') || h.includes('v0') || h.includes('v_0') || h.includes('projectile') || h.includes('parabol')) {
-        fallbackBp = {
-          engine: 'PHYSICS',
-          templateId: 'PHYS_PROJECTILE',
-          recognizedLatex: 'v_0 = 22\\text{ m/s}, \\quad \\alpha = 45^\\circ',
-          ocrAlternatives: ['v_0 = 22\\text{ m/s}, \\alpha = 45^\\circ', 'y = -\\frac{g}{2v_0^2\\cos^2\\alpha}x^2 + x\\tan\\alpha'],
-          parameters: [
-            { key: 'v0', label: 'Vận tốc đầu (v₀)', unit: 'm/s', defaultValue: 22.0, min: 5.0, max: 50.0, step: 1.0 },
-            { key: 'alpha', label: 'Góc ném (α)', unit: 'độ', defaultValue: 45.0, min: 15.0, max: 85.0, step: 5.0 },
-            { key: 'g', label: 'Gia tốc g', unit: 'm/s²', defaultValue: 9.8, min: 1.6, max: 25.0, step: 0.1 },
-          ],
-          socraticQuestion: 'Tại sao với cùng vận tốc đầu v₀, góc ném 45° lại cho tầm xa cực đại trên mặt phẳng nằm ngang?',
-        };
-      }
-      // 5. Mạch điện xoay chiều RLC & Giản đồ Fresnel
-      else if (
-        h.includes('rlc') || h.includes('fresnel') || h.includes('điện xoay chiều') ||
-        h.includes('cộng hưởng') || h.includes('z_l') || h.includes('z_c') ||
-        h.includes('z =') || h.includes('omega') || h.includes('phasor')
-      ) {
-        fallbackBp = {
-          engine: 'PHYSICS',
-          templateId: 'PHYS_RLC_PHASOR',
-          recognizedLatex: 'Z = \\sqrt{R^2 + (Z_L - Z_C)^2}, \\quad u = U_0\\cos(\\omega t + \\varphi)',
-          ocrAlternatives: ['Z = \\sqrt{R^2 + (Z_L - Z_C)^2}', 'u = U_0\\cos(\\omega t)', 'i = I_0\\cos(\\omega t - \\varphi)'],
-          parameters: [
-            { key: 'R', label: 'Điện trở (R)', unit: 'Ω', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
-            { key: 'L', label: 'Độ tự cảm (L)', unit: 'H', defaultValue: 0.5, min: 0.1, max: 2.0, step: 0.1 },
-            { key: 'C', label: 'Điện dung (C)', unit: 'μF', defaultValue: 50.0, min: 10.0, max: 200.0, step: 10.0 },
-            { key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', defaultValue: 200.0, min: 50.0, max: 500.0, step: 10.0 },
-            { key: 'U', label: 'Điện áp (U)', unit: 'V', defaultValue: 120.0, min: 20.0, max: 240.0, step: 10.0 },
-          ],
-          socraticQuestion: 'Khi điều chỉnh tần số góc ω tiến dần về giá trị cộng hưởng ω₀ = 1/√(LC), góc lệch pha φ và công suất P biến đổi thế nào?',
-          curriculumLevel: 'OLYMPIAD_ADVANCED',
-        };
-      }
-      // 6. Cân bằng phản ứng Oxi hóa - Khử (Chemistry Redox Balance Scale)
-      else if (h.includes('fe') || h.includes('cân') || h.includes('o2') || h.includes('hno3') || h.includes('redox') || h.includes('oxi')) {
-        fallbackBp = {
-          engine: 'CHEMISTRY',
-          templateId: 'CHEM_BALANCE_SCALE',
-          recognizedLatex: '4\\text{Fe} + 3\\text{O}_2 \\rightarrow 2\\text{Fe}_2\\text{O}_3',
-          ocrAlternatives: ['4\\text{Fe} + 3\\text{O}_2 \\rightarrow 2\\text{Fe}_2\\text{O}_3', '3\\text{Fe}_3\\text{O}_4 + 28\\text{HNO}_3 \\rightarrow 9\\text{Fe(NO}_3)_3 + \\text{NO} + 14\\text{H}_2\\text{O}'],
-          parameters: [
-            { key: 'c1', label: 'Hệ số Fe', unit: '', defaultValue: 4.0, min: 1.0, max: 6.0, step: 1.0 },
-            { key: 'c2', label: 'Hệ số O₂', unit: '', defaultValue: 3.0, min: 1.0, max: 6.0, step: 1.0 },
-            { key: 'c3', label: 'Hệ số Fe₂O₃', unit: '', defaultValue: 2.0, min: 1.0, max: 4.0, step: 1.0 },
-          ],
-          socraticQuestion: 'Em cần chọn bội chung nhỏ nhất là mấy để số nguyên tử và điện tích electron hai vế thăng bằng?',
-        };
-      }
-      // 7. Chuẩn độ axit - bazơ & Đường cong pH
-      else if (h.includes('chuẩn độ') || h.includes('titration') || h.includes('ph') || h.includes('naoh') || h.includes('hcl')) {
-        fallbackBp = {
-          engine: 'CHEMISTRY',
-          templateId: 'CHEM_EQUILIBRIUM_TITRATION',
-          recognizedLatex: '\\text{HCl} + \\text{NaOH} \\rightarrow \\text{NaCl} + \\text{H}_2\\text{O}, \\quad \\text{Chuẩn độ pH}',
-          ocrAlternatives: ['HCl + NaOH -> NaCl + H2O'],
-          parameters: [
-            { key: 'Vb', label: 'Thể tích NaOH (V_b)', unit: 'mL', defaultValue: 20.0, min: 0.0, max: 50.0, step: 1.0 },
-          ],
-          socraticQuestion: 'Tại sao tại điểm tương đương (V_NaOH = 25mL), đường cong pH lại có một bước nhảy vọt dốc đứng?',
-          curriculumLevel: 'OLYMPIAD_ADVANCED',
-        };
-      }
-      // 8. Cơ chế phân tử nhân đôi ADN (DNA Replication Helix)
-      else if (h.includes('dna') || h.includes('adn') || h.includes('helicase') || h.includes('xoắn')) {
-        fallbackBp = {
-          engine: 'BIOLOGY',
-          templateId: 'BIO_DNA_HELIX',
-          recognizedLatex: '\\text{DNA Replication: } 5\' \\to 3\', \\quad A=T, \\, G\\equiv C',
-          ocrAlternatives: ['A=T, G=C', '5\' -> 3\' Helicase'],
-          parameters: [
-            { key: 'unzipProgress', label: 'Tháo xoắn Helicase', unit: '%', defaultValue: 25.0, min: 0.0, max: 100.0, step: 5.0 },
-            { key: 'turnCount', label: 'Số chu kỳ xoắn', unit: 'vòng', defaultValue: 3.0, min: 1.0, max: 6.0, step: 1.0 },
-          ],
-          socraticQuestion: 'Tại sao liên kết hydro giữa A-T lại dễ bị bẻ gãy hơn G-C trong quá trình tháo xoắn của enzyme Helicase?',
-        };
-      }
-      // 9. Quang hợp và trao đổi chất thực vật
-      else if (h.includes('quang') || h.includes('25') || h.includes('lá') || h.includes('cây') || h.includes('photo')) {
-        fallbackBp = {
-          engine: 'BIOLOGY',
-          templateId: 'BIO_PHOTOSYNTHESIS',
-          recognizedLatex: '\\text{Quang hợp: } Rate = f(T = 25.0^\\circ\\text{C}, I = 70.0\\%)',
-          ocrAlternatives: ['Rate = f(T = 25^\\circ\\text{C}, I = 70\\%)'],
-          parameters: [
-            { key: 'temperature', label: 'Nhiệt độ (T)', unit: '°C', defaultValue: 25.0, min: 0.0, max: 60.0, step: 5.0 },
-            { key: 'light', label: 'Cường độ sáng (I)', unit: '%', defaultValue: 70.0, min: 10.0, max: 100.0, step: 5.0 },
-          ],
-          socraticQuestion: 'Tại sao khi nhiệt độ vượt quá 45°C, cường độ quang hợp lại giảm dốc đứng do biến tính enzyme?',
-        };
-      }
-      // 10. Hàm số lượng giác & Sóng điều hòa (Math Trig Wave)
-      else if (h.includes('sin') || h.includes('cos') || h.includes('wave') || h.includes('dao động') || h.includes('harmonic')) {
-        fallbackBp = {
-          engine: 'MATH',
-          templateId: 'MATH_TRIG_WAVE',
-          recognizedLatex: effectiveHint || 'y = 2\\sin(3x)',
-          ocrAlternatives: ['y = 2\\sin(3x)', 'x = 5\\cos(2\\pi t + \\frac{\\pi}{2})', 'y = 2\\cos(3x)'],
-          parameters: [
-            { key: 'A', label: 'Biên độ (A)', unit: 'cm', defaultValue: 2.0, min: 0.5, max: 5.0, step: 0.5 },
-            { key: 'omega', label: 'Tần số góc (ω)', unit: 'rad/s', defaultValue: 3.0, min: 1.0, max: 10.0, step: 1.0 },
-            { key: 'phi', label: 'Pha ban đầu (φ)', unit: 'rad', defaultValue: 0.0, min: -3.14, max: 3.14, step: 0.1 },
-            { key: 'D', label: 'Độ lệch trục (D)', unit: '', defaultValue: 0.0, min: -3.0, max: 3.0, step: 0.5 },
-          ],
-          socraticQuestion: 'Nếu giữ nguyên biên độ A = 2 nhưng tăng tần số góc ω lên gấp đôi, đồ thị sẽ thay đổi như thế nào?',
-        };
-      }
-      // 11. Giải tích & Khảo sát hàm số (Math Func 2D)
-      else if (h.includes('int') || h.includes('\\int') || h.includes('tích phân') || h.includes('nguyên hàm')) {
-        fallbackBp = {
-          engine: 'MATH',
-          templateId: 'MATH_FUNC_2D',
-          recognizedLatex: effectiveHint || 'y = \\int x^3 dx',
-          ocrAlternatives: ['y = \\int x^3 dx', 'y = \\int x^2 dx', 'y = x^2 - 4'],
-          parameters: [
-            { key: 'a', label: 'Hệ số a (x³)', unit: '', defaultValue: 1, min: -5, max: 5, step: 0.5 },
-            { key: 'b', label: 'Hệ số b (x²)', unit: '', defaultValue: 0, min: -5, max: 5, step: 0.5 },
-            { key: 'c', label: 'Hệ số c (x)', unit: '', defaultValue: 0, min: -10, max: 10, step: 0.5 },
-            { key: 'd', label: 'Hằng số tích phân C', unit: '', defaultValue: 0, min: -10, max: 10, step: 0.5 },
-          ],
-          socraticQuestion: 'Nguyên hàm của x³ là x⁴/4 + C. Diện tích dưới đường cong thay đổi như thế nào khi x tăng?',
-        };
-      }
-      // Default: Khảo sát hàm số đa thức
-      else {
-        fallbackBp = {
-          engine: 'MATH',
-          templateId: 'MATH_FUNC_2D',
-          recognizedLatex: effectiveHint || 'y = 2x + 1',
-          ocrAlternatives: ['y = 2x + 1', 'y = x^2 - 4', 'y = x^3 - 3x', 'y = 2\\sin(3x)'],
-          parameters: [
-            { key: 'c', label: 'Hệ số góc (k)', unit: '', defaultValue: 2, min: -10, max: 10, step: 0.5 },
-            { key: 'd', label: 'Tung độ gốc (d)', unit: '', defaultValue: 1, min: -10, max: 10, step: 0.5 },
-            { key: 'x0', label: 'Điểm tiếp điểm (x₀)', unit: '', defaultValue: 1, min: -5, max: 5, step: 0.5 },
-          ],
-          socraticQuestion: 'Tại sao khi tăng hệ số góc k = 2 lên k = 4, độ dốc của đường thẳng lại tăng lên?',
-        };
-      }
+      const fallbackBp = matchInstantStemBlueprint(effectiveHint) || {
+        engine: 'MATH',
+        templateId: 'MATH_FUNC_2D',
+        recognizedLatex: effectiveHint || 'y = 2x + 1',
+        ocrAlternatives: ['y = 2x + 1', 'y = x^2 - 4', 'y = x^3 - 3x', 'y = 2\\sin(3x)'],
+        parameters: [
+          { key: 'c', label: 'Hệ số góc (k)', unit: '', defaultValue: 2, min: -10, max: 10, step: 0.5 },
+          { key: 'd', label: 'Tung độ gốc (d)', unit: '', defaultValue: 1, min: -10, max: 10, step: 0.5 },
+          { key: 'x0', label: 'Điểm tiếp điểm (x₀)', unit: '', defaultValue: 1, min: -5, max: 5, step: 0.5 },
+        ],
+        socraticQuestion: 'Tại sao khi tăng hệ số góc k = 2 lên k = 4, độ dốc của đường thẳng lại tăng lên?',
+      };
 
       setActiveBlueprint(fallbackBp);
       setSelectedStrokes([]);
@@ -1663,12 +1769,15 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
     setActiveBlueprint(bp);
     setIsOcrReviewOpen(false);
+    setPendingBlueprint(null);
     setSelectedStrokes([]);
     setLassoLoop([]);
+    setFormulaInput('');
   };
 
   const handleCancelReview = () => {
     setIsOcrReviewOpen(false);
+    setPendingBlueprint(null);
   };
 
   const handleQuickFormula = (latex: string) => {
@@ -1723,6 +1832,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         <InkConvertPanel
           source={convertCtx.source}
           editing={convertCtx.editing ?? null}
+          enableGrading
           onClose={() => setConvertCtx(null)}
           onApply={applyConvert}
           onVisualizeLocal={(bp) => {
@@ -2009,7 +2119,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   Lasso {selectedStrokes.length} nét
                 </span>
                 <span className="text-[10px] text-stone-500 font-mono">
-                  Nền giấy chuẩn hóa
+                  {instantResult ? (
+                    <span className="text-emerald-700 font-semibold inline-flex items-center gap-1">
+                      ⚡ Tức thì {Math.round(instantResult.ms)}ms · {Math.round(instantResult.confidence * 100)}%
+                    </span>
+                  ) : (
+                    'Nền giấy chuẩn hóa'
+                  )}
                 </span>
               </div>
             </div>
@@ -2049,8 +2165,12 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   data-testid="live-teacher-formula-preview"
                   className="absolute -top-11 left-0 bg-white/95 backdrop-blur-md px-3 py-1 rounded-lg border border-blue-200 shadow-md flex items-center gap-2 text-xs z-30 animate-in fade-in"
                 >
-                  <span className="text-[10px] font-mono text-blue-700 font-bold uppercase tracking-wider shrink-0">
-                    Xem trước:
+                  <span className="text-[10px] font-mono text-blue-700 font-bold uppercase tracking-wider shrink-0 flex items-center gap-1">
+                    {instantResult && formulaInput.trim() === instantResult.lines.map((l) => l.latex).join(' \\\\ ').trim() ? (
+                      <span className="text-emerald-700 font-bold">⚡ Tức thì:</span>
+                    ) : (
+                      'Xem trước:'
+                    )}
                   </span>
                   <div className="overflow-x-auto max-w-sm text-stone-900 font-semibold">
                     <FormulaBlock latex={formulaInput} />
@@ -2325,7 +2445,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           {activeBlueprint && !isCompilingShimmer && displayMode === 'HOLOGRAM' && (
             <div
               data-testid="hologram-simulation-overlay"
-              className="absolute z-20 pointer-events-auto transition-transform"
+              onPointerDown={handleHoloPointerDownAnywhere}
+              onPointerMove={handleHoloGripMove}
+              onPointerUp={handleHoloGripUp}
+              onPointerCancel={handleHoloGripUp}
+              className="absolute z-20 pointer-events-auto select-none cursor-grab active:cursor-grabbing touch-none"
               style={{
                 left: `${(holoPosition.x / 1200) * 100}%`,
                 top: `${(holoPosition.y / 675) * 100}%`,
@@ -2333,6 +2457,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 transformOrigin: 'top left',
                 width: '560px',
                 maxWidth: '92%',
+                transition: isDraggingHoloRef.current ? 'none' : 'transform 0.15s ease-out',
               }}
             >
               <SimulationWidget
@@ -2629,6 +2754,18 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               <div className="flex justify-between text-stone-600">
                 <span>Mô phỏng 60FPS:</span>
                 <span className="text-emerald-700 font-mono font-medium">Đã đóng gói tương tác</span>
+              </div>
+              <div className="flex justify-between text-stone-600">
+                <span>Nhật ký bài giảng (qua các lần xóa bảng):</span>
+                <span className="text-blue-700 font-mono font-medium" data-testid="recap-scenes-count">
+                  {Math.max(1, recordedScenes.length + (strokes.length > 0 ? 1 : 0))} phân cảnh
+                </span>
+              </div>
+              <div className="flex justify-between text-stone-600">
+                <span>Lộ trình tự học tối nay:</span>
+                <span className="text-purple-700 font-mono font-medium">
+                  Socratic AI Tutor phân hóa (Chuẩn & Chuyên)
+                </span>
               </div>
             </div>
 

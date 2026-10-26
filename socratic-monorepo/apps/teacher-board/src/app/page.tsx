@@ -4,86 +4,57 @@ import React, { useState, useEffect } from 'react';
 import { SmartboardCanvas } from '../components/canvas/SmartboardCanvas';
 import { SocraticWorkspaceMode } from '../components/modes/SocraticWorkspaceMode';
 import { ClassTelemetryMode } from '../components/modes/ClassTelemetryMode';
+import { EngineHealthRail } from '../components/common/EngineHealthRail';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
-import { Download, Share2, Key, Check, Settings, Sparkles, QrCode, Copy, ExternalLink, X, FileText, ChevronRight } from 'lucide-react';
+import { Download, Share2, Check, Sparkles, QrCode, Copy, ExternalLink, X, FileText, ChevronRight, Maximize2, Minimize2, Monitor } from 'lucide-react';
 
 export default function UnifiedPlatformPage() {
   const [activeMode, setActiveMode] = useState<'BOARD' | 'SOCRATIC' | 'ANALYTICS'>('BOARD');
   const [curriculumLevel, setCurriculumLevel] = useState<CurriculumLevel>('THPT_STANDARD');
   const [selectedDemoBlueprint, setSelectedDemoBlueprint] = useState<SimulationBlueprint | null>(null);
   const [lessonExportNotice, setLessonExportNotice] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
-  // Gemini Vision AI Key Configuration Modal
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [geminiKeyInput, setGeminiKeyInput] = useState<string>('');
-  const [geminiKeyStatus, setGeminiKeyStatus] = useState<{ has_key: boolean; model?: string; masked_key?: string | null } | null>(null);
-  const [settingsSaveNotice, setSettingsSaveNotice] = useState<string | null>(null);
+  useEffect(() => {
+    const handleFsChange = () => {
+      if (typeof document !== 'undefined') {
+        setIsFullscreen(Boolean(document.fullscreenElement));
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (typeof document === 'undefined') return;
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
+
+  const handleExitToNative = () => {
+    if (typeof document !== 'undefined' && document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    setLessonExportNotice('Đã thu nhỏ / chuyển về chế độ cửa sổ: Bạn có thể chọn PowerPoint, Bảng mặc định hoặc Menu hệ thống ở thanh tác vụ bên dưới / mép màn hình.');
+    setTimeout(() => {
+      setLessonExportNotice(null);
+    }, 6000);
+  };
 
   // Editorial 1-Tap QR Smart Notes Modal (Apple-Keynote Showcase)
   const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
   const [isLinkCopied, setIsLinkCopied] = useState<boolean>(false);
 
-  const fetchGeminiKeyStatus = async () => {
-    try {
-      let res: Response | null = null;
-      try {
-        res = await fetch('/api/v1/canvas/settings/gemini-key');
-      } catch {
-        res = await fetch('http://127.0.0.1:8000/api/v1/canvas/settings/gemini-key');
-      }
-      if (res && res.ok) {
-        const data = await res.json();
-        setGeminiKeyStatus(data);
-      }
-    } catch (err) {
-      console.warn('[Gemini Settings] Status check fallback:', err);
-    }
-  };
-
+  // Read Gemini Vision key from environment if provided, or rely on backend env
   useEffect(() => {
-    fetchGeminiKeyStatus();
+    if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+      localStorage.setItem('gemini_api_key', process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+    }
   }, []);
 
-  const handleSaveGeminiKey = async () => {
-    const key = geminiKeyInput.trim();
-    if (!key) return;
-    try {
-      let res: Response | null = null;
-      try {
-        res = await fetch('/api/v1/canvas/settings/gemini-key', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ gemini_api_key: key }),
-        });
-      } catch {
-        res = await fetch('http://127.0.0.1:8000/api/v1/canvas/settings/gemini-key', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ gemini_api_key: key }),
-        });
-      }
-
-      if (res && res.ok) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('gemini_api_key', key);
-        }
-        setSettingsSaveNotice('Đã xác thực và lưu Gemini 2.0 Flash Vision Key thành công!');
-        setGeminiKeyInput('');
-        fetchGeminiKeyStatus();
-      } else {
-        setSettingsSaveNotice('Không thể lưu key vào backend, đã lưu vào bộ nhớ trình duyệt!');
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('gemini_api_key', key);
-        }
-      }
-    } catch {
-      setSettingsSaveNotice('Đã lưu Gemini Key vào bộ nhớ cục bộ trình duyệt!');
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('gemini_api_key', key);
-      }
-    }
-    setTimeout(() => setSettingsSaveNotice(null), 3500);
-  };
 
   const demoBlueprints: Record<string, SimulationBlueprint> = {
     PHYS_RLC_PHASOR: {
@@ -217,12 +188,17 @@ export default function UnifiedPlatformPage() {
 
   return (
     <main className="w-screen h-screen overflow-hidden bg-[#F8F7F4] text-[#18181B] flex flex-col select-none font-sans relative">
+      <EngineHealthRail />
       {/* 1. TOP COMMAND HEADER (Editorial Daylight: 48px h-12) */}
       <header className="h-10 border-b border-[#E6E4DD] bg-white/95 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-50">
         {/* Left: Minimal Wordmark & Lesson Title */}
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs tracking-widest text-stone-900 font-bold">
             SOCRATIC VISION BOARD
+          </span>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold hidden md:inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+            Tính năng 1: Bảng Tương Tác Trên Lớp
           </span>
         </div>
 
@@ -238,32 +214,32 @@ export default function UnifiedPlatformPage() {
                 : 'text-stone-600 hover:text-stone-900'
             }`}
           >
-            01. Bảng Tương Tác & Mô Phỏng
+            01. Bảng Tương Tác Trên Lớp (Màn hình 86")
           </button>
-          <button
-            type="button"
+          <a
+            href="http://localhost:3002?tab=COMPANION"
+            target="_blank"
+            rel="noreferrer"
             data-testid="mode-tab-socratic"
-            onClick={() => setActiveMode('SOCRATIC')}
-            className={`px-3 py-1 rounded-lg text-xs transition cursor-pointer font-medium ${
-              activeMode === 'SOCRATIC'
-                ? 'bg-white text-stone-900 font-semibold shadow-xs'
-                : 'text-stone-600 hover:text-stone-900'
-            }`}
+            className="px-2.5 py-1 rounded-lg text-xs transition cursor-pointer font-medium text-stone-600 hover:text-purple-700 flex items-center gap-1.5"
+            title="Mở Gia sư Socratic 1:1 trên nền tảng sau giờ học (Tính năng 2)"
           >
-            02. Gia Sư Socratic 1:1
-          </button>
-          <button
-            type="button"
+            <span>02. Gia Sư Socratic 1:1</span>
+            <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono font-semibold">Tính năng 2</span>
+            <ExternalLink className="w-3 h-3 text-purple-500" />
+          </a>
+          <a
+            href="http://localhost:3002?tab=HEATMAP"
+            target="_blank"
+            rel="noreferrer"
             data-testid="mode-tab-analytics"
-            onClick={() => setActiveMode('ANALYTICS')}
-            className={`px-3 py-1 rounded-lg text-xs transition cursor-pointer font-medium ${
-              activeMode === 'ANALYTICS'
-                ? 'bg-white text-stone-900 font-semibold shadow-xs'
-                : 'text-stone-600 hover:text-stone-900'
-            }`}
+            className="px-2.5 py-1 rounded-lg text-xs transition cursor-pointer font-medium text-stone-600 hover:text-emerald-700 flex items-center gap-1.5"
+            title="Mở Phân tích lớp học & Smart Notes trên nền tảng sau giờ học (Tính năng 2)"
           >
-            03. Phân Tích Lớp Học & Smart Notes
-          </button>
+            <span>03. Phân Tích Lớp Học & Smart Notes</span>
+            <span className="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-mono font-semibold">Tính năng 2</span>
+            <ExternalLink className="w-3 h-3 text-emerald-500" />
+          </a>
         </div>
 
         {/* Right: Curriculum Depth Toggle, AI Settings & Export Action */}
@@ -299,23 +275,7 @@ export default function UnifiedPlatformPage() {
             </button>
           </div>
 
-          {/* Gemini AI Settings Button */}
-          <button
-            type="button"
-            data-testid="btn-gemini-settings"
-            onClick={() => {
-              setIsSettingsOpen(true);
-              fetchGeminiKeyStatus();
-            }}
-            className="text-xs border border-[#DCD9D0] bg-white hover:bg-stone-50 px-2.5 py-1.5 rounded-lg text-stone-700 font-medium shadow-xs transition cursor-pointer flex items-center gap-1.5"
-            title="Cài đặt Gemini 2.0 Flash Vision Key"
-          >
-            <Settings className="w-3.5 h-3.5 text-stone-500" />
-            <span className="hidden 2xl:inline">Cài đặt AI</span>
-            {geminiKeyStatus?.has_key && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Key đã kết nối" />
-            )}
-          </button>
+
 
           {/* Export Lecture & 1-Tap QR Smart Notes Modal Button */}
           <button
@@ -326,6 +286,56 @@ export default function UnifiedPlatformPage() {
           >
             <QrCode className="w-3.5 h-3.5 text-emerald-600" />
             <span className="hidden 2xl:inline">Xuất bài giảng</span>
+          </button>
+
+          {/* Bridge to Feature 2: After-School AI Tutor */}
+          <button
+            type="button"
+            data-testid="btn-open-feature-2-companion"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.open('http://localhost:3002', '_blank');
+              }
+            }}
+            className="text-xs border border-purple-200 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg text-purple-800 font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+            title="Mở Nền tảng Gia sư AI Socratic sau giờ học"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+            <span className="hidden xl:inline">Tính năng 2: Gia sư AI sau giờ học</span>
+            <ExternalLink className="w-3 h-3 text-purple-500" />
+          </button>
+
+          {/* Smartboard Display Mode & Escape Control (Toàn màn hình / Thu nhỏ) */}
+          <button
+            type="button"
+            data-testid="btn-toggle-fullscreen"
+            onClick={toggleFullscreen}
+            className="text-xs border border-stone-300 bg-white hover:bg-stone-50 px-2.5 py-1.5 rounded-lg text-stone-700 font-medium shadow-xs transition cursor-pointer flex items-center gap-1.5"
+            title={isFullscreen ? 'Thu nhỏ cửa sổ' : 'Phóng to toàn màn hình'}
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize2 className="w-3.5 h-3.5 text-stone-600" />
+                <span className="hidden 2xl:inline">Thu nhỏ</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-3.5 h-3.5 text-stone-600" />
+                <span className="hidden 2xl:inline">Toàn màn hình</span>
+              </>
+            )}
+          </button>
+
+          {/* Switch to Native Board Tasks (Về PowerPoint / Bảng vẽ gốc của trường) */}
+          <button
+            type="button"
+            data-testid="btn-native-board-switch"
+            onClick={handleExitToNative}
+            className="text-xs border border-amber-300 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg text-amber-900 font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+            title="Chuyển nhanh sang PowerPoint, Bảng vẽ gốc hoặc giao diện Android của bảng"
+          >
+            <Monitor className="w-3.5 h-3.5 text-amber-700" />
+            <span className="hidden xl:inline">Về tác vụ gốc</span>
           </button>
         </div>
       </header>
@@ -354,19 +364,51 @@ export default function UnifiedPlatformPage() {
         </div>
 
         {/* MODE 02: Socratic 1:1 Workspace */}
-        <div className={`w-full h-full ${activeMode === 'SOCRATIC' ? 'block' : 'hidden'}`}>
-          <SocraticWorkspaceMode curriculumLevel={curriculumLevel} />
+        <div className={`w-full h-full flex flex-col ${activeMode === 'SOCRATIC' ? 'block' : 'hidden'}`}>
+          <div className="bg-purple-50 border-b border-purple-200 px-4 py-2 flex items-center justify-between text-xs text-purple-900 shrink-0">
+            <span className="font-medium">
+              Phân hệ Gia Sư Socratic 1:1 đã được quy tụ sang Tính Năng 2 để học sinh và giáo viên sử dụng tự học sau giờ học.
+            </span>
+            <a
+              href="http://localhost:3002?tab=COMPANION"
+              target="_blank"
+              rel="noreferrer"
+              className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-3 py-1 rounded-lg flex items-center gap-1.5 transition shadow-xs"
+            >
+              <span>Mở Tính năng 2 tại cổng 3002</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <SocraticWorkspaceMode curriculumLevel={curriculumLevel} />
+          </div>
         </div>
 
         {/* MODE 03: Class Telemetry & Smart Notes Matrix */}
-        <div className={`w-full h-full ${activeMode === 'ANALYTICS' ? 'block' : 'hidden'}`}>
-          <ClassTelemetryMode
-            onJumpToBoard={(blueprintKey) => {
-              setActiveMode('BOARD');
-              setSelectedDemoBlueprint(demoBlueprints[blueprintKey] || null);
-            }}
-            onOpenQrNotes={handleOpenSmartNotesModal}
-          />
+        <div className={`w-full h-full flex flex-col ${activeMode === 'ANALYTICS' ? 'block' : 'hidden'}`}>
+          <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-2 flex items-center justify-between text-xs text-emerald-900 shrink-0">
+            <span className="font-medium">
+              Phân hệ Phân Tích Lớp Học & Smart Notes đã được quy tụ sang Tính Năng 2 để theo dõi ma trận nhận thức sau giờ học.
+            </span>
+            <a
+              href="http://localhost:3002?tab=HEATMAP"
+              target="_blank"
+              rel="noreferrer"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3 py-1 rounded-lg flex items-center gap-1.5 transition shadow-xs"
+            >
+              <span>Mở Tính năng 2 tại cổng 3002</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <ClassTelemetryMode
+              onJumpToBoard={(blueprintKey) => {
+                setActiveMode('BOARD');
+                setSelectedDemoBlueprint(demoBlueprints[blueprintKey] || null);
+              }}
+              onOpenQrNotes={handleOpenSmartNotesModal}
+            />
+          </div>
         </div>
       </div>
 
@@ -523,96 +565,6 @@ export default function UnifiedPlatformPage() {
         </div>
       )}
 
-      {/* 5. GEMINI AI VISION KEY SETTINGS MODAL */}
-      {isSettingsOpen && (
-        <div
-          data-testid="gemini-settings-modal"
-          className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
-        >
-          <div className="bg-white border border-[#E6E4DD] rounded-2xl max-w-md w-full p-6 shadow-2xl flex flex-col gap-4 font-sans text-[#18181B]">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E6E4DD]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#F2F0EA] border border-[#E5E3DC] flex items-center justify-center text-stone-700">
-                  <Key className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm text-[#18181B]">Cấu hình Gemini 2.0 Flash Vision</h3>
-                  <p className="text-[11px] text-stone-500">Kết nối trực tiếp backend AI Engine với Google Gemini</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsSettingsOpen(false)}
-                className="text-stone-400 hover:text-stone-700 text-sm font-mono p-1 rounded-md"
-              >
-                ✕
-              </button>
-            </div>
-
-            {settingsSaveNotice && (
-              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{settingsSaveNotice}</span>
-              </div>
-            )}
-
-            <div className="p-3 bg-[#F4F3EE] rounded-xl border border-[#E5E3DC] flex flex-col gap-1.5 text-xs">
-              <div className="flex justify-between items-center text-stone-600">
-                <span>Trạng thái Backend:</span>
-                <span className={`font-mono font-medium ${geminiKeyStatus?.has_key ? 'text-emerald-700' : 'text-amber-700'}`}>
-                  {geminiKeyStatus?.has_key ? 'Đã kích hoạt' : 'Chưa cấu hình (Dùng Heuristics Offline)'}
-                </span>
-              </div>
-              {geminiKeyStatus?.masked_key && (
-                <div className="flex justify-between items-center text-stone-600">
-                  <span>Key hiện hành:</span>
-                  <span className="font-mono text-stone-800 font-semibold">{geminiKeyStatus.masked_key}</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center text-stone-600">
-                <span>Model AI:</span>
-                <span className="font-mono text-stone-800">gemini-2.0-flash</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-stone-700">
-                Google Gemini API Key mới:
-              </label>
-              <input
-                type="password"
-                data-testid="input-gemini-key"
-                value={geminiKeyInput}
-                onChange={(e) => setGeminiKeyInput(e.target.value)}
-                placeholder="AIzaSy..."
-                className="w-full px-3 py-2 rounded-xl bg-[#FCFBF9] border border-[#DCD9D0] text-xs font-mono text-stone-900 placeholder-stone-400 focus:outline-none focus:border-blue-500"
-              />
-              <span className="text-[10px] text-stone-500 font-serif italic">
-                Key được gửi trực tiếp tới FastAPI /api/v1/canvas/settings/gemini-key và tự động lưu vào .env.
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2 border-t border-[#E6E4DD]">
-              <button
-                type="button"
-                onClick={() => setIsSettingsOpen(false)}
-                className="flex-1 py-2 rounded-xl border border-[#DCD9D0] bg-white hover:bg-stone-50 text-xs font-medium text-stone-700 transition cursor-pointer"
-              >
-                Đóng
-              </button>
-              <button
-                type="button"
-                data-testid="btn-save-gemini-key"
-                onClick={handleSaveGeminiKey}
-                disabled={!geminiKeyInput.trim()}
-                className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:translate-y-px text-white text-xs font-semibold transition cursor-pointer shadow-sm disabled:opacity-40"
-              >
-                Lưu và Xác thực
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

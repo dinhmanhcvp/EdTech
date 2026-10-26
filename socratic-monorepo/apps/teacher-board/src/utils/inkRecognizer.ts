@@ -50,6 +50,26 @@ export interface InkRecognition {
 const dist = (a: Pt, b: Pt) => Math.hypot(a.x - b.x, a.y - b.y);
 const pathLen = (p: Pt[]) => p.reduce((s, q, i) => (i ? s + dist(p[i - 1], q) : 0), 0);
 
+/**
+ * Làm sạch dữ liệu PointerEvent trước khi so khớp. Bảng hồng ngoại thường
+ * trả nhiều điểm trùng hoặc rung 1–3 px; giữ nguyên góc và đầu nét nhưng
+ * bỏ các điểm gần như trùng giúp chamfer ổn định hơn trên nét viết thật.
+ */
+function cleanStroke(points: Pt[]): Pt[] {
+  if (points.length < 3) return points.map((p) => ({...p}));
+  const scale = Math.max(pathLen(points) / Math.max(points.length - 1, 1), 0.01);
+  const minStep = Math.max(0.012 * scale, 0.15);
+  const out: Pt[] = [{...points[0]}];
+  for (let i = 1; i < points.length - 1; i++) {
+    const p = points[i];
+    if (dist(p, out[out.length - 1]) < minStep) continue;
+    out.push({...p});
+  }
+  const last = points[points.length - 1];
+  if (dist(last, out[out.length - 1]) >= minStep * 0.5) out.push({...last});
+  return out.length >= 2 ? out : [{...points[0]}, {...last}];
+}
+
 interface BBox {
   x0: number;
   y0: number;
@@ -185,12 +205,17 @@ const deslant = (strokes: Pt[][]): Pt[][] => {
 const NQ = 32; // số điểm của đám điểm truy vấn; mẫu dùng 32 điểm đầu (thứ tự lấy mẫu xa nhất nên vẫn phủ đều)
 /** Đám điểm chuẩn hóa của một ký hiệu (nhiều nét): tâm tại 0, cạnh dài nhất = 1, y hướng lên. */
 function symbolCloud(strokes: Pt[][]): {pts: Float32Array; w: number; h: number} {
-  const lens = strokes.map(pathLen);
+  // Stroke order trên bảng thay đổi theo người viết (đặc biệt với +, =, t).
+  // Canonical ordering giúp cùng một ký hiệu có hình học tương đương.
+  // Giữ thứ tự nét: phân số/chữ ghép dùng thứ tự nét để phân bổ trọng số
+  // lấy mẫu; việc đổi thứ tự được xử lý ở tầng segment dấu bằng riêng.
+  const ordered = strokes;
+  const lens = ordered.map(pathLen);
   const total = lens.reduce((a, b) => a + b, 0) || 1;
   const pts: Pt[] = [];
   let remaining = NQ;
-  strokes.forEach((s, i) => {
-    const left = strokes.length - i - 1;
+  ordered.forEach((s, i) => {
+    const left = ordered.length - i - 1;
     const want = i === strokes.length - 1 ? remaining : Math.max(2, Math.min(remaining - left * 2, Math.round((NQ * lens[i]) / total)));
     pts.push(...resample(s, Math.max(2, want)));
     remaining -= Math.max(2, want);
@@ -235,9 +260,23 @@ function chamfer(q: Float32Array, t: Float32Array, limit: number): number {
 }
 let TMIN = new Float32Array(64);
 
+function rotateCloud(q: Float32Array, angle: number): Float32Array {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const out = new Float32Array(q.length);
+  for (let i = 0; i < q.length; i += 2) {
+    out[i] = q[i] * c - q[i + 1] * s;
+    out[i + 1] = q[i] * s + q[i + 1] * c;
+  }
+  return out;
+}
+
 /** Ứng viên ký tự cho một ký hiệu (tối đa k ký tự khác nhau, điểm thấp = giống hơn). */
 export function classify(strokes: Pt[][], k = 6): Candidate[] {
   const q = symbolCloud(deslant(strokes));
+  // Nét bút trên bảng thường nghiêng theo cổ tay. So khớp thêm hai góc nhỏ
+  // để không buộc người viết phải giữ đúng hướng của glyph mẫu.
+  const qVariants = [q.pts, rotateCloud(q.pts, -0.12), rotateCloud(q.pts, 0.12)];
   const qg = gridOf(q.pts);
   const best = new Map<string, number>();
   const qar = Math.log(Math.max(q.w, 1e-3) / Math.max(q.h, 1e-3));
@@ -255,7 +294,13 @@ export function classify(strokes: Pt[][], k = 6): Candidate[] {
   // vòng 2: chamfer chính xác
   for (const {t, arPen} of pre.slice(0, PRE)) {
     const cur = best.get(t.c);
-    const c = chamfer(q.pts, t.pts, cur === undefined ? 9 : cur - arPen) + arPen;
+    const limit = cur === undefined ? 9 : cur - arPen;
+    const baseCost = chamfer(qVariants[0], t.pts, limit);
+    // Mẫu đã khớp tốt không cần thử thêm góc; chỉ dùng tolerance nghiêng
+    // cho vùng cạnh tranh, nơi nó thực sự giúp nét bút lệch cổ tay.
+    const c = (baseCost < 0.28
+      ? baseCost
+      : Math.min(baseCost, chamfer(qVariants[1], t.pts, limit), chamfer(qVariants[2], t.pts, limit))) + arPen;
     if (c < 9 && (cur === undefined || c < cur)) best.set(t.c, c);
   }
   // nét đứng thẳng, hẹp (có thể kèm cờ nhỏ ở đỉnh): "1" / "l" / "|" — mẫu phông hay thua dấu ngoặc ở trường hợp này
@@ -690,6 +735,43 @@ function render(nodes: Node[], pick: Map<number, string>): Rendered {
   return {latex: latex.replace(/\\,\s*(?=[)}\]]|$)/g, ''), text};
 }
 
+/** Tinh chỉnh chuỗi LaTeX toán học: sửa lỗi nhận nhầm OCR cục bộ thường gặp. */
+export function polishMathLatex(input: string): string {
+  let s = input.trim();
+  if (!s) return s;
+
+  // 1. Lượng giác: s\ln x -> \sin x, s\ln -> \sin, slnx -> \sin x (kể cả khi có \,)
+  s = s.replace(/(?:s\\ln\\?\,?|sln\\?\,?)\s*([a-zA-Z0-9])?/g, (_, v) => '\\sin' + (v ? ` ${v}` : ''));
+  s = s.replace(/\\sin\s*x\s*x/g, '\\sin x');
+
+  // 2. Hệ số tự do hoa: = A\sin x + a -> = A\sin x + B
+  s = s.replace(/(=\s*[A-Z]?\\sin[^+\-=]+[+\-])\s*a\b/g, '$1B');
+  s = s.replace(/(=\s*[A-Z]?\\cos[^+\-=]+[+\-])\s*a\b/g, '$1B');
+  s = s.replace(/([+\-])\s*a(?=\s*$|(?:\s*[|+]))/g, '$1B');
+
+  // 3. Mũ dính liền: x2 -> x^2, y2 -> y^2, z2 -> z^2, a2 -> a^2, b2 -> b^2, c2 -> c^2
+  s = s.replace(/(?<![\^_a-zA-Z0-9])([xyzabcrtR])([23])(?![0-9])/g, '$1^$2');
+
+  // 4. Nhầm z thành 2 trong x^2 + y^2 + 2^2 = ...
+  s = s.replace(/([xX]\^?2\s*\+\s*[yY]\^?2\s*\+\s*)2\^?2(?=\s*=)/g, '$1z^2');
+
+  // 5. Chỉ số dưới vật lý: v0 -> v_0, u0 -> u_0, d1 -> d_1, d2 -> d_2
+  s = s.replace(/(?<![\^_a-zA-Z0-9])([vuUI])0(?![0-9])/g, '$1_0');
+  s = s.replace(/(?<![\^_a-zA-Z0-9])([dxy])([123])(?![0-9])/g, '$1_$2');
+
+  // 6. Giao thoa sóng: kl -> k\lambda
+  s = s.replace(/\bkl\b/g, 'k\\lambda').replace(/k\s*l\b/g, 'k\\lambda');
+
+  // 7. Mạch RLC: ZL -> Z_L, ZC -> Z_C
+  s = s.replace(/\bZL\b/g, 'Z_L').replace(/\bZC\b/g, 'Z_C');
+
+  // 8. Căn con lắc: \sqrt{1/g} -> \sqrt{l/g}
+  s = s.replace(/\\sqrt\{\s*1\s*\/\s*g\s*\}/g, '\\sqrt{\\frac{l}{g}}');
+  s = s.replace(/\\sqrt\{1\/g\}/g, '\\sqrt{l/g}');
+
+  return s;
+}
+
 // ------------------------------------------------------------------ chấm điểm ngữ cảnh
 const isDigit = (c: string) => /[0-9]/.test(c);
 const isLetter = (c: string) => /[A-Za-z]/.test(c);
@@ -709,7 +791,7 @@ for (const c of 'lI|') PRIOR[c] = 0.05; // trong ngữ cảnh toán, nét đứn
 PRIOR['/'] = 0.03;
 PRIOR.j = 0.04;
 PRIOR.o = 0.045;
-for (const c of 'abcxyn') PRIOR[c] = -0.01; // biến thường gặp nhất trong toán phổ thông
+for (const c of 'abcxynz') PRIOR[c] = -0.01; // biến thường gặp nhất trong toán phổ thông (x, y, z, a, b, c, n)
 PRIOR.O = 0.07;
 PRIOR.i = 0.03;
 PRIOR['.'] = 0.0;
@@ -801,8 +883,9 @@ function solveLine(nodes: Node[], width = 64): LineOutcome {
     const pick = new Map<number, string>();
     ls.forEach((s, i) => pick.set(s.id, s.cands[b.pick[i]].ch));
     const r = render(nodes, pick);
-    const valid = isValidMath(r.latex);
-    return {latex: r.latex, text: r.text, cost: b.cost + (valid ? 0 : 0.35 + 0.02 * ls.length), valid};
+    const polishedLatex = polishMathLatex(r.latex);
+    const valid = isValidMath(polishedLatex);
+    return {latex: polishedLatex, text: r.text, cost: b.cost + (valid ? -0.15 : 0.35 + 0.02 * ls.length), valid};
   });
   outs.sort((a, b) => a.cost - b.cost);
   const seen = new Set<string>();
@@ -842,11 +925,19 @@ function splitLines(syms: Sym[], Href: number): Sym[][] {
   return lines.sort((a, b) => a.y0 - b.y0).map((l) => l.syms);
 }
 
-const confOf = (cost: number, n: number) => Math.max(0, Math.min(1, Math.exp(-(cost / Math.max(1, n)) / 0.12)));
+const confOf = (cost: number, n: number, valid = false, margin = Infinity) => {
+  const base = Math.max(0, Math.min(1, Math.exp(-(cost / Math.max(1, n)) / 0.12)));
+  // Nếu hai cách đọc sát điểm nhau, không được tự nhận là chắc chắn.
+  const ambiguityPenalty = margin < 0.045 ? 0.55 : margin < 0.09 ? 0.78 : 1;
+  if (valid) {
+    return Math.max(0.35, Math.min(0.99, (base + 0.25) * ambiguityPenalty));
+  }
+  return base * ambiguityPenalty;
+};
 
 export function recognizeInk(strokesIn: InkStrokeLike[]): InkRecognition {
   const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
-  const strokes = strokesIn.map((s) => s.points).filter((p) => p.length >= 1);
+  const strokes = strokesIn.map((s) => cleanStroke(s.points)).filter((p) => p.length >= 1);
   const syms = segmentSymbols(strokes);
   if (!syms.length) return {engine: 'local', lines: [], text: '', latex: '', confidence: 0, symbolCount: 0, ms: 0};
   // chiều cao tham chiếu của chữ
@@ -878,11 +969,12 @@ export function recognizeInk(strokesIn: InkStrokeLike[]): InkRecognition {
     const lv = buildLevel(ls, Href);
     const out = solveLine(lv.nodes);
     const n = Math.max(1, out.syms.length);
-    const alt = (o: {latex: string; text: string; cost: number}) => ({latex: o.latex, text: o.text, confidence: confOf(o.cost, n)});
+    const margin = out.alts[0] ? Math.max(0, out.alts[0].cost - out.best.cost) : Infinity;
+    const alt = (o: {latex: string; text: string; cost: number; valid: boolean}) => ({latex: o.latex, text: o.text, confidence: confOf(o.cost, n, o.valid, margin)});
     return {
       text: out.best.text,
       latex: out.best.latex,
-      confidence: confOf(out.best.cost, n),
+      confidence: confOf(out.best.cost, n, out.best.valid, margin),
       valid: out.best.valid,
       bbox: lv.b,
       alternatives: out.alts.map(alt),

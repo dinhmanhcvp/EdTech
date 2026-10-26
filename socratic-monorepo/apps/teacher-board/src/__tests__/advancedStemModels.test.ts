@@ -352,6 +352,8 @@ describe("Truyền tin tế bào GPCR và Apoptosis", () => {
 describe("Từ khóa đủ ngữ cảnh", () => {
   it.each([
     ["hình học Oxyz", "MATH_3D_OXYZ"],
+    ["x^2 + y^2 + z^2 = 10", "MATH_3D_OXYZ"],
+    ["x^2 + y^2 + 2^2 = 10", "MATH_3D_OXYZ"],
     ["tròn xoay f(x)=x^2; a=0; b=3", "MATH_INTEGRAL_3D_REVOLVE"],
     ["đường Euler", "MATH_DYNAMIC_GEOMETRY"],
     ["S_N2", "CHEM_SN2_MECHANISM"],

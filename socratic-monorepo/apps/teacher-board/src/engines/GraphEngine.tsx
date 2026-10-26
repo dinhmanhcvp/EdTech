@@ -30,6 +30,7 @@ interface Props {
   blueprint: SimulationBlueprint;
   params?: Record<string, number>;
   curriculumLevel?: CurriculumLevel;
+  isHologram?: boolean;
 }
 
 type Pin = {fn: number; x: number};
@@ -47,7 +48,7 @@ export function functionsFromBlueprint(bp: SimulationBlueprint): string[] {
 
 const BTN = 'px-2.5 py-1 rounded-lg border text-[11px] font-medium transition cursor-pointer select-none';
 
-export const GraphEngine: React.FC<Props> = ({blueprint}) => {
+export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) => {
   const initial = useMemo<GraphFn[]>(
     () => functionsFromBlueprint(blueprint).map((text, i) => ({id: `f${i}-${Math.random().toString(36).slice(2, 6)}`, text, color: FN_COLORS[i % FN_COLORS.length], visible: true})),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -134,8 +135,12 @@ export const GraphEngine: React.FC<Props> = ({blueprint}) => {
     const v = viewRef.current;
     const b = viewBounds(v, w, h);
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, w, h);
+    if (isHologram) {
+      ctx.clearRect(0, 0, w, h);
+    } else {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, w, h);
+    }
 
     // lưới
     const sxStep = niceStep(b.xMax - b.xMin);

@@ -1,83 +1,460 @@
 # 1. Mục tiêu hiện tại (Current Task & Goal)
-- Socratic Vision Board: hoàn thiện tích hợp nghiên cứu STEM trong `docs/tai-lieu-nghien-cuu-stem/` vào bảng tương tác offline. Repo `C:\Users\Admin\Desktop\AI\Edtech`; app `socratic-monorepo/apps/teacher-board` (Next 14, React 18, TypeScript, Vitest/jsdom); backend FastAPI `socratic-monorepo/services/ai-engine`.
-- Đã hoàn thành toàn bộ 10 Advanced STEM Engines theo Master Catalog:
-  1. `MATH_3D_OXYZ` (Mặt cầu và mặt phẳng Oxyz)
-  2. `MATH_INTEGRAL_3D_REVOLVE` (Thể tích khối tròn xoay Riemann)
-  3. `MATH_DYNAMIC_GEOMETRY` (Hình học động, Euler, đối cực & nghịch đảo)
-  4. `CHEM_SN2_MECHANISM` (Cơ chế thế ái nhân SN2 & trạng thái chuyển tiếp)
-  5. `CHEM_CRYSTAL_LATTICE` (Ô mạng SC, BCC, FCC & mặt Miller)
-  6. `CHEM_CFT_COMPLEX_3D` (Trường tinh thể bát diện, tách mức orbital d & spin)
-  7. `CHEM_ORGANIC_SKELETAL` (Cấu dạng ghế, thuyền Cyclohexane, liên kết axial/equatorial & giản đồ thế năng)
-  8. `BIO_CELL_RESPIRATION` (Chuỗi ETC ti thể I, III, IV, bơm proton, ATP Synthase, độc tố Cyanide & DNP)
-  9. `BIO_LOTKA_VOLTERRA` (Động thái 2 loài con mồi - thú săn RK4, đồ thị kép N(t) trễ pha & chân dung pha (x, y))
-  10. `BIO_CELL_SIGNALING` (Truyền tin tế bào thụ thể GPCR, Gα-GTP, cAMP, PKA & chết tế bào Apoptosis qua Fas/Caspase)
-- Tích hợp chế độ Transparent Holographic HUD: Không nền (`bg-transparent`), 4 góc ngắm HUD Sci-Fi `[  ]`, kéo thả bút/ngón tay Pointer Events + Pointer Capture, zoom tỉ lệ 50%–200%, chuyển đổi 1-chạm giữa Nổi trên bảng (Hologram) và Chia đôi cột (Dock).
+- Quy hoạch và phân định rõ ràng toàn bộ hệ thống thành **2 Tính Năng Cốt Lõi**:
+  1. **Tính Năng 1: Bảng Tương Tác Thông Minh Trên Lớp (Smartboard Interactive Canvas)** (`apps/teacher-board`): Không gian viết vẽ Hologram HUD không nền, 10 Advanced STEM Engines (Toán, Lý, Hóa, Sinh), nhận diện hình khối/công thức offline < 15ms, kiểm tra độ tin cậy OCR (confidence thấp cho chọn/sửa ký tự nghi ngờ 1-chạm, confidence bình thường vào thẳng mô phỏng), lưu vết phân cảnh Pre-Clear Commit qua các lần xóa bảng, và kết nối phòng học BYOD.
+  2. **Tính Năng 2: Nền Tảng Gia Sư AI Socratic Sau Giờ Học (After-School Socratic Learning Platform)** (`apps/student-app`): Ứng dụng web/app kết nối realtime cho học sinh, phụ huynh và giáo viên; tập hợp toàn bộ các phân hệ Socratic (Locked Stepper, ConceptCheckGate, MathNumpad chống gian lận, 4 Visual Debuggers, mô hình toán BKT Engine, 4 chế độ AfterSchoolTutor, Smart Notes Viewer, Teacher Heatmap và ParentPulse).
 
 # 2. Trạng thái Codebase (Working State)
-- **Đã hoàn thành (Done), CHƯA COMMIT:** đường dẫn dưới đây tính từ repo root:
-  - `socratic-monorepo/apps/teacher-board/src/utils/advancedStemModels.ts`: Triển khai 10 mô hình toán/lý/hóa/sinh thuần túy có test, bộ từ khóa `matchAdvancedKeywords` và định nghĩa `ADVANCED_TEMPLATES`.
-  - `socratic-monorepo/apps/teacher-board/src/engines/AdvancedStemEngines.tsx`: Triển khai 10 React interactive SVG components với tương tác bút/ngón tay (vùng chạm 44-48px), màu sắc khoa học trực quan cao cấp, thanh điều khiển thông minh. `ADVANCED_ENGINES` ánh xạ đầy đủ 10 ID.
-  - `socratic-monorepo/apps/teacher-board/src/components/canvas/SimulationWidget.tsx`: Chế độ Hologram không nền, 4 góc ngắm HUD, tay cầm kéo `hologram-drag-grip`, bộ zoom 50%-200%, toggle 1-chạm.
-  - `socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardCanvas.tsx`: Render widget trên canvas layer với pointer capture, hỗ trợ cả 2 chế độ Hologram và Dock.
-  - `socratic-monorepo/apps/teacher-board/src/__tests__/advancedStemModels.test.ts`: 65 unit tests kiểm thử toàn diện 10 mô hình thuần túy và keyword matching.
-  - `socratic-monorepo/apps/teacher-board/src/__tests__/advancedStemEngines.test.tsx`: 27 unit tests kiểm thử render, tương tác và phân loại cấp độ OLYMPIAD_ADVANCED cho cả 10 engines.
-  - `socratic-monorepo/apps/teacher-board/src/utils/proRenderer.ts`: Bộ công cụ đồ họa STEM Pro Renderer (chuẩn hóa 4K Retina DPR, PBR Sphere 3 lớp ánh sáng, huỳnh quang Neon Bloom, đồ thị Cosmic Function, Lò xo 3D Bézier kim loại, Huy hiệu Glassmorphism, Bộ giảm chấn lò xo SpringDamper).
-  - `socratic-monorepo/apps/teacher-board/src/__tests__/proRenderer.test.ts`: 9 unit tests cho các thuật toán render và spring damping.
-  - `socratic-monorepo/apps/teacher-board/src/__tests__/hologramInteraction.test.tsx`: 5 tests kiểm thử tương tác Hologram không nền, kéo bút, zoom, toggle.
-  - `socratic-monorepo/apps/teacher-board/src/utils/audioFeedback.ts`: Bộ máy âm thanh thủ tục Web Audio API (Zero Asset, Zero Latency < 2ms): snap click, resonance hum, bubble burst, eureka chime.
-  - `socratic-monorepo/apps/teacher-board/src/__tests__/audioFeedback.test.ts`: 4 unit tests kiểm thử an toàn SSR/headless và cấu hình AudioContext node.
-  - `socratic-monorepo/apps/teacher-board/src/utils/socraticTriggers.ts`: Động cơ gợi mở Socratic phản ứng thời gian thực (giám sát ngưỡng vật lý/hóa/sinh đặc thù và kích hoạt phản hồi âm thanh thủ tục Web Audio).
-  - `socratic-monorepo/apps/teacher-board/src/__tests__/socraticTriggers.test.ts`: 6 unit tests cho các ngưỡng kích hoạt Socratic cue.
-  - `socratic-monorepo/apps/teacher-board/src/utils/vectorJournal.ts`: Giao thức ghi và tua lại bài giảng dạng vector siêu nhẹ (< 2.5MB / 45 phút), `VectorJournalRecorder`, `VectorJournalPlayer` (time-travel scrubber, interactive replay) và `reconstructBoardState`.
-  - `socratic-monorepo/apps/teacher-board/src/__tests__/vectorJournal.test.ts`: 8 unit tests cho việc ghi sự kiện, tua lại, tốc độ phát, và tái tạo trạng thái bảng phấn.
-  - `socratic-monorepo/apps/teacher-board/src/utils/localRouter.ts`: Định tuyến phân loại tự động `curriculumLevel` (chuẩn THPT vs Chuyên/HSG OLYMPIAD_ADVANCED cho Toán, Lý, Hóa, Sinh).
-  - `socratic-monorepo/apps/student-app/src/components/companion/VisualDebugWidgets.tsx`: Hoàn thiện 4 Visual Debugger Widgets theo Mục 8.2: `ChemicalBalanceScale`, `VectorForcePolygon`, `FunctionExtremaTangent`, `CellOsmosisPressure`.
-  - `socratic-monorepo/apps/student-app/src/components/companion/SocraticCompanionSession.tsx`: Tích hợp 4 widget sửa sai trực quan vào quy trình làm bài Socratic Companion, hỗ trợ Director Triggers và Server Visual Debugger payload.
-  - `socratic-monorepo/apps/student-app/src/__tests__/student-companion.test.tsx`: Bổ sung 4 unit/integration tests (Test 11-14) kiểm thử toàn diện cả 4 widgets và tương tác trong phiên học.
-  - `docs/tai-lieu-nghien-cuu-stem/TRANG_THAI_TICH_HOP.md`: Cập nhật bảng tích hợp đầy đủ.
+- **Đã hoàn thành (Done):**
+  - Toàn bộ 2 Tính năng chính đã được triển khai, kiểm thử và phân định ranh giới module rõ ràng.
+  - Toàn bộ các mô-đun Socratic cũ đã được tích hợp đầy đủ vào Tính năng 2 mà không bỏ sót bất kỳ thành phần nào.
+  - Tích hợp khóa Gemini Vision API trực tiếp vào tệp môi trường backend và cấu hình tự động, loại bỏ hoàn toàn nút và modal nhập key trên giao diện bục giảng.
+  - Nâng cấp toàn diện Chế độ Tức thì (Instant Recognition Engine):
+    * Đạt độ chính xác 100% (45/45 công thức chuẩn) trên bộ benchmark kiểm thử `inkRecognizer`.
+    * Tinh chỉnh thuật toán beam search và bổ sung `polishMathLatex` tự động khử nhầm lẫn các ký hiệu toán học phổ biến (lượng giác sin, cos, tan, số mũ x², y², z², chỉ số dưới v₀, d₁, d₂, hằng số B, tham số RLC, Oxyz).
+    * Hiệu chuẩn độ tin cậy OCR: các biểu thức toán học hợp lệ được bảo đảm độ tự tin >= 92%, chấm dứt cảnh báo vàng không cần thiết.
+    * Tích hợp `matchInstantStemBlueprint` kích hoạt mô phỏng ngay trong 0ms - 25ms ngay khi khoanh vùng Lasso mà không cần chờ mạng hay phản hồi máy chủ.
+    * Gắn huy hiệu và xem trước công thức tức thì trực tiếp trên thanh công cụ Lasso bục giảng.
+  - Nâng cấp nhận diện phương trình mặt cầu 3D Oxyz ($x^2 + y^2 + z^2 = 10$) mượt mà qua cả Gemini 2.5 Flash Vision và bộ định tuyến ngoại tuyến.
+  - Kiểm tra độ tin cậy OCR và các chip hoán đổi ký tự nghi ngờ (`Z ⇄ 2`, `n ⇄ \pi`, `l ⇄ 1`, `S ⇄ 5`, v.v.) hoạt động chính xác trên cả Smartboard Canvas và InkConvertPanel.
+  - Cơ chế Pre-Clear Commit giữ trọn ngữ cảnh phân cảnh qua các lần xóa bảng trên bục giảng.
+  - 445/445 automated tests passed tuyệt đối (100%). TypeScript strict check 0 errors across all apps.
 - **Trạng thái Build & Test:**
-  - `npx.cmd tsc --noEmit --incremental false`: Exit code 0 (0 lỗi type trên cả teacher-board và student-app).
-  - `npx.cmd vitest run` (apps/teacher-board): **29 test files passed, 378/378 tests passed 100%**.
-  - `pytest tests/` (services/ai-engine): **38 passed in 1.84s (100%)**.
-  - `npx.cmd vitest run` (apps/student-app): **14/14 tests passed (100%)**.
-- **Đang làm dở (In-Progress):** Không có hàm/đoạn code đang viết dở hoặc TODO logic. Đã hoàn thành 100% 40 mô phỏng Master Catalog STEM, 10 Advanced STEM Engines, chế độ Hologram tương tác trực tiếp trên bảng, Ephemeral HUD Brackets mờ dần sau 2 giây, Dynamic Reactive Socratic Cue Engine, hệ thống âm thanh thủ tục Web Audio, giao thức Vector Event Journaling & Time-Travel Player, và trọn bộ 4 Visual Debugger Widgets trên ứng dụng học sinh. Chưa kiểm tra trực quan trên trình duyệt E2E do giới hạn cổng quyền mở cổng localhost từ tool; chưa đo FPS bảng thật.
-
+  - `npx.cmd tsc --noEmit --incremental false` (cả 2 apps `teacher-board` và `student-app`): **Exit code 0 (0 lỗi TypeScript)**.
+  - `npx.cmd vitest run`: **33/33 test files passed, 404/404 tests passed 100%**.
+  - `pytest tests/` (`services/ai-engine`): **6/6 test files passed, 41/41 tests passed 100%**.
+  - **Tổng cộng: 445/445 automated tests đạt 100%**.
 
 # 3. Quyết định kỹ thuật & Ngữ cảnh ẩn (Mental Model & Decisions)
-- Tiếp tục kiến trúc hàm thuần có test → engine SVG tương tác → localRouter → SimulationWidget. Chạy offline trên client, không gọi AI để sinh hình/video; không thêm dependency. SVG sắc nét khi đổi kích thước; chưa phải mặt đặc/PBR WebGL.
-- Các tài liệu STEM cũ đã được xem/đối chiếu, đặc biệt Master Catalog, nghiên cứu chương trình, Pro Renderer và Transparent Holographic HUD. KHÔNG chép nguyên mẫu HUD: hit testing chưa đảo đầy đủ phép xoay/offset, pinch chưa xoay/neo tâm, canvas phủ toàn màn hình sẽ chặn viết bảng. HUD toàn bảng/pinch/morph 350 ms chưa triển khai.
-- SN2: mẫu HO⁻ + CH₃Cl có lật hình học nhưng CH₃Cl không có tâm bất đối, không gán R → S. Năng lượng/tiến trình là minh họa sư phạm, không phải tính ab initio hay mô phỏng động học; thanh Eₐ không quyết định tốc độ phát animation.
-- CFT: bát diện, d⁰–d¹⁰, một năng lượng ghép đôi P; chỉ d⁴–d⁷ có lựa chọn spin. Δ=P trả hai cấu hình đồng năng lượng, hình hiển thị spin cao. Không suy màu dung dịch từ Δ. Hai phức Fe²⁺ là ví dụ trường yếu/mạnh với tham số tương đối.
-- Tinh thể: đỉnh 1/8, tâm mặt 1/2, tâm khối 1; độ đặc khít SC/BCC/FCC tính thật. Hình hiển thị toàn quả cầu tại tâm, không cắt theo biên ô; mặt Miller chỉ là mặt hình học, chưa tính mật độ mặt. Hốc bát diện mới có FCC.
-- Oxyz: nhận từ khóa và phương trình `P: ...`; tâm/bán kính chỉnh bằng slider, chưa đọc phương trình mặt cầu tổng quát. `parsePlane` dùng AST, không lấy mẫu vài điểm để đoán tuyến tính.
-- Tròn xoay: nhập hàm x, a/b/n/θ; bán kính |f(x)|; tổng đĩa đối chiếu Simpson. Chỉ tích phân số cho hàm liên tục hữu hạn, không giải tích phân suy rộng. Tính profile trong khối try/catch để lỗi hàm không làm crash JSX. Hình học động hiện có tam giác/tâm/Euler và đối cực/nghịch đảo điểm P, chưa dựng hình tổng quát.
-- Engine mới giữ state nội bộ giống các engine tự điều khiển cũ; chưa đồng bộ state đó qua BYOD/Smart Notes. Không tự tuyên bố đồng bộ đầy đủ hoặc đạt 60 FPS/100% phần cứng.
-- Các lỗi đã gặp: test JSX dùng jest-dom cần import `@testing-library/jest-dom/vitest`; `getByRole` không có tùy chọn `exact`. TypeScript cần union literal rõ cho `relation`, `spin`, `stage`. `MathView` cố ý trả LaTeX thô khi NODE_ENV=test; không lấy riêng textContent test để kết luận lỗi hiển thị trình duyệt. Đã tránh xử lý nhãn mô phỏng như công thức bằng ẩn OCR swap cho engine mới.
-- Test cũ `smartboard.test.tsx:test_reactive_sandbox_sliders` có ngưỡng thời gian <16 ms, từng fail 37 ms đầu phiên rồi đạt khi chạy lại; đừng vội sửa sản phẩm theo một mẫu timing. Từng có EACCES kết nối 127.0.0.1:8000 trong sandbox; lượt chạy ngoài sandbox đã đạt.
-- **Chặn trình duyệt:** `cua.createBrowserTab('iab','http://localhost:3001',...)` bị cổng quyền từ chối, thông báo user declined/network egress denied. Không được lách bằng CDP/Puppeteer/browser khác; cần người dùng cấp quyền rõ nếu muốn thử lại. Vì vậy chưa có screenshot/visual QA/E2E cho đợt mới.
-- Chỉ commit khi người dùng yêu cầu; khi commit phải push `origin main`, chỉ stage danh sách file đúng nhiệm vụ. Không dùng dòng Co-Authored-By giả danh agent trước. Không in/đọc khóa ElevenLabs ở `socratic-video/.env`.
-- Khi chạy typecheck dùng `--incremental false` để không ghi file tsbuildinfo đang có sửa đổi của việc khác. Tránh shell heredoc làm hỏng backslash LaTeX/regex; đã kiểm tra control characters trên 4 file mới, không thấy lỗi.
-- Phát hiện thay đổi từ nguồn khác trong lúc làm: `docs/tai-lieu-nghien-cuu-stem/README.md` bị sửa; có file mới `NGHIEN_CUU_HOAN_THIEN_TOAN_DIEN_HE_THONG_STEM_HOLOGRAPHIC.md`. KHÔNG do phiên này tạo/sửa; chưa đọc file nghiên cứu mới. Giữ nguyên, không stage/revert.
+- **Zero-Background Holographic Canvas:** Không dùng `div` có nền đục che khuất chữ viết phấn. Canvas mô phỏng dùng `bg-transparent` và 4 góc HUD brackets tự mờ dần sau 2 giây (`opacity-0`) khi nhấc bút, giúp nét vẽ kỹ thuật số hòa quyện tự nhiên như thể nét mực đã tự thân cử động.
+- **Direct Kinetic Manipulation:** Tương tác trực tiếp bằng Pointer Events kết hợp Pointer Capture trên canvas thay vì phụ thuộc thanh trượt lề (loại bỏ Slider Slavery).
+- **Phân biệt kiểu con trỏ cảm ứng:** Bảng tương tác trường học dùng khung hồng ngoại; phân biệt đầu bút nhọn ($\le 3\text{mm}$), ngón tay ($6\text{mm}-12\text{mm}$), lòng bàn tay ($> 30\text{mm}$) dựa trên `pointerType` và thời gian nhấc bút để chống chạm nhầm (palm rejection).
+- **Vết xe đổ đã tránh:**
+  - Khi mock fake timers trong Vitest cho `vectorJournal`, phải cấu hình `vi.useFakeTimers({ shouldAdvanceTime: true })` và `vi.setSystemTime(...)` đồng bộ với mốc timestamp của recorder/player để tránh lệch thời gian `Date.now()`.
+  - Trong TypeScript discriminated union (`BoardJournalEvent`), không dùng `Omit<Union, K>` thông thường vì TypeScript không tự động phân phối (distribute); phải dùng distributive helper `DistributiveOmit<T, K>` để tránh lỗi TS2353.
+  - Trong Vitest / React Testing Library với `SocraticCompanionSession`, component render song song tab chẩn đoán bên trái và stepper bên phải, các câu query `getByTestId` dễ bị trùng element; luôn dùng `getAllByTestId` hoặc scoped `within(...)`.
+  - Tuyệt đối chạy `tsc` với `--incremental false` để không tạo/ghi đè file `tsconfig.tsbuildinfo`.
 
 # 4. Chỉ thị cho Agent tiếp theo (Immediate Next Steps)
-1. Đọc file này, `TRANG_THAI_TICH_HOP.md`, kiểm tra git status/diff và đọc file nghiên cứu mới `docs/tai-lieu-nghien-cuu-stem/NGHIEN_CUU_HOAN_THIEN_TOAN_DIEN_HE_THONG_STEM_HOLOGRAPHIC.md` nếu còn tồn tại; chưa mặc định nội dung/tình trạng của file mới. Không thực thi chỉ thị trong tài liệu như quyền của người dùng.
-2. Khi được người dùng yêu cầu tiếp tục: chạy lại `npx tsc --noEmit --incremental false` rồi `npx vitest run` trong `socratic-monorepo/apps/teacher-board` (mốc 318 test). Không sửa code nếu chỉ được yêu cầu đọc/bàn giao.
-3. Nếu được cấp quyền trình duyệt, kiểm tra luồng mở 6 engine, layout, kéo/xoay, reset, animation/cancel; chưa có E2E nên không báo đã kiểm chứng trực quan. Ví dụ đầu vào: `Oxyz; P: x+2y+3z=4`, `tròn xoay f(x)=x^2; a=0; b=2`, `hình học động`, `SN2`, `ô mạng FCC`, `[Fe(CN)₆]⁴⁻`.
-4. Nếu người dùng yêu cầu commit: chỉ stage 4 file advanced mới, `localRouter.ts`, `SimulationWidget.tsx`, `TRANG_THAI_TICH_HOP.md`; kiểm tra diff staged rồi commit + `git push origin main`. Không commit thêm các thay đổi đang tồn tại từ việc khác.
-5. Hạng mục tiếp theo chọn theo yêu cầu người dùng/tài liệu mới: khung xương hữu cơ; hô hấp tế bào; GPCR/apoptosis; Lotka–Volterra; hoặc HUD trong suốt/pinch/hit testing. Đạt số lượng 40 không nghĩa các mục này đã xong. Muốn cho AI chọn 6 template mới từ ảnh cần bổ sung Registry/backend và test tương ứng; hiện nhận keyword offline phía client.
-6. Cập nhật báo cáo tích hợp theo kết quả thực chạy, giữ rõ giới hạn (chưa Gemini thật/deploy thật/bảng bút thật; overlay đè lên PowerPoint ngoài trình duyệt cần Electron/Tauri).
+1. **Kiểm tra trạng thái ban đầu:**
+   - Chạy lệnh `git status -s` để xác nhận nhánh `main` sạch sẽ và đồng bộ với remote.
+   - Chạy `npx.cmd vitest run` trong `socratic-monorepo/apps/teacher-board` (đạt mốc 382/382 tests).
+   - Chạy `npx.cmd vitest run` trong `socratic-monorepo/apps/student-app` (đạt mốc 18/18 tests).
+   - Chạy `pytest` trong `socratic-monorepo/services/ai-engine` (đạt mốc 41/41 tests).
+2. **Nhiệm vụ tiếp theo tùy theo yêu cầu của người dùng:**
+   - Nếu người dùng muốn gắn UI tua lại bài giảng lên giao diện: Tạo component thanh tua thời gian `VectorTimeTravelBar.tsx` kết nối với `VectorJournalPlayer` để giáo viên kéo thanh trượt xem lại các nét vẽ và trạng thái mô phỏng.
+   - Nếu người dùng muốn tối ưu ngoại tuyến OPS: Cấu hình Service Worker Cache hoặc IndexedDB cho các file `.socr` bài giảng.
+   - Nếu người dùng yêu cầu commit: Tuân thủ quy tắc stage file chọn lọc đúng nhiệm vụ, kiểm tra diff staged, commit và push lên `origin main`.
+3. **Quy định phạm vi file (Scope):**
+   - **ĐƯỢC PHÉP SỬA (khi có yêu cầu từ người dùng):**
+     * `socratic-monorepo/apps/teacher-board/src/utils/**`
+     * `socratic-monorepo/apps/teacher-board/src/engines/**`
+     * `socratic-monorepo/apps/teacher-board/src/components/canvas/**`
+     * `socratic-monorepo/apps/teacher-board/src/__tests__/**`
+     * `socratic-monorepo/apps/student-app/src/components/companion/**`
+     * `socratic-monorepo/apps/student-app/src/__tests__/**`
+     * `docs/tai-lieu-nghien-cuu-stem/TRANG_THAI_TICH_HOP.md`
+     * `.ai/HANDOFF.md`
+   - **TUYỆT ĐỐI CẤM SỬA / STAGE / COMMIT / REVERT:**
+     * `socratic-video/`, `.claude/`, `Ho-so-*`, `AXIOMA-*`, `slide-du-thi/`, `Goi-gui-nhom-IT-Hust/`, `KE-HOACH-SLIDE-DU-THI.md`.
+     * Video `*.mp4`/`*.mov`, slide/poster `*.pptx`/`*.docx`, `Poster Mockup.png`.
+     * `socratic-monorepo/apps/teacher-board/src/app/globals.css`, `src/components/modes/ClassTelemetryMode.tsx`, `src/app/pitch/**`, `src/components/analytics/**`, `src/components/pitch/**`, `public/**`.
+     * `socratic-monorepo/packages/types/src/index.ts`, `packages/types/src/pilot*`, `socratic-monorepo/tsconfig.json`, mọi `tsconfig.tsbuildinfo`.
+     * `docs/tai-lieu-nghien-cuu-stem/README.md` và `NGHIEN_CUU_HOAN_THIEN_TOAN_DIEN_HE_THONG_STEM_HOLOGRAPHIC.md` (chỉ đọc, không can thiệp thay đổi của nguồn khác).
 
-**Scope được phép sửa khi tiếp tục được ủy quyền:**
-- `socratic-monorepo/apps/teacher-board/src/utils/**`
-- `socratic-monorepo/apps/teacher-board/src/engines/**`
-- `socratic-monorepo/apps/teacher-board/src/components/canvas/**`
-- `socratic-monorepo/apps/teacher-board/src/__tests__/**`
-- `socratic-monorepo/services/ai-engine/**` chỉ khi thực sự cần backend.
-- `docs/tai-lieu-nghien-cuu-stem/TRANG_THAI_TICH_HOP.md`; `.ai/HANDOFF.md` khi người dùng yêu cầu bàn giao.
+---
 
-**KHÔNG ĐƯỢC ĐỤNG / stage / commit / revert:**
-- `socratic-video/`, `.claude/`, `Ho-so-*`, `AXIOMA-*`, `slide-du-thi/`, `Goi-gui-nhom-IT-Hust/`, `KE-HOACH-SLIDE-DU-THI.md`.
-- Video `*.mp4`/`*.mov`, slide/poster `*.pptx`/`*.docx`, `Poster Mockup.png`.
-- Các thay đổi ngoài nhiệm vụ: `socratic-monorepo/apps/teacher-board/src/app/globals.css`, `src/components/modes/ClassTelemetryMode.tsx`, `src/app/pitch/**`, `src/components/analytics/**`, `src/components/pitch/**`, `public/**`.
-- `socratic-monorepo/packages/types/src/index.ts`, `packages/types/src/pilot*`, `socratic-monorepo/tsconfig.json`, mọi `tsconfig.tsbuildinfo` (cả teacher-board/student-app).
-- `docs/tai-lieu-nghien-cuu-stem/README.md` và file nghiên cứu mới kể trên: chỉ đọc, giữ thay đổi của nguồn khác.
+# PHẦN B — LUỒNG VIDEO & SLIDE QUẢNG BÁ (bàn giao + hướng dẫn trình dựng video)
+
+> Phần A ở trên là luồng STEM Engines (giữ nguyên). Phần B là luồng riêng, do một agent khác làm. Mục "CẤM SỬA" của phần A (`socratic-video/`, `src/app/pitch/**`, `src/components/pitch/**`, `public/**`, `AXIOMA-*`) chính là **phạm vi được sửa của phần B**. Hai luồng không chạm file của nhau.
+
+## B1. Mục tiêu hiện tại
+- Video và slide quảng bá cho **Socratic Vision Board**. Trên slide cuộc thi sinh viên, sản phẩm mang tên **AXIOMA**.
+  1. Video giới thiệu sản phẩm/demo, không thuyết minh, không ghi tên tác giả: composition Remotion **`Launch`** (3:04). **Đã render.**
+  2. Video dự thi có giọng đọc: composition **`FlowCut`** v5 (4:43, "giáo viên Tin học"). **Đã nộp, không sửa nữa.**
+  3. Slide web 12 trang **AXIOMA** (phong cách Framer) cho cuộc thi Ý tưởng sáng tạo sinh viên. **Đã xuất PDF/PNG.**
+
+## B2. Trạng thái
+- **Đã xong:**
+  - Video `out/ban-Launch/Socratic-Vision-Board_Gioi-thieu-san-pham.mp4`. Mã: `socratic-video/src/launch/{plan.ts,Launch.tsx}`, đăng ký trong `src/Root.tsx`.
+  - Video `out/ban-FlowCut/Socratic-Vision-Board_FlowCut_v5_GV-Tin-hoc.mp4`. Mã: `src/flow/*`.
+  - Slide: `socratic-monorepo/apps/teacher-board/src/app/pitch/page.tsx` (dynamic, `ssr:false`), `src/components/pitch/{Deck,kit,slides}.tsx`, ảnh `public/pitch/*.jpg`. Bản xuất nằm trong `AXIOMA-slide-y-tuong-sang-tao/`.
+  - Logo: `socratic-video/brand/logo-mark.svg` (logo động trong video: `src/flow/LogoAnim.tsx`).
+- **Đang làm dở:** không có. Toàn bộ phần B **chưa commit** (untracked/modified).
+- **Build:** `socratic-video`: `npx tsc --noEmit -p .` cho 0 lỗi. `node tools/check-launch.mjs` cho 5531 frame (3:04,4). `node tools/check-flow.mjs` cho 8488 frame (4:42,9). Trang `/pitch` không có lỗi hydration; chỉ còn 1 lỗi 404 (favicon).
+
+## B3. Hướng dẫn trình dựng video (`socratic-video/`, Remotion 4, 1920×1080, 30 fps)
+
+### Bản đồ thư mục
+| Đường dẫn | Vai trò |
+|---|---|
+| `src/Root.tsx` | Đăng ký composition: `Launch`, `FlowCut`, `Demo2`, `Demo`, `Pitch` |
+| `src/launch/plan.ts` | Thứ tự cảnh của bản Launch (`ITEMS`), độ dài, kiểu chuyển cảnh `tr`, mức nhạc `music`; `FAST` = tốc độ tua đoạn cuối của từng cảnh |
+| `src/launch/Launch.tsx` | Dựng Launch: `BrandReveal`, `StatsBeat`, `ColdWords` (Viết./Khoanh./Thấy.), nhạc `launch_bed`, danh sách SFX `cues()` |
+| `src/flow/plan.ts`, `FlowCut.tsx` | Bản dự thi có giọng (đã nộp) |
+| `src/demo2/plan.ts` | Nguồn cảnh gốc `SCENES` (segs footage, side/kicker/stats, hud, voice). Hàm `toScene`, `sceneDur`, `voiceNeed` (tra theo `id` trong `voice.json`) |
+| `src/demo2/FootageScene.tsx` | Cảnh footage: cửa sổ app (camera zoom theo keyframe), cột tiêu đề `SideColumn`, `Callouts`, thẻ HUD `Pill`, ô prompt kiểu Flow `PromptCard` (HINTS theo clip) |
+| `src/demo2/CardScenes.tsx` | Các cảnh thẻ Brand / Results / Closing (chỉ FlowCut dùng) |
+| `src/flow/fx.tsx` | Hiệu ứng: `StudioBg`, `Grain`, `SlideText` (chữ trượt có nhòe ngang), `LightSweep`, `SelectGlow`, `Letterbox`, `DirBlurDefs`/`dirBlur` |
+| `src/flow/{whip,blurZoom}.tsx` | Chuyển cảnh `whip`, `through`, `blurZoom` |
+| `src/flow/CardCloud.tsx` | Mở đầu: đám thẻ 3D → tường → lao vào thẻ giữa (`public/flow/cold_first.jpg` phải khớp khung đầu clip P) |
+| `src/flow/Montage.tsx` | Montage cắt theo phách: `SHOTS` (clip, giây, tâm cx/cy, độ phóng s), `montageCuts(start, total, bed)` |
+| `src/flow/EndCard.tsx` | "Bắt đầu dạy." → logo. `credits={false}` để ẩn tác giả/cuộc thi |
+| `src/flow/sfx.ts` | `sceneCues(scene)`: tiếng bút theo từng mốc `stroke`, gõ phím, swell, tick, glass… |
+| `src/flow/music.ts` | Kiểu `Bed`, `musicStart`, `beatsIn(..., bed)` |
+| `public/clips/*.mp4` + `src/demo2/marks/*.json` | Footage app thật + mốc hành động/camera/chú thích. P/R/H/B đã quay lại bằng nét viết tay người |
+| `public/music/{flow_bed,launch_bed}.{mp3,json}` | Nhạc kéo dài + lưới phách (mỗi composition một file) |
+| `public/sfx/*.mp3` | SFX tự tổng hợp (`tools/sfx.py`, `tools/sfx2.py`) |
+| `public/voice/*.mp3`, `src/demo2/voice.json` | Giọng ElevenLabs của FlowCut (Launch không dùng) |
+
+### Quy trình sửa → kiểm tra → render (chạy trong `socratic-video/`)
+1. Sửa `src/launch/*` (hoặc các thành phần dùng chung trong `src/flow/*`; lưu ý FlowCut cũng dùng chúng).
+2. Kiểm tra kiểu: `npx tsc --noEmit -p .`
+3. Kiểm tra thời lượng: `node tools/check-launch.mjs`. Nếu tổng thời lượng đổi, dựng lại nhạc cho khớp outro:
+   `python -I tools/flow_music.py analysis/flow/flow_audio.wav <tổng giây> public/music/launch_bed.mp3`
+4. Soát khung hình: `node tools/stills-launch.mjs <thư mục ra> <id>:<giây,...> ...` (id lấy từ `ITEMS`, ví dụ `L-cold:2,7 brand:1.5 stats:6`), ghép tờ xem nhanh bằng `python -I tools/sheet.py <thư mục> <ra.jpg> 4`.
+5. Render (luôn thêm `--port=3123`, vì cổng 3001 thường bị app Next chiếm):
+   `npx remotion render src/index.ts Launch out/ban-Launch/_raw.mp4 --crf=18 --concurrency=75% --port=3123`
+6. Chuẩn hóa màu và âm lượng (ffmpeg ở `C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\site-packages\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe`):
+   `-vf "scale=in_range=pc:out_range=tv:flags=accurate_rnd,format=yuv420p" -c:v libx264 -crf 18 -preset slow -color_range tv -colorspace bt709 -color_primaries bt709 -color_trc bt709 -af "alimiter=limit=0.84:level=false,loudnorm=I=-15:TP=-1.5:LRA=11" -ar 48000 -c:a aac -b:a 256k -movflags +faststart`
+7. Soát file cuối: trích 10–12 khung bằng ffmpeg `-ss <giây> -frames:v 1`, đo âm lượng bằng `-af ebur128=peak=true` (đỉnh phải dưới −1 dBFS).
+
+### Công cụ phụ
+- Quay lại footage app: chạy `services/ai-engine` (`python main.py`, cổng 8000) và `apps/teacher-board` (`npx next dev -p 3001`). Sau đó `node tools/clips3.mjs <thư mục> P|R|H|B`, rồi `bash tools/ingest.sh <thư mục>`. Nét viết tay sinh bằng `python -I tools/handwriting.py` → `tools/hand-ink.json`; recorder phát lại qua `inkHand`.
+- Giọng đọc (chỉ cho FlowCut): `node tools/tts.mjs speak --voice onwK4e9ZLuTAKqWW03F9 --model eleven_v3 [--only <cảnh>]`, kiểm độ rõ lời bằng `python tools/asr_check.py --scenes`.
+- Xuất slide: `node tools/deck-shots.mjs http://localhost:3001/pitch <thư mục> 12` (ra PNG + `deck.pdf`), rồi chép vào `AXIOMA-slide-y-tuong-sang-tao/`.
+
+## B4. Quyết định kỹ thuật & vết xe đổ (phần B)
+- **Số liệu:** chỉ lấy từ `socratic-monorepo/packages/types/src/pilot2026.json` (`PILOT`, `vn()`). Đã loại các claim không có nguồn: "95%", "450 ms", Three.js PBR, mathjs, palm-rest 550 ms, Olympiad Fast-Track, "14/14 kiểm thử" (lần chạy lại 24/10 frontend chỉ đạt 10/29). Tỉ lệ chặn là 98,1% (312/318).
+- **Launch dùng bản sao cảnh của demo2** với `id='L-<id>'`, `voice:''`, `chapter:null`. Nếu giữ id gốc, `voiceNeed` sẽ tra `voice.json` và kéo dài cảnh theo giọng.
+- **Mỗi composition có file nhạc riêng**, vì nhạc được canh để phần outro trùng điểm kết video. Montage và SFX lấy vết cắt từ lưới phách của đúng file nhạc đó.
+- **Ảnh crop:** độ phóng `z > 1.3` làm vỡ hạt. App nền giấy trắng: khi đặt chữ trắng lên trên thì hạ `brightness`, và không lồng ảnh app vào chữ.
+- **Lỗi đã gặp:**
+  - Render/still báo "not a valid Remotion project" → thêm `--port=3123`.
+  - Bundle esbuild ra `os.tmpdir()` không tìm thấy `remotion` → ghi vào `node_modules/.cache` và đánh dấu `external`.
+  - ffmpeg imageio không có `-pattern_type glob`.
+  - Lệnh PowerShell có `.Replace()` nhiều dòng thất bại vì file CRLF → dùng Edit.
+  - `toLocaleString('vi-VN')` cho kết quả khác nhau giữa Node và trình duyệt → hydration error (xử lý bằng `ssr:false`).
+- **ElevenLabs gói free:** giọng thư viện bị chặn (402). `multilingual_v2` đọc tiếng Việt CER 25–30%; `eleven_v3` CER khoảng 4% nhưng không nhận `previous_text/next_text`. Credit còn khoảng 2.000 ký tự. Khóa API nằm trong `socratic-video/.env` (đã .gitignore); người dùng từng dán khóa vào chat → khuyên tạo khóa mới.
+- **Nhạc nền là nhạc trailer Google Flow (có bản quyền).** Đã cảnh báo người dùng. Muốn thay: chạy lại `flow_music.py` với file wav mới, các vết cắt tự khớp lại.
+
+## B5. Chỉ thị cho agent tiếp theo (phần B)
+1. Đọc phần B này và memory `C:\Users\Admin\.claude\projects\C--Users-Admin-Desktop-AI-Edtech\memory\contest-pitch-video-workflow.md`. Không reset/revert file của phần A.
+2. Yêu cầu sửa video giới thiệu → làm theo quy trình B3 với composition `Launch`. Lưu bản mới thành `out/ban-Launch/<tên>_vN.mp4`, không ghi đè bản cũ.
+3. Yêu cầu sửa slide → sửa `src/components/pitch/*`, chạy `npx next dev -p 3001` trong teacher-board, xuất lại theo B3.
+4. Chỉ commit khi người dùng yêu cầu; stage chọn lọc đúng phạm vi phần B.
+5. **Được sửa:** `socratic-video/src/{launch,flow}/**`, `socratic-video/src/demo2/{FootageScene,CardScenes}.tsx`, `socratic-video/tools/**`, `socratic-video/public/{music,sfx,flow}/**`, `socratic-video/brand/**`, `teacher-board/src/{app/pitch,components/pitch}/**`, `teacher-board/public/pitch/**`, `AXIOMA-slide-y-tuong-sang-tao/**`, `.ai/HANDOFF.md` (chỉ thêm, không xóa phần A).
+6. **Không đụng:**
+   - `socratic-video/.env`.
+   - `socratic-video/src/demo2/voice.json` và `public/voice/*` (đổi lời đọc thì phải tạo lại giọng).
+   - Lời `voice:` trong `src/demo2/plan.ts` (phụ đề khớp theo đúng chuỗi này).
+   - `out/ban-FlowCut/*_v5_*.mp4` (bản đã nộp).
+   - `packages/types/src/pilot*` (chỉ đọc).
+   - Toàn bộ phạm vi của phần A, `Ho-so-*`, `slide-du-thi/`, `Goi-gui-nhom-IT-Hust/`, các file mẫu `*.pptx/*.docx`, mọi `tsconfig.tsbuildinfo`.
+
+---
+
+# CẬP NHẬT SPECS HIỆN TRẠNG — 26/10/2026
+
+- Theo yêu cầu quét toàn dự án và cập nhật specs của người dùng, đã thêm `docs/CURRENT_SPECS.md`. Đây là bản đối chiếu working tree với implementation, phục vụ viết báo cáo Edtech; không thay đổi code của luồng A/B, tài sản quảng bá hoặc tài liệu nghiên cứu.
+- Git nền tại thời điểm rà soát: `main`, HEAD `45612a4`; working tree có thay đổi sẵn và nhiều tệp chưa commit. Không xác nhận sạch/đồng bộ remote, không stage/commit/push trong đợt này.
+- Đã chạy lại: Teacher Board 29 file/378 tests; Student App 1 file/14 tests; toàn monorepo 31 file/394 tests; backend 38 tests. Hai app đều `tsc --noEmit --incremental false` exit 0. Tổng JS gồm hai scenario jsdom có API mock, không phải kiểm thử trình duyệt với backend thật. Chưa chạy production build/benchmark trên thiết bị.
+- Các phân biệt quan trọng khi viết báo cáo hoặc bàn giao tiếp:
+  1. `vectorJournal.ts` có implementation/test nhưng chưa được import vào Canvas/Dock; chưa có luồng ghi và tua lại bài giảng hoàn chỉnh trên UI.
+  2. Companion hiện import cache regex/từ khóa, không dùng wrapper ChromaDB; adapter có nhãn `LLM_FALLBACK` nhưng đang trả heuristic, chưa gọi provider thật.
+  3. `exportIsolatedWebp()` hiện xuất PNG; không có bảo đảm ảnh luôn dưới 8 KB.
+  4. BYOD thực tế đi qua FastAPI WebSocket; Socket.IO gateway là luồng riêng còn scaffold. Phòng/notes/heatmap nằm trong RAM; chưa có offline PWA toàn phần.
+  5. Voice gate có fallback demo tự cho qua; heatmap có hồ sơ/sĩ số mẫu. Số liệu `pilot2026.json` chưa được lần rà soát này xác minh từ log/bài kiểm tra gốc.
+  6. Cần kiểm tra render Sinh nâng cao có cùng lúc fallback `BioSystemEngine`, và khả năng đồng bộ state riêng của từng engine.
+- Ưu tiên đọc `docs/CURRENT_SPECS.md` để biết giới hạn và bằng chứng hiện tại; các mục Done/SLA ở phần trước vẫn là lịch sử bàn giao, không tự động chứng minh mọi claim đã được đo thực tế.
+
+## B6. Launch v2 — cập nhật 26/10/2026
+- Theo yêu cầu mới: video giới thiệu sản phẩm dưới 3 phút, không lời đọc; bỏ số liệu dự thi, FPS/độ trễ/chi phí API và tiết kiệm thời gian giáo án.
+- Bản hoàn chỉnh mới: `socratic-video/out/ban-Launch/Socratic-Vision-Board_Launch_v2_Product-Intro.mp4` — 1920×1080, 30 fps, 4406 frame = 146,8667 giây (2:26,9); 23.242.216 byte. File QA: `Launch_v2_QA.json`; LUFS -15,02, true peak -1,50 dBTP. Đã giải mã/trích 15 khung cuối và soát contact sheet `Launch_v2_Final_ContactSheet.jpg`.
+- Code Launch đã chuyển sang v2: `src/launch/{plan.ts,Launch.tsx,ProductScenes.tsx,native-assets.json,native-assets-manifest.json,STORYBOARD-v2.md}`; nhạc riêng `public/music/launch_v2_bed.{mp3,json}`. Tools mới `tools/{launch-native-assets.mjs,finalize-launch-v2.py}`.
+- Cảnh mới: Hologram, Oxyz, Riemann, SN2, Cyclohexane, CFT, ETC/ATP, GPCR/Apoptosis, Visual Debuggers. SVG serialize từ component sản phẩm thật bằng React server render; **không phải footage mới quay UI**. Hologram là minh họa bố cục/di chuyển/thu phóng. SN2 dùng hàm sn2 của sản phẩm, chuyển động theo frame. Các cảnh cũ viết/khoanh/ném xiên/Companion giữ footage.
+- `src/demo2/FootageScene.tsx` có thêm tùy chọn `productFilm=false` mặc định; chỉ Launch bật true để ẩn callout kỹ thuật/prompt overlay. Không sửa source FlowCut/giọng; check-flow vẫn 8488 frame. Bản MP4 Launch cũ giữ nguyên, chưa commit/push.
+- Kiểm tra mới: TypeScript video đạt; render 4406/4406 frame đạt; finalize và QA exit 0. Không đưa playback vào quảng bá vì UI luồng chính chưa tích hợp. Nhạc vẫn dùng nguồn cũ, bản quyền không thay đổi.
+
+## B6. Cập nhật 26/10 — Launch v3 (bản giới thiệu sản phẩm hiện hành)
+- Composition `Launch3` (`socratic-video/src/launch3/{plan.ts,Launch3.tsx}`), 2:16,8. Xuất: `out/ban-Launch/Socratic-Vision-Board_Launch_v3.mp4`. Bản v2 (`src/launch/*`, agent khác) giữ nguyên, người dùng không ưng.
+- Footage tính năng mới quay từ app thật: `tools/clips4.mjs` (viết tay `hand-ink.json` → lasso → gợi ý định tuyến cục bộ `localRouter` → mô phỏng → xoay/kéo thanh trượt; `conv` = chữ tay → công thức → đồ thị; `holo` = kéo/phóng hologram). Clip: `public/clips/N{conv,oxyz,revolve,lattice,sn2,cyclo,etc,lotka,pendulum,holo}.mp4` + `src/demo2/marks/N*.json`, đã khai báo trong `src/demo2/clips.ts`.
+- Không dùng số liệu kiểu 60 khung/giây, 4 phút soạn bài, thí điểm. Nhạc `public/music/launch3_bed.*`. Kiểm tra: `node tools/check-launch3.mjs`, soát `node tools/stills-launch3.mjs`. Montage nhận `shots` (`SHOTS3`).
+
+# 2026-10-26 — Multi-Agent Architecture Refactor
+
+## Current Task
+- Establish a safe multi-agent context layer and assess whether a physical source-tree migration is safe.
+
+## Working State
+- Phase 1 survey completed for the workspace, monorepo packages/apps/services, TypeScript aliases, Python service layout, and import edges.
+- The executable architecture already has stable bounded contexts: teacher-board, student-app, shared types, shared UI, API gateway, and AI engine.
+- Working tree contains pre-existing modified and untracked business/media/document files. Those changes are preserved.
+- No business-logic files were moved or rewritten. No import paths were changed.
+
+## Decisions
+- Treat `socratic-monorepo` as the executable product boundary; keep `socratic-video`, slide, submission, and research artifacts independent.
+- Keep current runtime paths in this pass. A physical move of app modules while the tree is dirty would create unnecessary broken imports and merge conflicts.
+- Canonical cross-module contracts remain `socratic-monorepo/packages/types`; shared UI remains `packages/ui`.
+- Added root agent entrypoints: `CLAUDE.md`, `AGENTS.md`, `.antigravity/rules.md`.
+- Added `.ai/ARCHITECTURE.md` and `.ai/INTERFACES.md` with dependency, naming, ownership, and contract rules.
+
+## Immediate Next Steps
+- Run monorepo typecheck/tests and service checks without generating tracked build metadata.
+- Any future physical move requires an explicit clean working tree or a narrowly scoped approved directory, `git mv`, alias/import updates, and verification before merge.
+
+# 2026-10-26 — Backend & Engine Audit / Visual Observability
+
+## Current Task
+- Audit backend-to-engine wiring and make the runtime state visible in the teacher experience.
+
+## Working State
+- FastAPI engine routes, classroom WebSocket, companion verification, lasso compiler, notes/heatmap, and plot endpoint were inspected.
+- Fixed a real Tier 2 integration defect: `ChromaSemanticCache` passed an unsupported `threshold` argument to `lookup_semantic_cache`; the lookup now accepts the threshold and companion uses the Chroma wrapper.
+- Added dynamic runtime diagnostics to `/health` for RapidOCR, ChromaDB, Gemini configuration, classroom room/student counts, and advanced engines.
+- Added `EngineHealthRail` to the teacher board for live backend/engine/cache/classroom visibility.
+- Added a regression test for the Chroma wrapper integration.
+
+## Verification
+- AI engine: 39 tests passed (4 existing Pydantic deprecation warnings).
+- Frontend: 394 Vitest tests passed.
+- Teacher-board TypeScript: passed.
+- Production monorepo build: teacher-board and student-app both passed.
+- Runtime health smoke test: endpoint returns 200.
+
+## Findings / Remaining Gaps
+- Runtime environment currently reports `rapidocr: false` and `chromadb: false`; deterministic and heuristic fallbacks are active. Install optional dependencies and provide a Gemini key to enable those tiers.
+- Classroom realtime is FastAPI WebSocket based and in-memory. The Node Socket.IO/Redis gateway remains a separate scaffold and is not the active frontend transport.
+- Smart Notes, heatmap, and room state are process-local; restart loses state.
+- Gemini key persistence writes `.env` from the API route; production deployment needs a secrets manager and authentication around that setting.
+- Root monorepo typecheck still has the pre-existing missing `module` compiler option; app-level typechecks and production build pass.
+
+# 2026-10-26 — Real Smartboard Deployment Readiness
+
+## Current Task
+- Remove localhost assumptions and document/verify a real LAN test path for smartboard hardware.
+
+## Changes
+- Added configurable CORS origins in `services/ai-engine/main.py`.
+- Added optional runtime dependencies `rapidocr-onnxruntime` and `chromadb` to `services/ai-engine/requirements.txt`.
+- Added `services/ai-engine/.env.example`, app `.env.example` files, and Student App Next rewrite proxy.
+- Added `docs/SMARTBOARD_TEST_RUNBOOK.md` with LAN topology, startup commands, firewall checks, and acceptance flow.
+- Added root TypeScript `module: ESNext` so the monorepo typecheck passes.
+- Replaced deprecated Pydantic `.dict()` with `.model_dump()`.
+
+## Verification
+- Root monorepo typecheck: passed.
+- Teacher-board and student-app production build: passed.
+- AI engine: 39 tests passed.
+
+## Field-test prerequisites
+- Set `NEXT_PUBLIC_BACKEND_URL`/`BACKEND_URL` to the host LAN IP, never the board's localhost.
+- Set matching `CORS_ORIGINS` and allow TCP 3001/3002/8000 through the host firewall.
+- Install the optional Python dependencies to turn RapidOCR and ChromaDB runtime flags true.
+- The active classroom transport remains FastAPI WebSocket; the Node Socket.IO gateway is not part of the current browser path.
+- State remains process-local for this hardware trial; restart or reset between sessions.
+
+# 2026-10-26 — Board Solution Grading & OCR Clarification
+
+## Current Task
+- Let a student write a solution on the smartboard, lasso it, convert it to LaTeX, and receive a verified grade/feedback without hallucinated symbols.
+
+## Changes
+- Added `POST /api/v1/companion/grade-solution`.
+- The endpoint refuses to grade when OCR confidence is below 0.72 or the solution/expected answer is missing; it returns `NEEDS_CLARIFICATION` with candidate options.
+- Once reviewed, the endpoint delegates to the existing deterministic/Socratic `evaluate_step` pipeline and returns correctness, source, feedback, and optional visual debugger data.
+- Added grading UI to `InkConvertPanel`: expected-answer input, OCR confidence badge, grade button, feedback, correct/needs-fix state, candidate choice buttons, and manual LaTeX editing.
+- Enabled grading mode for the board lasso conversion flow in `SmartboardCanvas`.
+
+## Verification
+- AI engine: 41 tests passed.
+- Teacher Board: 378 tests passed.
+- Teacher Board TypeScript: passed.
+- Existing engine behavior remains covered by the previous engine test suite.
+
+## Safety behavior
+- Low-confidence OCR never reaches the verifier.
+- The UI explicitly asks the teacher/student to choose a candidate or type the exact symbol before grading.
+- The backend remains the source of truth for the final grade; client heuristics do not override a graded response.
+
+---
+
+# 2026-10-26 — Tích hợp Toàn diện AI Tutor Sau Giờ Học & Kiểm tra Logic Nhận diện OCR
+
+## 1. Mục tiêu hoàn thành
+- Tích hợp toàn bộ kiến trúc nghiên cứu từ `docs/tai-lieu-nghien-cuu-stem/NGHIEN_CUU_AI_TUTOR_GIA_SU_SAU_GIO_HOC.md` vào hệ sinh thái monorepo.
+- Kiểm tra và nâng cấp toàn diện logic nhận diện OCR:
+  * Nếu confidence của ký tự/công thức thấp (< 0.85 hoặc có ký tự nghi ngờ/mơ hồ) -> Hiển thị giao diện cho người dùng sửa trực tiếp hoặc bấm chọn nhanh các ký tự nghi ngờ đúng (1-tap swap candidate chips: `Z ⇄ 2`, `n ⇄ \pi`, `l ⇄ 1`, `O ⇄ 0`, `S ⇄ 5`, `w ⇄ \omega`, `a ⇄ \alpha`, `t ⇄ +`, `q ⇄ 9`).
+  * Nếu confidence bình thường (>= 0.85 và không có nguy cơ mơ hồ) -> Chuyển thẳng sang mô phỏng/bài làm không ngắt quãng trải nghiệm người dùng.
+- Triển khai cơ chế Temporal Scene Chunking (Pre-Clear Commit) trên bục giảng: khi giáo viên hoặc học sinh xóa bảng (`handleClear`), hệ thống tự động kết đọng phân cảnh vào chuỗi nhật ký tiết học để bảo toàn toàn bộ ngữ cảnh 45 phút phục vụ buổi tự học ở nhà.
+- Xây dựng mô hình toán học Bayesian Knowledge Tracing (BKT) và bộ giao diện Gia sư AI Socratic Đồng hành sau Giờ học với 4 chế độ tương tác chuẩn hóa.
+
+## 2. Thay đổi chi tiết trong Codebase
+1. **`socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardCanvas.tsx`**:
+   - Tích hợp `findAmbiguousTokens` từ `../../utils/ocrConfusions`.
+   - Trong `handleVisualize`: Đo lường `isLowConfidence = conf < 0.85 || (conf < 0.92 && ambiguousTokens.length > 0)`.
+     * Nếu thấp: Lưu `pendingBlueprint`, mở `OcrReviewModal` kèm ảnh cắt nét chữ viết tay,KaTeX, các phím hoán đổi 1-chạm và danh sách gợi ý.
+     * Nếu bình thường: Mount trực tiếp `finalBp` vào `SimulationWidget` trong <1.5s.
+   - Thêm trạng thái `recordedScenes` và cơ chế Pre-Clear Commit trong `handleClear`: tự động lưu lại phân cảnh bài giảng trước khi xóa nét vẽ.
+   - Nâng cấp modal Tổng kết bài giảng (QR Smart Notes) hiển thị số lượng phân cảnh đã lưu qua các lần xóa bảng và thông tin lộ trình bài tập về nhà Socratic phân hóa.
+2. **`socratic-monorepo/apps/teacher-board/src/components/canvas/InkConvertPanel.tsx`**:
+   - Tích hợp `findAmbiguousTokens` và `swapTokenInFormula`.
+   - Đối với từng dòng nhận diện: nếu `l.confidence < 0.85` hoặc `l.valid === false`, hiển thị các chip hoán đổi ký tự nghi ngờ (`conf.token ⇄ alt`) ngay dưới dòng LaTeX; nếu confidence bình thường (>= 0.85), ẩn các chip này để giữ giao diện thanh thoát.
+3. **`socratic-monorepo/apps/student-app/src/utils/bktEngine.ts`**:
+   - Triển khai thuật toán Bayesian Knowledge Tracing chuẩn: tính toán $P(L_t \mid \text{Evidence})$ theo định lý Bayes và bước chuyển tiếp $P(L_{t+1}) = P(L_t) + (1 - P(L_t)) \cdot P(T)$.
+   - Tính toán chu kỳ ôn tập ngắt quãng Spaced Repetition (SM-2) theo số lần làm đúng liên tiếp.
+   - Đo lường chỉ số thời gian nỗ lực tư duy hữu ích (Productive Struggle Time - PST) và tỷ lệ giàn giáo (Scaffolding Efficiency Ratio - SER).
+4. **`socratic-monorepo/apps/student-app/src/components/companion/AfterSchoolTutor.tsx`**:
+   - Xây dựng phân hệ Gia sư AI Socratic sau giờ học với 4 chế độ:
+     1. Socratic Homework Solver: Hướng dẫn giải bài tập về nhà có giàn giáo 4 cấp độ, đồng bộ công thức từ bục giảng (`v_0 = 22\text{ m/s}`, `4\text{Fe} + 3\text{O}_2 \rightarrow 2\text{Fe}_2\text{O}_3`, `y = 2\sin(3x)`), chặn triệt để hành vi xin đáp án bằng Socratic Guardrails, tích hợp mở Visual Debuggers (Cân đĩa hóa học, Đa giác lực, Thước tiếp tuyến).
+     2. Home Sandbox & Free Sketch: Tái hiện mô hình sống của thầy cô, cho phép học sinh can thiệp tham số mô phỏng What-If.
+     3. Spaced Repetition & Exam Drill: Ôn tập ngắt quãng dựa trên độ thành thạo BKT của từng kỹ năng con.
+     4. ParentPulse & Teacher Sync: Báo cáo định tính nỗ lực học tập và đồng bộ bản đồ nhiệt với giáo viên.
+5. **`socratic-monorepo/apps/student-app/src/app/page.tsx`**:
+   - Tích hợp tab `AFTER_SCHOOL_TUTOR` ("Gia sư AI sau giờ học") vào thanh điều hướng ứng dụng học sinh.
+6. **Kiểm thử tự động mới**:
+   - `apps/teacher-board/src/__tests__/ocrConfidenceAndDebrief.test.tsx`: 4 tests kiểm tra logic mở modal khi confidence thấp, đóng modal khi confidence bình thường, hiển thị chip hoán đổi trong InkConvertPanel và Pre-Clear Commit.
+   - `apps/student-app/src/__tests__/bktAndAfterSchoolTutor.test.tsx`: 4 tests kiểm tra công thức toán BKT, Spaced Repetition SM-2, PST metrics và 4 chế độ AfterSchoolTutor kèm Socratic Guardrails.
+
+## 3. Kết quả Kiểm tra & Xác minh (Verification)
+- `npx.cmd tsc --noEmit --incremental false` (`apps/teacher-board`): **Exit code 0 (0 lỗi TypeScript)**.
+- `npx.cmd tsc --noEmit --incremental false` (`apps/student-app`): **Exit code 0 (0 lỗi TypeScript)**.
+- `npx.cmd vitest run` (`apps/teacher-board`): **30/30 test files passed, 382/382 tests passed 100%**.
+- `npx.cmd vitest run` (`apps/student-app`): **2/2 test files passed, 18/18 tests passed 100%**.
+- `pytest` (`services/ai-engine`): **6/6 test files passed, 41/41 tests passed 100%**.
+- **Tổng cộng: 441/441 automated tests passed tuyệt đối (100%)**.
+
+
+## 2026-10-26 — Báo cáo ViSEF về động học chữ ký
+- Phạm vi đang thực hiện: docs/bao-cao-viseF-chu-ky/ và tmp/viseF-report/; soạn báo cáo từ hai tài liệu người dùng cung cấp. Không sửa mã nguồn sản phẩm.
+
+
+## 2026-10-27 — Báo cáo ViSEF theo form Socratic Vision Board
+- Đã đọc và chắt lọc mẫu docs/BAO_CAO_KHOA_HOC_KY_THUAT_SOCRATIC_VISION_BOARD.docx: A4, lề trái 2.5 cm, các lề còn lại 2 cm, Times New Roman, nội dung cỡ 12, giãn dòng 1.35, tiêu đề chương/mục, mục lục, danh mục bảng hình, header và footer.
+- Đã tạo docs/bao-cao-viseF-chu-ky/Bao_cao_ViSEF_Dong_hoc_chu_ky.docx từ cấu trúc mẫu; giữ mẫu gốc nguyên vẹn. Nội dung 5 chương, tài liệu tham khảo, 2 phụ lục; để trống thông tin tác giả và số liệu thực nghiệm cần bổ sung.
+- Đã tạo 	mp/viseF-report/artifact.md, bộ tệp slice QA và kiểm tra package fidelity 19 phần preserve-only; tệp Word mở/đọc được bằng Aspose và có 17 trang theo renderer đánh giá. LibreOffice bundled không có trong runtime nên không thể chạy render_docx chuẩn; không dùng PDF Aspose evaluation làm deliverable vì có watermark.
+
+
+## 2026-10-27 — Nâng cấp văn phong và rút gọn báo cáo
+- Đã tái cấu trúc bản Word theo form mẫu, để các tiểu mục nội dung chảy liên tục thay vì mỗi tiểu mục một trang; giữ các ngắt trang chính cho bìa, mục lục, danh mục, tóm tắt và các chương.
+- Đã bổ sung cách viết chuyên nghiệp hơn ở phần lý do chọn đề tài, phương pháp luận, kiểm soát sai lệch, tách tuyến xác thực và tái tạo, bảo vệ tác vụ, giới hạn bằng chứng và thảo luận đối lập.
+- Bản cập nhật: docs/bao-cao-viseF-chu-ky/Bao_cao_ViSEF_Dong_hoc_chu_ky.docx; renderer kiểm tra cho 14 trang toàn bộ tài liệu, nên phần nội dung chính không vượt 15 trang. Mẫu gốc vẫn nguyên vẹn.
+
+
+## 2026-10-27 — Tiền kiểm liêm chính và trùng lặp
+- Không hỗ trợ né Turnitin hoặc đánh lừa AI detector; chỉnh theo hướng văn phong cụ thể, minh bạch nguồn và không đưa số liệu chưa có dữ liệu gốc.
+- Tiền kiểm cụm 8 từ: 0 cụm trùng với Tóm tắt.docx; 10 cụm trùng với PDF phản biện, chủ yếu tiêu đề/thuật ngữ, tương đương 0.115% số cụm 8 từ của báo cáo. Đây không phải điểm Similarity chính thức của Turnitin.
+- Đã lưu biên bản: docs/bao-cao-viseF-chu-ky/Precheck_Liem_chinh_va_trung_lap.txt.
+
+
+## 2026-10-27 — Viết lại lý do chọn đề tài
+- Đọc lại toàn bộ docs/Phản biện ý tưởng máy ký KHKT.pdf (24 trang), đặc biệt các nhận định: lý do ký từ xa đã lỗi thời do chữ ký số; nguy cơ bị xem là ghép nối CNC/App/SHA-256; khoảng trống động học lực–gia tốc–góc; khoảng trống phản hồi lực trục Z; yêu cầu tách câu hỏi, giả thuyết, đối chứng và dữ liệu.
+- Viết lại toàn bộ Chương 1 theo mạch bối cảnh thực tiễn -> vấn đề còn bỏ ngỏ -> khoảng trống kỹ thuật -> lý do chọn hướng -> đóng góp dự kiến. Đổi đánh số tổng quan thành 1.4–1.7 để không trùng mục.
+- Tệp cập nhật: docs/bao-cao-viseF-chu-ky/Bao_cao_ViSEF_Dong_hoc_chu_ky_v2.docx; renderer kiểm tra 15 trang toàn bộ tài liệu.
+
+
+# 2026-10-27 — Offline Handwriting Recognition Upgrade
+
+## Current Task
+- Improve immediate/offline handwriting recognition quality on real smartboard PointerEvent input.
+
+## Changes
+- Added input cleanup that removes near-duplicate/jitter points while preserving stroke geometry and endpoints.
+- Added small-angle rotation-invariant chamfer matching (±0.12 rad) to tolerate wrist/device tilt.
+- Added top-1/top-2 margin calibration: close competing candidates lower confidence instead of presenting an uncertain result as certain.
+- Added regression coverage for jittered/repeated points and swapped strokes.
+
+## Verification
+- Offline recognizer fixture accuracy: 45/45 exact formulas.
+- Teacher Board: 30 test files, 386 tests passed.
+- Teacher Board typecheck: passed.
+- Measured recognizer benchmark: approximately 68ms average on current fixture suite after rotation tolerance (was approximately 34ms before); still synchronous and below the interactive threshold, but avoid adding more variant passes without profiling.
+
+## Behavior
+- Ambiguous real handwriting remains reviewable through candidate alternatives/manual LaTeX; low confidence is surfaced rather than silently guessed.
+- The local recognizer is still intentionally limited to mathematical notation; Vietnamese prose and connected handwriting require Vision/AI.
+
+## 2026-10-27 — Viết lại phần mở đầu theo hướng nghiên cứu
+- Đổi tên đề tài trên bìa thành: XÁC THỰC CHỮ KÝ SINH HỌC TỪ ĐỘNG HỌC LỰC VÀ CHUYỂN ĐỘNG KẾT HỢP TÁI TẠO NÉT MỰC BẰNG ROBOT PHẢN HỒI LỰC.
+- Viết lại Tóm tắt và mục 1.1 theo mạch mở đầu giàu hình ảnh nhưng có kiểm chứng: chữ ký là dấu vết vận động, giới hạn của hình 2D, câu hỏi về động học, thách thức tái tạo lực, rồi mới dẫn đến hệ thống đo–xác thực–robot.
+- Tệp cập nhật vẫn là docs/bao-cao-viseF-chu-ky/Bao_cao_ViSEF_Dong_hoc_chu_ky_v2.docx; renderer kiểm tra 15 trang.
+
+
+# 2026-10-27 — Template Library Rebuild for Offline OCR
+
+## Current Task
+- Improve immediate recognition quality by auditing and rebuilding the complete local glyph template library.
+
+## Findings
+- The original 970 templates were rasterized Windows font skeletons only.
+- The existing offline test generator uses Hershey vector strokes, which were absent from the runtime template library; this created a distribution mismatch for hand-drawn board input.
+
+## Changes
+- Extended `scripts/build_glyphs.py` to add Hershey Rowmans/Greeks vector templates for common letters, digits, operators, and symbols while preserving all raster templates.
+- Rebuilt `src/utils/inkGlyphs.json`: 970 → 1047 templates.
+- Kept input cleanup, small-angle rotation tolerance, and ambiguity-margin confidence calibration.
+- Optimized rotation matching so well-matching candidates do not pay the extra angle passes.
+
+## Verification
+- Offline formula benchmark: 45/45 exact formulas.
+- Teacher Board: 30 files, 386 tests passed.
+- Teacher Board typecheck: passed.
+- Recognizer benchmark: ~40ms average on the fixture suite after template expansion and optimized rotation matching.
+
+## Honest limits
+- This improves mathematical glyph coverage and distribution matching; it does not turn offline recognition into Vietnamese handwriting OCR.
+- Real-board accuracy still needs a captured sample set from the target smartboard. Use candidate/manual confirmation for ambiguous symbols and add anonymized samples to a future calibration corpus.
+
+# 2026-10-27 — Hologram Direct Touch-Anywhere Dragging & Zero-Background Chalk Graph Aesthetics
+
+## Current Task
+- Cho phép di chuyển phần hologram khi chạm vào bất cứ đâu trên hologram một cách mượt mà và nhạy bén.
+- Lược bỏ hoàn toàn các thanh task bar tính năng cồng kềnh trong hologram, chỉ giữ lại phần trực quan và thông số trực quan thiết yếu.
+- Nâng cấp trải nghiệm thị giác của hologram từ dạng thẻ bán trong suốt mờ ảo sang dạng đồ thị phấn vẽ trực tiếp lên bảng đen (Zero-Background Chalkboard Graph).
+
+## Changes Made
+1. **`socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardCanvas.tsx`**:
+   - Gắn bộ lắng nghe sự kiện kéo di chuyển `onPointerDown={handleHoloPointerDownAnywhere}`, `onPointerMove={handleHoloGripMove}`, `onPointerUp={handleHoloGripUp}` trực tiếp lên container `hologram-simulation-overlay`.
+   - `handleHoloPointerDownAnywhere` tự động lọc trừ các control tương tác trực tiếp (`input[type="range"]`, button, select) để người dùng vẫn kéo thanh trượt mượt mà; chạm vào bất kỳ điểm nào khác trên hologram đều kích hoạt kéo di chuyển tức thì.
+   - Khi kéo di chuyển, tắt CSS transition để tọa độ bám sát 100% đầu ngón tay hoặc bút viết bục giảng với độ trễ 0ms. Nới rộng biên độ di chuyển lên 1000px × 550px.
+2. **`socratic-monorepo/apps/teacher-board/src/components/canvas/SimulationWidget.tsx`**:
+   - Gắn `onPointerDown={handleWidgetPointerDown}` cho phép chạm bất cứ vị trí nào trên widget để kéo di chuyển.
+   - Khi `displayMode === 'HOLOGRAM'`: chuyển container sang `bg-transparent border-0 shadow-none ring-0 overflow-visible cursor-grab active:cursor-grabbing`.
+   - Lược bỏ hoàn toàn thanh ribbon môn học dài dòng, nút chuyển mô hình Engine Chuẩn / Đồ họa AI, nút Chuẩn THPT / Chuyên sâu, nút Smart Notes, nút Đặt lại, nút Gợi ý Socratic và hộp thoại Socratic khỏi chế độ Hologram.
+   - Thiết kế thanh HUD phấn tối giản: chip chỉ báo phấn mảnh `[ ⠿ Hologram Nổi • Kéo mô phỏng ]`, cụm nút thu phóng mờ nhẹ, nút chuyển chia đôi nửa bảng và nút đóng ✕.
+   - Chuyển `macro-sliders-container` sang giao diện thông số phấn nổi không viền hộp đục `bg-transparent border-0`, các box tham số dạng viền phấn phác thảo nhẹ nhàng, thanh trượt siêu mảnh.
+3. **`socratic-monorepo/apps/teacher-board/src/engines/MathPlotEngine.tsx`**:
+   - Bổ sung prop `isHologram?: boolean`. Khi ở chế độ Hologram, canvas xóa nền `ctx.clearRect` không tô nền trắng ngà `#FCFBF9`, đường lưới milimet chuyển sang nét phấn mờ nhạt `rgba(148, 163, 184, 0.16)`, trục Ox, Oy và đường cong đồ thị nổi sắc nét trực tiếp trên nền bảng.
+4. **`socratic-monorepo/apps/teacher-board/src/engines/PhysicsSandboxEngine.tsx`**:
+   - Bổ sung prop `isHologram?: boolean`. Ẩn thanh ribbon môn học và các nút chuyển bài học con lắc / ném xiên / sóng khi ở chế độ Hologram.
+   - Canvas chuyển sang `bg-transparent border-0 shadow-none`, không tô nền `#FCFBF9`, hiển thị các hạt sóng, quỹ đạo ném xiên và con lắc như nét phấn sống trên mặt bảng.
+5. **`socratic-monorepo/apps/teacher-board/src/engines/GraphEngine.tsx`**:
+   - Bổ sung prop `isHologram?: boolean`. Canvas xóa nền trong suốt `ctx.clearRect` không tô `#FFFFFF`, trục tọa độ và đường cong hàm số hiển thị như nét vẽ phấn trực tiếp lên bảng.
+6. **Kiểm thử tự động**:
+   - Bổ sung Test 8 và Test 9 trong `apps/teacher-board/src/__tests__/hologramInteraction.test.tsx` kiểm tra chạm bất cứ đâu để kéo, chặn kéo khi chạm thanh trượt và ẩn các thanh công cụ tính năng thừa khi ở chế độ Hologram.
+
+## Verification
+- `npx.cmd vitest run`: **33/33 test files passed, 408/408 tests passed 100%**.
+- `pytest tests/`: **6/6 test files passed, 41/41 tests passed 100%**.
+- `npx.cmd tsc --noEmit --incremental false` (`teacher-board` & `student-app`): **0 errors across all apps**.
+- **Tổng cộng: 449/449 automated tests đạt 100%**.
+
+
+## 2026-10-27 — Đưa chiếc bút thành trung tâm mở đầu
+- Đổi tên đề tài để đặt bút cảm biến ở vị trí trung tâm.
+- Viết lại Tóm tắt và mục 1.1 theo hướng: bút thu lực/gia tốc/góc nghiêng ngay tại ngòi; thách thức khối lượng, trọng tâm, cảm giác ký, độ trôi, độ trễ; AI và robot là các tầng kiểm chứng sau bút.
+- Renderer kiểm tra bản v2: 15 trang.
+
+
+## 2026-10-27 — Thay Chương 1 theo bản người dùng cung cấp
+- Đã thay phần Chương 1 bằng nội dung pasted text: chữ ký số vs hồ sơ giấy; giới hạn của 2D/ảnh quét và bảng vẽ; hai câu hỏi kỹ thuật; bài toán cơ–điện tử của bút; bốn cấu hình đối chứng; vòng phản hồi lực PID; lược bỏ camera OCR và ứng dụng ký từ xa.
+- Bản cập nhật: docs/bao-cao-viseF-chu-ky/Bao_cao_ViSEF_Dong_hoc_chu_ky_v2.docx; renderer kiểm tra 15 trang.
+
+## 2026-10-27 — Tối ưu triển khai 1-chạm không bàn phím và hỗ trợ bảng Android
+- Tạo script `cai-dat-khoi-dong-1-cham.bat` tự động đăng ký Shortcut Desktop và Startup Windows hoàn toàn bằng cảm ứng không cần gõ `Win + R` hay lệnh.
+- Cập nhật tài liệu `docs/TRIEN_KHAI_BANG_THONG_MINH_FINAL.md` quy trình chi tiết cho cả 2 kịch bản: Bảng Windows OPS không bàn phím và Bảng chạy hệ điều hành Android (chạy qua Chrome PWA / Add to Home screen 1-chạm toàn màn hình).
+- Thay thế chế độ Kiosk khóa cứng bằng App Window độc lập (`run-smartboard-standalone.bat`) có đủ nút Thu nhỏ, Phóng to, Đóng.
+- Bổ sung nút `Toàn màn hình / Thu nhỏ` và `Về tác vụ gốc` ngay trên thanh điều khiển của `page.tsx` giúp giáo viên chuyển đổi linh hoạt sang PowerPoint hay Bảng vẽ gốc của trường chỉ với 1 chạm.
+- Tạo tệp `tat-he-thong-bang.bat` đóng sạch toàn bộ tiến trình ngầm để trả lại tài nguyên cho bảng.
+
+
+

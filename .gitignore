@@ -53,3 +53,11 @@ coverage/
 debug_last_lasso.png
 debug_last_request.json
 *.log
+
+# Large media & videos (>100MB blocked by GitHub)
+*.mov
+*.mp4
+socratic-video/
+tmp/
+.antigravity/
+.claude/

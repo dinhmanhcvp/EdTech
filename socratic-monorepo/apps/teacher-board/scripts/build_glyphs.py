@@ -14,6 +14,11 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from skimage.morphology import skeletonize
 
+try:
+    from HersheyFonts import HersheyFonts
+except Exception:
+    HersheyFonts = None
+
 FONTS = [
     ("C:/Windows/Fonts/Inkfree.ttf", 0),
     ("C:/Windows/Fonts/segoepr.ttf", 0),   # Segoe Print
@@ -115,6 +120,28 @@ def poly_cloud(strokes, n=N):
     return out, (mx[0] - mn[0]) / span, (mx[1] - mn[1]) / span
 
 
+def hershey_template(font, ch):
+    """Convert a single-stroke Hershey glyph into the same cloud format as queries."""
+    if font is None:
+        return None
+    try:
+        raw = font.strokes_for_text(ch)
+    except Exception:
+        return None
+    if not raw:
+        return None
+    strokes = []
+    for stroke in raw:
+        p = np.array(stroke, dtype=float)
+        if len(p) >= 2:
+            # Runtime queries use y-up coordinates; Hershey uses y-down.
+            p[:, 1] *= -1
+            strokes.append(p)
+    if not strokes:
+        return None
+    return poly_cloud(strokes)
+
+
 def circle(cx, cy, r, a0=0.0, a1=2 * np.pi, k=48):
     t = np.linspace(a0, a1, k)
     return np.c_[cx + r * np.cos(t), cy + r * np.sin(t)]
@@ -141,6 +168,15 @@ def main():
     fonts = [f for f in fonts if f[2] is not None]
     symfonts = [(p, i, load(p, i)) for p, i in SYMBOL_FONTS]
     symfonts = [f for f in symfonts if f[2] is not None]
+    hershey_roman = hershey_greek = None
+    if HersheyFonts is not None:
+        try:
+            hershey_roman = HersheyFonts()
+            hershey_roman.load_default_font("rowmans")
+            hershey_greek = HersheyFonts()
+            hershey_greek.load_default_font("greeks")
+        except Exception:
+            hershey_roman = hershey_greek = None
     print("phông viết tay:", [os.path.basename(f[0]) for f in fonts], "| phông ký hiệu:", [os.path.basename(f[0]) for f in symfonts])
     templates = []
     per_char = {}
@@ -155,6 +191,15 @@ def main():
             templates.append({"c": ch, "f": fi, "w": round(float(w), 3), "h": round(float(h), 3), "p": [[round(float(x), 3), round(float(y), 3)] for x, y in pts]})
             used += 1
         per_char[ch] = used
+        # Bổ sung mẫu vector gần với nét bút thật. Các mẫu font raster vẫn giữ
+        # nguyên để bao phủ chữ in, chữ Hy Lạp và ký hiệu hiếm.
+        hfont = hershey_roman
+        if ch in "αβγδθλμρσφωΔΣπ" and hershey_greek is not None:
+            hfont = hershey_greek
+        hv = hershey_template(hfont, ch)
+        if hv is not None:
+            pts, w, h = hv
+            templates.append({"c": ch, "f": 200, "w": round(float(w), 3), "h": round(float(h), 3), "p": [[round(float(x), 3), round(float(y), 3)] for x, y in pts]})
     for ch, variants in EXTRAS.items():
         for vi, strokes in enumerate(variants):
             pts, w, h = poly_cloud([np.array(x) for x in strokes])

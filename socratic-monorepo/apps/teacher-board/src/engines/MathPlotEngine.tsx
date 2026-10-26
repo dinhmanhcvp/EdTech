@@ -10,6 +10,7 @@ interface Props {
   blueprint: SimulationBlueprint;
   params: Record<string, number>;
   curriculumLevel?: CurriculumLevel;
+  isHologram?: boolean;
 }
 
 export interface EvaluatedFunction {
@@ -204,6 +205,7 @@ export const MathPlotEngine: React.FC<Props> = ({
   blueprint,
   params,
   curriculumLevel = blueprint.curriculumLevel ?? 'THPT_STANDARD',
+  isHologram = false,
 }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -310,29 +312,49 @@ export const MathPlotEngine: React.FC<Props> = ({
     const originY = height / 2;
     const scale = 36; // 36px = 1 unit
 
-    // 0. Daylight Technical Graph Paper Background
-    ctx.fillStyle = '#FCFBF9';
-    ctx.fillRect(0, 0, width, height);
+    // 0. Daylight Technical Graph Paper Background vs Zero-Background Chalkboard
+    if (isHologram) {
+      ctx.clearRect(0, 0, width, height);
 
-    // 1. Fine Millimeter Grid
-    ctx.strokeStyle = '#EFECE6';
-    ctx.lineWidth = 1;
-    for (let x = originX % scale; x < width; x += scale) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-      ctx.stroke();
-    }
-    for (let y = originY % scale; y < height; y += scale) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.stroke();
+      // Subtle chalk grid directly on chalkboard
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
+      ctx.lineWidth = 1;
+      for (let x = originX % scale; x < width; x += scale) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let y = originY % scale; y < height; y += scale) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+    } else {
+      ctx.fillStyle = '#FCFBF9';
+      ctx.fillRect(0, 0, width, height);
+
+      // 1. Fine Millimeter Grid
+      ctx.strokeStyle = '#EFECE6';
+      ctx.lineWidth = 1;
+      for (let x = originX % scale; x < width; x += scale) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let y = originY % scale; y < height; y += scale) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
     }
 
     // 2. Axes Ox, Oy
-    ctx.strokeStyle = '#94A3B8';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = isHologram ? '#475569' : '#94A3B8';
+    ctx.lineWidth = isHologram ? 1.75 : 1.5;
     ctx.beginPath();
     ctx.moveTo(0, originY);
     ctx.lineTo(width, originY);

@@ -85,3 +85,68 @@ Ví dụ đầu vào: `Oxyz; P: x+2y+3z=4`, `tròn xoay f(x)=x^2; a=0; b=2`, `h�
 - `UnistrokeSTEMClassifier.matchesDoubleBean` luôn trả `true` khi nét ≥ 32 điểm và `matchesYFork` chỉ đếm điểm phía trên điểm đầu → sẽ nhận nhầm hầu hết nét vẽ. Đã thay bằng các phép đo hình học riêng trong `sketchGestures.ts`, có test chống nhận nhầm.
 - `FloatingScreenOverlay.tsx` vẽ bằng `setState` mỗi điểm và dùng `e.width > 35` để đoán lòng bàn tay (không đáng tin trên nhiều bảng hồng ngoại); phần pointer của app đã làm theo cách khác (xem mục 1).
 - Đối chiếu khoa học đợt 26/10: [Purdue — trường tinh thể](https://chemed.chem.purdue.edu/genchem/topicreview/bp/ch12/crystal.php), [University of Texas — cơ chế SN2](https://iverson.cm.utexas.edu/courses/310M/ReactMoviesFl05%20/SN2text.html), [OpenStax — ô mạng tinh thể](https://openstax.org/books/chemistry-2e/pages/10-6-lattice-structures-in-crystalline-solids). Nghiên cứu gốc dùng CH₃Cl nhưng mô tả R → S là không phù hợp; triển khai phân biệt lật hình học và nghịch đảo tâm bất đối. Các tuyên bố tương thích 100%, 60 FPS/4K và trễ bằng 0 trong nghiên cứu là mục tiêu, không phải kết quả đo của đợt này.
+
+## 5. Phân Định Kiến Trúc 2 Tính Năng Cốt Lõi (Đợt 26/10/2026)
+
+Hệ thống được quy hoạch chặt chẽ thành hai tính năng chính không chồng chéo:
+
+### Tính Năng 1: Bảng tương tác thông minh trên lớp - Smartboard Interactive Canvas
+- **Mã nguồn:** `socratic-monorepo/apps/teacher-board`, cổng mặc định 3001, chạy trên màn hình tương tác thông minh bục giảng 86 inch và máy tính lớp học.
+- **Thành phần cốt lõi:**
+  1. Không gian viết vẽ Hologram HUD không nền, sử dụng lớp nền trong suốt `bg-transparent`, công nghệ lọc chạm nhầm lòng bàn tay palm rejection và cơ chế pointer capture.
+  2. 10 Động cơ STEM chuyên sâu: Toán 3D Oxyz, Riemann, Euler, SN2, Mạng tinh thể, Phức chất CFT, Cyclohexane, ETC, Lotka-Volterra, GPCR và Apoptosis.
+  3. Logic kiểm tra độ tin cậy nhận diện OCR: độ tin cậy thấp dưới 0.85 hoặc xuất hiện ký tự nghi vấn thì kích hoạt modal sửa hoặc chọn ký tự thay thế 1-chạm như `Z ⇄ 2`, `n ⇄ \pi`, `l ⇄ 1`, `S ⇄ 5`; độ tin cậy bình thường từ 0.85 trở lên thì tự động chuyển thẳng sang mô phỏng trực quan.
+  4. Cơ chế lưu vết phân cảnh bài giảng Temporal Scene Chunking thông qua Pre-Clear Commit: khi bấm xóa bảng hoặc lau bảng bằng cử chỉ, toàn bộ nét vẽ và mô phỏng được lưu lại thành các phân cảnh tuần tự cho học sinh xem lại sau giờ học.
+  5. Đồng bộ tương tác lớp học: ClassroomPanel, kết nối WebSocket FastAPI, bình chọn Socratic đa phương thức và chuyển giao quyền điều khiển mô phỏng.
+
+### Tính Năng 2: Nền tảng Gia sư AI Socratic Đồng hành Sau Giờ học - After-School Socratic Learning Platform
+- **Mã nguồn:** `socratic-monorepo/apps/student-app`, cổng mặc định 3002, ứng dụng web và di động kết nối thời gian thực cho học sinh, phụ huynh và giáo viên tự học sau giờ học.
+- **Toàn bộ các mô-đun Socratic được quy tụ trọn vẹn vào Tính Năng 2:**
+  1. **Socratic Companion Session:** Học theo giàn giáo 4 cấp độ, cổng kiểm tra bản chất khái niệm ConceptCheckGate cùng hiệu ứng hạt Eureka, bàn phím số toán học MathNumpad ngẫu nhiên vị trí chống sao chép lời giải từ bên ngoài.
+  2. **4 Bộ Visual Debugger Widgets:** Cân đĩa hóa học ChemicalBalanceScale, Đa giác vector lực VectorForcePolygon, Thước tiếp tuyến cực trị đạo hàm FunctionExtremaTangent, Mạch điện thang trở CircuitResistorLadder.
+  3. **Mô hình toán học Bayesian Knowledge Tracing Engine trong tệp `bktEngine.ts`:** Tính xác suất làm chủ $P(L_t \mid \text{Evidence})$, tính chu kỳ lặp lại ngắt quãng SM-2 Spaced Repetition, đo lường thời gian nỗ lực tư duy hữu ích PST và tỷ số hiệu quả nâng đỡ SER.
+  4. **4 Chế độ Gia sư AI sau giờ học trong tệp `AfterSchoolTutor.tsx`:**
+     - Chế độ 1: Giải bài tập về nhà có giàn giáo Socratic, kích hoạt Socratic Guardrails chặn đứng việc giải hộ đáp số và mở khóa các bộ Visual Debuggers.
+     - Chế độ 2: Phòng thí nghiệm phác thảo tự do tại nhà, mô phỏng lại và thử nghiệm các kịch bản động lực học từ nhật ký bài giảng trên lớp.
+     - Chế độ 3: Luyện thi phân hóa và Ôn tập ngắt quãng Spaced Repetition với hai lộ trình Chuẩn THPT và Chuyên sâu Olympiad.
+     - Chế độ 4: Cầu nối phản hồi ParentPulse gửi phụ huynh và đồng bộ Ma trận nhiệt nhận thức Teacher Heatmap cho giáo viên.
+  5. **Vở ghi thông minh Smart Notes Viewer:** Mở lại toàn bộ các phân cảnh bài giảng, công thức toán học và tệp vector nét vẽ đã lưu từ bục giảng.
+  6. **Ma trận Giáo viên TeacherHeatmap và Báo cáo Phụ huynh ParentPulse:** Theo dõi sự tiến bộ, điểm mù tư duy và chỉ số nỗ lực kiên trì Grit Score sau giờ học.
+
+### 5.3. Bảng quy tắc phân xử nhận diện OCR - Confidence Decision Matrix
+
+| Mức độ tin cậy | Điều kiện kích hoạt | Hành vi hệ thống | Trải nghiệm người dùng |
+|---|---|---|---|
+| **Bình thường (Cao)** | Confidence $\ge 0.85$ và không có ký tự mơ hồ | Bỏ qua hoàn toàn modal kiểm duyệt, nhúng trực tiếp mô phỏng 60FPS trong dưới 1.5 giây | Không gây bất kỳ độ trễ hay gián đoạn nào trong nhịp giảng dạy trên bục giảng |
+| **Nghi vấn (Trung bình)** | $0.85 \le \text{Confidence} < 0.92$ nhưng xuất hiện ký tự mơ hồ | Hiển thị modal kiểm duyệt OcrReviewModal kèm các chip hoán đổi phương án 1-chạm | Thầy cô hoặc học sinh chỉ cần chạm nhẹ một lần vào chip gợi ý để chọn ký tự chính xác |
+| **Thấp** | Confidence $< 0.85$ hoặc công thức không hợp lệ | Mở modal OcrReviewModal và bảng InkConvertPanel với trường nhập công thức trực tiếp | Cho phép chỉnh sửa nhanh công thức bằng bàn phím số hoặc chọn ký tự thay thế trực quan |
+
+### 5.4. Cơ chế đồng bộ dữ liệu Realtime giữa 2 Tính Năng
+
+```text
+BỤC GIẢNG (Feature 1: teacher-board)              HỌC SINH TẠI NHÀ (Feature 2: student-app)
+Màn hình tương tác 86 inch / Cổng 3001             Máy tính cá nhân, Tablet / Cổng 3002
+┌──────────────────────────────────────┐          ┌──────────────────────────────────────┐
+│  • Viết vẽ Hologram HUD              │          │  • AfterSchoolTutor: 4 chế độ tự học │
+│  • 10 STEM Engines tương tác trực tiếp│          │  • Socratic Stepper & MathNumpad     │
+│  • Pre-Clear Commit lưu phân cảnh    │          │  • 4 Visual Debuggers chẩn đoán      │
+└──────────────────┬───────────────────┘          └──────────────────▲───────────────────┘
+                   │                                                 │
+                   ▼                                                 │
+      ┌─────────────────────────┐        WebSocket / REST            │
+      │  AI Engine Hub & Cache  ├────────────────────────────────────┘
+      │  (Cổng 8000 / Redis)    │   • Đồng bộ tệp Vector Journal siêu nhẹ (< 60 KB)
+      └─────────────────────────┘   • Cập nhật bản đồ nhiệt nhận thức TeacherHeatmap
+                                    • Gửi báo cáo nỗ lực học tập ParentPulse
+```
+
+### 5.5. Tổng kết kiểm thử tự động toàn diện
+
+Hệ thống duy trì kiểm thử tự động nghiêm ngặt và đạt tỷ lệ thành công 100% trên toàn bộ các gói dự án:
+- `apps/teacher-board`: 30 tệp kiểm thử, 382 ca kiểm thử passed hoàn toàn.
+- `apps/student-app`: 2 tệp kiểm thử, 18 ca kiểm thử passed hoàn toàn.
+- `services/ai-engine`: 6 tệp kiểm thử, 41 ca kiểm thử passed hoàn toàn.
+- TypeScript Static Analysis: 0 lỗi cảnh báo trên cả hai ứng dụng phía máy khách.
+- **Tổng cộng: 441/441 ca kiểm thử passed tuyệt đối.**
+
+

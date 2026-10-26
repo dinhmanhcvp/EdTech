@@ -214,7 +214,12 @@ export const OxyzEngine: React.FC<Props> = ({ blueprint }) => {
   });
   const [parseError, setParseError] = useState(initial.error);
   const [center, setCenter] = useState<Vec3>([0, 0, 0]);
-  const [radius, setRadius] = useState(2);
+  const [radius, setRadius] = useState<number>(() => {
+    if (typeof blueprint.meta?.radius === "number" && blueprint.meta.radius > 0) {
+      return Math.round(blueprint.meta.radius * 100) / 100;
+    }
+    return 2;
+  });
   const [normal, setNormal] = useState<Vec3>(initial.normal);
   const [offset, setOffset] = useState(initial.offset);
   let result: ReturnType<typeof spherePlane> | null = null,

@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { SocraticCompanionSession } from '../components/companion/SocraticCompanionSession';
+import { AfterSchoolTutor } from '../components/companion/AfterSchoolTutor';
 import { TeacherHeatmap, StudentMastery } from '../components/dashboards/TeacherHeatmap';
 import { ParentPulse } from '../components/dashboards/ParentPulse';
 import { SmartNotesViewer } from '../components/dashboards/SmartNotesViewer';
-import { GraduationCap, BarChart3, HeartHandshake, Compass, FileText } from 'lucide-react';
+import { GraduationCap, BarChart3, HeartHandshake, Compass, FileText, Sparkles } from 'lucide-react';
 
 function getAcademicRank(eureka: number): { title: string; badgeClass: string; dotClass: string } {
   if (eureka >= 1000) return { title: 'Grandmaster / Quốc tế', badgeClass: 'bg-rose-50 text-rose-700 border-rose-200', dotClass: 'bg-rose-600' };
@@ -16,7 +17,7 @@ function getAcademicRank(eureka: number): { title: string; badgeClass: string; d
 }
 
 export default function StudentAppPage() {
-  const [activeTab, setActiveTab] = useState<'COMPANION' | 'SMARTNOTES' | 'HEATMAP' | 'PARENTPULSE'>('COMPANION');
+  const [activeTab, setActiveTab] = useState<'COMPANION' | 'AFTER_SCHOOL_TUTOR' | 'SMARTNOTES' | 'HEATMAP' | 'PARENTPULSE'>('COMPANION');
   const [totalEureka, setTotalEureka] = useState<number>(0);
   const [curriculumLevel, setCurriculumLevel] = useState<'THPT_STANDARD' | 'OLYMPIAD_ADVANCED'>('THPT_STANDARD');
 
@@ -28,6 +29,15 @@ export default function StudentAppPage() {
   ];
 
   const [students, setStudents] = useState<StudentMastery[]>(defaultStudents);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && ['COMPANION', 'AFTER_SCHOOL_TUTOR', 'SMARTNOTES', 'HEATMAP', 'PARENTPULSE'].includes(tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchHeatmap = async () => {
@@ -71,9 +81,10 @@ export default function StudentAppPage() {
               SOCRATIC
             </span>
             <span className="text-stone-400 text-xs font-mono">/</span>
-            <span className="text-xs text-stone-600 font-medium">Companion</span>
-            <span className="font-mono text-[10px] text-stone-500 border border-[#E5E3DC] bg-[#F2F0EA] px-1.5 py-0.5 rounded">
-              v4.0
+            <span className="text-xs text-stone-600 font-medium">After-School Platform</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-semibold hidden md:inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-600" />
+              Tính năng 2: Gia Sư AI & Tự Học Sau Giờ Học
             </span>
           </div>
 
@@ -117,54 +128,88 @@ export default function StudentAppPage() {
           </button>
         </div>
 
-        {/* Right: Tab Switcher */}
-        <div className="flex items-center gap-1 bg-[#F2F0EA] p-0.5 rounded-lg border border-[#E5E3DC]">
-          <button
-            onClick={() => setActiveTab('COMPANION')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
-              activeTab === 'COMPANION'
-                ? 'bg-white text-stone-900 font-medium shadow-xs'
-                : 'text-stone-500 hover:text-stone-800'
-            }`}
-          >
-            <Compass className="w-3.5 h-3.5" />
-            <span>Bài học Socratic</span>
-          </button>
+        {/* Right: Tab Switcher & Bridge to Feature 1 */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-[#F2F0EA] p-0.5 rounded-lg border border-[#E5E3DC]">
+            <button
+              onClick={() => setActiveTab('AFTER_SCHOOL_TUTOR')}
+              data-testid="tab-after-school-tutor"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
+                activeTab === 'AFTER_SCHOOL_TUTOR'
+                  ? 'bg-white text-stone-900 font-medium shadow-xs'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+              <span>Gia sư AI 4 chế độ</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('SMARTNOTES')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
-              activeTab === 'SMARTNOTES'
-                ? 'bg-white text-stone-900 font-medium shadow-xs'
-                : 'text-stone-500 hover:text-stone-800'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Smart Notes (Tính năng 5)</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('COMPANION')}
+              data-testid="tab-socratic-companion"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
+                activeTab === 'COMPANION'
+                  ? 'bg-white text-stone-900 font-medium shadow-xs'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5 text-blue-600" />
+              <span>Gia sư Socratic 1:1</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('HEATMAP')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
-              activeTab === 'HEATMAP'
-                ? 'bg-white text-stone-900 font-medium shadow-xs'
-                : 'text-stone-500 hover:text-stone-800'
-            }`}
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            <span>Ma trận Giáo viên</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('SMARTNOTES')}
+              data-testid="tab-smart-notes"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
+                activeTab === 'SMARTNOTES'
+                  ? 'bg-white text-stone-900 font-medium shadow-xs'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5 text-stone-600" />
+              <span>Smart Notes (Vở ghi)</span>
+            </button>
 
+            <button
+              onClick={() => setActiveTab('HEATMAP')}
+              data-testid="tab-teacher-heatmap"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
+                activeTab === 'HEATMAP'
+                  ? 'bg-white text-stone-900 font-medium shadow-xs'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Phân tích lớp học (Heatmap)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('PARENTPULSE')}
+              data-testid="tab-parent-pulse"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
+                activeTab === 'PARENTPULSE'
+                  ? 'bg-white text-stone-900 font-medium shadow-xs'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              <HeartHandshake className="w-3.5 h-3.5 text-rose-600" />
+              <span>Báo cáo Phụ huynh</span>
+            </button>
+          </div>
+
+          {/* Bridge button to Feature 1 */}
           <button
-            onClick={() => setActiveTab('PARENTPULSE')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
-              activeTab === 'PARENTPULSE'
-                ? 'bg-white text-stone-900 font-medium shadow-xs'
-                : 'text-stone-500 hover:text-stone-800'
-            }`}
+            type="button"
+            data-testid="btn-open-feature-1-board"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.open('http://localhost:3001', '_blank');
+              }
+            }}
+            className="text-xs border border-blue-200 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg text-blue-800 font-semibold shadow-xs transition cursor-pointer hidden 2xl:flex items-center gap-1"
+            title="Mở Bảng tương tác thông minh bục giảng trên lớp (Feature 1)"
           >
-            <HeartHandshake className="w-3.5 h-3.5" />
-            <span>Parent Pulse</span>
+            <span>Tính năng 1: Bảng trên lớp</span>
           </button>
         </div>
       </header>
@@ -176,6 +221,15 @@ export default function StudentAppPage() {
             <SocraticCompanionSession
               onSessionComplete={(pts) => setTotalEureka(pts)}
               curriculumLevel={curriculumLevel}
+            />
+          </div>
+        )}
+
+        {activeTab === 'AFTER_SCHOOL_TUTOR' && (
+          <div className="w-full flex justify-center">
+            <AfterSchoolTutor
+              curriculumLevel={curriculumLevel}
+              onEurekaEarned={(pts) => setTotalEureka((prev) => prev + pts)}
             />
           </div>
         )}

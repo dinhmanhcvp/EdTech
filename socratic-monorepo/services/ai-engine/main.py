@@ -23,6 +23,9 @@ from routers.companion import router as companion_router
 from routers.classroom import router as classroom_router
 from routers.recognize_ink import router as recognize_ink_router
 from routers.classroom_ws import router as classroom_ws_router
+from routers.classroom_ws import _public_size
+from routers.visualize import RAPIDOCR_ENGINE
+from cache.chroma_cache import CHROMADB_AVAILABLE
 
 app = FastAPI(
     title="Socratic Vision Board - Deterministic & Socratic AI Engine",
@@ -30,11 +33,14 @@ app = FastAPI(
     description="Edge-first AI compiler that translates teacher lasso & student friction into deterministic 60FPS blueprints."
 )
 
-# Enable CORS for Smartboard canvas & Student App
+# Enable CORS for Smartboard canvas & Student App. In a real classroom the
+# browser runs on another device, so origins must be configurable instead of
+# relying on localhost-only defaults.
+_cors_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "*").split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials="*" not in _cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -63,6 +69,8 @@ def plot_equation(equation: str = "A * sin(x)", a: float = 1.0, b: float = 0.0, 
 
 @app.get("/health")
 def health_check():
+    room_stats = _public_size()
+    gemini_configured = bool(os.getenv("GEMINI_API_KEY"))
     return {
         "status": "healthy",
         "version": "2.0.0",
@@ -71,8 +79,16 @@ def health_check():
             "MathPlotEngine",
             "PhysicsSandboxEngine",
             "ChemistryLabEngine",
-            "BioSystemEngine"
+            "BioSystemEngine",
+            "AdvancedStemEngines"
         ],
+        "runtime": {
+            "rapidocr": RAPIDOCR_ENGINE is not None,
+            "chromadb": CHROMADB_AVAILABLE,
+            "gemini_configured": gemini_configured,
+            "classroom_rooms": room_stats["rooms"],
+            "classroom_students": room_stats["students"],
+        },
         "endpoints": [
             "/api/v1/canvas/compile-lasso",
             "/api/v1/companion/evaluate-step",

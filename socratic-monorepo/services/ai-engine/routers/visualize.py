@@ -129,6 +129,22 @@ OFFLINE_TEMPLATE_REGISTRY: Dict[str, Dict[str, Any]] = {
         "targetParam": "bAxis",
         "subject": "MATH"
     },
+    # 3b. TOÁN: HÌNH HỌC KHÔNG GIAN 3D OXYZ & MẶT CẦU
+    "MATH_3D_OXYZ": {
+        "engine": "MATH",
+        "templateId": "MATH_3D_OXYZ",
+        "recognizedLatex": "x^2 + y^2 + z^2 = 10",
+        "expressions": ["x^2 + y^2 + z^2 = R^2"],
+        "parameters": [
+            { "key": "radius", "label": "Bán kính mặt cầu (R)", "unit": "", "defaultValue": 3.16, "min": 1.0, "max": 10.0, "step": 0.5 },
+            { "key": "centerX", "label": "Tâm I_x", "unit": "", "defaultValue": 0.0, "min": -5.0, "max": 5.0, "step": 0.5 },
+            { "key": "centerY", "label": "Tâm I_y", "unit": "", "defaultValue": 0.0, "min": -5.0, "max": 5.0, "step": 0.5 },
+            { "key": "centerZ", "label": "Tâm I_z", "unit": "", "defaultValue": 0.0, "min": -5.0, "max": 5.0, "step": 0.5 }
+        ],
+        "socraticQuestion": "Khi khoảng cách từ tâm mặt cầu I đến mặt phẳng (P) bằng bán kính R, vị trí tương đối giữa mặt cầu và mặt phẳng là tiếp xúc hay cắt nhau?",
+        "targetParam": "radius",
+        "subject": "MATH"
+    },
     # 4. VẬT LÝ: NÉM XIÊN & VECTOR VẬN TỐC
     "PHYS_PROJECTILE": {
         "engine": "PHYSICS",
@@ -555,6 +571,7 @@ def build_vision_prompt(hint_text=None, subject_lock=None):
         "- MATH_TRIG_WAVE (y = 2sin(3x), sin, cos, waves, oscillation)\n"
         "- MATH_FUNC_2D (y = 2x+1, y = ax^3+bx^2+cx+d, linear, parabola, cubic, polynomials)\n"
         "- MATH_CONIC_2D (x^2/a^2 + y^2/b^2 = 1, ellipse, circle)\n"
+        "- MATH_3D_OXYZ (x^2 + y^2 + z^2 = R^2, sphere, mặt cầu, mặt phẳng, Oxyz, 3D space)\n"
         "- PHYS_PROJECTILE (v0, g, projectile, parabola, ném, lực, arrow/ball)\n"
         "- PHYS_PENDULUM (pendulum, con lắc, spring, lò xo, L, circle on string)\n"
         "- PHYS_INCLINED (a = g(sin(alpha) - mu*cos(alpha)), inclined plane, mặt phẳng nghiêng, ma sát)\n"
@@ -719,6 +736,8 @@ def intelligent_fallback_matcher(
             matched_template = "MATH_TRIG_WAVE"
         elif any(k in hint for k in ["elip", "ellipse", "conic", "tròn", "tron"]):
             matched_template = "MATH_CONIC_2D"
+        elif any(k in hint for k in ["oxyz", "mặt cầu", "mat cau", "z^2", "z^ 2", "x^2+y^2+z^2", "x^2 + y^2 + z^2", "x^2+y^2"]):
+            matched_template = "MATH_3D_OXYZ"
         elif any(k in hint for k in ["x^", "x2", "x3", "y =", "y=", "f(x)", "hàm", "ham", "int", "tích phân", "tich phan", "nguyên hàm"]):
             matched_template = "MATH_FUNC_2D"
 
@@ -728,6 +747,14 @@ def intelligent_fallback_matcher(
         raw_strokes_json=raw_strokes_json,
         hint_subject=matched_template or hint_subject or hint_text
     )
+
+    # Detect 3D Sphere Equation from OCR text if present (e.g. x^2 + y^2 + z^2 = 10, or with OCR confusion z -> 2/Z)
+    raw_ocr = (ocr_res.get("recognized_latex") or "").strip().lower()
+    if any(p in raw_ocr for p in ["z^2", "z^ 2", "z2", "+z^", "+ z^"]) or ("x^2" in raw_ocr and "y^2" in raw_ocr and ("z" in raw_ocr or "2^2" in raw_ocr or "z^2" in raw_ocr)):
+        matched_template = "MATH_3D_OXYZ"
+        ocr_res["template_id"] = "MATH_3D_OXYZ"
+        if not ocr_res.get("recognized_latex") or ocr_res.get("recognized_latex") in ["y = 2x + 1", ""]:
+            ocr_res["recognized_latex"] = "x^2 + y^2 + z^2 = 10"
 
     if matched_template and ocr_res.get("template_id") != matched_template:
         ocr_res["template_id"] = matched_template
@@ -935,7 +962,7 @@ async def compile_lasso(request: Request):
     ai_svg = generate_bespoke_interactive_svg(
         topic=hint_text or hint_subject or item.get("templateId", ""),
         recognized_latex=final_latex,
-        parameters=[p.dict() for p in parameters]
+        parameters=[p.model_dump() for p in parameters]
     )
 
     blueprint = SimulationBlueprint(

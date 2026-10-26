@@ -6,3 +6,6 @@ uvicorn
 python-multipart
 pillow
 google-generativeai
+# Optional online/offline acceleration tiers used by the lasso and companion paths.
+rapidocr-onnxruntime
+chromadb

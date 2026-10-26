@@ -683,11 +683,32 @@ export function matchAdvancedKeywords(
       },
     };
   }
-  if (/\boxyz\b|mặt cầu.*mặt phẳng|mặt phẳng.*mặt cầu/i.test(t)) {
+  // Nhận diện không gian Oxyz: từ khóa Oxyz, mặt cầu, hoặc trực tiếp phương trình mặt cầu 3D x^2 + y^2 + z^2 = R^2
+  // Hỗ trợ xử lý OCR confusion khi ký tự z bị nhận nhầm thành 2 hoặc Z
+  const sphereMatch =
+    /(?:(?:\([xX][+-]\d+\)|[xX])\^?2\s*\+\s*(?:\([yY][+-]\d+\)|[yY])\^?2\s*\+\s*(?:\([zZ2][+-]\d+\)|[zZ2])\^?2|[xX]\^?2\s*\+\s*[yY]\^?2\s*\+\s*[zZ2]\^?2)\s*=\s*(\d+(?:[.,]\d+)?)/i.exec(
+      t,
+    );
+  if (
+    /\boxyz\b|mặt cầu.*mặt phẳng|mặt phẳng.*mặt cầu/i.test(t) ||
+    sphereMatch ||
+    (/[xX]\^?2/i.test(t) && /[yY]\^?2/i.test(t) && /[zZ]\^?2/i.test(t))
+  ) {
     const plane = /(?:\(P\)|\bP|mặt phẳng)\s*:\s*([^;\n]+=[^;\n]+)/i.exec(t);
+    const radiusVal = sphereMatch
+      ? Math.sqrt(parseFloat(sphereMatch[1].replace(",", ".")))
+      : 2;
     return {
       templateId: "MATH_3D_OXYZ",
-      meta: plane ? { plane: plane[1].trim() } : {},
+      meta: {
+        ...(plane ? { plane: plane[1].trim() } : {}),
+        ...(sphereMatch
+          ? {
+              sphereEquation: sphereMatch[0].replace(/[Z2]\^?2(?=\s*=)/i, "z^2"),
+              radius: radiusVal,
+            }
+          : {}),
+      },
     };
   }
   if (

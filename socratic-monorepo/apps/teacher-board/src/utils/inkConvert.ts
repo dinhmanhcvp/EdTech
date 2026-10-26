@@ -90,16 +90,28 @@ export async function recognizeWithAi(strokes: Stroke[], opts: AiOptions = {}): 
   if (key) headers['x-gemini-api-key'] = key;
 
   const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timer = ctrl ? setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 16000) : null;
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 35000) : null;
   try {
     let resp: Response;
+    const customBackend = (typeof window !== 'undefined' ? window.localStorage.getItem('backend_url') : '') || (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_BACKEND_URL : '') || '';
     try {
       resp = await doFetch(endpoint, {method: 'POST', headers, body, signal: ctrl?.signal});
     } catch (e) {
       if (!endpoint.startsWith('/')) throw e;
-      resp = await doFetch(`http://127.0.0.1:8000${endpoint}`, {method: 'POST', headers, body, signal: ctrl?.signal});
+      if (customBackend) {
+        resp = await doFetch(`${customBackend.replace(/\/+$/, '')}${endpoint}`, {method: 'POST', headers, body, signal: ctrl?.signal});
+      } else {
+        resp = await doFetch(`http://127.0.0.1:8000${endpoint}`, {method: 'POST', headers, body, signal: ctrl?.signal});
+      }
+    }
+    if (!resp.ok && endpoint.startsWith('/') && customBackend) {
+      try {
+        const directResp = await doFetch(`${customBackend.replace(/\/+$/, '')}${endpoint}`, {method: 'POST', headers, body, signal: ctrl?.signal});
+        if (directResp.ok) resp = directResp;
+      } catch {}
     }
     if (!resp.ok) return null; // 503 = chưa có khóa / mô hình không phản hồi
+
     const j = await resp.json();
     const lines: ConvertLine[] = (j.lines || []).map((l: {text?: string; latex?: string; confidence?: number}) => ({
       text: String(l.text ?? l.latex ?? ''),

@@ -13,8 +13,13 @@ const nextConfig = {
         source: '/api/v1/:path*',
         destination: `${BACKEND_URL}/api/v1/:path*`,
       },
+      {
+        source: '/health',
+        destination: `${BACKEND_URL}/health`,
+      },
     ];
   },
 };
+
 
 module.exports = nextConfig;

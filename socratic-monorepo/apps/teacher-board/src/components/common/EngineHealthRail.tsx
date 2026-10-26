@@ -18,9 +18,14 @@ type HealthPayload = {
 type RailState = 'checking' | 'online' | 'degraded' | 'offline';
 
 const backendUrl = () => {
+  if (typeof window !== 'undefined') {
+    const saved = window.localStorage.getItem('backend_url');
+    if (saved) return saved.replace(/\/+$/, '');
+  }
   const configured = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_BACKEND_URL : undefined;
   return (configured || 'http://127.0.0.1:8000').replace(/\/+$/, '');
 };
+
 
 export const EngineHealthRail: React.FC = () => {
   const [health, setHealth] = useState<HealthPayload | null>(null);

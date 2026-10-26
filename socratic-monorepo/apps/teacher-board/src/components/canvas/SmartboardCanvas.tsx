@@ -1663,6 +1663,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       }
 
       let resp: Response;
+      const customBackend = (typeof window !== 'undefined' ? window.localStorage.getItem('backend_url') : '') || (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_BACKEND_URL : '') || '';
       try {
         resp = await fetch(apiEndpoint, {
           method: 'POST',
@@ -1671,15 +1672,35 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         });
       } catch (fetchErr) {
         if (apiEndpoint.startsWith('/')) {
-          resp = await fetch(`http://127.0.0.1:8000${apiEndpoint}`, {
-            method: 'POST',
-            headers: requestHeaders,
-            body: JSON.stringify(payload),
-          });
+          if (customBackend) {
+            resp = await fetch(`${customBackend.replace(/\/+$/, '')}${apiEndpoint}`, {
+              method: 'POST',
+              headers: requestHeaders,
+              body: JSON.stringify(payload),
+            });
+          } else {
+            resp = await fetch(`http://127.0.0.1:8000${apiEndpoint}`, {
+              method: 'POST',
+              headers: requestHeaders,
+              body: JSON.stringify(payload),
+            });
+          }
         } else {
           throw fetchErr;
         }
       }
+
+      if (!resp.ok && apiEndpoint.startsWith('/') && customBackend) {
+        try {
+          const directResp = await fetch(`${customBackend.replace(/\/+$/, '')}${apiEndpoint}`, {
+            method: 'POST',
+            headers: requestHeaders,
+            body: JSON.stringify(payload),
+          });
+          if (directResp.ok) resp = directResp;
+        } catch {}
+      }
+
 
       if (!resp.ok) {
         const errText = await resp.text();

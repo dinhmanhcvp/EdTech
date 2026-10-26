@@ -180,6 +180,797 @@ export const ChemicalBalanceScale: React.FC<ChemicalBalanceScaleProps> = ({
 };
 
 // ============================================================================
+// 1.2. VECTOR FORCE POLYGON WIDGET (SECTION 8.2 - PHYSICS DEBUGGER)
+// ============================================================================
+export interface VectorForcePolygonProps {
+  fGravity?: number;       // P (N), default 50
+  fNormal?: number;        // N (N), default 43.3
+  fFriction?: number;      // F_ms (N), default 15
+  fPullOrParallel?: number;// F_kéo or P_parallel (N), default 25
+  angleDeg?: number;       // incline angle α, default 30
+  feedbackText?: string;
+  onAdjustFriction?: (f: number) => void;
+  onApplyBalanced?: () => void;
+}
+
+export const VectorForcePolygon: React.FC<VectorForcePolygonProps> = ({
+  fGravity = 50,
+  fNormal = 43.3,
+  fFriction = 15,
+  fPullOrParallel = 25,
+  angleDeg = 30,
+  feedbackText,
+  onAdjustFriction,
+  onApplyBalanced,
+}) => {
+  const [internalFriction, setInternalFriction] = useState<number>(fFriction);
+  const activeFriction = onAdjustFriction ? fFriction : internalFriction;
+
+  // Target friction for static/kinetic equilibrium along incline: F_ms = 25 N
+  const targetFriction = 25;
+  const gap = Math.abs(activeFriction - targetFriction);
+  const isBalanced = gap <= 1.0;
+
+  const handleFrictionChange = (val: number) => {
+    setInternalFriction(val);
+    if (onAdjustFriction) onAdjustFriction(val);
+  };
+
+  const handleAutoClose = () => {
+    handleFrictionChange(targetFriction);
+  };
+
+  // Polygon Coordinates (Head-to-tail chain)
+  // Origin ptA: (160, 35)
+  // 1. P (Gravity, straight down): (160, 35) -> (160, 135)
+  // 2. N (Normal force, up-left perpendicular to 30°):
+  //    (160, 135) -> (116.7, 60)
+  // 3. F_ms (Friction force, up-right along incline towards ptA):
+  //    at target 25 N, reaches exactly ptA (160, 35)!
+  const ptA = { x: 160, y: 35 };
+  const ptB = { x: 160, y: 135 };
+  const ptC = { x: 116.7, y: 60 };
+  const frictionFraction = Math.max(0, Math.min(2, activeFriction / targetFriction));
+  const frictionDx = 43.3 * frictionFraction;
+  const frictionDy = -25 * frictionFraction;
+  const ptD = { x: ptC.x + frictionDx, y: ptC.y + frictionDy };
+
+  return (
+    <div
+      data-testid="vector-force-polygon"
+      className="bg-white p-4 rounded-xl border border-[#E6E4DD] flex flex-col items-center w-full shadow-xs font-sans select-none"
+    >
+      {/* Header */}
+      <div className="text-[11px] font-mono text-stone-500 mb-2 flex items-center justify-between w-full px-1">
+        <span className="flex items-center gap-1.5 font-medium">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+          <span>Đa giác Vector Hợp lực (Vector Force Polygon):</span>
+          <span className="text-stone-900 font-bold">ΣF = P + N + F_ms</span>
+        </span>
+        <span className="text-[10px] text-stone-400 font-mono">α = {angleDeg}°</span>
+      </div>
+
+      {/* SVG Canvas */}
+      <div className="relative w-full h-48 bg-[#F8F7F4] rounded-xl border border-[#E6E4DD] overflow-hidden flex items-center justify-center">
+        <svg viewBox="0 0 320 180" className="w-full h-full">
+          <defs>
+            <marker id="poly-arrow-blue" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L6,3 z" fill="#2563EB" />
+            </marker>
+            <marker id="poly-arrow-indigo" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L6,3 z" fill="#4F46E5" />
+            </marker>
+            <marker id="poly-arrow-amber" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L6,3 z" fill="#D97706" />
+            </marker>
+            <marker id="poly-arrow-red" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L6,3 z" fill="#DC2626" />
+            </marker>
+            <marker id="poly-arrow-emerald" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L6,3 z" fill="#059669" />
+            </marker>
+          </defs>
+
+          {/* Reference Grid */}
+          <line x1="20" y1="90" x2="300" y2="90" stroke="#E6E4DD" strokeDasharray="3 3" />
+          <line x1="160" y1="15" x2="160" y2="165" stroke="#E6E4DD" strokeDasharray="3 3" />
+
+          {/* Vector 1: P (Gravity) ptA -> ptB */}
+          <line
+            x1={ptA.x}
+            y1={ptA.y}
+            x2={ptB.x}
+            y2={ptB.y}
+            stroke="#2563EB"
+            strokeWidth="2.5"
+            markerEnd="url(#poly-arrow-blue)"
+          />
+          <text x={ptB.x + 8} y={(ptA.y + ptB.y) / 2} fill="#2563EB" fontSize="11" fontFamily="monospace" fontWeight="bold">
+            P = {fGravity}N
+          </text>
+
+          {/* Vector 2: N (Normal force) ptB -> ptC */}
+          <line
+            x1={ptB.x}
+            y1={ptB.y}
+            x2={ptC.x}
+            y2={ptC.y}
+            stroke="#4F46E5"
+            strokeWidth="2.5"
+            markerEnd="url(#poly-arrow-indigo)"
+          />
+          <text x={ptC.x - 22} y={(ptB.y + ptC.y) / 2 + 5} fill="#4F46E5" fontSize="11" fontFamily="monospace" fontWeight="bold">
+            N = {fNormal}N
+          </text>
+
+          {/* Vector 3: F_ms (Friction force) ptC -> ptD */}
+          <line
+            x1={ptC.x}
+            y1={ptC.y}
+            x2={ptD.x}
+            y2={ptD.y}
+            stroke={isBalanced ? "#059669" : "#D97706"}
+            strokeWidth="2.5"
+            markerEnd={isBalanced ? "url(#poly-arrow-emerald)" : "url(#poly-arrow-amber)"}
+          />
+          <text x={(ptC.x + ptD.x) / 2 - 12} y={ptD.y - 10} fill={isBalanced ? "#059669" : "#D97706"} fontSize="11" fontFamily="monospace" fontWeight="bold">
+            F_ms = {activeFriction}N
+          </text>
+
+          {/* Gap Vector (Error vector when unbalanced) ptD -> ptA */}
+          {!isBalanced && (
+            <>
+              <line
+                x1={ptD.x}
+                y1={ptD.y}
+                x2={ptA.x}
+                y2={ptA.y}
+                stroke="#DC2626"
+                strokeWidth="2.5"
+                strokeDasharray="4 3"
+                markerEnd="url(#poly-arrow-red)"
+                className="animate-pulse"
+              />
+              <text
+                x={(ptD.x + ptA.x) / 2 + 10}
+                y={(ptD.y + ptA.y) / 2}
+                fill="#DC2626"
+                fontSize="10"
+                fontFamily="monospace"
+                fontWeight="bold"
+              >
+                ΔF = {gap.toFixed(1)}N
+              </text>
+            </>
+          )}
+
+          {/* Origin / Closing Point indicator */}
+          <circle cx={ptA.x} cy={ptA.y} r="4.5" fill={isBalanced ? "#059669" : "#DC2626"} />
+          <text x={ptA.x - 14} y={ptA.y - 6} fill="#78716C" fontSize="9" fontFamily="monospace">
+            Gốc (O)
+          </text>
+        </svg>
+
+        {/* Live Status Overlay Badge */}
+        <div className="absolute top-2.5 right-2.5">
+          {isBalanced ? (
+            <span
+              data-testid="polygon-closed-success"
+              className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-mono font-bold flex items-center gap-1 shadow-2xs"
+            >
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              Đa giác khép kín (ΣF = 0)
+            </span>
+          ) : (
+            <span
+              data-testid="polygon-gap-warning"
+              className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 text-[10px] font-mono font-bold flex items-center gap-1 shadow-2xs animate-pulse"
+            >
+              <AlertTriangle className="w-3 h-3 text-rose-600" />
+              Hở đa giác (ΔF = {gap.toFixed(1)} N)
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Friction Adjuster Slider */}
+      <div className="w-full mt-3 p-2 bg-[#F8F7F4] rounded-lg border border-[#E6E4DD] flex flex-col gap-1.5">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <span className="text-stone-700 flex items-center gap-1.5 font-medium">
+            <Sliders className="w-3.5 h-3.5 text-stone-500" />
+            Điều chỉnh lực ma sát F_ms:
+          </span>
+          <span className="font-bold text-stone-900 tabular-nums">{activeFriction} N</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            data-testid="adjust-friction-slider"
+            min="0"
+            max="40"
+            step="1"
+            value={activeFriction}
+            onChange={(e) => handleFrictionChange(Number(e.target.value))}
+            className="flex-1 accent-blue-600 cursor-pointer"
+          />
+          <button
+            type="button"
+            data-testid="auto-close-polygon-btn"
+            onClick={handleAutoClose}
+            className="px-2 py-0.5 rounded bg-white hover:bg-stone-50 border border-[#DCD9D0] text-[10px] font-mono text-blue-700 font-semibold shadow-2xs cursor-pointer"
+            title="Tự động căn chỉnh lực ma sát để khép kín chuỗi vector"
+          >
+            Tự khép kín
+          </button>
+        </div>
+      </div>
+
+      {/* Footer Feedback & Apply */}
+      <div className="text-[11px] font-mono mt-2.5 text-center px-3 py-1.5 rounded-lg bg-[#F8F7F4] border border-[#E6E4DD] flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
+        {isBalanced ? (
+          <span className="text-emerald-700 font-medium flex items-center gap-1.5 text-left">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+            <span>Đa giác lực đã khép kín hoàn toàn! Hệ cân bằng động lực học.</span>
+          </span>
+        ) : (
+          <span className="text-amber-800 flex items-center gap-1.5 text-left">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+            <span>{feedbackText || `Đa giác bị hở đoạn đỏ ${gap.toFixed(1)}N! Hãy tăng F_ms = P·sin(α) = 25N để khép kín.`}</span>
+          </span>
+        )}
+
+        {isBalanced && onApplyBalanced && (
+          <button
+            type="button"
+            data-testid="apply-polygon-btn"
+            onClick={onApplyBalanced}
+            className="px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition cursor-pointer active:translate-y-px shadow-xs shrink-0"
+          >
+            Điền vào bài làm
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+export const VectorForcePolygonWidget = VectorForcePolygon;
+
+// ============================================================================
+// 1.3. FUNCTION EXTREMA TANGENT WIDGET (SECTION 8.2 - MATH DEBUGGER)
+// ============================================================================
+export interface FunctionExtremaTangentProps {
+  x0?: number;             // candidate point x0, default e.g. 0.0 or 1.5
+  functionExpression?: string; // default "f(x) = x³ - 3x"
+  feedbackText?: string;
+  onAdjustX0?: (newX: number) => void;
+  onApplyExtremum?: () => void;
+}
+
+export const FunctionExtremaTangent: React.FC<FunctionExtremaTangentProps> = ({
+  x0 = 0.0,
+  functionExpression = 'f(x) = x³ - 3x',
+  feedbackText,
+  onAdjustX0,
+  onApplyExtremum,
+}) => {
+  const [internalX0, setInternalX0] = useState<number>(x0);
+  const activeX0 = onAdjustX0 ? x0 : internalX0;
+
+  // f(x) = x^3 - 3x => f'(x) = 3x^2 - 3
+  const fx = activeX0 * activeX0 * activeX0 - 3 * activeX0;
+  const slope = 3 * activeX0 * activeX0 - 3;
+  const isHorizontal = Math.abs(slope) <= 0.05;
+  const angleDeg = Math.round((Math.atan(slope) * 180) / Math.PI);
+
+  const handleXChange = (val: number) => {
+    setInternalX0(val);
+    if (onAdjustX0) onAdjustX0(val);
+  };
+
+  const handleSnapExtremum = (target: number = 1.0) => {
+    handleXChange(target);
+  };
+
+  // SVG coordinate transformation
+  const cx = 160;
+  const cy = 90;
+  const scaleX = 45;
+  const scaleY = 20;
+
+  const toSvgX = (x: number) => cx + x * scaleX;
+  const toSvgY = (y: number) => cy - y * scaleY;
+
+  // Generate cubic curve points for x in [-2.2, 2.2]
+  const curvePoints: string[] = [];
+  for (let x = -2.2; x <= 2.201; x += 0.08) {
+    const y = x * x * x - 3 * x;
+    curvePoints.push(`${toSvgX(x).toFixed(1)},${toSvgY(y).toFixed(1)}`);
+  }
+  const curvePath = `M ${curvePoints.join(' L ')}`;
+
+  // Tangent ruler at activeX0: extends deltaX = 1.0 unit on each side
+  const pt0 = { x: toSvgX(activeX0), y: toSvgY(fx) };
+  const rulerDelta = 45; // 45px = 1 unit
+  const dySvg = - slope * (scaleY / scaleX) * rulerDelta;
+  const rulerStart = { x: pt0.x - rulerDelta, y: pt0.y - dySvg };
+  const rulerEnd = { x: pt0.x + rulerDelta, y: pt0.y + dySvg };
+
+  return (
+    <div
+      data-testid="function-extrema-tangent"
+      className="bg-white p-4 rounded-xl border border-[#E6E4DD] flex flex-col items-center w-full shadow-xs font-sans select-none"
+    >
+      {/* Header */}
+      <div className="text-[11px] font-mono text-stone-500 mb-2 flex items-center justify-between w-full px-1">
+        <span className="flex items-center gap-1.5 font-medium">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+          <span>Thước Tiếp Tuyến Cực Trị (Extrema Tangent Ruler):</span>
+          <span className="text-stone-900 font-bold">{functionExpression}</span>
+        </span>
+        <span className="text-[10px] text-stone-400 font-mono">f&apos;(x) = 3x² - 3</span>
+      </div>
+
+      {/* SVG Canvas */}
+      <div className="relative w-full h-48 bg-[#F8F7F4] rounded-xl border border-[#E6E4DD] overflow-hidden flex items-center justify-center">
+        <svg viewBox="0 0 320 180" className="w-full h-full">
+          {/* Grid Axes */}
+          <line x1="20" y1={cy} x2="300" y2={cy} stroke="#DCD9D0" strokeWidth="1" />
+          <line x1={cx} y1="15" x2={cx} y2="165" stroke="#DCD9D0" strokeWidth="1" />
+          <text x="295" y={cy - 5} fill="#A8A29E" fontSize="9" fontFamily="monospace">x</text>
+          <text x={cx + 5} y="22" fill="#A8A29E" fontSize="9" fontFamily="monospace">y</text>
+
+          {/* Reference Extrema Horizontal Dashed Tangents */}
+          <line
+            x1="40"
+            y1={toSvgY(2)}
+            x2="280"
+            y2={toSvgY(2)}
+            stroke="#10B981"
+            strokeWidth="1"
+            strokeDasharray="3 3"
+            strokeOpacity="0.4"
+          />
+          <line
+            x1="40"
+            y1={toSvgY(-2)}
+            x2="280"
+            y2={toSvgY(-2)}
+            stroke="#10B981"
+            strokeWidth="1"
+            strokeDasharray="3 3"
+            strokeOpacity="0.4"
+          />
+
+          {/* Function Curve f(x) = x^3 - 3x */}
+          <path
+            d={curvePath}
+            fill="none"
+            stroke="#2563EB"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+
+          {/* Tangent Ruler Line at activeX0 */}
+          <line
+            x1={rulerStart.x}
+            y1={rulerStart.y}
+            x2={rulerEnd.x}
+            y2={rulerEnd.y}
+            stroke={isHorizontal ? "#059669" : "#D97706"}
+            strokeWidth={isHorizontal ? "3.5" : "3"}
+            strokeLinecap="round"
+            className={isHorizontal ? "" : "animate-pulse"}
+          />
+
+          {/* Tangent Contact Point */}
+          <circle
+            cx={pt0.x}
+            cy={pt0.y}
+            r="5"
+            fill={isHorizontal ? "#059669" : "#D97706"}
+            stroke="#FFFFFF"
+            strokeWidth="2"
+          />
+
+          {/* Coordinates Label */}
+          <text
+            x={Math.min(230, Math.max(30, pt0.x + 8))}
+            y={Math.min(160, Math.max(30, pt0.y - 10))}
+            fill={isHorizontal ? "#059669" : "#D97706"}
+            fontSize="10"
+            fontFamily="monospace"
+            fontWeight="bold"
+          >
+            ({activeX0.toFixed(2)}, {fx.toFixed(2)})
+          </text>
+        </svg>
+
+        {/* Live Status Overlay Badge */}
+        <div className="absolute top-2.5 right-2.5">
+          {isHorizontal ? (
+            <span
+              data-testid="tangent-horizontal-success"
+              className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-mono font-bold flex items-center gap-1 shadow-2xs"
+            >
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              Tiếp tuyến nằm ngang (k = 0)
+            </span>
+          ) : (
+            <span
+              data-testid="tangent-tilted-warning"
+              className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-mono font-bold flex items-center gap-1 shadow-2xs animate-pulse"
+            >
+              <AlertTriangle className="w-3 h-3 text-amber-600" />
+              Tiếp tuyến dốc nghiêng (k = {slope.toFixed(2)}, θ = {angleDeg}°)
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Slider & Snap Extrema Controls */}
+      <div className="w-full mt-3 p-2 bg-[#F8F7F4] rounded-lg border border-[#E6E4DD] flex flex-col gap-1.5">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <span className="text-stone-700 flex items-center gap-1.5 font-medium">
+            <Sliders className="w-3.5 h-3.5 text-stone-500" />
+            Tọa độ điểm khảo sát x₀:
+          </span>
+          <span className="font-bold text-stone-900 tabular-nums">
+            x₀ = {activeX0.toFixed(2)} • k = {slope.toFixed(2)}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            data-testid="adjust-x0-slider"
+            min="-2.0"
+            max="2.0"
+            step="0.05"
+            value={activeX0}
+            onChange={(e) => handleXChange(parseFloat(e.target.value))}
+            className="flex-1 accent-blue-600 cursor-pointer"
+          />
+          <button
+            type="button"
+            data-testid="snap-extremum-btn"
+            onClick={() => handleSnapExtremum(activeX0 <= 0 ? -1.0 : 1.0)}
+            className="px-2 py-0.5 rounded bg-white hover:bg-stone-50 border border-[#DCD9D0] text-[10px] font-mono text-blue-700 font-semibold shadow-2xs cursor-pointer"
+            title="Căn chỉnh tiếp tuyến nằm ngang hoàn hảo (k=0)"
+          >
+            Căn ngang (k=0)
+          </button>
+        </div>
+
+        {/* Quick Snap Chips */}
+        <div className="flex items-center gap-1.5 pt-0.5">
+          <span className="text-[10px] font-mono text-stone-400">Điểm đặc biệt:</span>
+          <button
+            type="button"
+            onClick={() => handleSnapExtremum(-1.0)}
+            className="px-1.5 py-0.2 rounded bg-white hover:bg-stone-100 border border-[#DCD9D0] text-[9px] font-mono text-stone-700 cursor-pointer"
+          >
+            x = -1 (Cực đại)
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSnapExtremum(1.0)}
+            className="px-1.5 py-0.2 rounded bg-white hover:bg-stone-100 border border-[#DCD9D0] text-[9px] font-mono text-stone-700 cursor-pointer"
+          >
+            x = +1 (Cực tiểu)
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSnapExtremum(0.0)}
+            className="px-1.5 py-0.2 rounded bg-white hover:bg-stone-100 border border-[#DCD9D0] text-[9px] font-mono text-stone-700 cursor-pointer"
+          >
+            x = 0 (Điểm uốn)
+          </button>
+        </div>
+      </div>
+
+      {/* Footer Feedback & Apply */}
+      <div className="text-[11px] font-mono mt-2.5 text-center px-3 py-1.5 rounded-lg bg-[#F8F7F4] border border-[#E6E4DD] flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
+        {isHorizontal ? (
+          <span className="text-emerald-700 font-medium flex items-center gap-1.5 text-left">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+            <span>Tiếp tuyến nằm ngang hoàn hảo (k = 0)! x₀ = {activeX0.toFixed(1)} là điểm cực trị.</span>
+          </span>
+        ) : (
+          <span className="text-amber-800 flex items-center gap-1.5 text-left">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+            <span>{feedbackText || `Tiếp tuyến tại x₀ = ${activeX0.toFixed(2)} đang nghiêng dốc k = ${slope.toFixed(2)} ≠ 0! Tại cực trị tiếp tuyến phải song song Ox.`}</span>
+          </span>
+        )}
+
+        {isHorizontal && onApplyExtremum && (
+          <button
+            type="button"
+            data-testid="apply-extremum-btn"
+            onClick={onApplyExtremum}
+            className="px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition cursor-pointer active:translate-y-px shadow-xs shrink-0"
+          >
+            Điền vào bài làm
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+export const FunctionExtremaTangentWidget = FunctionExtremaTangent;
+
+// ============================================================================
+// 1.4. CELL OSMOSIS PRESSURE WIDGET (SECTION 8.2 - BIOLOGY DEBUGGER)
+// ============================================================================
+export interface CellOsmosisPressureProps {
+  cOut?: number;           // extracellular NaCl concentration (%), default 2.0%
+  cIn?: number;            // intracellular NaCl concentration (%), default 0.9%
+  feedbackText?: string;
+  onAdjustCOut?: (newC: number) => void;
+  onApplyBalanced?: () => void;
+}
+
+export const CellOsmosisPressure: React.FC<CellOsmosisPressureProps> = ({
+  cOut = 2.0,
+  cIn = 0.9,
+  feedbackText,
+  onAdjustCOut,
+  onApplyBalanced,
+}) => {
+  const [internalCOut, setInternalCOut] = useState<number>(cOut);
+  const activeCOut = onAdjustCOut ? cOut : internalCOut;
+
+  // Osmotic pressure difference P = (cIn - cOut) * 10 atm
+  const deltaC = cIn - activeCOut;
+  const pAtm = Math.round(deltaC * 10 * 10) / 10;
+
+  // Environment state
+  const isHypertonic = activeCOut > 1.0;
+  const isHypotonic = activeCOut < 0.8;
+  const isIsotonic = !isHypertonic && !isHypotonic;
+
+  const handleCChange = (val: number) => {
+    setInternalCOut(val);
+    if (onAdjustCOut) onAdjustCOut(val);
+  };
+
+  // Cell radius scaling
+  let cellRadius = 45;
+  if (isHypertonic) {
+    const shrivelFactor = Math.min(1.0, (activeCOut - 0.9) / 2.0);
+    cellRadius = 45 - 20 * shrivelFactor;
+  } else if (isHypotonic) {
+    const swellFactor = Math.min(1.0, (0.9 - activeCOut) / 0.9);
+    cellRadius = 45 + 16 * swellFactor;
+  }
+
+  return (
+    <div
+      data-testid="cell-osmosis-pressure"
+      className="bg-white p-4 rounded-xl border border-[#E6E4DD] flex flex-col items-center w-full shadow-xs font-sans select-none"
+    >
+      {/* Header */}
+      <div className="text-[11px] font-mono text-stone-500 mb-2 flex items-center justify-between w-full px-1">
+        <span className="flex items-center gap-1.5 font-medium">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+          <span>Áp Suất Thẩm Thấu Màng Tế Bào (Cell Osmosis):</span>
+          <span className="text-stone-900 font-bold">C_trong = {cIn}% NaCl</span>
+        </span>
+        <span className="text-[10px] text-stone-400 font-mono">P = ΔC · RT</span>
+      </div>
+
+      {/* SVG Canvas */}
+      <div className="relative w-full h-48 bg-[#F0FDF4]/30 rounded-xl border border-[#E6E4DD] overflow-hidden flex items-center justify-center">
+        <svg viewBox="0 0 320 180" className="w-full h-full">
+          <defs>
+            <radialGradient id="cellGradient" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={isHypertonic ? "#F87171" : isHypotonic ? "#60A5FA" : "#34D399"} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={isHypertonic ? "#DC2626" : isHypotonic ? "#2563EB" : "#059669"} stopOpacity="0.8" />
+            </radialGradient>
+            <marker id="arrow-water-out" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L6,3 z" fill="#DC2626" />
+            </marker>
+            <marker id="arrow-water-in" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L6,3 z" fill="#2563EB" />
+            </marker>
+          </defs>
+
+          {/* Beaker / Environment background */}
+          <rect x="25" y="20" width="270" height="145" rx="12" fill={isHypertonic ? "#FEF2F2" : isHypotonic ? "#EFF6FF" : "#F0FDF4"} stroke="#CBD5E1" strokeWidth="1.5" />
+          <text x="35" y="38" fill="#64748B" fontSize="10" fontFamily="monospace">
+            Dung dịch ngoài: C = {activeCOut.toFixed(1)}% NaCl
+          </text>
+
+          {/* Plant Cell Wall / Membrane boundary */}
+          <rect x="85" y="35" width="150" height="115" rx="8" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeDasharray={isHypotonic && activeCOut <= 0.2 ? "4 2" : "none"} />
+          <text x="92" y="50" fill="#16A34A" fontSize="9" fontFamily="monospace" fontWeight="bold">
+            Thành tế bào
+          </text>
+
+          {/* Protoplast / Cytoplasm Membrane (Morphs with Osmosis) */}
+          {isHypertonic ? (
+            <polygon
+              points={`160,${92 - cellRadius} ${160 + cellRadius * 0.75},${92 - cellRadius * 0.6} ${160 + cellRadius},92 ${160 + cellRadius * 0.65},${92 + cellRadius * 0.7} 160,${92 + cellRadius} ${160 - cellRadius * 0.7},${92 + cellRadius * 0.6} ${160 - cellRadius},92 ${160 - cellRadius * 0.6},${92 - cellRadius * 0.65}`}
+              fill="url(#cellGradient)"
+              stroke="#B91C1C"
+              strokeWidth="2"
+              className="transition-all duration-300"
+            />
+          ) : (
+            <circle
+              cx="160"
+              cy="92"
+              r={cellRadius}
+              fill="url(#cellGradient)"
+              stroke={isHypotonic ? "#1D4ED8" : "#047857"}
+              strokeWidth={isHypotonic ? "2.5" : "2"}
+              className="transition-all duration-300"
+            />
+          )}
+
+          {/* Cell Nucleus */}
+          <circle cx="160" cy="92" r={Math.max(6, cellRadius * 0.22)} fill="#1E293B" opacity="0.75" />
+          <text x="160" y="95" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontFamily="monospace">
+            Nhân
+          </text>
+
+          {/* Water flux arrows */}
+          {isHypertonic && (
+            <>
+              <line x1="160" y1="65" x2="160" y2="35" stroke="#DC2626" strokeWidth="2" markerEnd="url(#arrow-water-out)" />
+              <line x1="160" y1="120" x2="160" y2="148" stroke="#DC2626" strokeWidth="2" markerEnd="url(#arrow-water-out)" />
+              <line x1="125" y1="92" x2="95" y2="92" stroke="#DC2626" strokeWidth="2" markerEnd="url(#arrow-water-out)" />
+              <line x1="195" y1="92" x2="225" y2="92" stroke="#DC2626" strokeWidth="2" markerEnd="url(#arrow-water-out)" />
+              <text x="230" y="85" fill="#DC2626" fontSize="9" fontFamily="monospace" fontWeight="bold">H₂O ↑</text>
+            </>
+          )}
+
+          {isHypotonic && (
+            <>
+              <line x1="160" y1="35" x2="160" y2="60" stroke="#2563EB" strokeWidth="2" markerEnd="url(#arrow-water-in)" />
+              <line x1="160" y1="148" x2="160" y2="124" stroke="#2563EB" strokeWidth="2" markerEnd="url(#arrow-water-in)" />
+              <line x1="95" y1="92" x2="120" y2="92" stroke="#2563EB" strokeWidth="2" markerEnd="url(#arrow-water-in)" />
+              <line x1="225" y1="92" x2="200" y2="92" stroke="#2563EB" strokeWidth="2" markerEnd="url(#arrow-water-in)" />
+              <text x="230" y="85" fill="#2563EB" fontSize="9" fontFamily="monospace" fontWeight="bold">H₂O ↓</text>
+            </>
+          )}
+
+          {/* Manometer Osmotic Pressure Indicator */}
+          <rect x="238" y="128" width="52" height="32" rx="4" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1" />
+          <text x="242" y="140" fill="#64748B" fontSize="8" fontFamily="monospace">Áp suất P</text>
+          <text x="242" y="153" fill={isHypertonic ? "#DC2626" : isHypotonic ? "#2563EB" : "#059669"} fontSize="11" fontFamily="monospace" fontWeight="bold">
+            {pAtm > 0 ? `+${pAtm}` : pAtm} atm
+          </text>
+        </svg>
+
+        {/* Live Status Overlay Badge */}
+        <div className="absolute top-2.5 right-2.5">
+          {isHypertonic && (
+            <span
+              data-testid="osmosis-shrivel-warning"
+              className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 text-[10px] font-mono font-bold flex items-center gap-1 shadow-2xs animate-pulse"
+            >
+              <AlertTriangle className="w-3 h-3 text-rose-600" />
+              Ưu trương • Tế bào co nguyên sinh
+            </span>
+          )}
+          {isHypotonic && (
+            <span
+              data-testid="osmosis-swell-warning"
+              className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-300 text-[10px] font-mono font-bold flex items-center gap-1 shadow-2xs animate-pulse"
+            >
+              <AlertTriangle className="w-3 h-3 text-blue-600" />
+              Nhược trương • Trương nước (Nguy cơ nổ)
+            </span>
+          )}
+          {isIsotonic && (
+            <span
+              data-testid="osmosis-balanced-success"
+              className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-mono font-bold flex items-center gap-1 shadow-2xs"
+            >
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              Đẳng trương hoàn hảo (P ≈ 0)
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Extracellular Concentration Slider & Presets */}
+      <div className="w-full mt-3 p-2 bg-[#F8F7F4] rounded-lg border border-[#E6E4DD] flex flex-col gap-1.5">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <span className="text-stone-700 flex items-center gap-1.5 font-medium">
+            <Sliders className="w-3.5 h-3.5 text-stone-500" />
+            Nồng độ muối ngoại bào C_ngoài:
+          </span>
+          <span className="font-bold text-stone-900 tabular-nums">
+            {activeCOut.toFixed(1)}% NaCl (P = {pAtm > 0 ? `+${pAtm}` : pAtm} atm)
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            data-testid="adjust-cout-slider"
+            min="0.0"
+            max="3.0"
+            step="0.1"
+            value={activeCOut}
+            onChange={(e) => handleCChange(parseFloat(e.target.value))}
+            className="flex-1 accent-blue-600 cursor-pointer"
+          />
+          <button
+            type="button"
+            data-testid="preset-isotonic-btn"
+            onClick={() => handleCChange(0.9)}
+            className="px-2 py-0.5 rounded bg-white hover:bg-stone-50 border border-[#DCD9D0] text-[10px] font-mono text-emerald-700 font-semibold shadow-2xs cursor-pointer"
+            title="Đưa về nồng độ đẳng trương sinh lý 0.9% NaCl"
+          >
+            Đẳng trương (0.9%)
+          </button>
+        </div>
+
+        {/* Quick Presets */}
+        <div className="flex items-center gap-1.5 pt-0.5">
+          <span className="text-[10px] font-mono text-stone-400">Chế độ môi trường:</span>
+          <button
+            type="button"
+            data-testid="preset-hypertonic-btn"
+            onClick={() => handleCChange(2.5)}
+            className="px-1.5 py-0.2 rounded bg-white hover:bg-stone-100 border border-[#DCD9D0] text-[9px] font-mono text-rose-700 cursor-pointer"
+          >
+            Ưu trương (2.5%)
+          </button>
+          <button
+            type="button"
+            onClick={() => handleCChange(0.9)}
+            className="px-1.5 py-0.2 rounded bg-white hover:bg-stone-100 border border-[#DCD9D0] text-[9px] font-mono text-emerald-700 cursor-pointer"
+          >
+            Đẳng trương (0.9%)
+          </button>
+          <button
+            type="button"
+            data-testid="preset-hypotonic-btn"
+            onClick={() => handleCChange(0.1)}
+            className="px-1.5 py-0.2 rounded bg-white hover:bg-stone-100 border border-[#DCD9D0] text-[9px] font-mono text-blue-700 cursor-pointer"
+          >
+            Nhược trương (0.1%)
+          </button>
+        </div>
+      </div>
+
+      {/* Footer Feedback & Apply */}
+      <div className="text-[11px] font-mono mt-2.5 text-center px-3 py-1.5 rounded-lg bg-[#F8F7F4] border border-[#E6E4DD] flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
+        {isIsotonic ? (
+          <span className="text-emerald-700 font-medium flex items-center gap-1.5 text-left">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+            <span>Đẳng trương hoàn hảo (0.9% NaCl)! Dòng nước cân bằng động, tế bào bình thường.</span>
+          </span>
+        ) : (
+          <span className="text-amber-800 flex items-center gap-1.5 text-left">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+            <span>
+              {feedbackText ||
+                (isHypertonic
+                  ? `Môi trường ưu trương (C = ${activeCOut.toFixed(1)}% > 0.9%): Nước thoát ra, tế bào co nguyên sinh!`
+                  : `Môi trường nhược trương (C = ${activeCOut.toFixed(1)}% < 0.9%): Nước tràn vào, tế bào trương căng!`)}
+            </span>
+          </span>
+        )}
+
+        {isIsotonic && onApplyBalanced && (
+          <button
+            type="button"
+            data-testid="apply-osmosis-btn"
+            onClick={onApplyBalanced}
+            className="px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition cursor-pointer active:translate-y-px shadow-xs shrink-0"
+          >
+            Điền vào bài làm
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+export const CellOsmosisPressureWidget = CellOsmosisPressure;
+
+// ============================================================================
 // 2. PHYSICS FREE-BODY DIAGRAM & ENERGY BAR CHART (TAB A - PHYSICS)
 // ============================================================================
 export interface PhysicsFBDProps {

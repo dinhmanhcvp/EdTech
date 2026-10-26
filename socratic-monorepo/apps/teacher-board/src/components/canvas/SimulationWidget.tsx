@@ -1,7 +1,7 @@
 // apps/teacher-board/src/components/canvas/SimulationWidget.tsx
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { SimulationBlueprint, SimParamConfig, CurriculumLevel } from '@socratic/types';
 import { RotateCcw, FileText, CheckCircle2, Sparkles } from 'lucide-react';
 import { MathPlotEngine } from '../../engines/MathPlotEngine';
@@ -11,6 +11,8 @@ import { PunnettEngine, HardyWeinbergEngine, LinearProgrammingEngine, CobwebEngi
 import { VseprEngine, LeChatelierEngine, DaniellEngine } from '../../engines/ChemEngines';
 import { StomataEngine, OsmosisEngine, OperonLacEngine, BoxplotEngine, VariationTableEngine } from '../../engines/MoreStemEngines';
 import { GasEngine, DoublePendulumEngine, CoriolisEngine, FraunhoferEngine } from '../../engines/PhysEngines';
+import { ADVANCED_ENGINES } from '../../engines/AdvancedStemEngines';
+import { ADVANCED_TEMPLATES, type AdvancedId } from '../../utils/advancedStemModels';
 import { PhysicsSandboxEngine } from '../../engines/PhysicsSandboxEngine';
 import { ChemistryLabEngine } from '../../engines/ChemistryLabEngine';
 import { BioSystemEngine } from '../../engines/BioSystemEngine';
@@ -18,6 +20,7 @@ import { AIGeneratedVisualEngine } from './AIGeneratedVisualEngine';
 import { TapAndSwapOCR } from './TapAndSwapOCR';
 import { MathView } from '../common/MathView';
 import { MathText } from '../ui/MathText';
+import { evaluateDynamicSocraticCue, triggerSocraticAcousticFeedback } from '../../utils/socraticTriggers';
 
 export interface SimulationWidgetProps {
   blueprint: SimulationBlueprint;
@@ -30,6 +33,16 @@ export interface SimulationWidgetProps {
   locked?: boolean;
   isSplitView?: boolean;
   onToggleSplitView?: () => void;
+  /** Chế độ hiển thị: DOCK (chia đôi cột) hoặc HOLOGRAM (nổi trực tiếp trên bảng, hòa trộn không nền) */
+  displayMode?: 'DOCK' | 'HOLOGRAM';
+  onToggleDisplayMode?: () => void;
+  /** Tỉ lệ phóng to thu nhỏ tự do của Hologram (0.5x - 2.0x) */
+  holoScale?: number;
+  onScaleChange?: (scale: number) => void;
+  /** Xử lý kéo di chuyển bằng bút hoặc chạm ngón tay */
+  onGripPointerDown?: (e: React.PointerEvent) => void;
+  onGripPointerMove?: (e: React.PointerEvent) => void;
+  onGripPointerUp?: (e: React.PointerEvent) => void;
 }
 
 function deriveParametersForFormula(
@@ -264,6 +277,7 @@ export function getCurriculumParameters(
 
 function getTopicDisplayName(blueprint: SimulationBlueprint): string {
   const t = blueprint.templateId;
+  if (Object.prototype.hasOwnProperty.call(ADVANCED_TEMPLATES, t)) return ADVANCED_TEMPLATES[t as AdvancedId].title;
   const f = (blueprint.recognizedLatex || '').toLowerCase();
 
   // Engine mới nhận dạng theo templateId trước, tránh bị các từ khóa (sin, x^2…) kéo sang chủ đề khác.
@@ -328,6 +342,7 @@ function getTopicDisplayName(blueprint: SimulationBlueprint): string {
 /** Engine tự vẽ thanh điều khiển riêng (hàm, tham số, bật/tắt) nên không dùng thanh trượt macro. */
 const PHYS_OWN = ['PHYS_GAS_STATE_PV', 'PHYS_DOUBLE_PENDULUM', 'PHYS_CORIOLIS_FORCE', 'PHYS_FRAUNHOFER_DIFF'];
 const SELF_CONTROLLED = new Set(['PHYS_GAS_STATE_PV', 'PHYS_DOUBLE_PENDULUM', 'PHYS_CORIOLIS_FORCE', 'PHYS_FRAUNHOFER_DIFF','MATH_GRAPH', 'GEO_SOLID', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE', 'BIO_STOMATA_GAS', 'BIO_OSMOSIS_CELL', 'BIO_OPERON_LAC', 'CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL']);
+Object.keys(ADVANCED_ENGINES).forEach((id) => SELF_CONTROLLED.add(id));
 
 export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   blueprint,
@@ -338,7 +353,17 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   locked = false,
   isSplitView = false,
   onToggleSplitView,
+  displayMode = 'DOCK',
+  onToggleDisplayMode,
+  holoScale = 1.0,
+  onScaleChange,
+  onGripPointerDown,
+  onGripPointerMove,
+  onGripPointerUp,
 }) => {
+  const isHolo = displayMode === 'HOLOGRAM';
+  const AdvancedEngine = Object.prototype.hasOwnProperty.call(ADVANCED_ENGINES, blueprint.templateId) ? ADVANCED_ENGINES[blueprint.templateId] : undefined;
+  const [engineRevision, setEngineRevision] = useState(0);
   const [activeFormula, setActiveFormula] = useState<string>(blueprint.recognizedLatex);
   const [renderMode, setRenderMode] = useState<'ENGINE' | 'AI_VISUAL'>(
     blueprint.custom_interactive_svg ? 'ENGINE' : 'ENGINE'
@@ -365,6 +390,36 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
 
   const [showSocratic, setShowSocratic] = useState<boolean>(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+
+  // Ephemeral HUD Brackets timer (auto fade-out after 2 seconds)
+  const [showHudBrackets, setShowHudBrackets] = useState<boolean>(true);
+  const hudTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerHudBrackets = useCallback(() => {
+    setShowHudBrackets(true);
+    if (hudTimeoutRef.current) clearTimeout(hudTimeoutRef.current);
+    hudTimeoutRef.current = setTimeout(() => {
+      setShowHudBrackets(false);
+    }, 2000);
+  }, []);
+
+  useEffect(() => {
+    triggerHudBrackets();
+    return () => {
+      if (hudTimeoutRef.current) clearTimeout(hudTimeoutRef.current);
+    };
+  }, [triggerHudBrackets]);
+
+  // Section 8: Dynamic Reactive Socratic Cue Evaluation
+  const dynamicCue = useMemo(() => {
+    return evaluateDynamicSocraticCue(blueprint.templateId, params, activeFormula);
+  }, [blueprint.templateId, params, activeFormula]);
+
+  useEffect(() => {
+    if (dynamicCue) {
+      triggerSocraticAcousticFeedback(dynamicCue);
+    }
+  }, [dynamicCue]);
 
   useEffect(() => {
     setParams((prev) => {
@@ -402,6 +457,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   };
 
   const handleReset = () => {
+    if (AdvancedEngine) setEngineRevision((revision) => revision + 1);
     const resetVals: Record<string, number> = {};
     activeParameters.forEach((p) => {
       resetVals[p.key] = p.defaultValue;
@@ -461,26 +517,79 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   return (
     <div
       data-testid="simulation-widget"
-      className="relative w-full max-w-full rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] text-stone-900 shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] overflow-hidden select-none"
+      data-display-mode={displayMode}
+      onPointerDown={triggerHudBrackets}
+      onPointerMove={triggerHudBrackets}
+      className={`relative w-full max-w-full select-none transition-all duration-150 ${
+        isHolo
+          ? 'rounded-2xl bg-stone-900/10 dark:bg-black/30 backdrop-blur-[2px] border border-cyan-400/40 shadow-[0_0_24px_rgba(0,240,255,0.18)] text-stone-900 dark:text-stone-100 overflow-visible'
+          : 'rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] text-stone-900 shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] overflow-hidden'
+      }`}
     >
-      {/* Header Bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#E6E4DD] bg-[#FCFBF9]/90 backdrop-blur-sm flex-wrap gap-2.5">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-stone-500 font-medium">
-              {getTopicDisplayName(activeBlueprint)}
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded bg-[#F2F0EA] border border-[#E6E4DD] text-stone-600 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              60 FPS • Local Engine
-            </span>
+      {/* Sci-Fi HUD Hologram corner brackets with Ephemeral fade-out */}
+      {isHolo && (
+        <div
+          data-testid="hologram-hud-brackets"
+          className={`transition-opacity duration-500 pointer-events-none ${
+            showHudBrackets ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <div className="absolute -top-1.5 -left-1.5 w-5 h-5 border-t-2 border-l-2 border-cyan-400 rounded-tl-sm drop-shadow-[0_0_8px_rgba(0,240,255,0.9)]" />
+          <div className="absolute -top-1.5 -right-1.5 w-5 h-5 border-t-2 border-r-2 border-cyan-400 rounded-tr-sm drop-shadow-[0_0_8px_rgba(0,240,255,0.9)]" />
+          <div className="absolute -bottom-1.5 -left-1.5 w-5 h-5 border-b-2 border-l-2 border-cyan-400 rounded-bl-sm drop-shadow-[0_0_8px_rgba(0,240,255,0.9)]" />
+          <div className="absolute -bottom-1.5 -right-1.5 w-5 h-5 border-b-2 border-r-2 border-cyan-400 rounded-br-sm drop-shadow-[0_0_8px_rgba(0,240,255,0.9)]" />
+
+          {/* Hologram HUD Scale Pill */}
+          <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-cyan-950/80 backdrop-blur-md border border-cyan-400/40 text-[10px] font-mono text-cyan-300 whitespace-nowrap shadow-xs">
+            [ PINCH TO SCALE: {Math.round(holoScale * 100)}% ]
           </div>
-          <div className="mt-1">
-            <TapAndSwapOCR
-              formula={activeFormula}
-              alternatives={blueprint.ocrAlternatives}
-              onSwap={handleFormulaSwap}
-            />
+        </div>
+      )}
+
+      {/* Header Bar */}
+      <div
+        className={`flex items-center justify-between px-3.5 py-2 flex-wrap gap-2 transition-colors ${
+          isHolo
+            ? 'rounded-t-2xl bg-cyan-950/25 backdrop-blur-md border-b border-cyan-500/20'
+            : 'border-b border-[#E6E4DD] bg-[#FCFBF9]/90 backdrop-blur-sm'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          {/* Hologram Stylus/Touch Drag Grip */}
+          {isHolo && onGripPointerDown && (
+            <div
+              data-testid="hologram-drag-grip"
+              onPointerDown={onGripPointerDown}
+              onPointerMove={onGripPointerMove}
+              onPointerUp={onGripPointerUp}
+              onPointerCancel={onGripPointerUp}
+              className="cursor-grab active:cursor-grabbing touch-none px-2 py-1 rounded-md bg-cyan-500/15 hover:bg-cyan-500/25 active:bg-cyan-500/40 text-cyan-800 dark:text-cyan-200 border border-cyan-400/40 flex items-center gap-1.5 text-xs font-mono font-semibold select-none shadow-xs transition"
+              title="Cầm bút hoặc ngón tay kéo để di chuyển mô phỏng trên bảng"
+            >
+              <span className="text-sm">⠿</span>
+              <span>Kéo mô phỏng</span>
+            </div>
+          )}
+
+          <div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[11px] font-mono uppercase tracking-widest font-medium ${isHolo ? 'text-cyan-700 dark:text-cyan-300 font-semibold' : 'text-stone-500'}`}>
+                {getTopicDisplayName(activeBlueprint)}
+              </span>
+              <span className={`inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded font-medium ${isHolo ? 'bg-cyan-950/40 border border-cyan-500/40 text-cyan-700 dark:text-cyan-200' : 'bg-[#F2F0EA] border border-[#E6E4DD] text-stone-600'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isHolo ? 'bg-cyan-400 animate-pulse' : 'bg-emerald-500'}`} />
+                {isHolo ? 'Hologram Nổi' : (AdvancedEngine ? 'Mô phỏng tại máy' : '60 FPS • Local Engine')}
+              </span>
+            </div>
+            {!AdvancedEngine && !isHolo && (
+              <div className="mt-1">
+                <TapAndSwapOCR
+                  formula={activeFormula}
+                  alternatives={blueprint.ocrAlternatives}
+                  onSwap={handleFormulaSwap}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -603,6 +712,50 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             <span>Gợi ý Socratic</span>
           </button>
 
+          {/* Hologram Zoom / Scale Controls */}
+          {isHolo && onScaleChange && (
+            <div className="flex items-center gap-1 bg-white/80 dark:bg-stone-900/80 px-1.5 py-0.5 rounded-lg border border-cyan-500/30 text-xs font-mono shadow-xs">
+              <button
+                data-testid="holo-zoom-out"
+                type="button"
+                onClick={() => onScaleChange(Math.max(0.5, Number((holoScale - 0.1).toFixed(1))))}
+                className="w-5 h-5 flex items-center justify-center hover:bg-stone-100 dark:hover:bg-stone-800 rounded text-stone-700 dark:text-stone-200 font-bold transition cursor-pointer"
+                title="Thu nhỏ mô phỏng"
+              >
+                -
+              </button>
+              <span data-testid="holo-scale-label" className="text-[11px] px-1 text-cyan-700 dark:text-cyan-300 font-medium">
+                {Math.round(holoScale * 100)}%
+              </span>
+              <button
+                data-testid="holo-zoom-in"
+                type="button"
+                onClick={() => onScaleChange(Math.min(2.0, Number((holoScale + 0.1).toFixed(1))))}
+                className="w-5 h-5 flex items-center justify-center hover:bg-stone-100 dark:hover:bg-stone-800 rounded text-stone-700 dark:text-stone-200 font-bold transition cursor-pointer"
+                title="Phóng to mô phỏng"
+              >
+                +
+              </button>
+            </div>
+          )}
+
+          {/* Toggle between Hologram and Dock */}
+          {onToggleDisplayMode && (
+            <button
+              data-testid="toggle-display-mode-btn"
+              type="button"
+              onClick={onToggleDisplayMode}
+              className={`px-2 py-1 rounded-lg text-xs font-medium transition cursor-pointer border shadow-xs ${
+                isHolo
+                  ? 'bg-white/85 dark:bg-stone-800/85 hover:bg-white text-stone-800 dark:text-stone-200 border-cyan-500/40'
+                  : 'bg-[#F2F0EA] hover:bg-[#EAE7DF] text-stone-700 border-[#E6E4DD]'
+              }`}
+              title={isHolo ? 'Chuyển sang dạng chia đôi cột' : 'Ghim nổi trực tiếp trên bảng (Hologram không nền)'}
+            >
+              {isHolo ? '◫ Chia đôi' : '🪄 Nổi trên bảng'}
+            </button>
+          )}
+
           {/* Close button if modal */}
           {onClose && (
             <button
@@ -649,6 +802,48 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         </div>
       )}
 
+      {/* Section 8: Dynamic Reactive Socratic Cue Banner (Triggered by Physical/Chemical Thresholds) */}
+      {dynamicCue && (
+        <div
+          data-testid="dynamic-socratic-cue"
+          className={`mx-4 my-2 p-3 rounded-xl border text-xs leading-relaxed flex items-start justify-between gap-3 shadow-md animate-in fade-in transition-all ${
+            dynamicCue.urgency === 'ALERT'
+              ? 'bg-rose-50/95 dark:bg-rose-950/50 border-rose-300 dark:border-rose-500/50 text-rose-950 dark:text-rose-100'
+              : dynamicCue.urgency === 'EUREKA'
+              ? 'bg-amber-50/95 dark:bg-amber-950/50 border-amber-300 dark:border-amber-500/50 text-amber-950 dark:text-amber-100'
+              : 'bg-cyan-50/95 dark:bg-cyan-950/50 border-cyan-300 dark:border-cyan-500/50 text-cyan-950 dark:text-cyan-100'
+          }`}
+        >
+          <div className="flex items-start gap-2.5">
+            <Sparkles
+              className={`w-4 h-4 mt-0.5 shrink-0 ${
+                dynamicCue.urgency === 'ALERT'
+                  ? 'text-rose-600 animate-pulse'
+                  : dynamicCue.urgency === 'EUREKA'
+                  ? 'text-amber-500 animate-bounce'
+                  : 'text-cyan-600'
+              }`}
+            />
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="font-mono text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-black/10 dark:bg-white/10">
+                  ⚡ Gợi Mở Tư Duy Tức Thời
+                </span>
+                <span className="font-bold text-xs">
+                  {dynamicCue.title}
+                </span>
+              </div>
+              <p className="font-serif italic text-sm mt-0.5">
+                &ldquo;{dynamicCue.question}&rdquo;
+              </p>
+              <p className="text-[11px] font-sans mt-1 opacity-85">
+                <strong>Bản chất khoa học:</strong> {dynamicCue.scientificInsight}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Socratic Discussion Prompt (Editorial Margin Note) */}
       {showSocratic && (
         <div
@@ -685,7 +880,12 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
       )}
 
       {/* 60FPS SIMULATION CANVAS RENDER AREA */}
-      <div className="p-4 flex justify-center items-center bg-[#F8F7F4]" data-testid="engine-canvas-container">
+      <div
+        className={`flex justify-center items-center transition-colors ${
+          isHolo ? 'p-2 bg-transparent' : 'p-4 bg-[#F8F7F4]'
+        }`}
+        data-testid="engine-canvas-container"
+      >
         {renderMode === 'AI_VISUAL' ? (
           <AIGeneratedVisualEngine
             blueprint={activeBlueprint}
@@ -709,7 +909,8 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.templateId === 'CHEM_GALVANIC_DANIELL' && <DaniellEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {blueprint.templateId === 'MATH_STAT_BOXPLOT' && <BoxplotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {blueprint.templateId === 'MATH_VARIATION_TABLE' && <VariationTableEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
-            {blueprint.engine === 'MATH' && !['MATH_GRAPH', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE'].includes(blueprint.templateId) && (
+            {AdvancedEngine && <AdvancedEngine key={`${blueprint.templateId}-${engineRevision}`} blueprint={activeBlueprint} />}
+            {blueprint.engine === 'MATH' && !AdvancedEngine && !['MATH_GRAPH', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE'].includes(blueprint.templateId) && (
               <MathPlotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
             {blueprint.engine === 'GEOMETRY' && (
@@ -722,7 +923,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.engine === 'PHYSICS' && !PHYS_OWN.includes(blueprint.templateId) && (
               <PhysicsSandboxEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
-            {blueprint.engine === 'CHEMISTRY' && !['CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL'].includes(blueprint.templateId) && (
+            {blueprint.engine === 'CHEMISTRY' && !AdvancedEngine && !['CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL'].includes(blueprint.templateId) && (
               <ChemistryLabEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
             {blueprint.engine === 'BIOLOGY' && !['BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG', 'BIO_STOMATA_GAS', 'BIO_OSMOSIS_CELL', 'BIO_OPERON_LAC'].includes(blueprint.templateId) && (
@@ -733,7 +934,15 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
       </div>
 
       {/* MACRO SLIDER CONTROLS (Tactile Parameter Scrubbers) */}
-      <div className={`p-4 bg-[#FCFBF9] border-t border-[#E6E4DD] grid grid-cols-2 gap-3 ${SELF_CONTROLLED.has(blueprint.templateId) ? 'hidden' : ''} ${locked ? 'pointer-events-none opacity-60' : ''}`} data-locked={locked} data-testid="macro-sliders-container">
+      <div
+        className={`p-4 ${
+          isHolo
+            ? 'bg-white/90 dark:bg-stone-900/90 backdrop-blur-md border-t border-cyan-500/20 rounded-b-2xl'
+            : 'bg-[#FCFBF9] border-t border-[#E6E4DD]'
+        } grid grid-cols-2 gap-3 ${SELF_CONTROLLED.has(blueprint.templateId) ? 'hidden' : ''} ${locked ? 'pointer-events-none opacity-60' : ''}`}
+        data-locked={locked}
+        data-testid="macro-sliders-container"
+      >
         {activeParameters.map((p: SimParamConfig) => {
           const currentVal = params[p.key] ?? p.defaultValue;
           return (

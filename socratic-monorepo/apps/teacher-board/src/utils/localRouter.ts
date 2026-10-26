@@ -11,6 +11,7 @@ import {parseCross, parseGenotypeFreqs, parseLP, parseRecurrence} from './stemMo
 import {matchBioKeywords} from './bioModels';
 import {matchChemKeywords} from './chemModels';
 import {matchPhysKeywords} from './physicsModels';
+import {matchAdvancedKeywords, ADVANCED_TEMPLATES} from './advancedStemModels';
 import {parseBoxplot, parseVariationTable} from './mathModels';
 
 /** Tách "y = x^2 - 3; y = A sin x + B" thành từng phương trình. */
@@ -138,6 +139,19 @@ const stemBase = {parameters: [] as SimulationBlueprint['parameters'], ocrAltern
 /** Lai Menđen, cân bằng Hardy–Weinberg, quy hoạch tuyến tính, dãy số quy nạp (mạng nhện). Trả null nếu không chắc. */
 export function matchStemModel(text: string): SimulationBlueprint | null {
   const raw = text || '';
+  const advanced = matchAdvancedKeywords(raw);
+  if (advanced) {
+    const spec = ADVANCED_TEMPLATES[advanced.templateId];
+    return {...stemBase, engine: spec.engine, templateId: advanced.templateId, recognizedLatex: `\\text{${spec.title}}`, meta: advanced.meta, socraticQuestion: spec.question,
+      curriculumLevel: [
+        'MATH_DYNAMIC_GEOMETRY',
+        'CHEM_CFT_COMPLEX_3D',
+        'CHEM_SN2_MECHANISM',
+        'CHEM_CRYSTAL_LATTICE',
+        'BIO_LOTKA_VOLTERRA',
+        'BIO_CELL_SIGNALING',
+      ].includes(advanced.templateId) ? 'OLYMPIAD_ADVANCED' : 'THPT_STANDARD'};
+  }
   const rec = parseRecurrence(raw);
   if (rec) {
     return {
@@ -225,7 +239,15 @@ export function matchStemModel(text: string): SimulationBlueprint | null {
       PHYS_CORIOLIS_FORCE: 'Tại sao trong bão ở Bắc bán cầu, luồng không khí luôn xoáy ngược chiều kim đồng hồ? Trong hệ quán tính, vật có thật sự bị cong không?',
       PHYS_FRAUNHOFER_DIFF: 'Tại sao tăng số khe N lại làm các vạch cực đại chính hẹp lại và sáng rực rỡ, còn giữa hai vạch xuất hiện N − 2 cực đại phụ rất yếu?',
     };
-    return {...stemBase, engine: 'PHYSICS', templateId: phys.templateId, recognizedLatex: `\\text{${phys.title}}`, meta: phys.meta, socraticQuestion: q[phys.templateId], curriculumLevel: 'THPT_STANDARD'};
+    return {
+      ...stemBase,
+      engine: 'PHYSICS',
+      templateId: phys.templateId,
+      recognizedLatex: `\\text{${phys.title}}`,
+      meta: phys.meta,
+      socraticQuestion: q[phys.templateId],
+      curriculumLevel: ['PHYS_DOUBLE_PENDULUM', 'PHYS_CORIOLIS_FORCE', 'PHYS_FRAUNHOFER_DIFF'].includes(phys.templateId) ? 'OLYMPIAD_ADVANCED' : 'THPT_STANDARD',
+    };
   }
   const freqs = parseGenotypeFreqs(raw);
   if (freqs && (/hardy|weinberg|quần thể|quan the|alen|cân bằng di truyền/i.test(raw) || /\d\s*%?\s*(?:AA|Aa|aa)\b/.test(raw))) {

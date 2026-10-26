@@ -3,7 +3,12 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MathNumpad } from '../components/companion/MathNumpad';
-import { ChemicalBalanceScale } from '../components/companion/VisualDebugWidgets';
+import {
+  ChemicalBalanceScale,
+  VectorForcePolygon,
+  FunctionExtremaTangent,
+  CellOsmosisPressure,
+} from '../components/companion/VisualDebugWidgets';
 import { ConceptCheckGate } from '../components/companion/ConceptCheckGate';
 import { LockedStepper, StepItem } from '../components/companion/LockedStepper';
 import { TeacherHeatmap, StudentMastery } from '../components/dashboards/TeacherHeatmap';
@@ -361,5 +366,154 @@ describe('Student Socratic Companion & Dashboards (Phase 4)', () => {
     const waveform = screen.getByTestId('voice-defense-waveform');
     expect(waveform).toBeTruthy();
   });
+
+  /**
+   * TEST 11: Vector Force Polygon Widget (Gap on Unbalanced & Closed Loop on Balanced)
+   */
+  it('test_vector_force_polygon_gap_and_balance', () => {
+    const onApplyBalanced = vi.fn();
+    const { rerender } = render(
+      <VectorForcePolygon
+        fGravity={50}
+        fNormal={43.3}
+        fFriction={10}
+        angleDeg={30}
+        onApplyBalanced={onApplyBalanced}
+      />
+    );
+
+    // Initial state: F_ms = 10 N -> Gap = |10 - 25| = 15 N -> Unbalanced
+    expect(screen.getByTestId('vector-force-polygon')).toBeTruthy();
+    const gapWarning = screen.getByTestId('polygon-gap-warning');
+    expect(gapWarning.textContent).toContain('Hở đa giác (ΔF = 15.0 N)');
+
+    // Click "Tự khép kín" button to snap to equilibrium F_ms = 25 N
+    const autoCloseBtn = screen.getByTestId('auto-close-polygon-btn');
+    fireEvent.click(autoCloseBtn);
+
+    // Verify polygon closes
+    const successBadge = screen.getByTestId('polygon-closed-success');
+    expect(successBadge.textContent).toContain('Đa giác khép kín (ΣF = 0)');
+
+    // Test apply button
+    const applyBtn = screen.getByTestId('apply-polygon-btn');
+    fireEvent.click(applyBtn);
+    expect(onApplyBalanced).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * TEST 12: Function Extrema Tangent Widget (Tilted Slope vs Horizontal Extrema)
+   */
+  it('test_function_extrema_tangent_tilted_and_horizontal', () => {
+    const onApplyExtremum = vi.fn();
+    render(
+      <FunctionExtremaTangent
+        x0={0.0}
+        functionExpression="f(x) = x³ - 3x"
+        onApplyExtremum={onApplyExtremum}
+      />
+    );
+
+    // At x0 = 0.0, f'(0) = -3.00 != 0 -> Tilted tangent warning
+    expect(screen.getByTestId('function-extrema-tangent')).toBeTruthy();
+    const tiltedWarning = screen.getByTestId('tangent-tilted-warning');
+    expect(tiltedWarning.textContent).toContain('Tiếp tuyến dốc nghiêng');
+    expect(tiltedWarning.textContent).toContain('k = -3.00');
+
+    // Click "Căn ngang (k=0)" button -> sets x0 = -1.0 or +1.0 where f'(x) = 0
+    const snapExtremumBtn = screen.getByTestId('snap-extremum-btn');
+    fireEvent.click(snapExtremumBtn);
+
+    // Verify horizontal success
+    const horizontalBadge = screen.getByTestId('tangent-horizontal-success');
+    expect(horizontalBadge.textContent).toContain('Tiếp tuyến nằm ngang (k = 0)');
+
+    // Test apply button
+    const applyBtn = screen.getByTestId('apply-extremum-btn');
+    fireEvent.click(applyBtn);
+    expect(onApplyExtremum).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * TEST 13: Cell Osmosis Pressure Widget (Plasmolysis, Turgor Swelling, Isotonic)
+   */
+  it('test_cell_osmosis_pressure_plasmolysis_and_isotonic', () => {
+    const onApplyBalanced = vi.fn();
+    render(
+      <CellOsmosisPressure
+        cOut={2.5}
+        cIn={0.9}
+        onApplyBalanced={onApplyBalanced}
+      />
+    );
+
+    // At C_out = 2.5% > 0.9% -> Hypertonic (Ưu trương), Plasmolysis (Co nguyên sinh)
+    expect(screen.getByTestId('cell-osmosis-pressure')).toBeTruthy();
+    const shrivelWarning = screen.getByTestId('osmosis-shrivel-warning');
+    expect(shrivelWarning.textContent).toContain('Ưu trương • Tế bào co nguyên sinh');
+
+    // Switch to Hypotonic (Nhược trương 0.1%)
+    const hypotonicBtn = screen.getByTestId('preset-hypotonic-btn');
+    fireEvent.click(hypotonicBtn);
+    const swellWarning = screen.getByTestId('osmosis-swell-warning');
+    expect(swellWarning.textContent).toContain('Nhược trương • Trương nước');
+
+    // Switch to Isotonic (Đẳng trương 0.9%)
+    const isotonicBtn = screen.getByTestId('preset-isotonic-btn');
+    fireEvent.click(isotonicBtn);
+    const balancedBadge = screen.getByTestId('osmosis-balanced-success');
+    expect(balancedBadge.textContent).toContain('Đẳng trương hoàn hảo (P ≈ 0)');
+
+    // Test apply button
+    const applyBtn = screen.getByTestId('apply-osmosis-btn');
+    fireEvent.click(applyBtn);
+    expect(onApplyBalanced).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * TEST 14: All 4 Visual Debuggers Render in Socratic Session on Director/Wrong Inputs
+   */
+  it('test_all_four_visual_debuggers_render_in_session_on_wrong_inputs', () => {
+    render(<SocraticCompanionSession />);
+
+    // 1. Initial problem: Physics -> Trigger wrong input (missing friction)
+    const wrongBtn = screen.getByTestId('director-wrong-btn');
+    fireEvent.click(wrongBtn);
+
+    // Verify Vector Force Polygon is rendered
+    expect(screen.getByTestId('vector-polygon-wrapper')).toBeTruthy();
+    expect(screen.getByTestId('vector-force-polygon')).toBeTruthy();
+    expect(screen.getByTestId('polygon-gap-warning')).toBeTruthy();
+
+    // 2. Switch to Math problem
+    const mathTab = screen.getByTestId('problem-tab-math');
+    fireEvent.click(mathTab);
+
+    // Trigger wrong input in Math
+    fireEvent.click(wrongBtn);
+    expect(screen.getByTestId('extrema-tangent-wrapper')).toBeTruthy();
+    expect(screen.getByTestId('function-extrema-tangent')).toBeTruthy();
+    expect(screen.getByTestId('tangent-tilted-warning')).toBeTruthy();
+
+    // 3. Switch to Biology problem
+    const bioTab = screen.getByTestId('problem-tab-biology');
+    fireEvent.click(bioTab);
+
+    // Trigger wrong input in Biology
+    fireEvent.click(wrongBtn);
+    expect(screen.getByTestId('cell-osmosis-wrapper')).toBeTruthy();
+    expect(screen.getByTestId('cell-osmosis-pressure')).toBeTruthy();
+    expect(screen.getByTestId('osmosis-shrivel-warning')).toBeTruthy();
+
+    // 4. Switch to Chemistry problem
+    const chemTab = screen.getByTestId('problem-tab-chemistry');
+    fireEvent.click(chemTab);
+
+    // Trigger wrong input in Chemistry
+    fireEvent.click(wrongBtn);
+    expect(screen.getByTestId('balance-scale-wrapper')).toBeTruthy();
+    expect(screen.getAllByTestId('chemical-balance-scale').length).toBeGreaterThanOrEqual(1);
+  });
 });
+
 

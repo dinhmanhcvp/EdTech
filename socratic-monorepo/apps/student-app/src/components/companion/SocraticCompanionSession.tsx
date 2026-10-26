@@ -4,7 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { SOCRATIC_PROBLEMS, SocraticProblem } from '../../data/socraticProblems';
 import { LockedStepper, StepItem } from './LockedStepper';
 import { MathNumpad } from './MathNumpad';
-import { VisualDebuggerWorkbench, ChemicalBalanceScale } from './VisualDebugWidgets';
+import {
+  VisualDebuggerWorkbench,
+  ChemicalBalanceScale,
+  VectorForcePolygon,
+  FunctionExtremaTangent,
+  CellOsmosisPressure,
+} from './VisualDebugWidgets';
 import { ConceptCheckGate } from './ConceptCheckGate';
 import { MathView } from '../common/MathView';
 import { MathText, FormulaBlock } from '../ui/MathText';
@@ -310,8 +316,36 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
   };
 
   const handleDirectorWrongInput = () => {
-    setFormulaInput('ma = mg*sin(alpha)'); // Missing friction
-    handleStepSubmit('ma = mg*sin(alpha)');
+    if (activeProblem.subject === 'PHYSICS') {
+      setFormulaInput('ma = mg*sin(alpha)'); // Missing friction
+      setIsFrictionMissing(true);
+      setServerVisualDebugger({
+        widget_type: 'VECTOR_FORCE_POLYGON',
+        payload: { gravity: 50, normal: 43.3, friction: 0, angle: 30 },
+      });
+      handleStepSubmit('ma = mg*sin(alpha)');
+    } else if (activeProblem.subject === 'MATH') {
+      setFormulaInput('x = 0');
+      setServerVisualDebugger({
+        widget_type: 'FUNCTION_EXTREMA_TANGENT',
+        payload: { x0: 0.0, expression: 'y = x³ - 3x' },
+      });
+      handleStepSubmit('x = 0');
+    } else if (activeProblem.subject === 'BIOLOGY') {
+      setFormulaInput('C = 2.5%');
+      setServerVisualDebugger({
+        widget_type: 'CELL_OSMOSIS_PRESSURE',
+        payload: { c_out: 2.5, c_in: 0.9 },
+      });
+      handleStepSubmit('C = 2.5%');
+    } else {
+      setFormulaInput('Fe + O2 -> Fe2O3');
+      setServerVisualDebugger({
+        widget_type: 'CHEMICAL_BALANCE_SCALE',
+        payload: { left_atoms: { O: 2 }, right_atoms: { O: 3 } },
+      });
+      handleStepSubmit('Fe + O2 -> Fe2O3');
+    }
   };
 
   const handleDirectorSolveActiveStep = () => {
@@ -571,7 +605,7 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
             {/* Input Dock inside Active Step */}
             {currentStep <= activeProblem.steps.length && (
               <div className="mt-3 flex flex-col gap-3">
-                {/* Chemistry Dual-Pan Balance Scale: server visual debugger or fallback */}
+                {/* 1. Chemistry Dual-Pan Balance Scale: server visual debugger or fallback */}
                 {(serverVisualDebugger?.widget_type === 'CHEMICAL_BALANCE_SCALE' || (activeProblem.subject === 'CHEMISTRY' && currentStep === 4)) && (
                   <div data-testid="balance-scale-wrapper">
                     <ChemicalBalanceScale
@@ -582,6 +616,44 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
                       onAdjustLeft={() => {}}
                       onAdjustRight={() => {}}
                       onApplyBalanced={() => setFormulaInput('4Fe + 3O₂ → 2Fe₂O₃')}
+                    />
+                  </div>
+                )}
+
+                {/* 2. Physics Vector Force Polygon Widget: server visual debugger or fallback */}
+                {(serverVisualDebugger?.widget_type === 'VECTOR_FORCE_POLYGON' || (activeProblem.subject === 'PHYSICS' && isFrictionMissing)) && (
+                  <div data-testid="vector-polygon-wrapper">
+                    <VectorForcePolygon
+                      fGravity={serverVisualDebugger?.payload?.gravity ?? 50}
+                      fNormal={serverVisualDebugger?.payload?.normal ?? 43.3}
+                      fFriction={serverVisualDebugger?.payload?.friction ?? (isFrictionMissing ? 0 : 15)}
+                      angleDeg={serverVisualDebugger?.payload?.angle ?? 30}
+                      feedbackText={serverFeedback || "Đa giác lực bị hở đoạn đỏ ΔF! Hãy bổ sung lực ma sát F_ms để khép kín đa giác."}
+                      onApplyBalanced={() => setFormulaInput('P*sin(alpha) - F_ms = m*a')}
+                    />
+                  </div>
+                )}
+
+                {/* 3. Math Function Extrema Tangent Widget: server visual debugger or fallback */}
+                {(serverVisualDebugger?.widget_type === 'FUNCTION_EXTREMA_TANGENT' || serverVisualDebugger?.widget_type === 'FUNCTION_EXTREMA_GRAPH' || (activeProblem.subject === 'MATH' && currentStep === 3)) && (
+                  <div data-testid="extrema-tangent-wrapper">
+                    <FunctionExtremaTangent
+                      x0={serverVisualDebugger?.payload?.x0 ?? 0.0}
+                      functionExpression={serverVisualDebugger?.payload?.expression ?? "y = x³ - 3x"}
+                      feedbackText={serverFeedback || "Tiếp tuyến tại x₀ = 0 đang dốc nghiêng k = -3 ≠ 0! Cực trị phải có tiếp tuyến nằm ngang (k = 0)."}
+                      onApplyExtremum={() => setFormulaInput('x = 1 (k = 0)')}
+                    />
+                  </div>
+                )}
+
+                {/* 4. Biology Cell Osmosis Pressure Widget: server visual debugger or fallback */}
+                {(serverVisualDebugger?.widget_type === 'CELL_OSMOSIS_PRESSURE' || (activeProblem.subject === 'BIOLOGY' && currentStep === 3)) && (
+                  <div data-testid="cell-osmosis-wrapper">
+                    <CellOsmosisPressure
+                      cOut={serverVisualDebugger?.payload?.c_out ?? 2.0}
+                      cIn={serverVisualDebugger?.payload?.c_in ?? 0.9}
+                      feedbackText={serverFeedback || "Môi trường ưu trương: Nước thoát ra ngoài khiến tế bào co nguyên sinh!"}
+                      onApplyBalanced={() => setFormulaInput('C_in = C_out = 0.9%')}
                     />
                   </div>
                 )}

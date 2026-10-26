@@ -16,6 +16,10 @@ describe('định tuyến Vật lí', () => {
     expect(bp('nhiễu xạ 7 khe').templateId).toBe('PHYS_FRAUNHOFER_DIFF');
     expect(bp('nhiễu xạ 7 khe').meta).toEqual({N: 7});
     expect(bp('con lắc kép').engine).toBe('PHYSICS');
+    expect(bp('con lắc kép').curriculumLevel).toBe('OLYMPIAD_ADVANCED');
+    expect(bp('lực Coriolis').curriculumLevel).toBe('OLYMPIAD_ADVANCED');
+    expect(bp('nhiễu xạ 7 khe').curriculumLevel).toBe('OLYMPIAD_ADVANCED');
+    expect(bp('chu trình Carnot').curriculumLevel).toBe('THPT_STANDARD');
   });
   it('không bắt nhầm biểu thức thông thường', () => {
     expect(routeLocally('F = ma')).toBeNull();

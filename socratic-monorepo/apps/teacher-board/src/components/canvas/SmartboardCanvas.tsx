@@ -127,6 +127,50 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
   const [qrCopied, setQrCopied] = useState<boolean>(false);
 
+  // Hologram On-Board Overlay vs Split-View Dock States
+  const [displayMode, setDisplayMode] = useState<'HOLOGRAM' | 'DOCK'>('HOLOGRAM');
+  const [holoPosition, setHoloPosition] = useState<{ x: number; y: number }>({ x: 580, y: 35 });
+  const [holoScale, setHoloScale] = useState<number>(1.0);
+  const isDraggingHoloRef = useRef(false);
+  const holoDragStartRef = useRef<{ startX: number; startY: number; origX: number; origY: number }>({
+    startX: 0,
+    startY: 0,
+    origX: 0,
+    origY: 0,
+  });
+
+  const handleHoloGripDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+    isDraggingHoloRef.current = true;
+    holoDragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: holoPosition.x,
+      origY: holoPosition.y,
+    };
+  };
+
+  const handleHoloGripMove = (e: React.PointerEvent) => {
+    if (!isDraggingHoloRef.current) return;
+    const dx = (e.clientX - holoDragStartRef.current.startX) / (boardScale || 1);
+    const dy = (e.clientY - holoDragStartRef.current.startY) / (boardScale || 1);
+    setHoloPosition({
+      x: Math.max(0, Math.min(800, Math.round(holoDragStartRef.current.origX + dx))),
+      y: Math.max(0, Math.min(450, Math.round(holoDragStartRef.current.origY + dy))),
+    });
+  };
+
+  const handleHoloGripUp = (e: React.PointerEvent) => {
+    isDraggingHoloRef.current = false;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+  };
+
   // OCR Verification Modal States
   const [isOcrReviewOpen, setIsOcrReviewOpen] = useState(false);
   const [pendingBlueprint, setPendingBlueprint] = useState<SimulationBlueprint | null>(null);
@@ -2160,7 +2204,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         <div
           ref={boardWrapRef}
           className={`relative rounded-2xl overflow-hidden border border-[#E6E4DD] bg-[#F8F7F4] shadow-sm transition-all duration-200 ${
-            activeBlueprint || isCompilingShimmer
+            (activeBlueprint && displayMode === 'DOCK') || isCompilingShimmer
               ? isSplitView
                 ? 'w-full lg:w-1/2'
                 : 'w-full lg:w-[52%]'
@@ -2276,6 +2320,41 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               );
             })()}
           </div>
+
+          {/* Hologram Simulation Overlay - Zero-Background Living Ink on Blackboard */}
+          {activeBlueprint && !isCompilingShimmer && displayMode === 'HOLOGRAM' && (
+            <div
+              data-testid="hologram-simulation-overlay"
+              className="absolute z-20 pointer-events-auto transition-transform"
+              style={{
+                left: `${(holoPosition.x / 1200) * 100}%`,
+                top: `${(holoPosition.y / 675) * 100}%`,
+                transform: `scale(${holoScale})`,
+                transformOrigin: 'top left',
+                width: '560px',
+                maxWidth: '92%',
+              }}
+            >
+              <SimulationWidget
+                key={`${activeBlueprint.templateId}|${activeBlueprint.recognizedLatex}|holo`}
+                blueprint={activeBlueprint}
+                displayMode="HOLOGRAM"
+                onToggleDisplayMode={() => setDisplayMode('DOCK')}
+                holoScale={holoScale}
+                onScaleChange={setHoloScale}
+                onGripPointerDown={handleHoloGripDown}
+                onGripPointerMove={handleHoloGripMove}
+                onGripPointerUp={handleHoloGripUp}
+                remoteParams={room.state.role === 'teacher' ? room.state.params : undefined}
+                onParamChange={(k, v) => {
+                  if (room.state.role === 'teacher') room.send({ type: 'SLIDER', key: k, value: v });
+                }}
+                onClose={() => setActiveBlueprint(null)}
+                isSplitView={isSplitView}
+                onToggleSplitView={() => setIsSplitView(!isSplitView)}
+              />
+            </div>
+          )}
         </div>
 
         {/* 450ms AI Semantic Compiling Skeleton Shimmer Card */}
@@ -2347,7 +2426,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         )}
 
         {/* Side-by-Side Simulation Blueprint */}
-        {activeBlueprint && !isCompilingShimmer && (
+        {activeBlueprint && !isCompilingShimmer && displayMode === 'DOCK' && (
           <div
             data-testid="active-simulation-modal"
             className={`flex flex-col rounded-2xl border border-[#E6E4DD] bg-white shadow-xl animate-in fade-in transition-all duration-200 max-h-[calc(100vh-140px)] overflow-y-auto ${
@@ -2361,6 +2440,15 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 <span>Mô phỏng trực quan ({isSplitView ? 'Nửa bảng phải' : 'Bên cạnh'})</span>
               </span>
               <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  data-testid="dock-switch-holo-btn"
+                  onClick={() => setDisplayMode('HOLOGRAM')}
+                  className="px-2 py-0.5 rounded-md bg-white hover:bg-cyan-50 border border-cyan-300 text-cyan-800 text-xs font-mono shadow-xs transition cursor-pointer flex items-center gap-1"
+                  title="Chuyển sang chế độ nổi trực tiếp trên bảng (Hologram không nền)"
+                >
+                  🪄 Nổi trên bảng
+                </button>
                 <button
                   type="button"
                   onClick={() => setIsSplitView(!isSplitView)}
@@ -2384,6 +2472,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               <SimulationWidget
                 key={`${activeBlueprint.templateId}|${activeBlueprint.recognizedLatex}|${(activeBlueprint.expressions || []).join('|')}`}
                 blueprint={activeBlueprint}
+                displayMode="DOCK"
+                onToggleDisplayMode={() => setDisplayMode('HOLOGRAM')}
                 remoteParams={room.state.role === 'teacher' ? room.state.params : undefined}
                 onParamChange={(k, v) => {
                   if (room.state.role === 'teacher') room.send({ type: 'SLIDER', key: k, value: v });

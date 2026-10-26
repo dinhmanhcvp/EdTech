@@ -6,16 +6,19 @@ import { SocraticWorkspaceMode } from '../components/modes/SocraticWorkspaceMode
 import { ClassTelemetryMode } from '../components/modes/ClassTelemetryMode';
 import { EngineHealthRail } from '../components/common/EngineHealthRail';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
-import { Download, Share2, Check, Sparkles, QrCode, Copy, ExternalLink, X, FileText, ChevronRight, Maximize2, Minimize2, Monitor } from 'lucide-react';
+import { Download, Share2, Check, Sparkles, QrCode, Copy, ExternalLink, X, FileText, ChevronRight, Maximize2, Minimize2, Monitor, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function UnifiedPlatformPage() {
+
   const [activeMode, setActiveMode] = useState<'BOARD' | 'SOCRATIC' | 'ANALYTICS'>('BOARD');
   const [curriculumLevel, setCurriculumLevel] = useState<CurriculumLevel>('THPT_STANDARD');
   const [selectedDemoBlueprint, setSelectedDemoBlueprint] = useState<SimulationBlueprint | null>(null);
   const [lessonExportNotice, setLessonExportNotice] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isHeaderExpanded, setIsHeaderExpanded] = useState<boolean>(false);
 
   useEffect(() => {
+
     const handleFsChange = () => {
       if (typeof document !== 'undefined') {
         setIsFullscreen(Boolean(document.fullscreenElement));
@@ -189,156 +192,197 @@ export default function UnifiedPlatformPage() {
   return (
     <main className="w-screen h-screen overflow-hidden bg-[#F8F7F4] text-[#18181B] flex flex-col select-none font-sans relative">
       <EngineHealthRail />
-      {/* 1. TOP COMMAND HEADER (Editorial Daylight: 48px h-12) */}
-      <header className="h-10 border-b border-[#E6E4DD] bg-white/95 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-50">
-        {/* Left: Minimal Wordmark & Lesson Title */}
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-xs tracking-widest text-stone-900 font-bold">
-            SOCRATIC VISION BOARD
+      {/* 1. SMARTBOARD COLLAPSED FLOATING PILL (Chế độ thu gọn tối giản chuẩn bảng thông minh) */}
+      {!isHeaderExpanded && (
+        <div className="absolute top-2.5 right-4 z-50 flex items-center gap-1.5 bg-white/85 hover:bg-white/95 backdrop-blur-md border border-stone-200/90 shadow-sm rounded-full px-2.5 py-1 transition-all select-none">
+          <span className="font-mono text-[10px] tracking-wider text-stone-700 font-bold hidden sm:inline px-1">
+            SOCRATIC BOARD
           </span>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold hidden md:inline-flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-            Tính năng 1: Bảng Tương Tác Trên Lớp
-          </span>
-        </div>
-
-        {/* Center: Unified Mode Switcher (Segmented Control) */}
-        <div className="flex items-center bg-[#F2F0EA] border border-[#E6E4DD] p-1 rounded-xl">
+          <div className="h-3.5 w-px bg-stone-300 hidden sm:block" />
           <button
             type="button"
-            data-testid="mode-tab-board"
-            onClick={() => setActiveMode('BOARD')}
-            className={`px-3 py-1 rounded-lg text-xs transition cursor-pointer font-medium ${
-              activeMode === 'BOARD'
-                ? 'bg-white text-stone-900 font-semibold shadow-xs'
-                : 'text-stone-600 hover:text-stone-900'
-            }`}
+            data-testid="btn-toggle-fullscreen-collapsed"
+            onClick={toggleFullscreen}
+            className="p-1 rounded-full hover:bg-stone-100 text-stone-600 transition"
+            title={isFullscreen ? 'Thu nhỏ cửa sổ' : 'Toàn màn hình'}
           >
-            01. Bảng Tương Tác Trên Lớp (Màn hình 86")
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
-          <a
-            href="http://localhost:3002?tab=COMPANION"
-            target="_blank"
-            rel="noreferrer"
-            data-testid="mode-tab-socratic"
-            className="px-2.5 py-1 rounded-lg text-xs transition cursor-pointer font-medium text-stone-600 hover:text-purple-700 flex items-center gap-1.5"
-            title="Mở Gia sư Socratic 1:1 trên nền tảng sau giờ học (Tính năng 2)"
+          <button
+            type="button"
+            data-testid="btn-native-board-switch-collapsed"
+            onClick={handleExitToNative}
+            className="px-2 py-0.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[11px] font-semibold flex items-center gap-1 transition"
+            title="Chuyển sang PowerPoint hoặc Bảng mặc định của trường"
           >
-            <span>02. Gia Sư Socratic 1:1</span>
-            <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono font-semibold">Tính năng 2</span>
-            <ExternalLink className="w-3 h-3 text-purple-500" />
-          </a>
-          <a
-            href="http://localhost:3002?tab=HEATMAP"
-            target="_blank"
-            rel="noreferrer"
-            data-testid="mode-tab-analytics"
-            className="px-2.5 py-1 rounded-lg text-xs transition cursor-pointer font-medium text-stone-600 hover:text-emerald-700 flex items-center gap-1.5"
-            title="Mở Phân tích lớp học & Smart Notes trên nền tảng sau giờ học (Tính năng 2)"
+            <Monitor className="w-3 h-3 text-amber-700" />
+            <span className="hidden md:inline">Tác vụ gốc</span>
+          </button>
+          <button
+            type="button"
+            data-testid="btn-expand-header"
+            onClick={() => setIsHeaderExpanded(true)}
+            className="px-2 py-0.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-[11px] font-semibold flex items-center gap-0.5 transition"
+            title="Mở rộng menu cài đặt chi tiết"
           >
-            <span>03. Phân Tích Lớp Học & Smart Notes</span>
-            <span className="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-mono font-semibold">Tính năng 2</span>
-            <ExternalLink className="w-3 h-3 text-emerald-500" />
-          </a>
+            <span>Menu</span>
+            <ChevronDown className="w-3.5 h-3.5 text-stone-500" />
+          </button>
         </div>
+      )}
 
-        {/* Right: Curriculum Depth Toggle, AI Settings & Export Action */}
-        <div className="flex items-center gap-2.5">
-          {/* Curriculum Depth Segmented Toggle */}
-          <div
-            className="flex items-center bg-[#F2F0EA] border border-[#E6E4DD] p-1 rounded-xl"
-            data-testid="curriculum-mode-toggle"
-          >
+      {/* 2. FULL TOP COMMAND HEADER (Chỉ hiện khi nhấn Menu mở rộng) */}
+      {isHeaderExpanded && (
+        <header className="h-10 border-b border-[#E6E4DD] bg-white/95 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-50 transition-all">
+          {/* Left: Minimal Wordmark & Lesson Title */}
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs tracking-widest text-stone-900 font-bold">
+              SOCRATIC VISION BOARD
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold hidden md:inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+              Tính năng 1: Bảng Tương Tác Trên Lớp
+            </span>
+          </div>
+
+          {/* Center: Unified Mode Switcher (Segmented Control) */}
+          <div className="flex items-center bg-[#F2F0EA] border border-[#E6E4DD] p-1 rounded-xl">
             <button
               type="button"
-              data-testid="btn-mode-standard"
-              onClick={() => setCurriculumLevel('THPT_STANDARD')}
-              className={`px-2.5 py-1 rounded-lg text-xs transition cursor-pointer font-medium ${
-                curriculumLevel === 'THPT_STANDARD'
+              data-testid="mode-tab-board"
+              onClick={() => setActiveMode('BOARD')}
+              className={`px-3 py-1 rounded-lg text-xs transition cursor-pointer font-medium ${
+                activeMode === 'BOARD'
                   ? 'bg-white text-stone-900 font-semibold shadow-xs'
                   : 'text-stone-600 hover:text-stone-900'
               }`}
             >
-              Chuẩn THPT
+              01. Bảng Tương Tác Trên Lớp (Màn hình 86")
             </button>
-            <button
-              type="button"
-              data-testid="btn-mode-olympiad"
-              onClick={() => setCurriculumLevel('OLYMPIAD_ADVANCED')}
-              className={`px-2.5 py-1 rounded-lg text-xs transition cursor-pointer font-medium ${
-                curriculumLevel === 'OLYMPIAD_ADVANCED'
-                  ? 'bg-white text-blue-700 font-semibold shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
+            <a
+              href="http://localhost:3002?tab=COMPANION"
+              target="_blank"
+              rel="noreferrer"
+              data-testid="mode-tab-socratic"
+              className="px-2.5 py-1 rounded-lg text-xs transition cursor-pointer font-medium text-stone-600 hover:text-purple-700 flex items-center gap-1.5"
+              title="Mở Gia sư Socratic 1:1 trên nền tảng sau giờ học (Tính năng 2)"
             >
-              Chuyên / HSG
-            </button>
+              <span>02. Gia Sư Socratic 1:1</span>
+              <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono font-semibold">Tính năng 2</span>
+              <ExternalLink className="w-3 h-3 text-purple-500" />
+            </a>
+            <a
+              href="http://localhost:3002?tab=HEATMAP"
+              target="_blank"
+              rel="noreferrer"
+              data-testid="mode-tab-analytics"
+              className="px-2.5 py-1 rounded-lg text-xs transition cursor-pointer font-medium text-stone-600 hover:text-emerald-700 flex items-center gap-1.5"
+              title="Mở Phân tích lớp học & Smart Notes trên nền tảng sau giờ học (Tính năng 2)"
+            >
+              <span>03. Phân Tích Lớp Học & Smart Notes</span>
+              <span className="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-mono font-semibold">Tính năng 2</span>
+              <ExternalLink className="w-3 h-3 text-emerald-500" />
+            </a>
           </div>
 
+          {/* Right: Curriculum Depth Toggle, AI Settings & Export Action */}
+          <div className="flex items-center gap-2">
+            {/* Curriculum Depth Segmented Toggle */}
+            <div
+              className="flex items-center bg-[#F2F0EA] border border-[#E6E4DD] p-1 rounded-xl"
+              data-testid="curriculum-mode-toggle"
+            >
+              <button
+                type="button"
+                data-testid="btn-mode-standard"
+                onClick={() => setCurriculumLevel('THPT_STANDARD')}
+                className={`px-2.5 py-1 rounded-lg text-xs transition cursor-pointer font-medium ${
+                  curriculumLevel === 'THPT_STANDARD'
+                    ? 'bg-white text-stone-900 font-semibold shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                Chuẩn THPT
+              </button>
+              <button
+                type="button"
+                data-testid="btn-mode-olympiad"
+                onClick={() => setCurriculumLevel('OLYMPIAD_ADVANCED')}
+                className={`px-2.5 py-1 rounded-lg text-xs transition cursor-pointer font-medium ${
+                  curriculumLevel === 'OLYMPIAD_ADVANCED'
+                    ? 'bg-white text-blue-700 font-semibold shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                Chuyên / HSG
+              </button>
+            </div>
 
+            {/* Export Lecture & 1-Tap QR Smart Notes Modal Button */}
+            <button
+              type="button"
+              data-testid="btn-export-smart-notes-modal"
+              onClick={handleOpenSmartNotesModal}
+              className="text-xs border border-[#DCD9D0] bg-white hover:bg-stone-50 px-2.5 py-1.5 rounded-lg text-stone-800 font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+            >
+              <QrCode className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="hidden 2xl:inline">Xuất bài giảng</span>
+            </button>
 
-          {/* Export Lecture & 1-Tap QR Smart Notes Modal Button */}
-          <button
-            type="button"
-            data-testid="btn-export-smart-notes-modal"
-            onClick={handleOpenSmartNotesModal}
-            className="text-xs border border-[#DCD9D0] bg-white hover:bg-stone-50 px-3 py-1.5 rounded-lg text-stone-800 font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
-          >
-            <QrCode className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="hidden 2xl:inline">Xuất bài giảng</span>
-          </button>
+            {/* Bridge to Feature 2: After-School AI Tutor */}
+            <button
+              type="button"
+              data-testid="btn-open-feature-2-companion"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.open('http://localhost:3002', '_blank');
+                }
+              }}
+              className="text-xs border border-purple-200 bg-purple-50 hover:bg-purple-100 px-2.5 py-1.5 rounded-lg text-purple-800 font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+              title="Mở Nền tảng Gia sư AI Socratic sau giờ học"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+              <span className="hidden xl:inline">Tính năng 2: Gia sư AI</span>
+              <ExternalLink className="w-3 h-3 text-purple-500" />
+            </button>
 
-          {/* Bridge to Feature 2: After-School AI Tutor */}
-          <button
-            type="button"
-            data-testid="btn-open-feature-2-companion"
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                window.open('http://localhost:3002', '_blank');
-              }
-            }}
-            className="text-xs border border-purple-200 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg text-purple-800 font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
-            title="Mở Nền tảng Gia sư AI Socratic sau giờ học"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-            <span className="hidden xl:inline">Tính năng 2: Gia sư AI sau giờ học</span>
-            <ExternalLink className="w-3 h-3 text-purple-500" />
-          </button>
+            {/* Smartboard Display Mode & Escape Control */}
+            <button
+              type="button"
+              data-testid="btn-toggle-fullscreen"
+              onClick={toggleFullscreen}
+              className="text-xs border border-stone-300 bg-white hover:bg-stone-50 px-2 py-1.5 rounded-lg text-stone-700 font-medium shadow-xs transition cursor-pointer flex items-center gap-1"
+              title={isFullscreen ? 'Thu nhỏ cửa sổ' : 'Phóng to toàn màn hình'}
+            >
+              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-stone-600" /> : <Maximize2 className="w-3.5 h-3.5 text-stone-600" />}
+            </button>
 
-          {/* Smartboard Display Mode & Escape Control (Toàn màn hình / Thu nhỏ) */}
-          <button
-            type="button"
-            data-testid="btn-toggle-fullscreen"
-            onClick={toggleFullscreen}
-            className="text-xs border border-stone-300 bg-white hover:bg-stone-50 px-2.5 py-1.5 rounded-lg text-stone-700 font-medium shadow-xs transition cursor-pointer flex items-center gap-1.5"
-            title={isFullscreen ? 'Thu nhỏ cửa sổ' : 'Phóng to toàn màn hình'}
-          >
-            {isFullscreen ? (
-              <>
-                <Minimize2 className="w-3.5 h-3.5 text-stone-600" />
-                <span className="hidden 2xl:inline">Thu nhỏ</span>
-              </>
-            ) : (
-              <>
-                <Maximize2 className="w-3.5 h-3.5 text-stone-600" />
-                <span className="hidden 2xl:inline">Toàn màn hình</span>
-              </>
-            )}
-          </button>
+            {/* Switch to Native Board Tasks */}
+            <button
+              type="button"
+              data-testid="btn-native-board-switch"
+              onClick={handleExitToNative}
+              className="text-xs border border-amber-300 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg text-amber-900 font-semibold shadow-xs transition cursor-pointer flex items-center gap-1"
+              title="Chuyển nhanh sang PowerPoint, Bảng vẽ gốc hoặc giao diện Android của bảng"
+            >
+              <Monitor className="w-3.5 h-3.5 text-amber-700" />
+              <span className="hidden xl:inline">Về tác vụ gốc</span>
+            </button>
 
-          {/* Switch to Native Board Tasks (Về PowerPoint / Bảng vẽ gốc của trường) */}
-          <button
-            type="button"
-            data-testid="btn-native-board-switch"
-            onClick={handleExitToNative}
-            className="text-xs border border-amber-300 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg text-amber-900 font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
-            title="Chuyển nhanh sang PowerPoint, Bảng vẽ gốc hoặc giao diện Android của bảng"
-          >
-            <Monitor className="w-3.5 h-3.5 text-amber-700" />
-            <span className="hidden xl:inline">Về tác vụ gốc</span>
-          </button>
-        </div>
-      </header>
+            {/* Collapse Header Button */}
+            <button
+              type="button"
+              data-testid="btn-collapse-header"
+              onClick={() => setIsHeaderExpanded(false)}
+              className="text-xs border border-stone-300 bg-stone-100 hover:bg-stone-200 px-2.5 py-1.5 rounded-lg text-stone-700 font-semibold shadow-xs transition cursor-pointer flex items-center gap-1"
+              title="Thu gọn thanh điều khiển để có 100% diện tích mặt bảng"
+            >
+              <ChevronUp className="w-3.5 h-3.5 text-stone-600" />
+              <span>Thu gọn</span>
+            </button>
+          </div>
+        </header>
+      )}
 
       {/* Export Toast Notice */}
       {lessonExportNotice && (
@@ -353,8 +397,9 @@ export default function UnifiedPlatformPage() {
         </div>
       )}
 
-      {/* 2. UNIFIED WORKSPACE VIEW AREA (100% height minus header) */}
-      <div className="flex-1 h-[calc(100vh-40px)] overflow-y-auto relative">
+      {/* 3. UNIFIED WORKSPACE VIEW AREA (100% height khi thu gọn thanh điều khiển) */}
+      <div className={`flex-1 overflow-y-auto relative ${isHeaderExpanded ? 'h-[calc(100vh-40px)]' : 'h-screen'}`}>
+
         {/* MODE 01: Interactive Board & Precision Lab Studio */}
         <div className={`w-full min-h-full ${activeMode === 'BOARD' ? 'block' : 'hidden'}`}>
           <SmartboardCanvas

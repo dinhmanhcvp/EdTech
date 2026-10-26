@@ -455,6 +455,8 @@
 - Thay thế chế độ Kiosk khóa cứng bằng App Window độc lập (`run-smartboard-standalone.bat`) có đủ nút Thu nhỏ, Phóng to, Đóng.
 - Bổ sung nút `Toàn màn hình / Thu nhỏ` và `Về tác vụ gốc` ngay trên thanh điều khiển của `page.tsx` giúp giáo viên chuyển đổi linh hoạt sang PowerPoint hay Bảng vẽ gốc của trường chỉ với 1 chạm.
 - Tạo tệp `tat-he-thong-bang.bat` đóng sạch toàn bộ tiến trình ngầm để trả lại tài nguyên cho bảng.
+- Thu gọn thanh điều khiển trên cùng thành thanh nổi tối giản (Smartboard Collapsed Floating Pill) với 100% diện tích màn hình dành cho mặt bảng, cho phép mở rộng menu cài đặt chi tiết khi cần.
+
 
 
 

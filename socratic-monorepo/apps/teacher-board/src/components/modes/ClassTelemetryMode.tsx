@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Send, QrCode, FileText, Check, ArrowUpRight, BarChart2, ShieldCheck, Activity, Sparkles, Layers } from 'lucide-react';
+import { Send, QrCode, Check } from 'lucide-react';
+import { PilotImpactPanel } from '../analytics/PilotImpactPanel';
+import { MathView } from '../common/MathView';
 
 export interface StudentMastery {
   name: string;
@@ -17,6 +19,46 @@ export interface ClassTelemetryModeProps {
   onOpenQrNotes?: () => void;
 }
 
+/** Ba điểm nghẽn khái niệm hay gặp; mỗi nút nạp đúng mẫu mô phỏng tương ứng vào Mode 01. */
+const BOTTLENECKS = [
+  {
+    key: 'PHYS_RLC_PHASOR',
+    testId: 'btn-push-rlc-bottleneck',
+    title: 'Cực trị RLC',
+    topic: 'Cực trị mạch RLC khi ω biến thiên',
+    latex: String.raw`\omega_0 = \dfrac{1}{\sqrt{LC}}`,
+    note: 'Nhầm điện áp tức thời với hiệu dụng trên L và C khi quét tần số qua điểm cộng hưởng.',
+    col: 'physicsProjectile' as const,
+    level: 'red' as const,
+    tone: 'text-blue-700',
+    dot: 'bg-blue-600',
+  },
+  {
+    key: 'CHEM_BALANCE_SCALE',
+    testId: 'btn-push-chem-bottleneck',
+    title: 'Bảo toàn electron',
+    topic: 'Bảo toàn electron Fe3O4 + HNO3',
+    latex: String.raw`\text{Fe}_3\text{O}_4 + \text{HNO}_3 \rightarrow \text{Fe(NO}_3)_3 + \text{NO} + \text{H}_2\text{O}`,
+    note: 'Đếm sai số electron nhường vì sắt trong oxit sắt từ có số oxi hóa trung bình +8/3.',
+    col: 'chemRedox' as const,
+    level: 'red' as const,
+    tone: 'text-rose-700',
+    dot: 'bg-rose-500',
+  },
+  {
+    key: 'PHYS_INCLINED',
+    testId: 'btn-push-incline-bottleneck',
+    title: 'Biên trượt có ma sát',
+    topic: 'Điều kiện biên trượt có ma sát',
+    latex: String.raw`ma = mg\sin\alpha - \mu mg\cos\alpha`,
+    note: 'Quên đổi chiều lực ma sát hoặc bỏ sót điều kiện tan α > μ để vật bắt đầu trượt.',
+    col: 'physicsProjectile' as const,
+    level: 'amber' as const,
+    tone: 'text-amber-700',
+    dot: 'bg-amber-500',
+  },
+];
+
 export const ClassTelemetryMode: React.FC<ClassTelemetryModeProps> = ({
   onJumpToBoard,
   onOpenQrNotes,
@@ -24,8 +66,6 @@ export const ClassTelemetryMode: React.FC<ClassTelemetryModeProps> = ({
   const [pushedToast, setPushedToast] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [bottleneckText, setBottleneckText] = useState<string>('28.0% Cân bằng Oxi (Fe + O₂)');
-  const [masteryPct, setMasteryPct] = useState<number>(84.2);
-  const [avgGrit, setAvgGrit] = useState<number>(89.6);
 
   // 35 Students Class 12A1 Curriculum Heatmap
   const defaultStudents: StudentMastery[] = [
@@ -231,46 +271,17 @@ export const ClassTelemetryMode: React.FC<ClassTelemetryModeProps> = ({
         </div>
       )}
 
-      {/* KPI Telemetry Header */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <div className="border border-[#E6E4DD] bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-[0_2px_12px_-2px_rgba(20,20,19,0.04)] flex flex-col gap-1">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500">
-            Tỷ lệ Nắm vững Lớp 12A1
-          </span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-mono font-bold text-[#18181B] tabular-nums">{masteryPct}%</span>
-            <span className="text-xs font-mono text-emerald-600 font-medium">+5.4% tuần này</span>
-          </div>
-        </div>
+      <PilotImpactPanel />
 
-        <div className="border border-[#E6E4DD] bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-[0_2px_12px_-2px_rgba(20,20,19,0.04)] flex flex-col gap-1">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500">
-            Chỉ số Bền bỉ (Grit Score)
-          </span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-mono font-bold text-emerald-600 tabular-nums">{avgGrit}</span>
-            <span className="text-xs font-mono text-stone-500">/ 100 điểm chuẩn</span>
-          </div>
+      <div className="h-px bg-[#E6E4DD]" />
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-rose-600">Lớp đang dạy · cập nhật theo bài làm</span>
+          <h2 className="font-display text-[28px] leading-tight text-[#141413] mt-1">
+            Bản đồ điểm nghẽn: <em className="text-rose-600">một chạm đẩy bài khắc phục lên bảng</em>
+          </h2>
         </div>
-
-        <div className="border border-[#E6E4DD] bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-[0_2px_12px_-2px_rgba(20,20,19,0.04)] flex flex-col gap-1">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500">
-            Điểm nghẽn Cực trị & Biên
-          </span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-sm font-mono font-bold text-rose-600 truncate">{bottleneckText}</span>
-          </div>
-        </div>
-
-        <div className="border border-[#E6E4DD] bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-[0_2px_12px_-2px_rgba(20,20,19,0.04)] flex flex-col gap-1">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500">
-            Học sinh Chuyên / Olympic
-          </span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-mono font-bold text-blue-600 tabular-nums">26 / 35</span>
-            <span className="text-xs font-mono text-stone-500">Đã mở khóa RK4</span>
-          </div>
-        </div>
+        <span className="text-[11px] font-mono text-stone-500 truncate max-w-[40%]">Điểm nghẽn từ máy chủ: {bottleneckText}</span>
       </div>
 
       {/* Main Split: Mastery Matrix & Real-time Action Banner */}
@@ -326,55 +337,32 @@ export const ClassTelemetryMode: React.FC<ClassTelemetryModeProps> = ({
 
         {/* Action Panel & Bottleneck Remediation (30% width) */}
         <div className="w-full lg:w-88 flex flex-col gap-4">
-          {/* Bottleneck 1: Cân bằng Oxi hóa - Khử */}
-          <div className="border border-rose-200 bg-white rounded-2xl p-4 shadow-sm flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono uppercase tracking-widest text-rose-700 font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                <span>Điểm nghẽn 01: Cân bằng Oxi</span>
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
-                28% Nắm vững
-              </span>
+          {BOTTLENECKS.map((bn) => (
+            <div key={bn.key} className="border border-[#E6E4DD] bg-white rounded-2xl p-4 shadow-sm flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className={`text-[11px] font-mono uppercase tracking-widest font-bold flex items-center gap-1.5 ${bn.tone}`}>
+                  <span className={`w-2 h-2 rounded-full ${bn.dot}`} />
+                  <span>{bn.title}</span>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#F2F0EA] text-stone-700 border border-[#E5E3DC] font-semibold tabular-nums whitespace-nowrap">
+                  {students.filter((st) => st[bn.col] === bn.level).length} HS {bn.level === 'red' ? 'mắc kẹt' : 'cần gợi mở'}
+                </span>
+              </div>
+              <div className="text-sm text-[#141413]">
+                <MathView latex={bn.latex} />
+              </div>
+              <p className="text-xs text-stone-600 leading-relaxed">{bn.note}</p>
+              <button
+                type="button"
+                data-testid={bn.testId}
+                onClick={() => handlePushToBoard(bn.topic, bn.key)}
+                className="w-full py-2.5 px-3 rounded-xl bg-[#18181B] hover:bg-black text-white text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Đẩy bài tập khắc phục lên Bảng lớp</span>
+              </button>
             </div>
-            <p className="text-xs text-stone-600 leading-relaxed font-serif">
-              72% học sinh gặp bẫy ở bước bảo toàn Oxi (4Fe + 3O₂ → 2Fe₂O₃). Bấm để đẩy bài toán lên bảng cùng mổ xẻ trên Cân Đĩa:
-            </p>
-            <button
-              type="button"
-              data-testid="btn-push-chem-bottleneck"
-              onClick={() => handlePushToBoard('Cân bằng Oxi Fe + O₂', 'CHEM_BALANCE_SCALE')}
-              className="w-full py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-2 shadow-xs"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>Đẩy bài tập khắc phục lên Bảng lớp</span>
-            </button>
-          </div>
-
-          {/* Bottleneck 2: Giản đồ Fresnel RLC */}
-          <div className="border border-blue-200 bg-white rounded-2xl p-4 shadow-sm flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono uppercase tracking-widest text-blue-700 font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-blue-600" />
-                <span>Điểm nghẽn 02: Giản đồ RLC</span>
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
-                34% Nắm vững
-              </span>
-            </div>
-            <p className="text-xs text-stone-600 leading-relaxed font-serif">
-              Học sinh nhầm lẫn giữa điện áp tức thời và điện áp hiệu dụng trên tụ điện và cuộn cảm khi thay đổi tần số cộng hưởng $\omega_0$.
-            </p>
-            <button
-              type="button"
-              data-testid="btn-push-rlc-bottleneck"
-              onClick={() => handlePushToBoard('Giản đồ vector quay RLC', 'PHYS_RLC_PHASOR')}
-              className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-2 shadow-xs"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>Đẩy Giản đồ RLC lên Bảng lớp</span>
-            </button>
-          </div>
+          ))}
 
           {/* Smart Notes Packaging Card */}
           <div className="border border-[#E6E4DD] bg-white rounded-2xl p-4 shadow-sm flex flex-col gap-3">

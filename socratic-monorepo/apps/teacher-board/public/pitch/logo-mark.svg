@@ -1,0 +1,22 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Socratic Vision Board · biểu tượng
+       Vòng Magic Lasso nét đứt (cách giáo viên khoanh công thức) bao một nét bút cobalt viết tay
+       vừa là dấu hỏi Socratic vừa là quỹ đạo ném; dấu chấm hổ phách là vật đang rơi theo quỹ đạo. -->
+  <rect width="512" height="512" rx="116" fill="#F8F7F4"/>
+  <g fill="#18181B" opacity="0.07">
+    <circle cx="96" cy="96" r="3"/><circle cx="160" cy="96" r="3"/><circle cx="224" cy="96" r="3"/><circle cx="288" cy="96" r="3"/><circle cx="352" cy="96" r="3"/><circle cx="416" cy="96" r="3"/>
+    <circle cx="96" cy="416" r="3"/><circle cx="160" cy="416" r="3"/><circle cx="224" cy="416" r="3"/><circle cx="288" cy="416" r="3"/><circle cx="352" cy="416" r="3"/><circle cx="416" cy="416" r="3"/>
+    <circle cx="96" cy="160" r="3"/><circle cx="96" cy="224" r="3"/><circle cx="96" cy="288" r="3"/><circle cx="96" cy="352" r="3"/>
+    <circle cx="416" cy="160" r="3"/><circle cx="416" cy="224" r="3"/><circle cx="416" cy="288" r="3"/><circle cx="416" cy="352" r="3"/>
+  </g>
+  <!-- lasso: vòng tay người, hơi nghiêng, vẽ quá điểm đầu -->
+  <path d="M 118 300 C 92 220, 150 128, 262 112 C 370 98, 438 158, 420 238 C 404 316, 318 370, 226 366 C 150 362, 108 330, 112 282 C 116 252, 140 230, 168 222"
+        fill="none" stroke="#18181B" stroke-width="9" stroke-linecap="round" stroke-dasharray="1 17 1 25" opacity="0.85"/>
+  <!-- nét bút: dấu hỏi = quỹ đạo -->
+  <path d="M 168 236 C 174 226, 180 218, 188 210 C 190 160, 226 136, 262 138 C 306 140, 330 168, 326 204 C 322 238, 292 250, 272 266 C 258 278, 254 292, 255 308"
+        fill="none" stroke="#2563EB" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- vệt chuyển động + vật đang rơi -->
+  <circle cx="255" cy="336" r="5" fill="#D97706" opacity="0.35"/>
+  <circle cx="255" cy="352" r="7" fill="#D97706" opacity="0.6"/>
+  <circle cx="256" cy="380" r="21" fill="#D97706"/>
+</svg>

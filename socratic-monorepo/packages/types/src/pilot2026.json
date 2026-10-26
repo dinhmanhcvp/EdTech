@@ -1,0 +1,157 @@
+{
+  "_note": "Nguồn số liệu duy nhất cho đợt thí điểm 4 tuần (2026). App (Mode 03), slide, poster và video đều đọc file này. Sửa số ở đây rồi dựng lại các sản phẩm.",
+  "study": {
+    "weeks": 4,
+    "lessons": 64,
+    "tutorSessions": 1420,
+    "N": 86,
+    "n1": 44,
+    "n1Core": 32,
+    "n1Gifted": 12,
+    "n2": 42,
+    "teachers": 7,
+    "grades": "11–12",
+    "topics": [
+      "Vật lý 12: mạch điện xoay chiều RLC, dao động cơ",
+      "Hóa học 11/12: cân bằng hóa học, oxi hóa – khử, chuẩn độ"
+    ],
+    "assessment": "Bài kiểm tra 10 điểm trước và sau, theo cấu trúc đề thi tốt nghiệp THPT từ 2025 (GDPT 2018)"
+  },
+  "scores": {
+    "pre": {
+      "control": {
+        "mean": 6.48,
+        "sd": 1.15
+      },
+      "exp": {
+        "mean": 6.42,
+        "sd": 1.18
+      },
+      "delta": -0.06,
+      "p": "0.81"
+    },
+    "post": {
+      "control": {
+        "mean": 6.85,
+        "sd": 1.12
+      },
+      "exp": {
+        "mean": 7.74,
+        "sd": 0.89
+      },
+      "delta": 0.89,
+      "p": "0.0002"
+    },
+    "growth": {
+      "control": {
+        "pts": 0.37,
+        "pct": 5.7
+      },
+      "exp": {
+        "pts": 1.32,
+        "pct": 20.6
+      }
+    },
+    "cohenD": 0.88
+  },
+  "parts": [
+    {
+      "key": "I",
+      "label": "Phần I · Trắc nghiệm 4 lựa chọn",
+      "short": "Phần I · Trắc nghiệm",
+      "control": 81.4,
+      "exp": 84.2,
+      "delta": 2.8
+    },
+    {
+      "key": "II",
+      "label": "Phần II · Đúng/Sai 4 mệnh đề",
+      "short": "Phần II · Đúng/Sai",
+      "control": 52.6,
+      "exp": 78.4,
+      "delta": 25.8
+    },
+    {
+      "key": "III",
+      "label": "Phần III · Trả lời ngắn nhiều bước",
+      "short": "Phần III · Trả lời ngắn",
+      "control": 44.0,
+      "exp": 66.5,
+      "delta": 22.5
+    },
+    {
+      "key": "RET",
+      "label": "Ghi nhớ sau 2 tuần",
+      "short": "Ghi nhớ sau 2 tuần",
+      "control": 61.2,
+      "exp": 82.7,
+      "delta": 21.5
+    }
+  ],
+  "ops": {
+    "prepMin": {
+      "before": 38.5,
+      "after": 4.2,
+      "pct": -89.1
+    },
+    "persistence": {
+      "before": 28.4,
+      "after": 74.6,
+      "times": 2.6
+    },
+    "guard": {
+      "blocked": 312,
+      "total": 318,
+      "pct": 98.1,
+      "bypassesWeek1": 6
+    },
+    "offload": {
+      "zeroToken": 81.4,
+      "sympy": 54.2,
+      "cache": 27.2,
+      "llm": 18.6,
+      "sympyMs": 12,
+      "cacheMs": 25
+    },
+    "api": {
+      "inkMs": 16,
+      "callsPerLesson": 4.3,
+      "cropKB": 8,
+      "costUsd": 0.014,
+      "costVnd": 350,
+      "reductionPct": 94.6
+    }
+  },
+  "feedback": [
+    {
+      "who": "Giáo viên Vật lý",
+      "meta": "14 năm dạy THPT và bồi dưỡng HSG",
+      "quote": "Giản đồ Fresnel cho mạch RLC giúp tôi bớt gần 40 phút soạn bài mỗi tiết, và nhờ chạm để sửa, tôi không phải mở bàn phím ảo trên màn hình 75 inch lần nào.",
+      "short": "Giản đồ Fresnel giúp tôi bớt gần 40 phút soạn bài mỗi tiết, và tôi không phải mở bàn phím ảo trên màn hình 75 inch lần nào."
+    },
+    {
+      "who": "Học sinh lớp 12",
+      "meta": "Thi khối A00",
+      "quote": "Bình thường bí là em tra lời giải ngay rồi tưởng mình hiểu, đến câu Đúng/Sai điều kiện biên thì sai. Ở đây, em quên trừ lực ma sát là mô hình hiện ngay vật trượt quá dốc và báo lệch thứ nguyên.",
+      "short": "Em quên trừ lực ma sát là mô hình hiện ngay vật trượt quá dốc và báo lệch thứ nguyên."
+    },
+    {
+      "who": "Học sinh đội tuyển Hóa",
+      "meta": "Lớp 12 chuyên Hóa",
+      "quote": "Đĩa cân bảo toàn electron cho Fe₃O₄ + HNO₃ và giản đồ năng lượng hoạt hóa rất trực quan.",
+      "short": "Đĩa cân bảo toàn electron cho Fe₃O₄ + HNO₃ rất trực quan."
+    }
+  ],
+  "iterations": [
+    {
+      "week": "Tuần 1",
+      "what": "Phát hiện 6 lượt lách qua bộ chặn bằng cách nhập vai gián tiếp",
+      "fix": "Thêm bước kiểm tra đầu ra: lọc mọi con số trùng đáp án trước khi gửi cho học sinh"
+    },
+    {
+      "week": "Tuần 2–3",
+      "what": "Đo lại sau khi vá",
+      "fix": "Tổng cộng chặn 312/318 lượt xin đáp án hoặc dán lời giải trong 4 tuần"
+    }
+  ]
+}

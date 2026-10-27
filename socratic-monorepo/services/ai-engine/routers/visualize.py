@@ -78,6 +78,9 @@ class UnifiedLassoResponse(BaseModel):
     ocr_result: OCRResult
     simulation_blueprint: SimulationBlueprint
     socratic_cue: Dict[str, str]
+    detected_intent: Optional[str] = "VISUALIZE"
+    intent_confidence: Optional[float] = 0.95
+    intent_reason: Optional[str] = "Phát hiện công thức STEM trực quan"
 
 
 # =============================================================================

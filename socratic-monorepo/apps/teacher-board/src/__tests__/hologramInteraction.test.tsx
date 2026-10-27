@@ -399,6 +399,88 @@ describe('Hologram Interaction & Zero-Background Direct Blackboard Manipulation'
     fireEvent.click(tabVisual);
     expect(screen.queryByTestId('solution-grading-panel')).toBeNull();
   });
+  /**
+   * TEST 13: Draggable AI Tool Hub & Circular Radial Menu with Direct LaTeX Conversion
+   */
+  it('renders draggable AI Hub on lasso and opens circular radial menu with LaTeX conversion', () => {
+    render(<SmartboardCanvas />);
+
+    const canvas = screen.getByTestId('chalkboard-canvas');
+
+    // Draw stroke
+    fireEvent.pointerDown(canvas, { clientX: 300, clientY: 300 });
+    fireEvent.pointerMove(canvas, { clientX: 350, clientY: 350 });
+    fireEvent.pointerUp(canvas);
+
+    // Lasso the stroke
+    const dockLasso = screen.getByTestId('tool-lasso');
+    fireEvent.click(dockLasso);
+    fireEvent.pointerDown(canvas, { clientX: 280, clientY: 280 });
+    fireEvent.pointerMove(canvas, { clientX: 380, clientY: 280 });
+    fireEvent.pointerMove(canvas, { clientX: 380, clientY: 380 });
+    fireEvent.pointerMove(canvas, { clientX: 280, clientY: 380 });
+    fireEvent.pointerUp(canvas);
+
+    // 1. Draggable AI Hub is rendered on canvas
+    const aiHub = screen.getByTestId('draggable-ai-hub');
+    expect(aiHub).toBeInTheDocument();
+
+    const aiHubBtn = screen.getByTestId('radial-ai-hub-btn');
+    expect(aiHubBtn).toBeInTheDocument();
+
+    // 2. Dragging the AI Hub changes position smoothly
+    fireEvent.pointerDown(aiHubBtn, { clientX: 330, clientY: 250, pointerId: 1 });
+    fireEvent.pointerMove(aiHubBtn, { clientX: 450, clientY: 180, pointerId: 1 });
+    fireEvent.pointerUp(aiHubBtn, { clientX: 450, clientY: 180, pointerId: 1 });
+
+    // 3. Tapping the AI Hub toggles circular radial fan-out menu
+    fireEvent.pointerDown(aiHubBtn, { clientX: 450, clientY: 180, pointerId: 1 });
+    fireEvent.pointerUp(aiHubBtn, { clientX: 450, clientY: 180, pointerId: 1 });
+
+    const radialMenu = screen.getByTestId('radial-action-menu');
+    expect(radialMenu).toBeInTheDocument();
+
+    // 4. Circular menu items are present including direct LaTeX conversion
+    expect(screen.getByTestId('radial-action-latex')).toBeInTheDocument();
+    expect(screen.getByTestId('radial-action-visualize')).toBeInTheDocument();
+    expect(screen.getByTestId('radial-action-grade')).toBeInTheDocument();
+    expect(screen.getByTestId('radial-action-subject')).toBeInTheDocument();
+    expect(screen.getByTestId('radial-action-voice')).toBeInTheDocument();
+    expect(screen.getByTestId('radial-action-close')).toBeInTheDocument();
+
+    // 5. Clicking "Chuyển LaTeX" directly opens LaTeX conversion modal
+    fireEvent.click(screen.getByTestId('radial-action-latex'));
+    expect(screen.getByTestId('ink-convert-panel')).toBeInTheDocument();
+  });
+
+  /**
+   * TEST 14: Intelligent Auto-Detection of Lasso Intent
+   */
+  it('automatically detects lasso intent and displays intent badge on selection', () => {
+    render(<SmartboardCanvas />);
+
+    const canvas = screen.getByTestId('chalkboard-canvas');
+
+    // Draw single formula stroke
+    fireEvent.pointerDown(canvas, { clientX: 150, clientY: 150 });
+    fireEvent.pointerMove(canvas, { clientX: 200, clientY: 150 });
+    fireEvent.pointerUp(canvas);
+
+    // Lasso the stroke
+    const dockLasso = screen.getByTestId('tool-lasso');
+    fireEvent.click(dockLasso);
+    fireEvent.pointerDown(canvas, { clientX: 130, clientY: 130 });
+    fireEvent.pointerMove(canvas, { clientX: 220, clientY: 130 });
+    fireEvent.pointerMove(canvas, { clientX: 220, clientY: 180 });
+    fireEvent.pointerMove(canvas, { clientX: 130, clientY: 180 });
+    fireEvent.pointerUp(canvas);
+
+    // Intent badge is displayed with detected intent
+    const intentBadge = screen.getByTestId('detected-intent-badge');
+    expect(intentBadge).toBeInTheDocument();
+    expect(intentBadge.textContent).toContain('Công thức STEM');
+  });
 });
+
 
 

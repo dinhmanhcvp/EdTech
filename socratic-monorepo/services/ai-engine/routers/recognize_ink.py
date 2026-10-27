@@ -52,6 +52,31 @@ def _clamp01(v: Any, default: float = 0.8) -> float:
         return default
 
 
+def classify_intent_from_text(text: str, line_count: int = 1) -> Dict[str, Any]:
+    """Phân loại mục đích của người dùng: Trực quan hóa công thức (VISUALIZE) hay Chấm bài học sinh (GRADE)."""
+    text_lower = text.lower()
+    has_keywords = bool(re.search(r'(bài\s*làm|lời\s*giải|ta\s*có|suy\s*ra|đáp\s*số|kết\s*quả|bước|\bđs\b|\bkq\b|thay\s*vào|chứng\s*minh|giải\s*ra)', text_lower))
+    has_derivation = bool(re.search(r'(=>|\\Rightarrow|\\Leftrightarrow|\\therefore)', text)) or text.count('=') >= 3
+    is_multiline = line_count >= 3
+
+    grade_score = 0
+    if has_keywords:
+        grade_score += 65
+    if has_derivation:
+        grade_score += 45
+    if is_multiline:
+        grade_score += 30
+
+    intent = "GRADE" if grade_score >= 50 else "VISUALIZE"
+    conf = min(0.98, max(0.72, 0.65 + grade_score / 150.0))
+    reason = "Phát hiện bài làm nhiều bước của học sinh" if intent == "GRADE" else "Phát hiện công thức toán hoặc mô phỏng STEM"
+    return {
+        "detected_intent": intent,
+        "intent_confidence": round(conf, 2),
+        "intent_reason": reason,
+    }
+
+
 def parse_recognition(raw: str) -> Optional[Dict[str, Any]]:
     """Trích JSON từ câu trả lời của mô hình và chuẩn hóa. Trả None nếu không dùng được."""
     if not raw:
@@ -77,14 +102,28 @@ def parse_recognition(raw: str) -> Optional[Dict[str, Any]]:
         lines.append({"text": text or latex, "latex": latex or text, "confidence": _clamp01(item.get("confidence"))})
     alts = [str(a).strip() for a in (data.get("alternatives") or []) if str(a).strip()][:4]
     if not lines and not alts:
-        return {"lines": [], "text": "", "latex": "", "confidence": 0.0, "alternatives": []}
+        return {
+            "lines": [],
+            "text": "",
+            "latex": "",
+            "confidence": 0.0,
+            "alternatives": [],
+            "detected_intent": "VISUALIZE",
+            "intent_confidence": 0.8,
+            "intent_reason": "Chưa có nét chữ",
+        }
     conf = sum(l["confidence"] for l in lines) / len(lines) if lines else 0.0
+    joined_text = "\n".join(l["text"] for l in lines)
+    intent_data = classify_intent_from_text(joined_text, len(lines))
     return {
         "lines": lines,
-        "text": "\n".join(l["text"] for l in lines),
+        "text": joined_text,
         "latex": " \\\\ ".join(l["latex"] for l in lines) if len(lines) > 1 else (lines[0]["latex"] if lines else ""),
         "confidence": round(conf, 3),
         "alternatives": alts,
+        "detected_intent": intent_data["detected_intent"],
+        "intent_confidence": intent_data["intent_confidence"],
+        "intent_reason": intent_data["intent_reason"],
     }
 
 

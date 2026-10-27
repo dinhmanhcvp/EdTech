@@ -531,6 +531,41 @@
   - TypeScript strict check 0 errors trên toàn monorepo.
   - Tổng cộng: **450/450 tests passed 100%**.
 
+## 2026-10-27 — Nút AI Đa Năng Di Chuyển Khắp Bảng, Menu Tròn Xung Quanh, Tự Động Phân Loại Trực Quan vs Chấm Bài và Khử Cảnh Báo OCR Không Cần Thiết
+- **Yêu cầu & Mục tiêu hoàn thành:**
+  1. **Nút công cụ AI di chuyển khắp bảng (Draggable AI Hub) kèm Vòng tròn tác vụ (Radial Fan-out Menu):**
+     * Nút AI trung tâm xuất hiện nổi khi khoanh Lasso, cho phép giáo viên chạm giữ và kéo tự do đi bất cứ vị trí nào trên toàn bộ mặt bảng đen (1200x675) với độ trễ 0ms.
+     * Khi nhấp nhẹ vào nút AI, các tác vụ bung tròn đều xung quanh nút (Radial Menu R=86px) gồm 6 tác vụ:
+       - Chuyển LaTeX (mở panel chuyển đổi LaTeX nhanh).
+       - Trực quan hóa STEM (kích hoạt mô phỏng 60FPS).
+       - Chấm bài học sinh (mở panel chấm lời giải theo bước).
+       - Bộ chọn môn học (chuyển đổi nhanh giữa Toán, Lý, Hóa, Sinh, Tự động).
+       - Đọc bằng giọng nói.
+       - Bỏ chọn / Đóng vùng lasso.
+  2. **Tự động nhận biết Trực quan hóa Công thức vs Chấm bài Học sinh (Lasso Intent Classifier):**
+     * Xây dựng bộ phân loại đa chiều tích hợp cả phía client (`lassoIntent.ts`) và backend (`recognize_ink.py`, `visualize.py`):
+       - Phân tích không gian hình học: số nét viết (stroke count), diện tích vùng khoanh (area), tỷ lệ khung bao H/W, số dòng phân tầng dọc (line clusters count).
+       - Phân tích ngữ nghĩa văn bản: nhận diện từ khóa dẫn dắt giải bài (bài làm, lời giải, ta có, suy ra, đáp số...), chuỗi ký hiệu suy luận liên tiếp (=>, <=>, các dấu bằng xếp tầng).
+     * Kết quả phân loại tự động gắn huy hiệu và làm nổi bật tác vụ khuyến nghị (Chấm bài hoặc Trực quan hóa) với hiệu ứng viền sáng nhịp đập (pulsing ring).
+  3. **Khử cảnh báo kiểm tra sửa công thức không cần thiết (OcrReviewModal Gating):**
+     * Màn hình kiểm tra/sửa công thức CHỈ xuất hiện khi độ tin cậy từ AI Vision thực sự thấp (< 0.80).
+     * Khi AI Vision tự tin (>= 0.80) hoặc khi chạy bộ nhận diện tức thì offline, hệ thống tự động đưa thẳng vào mô phỏng trực quan 60FPS không ngắt quãng bài giảng của giáo viên.
+- **Tệp đã chỉnh sửa & tạo mới:**
+  - `socratic-monorepo/apps/teacher-board/src/utils/lassoIntent.ts` (mới)
+  - `socratic-monorepo/apps/teacher-board/src/__tests__/lassoIntent.test.ts` (mới)
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardCanvas.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/__tests__/hologramInteraction.test.tsx`
+  - `socratic-monorepo/services/ai-engine/routers/recognize_ink.py`
+  - `socratic-monorepo/services/ai-engine/routers/visualize.py`
+  - `.ai/HANDOFF.md`
+- **Kết quả Kiểm tra & Xác minh:**
+  - `apps/teacher-board`: 31/31 test files, 398/398 tests passed 100%.
+  - `apps/student-app`: 2/2 test files, 18/18 tests passed 100%.
+  - `services/ai-engine`: 6/6 test files, 41/41 tests passed 100%.
+  - TypeScript strict check 0 errors trên toàn bộ các ứng dụng.
+  - Tổng cộng: **457/457 tests passed 100%**.
+
+
 
 
 

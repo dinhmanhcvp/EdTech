@@ -1,0 +1,4 @@
+# Optional offline neural OCR & vector cache for dedicated edge hardware (minimum 2GB RAM required)
+-r requirements.txt
+rapidocr-onnxruntime
+chromadb

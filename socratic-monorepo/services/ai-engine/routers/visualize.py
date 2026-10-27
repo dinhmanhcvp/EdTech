@@ -28,12 +28,16 @@ try:
 except ImportError:
     CV2_AVAILABLE = False
 
-try:
-    from rapidocr_onnxruntime import RapidOCR
-    RAPIDOCR_ENGINE = RapidOCR()
-except Exception as e:
-    print(f"Warning: RapidOCR initialization error: {e}")
-    RAPIDOCR_ENGINE = None
+ENABLE_HEAVY_MODELS = os.getenv("ENABLE_HEAVY_LOCAL_MODELS", "false").lower() in ("true", "1", "yes")
+
+RAPIDOCR_ENGINE = None
+if ENABLE_HEAVY_MODELS:
+    try:
+        from rapidocr_onnxruntime import RapidOCR
+        RAPIDOCR_ENGINE = RapidOCR()
+    except Exception as e:
+        print(f"Warning: RapidOCR initialization error: {e}")
+        RAPIDOCR_ENGINE = None
 
 from ocr_engine import global_ocr_engine
 

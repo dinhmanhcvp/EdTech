@@ -175,10 +175,11 @@ def generate_neon_graph(equation_str: str, param_a: float = 1.0, param_b: float 
         # Vector SVG export
         svg_buffer = io.StringIO()
         plt.savefig(svg_buffer, format='svg', bbox_inches='tight', transparent=True)
-        plt.close(fig)
-        
         return svg_buffer.getvalue()
 
     except Exception as e:
         return f"<svg viewBox='0 0 400 100' xmlns='http://www.w3.org/2000/svg'><rect width='400' height='100' fill='#0f172a'/><text x='20' y='55' fill='#f43f5e' font-family='monospace' font-size='13'>Lỗi phân tích đồ thị: {str(e)}</text></svg>"
+    finally:
+        plt.close('all')
+
 

@@ -9,6 +9,7 @@ Specialized for 75" Touchboards & Mobile Student Canvas:
 - Zero-Keyboard Tap & Swap LaTeX Candidate Generation
 """
 
+import os
 import io
 import re
 import math
@@ -28,12 +29,16 @@ try:
 except ImportError:
     CV2_AVAILABLE = False
 
-try:
-    from rapidocr_onnxruntime import RapidOCR
-    RAPIDOCR_ENGINE = RapidOCR()
-except Exception as e:
-    print(f"[OCR Engine] RapidOCR initialization warning: {e}")
-    RAPIDOCR_ENGINE = None
+ENABLE_HEAVY_MODELS = os.getenv("ENABLE_HEAVY_LOCAL_MODELS", "false").lower() in ("true", "1", "yes")
+
+RAPIDOCR_ENGINE = None
+if ENABLE_HEAVY_MODELS:
+    try:
+        from rapidocr_onnxruntime import RapidOCR
+        RAPIDOCR_ENGINE = RapidOCR()
+    except Exception as e:
+        print(f"[OCR Engine] RapidOCR initialization warning: {e}")
+        RAPIDOCR_ENGINE = None
 
 try:
     import pytesseract

@@ -6,9 +6,16 @@ If student queries match with high semantic similarity, returns 0-API cached sca
 import re
 from typing import Dict, Any, Optional, List
 
+import os
+
+ENABLE_HEAVY_MODELS = os.getenv("ENABLE_HEAVY_LOCAL_MODELS", "false").lower() in ("true", "1", "yes")
+
 try:
-    import chromadb
-    CHROMADB_AVAILABLE = True
+    if ENABLE_HEAVY_MODELS:
+        import chromadb
+        CHROMADB_AVAILABLE = True
+    else:
+        CHROMADB_AVAILABLE = False
 except ImportError:
     CHROMADB_AVAILABLE = False
 

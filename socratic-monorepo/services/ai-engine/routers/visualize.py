@@ -616,7 +616,7 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
             genai.configure(api_key=gemini_key)
             pil_img = Image.open(io.BytesIO(image_bytes)) if PIL_AVAILABLE else None
             if pil_img:
-                for model_name in ["gemini-2.5-flash", "gemini-flash-latest", "gemini-3.8-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                for model_name in ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]:
                     try:
                         model = genai.GenerativeModel(model_name)
                         response = model.generate_content([few_shot_prompt, pil_img])
@@ -666,7 +666,7 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
 # --------------------------------------------------------------------------------------
 # Latency-bounded Vision LLM (Checkpoint 1: visualization must mount in < 1.5s)
 # --------------------------------------------------------------------------------------
-_VISION_BUDGET_S = float(os.getenv("VISION_LLM_BUDGET_S", "1.1"))
+_VISION_BUDGET_S = float(os.getenv("VISION_LLM_BUDGET_S", "4.5"))
 _VISION_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="vision-llm")
 _VISION_FUTURES: Dict[str, Any] = {}
 

@@ -9,7 +9,7 @@ import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
 import { AUTO_INK_SCENES, AutoInkScene } from '../../utils/autoInkPresets';
-import { layoutTypeset, typesetStroke, sourceStrokes, bboxOfStrokes, latexToPlain, type ConvertLine, recognizeLocal, type ConvertResult } from '../../utils/inkConvert';
+import { layoutTypeset, typesetStroke, sourceStrokes, bboxOfStrokes, latexToPlain, type ConvertLine, recognizeLocal, recognizeWithAi, type ConvertResult } from '../../utils/inkConvert';
 import { SimulationWidget } from './SimulationWidget';
 import { InkConvertPanel } from './InkConvertPanel';
 import { SmartboardDock, AiFab } from './SmartboardDock';
@@ -49,6 +49,7 @@ import {
   Share2,
   Wand2,
   Pencil,
+  Loader2,
 } from 'lucide-react';
 
 const ERASE_R = 14; // bán kính tẩy (đơn vị canvas)
@@ -324,6 +325,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [lassoLoop, setLassoLoop] = useState<Point[]>([]);
   const [selectedStrokes, setSelectedStrokes] = useState<Stroke[]>([]);
   const [instantResult, setInstantResult] = useState<ConvertResult | null>(null);
+  const [aiVisionResult, setAiVisionResult] = useState<ConvertResult | null>(null);
+  const [isAiVisionScanning, setIsAiVisionScanning] = useState<boolean>(false);
   // Chuyển chữ viết tay → công thức chuẩn: nguồn nét (hoặc công thức đang sửa)
   const [convertCtx, setConvertCtx] = useState<{ source: Stroke[]; editing?: { id: string; latex: string; text: string } | null } | null>(null);
   const [boardScale, setBoardScale] = useState(1);
@@ -496,38 +499,65 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
   // Debug Preview Thumbnail & Instant Recognition Engine (Off-screen render & < 30ms OCR)
   useEffect(() => {
+    let alive = true;
     const src = sourceStrokes(selectedStrokes);
     if (src.length > 0) {
       exportIsolatedWebp(src)
         .then((res) => {
-          setThumbnailUrl(res.dataUrl);
+          if (alive) setThumbnailUrl(res.dataUrl);
         })
         .catch((err) => {
           console.warn('Thumbnail generation failed:', err);
-          setThumbnailUrl(null);
+          if (alive) setThumbnailUrl(null);
         });
 
       try {
         const res = recognizeLocal(src);
         if (res && res.lines.length > 0 && res.lines.some((l) => l.latex.trim().length > 0)) {
-          setInstantResult(res);
-          const fullLatex = res.lines.map((l) => l.latex).join(' \\\\ ');
-          setFormulaInput((prev) => {
-            if (!prev.trim()) {
-              return fullLatex;
-            }
-            return prev;
-          });
+          if (alive) {
+            setInstantResult(res);
+            const fullLatex = res.lines.map((l) => l.latex).join(' \\\\ ');
+            setFormulaInput((prev) => {
+              if (!prev.trim()) {
+                return fullLatex;
+              }
+              return prev;
+            });
+          }
         } else {
-          setInstantResult(null);
+          if (alive) setInstantResult(null);
         }
       } catch (err) {
-        setInstantResult(null);
+        if (alive) setInstantResult(null);
       }
+
+      // Tự động kích hoạt Gemini Vision ở chế độ chạy nền ngay khi giáo viên khoanh Lasso
+      setIsAiVisionScanning(true);
+      recognizeWithAi(src)
+        .then((aiRes) => {
+          if (!alive) return;
+          setIsAiVisionScanning(false);
+          if (aiRes && aiRes.lines.length > 0) {
+            setAiVisionResult(aiRes);
+            const aiLatex = aiRes.lines.map((l) => l.latex).join(' \\\\ ');
+            if (aiLatex.trim()) {
+              setFormulaInput(aiLatex);
+            }
+          }
+        })
+        .catch(() => {
+          if (!alive) return;
+          setIsAiVisionScanning(false);
+        });
     } else {
       setThumbnailUrl(null);
       setInstantResult(null);
+      setAiVisionResult(null);
+      setIsAiVisionScanning(false);
     }
+    return () => {
+      alive = false;
+    };
   }, [selectedStrokes]);
 
   // ---- Vẽ nét: làm mượt bằng đường cong bậc 2 qua trung điểm; có áp lực bút thì đổi độ dày theo từng đoạn ----
@@ -1588,6 +1618,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       .join(' \\\\ ');
     const inkSelected = sourceStrokes(selectedStrokes);
     let detectedInstantLatex = instantResult ? instantResult.lines.map((l) => l.latex).join(' \\\\ ') : '';
+    const aiVisionLatex = aiVisionResult ? aiVisionResult.lines.map((l) => l.latex).join(' \\\\ ') : '';
     if (!detectedInstantLatex && !overrideHint && !formulaInput && inkSelected.length > 0) {
       try {
         const localRec = recognizeLocal(inkSelected);
@@ -1598,7 +1629,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         // bỏ qua nếu lỗi
       }
     }
-    const effectiveHint = overrideHint || formulaInput || typesetHint || detectedInstantLatex || '';
+    const effectiveHint = overrideHint || formulaInput || aiVisionLatex || typesetHint || detectedInstantLatex || '';
 
     // Định tuyến tức thì cục bộ (< 25ms, 0 API): nhận ra ngay công thức STEM và đồ thị mà không cần chờ mạng
     const instantBp = matchInstantStemBlueprint(effectiveHint);
@@ -2140,7 +2171,15 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   Lasso {selectedStrokes.length} nét
                 </span>
                 <span className="text-[10px] text-stone-500 font-mono">
-                  {instantResult ? (
+                  {isAiVisionScanning ? (
+                    <span className="text-violet-700 font-semibold inline-flex items-center gap-1 animate-pulse">
+                      <Loader2 className="w-3 h-3 animate-spin" /> ✨ AI Vision đang quét...
+                    </span>
+                  ) : aiVisionResult ? (
+                    <span className="text-violet-700 font-semibold inline-flex items-center gap-1">
+                      ✨ AI Vision {Math.round(aiVisionResult.ms)}ms · {Math.round(aiVisionResult.confidence * 100)}%
+                    </span>
+                  ) : instantResult ? (
                     <span className="text-emerald-700 font-semibold inline-flex items-center gap-1">
                       ⚡ Tức thì {Math.round(instantResult.ms)}ms · {Math.round(instantResult.confidence * 100)}%
                     </span>
@@ -2448,6 +2487,16 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   className="pointer-events-auto absolute flex items-center gap-1 rounded-xl bg-white/95 backdrop-blur border border-[#DCD9D0] shadow-lg px-1.5 py-1"
                   style={{ left: `${left}%`, top: `${top}%` }}
                 >
+                  {isAiVisionScanning && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] text-violet-700 font-mono font-medium border-r border-stone-200 mr-0.5">
+                      <Loader2 className="w-3 h-3 animate-spin" /> AI Vision...
+                    </span>
+                  )}
+                  {aiVisionResult && !isAiVisionScanning && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] text-violet-700 font-mono font-medium border-r border-stone-200 mr-0.5">
+                      ✨ AI Vision
+                    </span>
+                  )}
                   <button data-testid="sel-btn-convert" onClick={openConvert} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-violet-700 hover:bg-violet-50 transition">
                     <Wand2 className="w-3.5 h-3.5" /> Chuyển thành công thức
                   </button>

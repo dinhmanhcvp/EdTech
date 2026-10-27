@@ -22,7 +22,7 @@ except ImportError:  # pragma: no cover
 
 router = APIRouter(prefix="/api/v1/canvas", tags=["Handwriting Recognition"])
 
-GEMINI_MODELS = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash", "gemini-1.5-flash"]
+GEMINI_MODELS = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
 _TIMEOUT_S = float(os.getenv("INK_RECOGNIZE_TIMEOUT_S", "14"))
 _POOL = ThreadPoolExecutor(max_workers=3, thread_name_prefix="ink-recognize")
 

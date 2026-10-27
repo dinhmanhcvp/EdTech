@@ -457,6 +457,22 @@
 - Tạo tệp `tat-he-thong-bang.bat` đóng sạch toàn bộ tiến trình ngầm để trả lại tài nguyên cho bảng.
 - Thu gọn thanh điều khiển trên cùng thành thanh nổi tối giản (Smartboard Collapsed Floating Pill) với 100% diện tích màn hình dành cho mặt bảng, cho phép mở rộng menu cài đặt chi tiết khi cần.
 
+## 2026-10-27 — Kích hoạt Tự động AI Vision khi Khoanh Lasso & Tối ưu Endpoint Gemini Render
+- **Nguyên nhân người dùng chưa thấy AI Vision chạy khi khoanh Lasso:**
+  1. Thao tác Lasso trước đây chỉ thực hiện chọn nét và chạy nhận diện cục bộ tức thì (`recognizeLocal`, 12ms), hiển thị huy hiệu `⚡ Tức thì` mà chưa tự động phát lệnh gọi Gemini Vision nền, khiến giáo viên nhầm tưởng AI Vision chưa chạy.
+  2. Khi bấm `Trực quan hóa`, các công thức STEM phổ biến được khớp ngay bằng bộ định tuyến cục bộ (`matchInstantStemBlueprint`) trong 0ms - 25ms và hiển thị mô phỏng ngay mà không cần gọi mạng.
+  3. Ở phía backend Render, danh sách mô hình trước đây trỏ vào các định danh không chuẩn (`gemini-2.5-flash`), đồng thời ngân sách thời gian `VISION_LLM_BUDGET_S = 1.1s` quá ngắn đối với độ trễ mạng đám mây, dẫn đến việc bị timeout ngầm và chuyển sang fallback.
+- **Nâng cấp đã thực hiện:**
+  1. **`SmartboardCanvas.tsx`**: Tự động kích hoạt gọi `recognizeWithAi` ở chế độ ngầm song song ngay khi giáo viên khoanh Lasso. Hiển thị huy hiệu trực quan `✨ AI Vision đang quét...` kèm biểu tượng xoay, tự động chuyển sang `✨ AI Vision [ms]ms · [độ tin cậy]%` và điền LaTeX chính xác có dấu tiếng Việt khi hoàn tất.
+  2. Hiển thị huy hiệu trạng thái AI Vision trực tiếp trên thanh công cụ nổi ngay cạnh nét vẽ của giáo viên.
+  3. **`services/ai-engine/routers/visualize.py`**: Chuẩn hóa danh sách mô hình về các endpoint chính thức của Google (`gemini-1.5-flash`, `gemini-2.0-flash`, `gemini-1.5-pro`), nâng ngân sách `_VISION_BUDGET_S` lên 4.5s đảm bảo không bị rớt mạng khi Render gọi sang Google.
+  4. **`services/ai-engine/routers/recognize_ink.py`**: Chuẩn hóa danh sách `GEMINI_MODELS` về các endpoint chính thức.
+- **Kiểm tra và Xác minh:**
+  - 406/406 Vitest tests passed.
+  - 41/41 Pytest tests passed.
+  - TypeScript strict check 0 errors.
+
+
 
 
 

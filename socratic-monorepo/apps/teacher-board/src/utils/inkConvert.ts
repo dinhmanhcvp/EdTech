@@ -5,12 +5,12 @@
  *  - Bước 2 (nền, tùy chọn): gửi ảnh nét viết tới /api/v1/canvas/recognize-ink (Gemini Vision) — đọc được tiếng Việt có dấu,
  *    chữ nối, công thức phức tạp. Có kết quả thì giao diện nâng cấp; lỗi/hết giờ thì giữ bản cục bộ.
  */
-import {recognizeInk, type InkRecognition, type RecognizedLine} from './inkRecognizer';
-import {exportIsolatedWebp} from './isolatedExporter';
-import {routeLocally} from './localRouter';
-import {normalizeMathInput} from './mathExpr';
-import type {Stroke, TypesetMeta} from './lassoGeometry';
-import type {SimulationBlueprint} from '@socratic/types';
+import { recognizeInk, type InkRecognition, type RecognizedLine } from './inkRecognizer';
+import { exportIsolatedWebp } from './isolatedExporter';
+import { routeLocally } from './localRouter';
+import { normalizeMathInput } from './mathExpr';
+import type { Stroke, TypesetMeta } from './lassoGeometry';
+import type { SimulationBlueprint } from '@socratic/types';
 
 export interface ConvertLine {
   text: string;
@@ -18,8 +18,8 @@ export interface ConvertLine {
   confidence: number;
   valid?: boolean;
   /** vùng nét viết gốc (đơn vị canvas); chỉ có với bộ nhận dạng cục bộ */
-  bbox?: {x0: number; y0: number; x1: number; y1: number};
-  alternatives: {latex: string; text: string; confidence: number}[];
+  bbox?: { x0: number; y0: number; x1: number; y1: number };
+  alternatives: { latex: string; text: string; confidence: number }[];
 }
 
 export interface ConvertResult {
@@ -45,19 +45,19 @@ export function bboxOfStrokes(strokes: Stroke[]) {
       if (p.y > y1) y1 = p.y;
     }
   }
-  return {x0, y0, x1, y1};
+  return { x0, y0, x1, y1 };
 }
 
 const fromLocal = (r: InkRecognition): ConvertResult => ({
   engine: 'local',
   confidence: r.confidence,
   ms: r.ms,
-  lines: r.lines.map((l: RecognizedLine) => ({text: l.text, latex: l.latex, confidence: l.confidence, valid: l.valid, bbox: l.bbox, alternatives: l.alternatives})),
+  lines: r.lines.map((l: RecognizedLine) => ({ text: l.text, latex: l.latex, confidence: l.confidence, valid: l.valid, bbox: l.bbox, alternatives: l.alternatives })),
 });
 
 /** Nhận dạng cục bộ, chạy đồng bộ. */
 export function recognizeLocal(strokes: Stroke[]): ConvertResult {
-  return fromLocal(recognizeInk(sourceStrokes(strokes).map((s) => ({points: s.points}))));
+  return fromLocal(recognizeInk(sourceStrokes(strokes).map((s) => ({ points: s.points }))));
 }
 
 interface AiOptions {
@@ -99,7 +99,7 @@ export async function recognizeWithAi(strokes: Stroke[], opts: AiOptions = {}): 
     bodyPayload.openrouter_api_key = openrouterKey;
   }
   const body = JSON.stringify(bodyPayload);
-  const headers: Record<string, string> = {'Content-Type': 'application/json'};
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (key) headers['x-gemini-api-key'] = key;
   if (openrouterKey) headers['x-openrouter-api-key'] = openrouterKey;
 
@@ -113,34 +113,34 @@ export async function recognizeWithAi(strokes: Stroke[], opts: AiOptions = {}): 
     const targetUrl = isHosted && cleanCustom && endpoint.startsWith('/') ? `${cleanCustom}${endpoint}` : endpoint;
 
     try {
-      resp = await doFetch(targetUrl, {method: 'POST', headers, body, signal: ctrl?.signal});
+      resp = await doFetch(targetUrl, { method: 'POST', headers, body, signal: ctrl?.signal });
     } catch (e) {
       if (!endpoint.startsWith('/')) throw e;
       if (cleanCustom && targetUrl !== `${cleanCustom}${endpoint}`) {
-        resp = await doFetch(`${cleanCustom}${endpoint}`, {method: 'POST', headers, body, signal: ctrl?.signal});
+        resp = await doFetch(`${cleanCustom}${endpoint}`, { method: 'POST', headers, body, signal: ctrl?.signal });
       } else {
-        resp = await doFetch(`http://127.0.0.1:8000${endpoint}`, {method: 'POST', headers, body, signal: ctrl?.signal});
+        resp = await doFetch(`http://127.0.0.1:8000${endpoint}`, { method: 'POST', headers, body, signal: ctrl?.signal });
       }
     }
     if (!resp.ok && endpoint.startsWith('/') && cleanCustom && targetUrl !== `${cleanCustom}${endpoint}`) {
       try {
-        const directResp = await doFetch(`${cleanCustom}${endpoint}`, {method: 'POST', headers, body, signal: ctrl?.signal});
+        const directResp = await doFetch(`${cleanCustom}${endpoint}`, { method: 'POST', headers, body, signal: ctrl?.signal });
         if (directResp.ok) resp = directResp;
-      } catch {}
+      } catch { }
     }
     if (!resp.ok) return null; // 503 = chưa có khóa / mô hình không phản hồi
 
     const j = await resp.json();
-    const lines: ConvertLine[] = (j.lines || []).map((l: {text?: string; latex?: string; confidence?: number}) => ({
+    const lines: ConvertLine[] = (j.lines || []).map((l: { text?: string; latex?: string; confidence?: number }) => ({
       text: String(l.text ?? l.latex ?? ''),
       latex: String(l.latex ?? l.text ?? ''),
       confidence: typeof l.confidence === 'number' ? l.confidence : 0.8,
       alternatives: [],
     }));
     if (!lines.length) return null;
-    const alts = ((j.alternatives || []) as string[]).map((a) => ({latex: a, text: a, confidence: 0.5}));
+    const alts = ((j.alternatives || []) as string[]).map((a) => ({ latex: a, text: a, confidence: 0.5 }));
     if (alts.length) lines[0].alternatives = alts;
-    return {engine: 'gemini', lines, confidence: typeof j.confidence === 'number' ? j.confidence : 0.8, ms: Date.now() - t0, model: j.model};
+    return { engine: 'gemini', lines, confidence: typeof j.confidence === 'number' ? j.confidence : 0.8, ms: Date.now() - t0, model: j.model };
   } catch {
     return null;
   } finally {
@@ -185,14 +185,14 @@ export function layoutTypeset(lines: ConvertLine[], source: Stroke[], mode: 'rep
       x = sb.x1 + 28;
     }
     const w = estWidth(l.latex, size);
-    out.push({x, y, meta: {latex: l.latex, text: l.text, size, w, h: size * 1.5}});
+    out.push({ x, y, meta: { latex: l.latex, text: l.text, size, w, h: size * 1.5 } });
   });
   return out;
 }
 
 export const typesetStroke = (p: Placement, color: string): Stroke => ({
   id: `typeset-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
-  points: [{x: p.x, y: p.y}],
+  points: [{ x: p.x, y: p.y }],
   color,
   width: 0,
   typeset: p.meta,
@@ -201,7 +201,7 @@ export const typesetStroke = (p: Placement, color: string): Stroke => ({
 /** Công thức đã nhận dạng có dựng được ngay (đồ thị / khối 3D) mà không cần AI không? */
 export function localVisualization(latexOrText: string): SimulationBlueprint | null {
   const plain = normalizeMathInput(latexOrText.replace(/\\\\/g, '\n'));
-  return routeLocally(plain, {explicitGraph: true}) ?? routeLocally(latexOrText, {explicitGraph: true});
+  return routeLocally(plain, { explicitGraph: true }) ?? routeLocally(latexOrText, { explicitGraph: true });
 }
 
-export {latexToPlain} from './latexPlain';
+export { latexToPlain } from './latexPlain';

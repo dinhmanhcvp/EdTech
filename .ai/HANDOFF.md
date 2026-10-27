@@ -457,20 +457,32 @@
 - Tạo tệp `tat-he-thong-bang.bat` đóng sạch toàn bộ tiến trình ngầm để trả lại tài nguyên cho bảng.
 - Thu gọn thanh điều khiển trên cùng thành thanh nổi tối giản (Smartboard Collapsed Floating Pill) với 100% diện tích màn hình dành cho mặt bảng, cho phép mở rộng menu cài đặt chi tiết khi cần.
 
-## 2026-10-27 — Kích hoạt Tự động AI Vision khi Khoanh Lasso & Tối ưu Endpoint Gemini Render
-- **Nguyên nhân người dùng chưa thấy AI Vision chạy khi khoanh Lasso:**
-  1. Thao tác Lasso trước đây chỉ thực hiện chọn nét và chạy nhận diện cục bộ tức thì (`recognizeLocal`, 12ms), hiển thị huy hiệu `⚡ Tức thì` mà chưa tự động phát lệnh gọi Gemini Vision nền, khiến giáo viên nhầm tưởng AI Vision chưa chạy.
-  2. Khi bấm `Trực quan hóa`, các công thức STEM phổ biến được khớp ngay bằng bộ định tuyến cục bộ (`matchInstantStemBlueprint`) trong 0ms - 25ms và hiển thị mô phỏng ngay mà không cần gọi mạng.
-  3. Ở phía backend Render, danh sách mô hình trước đây trỏ vào các định danh không chuẩn (`gemini-2.5-flash`), đồng thời ngân sách thời gian `VISION_LLM_BUDGET_S = 1.1s` quá ngắn đối với độ trễ mạng đám mây, dẫn đến việc bị timeout ngầm và chuyển sang fallback.
-- **Nâng cấp đã thực hiện:**
-  1. **`SmartboardCanvas.tsx`**: Tự động kích hoạt gọi `recognizeWithAi` ở chế độ ngầm song song ngay khi giáo viên khoanh Lasso. Hiển thị huy hiệu trực quan `✨ AI Vision đang quét...` kèm biểu tượng xoay, tự động chuyển sang `✨ AI Vision [ms]ms · [độ tin cậy]%` và điền LaTeX chính xác có dấu tiếng Việt khi hoàn tất.
-  2. Hiển thị huy hiệu trạng thái AI Vision trực tiếp trên thanh công cụ nổi ngay cạnh nét vẽ của giáo viên.
-  3. **`services/ai-engine/routers/visualize.py`**: Chuẩn hóa danh sách mô hình về các endpoint chính thức của Google (`gemini-1.5-flash`, `gemini-2.0-flash`, `gemini-1.5-pro`), nâng ngân sách `_VISION_BUDGET_S` lên 4.5s đảm bảo không bị rớt mạng khi Render gọi sang Google.
-  4. **`services/ai-engine/routers/recognize_ink.py`**: Chuẩn hóa danh sách `GEMINI_MODELS` về các endpoint chính thức.
+## 2026-10-27 — Soát Toàn Bộ AI Vision & Sửa Lỗi Chuyển Đổi Công Thức (Ink Convert Pipeline)
+- **Nguyên nhân gốc rễ khiến AI Vision chưa hoạt động dù bấm Chuyển thành công thức:**
+  1. **Lỗi định danh Model 404 từ Google API**: Khi gọi Google Gemini v1beta với model `gemini-1.5-flash`, Google trả về mã `404 models/gemini-1.5-flash is not found for API version v1beta` đối với tài khoản/phiên bản API hiện hành. Model chính thức hoạt động ổn định và cực nhanh là `gemini-2.5-flash` (đo đạc thực tế chỉ 0.8 giây, confidence 0.99).
+  2. **Render Free Tier Cold Start ngủ đông**: Máy chủ Render gói miễn phí tự động tắt sau 15 phút không dùng. Khi khởi động lại, Render cần 30 - 50 giây. Trước đây giao diện không có nút Thử lại hoặc nút Ping đánh thức máy chủ nên bị kẹt ở chế độ tức thì.
+  3. **Ngắt kết nối giữa SmartboardCanvas và InkConvertPanel**: Khi Lasso đã kích hoạt AI Vision nền, kết quả chưa được truyền làm `initialAiResult` cho `InkConvertPanel`, khiến panel phải bắt đầu lại từ đầu hoặc bị timeout.
+  4. **Thiếu công cụ chẩn đoán kết nối trên giao diện**: Thanh trạng thái cũ có `pointer-events-none` và luôn báo AI Engine sẵn sàng ngay cả khi thiếu khóa hoặc Render chưa thức.
+- **Nâng cấp toàn diện đã thực hiện:**
+  1. **`services/ai-engine/routers/recognize_ink.py` & `visualize.py`**:
+     * Đưa `gemini-2.5-flash` và `gemini-flash-latest` lên vị trí ưu tiên hàng đầu trong `GEMINI_MODELS`.
+     * Tẩy sạch khoảng trắng và dấu ngoặc kép thừa `.strip().strip("'\"")` trong biến môi trường `GEMINI_API_KEY`.
+     * Trả về thông tin lỗi chi tiết trong exception 503 để dễ quan sát chẩn đoán.
+  2. **`apps/teacher-board/src/components/canvas/InkConvertPanel.tsx`**:
+     * Hỗ trợ nhận diện kết quả quét nền trước `initialAiResult` và cờ `isAiScanning`.
+     * Bổ sung nút `Thử lại AI Vision` và nút `Ping & Cấu hình` khi ở trạng thái unavailable.
+  3. **`apps/teacher-board/src/components/common/AiBackendConfigModal.tsx`**:
+     * Tạo modal cấu hình trực tiếp: cho phép xem/sửa URL Render, nhập khóa Gemini API dự phòng trực tiếp trên trình duyệt, nút Ping kiểm tra kết nối với thông báo trực quan khi Render đang khởi động lạnh, và nút Thử AI Vision trả kết quả tức thì trong < 1s.
+  4. **`apps/teacher-board/src/components/common/EngineHealthRail.tsx`**:
+     * Chuyển thành thanh tương tác trực quan `pointer-events-auto cursor-pointer`, phản ánh đúng trạng thái khóa Gemini, nhấp vào mở modal cấu hình.
+  5. **`apps/teacher-board/src/utils/inkConvert.ts`**:
+     * Tự động ưu tiên gọi HTTPS trực tiếp tới máy chủ Render khi triển khai trên Vercel để tránh giới hạn timeout 10s của Vercel serverless proxy.
 - **Kiểm tra và Xác minh:**
-  - 406/406 Vitest tests passed.
-  - 41/41 Pytest tests passed.
+  - 388/388 Teacher Board Vitest tests passed.
+  - 18/18 Student App Vitest tests passed.
+  - 41/41 Backend Pytest tests passed.
   - TypeScript strict check 0 errors.
+
 
 
 

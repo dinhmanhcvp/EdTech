@@ -1884,6 +1884,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         <InkConvertPanel
           source={convertCtx.source}
           editing={convertCtx.editing ?? null}
+          initialAiResult={aiVisionResult}
+          isAiScanning={isAiVisionScanning}
           enableGrading
           onClose={() => setConvertCtx(null)}
           onApply={applyConvert}

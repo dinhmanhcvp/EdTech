@@ -23,8 +23,13 @@ import type {SimulationBlueprint} from '@socratic/types';
 export interface InkConvertPanelProps {
   /** nét viết cần chuyển; để trống khi sửa một công thức đã gõ */
   source: Stroke[];
+  /** kết quả AI Vision đã quét trước từ SmartboardCanvas */
+  initialAiResult?: ConvertResult | null;
+  /** cờ báo AI Vision đang quét nền từ SmartboardCanvas */
+  isAiScanning?: boolean;
   /** chế độ sửa công thức đã gõ */
   editing?: {latex: string; text: string} | null;
+  onOpenConfig?: () => void;
   onClose: () => void;
   onApply: (lines: ConvertLine[], mode: 'replace' | 'insert') => void;
   onVisualizeLocal: (bp: SimulationBlueprint) => void;
@@ -60,15 +65,34 @@ const KEYS: [string, string, number][] = [
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
-export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({source, editing, onClose, onApply, onVisualizeLocal, onVisualizeAi, enableGrading = false}) => {
+export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({
+  source,
+  editing,
+  initialAiResult,
+  isAiScanning = false,
+  onOpenConfig,
+  onClose,
+  onApply,
+  onVisualizeLocal,
+  onVisualizeAi,
+  enableGrading = false,
+}) => {
   const src = useMemo(() => sourceStrokes(source), [source]);
   const sketch = useMemo(() => (editing || src.length < 4 ? null : detectSolidFromStrokes(src.map((x) => ({points: x.points})))), [src, editing]);
   const local = useMemo<ConvertResult | null>(() => (editing || !src.length ? null : recognizeLocal(src)), [src, editing]);
-  const [ai, setAi] = useState<ConvertResult | null>(null);
-  const [aiState, setAiState] = useState<'idle' | 'loading' | 'done' | 'unavailable'>('idle');
-  const [engine, setEngine] = useState<'local' | 'gemini'>('local');
+  const [ai, setAi] = useState<ConvertResult | null>(initialAiResult ?? null);
+  const [aiState, setAiState] = useState<'idle' | 'loading' | 'done' | 'unavailable'>(
+    initialAiResult ? 'done' : isAiScanning ? 'loading' : 'idle'
+  );
+  const [engine, setEngine] = useState<'local' | 'gemini'>(initialAiResult ? 'gemini' : 'local');
   const [lines, setLines] = useState<ConvertLine[]>(() =>
-    editing ? [{text: editing.text, latex: editing.latex, confidence: 1, alternatives: []}] : local?.lines.length ? local.lines : [{text: '', latex: '', confidence: 0, alternatives: []}],
+    editing
+      ? [{text: editing.text, latex: editing.latex, confidence: 1, alternatives: []}]
+      : initialAiResult?.lines.length
+      ? initialAiResult.lines
+      : local?.lines.length
+      ? local.lines
+      : [{text: '', latex: '', confidence: 0, alternatives: []}],
   );
   const [edited, setEdited] = useState(false);
   const [thumb, setThumb] = useState<string | null>(null);
@@ -101,8 +125,34 @@ export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({source, editing
     };
   }, [src]);
 
+  const runAiRecognition = () => {
+    if (editing || !src.length) return;
+    setAiState('loading');
+    recognizeWithAi(src).then((r) => {
+      if (!r) {
+        setAiState('unavailable');
+        return;
+      }
+      setAi(r);
+      setAiState('done');
+      if (!edited) {
+        setEngine('gemini');
+        setLines(r.lines);
+      }
+    });
+  };
+
   // nâng cấp bằng AI Vision ở nền
   useEffect(() => {
+    if (initialAiResult) {
+      setAi(initialAiResult);
+      setAiState('done');
+      if (!edited) {
+        setEngine('gemini');
+        setLines(initialAiResult.lines);
+      }
+      return;
+    }
     if (editing || !src.length) return;
     let alive = true;
     setAiState('loading');
@@ -114,19 +164,15 @@ export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({source, editing
       }
       setAi(r);
       setAiState('done');
+      if (!edited) {
+        setEngine('gemini');
+        setLines(r.lines);
+      }
     });
     return () => {
       alive = false;
     };
-  }, [src, editing]);
-
-  // AI về mà giáo viên chưa chỉnh gì → tự chuyển sang kết quả AI
-  useEffect(() => {
-    if (ai && !edited) {
-      setEngine('gemini');
-      setLines(ai.lines);
-    }
-  }, [ai, edited]);
+  }, [src, editing, initialAiResult]);
 
   const pick = (e: 'local' | 'gemini') => {
     const r = e === 'gemini' ? ai : local;
@@ -286,9 +332,34 @@ ${joinedText}`), [joinedLatex, joinedText]);
                   </span>
                 </div>
                 {aiState === 'unavailable' && (
-                  <p className="text-[11px] text-stone-500" data-testid="ink-convert-ai-note">
-                    AI Vision chưa dùng được (chưa có khóa Gemini hoặc mất kết nối) — đang dùng nhận dạng cục bộ. Cục bộ đọc tốt số, chữ Latin, mũ, phân số, căn; <b>không đọc được tiếng Việt có dấu</b>.
-                  </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900" data-testid="ink-convert-ai-note">
+                    <span className="leading-relaxed">
+                      Chưa nhận được phản hồi AI Vision. Đang dùng nhận dạng tức thì. Render có thể đang khởi động từ trạng thái ngủ hoặc cần kết nối lại.
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onOpenConfig) {
+                            onOpenConfig();
+                          } else if (typeof window !== 'undefined') {
+                            window.dispatchEvent(new CustomEvent('open-ai-backend-config'));
+                          }
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-white hover:bg-stone-50 text-stone-700 font-medium border border-stone-300 transition cursor-pointer"
+                        title="Kiểm tra kết nối và cấu hình URL Render / Gemini API Key"
+                      >
+                        ⚙ Ping & Cấu hình
+                      </button>
+                      <button
+                        type="button"
+                        onClick={runAiRecognition}
+                        className="px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-medium shadow-xs transition cursor-pointer"
+                      >
+                        Thử lại AI Vision
+                      </button>
+                    </div>
+                  </div>
                 )}
                 {unsure && (
                   <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1" data-testid="ink-convert-unsure">

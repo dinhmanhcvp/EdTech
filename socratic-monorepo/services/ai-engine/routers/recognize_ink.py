@@ -22,7 +22,14 @@ except ImportError:  # pragma: no cover
 
 router = APIRouter(prefix="/api/v1/canvas", tags=["Handwriting Recognition"])
 
-GEMINI_MODELS = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
+GEMINI_MODELS = [
+    "gemini-2.5-flash",
+    "gemini-flash-latest",
+    "gemini-2.5-pro",
+    "gemini-pro-latest",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+]
 _TIMEOUT_S = float(os.getenv("INK_RECOGNIZE_TIMEOUT_S", "14"))
 _POOL = ThreadPoolExecutor(max_workers=3, thread_name_prefix="ink-recognize")
 
@@ -131,7 +138,7 @@ async def recognize_ink(request: Request):
     if not PIL_AVAILABLE:
         raise HTTPException(status_code=503, detail="Máy chủ thiếu Pillow.")
 
-    api_key = (request.headers.get("x-gemini-api-key") or body.get("gemini_api_key") or os.getenv("GEMINI_API_KEY") or "").strip()
+    api_key = (request.headers.get("x-gemini-api-key") or body.get("gemini_api_key") or os.getenv("GEMINI_API_KEY") or "").strip().strip("'\"")
     if not api_key:
         raise HTTPException(status_code=503, detail="no_key")
 

@@ -94,19 +94,23 @@ export async function recognizeWithAi(strokes: Stroke[], opts: AiOptions = {}): 
   try {
     let resp: Response;
     const customBackend = (typeof window !== 'undefined' ? window.localStorage.getItem('backend_url') : '') || (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_BACKEND_URL : '') || '';
+    const cleanCustom = customBackend.replace(/\/+$/, '');
+    const isHosted = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    const targetUrl = isHosted && cleanCustom && endpoint.startsWith('/') ? `${cleanCustom}${endpoint}` : endpoint;
+
     try {
-      resp = await doFetch(endpoint, {method: 'POST', headers, body, signal: ctrl?.signal});
+      resp = await doFetch(targetUrl, {method: 'POST', headers, body, signal: ctrl?.signal});
     } catch (e) {
       if (!endpoint.startsWith('/')) throw e;
-      if (customBackend) {
-        resp = await doFetch(`${customBackend.replace(/\/+$/, '')}${endpoint}`, {method: 'POST', headers, body, signal: ctrl?.signal});
+      if (cleanCustom && targetUrl !== `${cleanCustom}${endpoint}`) {
+        resp = await doFetch(`${cleanCustom}${endpoint}`, {method: 'POST', headers, body, signal: ctrl?.signal});
       } else {
         resp = await doFetch(`http://127.0.0.1:8000${endpoint}`, {method: 'POST', headers, body, signal: ctrl?.signal});
       }
     }
-    if (!resp.ok && endpoint.startsWith('/') && customBackend) {
+    if (!resp.ok && endpoint.startsWith('/') && cleanCustom && targetUrl !== `${cleanCustom}${endpoint}`) {
       try {
-        const directResp = await doFetch(`${customBackend.replace(/\/+$/, '')}${endpoint}`, {method: 'POST', headers, body, signal: ctrl?.signal});
+        const directResp = await doFetch(`${cleanCustom}${endpoint}`, {method: 'POST', headers, body, signal: ctrl?.signal});
         if (directResp.ok) resp = directResp;
       } catch {}
     }

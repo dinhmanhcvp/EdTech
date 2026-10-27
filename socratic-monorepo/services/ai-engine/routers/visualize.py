@@ -601,7 +601,7 @@ def build_vision_prompt(hint_text=None, subject_lock=None):
 
 
 def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None, api_key: Optional[str] = None, subject_lock: Optional[str] = None) -> Optional[Dict[str, Any]]:
-    gemini_key = api_key or os.getenv("GEMINI_API_KEY")
+    gemini_key = (api_key or os.getenv("GEMINI_API_KEY") or "").strip().strip("'\"")
     openai_key = os.getenv("OPENAI_API_KEY")
 
     if not gemini_key and not openai_key:
@@ -616,7 +616,7 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
             genai.configure(api_key=gemini_key)
             pil_img = Image.open(io.BytesIO(image_bytes)) if PIL_AVAILABLE else None
             if pil_img:
-                for model_name in ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]:
+                for model_name in ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-pro", "gemini-pro-latest", "gemini-2.0-flash", "gemini-1.5-flash"]:
                     try:
                         model = genai.GenerativeModel(model_name)
                         response = model.generate_content([few_shot_prompt, pil_img])

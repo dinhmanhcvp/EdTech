@@ -78,8 +78,10 @@ export async function recognizeWithAi(strokes: Stroke[], opts: AiOptions = {}): 
   if (!src.length) return null;
   const doFetch = opts.fetchImpl ?? (typeof fetch !== 'undefined' ? fetch : undefined);
   if (!doFetch) return null;
-  const key = opts.apiKey ?? (typeof window !== 'undefined' ? window.localStorage.getItem('gemini_api_key') || '' : '');
-  const openrouterKey = opts.openrouterKey ?? (typeof window !== 'undefined' ? window.localStorage.getItem('openrouter_api_key') || '' : '');
+  const rawKey = opts.apiKey ?? (typeof window !== 'undefined' ? window.localStorage.getItem('gemini_api_key') || '' : '');
+  const rawOrKey = opts.openrouterKey ?? (typeof window !== 'undefined' ? window.localStorage.getItem('openrouter_api_key') || '' : '');
+  const key = rawKey.replace(/[\r\n]+/g, ',').replace(/[,;\s]+/g, ',').replace(/^,|,$/g, '').trim();
+  const openrouterKey = rawOrKey.replace(/[\r\n]+/g, ',').replace(/[,;\s]+/g, ',').replace(/^,|,$/g, '').trim();
   const endpoint = opts.endpoint ?? '/api/v1/canvas/recognize-ink';
   const t0 = Date.now();
   let image: string;

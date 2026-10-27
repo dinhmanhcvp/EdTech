@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
-from llm.key_pool import call_openrouter_vision, global_key_pool, mask_api_key
+from llm.key_pool import call_openrouter_vision, classify_error_cooldown, global_key_pool, mask_api_key
 
 try:
     from PIL import Image
@@ -25,10 +25,12 @@ except ImportError:  # pragma: no cover
 router = APIRouter(prefix="/api/v1/canvas", tags=["Handwriting Recognition"])
 
 GEMINI_MODELS = [
+    "gemini-1.5-flash",
+    "gemini-2.0-flash",
     "gemini-2.5-flash",
     "gemini-flash-latest",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
+    "gemini-1.5-flash-8b",
+    "gemini-1.5-pro",
     "gemini-2.5-pro",
     "gemini-pro-latest",
 ]
@@ -148,10 +150,9 @@ def _call_gemini(image_bytes: bytes, hint: str, api_key: str) -> Optional[Dict[s
 
     for key_idx, current_key in enumerate(candidate_keys):
         genai.configure(api_key=current_key)
-        key_rate_limited = False
+        key_auth_error = False
+        last_key_err: Optional[Exception] = None
         for name in GEMINI_MODELS:
-            if key_rate_limited:
-                break
             try:
                 model = genai.GenerativeModel(name)
                 resp = model.generate_content([prompt, img], generation_config={"temperature": 0})
@@ -164,10 +165,19 @@ def _call_gemini(image_bytes: bytes, hint: str, api_key: str) -> Optional[Dict[s
                     return parsed
             except Exception as e:
                 last_err = e
-                reason, _ = global_key_pool.mark_failure("gemini", current_key, e)
-                if reason in ("rate_limit", "quota_exhausted", "auth_error"):
-                    # Chuyển ngay sang API key tiếp theo mà không thử tiếp model khác trên cùng key bị giới hạn
-                    key_rate_limited = True
+                last_key_err = e
+                reason, _ = classify_error_cooldown(e)
+                if reason == "auth_error":
+                    # Khóa không hợp lệ (sai key / 401 / 403) -> ngắt ngay key này chuyển sang key khác
+                    global_key_pool.mark_failure("gemini", current_key, e)
+                    key_auth_error = True
+                    break
+                # Nếu là quota_exhausted hoặc rate_limit của model này:
+                # Quota của Google AI Studio tính THEO MODEL (vd: 2.5 Flash hết 20 RPD nhưng 1.5 Flash vẫn còn 1500 RPD)!
+                # Tiếp tục thử model tiếp theo trong GEMINI_MODELS trên cùng key.
+        else:
+            if not key_auth_error and last_key_err is not None:
+                global_key_pool.mark_failure("gemini", current_key, last_key_err)
     if last_err:
         print(f"[recognize-ink] Gemini pool error across {len(candidate_keys)} key(s): {last_err}")
     return None
@@ -364,4 +374,6 @@ async def recognize_ink(request: Request):
     if local_result is not None:
         return local_result
 
-    raise HTTPException(status_code=503, detail="vision_unavailable")
+    err_summary = global_key_pool.get_last_error_summary()
+    detail_msg = f"vision_unavailable: {err_summary}" if err_summary else "vision_unavailable"
+    raise HTTPException(status_code=503, detail=detail_msg)

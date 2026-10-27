@@ -29,7 +29,7 @@ except ImportError:
     CV2_AVAILABLE = False
 
 from ocr_engine import global_ocr_engine, RAPIDOCR_ENGINE, LOCAL_MATH_ONNX, ENABLE_HEAVY_MODELS
-from llm.key_pool import global_key_pool, call_openrouter_vision, mask_api_key, _split_keys
+from llm.key_pool import global_key_pool, call_openrouter_vision, mask_api_key, _split_keys, classify_error_cooldown
 
 router = APIRouter(prefix="/api/v1/canvas", tags=["Canvas & Magic Lasso"])
 
@@ -597,9 +597,15 @@ def build_vision_prompt(hint_text=None, subject_lock=None):
     )
 
 
-def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None, api_key: Optional[str] = None, subject_lock: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def classify_with_vision_llm(
+    image_bytes: bytes,
+    hint_text: Optional[str] = None,
+    api_key: Optional[str] = None,
+    openrouter_key: Optional[str] = None,
+    subject_lock: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
     gemini_keys = global_key_pool.get_ordered_keys("gemini", extra_key=api_key)
-    openrouter_keys = global_key_pool.get_ordered_keys("openrouter")
+    openrouter_keys = global_key_pool.get_ordered_keys("openrouter", extra_key=openrouter_key)
     openai_key = os.getenv("OPENAI_API_KEY")
 
     if not gemini_keys and not openrouter_keys and not openai_key:
@@ -607,7 +613,7 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
 
     few_shot_prompt = build_vision_prompt(hint_text, subject_lock)
 
-    # 1. Try Gemini Pool (xoay vòng qua tất cả các khóa Gemini; nếu chạm 429/Quota thì chuyển ngay sang khóa tiếp theo)
+    # 1. Try Gemini Pool (xoay vòng qua tất cả các khóa Gemini; ưu tiên gemini-1.5-flash hạn mức lớn 1500 RPD)
     if gemini_keys:
         try:
             import google.generativeai as genai
@@ -615,17 +621,18 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
             if pil_img:
                 for g_key in gemini_keys:
                     genai.configure(api_key=g_key)
-                    key_rate_limited = False
+                    key_auth_error = False
+                    last_key_err: Optional[Exception] = None
                     for model_name in [
+                        "gemini-1.5-flash",
+                        "gemini-2.0-flash",
                         "gemini-2.5-flash",
                         "gemini-flash-latest",
-                        "gemini-2.0-flash",
-                        "gemini-1.5-flash",
+                        "gemini-1.5-flash-8b",
+                        "gemini-1.5-pro",
                         "gemini-2.5-pro",
                         "gemini-pro-latest",
                     ]:
-                        if key_rate_limited:
-                            break
                         try:
                             model = genai.GenerativeModel(model_name)
                             response = model.generate_content([few_shot_prompt, pil_img])
@@ -646,9 +653,15 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
                                         return data
                         except Exception as me:
                             print(f"[Gemini Vision] Model {model_name} error on {mask_api_key(g_key)}: {me}")
-                            reason, _ = global_key_pool.mark_failure("gemini", g_key, me)
-                            if reason in ("rate_limit", "quota_exhausted", "auth_error"):
-                                key_rate_limited = True
+                            last_key_err = me
+                            reason, _ = classify_error_cooldown(me)
+                            if reason == "auth_error":
+                                global_key_pool.mark_failure("gemini", g_key, me)
+                                key_auth_error = True
+                                break
+                    else:
+                        if not key_auth_error and last_key_err is not None:
+                            global_key_pool.mark_failure("gemini", g_key, last_key_err)
         except Exception as ge:
             print(f"[Gemini Vision] Init error: {ge}")
 
@@ -718,17 +731,28 @@ _VISION_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="vision-llm"
 _VISION_FUTURES: Dict[str, Any] = {}
 
 
-def classify_with_vision_budgeted(image_bytes: bytes, hint_text: Optional[str] = None, api_key: Optional[str] = None, subject_lock: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def classify_with_vision_budgeted(
+    image_bytes: bytes,
+    hint_text: Optional[str] = None,
+    api_key: Optional[str] = None,
+    openrouter_key: Optional[str] = None,
+    subject_lock: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
     """
     Run classify_with_vision_llm with a hard latency budget. If the model is slower than the budget,
     return None immediately (the caller falls back to the local RapidOCR/stroke pipeline, ~10ms)
     while the LLM keeps working in the background; its late answer is cached by image hash so that
     retrying the same crop is instant and more accurate.
     """
-    key = hashlib.sha1(image_bytes + (hint_text or "").encode("utf-8", "ignore") + (subject_lock or "").encode("utf-8", "ignore")).hexdigest()
+    key = hashlib.sha1(
+        image_bytes
+        + (hint_text or "").encode("utf-8", "ignore")
+        + (subject_lock or "").encode("utf-8", "ignore")
+        + (openrouter_key or "").encode("utf-8", "ignore")
+    ).hexdigest()
     fut = _VISION_FUTURES.get(key)
     if fut is None:
-        fut = _VISION_POOL.submit(classify_with_vision_llm, image_bytes, hint_text, api_key, subject_lock)
+        fut = _VISION_POOL.submit(classify_with_vision_llm, image_bytes, hint_text, api_key, openrouter_key, subject_lock)
         _VISION_FUTURES[key] = fut
         if len(_VISION_FUTURES) > 64:
             for old in list(_VISION_FUTURES.keys())[:32]:
@@ -836,6 +860,7 @@ async def compile_lasso(request: Request):
     """
     content_type = request.headers.get("content-type", "").lower()
     custom_gemini_key = request.headers.get("x-gemini-api-key")
+    custom_openrouter_key = request.headers.get("x-openrouter-api-key")
     image_bytes = None
     image_base64 = None
     hint_text = None
@@ -850,6 +875,7 @@ async def compile_lasso(request: Request):
             hint_text = body.get("hint_text")
             hint_subject = body.get("hint_subject") or hint_text
             custom_gemini_key = body.get("gemini_api_key") or custom_gemini_key
+            custom_openrouter_key = body.get("openrouter_api_key") or custom_openrouter_key
             subject_lock = body.get("subject_lock")
             raw_strokes_json = body.get("raw_strokes_json")
             if isinstance(raw_strokes_json, (dict, list)):
@@ -862,6 +888,7 @@ async def compile_lasso(request: Request):
             hint_subject = form.get("hint_subject")
             hint_text = form.get("hint_text") or hint_subject
             custom_gemini_key = form.get("gemini_api_key") or custom_gemini_key
+            custom_openrouter_key = form.get("openrouter_api_key") or custom_openrouter_key
             subject_lock = form.get("subject_lock")
             raw_strokes_json = form.get("raw_strokes_json")
             image_base64 = form.get("image_base64")
@@ -897,7 +924,13 @@ async def compile_lasso(request: Request):
     # Step 1: Attempt Real Vision LLM (Gemini Flash / OpenAI) under a strict latency budget (<1.5s SLA)
     llm_result = None
     if image_bytes and len(image_bytes) > 0:
-        llm_result = classify_with_vision_budgeted(image_bytes, hint_text or hint_subject, api_key=custom_gemini_key, subject_lock=subject_lock)
+        llm_result = classify_with_vision_budgeted(
+            image_bytes,
+            hint_text or hint_subject,
+            api_key=custom_gemini_key,
+            openrouter_key=custom_openrouter_key,
+            subject_lock=subject_lock,
+        )
 
     if llm_result and "templateId" in llm_result:
         template_id = llm_result["templateId"]

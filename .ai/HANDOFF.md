@@ -1,36 +1,27 @@
 # 1. Mục tiêu hiện tại (Current Task & Goal)
+- Khắc phục triệt để lỗi **HTTP 503 Service Unavailable / Vision Unavailable** khi cấu hình khóa API Gemini và OpenRouter.
+- Giải quyết rào cản hạn mức Google AI Studio (Free Tier RPD quota) và cơ chế tự động xoay vòng nhiều khóa (Multi-Key Pool) + dự phòng OpenRouter / Neural ONNX.
 - Quy hoạch và phân định rõ ràng toàn bộ hệ thống thành **2 Tính Năng Cốt Lõi**:
-  1. **Tính Năng 1: Bảng Tương Tác Thông Minh Trên Lớp (Smartboard Interactive Canvas)** (`apps/teacher-board`): Không gian viết vẽ Hologram HUD không nền, 10 Advanced STEM Engines (Toán, Lý, Hóa, Sinh), nhận diện hình khối/công thức offline < 15ms, kiểm tra độ tin cậy OCR (confidence thấp cho chọn/sửa ký tự nghi ngờ 1-chạm, confidence bình thường vào thẳng mô phỏng), lưu vết phân cảnh Pre-Clear Commit qua các lần xóa bảng, và kết nối phòng học BYOD.
-  2. **Tính Năng 2: Nền Tảng Gia Sư AI Socratic Sau Giờ Học (After-School Socratic Learning Platform)** (`apps/student-app`): Ứng dụng web/app kết nối realtime cho học sinh, phụ huynh và giáo viên; tập hợp toàn bộ các phân hệ Socratic (Locked Stepper, ConceptCheckGate, MathNumpad chống gian lận, 4 Visual Debuggers, mô hình toán BKT Engine, 4 chế độ AfterSchoolTutor, Smart Notes Viewer, Teacher Heatmap và ParentPulse).
+  1. **Tính Năng 1: Bảng Tương Tác Thông Minh Trên Lớp (Smartboard Interactive Canvas)** (`apps/teacher-board`).
+  2. **Tính Năng 2: Nền Tảng Gia Sư AI Socratic Sau Giờ Học (After-School Socratic Learning Platform)** (`apps/student-app`).
 
 # 2. Trạng thái Codebase (Working State)
 - **Đã hoàn thành (Done):**
+  - **Khắc phục triệt để lỗi HTTP 503 & Quota Exceeded:**
+    * **Phân tích bản chất hạn mức Google AI Studio:** Hạn mức số lượt gọi trong ngày (RPD) được Google tính **theo từng Tài khoản/Dự án Google**, không tính theo từng API key. Do đó việc tạo 4 key trong cùng 1 tài khoản/dự án sẽ chia sẻ chung 1 hạn mức 20 lượt/ngày của Gemini 2.5 Flash. Khi chạm 20 RPD, toàn bộ 4 key đều trả về `429 ResourceExhausted: Quota exceeded for Requests per day`.
+    * **Ưu tiên Gemini 1.5 Flash (1.500 RPD) lên đầu bảng:** Trước đây `GEMINI_MODELS` đặt `gemini-2.5-flash` (chỉ 20 RPD) ở vị trí đầu tiên. Đã hoán đổi đưa `gemini-1.5-flash` (1.500 RPD miễn phí) lên đầu, tiếp đến `gemini-2.0-flash`, giúp người dùng không còn bị chạm rào cản 20 lượt/ngày.
+    * **Sửa lỗi ngắt vòng lặp mô hình sớm (Premature Break):** Trong `_call_gemini` và `classify_with_vision_llm`, khi gặp `quota_exhausted` trên một model, hệ thống không còn ngắt ngang key mà tự động thử tiếp các model khác (`gemini-1.5-flash`, `gemini-2.0-flash`...) trên cùng key đó (vì Google tính hạn mức riêng cho từng model). Chỉ khi lỗi `auth_error` (key sai) mới ngắt sang key tiếp theo.
+    * **Nâng cấp bể OpenRouter với `openrouter/free`:** Bổ sung router tự động chọn model miễn phí tốt nhất (`openrouter/free`) và `google/gemini-2.0-flash-001` lên đầu danh sách `DEFAULT_OPENROUTER_VISION_MODELS` và `DEFAULT_OPENROUTER_TEXT_MODELS`.
+    * **Khử triệt để lỗi Header Injection trong Fetch:** Chuẩn hóa toàn bộ chuỗi key nhập từ textarea/localStorage, tự động thay thế `\r\n` thành dấu phẩy `,` trước khi gửi qua `fetch` (`x-gemini-api-key`, `x-openrouter-api-key`), ngăn chặn lỗi `TypeError: Invalid character in header` trên trình duyệt và proxy Render.
+    * **Chẩn đoán 503 chi tiết:** Bổ sung `get_last_error_summary()` vào `KeyPoolManager`. Khi gặp 503, máy chủ trả về chi tiết chẩn đoán lỗi cụ thể (ví dụ: `Gemini: 429 Quota Exceeded | OpenRouter: 401 Unauthorized`) giúp người dùng và modal hiển thị hướng dẫn khắc phục chính xác.
   - Toàn bộ 2 Tính năng chính đã được triển khai, kiểm thử và phân định ranh giới module rõ ràng.
-  - Toàn bộ các mô-đun Socratic cũ đã được tích hợp đầy đủ vào Tính năng 2 mà không bỏ sót bất kỳ thành phần nào.
-  - Tích hợp khóa Gemini Vision API trực tiếp vào tệp môi trường backend và cấu hình tự động, loại bỏ hoàn toàn nút và modal nhập key trên giao diện bục giảng.
-  - Nâng cấp toàn diện Chế độ Tức thì (Instant Recognition Engine):
-    * Đạt độ chính xác 100% (45/45 công thức chuẩn) trên bộ benchmark kiểm thử `inkRecognizer`.
-    * Tinh chỉnh thuật toán beam search và bổ sung `polishMathLatex` tự động khử nhầm lẫn các ký hiệu toán học phổ biến (lượng giác sin, cos, tan, số mũ x², y², z², chỉ số dưới v₀, d₁, d₂, hằng số B, tham số RLC, Oxyz).
-    * Hiệu chuẩn độ tin cậy OCR: các biểu thức toán học hợp lệ được bảo đảm độ tự tin >= 92%, chấm dứt cảnh báo vàng không cần thiết.
-    * Tích hợp `matchInstantStemBlueprint` kích hoạt mô phỏng ngay trong 0ms - 25ms ngay khi khoanh vùng Lasso mà không cần chờ mạng hay phản hồi máy chủ.
-    * Gắn huy hiệu và xem trước công thức tức thì trực tiếp trên thanh công cụ Lasso bục giảng.
-  - Nâng cấp nhận diện phương trình mặt cầu 3D Oxyz ($x^2 + y^2 + z^2 = 10$) mượt mà qua cả Gemini 2.5 Flash Vision và bộ định tuyến ngoại tuyến.
-  - Kiểm tra độ tin cậy OCR và các chip hoán đổi ký tự nghi ngờ (`Z ⇄ 2`, `n ⇄ \pi`, `l ⇄ 1`, `S ⇄ 5`, v.v.) hoạt động chính xác trên cả Smartboard Canvas và InkConvertPanel.
-  - Cơ chế Pre-Clear Commit giữ trọn ngữ cảnh phân cảnh qua các lần xóa bảng trên bục giảng.
-  - **Tối ưu hóa toàn diện theo Video Demo Bảng AI Thông Minh (`docs/Bảng AI TQ.mp4`):**
-    * **Biến đổi nét vẽ thành hình học 3D tại chỗ (In-Place 3D Transformation):** Nét vẽ tay hình lập phương, chóp, hộp chữ nhật... được nhận diện tự động và chuyển đổi tức thì thành khối 3D Hologram không nền (`bg-transparent`), loại bỏ hoàn toàn các khung chữ nhật đục che khuất bảng đen.
-    * **Thanh công cụ nổi 1 chạm (`geo-floating-pill-toolbar` - Frame 38):** Thanh điều khiển dạng viên thuốc bo tròn phủ kính mờ (`backdrop-blur`) đặt ngay dưới khối 3D với 7 tác vụ tức thì: Nhãn đỉnh, Cắt thiết diện 2D+3D, Mặt cầu 3D trực giao, Chiều cao SO/SH, Trung điểm M-N-P, Khai triển/Gập, và Đặt lại view.
-    * **Mặt cầu 3D với 3 đường tròn lớn trực giao (3D Orthogonal Great Circles - Frame 35):** Mặt cầu ngoại tiếp/nội tiếp khối 3D hiển thị bằng 3 đường tròn lớn xoay theo phối cảnh 3D thực (Đỏ XY equator, Xanh lá YZ meridian, Xanh dương XZ meridian) kèm chiều sâu bán cầu trước/sau, tâm O và bán kính R.
-    * **Điểm chạm cảm ứng tại các đỉnh khối (Vertex Touch Handles - Frame 36):** Mỗi đỉnh khối 3D được đánh dấu chấm tròn cảm ứng viền xanh nổi bật để giáo viên/học sinh chạm chọn, đo đạc hoặc nối đoạn thẳng phụ trực tiếp trên bảng.
-    * **Mặt cắt 2D trực giao thả nổi bên trái bảng (Floating 2D Cross Section - Frames 40, 42, 45):** Khi cắt khối 3D, mặt cắt đa giác 2D thật nổi độc lập bên trái khối lập phương với đầy đủ số đo góc đỉnh, độ dài cạnh và diện tích S, chu vi P mà không bị đóng khung trong card trắng.
-    * **Hỏi đáp AI Giọng Nói (`VoiceAiQaCard.tsx` - Frames 40, 45):** Tích hợp câu hỏi chuẩn video *"Trong hình lập phương cạnh a, thiết diện nào có diện tích lớn nhất?"* kèm chứng minh lục giác đều ($S = rac{3\sqrt{3}}{4}a^2$) vs hình chữ nhật chéo ($S = a^2\sqrt{2}$) và nút bung mô hình 3D 1-chạm.
-  - 497/497 automated tests passed tuyệt đối (100%). TypeScript strict check 0 errors across all apps.
+  - 513/513 automated tests passed tuyệt đối (100%). TypeScript strict check 0 errors across all apps.
 - **Trạng thái Build & Test:**
   - `npx.cmd tsc --noEmit --incremental false` (cả 2 apps `teacher-board` và `student-app`): **Exit code 0 (0 lỗi TypeScript)**.
   - `npx.cmd vitest run` (`teacher-board`): **34/34 test files passed, 417/417 tests passed 100%**.
-  - `npx.cmd vitest run` (`student-app`): **5/5 test files passed, 23/23 tests passed 100%**.
-  - `pytest tests/` (`services/ai-engine`): **57/57 tests passed 100%**.
-  - **Tổng cộng: 497/497 automated tests đạt 100%**.
+  - `npx.cmd vitest run` (`student-app`): **6/6 test files passed, 35/35 tests passed 100%**.
+  - `pytest tests/` (`services/ai-engine`): **61/61 tests passed 100%**.
+  - **Tổng cộng: 513/513 automated tests đạt 100%**.
 
 # 3. Quyết định kỹ thuật & Ngữ cảnh ẩn (Mental Model & Decisions)
 - **Zero-Background Holographic Canvas:** Không dùng `div` có nền đục che khuất chữ viết phấn. Canvas mô phỏng dùng `bg-transparent` và 4 góc HUD brackets tự mờ dần sau 2 giây (`opacity-0`) khi nhấc bút, giúp nét vẽ kỹ thuật số hòa quyện tự nhiên như thể nét mực đã tự thân cử động.

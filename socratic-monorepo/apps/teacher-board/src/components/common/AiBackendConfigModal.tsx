@@ -16,6 +16,15 @@ import {
   Layers,
 } from 'lucide-react';
 
+function sanitizeKeyList(raw: string): string {
+  if (!raw) return '';
+  return raw
+    .replace(/[\r\n]+/g, ',')
+    .replace(/[,;\s]+/g, ',')
+    .replace(/^,|,$/g, '')
+    .trim();
+}
+
 interface AiBackendConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -146,10 +155,10 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
     const endpoint = target
       ? `${target}/api/v1/canvas/recognize-ink`
       : '/api/v1/canvas/recognize-ink';
-    const key = apiKey.trim();
-    const orKey = openrouterKey.trim();
+    const key = sanitizeKeyList(apiKey);
+    const orKey = sanitizeKeyList(openrouterKey);
 
-    // Mẫu nét vẽ kiểm tra nhỏ 1x1 base64
+    // Mẫu nét vẽ kiểm tra nhỏ 1x1 base64 + strokes
     const tinyPng =
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
@@ -170,6 +179,9 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
         headers,
         body: JSON.stringify({
           image_base64: tinyPng,
+          raw_strokes_json: JSON.stringify([
+            { points: [{ x: 10, y: 10 }, { x: 50, y: 10 }, { x: 50, y: 50 }] },
+          ]),
           hint: '4Fe + 3O2 -> 2Fe2O3',
           gemini_api_key: key,
           openrouter_api_key: orKey,
@@ -180,16 +192,31 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         setTestVisionState('error');
-        setTestVisionResult(
-          `Lỗi ${res.status}: ${errorData.detail || 'Không thể nhận dạng'}. Kiểm tra lại các khóa API hoặc kết nối Render.`,
-        );
+        const detailStr = String(errorData.detail || '');
+        if (res.status === 503) {
+          if (detailStr.includes('no_key')) {
+            setTestVisionResult('Lỗi 503: Chưa có khóa API. Hãy dán khóa Gemini hoặc OpenRouter.');
+          } else if (detailStr.includes('quota') || detailStr.includes('429')) {
+            setTestVisionResult(
+              `Lỗi 503 (Hết Quota): ${detailStr}. Google AI Studio giới hạn lượt/ngày trên dự án này. Hãy thêm key từ tài khoản Google khác hoặc dùng OpenRouter.`,
+            );
+          } else {
+            setTestVisionResult(
+              `Lỗi 503: ${detailStr || 'Dịch vụ tạm thời bận hoặc máy chủ Render đang khởi động (cold-start)'}. Vui lòng thử lại sau vài chục giây.`,
+            );
+          }
+        } else {
+          setTestVisionResult(
+            `Lỗi ${res.status}: ${detailStr || 'Không thể nhận dạng'}. Kiểm tra lại các khóa API hoặc kết nối Render.`,
+          );
+        }
         return;
       }
 
       const data = await res.json();
       setTestVisionState('success');
       const engine = data.engine || 'gemini';
-      const model = data.model || 'gemini-2.5-flash';
+      const model = data.model || 'gemini-1.5-flash';
       const keyInfo = data.key_index ? ` [Key #${data.key_index}]` : '';
       setTestVisionResult(
         `Thành công trong ${ms}ms! Động cơ: ${engine.toUpperCase()} (${model})${keyInfo}. Tự động xoay vòng & dự phòng hoạt động chuẩn xác!`,
@@ -210,14 +237,14 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
         window.localStorage.removeItem('backend_url');
       }
 
-      const cleanKey = apiKey.trim().replace(/^['"]|['"]$/g, '');
+      const cleanKey = sanitizeKeyList(apiKey.trim().replace(/^['"]|['"]$/g, ''));
       if (cleanKey) {
         window.localStorage.setItem('gemini_api_key', cleanKey);
       } else {
         window.localStorage.removeItem('gemini_api_key');
       }
 
-      const cleanOrKey = openrouterKey.trim().replace(/^['"]|['"]$/g, '');
+      const cleanOrKey = sanitizeKeyList(openrouterKey.trim().replace(/^['"]|['"]$/g, ''));
       if (cleanOrKey) {
         window.localStorage.setItem('openrouter_api_key', cleanOrKey);
       } else {
@@ -353,6 +380,21 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
           <p className="text-[10px] text-stone-500">
             Mẹo: Tạo 2-3 tài khoản Google cá nhân lấy key miễn phí, dán chung vào đây. Khi 1 key hết lượt trong phút (15 RPM), hệ thống tự nhảy sang key tiếp theo trong &lt;1ms!
           </p>
+          <div className="text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200/80 leading-relaxed flex flex-col gap-1">
+            <span className="font-semibold flex items-center gap-1.5 text-amber-900">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+              Lưu ý quan trọng về Hạn mức Google AI Studio (Free Tier):
+            </span>
+            <span>
+              • Quota được Google tính <b>theo Tài khoản / Dự án Google</b> (không phải theo từng API key). Nếu tạo 4 key trong cùng 1 tài khoản/dự án, cả 4 key đều dùng chung 1 hạn mức.
+            </span>
+            <span>
+              • Để có nhiều hạn mức hơn, bạn nên lấy key từ <b>các tài khoản Google khác nhau</b> rồi dán cách nhau bằng dấu phẩy.
+            </span>
+            <span>
+              • Hệ thống tự động ưu tiên <code>gemini-1.5-flash</code> (hạn mức lớn <b>1.500 lượt/ngày</b>) thay vì 2.5 Flash (chỉ 20 lượt/ngày).
+            </span>
+          </div>
         </div>
 
         {/* Bể Khóa 2: OpenRouter API Keys (Dự phòng thông minh) */}

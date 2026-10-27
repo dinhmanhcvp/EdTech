@@ -23,15 +23,18 @@ T = TypeVar("T")
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 DEFAULT_OPENROUTER_VISION_MODELS = [
+    "openrouter/free",
+    "google/gemini-2.0-flash-001",
     "google/gemini-2.0-flash-exp:free",
     "qwen/qwen2.5-vl-72b-instruct:free",
     "qwen/qwen2.5-vl-32b-instruct:free",
     "google/gemma-3-27b-it:free",
     "meta-llama/llama-3.2-11b-vision-instruct:free",
-    "google/gemini-2.0-flash-001",
 ]
 
 DEFAULT_OPENROUTER_TEXT_MODELS = [
+    "openrouter/free",
+    "google/gemini-2.0-flash-001",
     "google/gemini-2.0-flash-exp:free",
     "qwen/qwen-2.5-72b-instruct:free",
     "meta-llama/llama-3.3-70b-instruct:free",
@@ -380,6 +383,15 @@ class KeyPoolManager:
                 "total_active_keys": g_active + or_active,
             }
 
+    def get_last_error_summary(self) -> str:
+        """Trả về tóm tắt chẩn đoán lỗi gần nhất của các khóa để báo cáo HTTP 503 chi tiết."""
+        with self._lock:
+            reasons = []
+            for (prov, key), st in self._states.items():
+                if st.last_error_reason:
+                    reasons.append(f"{prov.upper()}[{mask_api_key(key)}]: {st.last_error_reason}")
+            return " | ".join(reasons) if reasons else ""
+
 
 def get_openrouter_vision_models() -> List[str]:
     env_models = _split_keys(os.getenv("OPENROUTER_VISION_MODELS") or os.getenv("OPENROUTER_MODEL"))
@@ -415,10 +427,8 @@ def call_openrouter_vision(
     http_open = opener or urllib.request.urlopen
 
     for api_key in keys:
-        key_rate_limited = False
+        last_key_err: Optional[Exception] = None
         for model_name in model_list:
-            if key_rate_limited:
-                break
             payload = {
                 "model": model_name,
                 "temperature": 0,
@@ -472,15 +482,23 @@ def call_openrouter_vision(
                     body_txt = he.read().decode("utf-8", errors="replace")[:200]
                 except Exception:
                     pass
-                reason, _ = mgr.mark_failure(
-                    "openrouter", api_key, RuntimeError(f"HTTP {he.code}: {body_txt or he.reason}")
-                )
-                if reason in ("auth_error", "quota_exhausted", "rate_limit"):
-                    key_rate_limited = True
+                err_wrapped = RuntimeError(f"HTTP {he.code}: {body_txt or he.reason}")
+                last_key_err = err_wrapped
+                reason, _ = classify_error_cooldown(err_wrapped)
+                if reason == "auth_error":
+                    # Khóa không hợp lệ -> cách ly khóa và chuyển sang khóa tiếp theo
+                    mgr.mark_failure("openrouter", api_key, err_wrapped)
+                    break
+                # Nếu 429 trên model miễn phí cụ thể -> tiếp tục thử model khác trong danh sách
             except Exception as e:
-                reason, _ = mgr.mark_failure("openrouter", api_key, e)
-                if reason in ("auth_error", "quota_exhausted", "rate_limit"):
-                    key_rate_limited = True
+                last_key_err = e
+                reason, _ = classify_error_cooldown(e)
+                if reason == "auth_error":
+                    mgr.mark_failure("openrouter", api_key, e)
+                    break
+        else:
+            if last_key_err is not None:
+                mgr.mark_failure("openrouter", api_key, last_key_err)
 
     return None
 
@@ -506,10 +524,8 @@ def call_openrouter_text(
     http_open = opener or urllib.request.urlopen
 
     for api_key in keys:
-        key_rate_limited = False
+        last_key_err: Optional[Exception] = None
         for model_name in model_list:
-            if key_rate_limited:
-                break
             payload = {
                 "model": model_name,
                 "temperature": 0.3,
@@ -544,9 +560,14 @@ def call_openrouter_text(
                         mgr.mark_success("openrouter", api_key)
                         return (text, model_name)
             except Exception as e:
-                reason, _ = mgr.mark_failure("openrouter", api_key, e)
-                if reason in ("auth_error", "quota_exhausted", "rate_limit"):
-                    key_rate_limited = True
+                last_key_err = e
+                reason, _ = classify_error_cooldown(e)
+                if reason == "auth_error":
+                    mgr.mark_failure("openrouter", api_key, e)
+                    break
+        else:
+            if last_key_err is not None:
+                mgr.mark_failure("openrouter", api_key, last_key_err)
 
     return None
 

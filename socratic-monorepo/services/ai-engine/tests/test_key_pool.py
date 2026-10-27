@@ -117,7 +117,7 @@ def test_openrouter_vision_failover_mocked():
     assert res is not None
     raw_text, model_used = res
     assert "MATH_FUNC_2D" in raw_text
-    assert "google/gemini" in model_used or "qwen" in model_used
+    assert "google/gemini" in model_used or "qwen" in model_used or "openrouter" in model_used
     assert len(calls) == 1
     assert "sk-or-test1" in calls[0]
 

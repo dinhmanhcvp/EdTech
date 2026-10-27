@@ -1932,19 +1932,26 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         }
       }
 
-      const storedGeminiKey = typeof window !== 'undefined' ? (localStorage.getItem('gemini_api_key') || '') : '';
-      const payload = {
+      const rawStoredGeminiKey = typeof window !== 'undefined' ? (localStorage.getItem('gemini_api_key') || '') : '';
+      const rawStoredOrKey = typeof window !== 'undefined' ? (localStorage.getItem('openrouter_api_key') || '') : '';
+      const storedGeminiKey = rawStoredGeminiKey.replace(/[\r\n]+/g, ',').replace(/[,;\s]+/g, ',').replace(/^,|,$/g, '').trim();
+      const storedOrKey = rawStoredOrKey.replace(/[\r\n]+/g, ',').replace(/[,;\s]+/g, ',').replace(/^,|,$/g, '').trim();
+      const payload: Record<string, unknown> = {
         image_base64: cropData ? cropData.dataUrl : '',
         hint_text: effectiveHint,
         hint_subject: effectiveHint,
         raw_strokes_json: JSON.stringify(inkSelected),
         gemini_api_key: storedGeminiKey,
+        openrouter_api_key: storedOrKey,
         subject_lock: subjectLock,
       };
 
       const requestHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
       if (storedGeminiKey) {
         requestHeaders['x-gemini-api-key'] = storedGeminiKey;
+      }
+      if (storedOrKey) {
+        requestHeaders['x-openrouter-api-key'] = storedOrKey;
       }
 
       if (onApiCallSpy) {

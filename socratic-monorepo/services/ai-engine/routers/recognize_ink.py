@@ -27,10 +27,10 @@ router = APIRouter(prefix="/api/v1/canvas", tags=["Handwriting Recognition"])
 GEMINI_MODELS = [
     "gemini-2.5-flash",
     "gemini-flash-latest",
-    "gemini-2.5-pro",
-    "gemini-pro-latest",
     "gemini-2.0-flash",
     "gemini-1.5-flash",
+    "gemini-2.5-pro",
+    "gemini-pro-latest",
 ]
 _TIMEOUT_S = float(os.getenv("INK_RECOGNIZE_TIMEOUT_S", "14"))
 _POOL = ThreadPoolExecutor(max_workers=3, thread_name_prefix="ink-recognize")
@@ -86,10 +86,16 @@ def parse_recognition(raw: str) -> Optional[Dict[str, Any]]:
     m = re.search(r"\{.*\}", raw, re.DOTALL)
     if not m:
         return None
+    clean_json = m.group(0)
     try:
-        data = json.loads(m.group(0))
+        data = json.loads(clean_json)
     except json.JSONDecodeError:
-        return None
+        # Tự động sửa lỗi dấu phẩy thừa ở cuối mảng/object mà một số mô hình OpenRouter có thể trả về
+        clean_json = re.sub(r",\s*([\}\]])", r"\1", clean_json)
+        try:
+            data = json.loads(clean_json)
+        except json.JSONDecodeError:
+            return None
     lines: List[Dict[str, Any]] = []
     for item in data.get("lines", []) or []:
         if not isinstance(item, dict):

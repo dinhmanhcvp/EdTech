@@ -616,7 +616,14 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
                 for g_key in gemini_keys:
                     genai.configure(api_key=g_key)
                     key_rate_limited = False
-                    for model_name in ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-pro", "gemini-pro-latest", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                    for model_name in [
+                        "gemini-2.5-flash",
+                        "gemini-flash-latest",
+                        "gemini-2.0-flash",
+                        "gemini-1.5-flash",
+                        "gemini-2.5-pro",
+                        "gemini-pro-latest",
+                    ]:
                         if key_rate_limited:
                             break
                         try:
@@ -625,7 +632,12 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
                             if response and response.text:
                                 m = re.search(r'\{.*\}', response.text, re.DOTALL)
                                 if m:
-                                    data = json.loads(m.group(0))
+                                    clean_j = m.group(0)
+                                    try:
+                                        data = json.loads(clean_j)
+                                    except json.JSONDecodeError:
+                                        clean_j = re.sub(r",\s*([\}\]])", r"\1", clean_j)
+                                        data = json.loads(clean_j)
                                     if "templateId" in data and data["templateId"] in OFFLINE_TEMPLATE_REGISTRY:
                                         global_key_pool.mark_success("gemini", g_key)
                                         data["_provider"] = "GEMINI"
@@ -653,7 +665,12 @@ def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None
                 raw_or, or_model = or_res
                 m = re.search(r'\{.*\}', raw_or, re.DOTALL)
                 if m:
-                    data = json.loads(m.group(0))
+                    clean_or = m.group(0)
+                    try:
+                        data = json.loads(clean_or)
+                    except json.JSONDecodeError:
+                        clean_or = re.sub(r",\s*([\}\]])", r"\1", clean_or)
+                        data = json.loads(clean_or)
                     if "templateId" in data and data["templateId"] in OFFLINE_TEMPLATE_REGISTRY:
                         data["_provider"] = "OPENROUTER"
                         data["_model"] = or_model

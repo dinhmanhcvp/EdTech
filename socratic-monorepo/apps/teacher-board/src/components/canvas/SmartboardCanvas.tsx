@@ -8,6 +8,7 @@ import { detectSolidFromStrokes, detectPlaneShapeFromStrokes } from '../../utils
 import { shapeFromBlueprint, solidWire, planeStats, VERTEX_LABELS } from '../../utils/inlineShape';
 import { type BoardView, FIT_VIEW, clampView, zoomAt, panBy, bufferQuality } from '../../utils/boardView';
 import { BoardViewControls } from './BoardViewControls';
+import { looksLikeWords, matchViName } from '../../utils/viKeywords';
 import { InlineShape } from './InlineShape';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
@@ -100,8 +101,29 @@ export function matchInstantStemBlueprint(effectiveHint: string): SimulationBlue
   if (!raw) return null;
 
   // 1. Kiểm tra bộ định tuyến mô hình nâng cao & khối 3D (Oxyz, Punnett, Hardy-Weinberg, Recurrence, LP, Solids...)
+  // "phức chất bát diện" là thuyết trường tinh thể, không phải khối bát diện
+  if (/phức/i.test(raw)) {
+    const cft = routeLocally('CFT d6');
+    if (cft) return cft;
+  }
   const direct = routeLocally(raw);
   if (direct) return direct;
+
+  // 1a. Bỏ chữ đệm đầu câu ("phân tử NH3", "hiện tượng thẩm thấu", "mô phỏng …") rồi định tuyến lại phần còn lại
+  const stripped = raw.replace(/^\s*(?:(?:hãy|vẽ|dựng|trực quan hóa|trực quan|mô phỏng|khảo sát|xem|hiện tượng|bài toán|quá trình|sự|phân tử|hợp chất|cấu trúc)\s+)+/i, '');
+  if (stripped && stripped !== raw) {
+    const sd = routeLocally(stripped);
+    if (sd) return sd;
+  }
+
+  // 1b. Tên mô phỏng viết bằng chữ tiếng Việt (kể cả bị đọc sai dấu / sai vài ký tự): "khí khổng", "con lắc kép"…
+  if (looksLikeWords(raw)) {
+    const vi = matchViName(raw);
+    if (vi) {
+      const viHit = routeLocally(vi.canon) ?? (vi.canon === raw ? null : matchInstantStemBlueprint(vi.canon));
+      if (viHit) return viHit;
+    }
+  }
 
   const h = raw.toLowerCase();
 
@@ -665,8 +687,12 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       try {
         // Ưu tiên kiểm tra hình khối 3D hoặc đa giác phẳng 2D trước khi nhận dạng chữ viết tay,
         // tránh việc bộ nhận dạng ký tự biến hình lập phương hoặc tam giác thành các ký tự rời rạc.
-        const solidSk = src.length >= 4 ? detectSolidFromStrokes(src) : null;
-        const planeSk = !solidSk && src.length >= 1 && src.length <= 4 ? detectPlaneShapeFromStrokes(src) : null;
+        // Nhiều nét chữ tiếng Việt (tên mô phỏng) hay bị nhầm thành khối hình: nếu chữ đọc ra gần tên một mô phỏng thì ưu tiên chữ.
+        const localTry = recognizeLocal(src);
+        const localLatex = localTry?.lines.map((l) => l.latex).join(' ') ?? '';
+        const textHit = looksLikeWords(localLatex) && !!matchViName(localLatex);
+        const solidSk = !textHit && src.length >= 4 ? detectSolidFromStrokes(src) : null;
+        const planeSk = !textHit && !solidSk && src.length >= 1 && src.length <= 4 ? detectPlaneShapeFromStrokes(src) : null;
         if (solidSk && solidSk.confidence >= 0.72) {
           if (alive) {
             setInstantResult(null);
@@ -678,14 +704,18 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             setFormulaInput((prev) => (!prev.trim() ? planeSk.title : prev));
           }
         } else {
-          const res = recognizeLocal(src);
+          const res = localTry;
           if (res && res.lines.length > 0 && res.lines.some((l) => l.latex.trim().length > 0)) {
             if (alive) {
               setInstantResult(res);
               const fullLatex = res.lines.map((l) => l.latex).join(' \\\\ ');
+              // Chữ tiếng Việt không phải công thức: đừng đưa chuỗi ký tự đọc bừa vào ô công thức;
+              // nếu gần với tên một mô phỏng thì dùng tên chuẩn, còn lại đợi Vision đọc.
+              const wordy = looksLikeWords(fullLatex);
+              const viName = wordy ? matchViName(fullLatex) : null;
               setFormulaInput((prev) => {
                 if (!prev.trim()) {
-                  return fullLatex;
+                  return wordy ? (viName ? viName.canon : '') : fullLatex;
                 }
                 return prev;
               });
@@ -721,7 +751,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               (src.length >= 4 && (detectSolidFromStrokes(src)?.confidence ?? 0) >= 0.72) ||
               (src.length >= 1 && src.length <= 4 && (detectPlaneShapeFromStrokes(src)?.confidence ?? 0) >= 0.78);
             if (aiLatex.trim() && !isGeoSketch) {
-              setFormulaInput(aiLatex);
+              // Vision đọc chữ có thể sai dấu ("con lốc kép"): nếu gần tên một mô phỏng thì dùng tên chuẩn
+              const aiPlain = aiRes.lines.map((l) => l.text).join(' ');
+              const aiViName = looksLikeWords(aiPlain) ? matchViName(aiPlain) : null;
+              setFormulaInput(aiViName ? aiViName.canon : aiLatex);
             }
           }
         })
@@ -2298,10 +2331,30 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         // bỏ qua nếu lỗi
       }
     }
+    // Chữ tiếng Việt đọc từ máy (không phải công thức) mà không giống tên mô phỏng nào thì bỏ đi, đừng coi chuỗi ký tự bừa là công thức
+    const wordSources = [detectedInstantLatex, aiVisionResult ? aiVisionResult.lines.map((l) => l.text).join(' ') : ''];
+    const namedWords = wordSources.some((t) => !!t && looksLikeWords(t) && !!matchViName(t));
+    if (detectedInstantLatex && looksLikeWords(detectedInstantLatex)) {
+      const viLocal = matchViName(detectedInstantLatex);
+      detectedInstantLatex = viLocal ? viLocal.canon : '';
+    }
     const effectiveHint = overrideHint || formulaInput || aiVisionLatex || typesetHint || detectedInstantLatex || '';
 
+    // 0. Chữ tiếng Việt gọi tên một mô phỏng: mở thẳng (không cho nét chữ bị nhầm thành khối hình)
+    if (!overrideHint && !typesetHint && namedWords && effectiveHint && looksLikeWords(effectiveHint)) {
+      const wordBp = matchInstantStemBlueprint(effectiveHint);
+      if (wordBp) {
+        setActiveBlueprint(wordBp);
+        setSelectedStrokes([]);
+        setLassoLoop([]);
+        setFormulaInput('');
+        setIsLoading(false);
+        return;
+      }
+    }
+
     // 1. Hình khối 3D vẽ tay (lập phương, hộp, chóp, lăng trụ, tứ diện, bát diện): ưu tiên nhận ngay từ cấu trúc đồ thị nét vẽ
-    if (!overrideHint && !typesetHint && inkSelected.length >= 4) {
+    if (!overrideHint && !typesetHint && !namedWords && inkSelected.length >= 4) {
       const sk = detectSolidFromStrokes(inkSelected);
       if (sk && sk.confidence >= 0.7) {
         transformStrokesToGeometryInPlace(inkSelected, makeSolidBlueprint(sk.kind, sk.dims));
@@ -2310,7 +2363,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     }
 
     // 2. Đa giác phẳng 2D vẽ tay (tam giác thường/vuông/cân/đều, hình vuông, chữ nhật, bình hành): chuyển ngay sang Hình học động tương tác
-    if (!overrideHint && !typesetHint && inkSelected.length >= 1 && inkSelected.length <= 4) {
+    if (!overrideHint && !typesetHint && !namedWords && inkSelected.length >= 1 && inkSelected.length <= 4) {
       const planeSk = detectPlaneShapeFromStrokes(inkSelected);
       if (planeSk && planeSk.confidence >= 0.78) {
         transformStrokesToGeometryInPlace(inkSelected, makePlaneGeometryBlueprint(planeSk));

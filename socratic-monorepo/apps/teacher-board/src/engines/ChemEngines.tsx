@@ -217,7 +217,7 @@ export const LeChatelierEngine: React.FC<Props> = () => {
     let last = performance.now();
     let acc = 0;
     const tick = (now: number) => {
-      const dt = Math.min(0.1, (now - last) / 1000);
+      const dt = Math.max(0, Math.min(0.1, (now - last) / 1000));
       last = now;
       const next = lcRelax(ref.current.xi, eqRef.current, dt);
       ref.current.xi = next;
@@ -354,7 +354,7 @@ export const DaniellEngine: React.FC<Props> = ({blueprint}) => {
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
-      const dt = Math.min(0.1, (now - last) / 1000);
+      const dt = Math.max(0, Math.min(0.1, (now - last) / 1000));
       last = now;
       if (closedRef.current) {
         const next = daniellStep(stRef.current, cellRef.current, 1.5, dt * speedRef.current * 6);

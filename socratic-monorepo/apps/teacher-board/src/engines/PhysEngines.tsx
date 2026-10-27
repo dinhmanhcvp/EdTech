@@ -65,7 +65,7 @@ export const GasEngine: React.FC<Props> = ({blueprint}) => {
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000);
+      const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); // rAF có thể báo mốc sớm hơn performance.now() → dt âm làm chỉ số mảng âm
       last = now;
       setU((x) => (x + dt / 10) % 1);
       raf = requestAnimationFrame(tick);
@@ -74,7 +74,7 @@ export const GasEngine: React.FC<Props> = ({blueprint}) => {
     return () => cancelAnimationFrame(raf);
   }, [play]);
 
-  const seg = Math.min(procs.length - 1, Math.floor(u * procs.length));
+  const seg = Math.max(0, Math.min(procs.length - 1, Math.floor(u * procs.length)));
   const local = u * procs.length - seg;
   const cur: GasState = along(procs[seg], local, n, gamma);
   const pts: GasState[] = procs.flatMap((p) => Array.from({length: 40}, (_, i) => along(p, i / 39, n, gamma)));
@@ -197,7 +197,7 @@ export const DoublePendulumEngine: React.FC<Props> = () => {
     let raf = 0;
     let last = performance.now();
     const loop = (now: number) => {
-      const dt = Math.min(0.033, (now - last) / 1000);
+      const dt = Math.max(0, Math.min(0.033, (now - last) / 1000));
       last = now;
       const S = sim.current;
       const steps = Math.max(1, Math.ceil(dt / 0.0025));
@@ -298,7 +298,7 @@ export const CoriolisEngine: React.FC<Props> = () => {
     let raf = 0;
     let last = performance.now();
     const loop = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000);
+      const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); // rAF có thể báo mốc sớm hơn performance.now() → dt âm làm chỉ số mảng âm
       last = now;
       setT((x) => (x + dt > path.tHit + 0.7 ? 0 : x + dt));
       raf = requestAnimationFrame(loop);

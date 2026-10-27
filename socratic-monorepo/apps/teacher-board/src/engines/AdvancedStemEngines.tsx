@@ -1532,7 +1532,7 @@ export const Sn2Engine: React.FC<Props> = () => {
       last = 0;
     const tick = (now: number) => {
       if (last) {
-        const dt = Math.min(0.1, (now - last) / 1000);
+        const dt = Math.max(0, Math.min(0.1, (now - last) / 1000));
         setProgress((p) => Math.min(1, p + dt / 6));
       }
       last = now;

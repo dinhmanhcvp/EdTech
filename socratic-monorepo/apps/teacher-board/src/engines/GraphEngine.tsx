@@ -79,7 +79,7 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
 
     let last = performance.now();
     const tick = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000);
+      const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));
       last = now;
       setPcfg((prev) => {
         const next = {...prev};

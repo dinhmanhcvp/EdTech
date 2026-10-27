@@ -66,6 +66,10 @@ def test_parse_empty_lines_is_valid_empty_result():
 
 def test_endpoint_without_key_is_503_so_client_falls_back(client, monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEYS", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEYS", raising=False)
+    ri.global_key_pool.clear_runtime_keys()
     resp = client.post("/api/v1/canvas/recognize-ink", json={"image_base64": _png_b64()})
     assert resp.status_code == 503
     assert resp.json()["detail"] == "no_key"

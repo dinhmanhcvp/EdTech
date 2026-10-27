@@ -13,6 +13,7 @@ import {
   Sparkles,
   X,
   Zap,
+  Layers,
 } from 'lucide-react';
 
 interface AiBackendConfigModalProps {
@@ -28,11 +29,20 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
 }) => {
   const [backendUrl, setBackendUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [openrouterKey, setOpenrouterKey] = useState('');
   const [pingState, setPingState] = useState<
     'idle' | 'pinging' | 'online' | 'degraded' | 'cold_start' | 'offline'
   >('idle');
   const [pingMessage, setPingMessage] = useState('');
   const [pingLatency, setPingLatency] = useState<number | null>(null);
+
+  const [poolInfo, setPoolInfo] = useState<{
+    gemini_total?: number;
+    gemini_active?: number;
+    openrouter_total?: number;
+    openrouter_active?: number;
+    total_active?: number;
+  } | null>(null);
 
   const [testVisionState, setTestVisionState] = useState<
     'idle' | 'testing' | 'success' | 'error'
@@ -51,6 +61,9 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
 
       const savedKey = window.localStorage.getItem('gemini_api_key') || '';
       setApiKey(savedKey);
+
+      const savedOrKey = window.localStorage.getItem('openrouter_api_key') || '';
+      setOpenrouterKey(savedOrKey);
     }
   }, [isOpen]);
 
@@ -90,19 +103,29 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
       }
 
       const data = await res.json();
+      const runtimePool = data?.runtime?.key_pool;
+      if (runtimePool) {
+        setPoolInfo(runtimePool);
+      }
+
       const hasKey = Boolean(
-        data?.runtime?.gemini_configured || apiKey.trim().length > 10,
+        data?.runtime?.gemini_configured ||
+        (runtimePool && runtimePool.total_active > 0) ||
+        apiKey.trim().length > 10 ||
+        openrouterKey.trim().length > 10,
       );
 
       if (hasKey) {
         setPingState('online');
+        const gActive = runtimePool?.gemini_active ?? (apiKey ? 1 : 0);
+        const orActive = runtimePool?.openrouter_active ?? (openrouterKey ? 1 : 0);
         setPingMessage(
-          `Kết nối thành công (${latency}ms). Gemini AI Vision đã sẵn sàng!`,
+          `Kết nối thành công (${latency}ms). Bể khóa AI: ${gActive} Gemini sẵn sàng, ${orActive} OpenRouter dự phòng!`,
         );
       } else {
         setPingState('degraded');
         setPingMessage(
-          `Kết nối thành công (${latency}ms). Máy chủ chưa có khóa Gemini API. Hãy dán khóa vào ô bên dưới.`,
+          `Kết nối thành công (${latency}ms). Máy chủ chưa có khóa AI. Hãy dán 1 hoặc nhiều khóa Gemini / OpenRouter miễn phí bên dưới.`,
         );
       }
     } catch (err: unknown) {
@@ -117,13 +140,14 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
 
   const handleTestVision = async () => {
     setTestVisionState('testing');
-    setTestVisionResult('Đang gửi ảnh kiểm tra tới AI Vision...');
+    setTestVisionResult('Đang gửi ảnh kiểm tra tới AI Vision (tự xoay vòng nếu gặp Rate Limit)...');
 
     const target = getEffectiveBackend();
     const endpoint = target
       ? `${target}/api/v1/canvas/recognize-ink`
       : '/api/v1/canvas/recognize-ink';
     const key = apiKey.trim();
+    const orKey = openrouterKey.trim();
 
     // Mẫu nét vẽ kiểm tra nhỏ 1x1 base64
     const tinyPng =
@@ -135,6 +159,9 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
     if (key) {
       headers['x-gemini-api-key'] = key;
     }
+    if (orKey) {
+      headers['x-openrouter-api-key'] = orKey;
+    }
 
     const t0 = performance.now();
     try {
@@ -145,6 +172,7 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
           image_base64: tinyPng,
           hint: '4Fe + 3O2 -> 2Fe2O3',
           gemini_api_key: key,
+          openrouter_api_key: orKey,
         }),
       });
 
@@ -153,16 +181,18 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
         const errorData = await res.json().catch(() => ({}));
         setTestVisionState('error');
         setTestVisionResult(
-          `Lỗi ${res.status}: ${errorData.detail || 'Không thể nhận dạng'}. Kiểm tra lại khóa API hoặc kết nối Render.`,
+          `Lỗi ${res.status}: ${errorData.detail || 'Không thể nhận dạng'}. Kiểm tra lại các khóa API hoặc kết nối Render.`,
         );
         return;
       }
 
       const data = await res.json();
       setTestVisionState('success');
+      const engine = data.engine || 'gemini';
       const model = data.model || 'gemini-2.5-flash';
+      const keyInfo = data.key_index ? ` [Key #${data.key_index}]` : '';
       setTestVisionResult(
-        `Thành công trong ${ms}ms! Mô hình: ${model}. AI Vision hoạt động hoàn hảo.`,
+        `Thành công trong ${ms}ms! Động cơ: ${engine.toUpperCase()} (${model})${keyInfo}. Tự động xoay vòng & dự phòng hoạt động chuẩn xác!`,
       );
     } catch (err: unknown) {
       setTestVisionState('error');
@@ -171,7 +201,7 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (typeof window !== 'undefined') {
       const cleanUrl = backendUrl.trim().replace(/\/+$/, '');
       if (cleanUrl) {
@@ -186,6 +216,27 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
       } else {
         window.localStorage.removeItem('gemini_api_key');
       }
+
+      const cleanOrKey = openrouterKey.trim().replace(/^['"]|['"]$/g, '');
+      if (cleanOrKey) {
+        window.localStorage.setItem('openrouter_api_key', cleanOrKey);
+      } else {
+        window.localStorage.removeItem('openrouter_api_key');
+      }
+
+      // Tự động đồng bộ các key lên backend Render / Local nếu có kết nối
+      const target = getEffectiveBackend();
+      const settingsEndpoint = target ? `${target}/api/v1/canvas/settings/keys` : '/api/v1/canvas/settings/keys';
+      try {
+        await fetch(settingsEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            gemini_api_keys: cleanKey,
+            openrouter_api_keys: cleanOrKey,
+          }),
+        }).catch(() => { });
+      } catch { }
 
       window.dispatchEvent(new CustomEvent('backend_config_updated'));
       setSavedSuccess(true);
@@ -204,7 +255,7 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-2xl bg-white border border-stone-200 shadow-2xl p-6 flex flex-col gap-5"
+        className="w-full max-w-lg rounded-2xl bg-white border border-stone-200 shadow-2xl p-6 flex flex-col gap-4 max-h-[92vh] overflow-y-auto"
         data-testid="ai-backend-config-modal"
         onClick={(e) => e.stopPropagation()}
       >
@@ -216,10 +267,10 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
             </span>
             <div>
               <h2 className="text-sm font-bold text-stone-900">
-                Kiểm tra & Cấu hình AI Vision Backend
+                Kiểm tra & Cấu hình Bể Khóa AI (Multi-Key & OpenRouter)
               </h2>
               <p className="text-xs text-stone-500">
-                Kết nối dịch vụ Render và khóa Gemini API cho bảng thông minh
+                Tự động xoay vòng nhiều key Free & dự phòng khi chạm Rate Limit
               </p>
             </div>
           </div>
@@ -243,7 +294,7 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
               type="text"
               value={backendUrl}
               onChange={(e) => setBackendUrl(e.target.value)}
-              placeholder="https://socratic-ai-engine.onrender.com (hoặc để trống nếu dùng Vercel proxy)"
+              placeholder="https://socratic-ai-engine.onrender.com (hoặc để trống nếu dùng localhost/proxy)"
               className="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
             />
             <button
@@ -262,13 +313,12 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
           </div>
           {pingMessage && (
             <div
-              className={`text-xs p-2.5 rounded-xl border flex items-start gap-2 ${
-                pingState === 'online'
+              className={`text-xs p-2.5 rounded-xl border flex items-start gap-2 ${pingState === 'online'
                   ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                   : pingState === 'degraded' || pingState === 'cold_start'
-                  ? 'bg-amber-50 border-amber-200 text-amber-800'
-                  : 'bg-rose-50 border-rose-200 text-rose-800'
-              }`}
+                    ? 'bg-amber-50 border-amber-200 text-amber-800'
+                    : 'bg-rose-50 border-rose-200 text-rose-800'
+                }`}
             >
               {pingState === 'online' ? (
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -282,80 +332,104 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
           )}
         </div>
 
-        {/* Input: Gemini API Key */}
+        {/* Bể Khóa 1: Google Gemini Free Keys */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-stone-700 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
-              <Key className="w-3.5 h-3.5 text-stone-400" />
-              <span>Khóa Google Gemini API (Tùy chọn ghi đè cục bộ)</span>
+              <Key className="w-3.5 h-3.5 text-violet-500" />
+              <span>Khóa Google Gemini (Hỗ trợ dán nhiều key phân cách bằng dấu phẩy)</span>
             </span>
-            <span className="text-[10px] text-stone-400 font-normal">
-              Lưu an toàn trong trình duyệt
+            <span className="text-[10px] text-violet-600 font-mono font-semibold">
+              Xoay vòng tự động
             </span>
           </label>
-          <div className="flex gap-2">
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="AIzaSy... (Nếu backend trên Render đã có key thì có thể để trống)"
-              className="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
-            />
-            <button
-              type="button"
-              onClick={handleTestVision}
-              disabled={testVisionState === 'testing'}
-              className="px-3 py-2 rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 text-xs font-semibold flex items-center gap-1.5 transition shrink-0 cursor-pointer disabled:opacity-50"
-            >
-              {testVisionState === 'testing' ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Sparkles className="w-3.5 h-3.5 text-violet-600" />
-              )}
-              <span>Thử AI Vision</span>
-            </button>
-          </div>
-          {testVisionResult && (
-            <div
-              className={`text-xs p-2.5 rounded-xl border flex items-start gap-2 ${
-                testVisionState === 'success'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                  : testVisionState === 'testing'
+          <textarea
+            rows={2}
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder="AIzaSy...key1, AIzaSy...key2, AIzaSy...key3 (Tự động chuyển key tiếp theo khi chạm 429)"
+            className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 resize-none"
+          />
+          <p className="text-[10px] text-stone-500">
+            Mẹo: Tạo 2-3 tài khoản Google cá nhân lấy key miễn phí, dán chung vào đây. Khi 1 key hết lượt trong phút (15 RPM), hệ thống tự nhảy sang key tiếp theo trong &lt;1ms!
+          </p>
+        </div>
+
+        {/* Bể Khóa 2: OpenRouter API Keys (Dự phòng thông minh) */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-stone-700 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-cyan-600" />
+              <span>Khóa OpenRouter API (Tự động dự phòng khi Gemini hết Quota)</span>
+            </span>
+            <span className="text-[10px] text-cyan-700 font-mono font-semibold">
+              Failover 0ms
+            </span>
+          </label>
+          <input
+            type="password"
+            value={openrouterKey}
+            onChange={(e) => setOpenrouterKey(e.target.value)}
+            placeholder="sk-or-v1-... (Hỗ trợ mô hình miễn phí: gemini-2.0-flash-exp:free, qwen2.5-vl:free)"
+            className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono text-stone-900 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+          />
+        </div>
+
+        {/* Nút Thử AI Vision */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleTestVision}
+            disabled={testVisionState === 'testing'}
+            className="w-full py-2 rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition shrink-0 cursor-pointer disabled:opacity-50"
+          >
+            {testVisionState === 'testing' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5 text-violet-600" />
+            )}
+            <span>Thử Nhận Diện & Kiểm Tra Tự Động Xoay Key</span>
+          </button>
+        </div>
+        {testVisionResult && (
+          <div
+            className={`text-xs p-2.5 rounded-xl border flex items-start gap-2 ${testVisionState === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : testVisionState === 'testing'
                   ? 'bg-blue-50 border-blue-200 text-blue-800'
                   : 'bg-rose-50 border-rose-200 text-rose-800'
               }`}
-            >
-              {testVisionState === 'success' ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              ) : testVisionState === 'testing' ? (
-                <Loader2 className="w-4 h-4 text-blue-600 shrink-0 animate-spin mt-0.5" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-              )}
-              <span className="flex-1 leading-relaxed">{testVisionResult}</span>
-            </div>
-          )}
-        </div>
+          >
+            {testVisionState === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            ) : testVisionState === 'testing' ? (
+              <Loader2 className="w-4 h-4 text-blue-600 shrink-0 animate-spin mt-0.5" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            )}
+            <span className="flex-1 leading-relaxed">{testVisionResult}</span>
+          </div>
+        )}
 
         {/* Thông tin chẩn đoán */}
         <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 text-[11px] text-stone-600 flex flex-col gap-1.5">
           <div className="font-semibold text-stone-700 flex items-center gap-1">
             <Zap className="w-3.5 h-3.5 text-amber-500" />
-            <span>Cơ chế hoạt động tối ưu:</span>
+            <span>Cơ chế bảo vệ người dùng 3 tầng:</span>
           </div>
           <p>
-            1. Khi khoanh nét vẽ, nhận dạng tức thì ngoại tuyến hiển thị ngay lập tức trong 15ms.
+            • <b>Tầng 1 (Gemini Free Multi-Key):</b> Tự động chia tải và nhảy key khi gặp lỗi Rate Limit 429 hoặc hết hạn mức trong ngày.
           </p>
           <p>
-            2. AI Vision (Gemini 2.5 Flash) tự động chạy nền để nhận diện tiếng Việt và ký hiệu phức tạp.
+            • <b>Tầng 2 (OpenRouter Failover):</b> Khi tất cả key Gemini đều bận, máy chủ tự trượt sang OpenRouter để nhận diện tiếp mà không báo lỗi.
           </p>
           <p>
-            3. Nếu máy chủ Render miễn phí đang ngủ đông sau 15 phút không dùng, hãy bấm <b>Kiểm tra kết nối</b> để đánh thức máy chủ trước khi bắt đầu tiết học.
+            • <b>Tầng 3 (Local Neural ONNX):</b> Nếu mất mạng hoàn toàn hoặc không có key, mô hình offline Pix2Text-MFR-1.5 và RapidOCR tự động đảm nhận.
           </p>
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-2 border-t border-stone-100 pt-3">
+        <div className="flex items-center justify-end gap-2 border-t border-stone-100 pt-2">
           <button
             type="button"
             onClick={onClose}

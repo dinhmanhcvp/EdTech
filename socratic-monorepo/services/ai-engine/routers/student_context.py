@@ -6,6 +6,10 @@ from security import require_roles
 
 router = APIRouter(prefix="/api/v1/student", tags=["Student Board Context"])
 
+def _assert_subject(student_id: str, claims: dict) -> None:
+    if claims.get("role") not in {"local", "admin", "teacher"} and claims.get("subject") != student_id:
+        raise HTTPException(status_code=403, detail="student_subject_mismatch")
+
 class ProfileUpdate(BaseModel):
     profile_id: str = "FOUNDATION"
     display_name: str = "Student"
@@ -30,23 +34,29 @@ class SnapshotUpdate(BaseModel):
 @router.get("/context/{student_id}")
 def get_student_context(student_id: str, class_id: str = "12A1", _claims: dict = Depends(require_roles({"student", "teacher", "admin"}))) -> Dict[str, Any]:
     if not student_id.strip() or len(student_id) > 80: raise HTTPException(status_code=400, detail="invalid_student_id")
+    _assert_subject(student_id, _claims)
     return {"snapshot": context_snapshot(student_id, class_id), "profile": get_profile(student_id), "errors": list_errors(student_id), "roadmap": roadmap(student_id)}
 
 @router.put("/profile/{student_id}")
 def update_student_profile(student_id: str, req: ProfileUpdate, _claims: dict = Depends(require_roles({"student", "admin"}))) -> Dict[str, Any]:
+    _assert_subject(student_id, _claims)
     return {"status": "saved", "profile": save_profile(student_id, req.model_dump())}
 
 @router.post("/errors/{student_id}")
 def save_student_error(student_id: str, req: ErrorMemoryRequest, _claims: dict = Depends(require_roles({"student", "admin"}))) -> Dict[str, Any]:
+    _assert_subject(student_id, _claims)
     try: return {"status": "recorded", "error": record_error(student_id, req.subject, req.concept, req.diagnosis), "roadmap": roadmap(student_id)}
     except ValueError as exc: raise HTTPException(status_code=400, detail=str(exc))
 
 @router.post("/events/{student_id}")
 def save_session_event(student_id: str, req: SessionEventRequest, _claims: dict = Depends(require_roles({"student", "admin"}))) -> Dict[str, Any]:
+    _assert_subject(student_id, _claims)
     return {"status": "recorded", "event": record_event(student_id, req.event_type, req.payload)}
 
 @router.get("/roadmap/{student_id}")
-def get_student_roadmap(student_id: str, _claims: dict = Depends(require_roles({"student", "teacher", "admin"}))) -> Dict[str, Any]: return roadmap(student_id)
+def get_student_roadmap(student_id: str, _claims: dict = Depends(require_roles({"student", "teacher", "admin"}))) -> Dict[str, Any]:
+    _assert_subject(student_id, _claims)
+    return roadmap(student_id)
 
 @router.post("/roadmap/{student_id}/prepare")
 def prepare_teacher_roadmap(student_id: str, _claims: dict = Depends(require_roles({"teacher", "admin"}))) -> Dict[str, Any]:

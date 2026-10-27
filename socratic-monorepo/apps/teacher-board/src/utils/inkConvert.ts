@@ -63,6 +63,7 @@ export function recognizeLocal(strokes: Stroke[]): ConvertResult {
 interface AiOptions {
   fetchImpl?: typeof fetch;
   apiKey?: string;
+  openrouterKey?: string;
   hint?: string;
   timeoutMs?: number;
   endpoint?: string;
@@ -78,6 +79,7 @@ export async function recognizeWithAi(strokes: Stroke[], opts: AiOptions = {}): 
   const doFetch = opts.fetchImpl ?? (typeof fetch !== 'undefined' ? fetch : undefined);
   if (!doFetch) return null;
   const key = opts.apiKey ?? (typeof window !== 'undefined' ? window.localStorage.getItem('gemini_api_key') || '' : '');
+  const openrouterKey = opts.openrouterKey ?? (typeof window !== 'undefined' ? window.localStorage.getItem('openrouter_api_key') || '' : '');
   const endpoint = opts.endpoint ?? '/api/v1/canvas/recognize-ink';
   const t0 = Date.now();
   let image: string;
@@ -86,15 +88,20 @@ export async function recognizeWithAi(strokes: Stroke[], opts: AiOptions = {}): 
   } catch {
     return null;
   }
-  const body = JSON.stringify({
+  const bodyPayload: Record<string, unknown> = {
     image_base64: image,
     raw_strokes_json: JSON.stringify(src),
     allow_local_onnx: opts.preferOffline ?? true,
     hint: opts.hint ?? '',
     gemini_api_key: key,
-  });
+  };
+  if (openrouterKey) {
+    bodyPayload.openrouter_api_key = openrouterKey;
+  }
+  const body = JSON.stringify(bodyPayload);
   const headers: Record<string, string> = {'Content-Type': 'application/json'};
   if (key) headers['x-gemini-api-key'] = key;
+  if (openrouterKey) headers['x-openrouter-api-key'] = openrouterKey;
 
   const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
   const timer = ctrl ? setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 35000) : null;

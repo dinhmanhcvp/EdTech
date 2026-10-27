@@ -13,6 +13,8 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
+from llm.key_pool import call_openrouter_vision, global_key_pool, mask_api_key
+
 try:
     from PIL import Image
 
@@ -130,22 +132,38 @@ def parse_recognition(raw: str) -> Optional[Dict[str, Any]]:
 def _call_gemini(image_bytes: bytes, hint: str, api_key: str) -> Optional[Dict[str, Any]]:
     import google.generativeai as genai  # nhập muộn: máy không cài vẫn chạy được các phần khác
 
-    genai.configure(api_key=api_key)
+    candidate_keys = global_key_pool.get_ordered_keys("gemini", extra_key=api_key)
+    if not candidate_keys and api_key:
+        candidate_keys = [api_key]
+
     img = Image.open(io.BytesIO(image_bytes))
     prompt = PROMPT + (f"\nGợi ý ngữ cảnh từ giáo viên: {hint}" if hint else "")
     last_err: Optional[Exception] = None
-    for name in GEMINI_MODELS:
-        try:
-            model = genai.GenerativeModel(name)
-            resp = model.generate_content([prompt, img], generation_config={"temperature": 0})
-            parsed = parse_recognition(getattr(resp, "text", "") or "")
-            if parsed is not None:
-                parsed["model"] = name
-                return parsed
-        except Exception as e:  # thử mô hình kế tiếp
-            last_err = e
+
+    for key_idx, current_key in enumerate(candidate_keys):
+        genai.configure(api_key=current_key)
+        key_rate_limited = False
+        for name in GEMINI_MODELS:
+            if key_rate_limited:
+                break
+            try:
+                model = genai.GenerativeModel(name)
+                resp = model.generate_content([prompt, img], generation_config={"temperature": 0})
+                parsed = parse_recognition(getattr(resp, "text", "") or "")
+                if parsed is not None:
+                    global_key_pool.mark_success("gemini", current_key)
+                    parsed["model"] = name
+                    parsed["key_index"] = key_idx + 1
+                    parsed["masked_key"] = mask_api_key(current_key)
+                    return parsed
+            except Exception as e:
+                last_err = e
+                reason, _ = global_key_pool.mark_failure("gemini", current_key, e)
+                if reason in ("rate_limit", "quota_exhausted", "auth_error"):
+                    # Chuyển ngay sang API key tiếp theo mà không thử tiếp model khác trên cùng key bị giới hạn
+                    key_rate_limited = True
     if last_err:
-        print(f"[recognize-ink] Gemini error: {last_err}")
+        print(f"[recognize-ink] Gemini pool error across {len(candidate_keys)} key(s): {last_err}")
     return None
 
 
@@ -156,6 +174,35 @@ def recognize_with_gemini(image_bytes: bytes, hint: str, api_key: str) -> Option
         return fut.result(timeout=_TIMEOUT_S)
     except FuturesTimeout:
         print(f"[recognize-ink] quá thời hạn {_TIMEOUT_S}s")
+        return None
+
+
+def _call_openrouter(image_bytes: bytes, hint: str, openrouter_key: str = "") -> Optional[Dict[str, Any]]:
+    prompt = PROMPT + (f"\nGợi ý ngữ cảnh từ giáo viên: {hint}" if hint else "")
+    res = call_openrouter_vision(
+        prompt=prompt,
+        image_bytes=image_bytes,
+        pool=global_key_pool,
+        extra_key=openrouter_key or None,
+        timeout_s=min(_TIMEOUT_S, 11.0),
+    )
+    if not res:
+        return None
+    raw_text, model_used = res
+    parsed = parse_recognition(raw_text)
+    if parsed is not None:
+        parsed["model"] = model_used
+        parsed["engine"] = "openrouter"
+    return parsed
+
+
+def recognize_with_openrouter(image_bytes: bytes, hint: str, openrouter_key: str = "") -> Optional[Dict[str, Any]]:
+    """Gọi OpenRouter Vision khi Gemini bị chạm Rate Limit hoặc khi chỉ cấu hình OpenRouter."""
+    fut = _POOL.submit(_call_openrouter, image_bytes, hint, openrouter_key)
+    try:
+        return fut.result(timeout=_TIMEOUT_S)
+    except FuturesTimeout:
+        print(f"[recognize-ink] OpenRouter quá thời hạn {_TIMEOUT_S}s")
         return None
 
 
@@ -270,25 +317,42 @@ async def recognize_ink(request: Request):
     hint = str(body.get("hint") or "")[:300]
     raw_strokes_json = body.get("raw_strokes_json")
     prefer_offline = bool(body.get("prefer_offline") or body.get("allow_local_onnx"))
-    api_key = (request.headers.get("x-gemini-api-key") or body.get("gemini_api_key") or os.getenv("GEMINI_API_KEY") or "").strip().strip("'\"")
 
-    # 1. Ưu tiên chạy Local Neural ONNX (Pix2Text MFR-1.5 + RapidOCR) khi bật offline/local hoặc khi chưa có khóa Gemini
+    req_gemini_key = (request.headers.get("x-gemini-api-key") or body.get("gemini_api_key") or "").strip().strip("'\"")
+    req_openrouter_key = (request.headers.get("x-openrouter-api-key") or body.get("openrouter_api_key") or "").strip().strip("'\"")
+
+    ordered_gemini_keys = global_key_pool.get_ordered_keys("gemini", extra_key=req_gemini_key or None)
+    ordered_openrouter_keys = global_key_pool.get_ordered_keys("openrouter", extra_key=req_openrouter_key or None)
+
+    api_key = req_gemini_key or (ordered_gemini_keys[0] if ordered_gemini_keys else "")
+    openrouter_key = req_openrouter_key or (ordered_openrouter_keys[0] if ordered_openrouter_keys else "")
+    has_any_cloud_key = bool(api_key or openrouter_key)
+
+    # 1. Ưu tiên chạy Local Neural ONNX (Pix2Text MFR-1.5 + RapidOCR) khi bật offline/local hoặc khi chưa có khóa Cloud
     local_result: Optional[Dict[str, Any]] = None
-    if prefer_offline or not api_key:
+    if prefer_offline or not has_any_cloud_key:
         local_result = recognize_with_local_onnx(image_bytes, raw_strokes_json=raw_strokes_json, hint=hint)
-        if local_result is not None and (prefer_offline or not api_key or local_result.get("confidence", 0) >= 0.80):
+        if local_result is not None and (prefer_offline or not has_any_cloud_key or local_result.get("confidence", 0) >= 0.80):
             return local_result
 
-    if not api_key:
+    if not has_any_cloud_key:
         raise HTTPException(status_code=503, detail="no_key")
 
-    # 2. Gọi Gemini Vision (nếu có khóa API và cần nhận diện văn bản phức tạp)
-    result = recognize_with_gemini(image_bytes, hint, api_key)
-    if result is not None:
-        result["engine"] = "gemini"
-        return result
+    # 2. Gọi bể khóa Gemini Vision (tự động xoay vòng qua nhiều khóa khi chạm Rate Limit 429)
+    if api_key:
+        result = recognize_with_gemini(image_bytes, hint, api_key)
+        if result is not None:
+            result["engine"] = "gemini"
+            return result
 
-    # 3. Fallback sang Local Neural ONNX nếu Gemini quá hạn hoặc lỗi mạng
+    # 3. Tự động chuyển sang bể khóa OpenRouter Vision nếu tất cả khóa Gemini chạm giới hạn hoặc lỗi
+    if openrouter_key:
+        or_result = recognize_with_openrouter(image_bytes, hint, openrouter_key)
+        if or_result is not None:
+            or_result["engine"] = "openrouter"
+            return or_result
+
+    # 4. Fallback sang Local Neural ONNX nếu mọi khóa Cloud đều quá hạn hoặc lỗi mạng
     if local_result is None:
         local_result = recognize_with_local_onnx(image_bytes, raw_strokes_json=raw_strokes_json, hint=hint)
     if local_result is not None:

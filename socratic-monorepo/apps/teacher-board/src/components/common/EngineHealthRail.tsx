@@ -11,6 +11,13 @@ type HealthPayload = {
     latex_onnx?: boolean;
     chromadb?: boolean;
     gemini_configured?: boolean;
+    key_pool?: {
+      gemini_total?: number;
+      gemini_active?: number;
+      openrouter_total?: number;
+      openrouter_active?: number;
+      total_active?: number;
+    };
     classroom_rooms?: number;
     classroom_students?: number;
   };
@@ -126,6 +133,11 @@ export const EngineHealthRail: React.FC = () => {
           <Radio className="h-3.5 w-3.5 text-rose-500" />
           <span>{health?.runtime?.classroom_students ?? 0}</span>
         </div>
+        {health?.runtime?.key_pool && ((health.runtime.key_pool.gemini_total || 0) + (health.runtime.key_pool.openrouter_total || 0)) > 1 && (
+          <div className="flex items-center gap-1 text-[10px] font-mono text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded-md border border-violet-200" title="Bể khóa AI đang xoay vòng">
+            <span>⚡ {health.runtime.key_pool.total_active ?? 0} keys</span>
+          </div>
+        )}
         <div className="pl-1 border-l border-stone-200 text-stone-400 group-hover:text-violet-600 transition" title="Cấu hình kết nối">
           <Settings2 className="h-3.5 w-3.5" />
         </div>

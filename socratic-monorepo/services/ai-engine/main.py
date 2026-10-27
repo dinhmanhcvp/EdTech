@@ -28,6 +28,7 @@ from routers.visualize import RAPIDOCR_ENGINE, LOCAL_MATH_ONNX
 from cache.chroma_cache import CHROMADB_AVAILABLE
 from routers.student_context import router as student_context_router
 from student_context import store_ready
+from llm.key_pool import global_key_pool
 
 app = FastAPI(
     title="Socratic Vision Board - Deterministic & Socratic AI Engine",
@@ -73,7 +74,8 @@ def plot_equation(equation: str = "A * sin(x)", a: float = 1.0, b: float = 0.0, 
 @app.get("/health")
 def health_check():
     room_stats = _public_size()
-    gemini_configured = bool(os.getenv("GEMINI_API_KEY"))
+    pool_status = global_key_pool.get_status()
+    gemini_configured = bool(pool_status["any_configured"] or os.getenv("GEMINI_API_KEY"))
     return {
         "status": "healthy",
         "version": "2.0.0",
@@ -91,6 +93,13 @@ def health_check():
             "latex_onnx": bool(LOCAL_MATH_ONNX and LOCAL_MATH_ONNX.available),
             "chromadb": CHROMADB_AVAILABLE,
             "gemini_configured": gemini_configured,
+            "key_pool": {
+                "gemini_total": pool_status["gemini"]["total"],
+                "gemini_active": pool_status["gemini"]["active"],
+                "openrouter_total": pool_status["openrouter"]["total"],
+                "openrouter_active": pool_status["openrouter"]["active"],
+                "total_active": pool_status["total_active_keys"],
+            },
             "classroom_rooms": room_stats["rooms"],
             "classroom_students": room_stats["students"],
         },

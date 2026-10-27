@@ -176,10 +176,11 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
     if (!studentInput.trim()) return;
 
     // Kiểm tra tính đúng đắn tượng trưng
-    const isCorrect =
-      raw.includes(currentStep.expectedLatex.toLowerCase().replace(/\\/g, '')) ||
-      raw.includes(currentStep.expectedLatex.toLowerCase()) ||
-      raw.length > 5;
+    // Offline fallback may accept only an explicit normalized match. A long
+    // sentence is not evidence of correctness; the backend verifier remains
+    // authoritative whenever it is reachable.
+    const expectedNormalized = currentStep.expectedLatex.toLowerCase().replace(/\\/g, '').replace(/\s+/g, '');
+    const isCorrect = raw.replace(/\s+/g, '').includes(expectedNormalized);
 
     // Cập nhật BKT
     const bktResult = updateMasteryBKT(currentMastery, isCorrect);

@@ -40,7 +40,7 @@ export interface SocraticCompanionSessionProps {
 
 export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> = ({
   onSessionComplete,
-  apiEndpoint = 'http://127.0.0.1:8000/api/v1/companion/evaluate-step',
+  apiEndpoint = '/api/v1/companion/evaluate-step',
   curriculumLevel = 'THPT_STANDARD',
   initialProblemId = 'PHYSICS_INCLINE',
 }) => {
@@ -78,6 +78,7 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
   // Director Demo Toolbar State
   const [isDirectorOpen, setIsDirectorOpen] = useState<boolean>(true);
   const [boardSyncNotice, setBoardSyncNotice] = useState<string | null>(null);
+  const [connectionState, setConnectionState] = useState<'online' | 'offline' | 'checking'>('checking');
 
   // Reset steps when switching problem
   const handleSelectProblem = (id: string) => {
@@ -158,36 +159,9 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
       .replace(/→/g, '->')
       .toLowerCase();
 
-    // Heuristic or Backend Evaluation
-    let isCorrect = cleanInput === expectedClean;
-
-    // Generous substring matches for physics and chem equations
-    if (!isCorrect) {
-      if (activeProblem.id === 'PHYSICS_INCLINE') {
-        if (currentStep === 1 && (cleanInput.includes('mgcos') || cleanInput.includes('n='))) isCorrect = true;
-        if (currentStep === 2 && cleanInput.includes('mgsin') && cleanInput.includes('cos')) isCorrect = true;
-        if (currentStep === 3 && cleanInput.includes('g(') && cleanInput.includes('sin')) isCorrect = true;
-        if (currentStep === 4 && (cleanInput.includes('sqrt(2as)') || cleanInput.includes('8'))) isCorrect = true;
-      } else if (activeProblem.id === 'CHEMISTRY_REDOX') {
-        if (currentStep === 1 && (cleanInput.includes('3fe') || cleanInput.includes('+8/3'))) isCorrect = true;
-        if (currentStep === 2 && (cleanInput.includes('n(+5)') || cleanInput.includes('3e'))) isCorrect = true;
-        if (currentStep === 3 && (cleanInput.includes('3fe3o4') || cleanInput.includes('3e'))) isCorrect = true;
-        if (currentStep === 4 && (cleanInput.includes('3fe3o4+28hno3') || cleanInput.includes('4fe+3o2->2fe2o3') || cleanInput.includes('2fe2o3'))) isCorrect = true;
-      } else if (activeProblem.id === 'CHEMISTRY_BALANCE') {
-        if (currentStep === 1 && (cleanInput.includes('4fe') && cleanInput.includes('3o2') && cleanInput.includes('2fe2o3'))) isCorrect = true;
-      } else if (activeProblem.id === 'MATH_EXTREMA') {
-        if (currentStep === 1 && cleanInput.includes('3x^2-6mx')) isCorrect = true;
-        if (currentStep === 2 && (cleanInput.includes('9>0') || cleanInput.includes('delta'))) isCorrect = true;
-        if (currentStep === 3 && (cleanInput === 'm=0' || cleanInput === '0')) isCorrect = true;
-        if (currentStep === 4 && (cleanInput === 's=6' || cleanInput === '6')) isCorrect = true;
-      } else if (activeProblem.id === 'BIOLOGY_GENETICS') {
-        if (currentStep === 1 && cleanInput.includes('0.36aa')) isCorrect = true;
-        if (currentStep === 2 && (cleanInput.includes('0.217') || cleanInput.includes('0.22'))) isCorrect = true;
-        if (currentStep === 3 && cleanInput.includes('protein')) isCorrect = true;
-        if (currentStep === 4 && cleanInput.includes('phien ma')) isCorrect = true;
-      }
-    }
-
+    // Online-first: only the backend verifier can mark a step correct.
+    let isCorrect = false;
+    let verified = false;
     let evalDeltaPoints: number | undefined;
 
     // Call backend API if available
@@ -206,8 +180,11 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
         }),
       });
 
-      if (resp.ok) {
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      {
         const evalData = await resp.json();
+        verified = true;
+        setConnectionState('online');
         if (evalData.is_step_correct !== undefined) {
           isCorrect = evalData.is_step_correct;
         }
@@ -221,7 +198,15 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
           evalDeltaPoints = evalData.eureka_points_delta;
         }
       }
-    } catch {}
+    } catch {
+      setConnectionState('offline');
+      setServerFeedback('Chưa kết nối được máy chấm online. Bài chưa được đánh giá và không cộng điểm; hãy kết nối lại rồi thử lại.');
+    }
+
+    if (!verified) {
+      setIsLoading(false);
+      return;
+    }
 
     if (isCorrect) {
       setCompletedSteps((prev) => ({ ...prev, [currentStep]: true }));

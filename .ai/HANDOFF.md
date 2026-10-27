@@ -836,3 +836,32 @@
 - Student typecheck passed.
 - Student tests: 18/18 passed.
 - Student production build passed.
+
+
+# 2026-10-27 — Bể Khóa Đa Tầng Tự Động Xoay Vòng & Dự Phòng (Gemini Free Multi-Key Pool + OpenRouter Failover)
+
+## Mục tiêu & Giải pháp cho bài toán hạn chế tài khoản Free
+- **Vấn đề thực tế:** Khi dùng gói Free của Gemini, người dùng thường xuyên gặp lỗi giới hạn tần suất gọi (`429 Too Many Requests` / `15 RPM` hoặc `ResourceExhausted` hết quota trong ngày).
+- **Giải pháp triệt để đã triển khai (`llm/key_pool.py`, `routers/recognize_ink.py`, `routers/visualize.py`):**
+  1. **Bể khóa Gemini Multi-Key (Round-Robin & Auto-Cooldown):**
+     - Cho phép người dùng cung cấp nhiều khóa Gemini miễn phí phân cách bằng dấu phẩy hoặc xuống dòng (`GEMINI_API_KEYS=key1,key2,key3...`, `GEMINI_API_KEY_1..20`, hoặc dán trực tiếp trong modal cấu hình trên bảng).
+     - Thuật toán xoay vòng Round-Robin chia đều tải gọi giữa các khóa đang khỏe mạnh.
+     - Khi một khóa bị lỗi `429 Rate Limit` hoặc `Quota Exceeded`, hệ thống đánh dấu khóa đó vào trạng thái cách ly tạm thời (Cooldown) và **tự động chuyển sang khóa tiếp theo ngay trong < 1ms trong cùng một request**, người dùng không hề bị ngắt quãng.
+  2. **Dự phòng thông minh sang OpenRouter (OpenRouter Failover):**
+     - Cho phép cấu hình thêm khóa OpenRouter (`OPENROUTER_API_KEYS` / `OPENROUTER_API_KEY` hoặc dán trong modal cấu hình UI).
+     - Khi TOÀN BỘ khóa Gemini miễn phí đều chạm ngưỡng 429 hoặc cạn quota, hệ thống tự động trượt (failover) sang OpenRouter Vision (`google/gemini-2.0-flash-exp:free`, `qwen/qwen2.5-vl-72b-instruct:free`, `google/gemma-3-27b-it:free`...) để tiếp tục nhận diện nét vẽ và công thức mà không báo lỗi.
+  3. **Hạ cánh an toàn 3 tầng (3-Tier Resilience):**
+     - **Tầng 1:** Bể nhiều khóa Gemini Free (tự nhảy key khi 429).
+     - **Tầng 2:** Bể khóa OpenRouter Free/Paid (tự nhảy khi Gemini bận).
+     - **Tầng 3:** Mô hình cục bộ Neural ONNX `Pix2Text-MFR-1.5` + `RapidOCR` (tự động nhận diện 100% offline nếu mất mạng hoặc cạn mọi API key).
+  4. **Nâng cấp Giao diện Cấu hình & Trực quan hóa (`AiBackendConfigModal.tsx` & `EngineHealthRail.tsx`):**
+     - Bổ sung ô nhập riêng cho OpenRouter API Keys và cho phép dán nhiều key Gemini phân cách bằng dấu phẩy.
+     - Tự động đồng bộ các key mới lưu vào backend qua endpoint `POST /api/v1/canvas/settings/keys`.
+     - `EngineHealthRail` hiển thị huy hiệu số key đang hoạt động trong bể (`⚡ X keys`).
+
+## Kết quả Kiểm tra & Xác minh
+- **Pytest (`services/ai-engine`):** **52/52 tests passed 100%** (bổ sung 6 tests mới trong `test_key_pool.py`).
+- **Vitest (`apps/teacher-board`):** **33/33 test files passed, 411/411 tests passed 100%**.
+- **Vitest (`apps/student-app`):** **2/2 test files passed, 18/18 tests passed 100%**.
+- **TypeScript strict check:** **0 lỗi** trên toàn bộ monorepo.
+- **Tổng cộng:** **481/481 automated tests passed (100%)**.

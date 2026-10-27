@@ -29,6 +29,7 @@ except ImportError:
     CV2_AVAILABLE = False
 
 from ocr_engine import global_ocr_engine, RAPIDOCR_ENGINE, LOCAL_MATH_ONNX, ENABLE_HEAVY_MODELS
+from llm.key_pool import global_key_pool, call_openrouter_vision, mask_api_key, _split_keys
 
 router = APIRouter(prefix="/api/v1/canvas", tags=["Canvas & Magic Lasso"])
 
@@ -597,38 +598,71 @@ def build_vision_prompt(hint_text=None, subject_lock=None):
 
 
 def classify_with_vision_llm(image_bytes: bytes, hint_text: Optional[str] = None, api_key: Optional[str] = None, subject_lock: Optional[str] = None) -> Optional[Dict[str, Any]]:
-    gemini_key = (api_key or os.getenv("GEMINI_API_KEY") or "").strip().strip("'\"")
+    gemini_keys = global_key_pool.get_ordered_keys("gemini", extra_key=api_key)
+    openrouter_keys = global_key_pool.get_ordered_keys("openrouter")
     openai_key = os.getenv("OPENAI_API_KEY")
 
-    if not gemini_key and not openai_key:
+    if not gemini_keys and not openrouter_keys and not openai_key:
         return None
 
     few_shot_prompt = build_vision_prompt(hint_text, subject_lock)
 
-    # 1. Try Gemini
-    if gemini_key:
+    # 1. Try Gemini Pool (xoay vòng qua tất cả các khóa Gemini; nếu chạm 429/Quota thì chuyển ngay sang khóa tiếp theo)
+    if gemini_keys:
         try:
             import google.generativeai as genai
-            genai.configure(api_key=gemini_key)
             pil_img = Image.open(io.BytesIO(image_bytes)) if PIL_AVAILABLE else None
             if pil_img:
-                for model_name in ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-pro", "gemini-pro-latest", "gemini-2.0-flash", "gemini-1.5-flash"]:
-                    try:
-                        model = genai.GenerativeModel(model_name)
-                        response = model.generate_content([few_shot_prompt, pil_img])
-                        if response and response.text:
-                            m = re.search(r'\{.*\}', response.text, re.DOTALL)
-                            if m:
-                                data = json.loads(m.group(0))
-                                if "templateId" in data and data["templateId"] in OFFLINE_TEMPLATE_REGISTRY:
-                                    print(f"[Gemini Vision] Succeeded with model: {model_name}")
-                                    return data
-                    except Exception as me:
-                        print(f"[Gemini Vision] Model {model_name} error: {me}")
+                for g_key in gemini_keys:
+                    genai.configure(api_key=g_key)
+                    key_rate_limited = False
+                    for model_name in ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-pro", "gemini-pro-latest", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                        if key_rate_limited:
+                            break
+                        try:
+                            model = genai.GenerativeModel(model_name)
+                            response = model.generate_content([few_shot_prompt, pil_img])
+                            if response and response.text:
+                                m = re.search(r'\{.*\}', response.text, re.DOTALL)
+                                if m:
+                                    data = json.loads(m.group(0))
+                                    if "templateId" in data and data["templateId"] in OFFLINE_TEMPLATE_REGISTRY:
+                                        global_key_pool.mark_success("gemini", g_key)
+                                        data["_provider"] = "GEMINI"
+                                        data["_model"] = model_name
+                                        print(f"[Gemini Vision] Succeeded with model: {model_name} (key {mask_api_key(g_key)})")
+                                        return data
+                        except Exception as me:
+                            print(f"[Gemini Vision] Model {model_name} error on {mask_api_key(g_key)}: {me}")
+                            reason, _ = global_key_pool.mark_failure("gemini", g_key, me)
+                            if reason in ("rate_limit", "quota_exhausted", "auth_error"):
+                                key_rate_limited = True
         except Exception as ge:
             print(f"[Gemini Vision] Init error: {ge}")
 
-    # 2. Try OpenAI
+    # 2. Try OpenRouter Vision Pool (tự động dự phòng khi Gemini chạm Rate Limit hoặc khi dùng OpenRouter)
+    if openrouter_keys:
+        try:
+            or_res = call_openrouter_vision(
+                prompt=few_shot_prompt + f"\nClassify this blackboard handwriting. Hint: {hint_text or ''}",
+                image_bytes=image_bytes,
+                pool=global_key_pool,
+                timeout_s=min(_VISION_BUDGET_S, 8.0),
+            )
+            if or_res:
+                raw_or, or_model = or_res
+                m = re.search(r'\{.*\}', raw_or, re.DOTALL)
+                if m:
+                    data = json.loads(m.group(0))
+                    if "templateId" in data and data["templateId"] in OFFLINE_TEMPLATE_REGISTRY:
+                        data["_provider"] = "OPENROUTER"
+                        data["_model"] = or_model
+                        print(f"[OpenRouter Vision] Succeeded with model: {or_model}")
+                        return data
+        except Exception as ore:
+            print(f"[OpenRouter Vision] Error: {ore}")
+
+    # 3. Try OpenAI
     if openai_key:
         try:
             import openai
@@ -999,28 +1033,105 @@ async def compile_lasso(request: Request):
     )
 
 
+def _upsert_env_vars(updates: Dict[str, str]) -> None:
+    """Cập nhật các khóa vào tệp .env mà không xóa mất các biến môi trường khác."""
+    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+    existing_lines: List[str] = []
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                existing_lines = f.read().splitlines()
+        except Exception:
+            existing_lines = []
+
+    updated_keys = set()
+    new_lines: List[str] = []
+    for line in existing_lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            k = stripped.split("=", 1)[0].strip()
+            if k in updates:
+                new_lines.append(f"{k}={updates[k]}")
+                updated_keys.add(k)
+                continue
+        new_lines.append(line)
+
+    for k, v in updates.items():
+        if k not in updated_keys:
+            new_lines.append(f"{k}={v}")
+
+    try:
+        with open(env_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(new_lines) + "\n")
+    except Exception as e:
+        print(f"[Settings] Env write error: {e}")
+
+
 @router.post("/settings/gemini-key")
+@router.post("/settings/keys")
 async def save_gemini_key(request: Request):
     data = await request.json()
-    key = data.get("gemini_api_key", "").strip()
-    if key:
-        os.environ["GEMINI_API_KEY"] = key
-        # Persist to .env in services/ai-engine
-        env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
-        try:
-            with open(env_path, "w", encoding="utf-8") as f:
-                f.write(f"GEMINI_API_KEY={key}\n")
-        except Exception as e:
-            print(f"[Settings] Env write error: {e}")
-        return {"status": "ok", "message": "Gemini 2.0 Flash Vision Key đã được lưu thành công", "has_key": True}
+    if data.get("reset_cooldowns"):
+        global_key_pool.reset_cooldowns()
+
+    raw_gemini = data.get("gemini_api_keys") or data.get("gemini_api_key") or ""
+    raw_openrouter = data.get("openrouter_api_keys") or data.get("openrouter_api_key") or ""
+    replace_mode = bool(data.get("replace", False))
+
+    gemini_list = raw_gemini if isinstance(raw_gemini, list) else _split_keys(str(raw_gemini))
+    openrouter_list = raw_openrouter if isinstance(raw_openrouter, list) else _split_keys(str(raw_openrouter))
+
+    env_updates: Dict[str, str] = {}
+    if gemini_list:
+        joined_g = ",".join(gemini_list)
+        os.environ["GEMINI_API_KEY"] = gemini_list[0]
+        os.environ["GEMINI_API_KEYS"] = joined_g
+        env_updates["GEMINI_API_KEY"] = gemini_list[0]
+        env_updates["GEMINI_API_KEYS"] = joined_g
+        global_key_pool.add_runtime_keys(gemini_keys=gemini_list, replace=replace_mode)
+
+    if openrouter_list:
+        joined_or = ",".join(openrouter_list)
+        os.environ["OPENROUTER_API_KEY"] = openrouter_list[0]
+        os.environ["OPENROUTER_API_KEYS"] = joined_or
+        env_updates["OPENROUTER_API_KEY"] = openrouter_list[0]
+        env_updates["OPENROUTER_API_KEYS"] = joined_or
+        global_key_pool.add_runtime_keys(openrouter_keys=openrouter_list, replace=replace_mode)
+
+    if env_updates:
+        _upsert_env_vars(env_updates)
+        pool_status = global_key_pool.get_status()
+        return {
+            "status": "ok",
+            "message": (
+                f"Đã cập nhật bể khóa: {pool_status['gemini']['total']} Gemini key(s), "
+                f"{pool_status['openrouter']['total']} OpenRouter key(s)"
+            ),
+            "has_key": pool_status["any_configured"],
+            "pool": pool_status,
+        }
+
+    if data.get("reset_cooldowns"):
+        pool_status = global_key_pool.get_status()
+        return {
+            "status": "ok",
+            "message": "Đã đặt lại trạng thái Cooldown cho toàn bộ bể khóa.",
+            "has_key": pool_status["any_configured"],
+            "pool": pool_status,
+        }
+
     return {"status": "error", "message": "Key không hợp lệ", "has_key": False}
 
 
 @router.get("/settings/gemini-key")
+@router.get("/settings/keys")
 def get_gemini_key_status():
-    key = os.getenv("GEMINI_API_KEY")
+    pool_status = global_key_pool.get_status()
+    g_keys = pool_status["gemini"]["keys"]
+    first_masked = g_keys[0]["masked_key"] if g_keys else None
     return {
-        "has_key": bool(key),
-        "model": "gemini-2.0-flash",
-        "masked_key": f"{key[:6]}...{key[-4:]}" if key and len(key) > 10 else None
+        "has_key": pool_status["any_configured"],
+        "model": "gemini-2.5-flash + openrouter-failover",
+        "masked_key": first_masked,
+        "pool": pool_status,
     }

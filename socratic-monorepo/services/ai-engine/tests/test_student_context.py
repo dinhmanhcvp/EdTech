@@ -30,3 +30,13 @@ def test_snapshot_writer_requires_shape_and_persists():
     context = client.get("/api/v1/student/context/snapshot_student?class_id=12A1")
     assert context.status_code == 200
     assert context.json()["snapshot"]["sessionId"] == "s1"
+
+
+def test_authenticated_student_cannot_read_another_student(monkeypatch):
+    monkeypatch.setenv("STUDENT_CONTEXT_REQUIRE_AUTH", "true")
+    monkeypatch.setenv("STUDENT_CONTEXT_SECRET", "12345678901234567890123456789012")
+    from security import issue_token
+    token = issue_token("student", "student-a")
+    response = client.get("/api/v1/student/context/student-b", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 403
+    monkeypatch.setenv("STUDENT_CONTEXT_REQUIRE_AUTH", "false")

@@ -850,17 +850,21 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         </div>
       )}
 
-      {/* Section 8: Dynamic Reactive Socratic Cue Banner (Triggered by Physical/Chemical Thresholds) */}
+      {/* Section 8: Dynamic Reactive Socratic Cue Banner (Hidden in Hologram to focus purely on visual simulation) */}
       {dynamicCue && (
         <div
           data-testid="dynamic-socratic-cue"
-          className={`mx-4 my-2 p-3 rounded-xl border text-xs leading-relaxed flex items-start justify-between gap-3 shadow-md animate-in fade-in transition-all ${
-            dynamicCue.urgency === 'ALERT'
-              ? 'bg-rose-50/95 dark:bg-rose-950/50 border-rose-300 dark:border-rose-500/50 text-rose-950 dark:text-rose-100'
-              : dynamicCue.urgency === 'EUREKA'
-              ? 'bg-amber-50/95 dark:bg-amber-950/50 border-amber-300 dark:border-amber-500/50 text-amber-950 dark:text-amber-100'
-              : 'bg-cyan-50/95 dark:bg-cyan-950/50 border-cyan-300 dark:border-cyan-500/50 text-cyan-950 dark:text-cyan-100'
-          }`}
+          className={
+            isHolo
+              ? 'hidden'
+              : `mx-4 my-2 p-3 rounded-xl border text-xs leading-relaxed flex items-start justify-between gap-3 shadow-md animate-in fade-in transition-all ${
+                  dynamicCue.urgency === 'ALERT'
+                    ? 'bg-rose-50/95 dark:bg-rose-950/50 border-rose-300 dark:border-rose-500/50 text-rose-950 dark:text-rose-100'
+                    : dynamicCue.urgency === 'EUREKA'
+                    ? 'bg-amber-50/95 dark:bg-amber-950/50 border-amber-300 dark:border-amber-500/50 text-amber-950 dark:text-amber-100'
+                    : 'bg-cyan-50/95 dark:bg-cyan-950/50 border-cyan-300 dark:border-cyan-500/50 text-cyan-950 dark:text-cyan-100'
+                }`
+          }
         >
           <div className="flex items-start gap-2.5">
             <Sparkles
@@ -892,8 +896,8 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         </div>
       )}
 
-      {/* Socratic Discussion Prompt (Editorial Margin Note) */}
-      {showSocratic && (
+      {/* Socratic Discussion Prompt (Editorial Margin Note - Only in Dock mode) */}
+      {!isHolo && showSocratic && (
         <div
           data-testid="socratic-content"
           onClick={() => setShowSocratic(false)}

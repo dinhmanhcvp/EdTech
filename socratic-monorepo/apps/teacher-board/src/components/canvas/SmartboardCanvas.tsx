@@ -50,6 +50,8 @@ import {
   Wand2,
   Pencil,
   Loader2,
+  Maximize2,
+  GraduationCap,
 } from 'lucide-react';
 
 const ERASE_R = 14; // bán kính tẩy (đơn vị canvas)
@@ -328,7 +330,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [aiVisionResult, setAiVisionResult] = useState<ConvertResult | null>(null);
   const [isAiVisionScanning, setIsAiVisionScanning] = useState<boolean>(false);
   // Chuyển chữ viết tay → công thức chuẩn: nguồn nét (hoặc công thức đang sửa)
-  const [convertCtx, setConvertCtx] = useState<{ source: Stroke[]; editing?: { id: string; latex: string; text: string } | null } | null>(null);
+  const [convertCtx, setConvertCtx] = useState<{
+    source: Stroke[];
+    editing?: { id: string; latex: string; text: string } | null;
+    initialTab?: 'VISUAL' | 'GRADE';
+  } | null>(null);
   const [boardScale, setBoardScale] = useState(1);
   // lớp học BYOD
   const room = useClassroom();
@@ -366,45 +372,124 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     origX: 0,
     origY: 0,
   });
-
-  const handleHoloGripDown = (e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    } catch {}
-    isDraggingHoloRef.current = true;
-    holoDragStartRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: holoPosition.x,
-      origY: holoPosition.y,
-    };
-  };
+  const activeHoloPointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStartDistRef = useRef<number>(0);
+  const pinchStartScaleRef = useRef<number>(1.0);
+  const isPinchingHoloRef = useRef<boolean>(false);
+  const isResizingHoloRef = useRef<boolean>(false);
+  const holoResizeStartRef = useRef<{ startX: number; startY: number; origScale: number }>({
+    startX: 0,
+    startY: 0,
+    origScale: 1.0,
+  });
 
   const handleHoloPointerDownAnywhere = (e: React.PointerEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('input, button, select, textarea, [data-interactive="true"]')) {
       return;
     }
-    handleHoloGripDown(e);
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+
+    activeHoloPointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (activeHoloPointersRef.current.size === 2) {
+      // 2 ngón tay chạm cùng lúc: kích hoạt cử chỉ chụm hai ngón phóng to/thu nhỏ (pinch-to-zoom)
+      const pts = Array.from(activeHoloPointersRef.current.values());
+      pinchStartDistRef.current = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      pinchStartScaleRef.current = holoScale;
+      isPinchingHoloRef.current = true;
+      isDraggingHoloRef.current = false;
+    } else if (activeHoloPointersRef.current.size === 1) {
+      // 1 ngón tay / bút: di chuyển vị trí mô phỏng trên bảng
+      isDraggingHoloRef.current = true;
+      isPinchingHoloRef.current = false;
+      holoDragStartRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        origX: holoPosition.x,
+        origY: holoPosition.y,
+      };
+    }
+  };
+
+  const handleHoloGripDown = (e: React.PointerEvent) => {
+    handleHoloPointerDownAnywhere(e);
   };
 
   const handleHoloGripMove = (e: React.PointerEvent) => {
-    if (!isDraggingHoloRef.current) return;
-    const dx = (e.clientX - holoDragStartRef.current.startX) / (boardScale || 1);
-    const dy = (e.clientY - holoDragStartRef.current.startY) / (boardScale || 1);
-    setHoloPosition({
-      x: Math.max(0, Math.min(1000, Math.round(holoDragStartRef.current.origX + dx))),
-      y: Math.max(0, Math.min(550, Math.round(holoDragStartRef.current.origY + dy))),
-    });
+    if (activeHoloPointersRef.current.has(e.pointerId)) {
+      activeHoloPointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+
+    if (isPinchingHoloRef.current && activeHoloPointersRef.current.size >= 2) {
+      const pts = Array.from(activeHoloPointersRef.current.values());
+      const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      if (pinchStartDistRef.current > 10) {
+        const factor = currentDist / pinchStartDistRef.current;
+        const targetScale = Math.max(0.5, Math.min(2.5, Number((pinchStartScaleRef.current * factor).toFixed(2))));
+        setHoloScale(targetScale);
+      }
+      return;
+    }
+
+    if (isResizingHoloRef.current) {
+      const dx = (e.clientX - holoResizeStartRef.current.startX) / (boardScale || 1);
+      const dy = (e.clientY - holoResizeStartRef.current.startY) / (boardScale || 1);
+      const deltaScale = (dx + dy) / 380;
+      const targetScale = Math.max(0.5, Math.min(2.5, Number((holoResizeStartRef.current.origScale + deltaScale).toFixed(2))));
+      setHoloScale(targetScale);
+      return;
+    }
+
+    if (isDraggingHoloRef.current) {
+      const dx = (e.clientX - holoDragStartRef.current.startX) / (boardScale || 1);
+      const dy = (e.clientY - holoDragStartRef.current.startY) / (boardScale || 1);
+      setHoloPosition({
+        x: Math.max(0, Math.min(1000, Math.round(holoDragStartRef.current.origX + dx))),
+        y: Math.max(0, Math.min(550, Math.round(holoDragStartRef.current.origY + dy))),
+      });
+    }
   };
 
   const handleHoloGripUp = (e: React.PointerEvent) => {
-    isDraggingHoloRef.current = false;
+    activeHoloPointersRef.current.delete(e.pointerId);
+    if (activeHoloPointersRef.current.size < 2) {
+      isPinchingHoloRef.current = false;
+    }
+    if (activeHoloPointersRef.current.size === 0) {
+      isDraggingHoloRef.current = false;
+      isResizingHoloRef.current = false;
+    }
     try {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     } catch {}
+  };
+
+  const handleHoloResizeHandleDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+    isResizingHoloRef.current = true;
+    isDraggingHoloRef.current = false;
+    isPinchingHoloRef.current = false;
+    holoResizeStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      origScale: holoScale,
+    };
+  };
+
+  const handleHoloWheelZoom = (e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const delta = -e.deltaY * 0.0018;
+    setHoloScale((prev) => Math.max(0.5, Math.min(2.5, Number((prev + delta).toFixed(2)))));
   };
 
   // OCR Verification Modal States
@@ -1368,13 +1453,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     setTimeout(() => setErrorMessage((cur) => (cur === msg ? null : cur)), ms);
   };
 
-  const openConvert = () => {
+  const openConvert = (initialTab: 'VISUAL' | 'GRADE' = 'VISUAL') => {
     const src = sourceStrokes(selectedStrokes.length > 0 ? selectedStrokes : strokes);
     if (src.length === 0) {
       flashError('Chưa có nét viết nào để chuyển. Hãy viết công thức lên bảng (hoặc khoanh vùng nét cần chuyển) rồi bấm lại.');
       return;
     }
-    setConvertCtx({ source: src });
+    setConvertCtx({ source: src, initialTab });
   };
 
   const applyConvert = (lines: ConvertLine[], mode: 'replace' | 'insert') => {
@@ -1884,8 +1969,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         <InkConvertPanel
           source={convertCtx.source}
           editing={convertCtx.editing ?? null}
+          initialTab={convertCtx.initialTab ?? 'VISUAL'}
           initialAiResult={aiVisionResult}
           isAiScanning={isAiVisionScanning}
+          initialSubject={subjectLock}
+          onSubjectChange={setSubjectLock}
           enableGrading
           onClose={() => setConvertCtx(null)}
           onApply={applyConvert}
@@ -2141,240 +2229,175 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         </div>
       )}
 
-      {/* Floating Lasso Action Bar */}
+      {/* Floating Minimalist Lasso Action Bar */}
       {selectedStrokes.length > 0 && (
         <div
           data-testid="lasso-action-bar"
-          className="fixed bottom-[100px] left-1/2 -translate-x-1/2 flex flex-col gap-2.5 px-4 py-3 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] shadow-[0_12px_40px_rgb(0,0,0,0.14)] z-40 w-[min(1024px,calc(100vw-24px))] animate-in fade-in duration-150"
+          className="fixed bottom-[96px] left-1/2 -translate-x-1/2 flex flex-wrap items-center justify-between gap-2.5 px-4 py-2 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] shadow-[0_12px_36px_rgba(0,0,0,0.12)] z-40 max-w-5xl w-[min(980px,calc(100vw-24px))] animate-in fade-in duration-150"
         >
-          {/* Top Row: Preview, Voice Mic, Formula Input, Action Buttons */}
-          <div className="flex flex-col md:flex-row items-center gap-3 w-full">
-            {/* Live Cropped Ink Preview */}
-            <div className="flex items-center gap-2.5 shrink-0">
-              {thumbnailUrl ? (
-                <div className="relative group">
-                  <img
-                    src={thumbnailUrl}
-                    alt="OCR Preview"
-                    data-testid="ocr-debug-thumbnail"
-                    className="w-16 h-10 object-contain rounded-lg border border-[#E6E4DD] bg-[#FCFBF9] shadow-xs"
-                  />
-                  <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[8px] font-mono text-stone-500 bg-white px-1 rounded whitespace-nowrap border border-[#E6E4DD]">
-                    0ms Crop
-                  </span>
-                </div>
-              ) : (
-                <div className="w-16 h-10 flex items-center justify-center rounded-lg border border-dashed border-[#E6E4DD] bg-[#F8F7F4] text-[10px] text-stone-400 font-mono">
-                  Preview
-                </div>
-              )}
-              <div className="flex flex-col">
-                <span className="text-xs font-semibold text-stone-900">
-                  Lasso {selectedStrokes.length} nét
-                </span>
-                <span className="text-[10px] text-stone-500 font-mono">
-                  {isAiVisionScanning ? (
-                    <span className="text-violet-700 font-semibold inline-flex items-center gap-1 animate-pulse">
-                      <Loader2 className="w-3 h-3 animate-spin" /> ✨ AI Vision đang quét...
-                    </span>
-                  ) : aiVisionResult ? (
-                    <span className="text-violet-700 font-semibold inline-flex items-center gap-1">
-                      ✨ AI Vision {Math.round(aiVisionResult.ms)}ms · {Math.round(aiVisionResult.confidence * 100)}%
-                    </span>
-                  ) : instantResult ? (
-                    <span className="text-emerald-700 font-semibold inline-flex items-center gap-1">
-                      ⚡ Tức thì {Math.round(instantResult.ms)}ms · {Math.round(instantResult.confidence * 100)}%
-                    </span>
-                  ) : (
-                    'Nền giấy chuẩn hóa'
-                  )}
-                </span>
+          {/* Left: Thumbnail & Stroke Count */}
+          <div className="flex items-center gap-2 shrink-0">
+            {thumbnailUrl ? (
+              <img
+                src={thumbnailUrl}
+                alt="OCR Preview"
+                data-testid="ocr-debug-thumbnail"
+                className="w-12 h-8 object-contain rounded-lg border border-[#E6E4DD] bg-[#FCFBF9] shadow-2xs"
+              />
+            ) : (
+              <div className="w-12 h-8 flex items-center justify-center rounded-lg border border-dashed border-[#E6E4DD] bg-[#F8F7F4] text-[9px] text-stone-400 font-mono">
+                Lasso
               </div>
+            )}
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-stone-900 leading-tight">
+                {selectedStrokes.length} nét
+              </span>
+              <span className="text-[10px] text-stone-500 font-mono leading-tight">
+                {isAiVisionScanning ? (
+                  <span className="text-violet-700 font-medium inline-flex items-center gap-1 animate-pulse">
+                    <Loader2 className="w-2.5 h-2.5 animate-spin" /> Quét AI...
+                  </span>
+                ) : aiVisionResult ? (
+                  <span className="text-violet-700 font-medium">
+                    AI {Math.round(aiVisionResult.confidence * 100)}%
+                  </span>
+                ) : instantResult ? (
+                  <span className="text-emerald-700 font-medium">
+                    ⚡ Tức thì {Math.round(instantResult.confidence * 100)}%
+                  </span>
+                ) : (
+                  'Đã chọn'
+                )}
+              </span>
             </div>
+          </div>
 
+          {/* Middle Left: Contextual Subject Lock Selector */}
+          <div className="flex items-center gap-1 shrink-0" data-testid="subject-lock">
+            <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider pl-1">
+              Môn:
+            </span>
+            <button
+              data-testid="subject-auto"
+              onClick={() => setSubjectLock(null)}
+              className={`px-2 py-1 rounded-lg text-xs font-medium transition cursor-pointer border ${
+                subjectLock === null
+                  ? 'bg-stone-900 text-white border-stone-900 shadow-2xs'
+                  : 'bg-white text-stone-600 border-[#DCD9D0] hover:bg-stone-50'
+              }`}
+            >
+              Tự động
+            </button>
+            {([['MATH', '#2563EB'], ['PHYSICS', '#7C3AED'], ['CHEMISTRY', '#D97706'], ['BIOLOGY', '#059669']] as [Subject, string][]).map(([k, c]) => (
+              <button
+                key={k}
+                data-testid={`subject-${k.toLowerCase()}`}
+                onClick={() => setSubjectLock(subjectLock === k ? null : k)}
+                className="px-2 py-1 rounded-lg text-xs font-medium transition cursor-pointer border"
+                style={
+                  subjectLock === k
+                    ? { background: c, color: '#fff', borderColor: c, boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }
+                    : { color: c, borderColor: `${c}55`, background: `${c}0c` }
+                }
+              >
+                {SUBJECT_LABEL[k]}
+              </button>
+            ))}
+          </div>
+
+          {/* Formula Input Box with Floating Live KaTeX Preview Pill */}
+          <div className="relative flex-1 min-w-[140px] flex items-center">
+            {formulaInput.trim().length > 0 && (
+              <div
+                data-testid="live-teacher-formula-preview"
+                className="absolute -top-10 left-0 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-lg border border-blue-200 shadow-md flex items-center gap-1.5 text-xs z-30 animate-in fade-in"
+              >
+                <span className="text-[10px] font-mono text-blue-700 font-bold uppercase shrink-0">
+                  Xem trước:
+                </span>
+                <div className="overflow-x-auto max-w-xs text-stone-900 font-semibold">
+                  <FormulaBlock latex={formulaInput} />
+                </div>
+              </div>
+            )}
+            <input
+              type="text"
+              data-testid="lasso-formula-input"
+              value={formulaInput}
+              onChange={(e) => setFormulaInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleVisualize();
+              }}
+              placeholder="Nhập hoặc sửa công thức..."
+              className="w-full px-2.5 py-1.5 rounded-lg bg-[#F8F7F4] border border-[#E6E4DD] text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-blue-500 font-mono transition"
+            />
+          </div>
+
+          {/* Right: Core Actions */}
+          <div className="flex items-center gap-1.5 shrink-0">
             {/* Chuyển nét viết thành công thức chuẩn */}
             <button
               type="button"
               data-testid="btn-convert-ink"
-              onClick={openConvert}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer shrink-0 border bg-violet-50 hover:bg-violet-100 border-violet-200 text-violet-700"
-              title="Chuyển chữ viết tay đã khoanh thành văn bản & công thức chuẩn"
+              onClick={() => openConvert('VISUAL')}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border bg-violet-50 hover:bg-violet-100 border-violet-200 text-violet-700 shadow-2xs"
+              title="Chuyển chữ viết tay thành công thức chuẩn"
             >
               <Wand2 className="w-3.5 h-3.5" />
-              <span>Chuyển thành công thức</span>
+              <span>Chuyển công thức</span>
             </button>
 
-            {/* Voice-to-Blueprint Mic Button */}
+            {/* Trực quan hóa STEM */}
+            <button
+              data-testid="btn-visualize"
+              onClick={() => handleVisualize()}
+              disabled={isLoading}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition cursor-pointer shadow-sm disabled:opacity-50"
+              title="Kích hoạt mô phỏng trực quan 60FPS"
+            >
+              {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+              <span>{isLoading ? 'Đang dựng...' : 'Trực quan hóa'}</span>
+            </button>
+
+            {/* Chấm bài học sinh */}
+            <button
+              type="button"
+              data-testid="btn-grade-ink"
+              onClick={() => openConvert('GRADE')}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-800 shadow-2xs"
+              title="Chấm bài giải của học sinh trên bảng"
+            >
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>Chấm bài</span>
+            </button>
+
+            {/* Voice Dictation */}
             <button
               type="button"
               data-testid="voice-blueprint-mic-btn"
               onClick={handleVoiceDictation}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer shrink-0 border ${
+              className={`p-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
                 isVoiceListening
-                  ? 'bg-rose-50 text-rose-700 border-rose-200'
-                  : 'bg-white hover:bg-stone-50 border-[#DCD9D0] text-stone-700 shadow-xs'
+                  ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
+                  : 'bg-white hover:bg-stone-50 border-[#DCD9D0] text-stone-600 shadow-2xs'
               }`}
               title="Đọc công thức bằng giọng nói"
             >
-              {isVoiceListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-stone-500" />}
-              <span>{isVoiceListening ? 'Đang nghe...' : 'Giọng nói'}</span>
+              {isVoiceListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
             </button>
 
-            {/* Formula Input Box with Floating Live KaTeX Preview Pill */}
-            <div className="relative flex-1 flex items-center gap-2 w-full md:w-auto">
-              {formulaInput.trim().length > 0 && (
-                <div
-                  data-testid="live-teacher-formula-preview"
-                  className="absolute -top-11 left-0 bg-white/95 backdrop-blur-md px-3 py-1 rounded-lg border border-blue-200 shadow-md flex items-center gap-2 text-xs z-30 animate-in fade-in"
-                >
-                  <span className="text-[10px] font-mono text-blue-700 font-bold uppercase tracking-wider shrink-0 flex items-center gap-1">
-                    {instantResult && formulaInput.trim() === instantResult.lines.map((l) => l.latex).join(' \\\\ ').trim() ? (
-                      <span className="text-emerald-700 font-bold">⚡ Tức thì:</span>
-                    ) : (
-                      'Xem trước:'
-                    )}
-                  </span>
-                  <div className="overflow-x-auto max-w-sm text-stone-900 font-semibold">
-                    <FormulaBlock latex={formulaInput} />
-                  </div>
-                </div>
-              )}
-              <input
-                type="text"
-                data-testid="lasso-formula-input"
-                value={formulaInput}
-                onChange={(e) => setFormulaInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleVisualize();
-                }}
-                placeholder="Nhập công thức bất kỳ (ném xiên, giao thoa sóng, con lắc, RLC, Fe+O2, tích phân...)"
-                className="w-full px-3 py-1.5 rounded-lg bg-[#F8F7F4] border border-[#E6E4DD] text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-blue-500 font-mono transition"
-              />
-            </div>
-
-            {/* Main Action & Cancel */}
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                data-testid="btn-visualize"
-                onClick={() => handleVisualize()}
-                disabled={isLoading}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition cursor-pointer shadow-sm"
-              >
-                {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                <span>{isLoading ? 'Đang nhận diện...' : 'Trực quan hóa'}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setSelectedStrokes([]);
-                  setLassoLoop([]);
-                  setFormulaInput('');
-                }}
-                className="p-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-500 hover:text-stone-900 border border-[#DCD9D0] shadow-xs transition cursor-pointer"
-                title="Bỏ chọn"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Bottom Row: 1-Tap Smart Topic Chips (Zero Fail, Instant Routing) */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#E6E4DD]">
-            <div className="flex items-center gap-1 shrink-0" data-testid="subject-lock">
-              <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider">Môn:</span>
-              <button
-                data-testid="subject-auto"
-                onClick={() => setSubjectLock(null)}
-                className={`px-2 py-0.5 rounded-full text-[11px] border transition ${subjectLock === null ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-[#DCD9D0] hover:bg-stone-50'}`}
-              >
-                Tự động
-              </button>
-              {([['MATH', '#2563EB'], ['PHYSICS', '#7C3AED'], ['CHEMISTRY', '#D97706'], ['BIOLOGY', '#059669']] as [Subject, string][]).map(([k, c]) => (
-                <button
-                  key={k}
-                  data-testid={`subject-${k.toLowerCase()}`}
-                  onClick={() => setSubjectLock(subjectLock === k ? null : k)}
-                  className="px-2 py-0.5 rounded-full text-[11px] border font-medium transition"
-                  style={subjectLock === k ? { background: c, color: '#fff', borderColor: c } : { color: c, borderColor: `${c}66`, background: `${c}0f` }}
-                >
-                  {SUBJECT_LABEL[k]}
-                </button>
-              ))}
-            </div>
-            <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider shrink-0">
-              Gợi ý tức thì (0ms):
-            </span>
+            {/* Cancel / Deselect */}
             <button
-              type="button"
-              data-testid="smart-chip-physics"
-              onClick={() => handleVisualize('v_0 = 22\\text{ m/s}, \\quad \\alpha = 45^\\circ \\quad (\\text{Ném xiên})')}
-              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
+              onClick={() => {
+                setSelectedStrokes([]);
+                setLassoLoop([]);
+                setFormulaInput('');
+              }}
+              className="p-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-500 hover:text-stone-900 border border-[#DCD9D0] shadow-2xs transition cursor-pointer"
+              title="Bỏ chọn vùng Lasso"
             >
-              <FormulaBlock latex="v_0 = 22\text{ m/s}, \alpha = 45^\circ" />
-            </button>
-            <button
-              type="button"
-              data-testid="smart-chip-ripple"
-              onClick={() => handleVisualize('d_2 - d_1 = k\\lambda \\quad (\\text{Giao thoa sóng})')}
-              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
-            >
-              <FormulaBlock latex="d_2 - d_1 = k\lambda" />
-            </button>
-            <button
-              type="button"
-              data-testid="smart-chip-pendulum"
-              onClick={() => handleVisualize('T = 2\\pi\\sqrt{\\frac{l}{g}} \\quad (\\text{Con lắc đơn})')}
-              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
-            >
-              <FormulaBlock latex="T = 2\pi\sqrt{l/g}" />
-            </button>
-            <button
-              type="button"
-              data-testid="smart-chip-rlc"
-              onClick={() => handleVisualize('Z = \\sqrt{R^2 + (Z_L - Z_C)^2} \\quad (\\text{Mạch RLC})')}
-              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
-            >
-              <FormulaBlock latex="Z = \sqrt{R^2 + (Z_L - Z_C)^2}" />
-            </button>
-            <button
-              type="button"
-              data-testid="smart-chip-incline"
-              onClick={() => handleVisualize('a = g(\\sin\\alpha - \\mu\\cos\\alpha) \\quad (\\text{Mặt phẳng nghiêng})')}
-              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
-            >
-              <FormulaBlock latex="a = g(\sin\alpha - \mu\cos\alpha)" />
-            </button>
-            <button
-              type="button"
-              data-testid="smart-chip-math"
-              onClick={() => handleVisualize('y = 2\\sin(3x)')}
-              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
-            >
-              <FormulaBlock latex="y = 2\sin(3x)" />
-            </button>
-            <button
-              type="button"
-              data-testid="smart-chip-chemistry"
-              onClick={() => handleVisualize('4\\text{Fe} + 3\\text{O}_2 \\rightarrow 2\\text{Fe}_2\\text{O}_3')}
-              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
-            >
-              <FormulaBlock latex="4\text{Fe} + 3\text{O}_2 \rightarrow 2\text{Fe}_2\text{O}_3" />
-            </button>
-            <button
-              type="button"
-              data-testid="smart-chip-biology"
-              onClick={() => handleVisualize('quang hợp nhiệt độ 25 độ C')}
-              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
-            >
-              <FormulaBlock latex="\text{Quang hợp: } T = 25^\circ\text{C}" />
-            </button>
-            <button
-              type="button"
-              data-testid="smart-chip-titration"
-              onClick={() => handleVisualize('chuẩn độ axit bazơ ph')}
-              className="px-2.5 py-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] border border-[#E6E4DD] text-stone-800 text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
-            >
-              <FormulaBlock latex="\text{Chuẩn độ pH (HCl + NaOH)}" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -2499,11 +2522,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                       ✨ AI Vision
                     </span>
                   )}
-                  <button data-testid="sel-btn-convert" onClick={openConvert} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-violet-700 hover:bg-violet-50 transition">
+                  <button data-testid="sel-btn-convert" onClick={() => openConvert('VISUAL')} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-violet-700 hover:bg-violet-50 transition">
                     <Wand2 className="w-3.5 h-3.5" /> Chuyển thành công thức
                   </button>
                   <button data-testid="sel-btn-visualize" onClick={() => handleVisualize()} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-blue-700 hover:bg-blue-50 transition">
                     <Sparkles className="w-3.5 h-3.5" /> Trực quan hóa
+                  </button>
+                  <button data-testid="sel-btn-grade" onClick={() => openConvert('GRADE')} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-emerald-800 hover:bg-emerald-50 transition" title="Chấm bài học sinh">
+                    <GraduationCap className="w-3.5 h-3.5" /> Chấm bài
                   </button>
                   <button data-testid="sel-btn-delete" onClick={handleDeleteSelection} title="Xóa vùng chọn" className="p-1 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 transition">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -2521,7 +2547,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               onPointerMove={handleHoloGripMove}
               onPointerUp={handleHoloGripUp}
               onPointerCancel={handleHoloGripUp}
-              className="absolute z-20 pointer-events-auto select-none cursor-grab active:cursor-grabbing touch-none"
+              onWheel={handleHoloWheelZoom}
+              className="absolute z-20 pointer-events-auto select-none cursor-grab active:cursor-grabbing touch-none group"
               style={{
                 left: `${(holoPosition.x / 1200) * 100}%`,
                 top: `${(holoPosition.y / 675) * 100}%`,
@@ -2529,7 +2556,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 transformOrigin: 'top left',
                 width: '560px',
                 maxWidth: '92%',
-                transition: isDraggingHoloRef.current ? 'none' : 'transform 0.15s ease-out',
+                transition: isDraggingHoloRef.current || isPinchingHoloRef.current || isResizingHoloRef.current ? 'none' : 'transform 0.15s ease-out',
               }}
             >
               <SimulationWidget
@@ -2539,7 +2566,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 onToggleDisplayMode={() => setDisplayMode('DOCK')}
                 holoScale={holoScale}
                 onScaleChange={setHoloScale}
-                onGripPointerDown={handleHoloGripDown}
+                onGripPointerDown={handleHoloPointerDownAnywhere}
                 onGripPointerMove={handleHoloGripMove}
                 onGripPointerUp={handleHoloGripUp}
                 remoteParams={room.state.role === 'teacher' ? room.state.params : undefined}
@@ -2550,6 +2577,19 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 isSplitView={isSplitView}
                 onToggleSplitView={() => setIsSplitView(!isSplitView)}
               />
+
+              {/* Smooth Touch & Stylus Corner Resize Handle */}
+              <div
+                data-testid="holo-touch-resize-handle"
+                onPointerDown={handleHoloResizeHandleDown}
+                onPointerMove={handleHoloGripMove}
+                onPointerUp={handleHoloGripUp}
+                onPointerCancel={handleHoloGripUp}
+                className="absolute -bottom-2.5 -right-2.5 w-7 h-7 rounded-full bg-blue-600/90 hover:bg-blue-600 text-white flex items-center justify-center cursor-nwse-resize shadow-md backdrop-blur border border-white/60 active:scale-125 transition-transform z-30 touch-none select-none"
+                title="Dùng ngón tay hoặc bút kéo để phóng to / thu nhỏ mô phỏng mượt mà"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+              </div>
             </div>
           )}
         </div>

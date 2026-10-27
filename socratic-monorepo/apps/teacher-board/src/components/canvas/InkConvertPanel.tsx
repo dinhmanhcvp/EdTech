@@ -16,7 +16,7 @@ import {
 import {MathView} from '../common/MathView';
 import {detectSolidFromStrokes} from '../../utils/sketchSolid';
 import {makeSolidBlueprint, SOLID_TITLES} from '../../utils/localRouter';
-import {detectSubject, SUBJECT_LABEL} from '../../utils/subjectContext';
+import {detectSubject, SUBJECT_LABEL, type Subject} from '../../utils/subjectContext';
 import {findAmbiguousTokens, swapTokenInFormula} from '../../utils/ocrConfusions';
 import type {SimulationBlueprint} from '@socratic/types';
 
@@ -29,6 +29,11 @@ export interface InkConvertPanelProps {
   isAiScanning?: boolean;
   /** chế độ sửa công thức đã gõ */
   editing?: {latex: string; text: string} | null;
+  /** tab chế độ ban đầu: VISUAL (công thức & trực quan) hoặc GRADE (chấm bài học sinh) */
+  initialTab?: 'VISUAL' | 'GRADE';
+  /** khóa môn học ngữ cảnh */
+  initialSubject?: Subject | null;
+  onSubjectChange?: (s: Subject | null) => void;
   onOpenConfig?: () => void;
   onClose: () => void;
   onApply: (lines: ConvertLine[], mode: 'replace' | 'insert') => void;
@@ -65,11 +70,21 @@ const KEYS: [string, string, number][] = [
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
+const SUBJECT_OPTIONS: [Subject, string][] = [
+  ['MATH', '#2563EB'],
+  ['PHYSICS', '#7C3AED'],
+  ['CHEMISTRY', '#D97706'],
+  ['BIOLOGY', '#059669'],
+];
+
 export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({
   source,
   editing,
   initialAiResult,
   isAiScanning = false,
+  initialTab = 'VISUAL',
+  initialSubject = null,
+  onSubjectChange,
   onOpenConfig,
   onClose,
   onApply,
@@ -77,6 +92,8 @@ export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({
   onVisualizeAi,
   enableGrading = false,
 }) => {
+  const [activeTab, setActiveTab] = useState<'VISUAL' | 'GRADE'>(initialTab);
+  const [selectedSubj, setSelectedSubj] = useState<Subject | null>(initialSubject);
   const src = useMemo(() => sourceStrokes(source), [source]);
   const sketch = useMemo(() => (editing || src.length < 4 ? null : detectSolidFromStrokes(src.map((x) => ({points: x.points})))), [src, editing]);
   const local = useMemo<ConvertResult | null>(() => (editing || !src.length ? null : recognizeLocal(src)), [src, editing]);
@@ -125,10 +142,29 @@ export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({
     };
   }, [src]);
 
+  const handleSelectSubject = (s: Subject | null) => {
+    setSelectedSubj(s);
+    onSubjectChange?.(s);
+    if (!editing && src.length > 0) {
+      setAiState('loading');
+      recognizeWithAi(src, { hint: s ? `Môn ${SUBJECT_LABEL[s]}` : undefined }).then((r) => {
+        if (!r) {
+          setAiState('unavailable');
+          return;
+        }
+        setAi(r);
+        setAiState('done');
+        setEngine('gemini');
+        setLines(r.lines);
+        setEdited(false);
+      });
+    }
+  };
+
   const runAiRecognition = () => {
     if (editing || !src.length) return;
     setAiState('loading');
-    recognizeWithAi(src).then((r) => {
+    recognizeWithAi(src, { hint: selectedSubj ? `Môn ${SUBJECT_LABEL[selectedSubj]}` : undefined }).then((r) => {
       if (!r) {
         setAiState('unavailable');
         return;
@@ -278,25 +314,107 @@ ${joinedText}`), [joinedLatex, joinedText]);
         data-testid="ink-convert-panel"
         className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white border border-[#E6E4DD] shadow-[0_20px_60px_-10px_rgba(20,20,19,0.35)] flex flex-col"
       >
-        {/* Tiêu đề */}
-        <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-[#E6E4DD] sticky top-0 bg-white/95 backdrop-blur z-10">
+        {/* Tiêu đề & Chế độ Chuyển đổi */}
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-[#E6E4DD] sticky top-0 bg-white/95 backdrop-blur z-10">
           <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+            <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
               <Wand2 className="w-4 h-4" />
             </span>
             <div>
-              <h2 className="text-sm font-semibold text-stone-900">{editing ? 'Sửa công thức' : 'Chữ viết tay → văn bản & công thức chuẩn'}</h2>
+              <h2 className="text-sm font-semibold text-stone-900">
+                {editing ? 'Sửa công thức' : activeTab === 'GRADE' ? 'Chấm bài chữa trên bảng' : 'Chữ viết tay → văn bản & công thức chuẩn'}
+              </h2>
               <p className="text-[11px] text-stone-500">
-                {editing ? 'Chỉnh LaTeX hoặc dùng bàn phím ký hiệu, xem trước ngay.' : 'Kiểm tra, sửa nếu cần, rồi thay nét viết bằng công thức gõ sạch trên bảng.'}
+                {editing
+                  ? 'Chỉnh LaTeX hoặc dùng bàn phím ký hiệu, xem trước ngay.'
+                  : activeTab === 'GRADE'
+                  ? 'Đối chiếu bài làm của học sinh với đáp án chuẩn và nhận diện sai số.'
+                  : 'Kiểm tra, sửa nếu cần, rồi thay nét viết bằng công thức gõ sạch trên bảng.'}
               </p>
             </div>
           </div>
-          <button onClick={onClose} data-testid="ink-convert-close" className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-500" title="Đóng (Esc)">
-            <X className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-2 ml-auto">
+            {!editing && enableGrading && (
+              <div className="flex items-center bg-[#F2F0EA] p-0.5 rounded-xl border border-[#E6E4DD]" data-testid="ink-mode-tabs">
+                <button
+                  type="button"
+                  data-testid="ink-tab-visual"
+                  onClick={() => setActiveTab('VISUAL')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                    activeTab === 'VISUAL'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Công thức & Trực quan</span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="ink-tab-grade"
+                  onClick={() => setActiveTab('GRADE')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                    activeTab === 'GRADE'
+                      ? 'bg-violet-600 text-white shadow-2xs'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  <span>Chấm bài</span>
+                </button>
+              </div>
+            )}
+            <button onClick={onClose} data-testid="ink-convert-close" className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-500 transition cursor-pointer" title="Đóng (Esc)">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <div className="p-5 flex flex-col gap-4">
+          {/* Bộ chọn phân môn nhận diện (Ép sát context khoa học) */}
+          {!editing && (
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2 rounded-xl bg-[#F8F7F4] border border-[#E6E4DD]" data-testid="ink-subject-selector">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-mono uppercase text-stone-500 font-semibold px-1">
+                  Môn nhận diện:
+                </span>
+                <button
+                  type="button"
+                  data-testid="ink-subject-auto"
+                  onClick={() => handleSelectSubject(null)}
+                  className={`px-2.5 py-0.5 rounded-full text-xs transition cursor-pointer font-medium border ${
+                    selectedSubj === null
+                      ? 'bg-stone-900 text-white border-stone-900 shadow-2xs'
+                      : 'bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50'
+                  }`}
+                >
+                  Tự động
+                </button>
+                {SUBJECT_OPTIONS.map(([k, c]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    data-testid={`ink-subject-${k.toLowerCase()}`}
+                    onClick={() => handleSelectSubject(selectedSubj === k ? null : k)}
+                    className="px-2.5 py-0.5 rounded-full text-xs font-medium transition cursor-pointer border"
+                    style={
+                      selectedSubj === k
+                        ? { background: c, color: '#fff', borderColor: c, boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }
+                        : { color: c, borderColor: `${c}55`, background: `${c}0c` }
+                    }
+                  >
+                    {SUBJECT_LABEL[k]}
+                  </button>
+                ))}
+              </div>
+              {subj.subject && selectedSubj === null && (
+                <span className="text-[10px] font-mono text-stone-500 pr-1">
+                  Nhận diện tự động: <strong className="text-stone-800">{SUBJECT_LABEL[subj.subject as Subject]}</strong>
+                </span>
+              )}
+            </div>
+          )}
           {/* Nguồn + động cơ */}
           {!editing && (
             <div className="flex flex-col sm:flex-row gap-3 items-stretch">
@@ -457,8 +575,9 @@ ${joinedText}`), [joinedLatex, joinedText]);
             ))}
           </div>
 
-          {enableGrading && !editing && (
-            <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-3 flex flex-col gap-2" data-testid="solution-grading-panel">
+          {/* Bảng Chấm Bài Học Sinh (Chỉ hiện khi chọn tab Chấm bài) */}
+          {enableGrading && !editing && activeTab === 'GRADE' && (
+            <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-3.5 flex flex-col gap-2.5 animate-in fade-in" data-testid="solution-grading-panel">
               <div className="flex items-center gap-2">
                 <span className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center"><GraduationCap className="w-4 h-4" /></span>
                 <div>

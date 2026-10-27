@@ -502,6 +502,36 @@
   - 18/18 Student App Vitest tests passed 100%.
   - TypeScript strict check 0 errors.
 
+## 2026-10-27 — Tối Giản Thanh Lasso, Thu Phóng Hologram Bằng Tay và Phân Tách Trực Quan Hóa Với Chấm Bài
+- **Yêu cầu & Mục tiêu hoàn thành:**
+  1. **Hologram nổi thuần trực quan hóa:**
+     * Lược bỏ hoàn toàn phần gợi mở Socratic và các hộp thoại chữ trong chế độ Hologram để giữ trải nghiệm 100% thị giác cho giáo viên trên bục giảng.
+     * Cho phép dùng tay phóng to thu nhỏ mượt mà trực tiếp trên màn hình:
+       - Hỗ trợ cử chỉ cảm ứng chụm 2 ngón tay (pinch-to-zoom) với dải tỷ lệ 0.5x - 2.5x.
+       - Thêm tay nắm góc dưới bên phải (`holo-touch-resize-handle`) cho phép kéo 1 ngón tay hoặc bút viết để chỉnh kích thước trực tiếp.
+       - Hỗ trợ cuộn chuột hoặc bàn di cảm ứng để thu phóng nhanh.
+  2. **Tối giản thanh công cụ nổi Lasso:**
+     * Loại bỏ hoàn toàn 10 chip gợi ý cứng nhắc gây rối mắt.
+     * Đưa bộ chọn môn học (Tự động, Toán, Vật lý, Hóa học, Sinh học) lên vị trí nổi bật để bám sát ngữ cảnh nhận diện.
+     * Giữ lại các hành động cốt lõi: Chuyển công thức, Trực quan hóa, Chấm bài, Giọng nói và Bỏ chọn.
+  3. **Phân tách thông minh giữa Trực quan hóa và Chấm bài học sinh:**
+     * Tự động nhận biết tác vụ: Khi chuyển đổi công thức hoặc trực quan hóa thông thường, màn hình ẩn hoàn toàn khung chấm bài để giữ không gian sạch sẽ, không gây thừa thãi.
+     * Trong `InkConvertPanel`: Phân chia rõ ràng thành 2 tab `Công thức & Trực quan` và `Chấm bài`.
+     * Chỉ kích hoạt và hiển thị khung chấm bài khi người dùng bấm nút Chấm bài từ thanh Lasso hoặc chuyển sang tab Chấm bài.
+     * Bổ sung bộ chọn môn học trực tiếp trên bảng chuyển đổi công thức để điều chỉnh ngữ cảnh AI Vision theo thời gian thực.
+- **Tệp đã chỉnh sửa:**
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas/SimulationWidget.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardCanvas.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas/InkConvertPanel.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/__tests__/hologramInteraction.test.tsx`
+- **Kết quả Kiểm tra & Xác minh:**
+  - `apps/teacher-board`: 30/30 test files, 391/391 tests passed 100%.
+  - `apps/student-app`: 2/2 test files, 18/18 tests passed 100%.
+  - `services/ai-engine`: 6/6 test files, 41/41 tests passed 100%.
+  - TypeScript strict check 0 errors trên toàn monorepo.
+  - Tổng cộng: **450/450 tests passed 100%**.
+
+
 
 
 

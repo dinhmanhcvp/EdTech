@@ -267,6 +267,138 @@ describe('Hologram Interaction & Zero-Background Direct Blackboard Manipulation'
     expect(screen.getByTestId('param-box-L')).toBeInTheDocument();
     expect(screen.getByTestId('param-box-theta0')).toBeInTheDocument();
   });
+
+  /**
+   * TEST 10: Multi-Touch Pinch-to-Zoom, Corner Handle & Wheel Zoom for Hologram
+   */
+  it('supports smooth multi-touch pinch to zoom and tactile corner resize handle', () => {
+    render(<SmartboardCanvas initialBlueprint={testBlueprint} />);
+
+    const overlay = screen.getByTestId('hologram-simulation-overlay');
+    expect(overlay).toBeInTheDocument();
+
+    // 1. Two-finger pinch gesture
+    fireEvent.pointerDown(overlay, { pointerId: 1, clientX: 100, clientY: 100 });
+    fireEvent.pointerDown(overlay, { pointerId: 2, clientX: 200, clientY: 100 });
+    // Move fingers farther apart (distance doubles)
+    fireEvent.pointerMove(overlay, { pointerId: 2, clientX: 300, clientY: 100 });
+    fireEvent.pointerUp(overlay, { pointerId: 1 });
+    fireEvent.pointerUp(overlay, { pointerId: 2 });
+
+    // Scale should have increased smoothly
+    expect(overlay.style.transform).toContain('scale(');
+
+    // 2. Corner touch resize handle
+    const resizeHandle = screen.getByTestId('holo-touch-resize-handle');
+    expect(resizeHandle).toBeInTheDocument();
+    fireEvent.pointerDown(resizeHandle, { pointerId: 3, clientX: 500, clientY: 500 });
+    fireEvent.pointerMove(overlay, { pointerId: 3, clientX: 600, clientY: 600 });
+    fireEvent.pointerUp(resizeHandle, { pointerId: 3 });
+
+    // 3. Wheel zoom on overlay
+    fireEvent.wheel(overlay, { deltaY: -100 });
+    expect(overlay.style.transform).toContain('scale(');
+  });
+
+  /**
+   * TEST 11: Minimalist Lasso Action Bar with Subject Context Selector
+   */
+  it('renders minimalist lasso toolbar with contextual subject selector and without hardcoded suggestion chips', () => {
+    render(<SmartboardCanvas />);
+
+    const canvas = screen.getByTestId('chalkboard-canvas');
+
+    // Switch to lasso tool and draw loop
+    const dockLasso = screen.getByTestId('tool-lasso');
+    fireEvent.click(dockLasso);
+
+    // Draw stroke 1 with pen
+    const dockPen = screen.getByTestId('tool-pen');
+    fireEvent.click(dockPen);
+    fireEvent.pointerDown(canvas, { clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(canvas, { clientX: 150, clientY: 150 });
+    fireEvent.pointerUp(canvas);
+
+    // Switch back to lasso and enclose stroke
+    fireEvent.click(dockLasso);
+    fireEvent.pointerDown(canvas, { clientX: 80, clientY: 80 });
+    fireEvent.pointerMove(canvas, { clientX: 180, clientY: 80 });
+    fireEvent.pointerMove(canvas, { clientX: 180, clientY: 180 });
+    fireEvent.pointerMove(canvas, { clientX: 80, clientY: 180 });
+    fireEvent.pointerUp(canvas);
+
+    // Minimalist lasso action bar appears
+    const bar = screen.getByTestId('lasso-action-bar');
+    expect(bar).toBeInTheDocument();
+
+    // Subject context selector is prominent
+    expect(screen.getByTestId('subject-lock')).toBeInTheDocument();
+    expect(screen.getByTestId('subject-auto')).toBeInTheDocument();
+    expect(screen.getByTestId('subject-math')).toBeInTheDocument();
+    expect(screen.getByTestId('subject-physics')).toBeInTheDocument();
+    expect(screen.getByTestId('subject-chemistry')).toBeInTheDocument();
+    expect(screen.getByTestId('subject-biology')).toBeInTheDocument();
+
+    // Clicking subject changes domain context
+    fireEvent.click(screen.getByTestId('subject-physics'));
+
+    // Core actions are present
+    expect(screen.getByTestId('btn-convert-ink')).toBeInTheDocument();
+    expect(screen.getByTestId('btn-visualize')).toBeInTheDocument();
+    expect(screen.getByTestId('btn-grade-ink')).toBeInTheDocument();
+
+    // 10 hardcoded instant suggestion chips must NOT clutter the bar
+    expect(screen.queryByTestId('smart-chip-physics')).toBeNull();
+    expect(screen.queryByTestId('smart-chip-ripple')).toBeNull();
+    expect(screen.queryByTestId('smart-chip-chemistry')).toBeNull();
+  });
+
+  /**
+   * TEST 12: Separation of Formula & Visualization vs Student Grading
+   */
+  it('differentiates between visual conversion mode and student grading mode', () => {
+    render(<SmartboardCanvas />);
+
+    const canvas = screen.getByTestId('chalkboard-canvas');
+
+    // Draw stroke
+    fireEvent.pointerDown(canvas, { clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(canvas, { clientX: 250, clientY: 250 });
+    fireEvent.pointerUp(canvas);
+
+    // Lasso the stroke
+    const dockLasso = screen.getByTestId('tool-lasso');
+    fireEvent.click(dockLasso);
+    fireEvent.pointerDown(canvas, { clientX: 180, clientY: 180 });
+    fireEvent.pointerMove(canvas, { clientX: 280, clientY: 180 });
+    fireEvent.pointerMove(canvas, { clientX: 280, clientY: 280 });
+    fireEvent.pointerMove(canvas, { clientX: 180, clientY: 280 });
+    fireEvent.pointerUp(canvas);
+
+    // 1. Open "Chuyển thành công thức" -> VISUAL mode
+    const btnConvert = screen.getByTestId('btn-convert-ink');
+    fireEvent.click(btnConvert);
+
+    const convertPanel = screen.getByTestId('ink-convert-panel');
+    expect(convertPanel).toBeInTheDocument();
+
+    // In VISUAL mode: solution-grading-panel is NOT rendered!
+    expect(screen.queryByTestId('solution-grading-panel')).toBeNull();
+
+    // 2. Switch to "Chấm bài" tab
+    const tabGrade = screen.getByTestId('ink-tab-grade');
+    fireEvent.click(tabGrade);
+
+    // In GRADE mode: solution-grading-panel is displayed!
+    expect(screen.getByTestId('solution-grading-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('solution-expected-input')).toBeInTheDocument();
+    expect(screen.getByTestId('solution-grade-btn')).toBeInTheDocument();
+
+    // 3. Switch back to VISUAL tab
+    const tabVisual = screen.getByTestId('ink-tab-visual');
+    fireEvent.click(tabVisual);
+    expect(screen.queryByTestId('solution-grading-panel')).toBeNull();
+  });
 });
 
 

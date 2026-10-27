@@ -24,7 +24,7 @@ from routers.classroom import router as classroom_router
 from routers.recognize_ink import router as recognize_ink_router
 from routers.classroom_ws import router as classroom_ws_router
 from routers.classroom_ws import _public_size
-from routers.visualize import RAPIDOCR_ENGINE
+from routers.visualize import RAPIDOCR_ENGINE, LOCAL_MATH_ONNX
 from cache.chroma_cache import CHROMADB_AVAILABLE
 
 app = FastAPI(
@@ -84,6 +84,7 @@ def health_check():
         ],
         "runtime": {
             "rapidocr": RAPIDOCR_ENGINE is not None,
+            "latex_onnx": bool(LOCAL_MATH_ONNX and LOCAL_MATH_ONNX.available),
             "chromadb": CHROMADB_AVAILABLE,
             "gemini_configured": gemini_configured,
             "classroom_rooms": room_stats["rooms"],

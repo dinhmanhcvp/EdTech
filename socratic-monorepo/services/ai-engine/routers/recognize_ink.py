@@ -159,6 +159,96 @@ def recognize_with_gemini(image_bytes: bytes, hint: str, api_key: str) -> Option
         return None
 
 
+def recognize_with_local_onnx(
+    image_bytes: bytes,
+    raw_strokes_json: Optional[str] = None,
+    hint: str = "",
+) -> Optional[Dict[str, Any]]:
+    """
+    Nhận dạng công thức toán 2D & chữ viết tay 100% offline trên máy chủ Python local
+    bằng mô hình Neural ONNX (`pix2text-mfr-1.5` VisionEncoderDecoder + `RapidOCR`).
+    Trả về None nếu ảnh rỗng (chẳng hạn ảnh trắng stub trong unit test) hoặc khi mô hình không sẵn sàng.
+    """
+    try:
+        from ocr_engine import LOCAL_MATH_ONNX, RAPIDOCR_ENGINE, BlackboardOCREngine, LocalMathONNXEngine
+    except Exception as e:
+        print(f"[recognize-ink] Không thể nạp ocr_engine: {e}")
+        return None
+
+    parsed_strokes = None
+    if raw_strokes_json:
+        try:
+            s_obj = json.loads(raw_strokes_json)
+            if isinstance(s_obj, list) and len(s_obj) > 0:
+                parsed_strokes = s_obj
+        except Exception:
+            parsed_strokes = None
+
+    if not parsed_strokes and not LocalMathONNXEngine.has_ink_content(image_bytes=image_bytes):
+        return None
+
+    # 1. Chạy mô hình Neural 2D Math Formula (Pix2Text MFR-1.5 ONNX)
+    mfr_res = None
+    if LOCAL_MATH_ONNX is not None:
+        mfr_res = LOCAL_MATH_ONNX.recognize_formula(
+            image_bytes=image_bytes,
+            strokes_data=parsed_strokes,
+        )
+
+    # 2. Chạy RapidOCR nếu cần kiểm tra từ khóa Tiếng Việt hoặc khi MFR không sẵn sàng
+    rapid_text = ""
+    rapid_conf = 0.0
+    if RAPIDOCR_ENGINE is not None:
+        try:
+            pil_im = LocalMathONNXEngine.prepare_formula_pil(image_bytes=image_bytes, strokes_data=parsed_strokes)
+            if pil_im is not None:
+                import numpy as np
+                ocr_out, _ = RAPIDOCR_ENGINE(np.asarray(pil_im))
+                if ocr_out:
+                    rapid_text, rapid_conf = BlackboardOCREngine.assemble_math_tokens(ocr_out)
+        except Exception:
+            pass
+
+    if mfr_res and mfr_res.get("lines"):
+        lines = mfr_res["lines"]
+        joined_text = mfr_res.get("text") or "\n".join(l["text"] for l in lines)
+        joined_latex = mfr_res.get("latex") or " \\\\ ".join(l["latex"] for l in lines)
+        conf = float(mfr_res.get("confidence", 0.92))
+        alts = list(mfr_res.get("alternatives") or [])
+        if rapid_text and rapid_text not in alts and rapid_text != joined_latex:
+            alts.append(rapid_text)
+        intent_data = classify_intent_from_text(joined_text, len(lines))
+        return {
+            "lines": lines,
+            "text": joined_text,
+            "latex": joined_latex,
+            "confidence": round(conf, 3),
+            "alternatives": alts[:4],
+            "detected_intent": intent_data["detected_intent"],
+            "intent_confidence": intent_data["intent_confidence"],
+            "intent_reason": intent_data["intent_reason"],
+            "model": mfr_res.get("model", "pix2text-mfr-1.5-onnx"),
+            "engine": "local_onnx",
+        }
+
+    if rapid_text:
+        intent_data = classify_intent_from_text(rapid_text, 1)
+        return {
+            "lines": [{"text": rapid_text, "latex": rapid_text, "confidence": round(rapid_conf, 3)}],
+            "text": rapid_text,
+            "latex": rapid_text,
+            "confidence": round(rapid_conf, 3),
+            "alternatives": [],
+            "detected_intent": intent_data["detected_intent"],
+            "intent_confidence": intent_data["intent_confidence"],
+            "intent_reason": intent_data["intent_reason"],
+            "model": "rapidocr-onnx",
+            "engine": "local_onnx",
+        }
+
+    return None
+
+
 @router.post("/recognize-ink")
 async def recognize_ink(request: Request):
     try:
@@ -177,12 +267,31 @@ async def recognize_ink(request: Request):
     if not PIL_AVAILABLE:
         raise HTTPException(status_code=503, detail="Máy chủ thiếu Pillow.")
 
+    hint = str(body.get("hint") or "")[:300]
+    raw_strokes_json = body.get("raw_strokes_json")
+    prefer_offline = bool(body.get("prefer_offline") or body.get("allow_local_onnx"))
     api_key = (request.headers.get("x-gemini-api-key") or body.get("gemini_api_key") or os.getenv("GEMINI_API_KEY") or "").strip().strip("'\"")
+
+    # 1. Ưu tiên chạy Local Neural ONNX (Pix2Text MFR-1.5 + RapidOCR) khi bật offline/local hoặc khi chưa có khóa Gemini
+    local_result: Optional[Dict[str, Any]] = None
+    if prefer_offline or not api_key:
+        local_result = recognize_with_local_onnx(image_bytes, raw_strokes_json=raw_strokes_json, hint=hint)
+        if local_result is not None and (prefer_offline or not api_key or local_result.get("confidence", 0) >= 0.80):
+            return local_result
+
     if not api_key:
         raise HTTPException(status_code=503, detail="no_key")
 
-    result = recognize_with_gemini(image_bytes, str(body.get("hint") or "")[:300], api_key)
-    if result is None:
-        raise HTTPException(status_code=503, detail="vision_unavailable")
-    result["engine"] = "gemini"
-    return result
+    # 2. Gọi Gemini Vision (nếu có khóa API và cần nhận diện văn bản phức tạp)
+    result = recognize_with_gemini(image_bytes, hint, api_key)
+    if result is not None:
+        result["engine"] = "gemini"
+        return result
+
+    # 3. Fallback sang Local Neural ONNX nếu Gemini quá hạn hoặc lỗi mạng
+    if local_result is None:
+        local_result = recognize_with_local_onnx(image_bytes, raw_strokes_json=raw_strokes_json, hint=hint)
+    if local_result is not None:
+        return local_result
+
+    raise HTTPException(status_code=503, detail="vision_unavailable")

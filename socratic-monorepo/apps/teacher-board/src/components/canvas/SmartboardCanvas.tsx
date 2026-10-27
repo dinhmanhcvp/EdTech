@@ -3,8 +3,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
-import { routeLocally, makeSolidBlueprint } from '../../utils/localRouter';
-import { detectSolidFromStrokes } from '../../utils/sketchSolid';
+import { routeLocally, makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES } from '../../utils/localRouter';
+import { detectSolidFromStrokes, detectPlaneShapeFromStrokes } from '../../utils/sketchSolid';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -13,6 +13,7 @@ import { layoutTypeset, typesetStroke, sourceStrokes, bboxOfStrokes, latexToPlai
 import { SimulationWidget } from './SimulationWidget';
 import { InkConvertPanel } from './InkConvertPanel';
 import { SmartboardDock, AiFab } from './SmartboardDock';
+import { VoiceAiQaCard } from './VoiceAiQaCard';
 import { ClassroomPanel } from './ClassroomPanel';
 import { useClassroom } from '../../hooks/useClassroom';
 import { slimBlueprint } from '../../utils/classroomState';
@@ -374,6 +375,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [isSplitView, setIsSplitView] = useState<boolean>(true);
   const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
   const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
+  const [isVoiceQaOpen, setIsVoiceQaOpen] = useState<boolean>(false);
+  const [voiceQaQuery, setVoiceQaQuery] = useState<string>('Trong hình lập phương, thiết diện nào có diện tích lớn nhất?');
   const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
   const [qrCopied, setQrCopied] = useState<boolean>(false);
 
@@ -613,20 +616,36 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         });
 
       try {
-        const res = recognizeLocal(src);
-        if (res && res.lines.length > 0 && res.lines.some((l) => l.latex.trim().length > 0)) {
+        // Ưu tiên kiểm tra hình khối 3D hoặc đa giác phẳng 2D trước khi nhận dạng chữ viết tay,
+        // tránh việc bộ nhận dạng ký tự biến hình lập phương hoặc tam giác thành các ký tự rời rạc.
+        const solidSk = src.length >= 4 ? detectSolidFromStrokes(src) : null;
+        const planeSk = !solidSk && src.length >= 1 && src.length <= 4 ? detectPlaneShapeFromStrokes(src) : null;
+        if (solidSk && solidSk.confidence >= 0.72) {
           if (alive) {
-            setInstantResult(res);
-            const fullLatex = res.lines.map((l) => l.latex).join(' \\\\ ');
-            setFormulaInput((prev) => {
-              if (!prev.trim()) {
-                return fullLatex;
-              }
-              return prev;
-            });
+            setInstantResult(null);
+            setFormulaInput((prev) => (!prev.trim() ? SOLID_TITLES[solidSk.kind] : prev));
+          }
+        } else if (planeSk && planeSk.confidence >= 0.78) {
+          if (alive) {
+            setInstantResult(null);
+            setFormulaInput((prev) => (!prev.trim() ? planeSk.title : prev));
           }
         } else {
-          if (alive) setInstantResult(null);
+          const res = recognizeLocal(src);
+          if (res && res.lines.length > 0 && res.lines.some((l) => l.latex.trim().length > 0)) {
+            if (alive) {
+              setInstantResult(res);
+              const fullLatex = res.lines.map((l) => l.latex).join(' \\\\ ');
+              setFormulaInput((prev) => {
+                if (!prev.trim()) {
+                  return fullLatex;
+                }
+                return prev;
+              });
+            }
+          } else {
+            if (alive) setInstantResult(null);
+          }
         }
       } catch (err) {
         if (alive) setInstantResult(null);
@@ -651,7 +670,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           if (aiRes && aiRes.lines.length > 0) {
             setAiVisionResult(aiRes);
             const aiLatex = aiRes.lines.map((l) => l.latex).join(' \\\\ ');
-            if (aiLatex.trim()) {
+            const isGeoSketch =
+              (src.length >= 4 && (detectSolidFromStrokes(src)?.confidence ?? 0) >= 0.72) ||
+              (src.length >= 1 && src.length <= 4 && (detectPlaneShapeFromStrokes(src)?.confidence ?? 0) >= 0.78);
+            if (aiLatex.trim() && !isGeoSketch) {
               setFormulaInput(aiLatex);
             }
           }
@@ -1703,6 +1725,12 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           const text = event.results[0][0].transcript;
           setIsVoiceListening(false);
           setVoiceNotice(`Đã nhận: "${text}"`);
+          if (/\?|thiết diện|lập phương|lớn nhất|tương giao|tại sao|như thế nào|mấy điểm|là gì/i.test(text)) {
+            setVoiceQaQuery(text);
+            setIsVoiceQaOpen(true);
+            setTimeout(() => setVoiceNotice(null), 1200);
+            return;
+          }
           setFormulaInput(text);
           setTimeout(() => {
             handleVisualize(text);
@@ -1788,18 +1816,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     }
     const effectiveHint = overrideHint || formulaInput || aiVisionLatex || typesetHint || detectedInstantLatex || '';
 
-    // Định tuyến tức thì cục bộ (< 25ms, 0 API): nhận ra ngay công thức STEM và đồ thị mà không cần chờ mạng
-    const instantBp = matchInstantStemBlueprint(effectiveHint);
-    if (instantBp) {
-      setActiveBlueprint(instantBp);
-      setSelectedStrokes([]);
-      setLassoLoop([]);
-      setFormulaInput('');
-      setIsLoading(false);
-      return;
-    }
-    // Hình khối vẽ tay (lập phương, hộp, chóp, lăng trụ): nhận ngay trên máy từ cấu trúc nét, không cần AI
-    if (!effectiveHint.trim() && inkSelected.length >= 4) {
+    // 1. Hình khối 3D vẽ tay (lập phương, hộp, chóp, lăng trụ, tứ diện, bát diện): ưu tiên nhận ngay từ cấu trúc đồ thị nét vẽ
+    if (!overrideHint && !typesetHint && inkSelected.length >= 4) {
       const sk = detectSolidFromStrokes(inkSelected);
       if (sk && sk.confidence >= 0.7) {
         setActiveBlueprint(makeSolidBlueprint(sk.kind, sk.dims));
@@ -1810,8 +1828,33 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         return;
       }
     }
-    // Hình phác thảo STEM (lò xo, sóng, parabol, elip, mạch điện, chạc Y, khí khổng): nhận ngay trên máy
-    if (!effectiveHint.trim() && inkSelected.length >= 1 && inkSelected.length <= 3) {
+
+    // 2. Đa giác phẳng 2D vẽ tay (tam giác thường/vuông/cân/đều, hình vuông, chữ nhật, bình hành): chuyển ngay sang Hình học động tương tác
+    if (!overrideHint && !typesetHint && inkSelected.length >= 1 && inkSelected.length <= 4) {
+      const planeSk = detectPlaneShapeFromStrokes(inkSelected);
+      if (planeSk && planeSk.confidence >= 0.78) {
+        setActiveBlueprint(makePlaneGeometryBlueprint(planeSk));
+        setSelectedStrokes([]);
+        setLassoLoop([]);
+        setFormulaInput('');
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    // 3. Định tuyến tức thì cục bộ (< 25ms, 0 API): nhận ra ngay công thức STEM và đồ thị mà không cần chờ mạng
+    const instantBp = matchInstantStemBlueprint(effectiveHint);
+    if (instantBp) {
+      setActiveBlueprint(instantBp);
+      setSelectedStrokes([]);
+      setLassoLoop([]);
+      setFormulaInput('');
+      setIsLoading(false);
+      return;
+    }
+
+    // 4. Hình phác thảo STEM (lò xo, sóng, parabol, elip, mạch điện, chạc Y, khí khổng): nhận ngay trên máy
+    if (!overrideHint && !typesetHint && inkSelected.length >= 1 && inkSelected.length <= 3) {
       const sk = recognizeSketch(inkSelected.map((s) => ({ points: s.points })));
       if (sk) {
         setIsLoading(false);
@@ -2593,15 +2636,19 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 );
               })}
 
-            {/* Thanh công cụ nổi quanh vùng đang chọn */}
+            {/* Thanh công cụ ngữ cảnh bám sát cạnh dưới vùng đang chọn (Ergonomic Bottom-Anchored Context Pill) */}
             {selectedStrokes.length > 0 && !convertCtx && (() => {
               const bb = bboxOfStrokes(selectedStrokes);
-              const left = Math.max(0.5, Math.min(60, (bb.x0 / 1200) * 100));
-              const top = Math.max(0.5, ((bb.y0 - 52) / 675) * 100);
+              const left = Math.max(0.5, Math.min(58, (bb.x0 / 1200) * 100));
+              const preferBottom = bb.y1 + 52 <= 640;
+              const topPx = preferBottom ? bb.y1 + 10 : Math.max(4, bb.y0 - 48);
+              const top = Math.max(0.5, Math.min(91, (topPx / 675) * 100));
+              const isGradeIntent = detectedLassoIntent?.intent === 'GRADE';
               return (
                 <div
                   data-testid="selection-toolbar"
-                  className="pointer-events-auto absolute flex items-center gap-1 rounded-xl bg-white/95 backdrop-blur border border-[#DCD9D0] shadow-lg px-1.5 py-1"
+                  data-anchor={preferBottom ? 'bottom' : 'top'}
+                  className="pointer-events-auto absolute flex items-center gap-1 rounded-2xl bg-white/97 backdrop-blur-md border border-[#DCD9D0] shadow-[0_10px_28px_rgba(0,0,0,0.16)] px-2 py-1 z-30"
                   style={{ left: `${left}%`, top: `${top}%` }}
                 >
                   {isAiVisionScanning && (
@@ -2614,16 +2661,43 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                       ✨ AI Vision
                     </span>
                   )}
-                  <button data-testid="sel-btn-convert" onClick={() => openConvert('VISUAL')} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-violet-700 hover:bg-violet-50 transition">
-                    <Wand2 className="w-3.5 h-3.5" /> Chuyển thành công thức
-                  </button>
-                  <button data-testid="sel-btn-visualize" onClick={() => handleVisualize()} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-blue-700 hover:bg-blue-50 transition">
+                  <button
+                    data-testid="sel-btn-visualize"
+                    onClick={() => handleVisualize()}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-semibold transition cursor-pointer ${
+                      !isGradeIntent
+                        ? 'bg-blue-600 text-white shadow-xs hover:bg-blue-700'
+                        : 'text-blue-700 hover:bg-blue-50'
+                    }`}
+                  >
                     <Sparkles className="w-3.5 h-3.5" /> Trực quan hóa
                   </button>
-                  <button data-testid="sel-btn-grade" onClick={() => openConvert('GRADE')} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-emerald-800 hover:bg-emerald-50 transition" title="Chấm bài học sinh">
+                  <button
+                    data-testid="sel-btn-convert"
+                    onClick={() => openConvert('VISUAL')}
+                    className="flex items-center gap-1 px-2 py-1 rounded-xl text-[11px] font-medium text-violet-700 hover:bg-violet-50 transition cursor-pointer"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" /> Chuyển thành công thức
+                  </button>
+                  <button
+                    data-testid="sel-btn-grade"
+                    onClick={() => openConvert('GRADE')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-semibold transition cursor-pointer ${
+                      isGradeIntent
+                        ? 'bg-emerald-600 text-white shadow-xs hover:bg-emerald-700'
+                        : 'text-emerald-800 hover:bg-emerald-50'
+                    }`}
+                    title="Chấm bài học sinh"
+                  >
                     <GraduationCap className="w-3.5 h-3.5" /> Chấm bài
                   </button>
-                  <button data-testid="sel-btn-delete" onClick={handleDeleteSelection} title="Xóa vùng chọn" className="p-1 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 transition">
+                  <span className="w-px h-4 bg-stone-200 mx-0.5" />
+                  <button
+                    data-testid="sel-btn-delete"
+                    onClick={handleDeleteSelection}
+                    title="Xóa vùng chọn"
+                    className="p-1 rounded-xl text-stone-500 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                  >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -2878,6 +2952,18 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         }}
         onLasso={() => setTool('LASSO')}
         onVoice={handleVoiceDictation}
+        onAskQa={() => setIsVoiceQaOpen(true)}
+      />
+      <VoiceAiQaCard
+        isOpen={isVoiceQaOpen}
+        initialQuery={voiceQaQuery}
+        isListening={isVoiceListening}
+        onStartVoice={handleVoiceDictation}
+        onClose={() => setIsVoiceQaOpen(false)}
+        onSpawnBlueprint={(bp) => {
+          setActiveBlueprint(bp);
+          setIsVoiceQaOpen(false);
+        }}
       />
       {isClassroomOpen && <ClassroomPanel room={room} templateId={activeBlueprint?.templateId ?? null} onClose={() => setIsClassroomOpen(false)} />}
 

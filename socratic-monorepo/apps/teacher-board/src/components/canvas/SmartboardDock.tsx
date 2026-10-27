@@ -30,6 +30,7 @@ import {
   Loader2,
   GraduationCap,
   BookOpen,
+  MessageSquare,
 } from 'lucide-react';
 import type {CanvasTool, ShapeType, GridPattern} from './SmartboardCanvas';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -293,6 +294,7 @@ export interface AiFabProps {
   onVisualize: () => void;
   onLasso: () => void;
   onVoice: () => void;
+  onAskQa?: () => void;
   onGrade?: () => void;
   subjectLock?: Subject | null;
   onCycleSubject?: () => void;
@@ -313,6 +315,7 @@ export const AiFab: React.FC<AiFabProps> = ({
   onVisualize,
   onLasso,
   onVoice,
+  onAskQa,
   onGrade,
   subjectLock,
   onCycleSubject,
@@ -467,13 +470,28 @@ export const AiFab: React.FC<AiFabProps> = ({
       id: 'voice',
       testid: 'ai-fab-voice',
       aliasTestId: 'radial-action-voice',
-      label: listening ? 'Đang nghe…' : 'Giọng nói',
-      hint: 'Đọc công thức bằng giọng nói',
+      label: listening ? 'Đang nghe…' : 'Hỏi đáp AI',
+      hint: 'Hỏi đáp AI giọng nói / văn bản kèm mô hình minh họa động',
       icon: listening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />,
-      run: onVoice,
+      run: () => {
+        onVoice();
+        onAskQa?.();
+      },
       accent: listening
         ? 'bg-gradient-to-br from-rose-600 to-red-600 text-white border-rose-300 shadow-rose-500/35 animate-pulse'
         : 'bg-gradient-to-br from-rose-500 to-pink-600 text-white border-rose-300 shadow-rose-500/35',
+      badge: undefined,
+      highlight: false,
+    },
+    {
+      id: 'qa',
+      testid: 'ai-fab-qa',
+      aliasTestId: 'radial-action-qa',
+      label: 'Thẻ Hỏi Đáp',
+      hint: 'Mở thẻ hỏi đáp AI kèm mô hình minh họa động tức thì',
+      icon: <MessageSquare className="w-5 h-5" />,
+      run: onAskQa || onVoice,
+      accent: 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-cyan-300 shadow-cyan-500/35',
       badge: undefined,
       highlight: false,
     },

@@ -87,10 +87,10 @@ interface Graph {
   edges: [number, number][];
 }
 
-/** Nét → đồ thị đỉnh/cạnh. Trả null nếu hình có nét cong (không phải đa diện). */
-export function buildGraph(strokes: SketchStrokeLike[]): {graph: Graph; D: number} | null {
+/** Nét → đồ thị đỉnh/cạnh. Trả null nếu hình có nét cong (không phải đa diện/đa giác). */
+export function buildGraph(strokes: SketchStrokeLike[], minSegs = 4): {graph: Graph; D: number} | null {
   const all = strokes.flatMap((s) => s.points);
-  if (all.length < 4) return null;
+  if (all.length < 3) return null;
   let x0 = Infinity,
     y0 = Infinity,
     x1 = -Infinity,
@@ -110,16 +110,16 @@ export function buildGraph(strokes: SketchStrokeLike[]): {graph: Graph; D: numbe
     if (s.points.length < 2 || pathLength(s.points) < 0.05 * D) continue;
     let pts = s.points;
     const closed = dist(pts[0], pts[pts.length - 1]) < 0.09 * D && pathLength(pts) > 0.35 * D;
-    if (closed) pts = [...pts, pts[0]];
+    if (closed && dist(pts[0], pts[pts.length - 1]) > 1e-6) pts = [...pts, pts[0]];
     const poly = simplify(pts, 0.035 * D);
     // nét cong (vòng tròn, elip, sóng…): quá nhiều đoạn ngắn → không phải hình đa diện
     if (poly.length > 9 && pathLength(poly) / (poly.length - 1) < 0.1 * D) return null;
     for (let i = 1; i < poly.length; i++) if (dist(poly[i - 1], poly[i]) >= 0.05 * D) segs.push([poly[i - 1], poly[i]]);
   }
-  if (segs.length < 4) return null;
+  if (segs.length < minSegs) return null;
 
   // 2. gộp các đầu mút gần nhau thành một đỉnh (liên kết đơn, giới hạn bán kính cụm)
-  const r = 0.075 * D;
+  const r = 0.088 * D;
   const ends: SketchPt[] = segs.flatMap(([a, b]) => [a, b]);
   const parent = ends.map((_, i) => i);
   const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
@@ -139,7 +139,7 @@ export function buildGraph(strokes: SketchStrokeLike[]): {graph: Graph; D: numbe
     if (a !== b) edges.push(a < b ? [a, b] : [b, a]);
   });
 
-  // 3. nối chữ T: đầu mút lẻ loi nằm sát giữa một cạnh khác → tách cạnh đó tại đỉnh này
+  // 3. nối chữ T: đầu mút nằm gần thân một cạnh khác → tách cạnh đó tại đỉnh này
   const dedupe = (es: [number, number][]) => {
     const seen = new Set<string>();
     return es.filter(([a, b]) => (seen.has(`${a}-${b}`) ? false : (seen.add(`${a}-${b}`), true)));
@@ -153,19 +153,20 @@ export function buildGraph(strokes: SketchStrokeLike[]): {graph: Graph; D: numbe
     }
     return d;
   };
-  for (let iter = 0; iter < 6; iter++) {
+  for (let iter = 0; iter < 8; iter++) {
     const d = degree();
     let did = false;
     for (let v = 0; v < verts.length && !did; v++) {
-      if (d[v] !== 1) continue;
+      if (d[v] < 1 || d[v] > 2) continue;
       for (let ei = 0; ei < edges.length; ei++) {
         const [a, b] = edges[ei];
         if (a === v || b === v) continue;
         const A = verts[a];
         const B = verts[b];
         const L = dist(A, B);
+        if (L < 1e-6) continue;
         const t = ((verts[v].x - A.x) * (B.x - A.x) + (verts[v].y - A.y) * (B.y - A.y)) / (L * L);
-        if (t > 0.12 && t < 0.88 && perpDist(verts[v], A, B) < r) {
+        if (t > 0.1 && t < 0.9 && perpDist(verts[v], A, B) < r) {
           edges.splice(ei, 1, [Math.min(a, v), Math.max(a, v)], [Math.min(v, b), Math.max(v, b)]);
           did = true;
           break;
@@ -174,6 +175,23 @@ export function buildGraph(strokes: SketchStrokeLike[]): {graph: Graph; D: numbe
     }
     if (!did) break;
     edges = dedupe(edges);
+  }
+
+  // 3b. khử cựa ngắn (spur): đỉnh bậc 1 nối bởi đoạn rất ngắn do nét thừa ở góc
+  for (let guard = 0; guard < 8; guard++) {
+    const d = degree();
+    let did = false;
+    for (let ei = 0; ei < edges.length; ei++) {
+      const [a, b] = edges[ei];
+      if ((d[a] === 1 && d[b] >= 3) || (d[b] === 1 && d[a] >= 3)) {
+        if (dist(verts[a], verts[b]) < 0.13 * D) {
+          edges.splice(ei, 1);
+          did = true;
+          break;
+        }
+      }
+    }
+    if (!did) break;
   }
 
   // 4. bỏ đỉnh bậc 2 nằm trên đường thẳng (một cạnh vẽ bằng 2 nét)
@@ -293,18 +311,194 @@ export function detectSolidFromStrokes(strokes: SketchStrokeLike[]): SketchSolid
   const H = convexHullCount(g.verts);
   const interior = V - H;
   const maxDeg = Math.max(...deg);
+  const deg3Plus = deg.filter((d) => d >= 3).length;
+  const pGroups = directionGroups(g);
   const mk = (kind: SolidKind, confidence: number, note: string, dims: SketchSolid['dims'] = {}): SketchSolid => ({kind, dims, confidence, vertices: V, edges: E, note});
 
-  // Hình hộp / lập phương: 8 đỉnh–12 cạnh (vẽ cả nét khuất) hoặc 7 đỉnh–9 cạnh (bỏ nét khuất, đỉnh trong bậc 3)
-  if ((V === 8 && E >= 11 && E <= 13) || (V === 7 && E === 9 && interior === 1 && maxDeg === 3)) {
+  // 1. Hình hộp / lập phương:
+  // - Chuẩn: 8 đỉnh, 10–14 cạnh (đủ nét khuất), hoặc 7 đỉnh, 8–10 cạnh (chỉ vẽ 3 mặt nhìn thấy: 6 đỉnh bao lồi + 1 đỉnh trong nối 3 cạnh)
+  // - Thực tế vẽ tay: 2 hình vuông/chữ nhật chồng nhau nối bởi 3–4 đoạn xiên (7–9 đỉnh, 9–14 cạnh, có ≥ 2 hướng cạnh song song)
+  if (
+    (V === 8 && E >= 10 && E <= 14) ||
+    (V === 7 && E >= 8 && E <= 11 && interior >= 1 && maxDeg >= 3) ||
+    (V >= 7 && V <= 9 && E >= 9 && E <= 14 && pGroups.length >= 2 && deg3Plus >= 4)
+  ) {
     const bd = boxDims(g);
-    return mk(bd.kind, V === 8 && E === 12 ? 0.92 : 0.82, `${V} đỉnh, ${E} cạnh`, bd.dims);
+    const conf = V === 8 && E === 12 ? 0.94 : V >= 7 && V <= 8 && E >= 9 && E <= 13 ? 0.85 : 0.76;
+    return mk(bd.kind, conf, `${V} đỉnh, ${E} cạnh`, bd.dims);
   }
-  // Chóp tứ giác: 5 đỉnh, 7–8 cạnh, đỉnh chóp bậc 4
-  if (V === 5 && (E === 8 || E === 7) && maxDeg >= 4) return mk('pyramid4', E === 8 ? 0.88 : 0.78, `${V} đỉnh, ${E} cạnh, đỉnh chóp bậc ${maxDeg}`);
-  // Lăng trụ tam giác: 6 đỉnh, 9 cạnh (hoặc 8 nếu bỏ một nét khuất), mọi đỉnh bậc 3 (hoặc 2–3)
-  if (V === 6 && (E === 9 || E === 8) && maxDeg === 3) return mk('prism3', E === 9 ? 0.85 : 0.7, `${V} đỉnh, ${E} cạnh`);
-  // Tứ diện: 4 đỉnh nối đủ 6 cạnh (hai đường chéo cắt nhau hoặc một đỉnh nằm trong tam giác)
-  if (V === 4 && E === 6) return mk('pyramid3', 0.7, '4 đỉnh nối đủ 6 cạnh');
+
+  // 2. Chóp tứ giác S.ABCD:
+  // - Chuẩn: 5 đỉnh, 6–9 cạnh, đỉnh chóp S nối xuống 3–4 đỉnh đáy (hoặc đỉnh S cao nhất theo trục y nối với đáy tứ giác)
+  if (V === 5 && E >= 6 && E <= 9 && (maxDeg >= 3 || deg3Plus >= 3)) {
+    const conf = E === 8 && maxDeg >= 4 ? 0.9 : E >= 7 ? 0.8 : 0.74;
+    return mk('pyramid4', conf, `${V} đỉnh, ${E} cạnh, đỉnh chóp bậc ${maxDeg}`);
+  }
+
+  // 3. Bát diện đều: 6 đỉnh, 10–12 cạnh, các đỉnh bậc ≥ 3–4
+  if (V === 6 && E >= 10 && E <= 13 && maxDeg >= 4 && deg3Plus >= 5) {
+    return mk('octahedron', E === 12 ? 0.88 : 0.78, `${V} đỉnh, ${E} cạnh`);
+  }
+
+  // 4. Lăng trụ tam giác ABC.A'B'C': 6 đỉnh, 7–10 cạnh, tối đa bậc 3–4
+  if (V === 6 && E >= 7 && E <= 10 && deg3Plus >= 4) {
+    return mk('prism3', E === 9 ? 0.86 : 0.76, `${V} đỉnh, ${E} cạnh`);
+  }
+
+  // 5. Tứ diện / Chóp tam giác S.ABC:
+  // - 4 đỉnh nối 5–6 cạnh, hoặc 5 đỉnh 6 cạnh (khi 2 đường chéo cắt nhau tạo giao điểm thứ 5)
+  if ((V === 4 && (E === 6 || E === 5)) || (V === 5 && E === 6 && interior === 1)) {
+    return mk('pyramid3', E === 6 && V === 4 ? 0.82 : 0.74, `${V} đỉnh, ${E} cạnh`);
+  }
+
   return null;
+}
+
+export type PlaneShapeKind =
+  | 'triangle_equilateral'
+  | 'triangle_right'
+  | 'triangle_isosceles'
+  | 'triangle_scalene'
+  | 'square'
+  | 'rectangle'
+  | 'parallelogram';
+
+export interface SketchPlaneShape {
+  kind: PlaneShapeKind;
+  title: string;
+  /** Tọa độ chuẩn hóa trong miền [-3.5..3.5, -2.2..2.2] cho DynamicGeometryEngine */
+  vertices2D: [number, number][];
+  confidence: number;
+  anglesDeg: number[];
+  sideLengths: number[];
+  note: string;
+}
+
+/**
+ * Nhận diện hình phẳng 2D vẽ tay (Tam giác thường / vuông / cân / đều, Hình vuông, Hình chữ nhật, Hình bình hành)
+ * từ 1 đến 4 nét bút. Trả về tọa độ đỉnh chuẩn hóa để dựng ngay vào hình học động tương tác.
+ */
+export function detectPlaneShapeFromStrokes(strokes: SketchStrokeLike[]): SketchPlaneShape | null {
+  if (!strokes.length || strokes.length > 4) return null;
+  const built = buildGraph(strokes, 3);
+  if (!built) return null;
+  const {graph: g, D} = built;
+  if (D < 45) return null;
+  const V = g.verts.length;
+  const E = g.edges.length;
+  if (!((V === 3 && E === 3) || (V === 4 && E === 4))) return null;
+
+  // Mọi đỉnh trong đa giác đơn khép kín phải có bậc đúng bằng 2
+  const deg = new Array<number>(V).fill(0);
+  for (const [a, b] of g.edges) {
+    deg[a]++;
+    deg[b]++;
+  }
+  if (!deg.every((d) => d === 2)) return null;
+
+  // Sắp xếp các đỉnh theo chu trình khép kín ngược chiều kim đồng hồ trong hệ tọa độ toán học (y hướng lên)
+  const cx = g.verts.reduce((s, p) => s + p.x, 0) / V;
+  const cy = g.verts.reduce((s, p) => s + p.y, 0) / V;
+  const ordered = [...g.verts].sort((a, b) => Math.atan2(-(a.y - cy), a.x - cx) - Math.atan2(-(b.y - cy), b.x - cx));
+
+  // Tính độ dài các cạnh và các góc trong (độ)
+  const sides: number[] = [];
+  const angles: number[] = [];
+  let signedArea = 0;
+  for (let i = 0; i < V; i++) {
+    const cur = ordered[i];
+    const nxt = ordered[(i + 1) % V];
+    const prv = ordered[(i - 1 + V) % V];
+    sides.push(dist(cur, nxt));
+    signedArea += cur.x * (-nxt.y) - nxt.x * (-cur.y);
+
+    const v1x = prv.x - cur.x;
+    const v1y = -(prv.y - cur.y);
+    const v2x = nxt.x - cur.x;
+    const v2y = -(nxt.y - cur.y);
+    const l1 = Math.hypot(v1x, v1y) || 1;
+    const l2 = Math.hypot(v2x, v2y) || 1;
+    const cosA = Math.max(-1, Math.min(1, (v1x * v2x + v1y * v2y) / (l1 * l2)));
+    angles.push((Math.acos(cosA) * 180) / Math.PI);
+  }
+
+  const area = Math.abs(signedArea) * 0.5;
+  // Loại bỏ hình quá dẹt (suy biến thành đoạn thẳng hoặc chữ V hẹp)
+  if (area < 0.08 * D * D || angles.some((a) => a < 18 || a > 162)) return null;
+
+  // Chuẩn hóa tọa độ các đỉnh về khung [-2.5..2.5, -1.8..1.8] của DynamicGeometryEngine
+  const scale = 3.8 / Math.max(D, 1);
+  const vertices2D: [number, number][] = ordered.map((p) => [
+    Number(((p.x - cx) * scale).toFixed(2)),
+    Number((-(p.y - cy) * scale).toFixed(2)),
+  ]);
+
+  if (V === 3) {
+    const maxS = Math.max(...sides);
+    const minS = Math.min(...sides);
+    const sideDiffs = [
+      Math.abs(sides[0] - sides[1]) / maxS,
+      Math.abs(sides[1] - sides[2]) / maxS,
+      Math.abs(sides[2] - sides[0]) / maxS,
+    ];
+    const hasRightAngle = angles.some((a) => Math.abs(a - 90) <= 11);
+    const isEquilateral = (maxS - minS) / maxS <= 0.14 && angles.every((a) => Math.abs(a - 60) <= 12);
+    const isIsosceles = sideDiffs.some((d) => d <= 0.13);
+
+    let kind: PlaneShapeKind = 'triangle_scalene';
+    let title = 'Tam giác ABC';
+    if (isEquilateral) {
+      kind = 'triangle_equilateral';
+      title = 'Tam giác đều ABC';
+    } else if (hasRightAngle && isIsosceles) {
+      kind = 'triangle_right';
+      title = 'Tam giác vuông cân ABC';
+    } else if (hasRightAngle) {
+      kind = 'triangle_right';
+      title = 'Tam giác vuông ABC';
+    } else if (isIsosceles) {
+      kind = 'triangle_isosceles';
+      title = 'Tam giác cân ABC';
+    }
+
+    return {
+      kind,
+      title,
+      vertices2D,
+      confidence: strokes.length === 3 ? 0.92 : 0.86,
+      anglesDeg: angles.map((a) => Math.round(a)),
+      sideLengths: sides.map((s) => Number((s * scale).toFixed(2))),
+      note: `3 đỉnh, góc ${angles.map((a) => `${Math.round(a)}°`).join(' · ')}`,
+    };
+  }
+
+  // V === 4: Tứ giác
+  const maxS = Math.max(...sides);
+  const minS = Math.min(...sides);
+  const oppEqual = Math.abs(sides[0] - sides[2]) / maxS <= 0.18 && Math.abs(sides[1] - sides[3]) / maxS <= 0.18;
+  const rightCount = angles.filter((a) => Math.abs(a - 90) <= 14).length;
+  const allSidesNear = (maxS - minS) / maxS <= 0.18;
+
+  let kind: PlaneShapeKind = 'parallelogram';
+  let title = 'Tứ giác ABCD';
+  if (rightCount >= 3 && allSidesNear) {
+    kind = 'square';
+    title = 'Hình vuông ABCD';
+  } else if (rightCount >= 3) {
+    kind = 'rectangle';
+    title = 'Hình chữ nhật ABCD';
+  } else if (oppEqual) {
+    kind = 'parallelogram';
+    title = 'Hình bình hành ABCD';
+  }
+
+  return {
+    kind,
+    title,
+    vertices2D,
+    confidence: rightCount >= 3 ? 0.88 : 0.8,
+    anglesDeg: angles.map((a) => Math.round(a)),
+    sideLengths: sides.map((s) => Number((s * scale).toFixed(2))),
+    note: `4 đỉnh, góc ${angles.map((a) => `${Math.round(a)}°`).join(' · ')}`,
+  };
 }

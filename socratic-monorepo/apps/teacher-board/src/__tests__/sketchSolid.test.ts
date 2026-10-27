@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {detectSolidFromStrokes, simplify, buildGraph, type SketchPt} from '../utils/sketchSolid';
+import {detectSolidFromStrokes, detectPlaneShapeFromStrokes, simplify, buildGraph, type SketchPt} from '../utils/sketchSolid';
 import {makeSolid, edgesOf, faceNormal, mulMV, rotAxis, mulMM, type V3} from '../utils/solids';
 import type {SolidKind} from '../utils/localRouter';
 
@@ -124,5 +124,75 @@ describe('sketchSolid: nhận khối từ hình vẽ tay giả lập (chiếu 3D
     const built = buildGraph(sketch('cube', {seed: 7, hidden: true}));
     expect(built?.graph.verts.length).toBe(8);
     expect(built?.graph.edges.length).toBe(12);
+  });
+
+  it('nhận diện hình lập phương vẽ theo kiểu 2 hình vuông lệch nhau + 4 đoạn nối xiên', () => {
+    const frontSq = {
+      points: [
+        {x: 120, y: 180},
+        {x: 280, y: 180},
+        {x: 280, y: 340},
+        {x: 120, y: 340},
+        {x: 120, y: 180},
+      ],
+    };
+    const backSq = {
+      points: [
+        {x: 180, y: 120},
+        {x: 340, y: 120},
+        {x: 340, y: 280},
+        {x: 180, y: 280},
+        {x: 180, y: 120},
+      ],
+    };
+    const c1 = {points: [{x: 120, y: 180}, {x: 180, y: 120}]};
+    const c2 = {points: [{x: 280, y: 180}, {x: 340, y: 120}]};
+    const c3 = {points: [{x: 280, y: 340}, {x: 340, y: 280}]};
+    const c4 = {points: [{x: 120, y: 340}, {x: 180, y: 280}]};
+    const r = detectSolidFromStrokes([frontSq, backSq, c1, c2, c3, c4]);
+    expect(r?.kind).toBe('cube');
+    expect(r?.confidence).toBeGreaterThanOrEqual(0.8);
+  });
+
+  it('nhận diện hình phẳng 2D vẽ tay: tam giác đều, tam giác vuông, tam giác cân, hình vuông, hình chữ nhật', () => {
+    // 1. Tam giác đều vẽ bằng 1 nét khép kín hoặc 3 nét rời
+    const eq1 = [
+      {
+        points: [
+          {x: 100, y: 300},
+          {x: 300, y: 300},
+          {x: 200, y: 300 - 173.2},
+          {x: 100, y: 300},
+        ],
+      },
+    ];
+    const rEq = detectPlaneShapeFromStrokes(eq1);
+    expect(rEq?.kind).toBe('triangle_equilateral');
+    expect(rEq?.vertices2D).toHaveLength(3);
+
+    // 2. Tam giác vuông vẽ bằng 3 nét rời
+    const right3 = [
+      {points: [{x: 100, y: 300}, {x: 320, y: 300}]},
+      {points: [{x: 100, y: 300}, {x: 100, y: 140}]},
+      {points: [{x: 100, y: 140}, {x: 320, y: 300}]},
+    ];
+    const rRight = detectPlaneShapeFromStrokes(right3);
+    expect(rRight?.kind).toBe('triangle_right');
+    expect(rRight?.title).toContain('Tam giác vuông');
+
+    // 3. Hình vuông vẽ 1 nét
+    const sq = [
+      {
+        points: [
+          {x: 100, y: 100},
+          {x: 300, y: 100},
+          {x: 300, y: 300},
+          {x: 100, y: 300},
+          {x: 100, y: 100},
+        ],
+      },
+    ];
+    const rSq = detectPlaneShapeFromStrokes(sq);
+    expect(rSq?.kind).toBe('square');
   });
 });

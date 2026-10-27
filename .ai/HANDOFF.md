@@ -608,3 +608,106 @@
 
 
 
+
+## 2026-10-27 — Nâng Cấp Hệ Thống Nhận Diện Offline Bằng Mô Hình Neural ONNX (Pix2Text-MFR-1.5 + RapidOCR)
+- **Nguyên nhân gốc rễ khiến bộ nhận diện tự xây trước đây có confidence thấp và hiệu quả kém trên nét viết thực tế:**
+  1. Thuật toán `inkRecognizer.ts` trên trình duyệt dùng khoảng cách điểm Chamfer 2D tĩnh trên mẫu font chữ mà chưa chuẩn hóa hợp lý trọng số `margin` trong hàm `confOf` (khiến công thức nhiều ký hiệu bị phạt `0.55x` chỉ vì 1 ký hiệu có ứng viên thứ hai gần điểm).
+  2. Trên máy chủ Python (`services/ai-engine`), cờ `ENABLE_HEAVY_LOCAL_MODELS` bị tắt mặc định (`false`), chưa có mô hình Vision-Encoder-Decoder chuyên nhận diện công thức toán 2D viết tay (HMER), và endpoint `/api/v1/canvas/recognize-ink` trả mã lỗi `503` ngay khi không có khóa `GEMINI_API_KEY` hoặc mất mạng.
+- **Giải pháp Offline Neural ONNX đã triển khai & tích hợp hoàn chỉnh:**
+  1. **Tích hợp `LocalMathONNXEngine` (`breezedeus/pix2text-mfr-1.5` VisionEncoderDecoder ONNX: DeiT Vision Encoder + TrOCR Transformer Decoder) + `RapidOCR` (`rapidocr-onnxruntime`) trong `services/ai-engine/ocr_engine.py`:**
+     * Chạy 100% offline trên CPU qua `onnxruntime` + `tokenizers` (không cần GPU hay PyTorch, tự động bật trên máy tính local/OPS Windows và tự động tắt trên container Render 512MB RAM).
+     * Tái tạo ảnh vector sắc nét từ `raw_strokes_json` hoặc tiền xử lý ảnh chụp bảng (tự động đảo cực nền tối, cắt sát vùng mực `tight_crop`), đưa qua mạng Vision-to-LaTeX đọc trực tiếp công thức 2D (phân số `\frac`, căn thức `\sqrt`, số mũ, chỉ số dưới, lượng giác, hệ phương trình nhiều dòng `\begin{matrix}`).
+     * Tính **Confidence thực** từ xác suất Softmax của chuỗi token đầu ra (`mean_prob` & `min_prob`, đạt `0.93 – 0.99` trên công thức viết tay chuẩn) và tự động trích xuất phương án thay thế Top-2 từ bước giải mã có xác suất cạnh tranh cao nhất.
+     * Bổ sung bộ hậu xử lý `clean_mfr_latex` khử các thẻ bọc (`\boldsymbol`, `\mathrm`, `\ensuremath`, `\begin{matrix}`) và sửa lỗi chữ viết tay (`s \dot{n}` $\rightarrow$ `\sin`).
+  2. **Nâng cấp Endpoint `POST /api/v1/canvas/recognize-ink` (`services/ai-engine/routers/recognize_ink.py`):**
+     * Bổ sung `recognize_with_local_onnx` chạy ưu tiên khi `allow_local_onnx=True` / `prefer_offline=True` hoặc khi không có `GEMINI_API_KEY` / mất kết nối mạng.
+     * Kiểm tra thông minh `has_ink_content` để bỏ qua ảnh trắng rỗng trong các bài kiểm thử stub (`32x16` trắng).
+  3. **Đồng bộ Frontend (`inkConvert.ts`, `inkRecognizer.ts`, `InkConvertPanel.tsx`, `EngineHealthRail.tsx`):**
+     * `recognizeWithAi` gửi kèm `raw_strokes_json` và `allow_local_onnx: true` để tận dụng tối đa tái tạo nét vector trên `LocalMathONNXEngine`.
+     * Hiển thị huy hiệu `🧠 Neural ONNX` trên `InkConvertPanel` và trạng thái `Neural ONNX Offline · Sẵn sàng` trên `EngineHealthRail`.
+     * Hiệu chuẩn lại hàm `confOf` trong `inkRecognizer.ts` tránh phạt oan các biểu thức toán hợp lệ nhiều ký tự.
+- **Kết quả Kiểm tra & Xác minh:**
+  - Benchmark `pix2text-mfr-1.5` ONNX: Đạt 15/15 công thức chuẩn (cả phân số, căn bậc hai, phương trình bậc 2/3, hệ 2 phương trình) với độ tự tin Softmax `93.2% – 99.9%`.
+  - `services/ai-engine`: `42/42` Pytest tests passed 100%.
+  - `apps/teacher-board`: TypeScript `tsc --noEmit --incremental false` 0 errors; Vitest OCR & InkConvert tests passed 100%.
+
+
+## 2026-10-27 — Triển Khai 3 Nâng Cấp Lớn Trên Bảng Tương Tác Thông Minh (Thiết Diện 3D Động + Mặt Cắt 2D Thật, Đa Hàm Số Tương Giao + HUD Auto-Play, Hỏi Đáp AI Giọng Nói Kèm Mô Hình Minh Họa Động)
+- **Yêu cầu & Mục tiêu hoàn thành:**
+  1. **Nâng cấp 1 — Thiết Diện Hình Học Không Gian 3D Động & Trích Xuất Mặt Cắt 2D Thật (`solids.ts` & `GeometryEngine.tsx`):**
+     * Bổ sung chế độ `"✂ Cắt Thiết Diện (2D + 3D)"` (`mode = 'section'`) cho khối Lập phương, Hình chóp, Lăng trụ và các khối đa diện trong `GeometryEngine.tsx`.
+     * Thuật toán toán học thuần `computeCrossSection(solid, rawNormal, d)` và `planeFromThreePoints(p1, p2, p3)` trong `solids.ts`: tìm chính xác giao điểm của mặt phẳng $\vec{n} \cdot \vec{r} = d$ với tất cả các cạnh của khối đa diện, khử điểm trùng, chiếu lên hệ cơ sở trực chuẩn 2D $(\vec{u}, \vec{v})$ nằm trên mặt phẳng cắt, sắp xếp đỉnh ngược chiều kim đồng hồ, tính độ dài từng cạnh, góc nội tiếp (độ) tại từng đỉnh, chu vi $P$, diện tích $S$ và nhận diện tên hình tiếng Việt (`Tam giác đều`, `Hình vuông`, `Hình chữ nhật`, `Ngũ giác`, `Lục giác đều`...).
+     * Cho phép kéo mặt phẳng cắt (thanh trượt khoảng cách $d$, góc nghiêng pháp tuyến), bấm các mẫu thiết diện nhanh (Tam giác $\leftrightarrow$ Tứ giác $\leftrightarrow$ Ngũ giác $\leftrightarrow$ Lục giác đều) hoặc chọn/kéo 3 điểm $M, N, P$ trên cạnh để thiết diện biến đổi liên tục.
+     * Hiển thị song song: bên trái là Hình phẳng 2D trích xuất thật của thiết diện kèm cung góc (độ), độ dài cạnh và diện tích $S$ theo thời gian thực; bên phải là Hình 3D có mặt cắt xanh bán trong suốt có thể xoay trực tiếp.
+  2. **Nâng cấp 2 — Nhận Diện Đa Hàm Số Tương Giao + HUD Thanh Trượt Góc Đồ Thị Có Nút Auto-Play ▶ (`GraphEngine.tsx` & `SmartboardCanvas.tsx`):**
+     * Trong `SmartboardCanvas.tsx` (`matchInstantStemBlueprint`), ưu tiên `routeLocally(raw)` kết hợp `splitEquations` (`localRouter.ts`) và `functionsFromBlueprint` (`GraphEngine.tsx`) để khi giáo viên viết 2 hàm số (ví dụ $y = x^2 - 3$ và $y = A\sin x + B$) rồi khoanh chung 1 vùng Lasso, hệ thống tự động đưa cả 2 hàm vào hệ trục tọa độ tương giao nền bảng tối (`darkBoard = true` mặc định, có nút chuyển `🌙 Nền tối` / `☀ Nền sáng`) kèm đánh dấu giao điểm thực theo thời gian thực.
+     * Đặt cụm HUD thanh trượt hằng số ($A, B, m\dots$, `data-testid="graph-hud-params"`) gọn ngay góc trên bên phải đồ thị kèm nút Play/Pause (`▶ Auto-Play` / `⏸ Pause`, `data-testid="graph-autoplay-btn"`) tự động chạy biến thiên mượt mà bằng `requestAnimationFrame`.
+  3. **Nâng cấp 3 — Hỏi Đáp AI Giọng Nói Kèm Mô Hình Minh Họa Động Ngay Trên Bảng (`VoiceAiQaCard.tsx`, `SmartboardDock.tsx`, `SmartboardCanvas.tsx`):**
+     * Xây dựng thẻ `VoiceAiQaCard.tsx` (`data-testid="voice-ai-qa-card"`) tích hợp trực tiếp vào nút AI nổi trên bảng (`ai-fab-qa` và `ai-fab-voice`).
+     * Khi giáo viên đặt câu hỏi bằng giọng nói hoặc văn bản (ví dụ *"Trong hình lập phương, thiết diện nào có diện tích lớn nhất?"*), AI hiển thị thẻ câu trả lời trực quan kèm công thức KaTeX, hình minh họa động SVG thu nhỏ (`MiniAnimatedPreview`) và các nút bấm 1 chạm (`voice-qa-spawn-act-hexagon`, `voice-qa-spawn-act-triangle`, `voice-qa-spawn-act-multigraph`...) để giáo viên bấm minh họa tức thì lên bảng.
+- **Tệp đã tạo mới & chỉnh sửa:**
+  - `socratic-monorepo/apps/teacher-board/src/utils/solids.ts`
+  - `socratic-monorepo/apps/teacher-board/src/engines/GeometryEngine.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/engines/GraphEngine.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas/VoiceAiQaCard.tsx` (mới)
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardDock.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardCanvas.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/__tests__/threeUpgrades.test.tsx` (mới)
+  - `.ai/HANDOFF.md`
+- **Kết quả Kiểm tra & Xác minh:**
+  - `apps/teacher-board`: `npx.cmd tsc --noEmit --incremental false` đạt **0 lỗi**; `npx.cmd vitest run` đạt **32/32 test files passed, 406/406 tests passed 100%**.
+
+
+## 2026-10-27 — Nâng Cấp Nhận Diện Hình Học Vẽ Tay (2D & 3D) Và Công Cụ Vẽ Thêm Yếu Tố Hình Học Tương Tác Chuẩn GeoGebra 3D
+- **Nguyên nhân khiến nét vẽ hình lập phương hoặc tam giác bằng tay trước đây không chuyển trực tiếp thành hình trực quan:**
+  1. Trong `SmartboardCanvas.tsx` (hàm `handleVisualize` và `useEffect` khi khoanh vùng Lasso), hệ thống gọi `recognizeLocal(src)` (nhận dạng chữ viết tay) trước rồi gán chuỗi ký tự nhiễu vào `detectedInstantLatex` / `formulaInput`. Do điều kiện `!effectiveHint.trim()` lúc đó trở thành `false`, các bộ nhận diện hình khối `detectSolidFromStrokes` và `recognizeSketch` bị bỏ qua hoàn toàn.
+  2. Bộ nhận diện `sketchSolid.ts` trước đây chỉ bắt đúng số đỉnh/cạnh lý tưởng (`V === 8, E = 11..13` hoặc `V === 7, E === 9`), chưa xử lý trường hợp giáo viên vẽ 2 hình vuông/tứ giác chồng lên nhau nối bởi các đoạn xiên, và chưa hỗ trợ nhận diện đa giác phẳng 2D (tam giác thường/vuông/cân/đều, hình vuông, hình chữ nhật, hình bình hành) vẽ bằng 1–4 nét rời.
+- **Giải pháp đã triển khai & tích hợp không xung đột:**
+  1. **Mở rộng nhận diện Hình khối 3D & Đa giác phẳng 2D vẽ tay (`sketchSolid.ts`, `localRouter.ts`):**
+     * Nâng cấp `buildGraph` và `detectSolidFromStrokes`: tự động nối chữ T ở thân cạnh, khử đoạn cựa thừa (spur) ở góc vẽ tay, nhận diện chính xác Hình lập phương (`cube`), Hình hộp chữ nhật (`box`), Hình chóp tứ giác (`pyramid4`), Tứ diện (`pyramid3`), Lăng trụ tam giác (`prism3`) và Bát diện đều (`octahedron`) kể cả khi vẽ bằng 2 mặt phẳng chồng nhau nối cạnh xiên hoặc ẩn nét khuất.
+     * Bổ sung `detectPlaneShapeFromStrokes` (`sketchSolid.ts`) và `makePlaneGeometryBlueprint` (`localRouter.ts`): nhận diện Tam giác đều, Tam giác vuông, Tam giác cân, Tam giác thường, Hình vuông, Hình chữ nhật, Hình bình hành vẽ từ 1 đến 4 nét, trích xuất tọa độ chuẩn hóa của các đỉnh, số đo góc và độ dài cạnh để nạp thẳng vào `MATH_DYNAMIC_GEOMETRY`.
+  2. **Ưu tiên nhận diện Hình học trước OCR ký tự (`SmartboardCanvas.tsx`, `InkConvertPanel.tsx`):**
+     * Khi khoanh Lasso một hình vẽ tay 3D (`detectSolidFromStrokes` với `confidence >= 0.72`) hoặc hình phẳng 2D (`detectPlaneShapeFromStrokes` với `confidence >= 0.78`), hệ thống giữ nguyên nhận diện hình học và dựng thẳng mô phỏng 3D/2D tương tác ngay lập tức mà không bị bộ đọc chữ làm nhiễu.
+     * Trên `InkConvertPanel.tsx`, hiển thị thẻ nhận diện thông minh cho phép bấm 1 chạm **"Dựng hình phẳng 2D"** hoặc **"Dựng chóp 3D từ đáy này"** (extrude đáy 2D vừa vẽ thành hình chóp không gian 3D).
+  3. **Bổ sung Bộ công cụ "📐 Vẽ Thêm Hình Phụ" tương tác trực tiếp trên Hình học không gian 3D (`GeometryEngine.tsx`) và Hình học phẳng (`AdvancedStemEngines.tsx`):**
+     * Trong `GeometryEngine.tsx` (`GEO_SOLID`): bổ sung thanh công cụ `📐 Vẽ Thêm Hình Phụ` (`data-testid="geo-construct-toggle"`) cho phép giáo viên & học sinh:
+       - Hạ **Đường cao $SO / SH \perp (\text{đáy})$** kèm ký hiệu góc vuông chuẩn SGK (`geo-aux-altitude`).
+       - Kẻ **Đường chéo mặt đáy $AC, BD$ và tâm đáy $O$** (`geo-aux-diagonals`).
+       - Bật/tắt **Trung điểm tất cả các cạnh ($M, N, P, Q\dots$)** (`geo-aux-midpoints`).
+       - Hiển thị **Mặt cầu ngoại tiếp khối đa diện** kèm đường xích đạo nét đứt (`geo-aux-sphere`).
+       - Chế độ **Chạm 2 điểm bất kỳ trên hình 3D để nối đoạn thẳng phụ** (`geo-aux-connect-mode`) kèm tính toán và hiển thị độ dài thực 3D của đoạn vừa nối, kết hợp mượt mà với chế độ **✂ Cắt Thiết Diện (2D + 3D)**.
+       - Chuyển đổi nhanh giữa 6 khối đa diện chuẩn (`cube`, `box`, `pyramid4`, `pyramid3`, `prism3`, `octahedron`).
+     * Trong `DynamicGeometryEngine` (`AdvancedStemEngines.tsx`): nạp đúng tọa độ tam giác vẽ tay của giáo viên, hiển thị bảng số đo độ dài 3 cạnh $a, b, c$, 3 góc $A, B, C$, diện tích $S$, bán kính ngoại tiếp $R$, nội tiếp $r$; bổ sung lớp dựng **3 Đường cao ($AH$)**, **3 Trung tuyến ($AM$)**, **Đường tròn 9 điểm Euler (Nine-Point Circle)** và các nút mẫu nhanh (Tam giác đều, Tam giác vuông, Tam giác cân).
+- **Tệp đã chỉnh sửa:**
+  - `socratic-monorepo/apps/teacher-board/src/utils/sketchSolid.ts`
+  - `socratic-monorepo/apps/teacher-board/src/utils/localRouter.ts`
+  - `socratic-monorepo/apps/teacher-board/src/utils/advancedStemModels.ts`
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardCanvas.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas\InkConvertPanel.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/engines/GeometryEngine.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/engines/AdvancedStemEngines.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/__tests__/sketchSolid.test.ts`
+  - `socratic-monorepo/apps/teacher-board/src/__tests__/threeUpgrades.test.tsx`
+  - `.ai/HANDOFF.md`
+- **Kết quả Kiểm tra & Xác minh:**
+  - `apps/teacher-board`: `npx.cmd tsc --noEmit --incremental false` đạt **0 lỗi**; `npx.cmd vitest run` đạt **32/32 test files passed, 408/408 tests passed 100%**.
+
+
+## 2026-10-27 — Tinh Gọn UI/UX Hologram (Tay Nắm 6 Chấm, Context Pill Bar 3 Nút Dưới Đáy, Nút Auto-Play ▶ Cho Mọi Tham Số & Thanh Chọn Bám Cạnh Dưới Lasso)
+- **Yêu cầu & Mục tiêu hoàn thành (Kế thừa chọn lọc điểm mạnh UI/UX và đảm bảo Zero-Conflict với các luồng song song):**
+  1. **Nút Auto-Play (`▶ / ⏸`, `data-testid="param-autoplay-${key}"`) cho toàn bộ thanh trượt tham số STEM trong `SimulationWidget.tsx`:**
+     * Bổ sung nút `▶` ngay cạnh giá trị của từng tham số trong `macro-sliders-container` (áp dụng cho mọi mô phỏng Toán, Lý, Hóa, Sinh).
+     * Khi bấm `▶`, tham số tự động chạy biến thiên tuần hoàn mượt mà giữa `min ↔ max`, và tự động dừng khi giáo viên chạm kéo thanh trượt hoặc bấm `-` / `+`.
+  2. **Khung Chọn Hologram Viền Mảnh 4 Chấm Tròn Góc + Tay Nắm 6 Chấm (`:::::`) + Thanh Tác Vụ Ngữ Cảnh 3 Nút Dưới Đáy (`SimulationWidget.tsx`):**
+     * Bổ sung tay nắm 6 chấm tròn (`data-testid="hologram-six-dot-grip"`) ở chính giữa đáy khung Hologram và thanh công cụ 3 nút gọn gàng (`data-testid="hologram-bottom-context-bar"`: `◫ Nửa bảng`, `↻ Đặt lại`, `✕ Xóa`).
+     * Đồng bộ độ mờ tự động của thanh Header và thanh Context Bar dưới đáy theo `showHudBrackets` (tự làm mờ sau 2 giây nhấc bút, hiện rõ tức thì khi chạm vào) để giữ trọn vẻ đẹp đồ thị phấn không nền.
+  3. **Thanh Ngữ Cảnh Vùng Khoanh Lasso Bám Sát Cạnh Dưới (`selection-toolbar` trong `SmartboardCanvas.tsx`):**
+     * Đặt `selection-toolbar` bám sát ngay dưới chân khung nét viết vừa khoanh (`bb.y1 + 10`, tự đảo lên trên nếu sát đáy bảng) và làm nổi bật nút tác vụ chính (`Trực quan hóa` hoặc `Chấm bài`) theo `detectedLassoIntent`.
+- **Tệp đã chỉnh sửa & tạo mới:**
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas/SimulationWidget.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardCanvas.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/__tests__/compactHoloAndToolbarUx.test.tsx` (mới)
+  - `.ai/HANDOFF.md`
+- **Kiểm tra & Xác minh:**
+  - `npx.cmd tsc --noEmit --incremental false`: **0 lỗi TypeScript**.
+  - `npx.cmd vitest run src/__tests__/compactHoloAndToolbarUx.test.tsx src/__tests__/hologramInteraction.test.tsx`: **16/16 tests passed 100%**.

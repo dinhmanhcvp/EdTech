@@ -390,6 +390,8 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
 
   const [showSocratic, setShowSocratic] = useState<boolean>(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [autoPlayKey, setAutoPlayKey] = useState<string | null>(null);
+  const autoPlayDirRef = useRef<number>(1);
 
   // Ephemeral HUD Brackets timer (auto fade-out after 2 seconds)
   const [showHudBrackets, setShowHudBrackets] = useState<boolean>(true);
@@ -409,6 +411,35 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
       if (hudTimeoutRef.current) clearTimeout(hudTimeoutRef.current);
     };
   }, [triggerHudBrackets]);
+
+  // Auto-Play parameter sweeper (smooth ping-pong between min and max)
+  useEffect(() => {
+    if (!autoPlayKey) return;
+    const cfg = activeParameters.find((p) => p.key === autoPlayKey);
+    if (!cfg) {
+      setAutoPlayKey(null);
+      return;
+    }
+    const span = Math.max(0.0001, cfg.max - cfg.min);
+    const delta = Math.max(cfg.step * 0.5, span / 80);
+    const timer = setInterval(() => {
+      setParams((prev) => {
+        const cur = prev[autoPlayKey] ?? cfg.defaultValue;
+        let next = cur + autoPlayDirRef.current * delta;
+        if (next >= cfg.max) {
+          next = cfg.max;
+          autoPlayDirRef.current = -1;
+        } else if (next <= cfg.min) {
+          next = cfg.min;
+          autoPlayDirRef.current = 1;
+        }
+        const rounded = Number(next.toFixed(2));
+        onParamChange?.(autoPlayKey, rounded);
+        return { ...prev, [autoPlayKey]: rounded };
+      });
+    }, 50);
+    return () => clearInterval(timer);
+  }, [autoPlayKey, activeParameters, onParamChange]);
 
   // Section 8: Dynamic Reactive Socratic Cue Evaluation
   const dynamicCue = useMemo(() => {
@@ -537,7 +568,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
           : 'rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] text-stone-900 shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] overflow-hidden'
       }`}
     >
-      {/* Sci-Fi HUD Hologram corner brackets with Ephemeral fade-out */}
+      {/* Sci-Fi HUD Hologram corner brackets & selection frame with Ephemeral fade-out */}
       {isHolo && (
         <div
           data-testid="hologram-hud-brackets"
@@ -545,13 +576,14 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             showHudBrackets ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <div className="absolute -top-1.5 -left-1.5 w-5 h-5 border-t-2 border-l-2 border-cyan-400 rounded-tl-sm drop-shadow-[0_0_8px_rgba(0,240,255,0.9)]" />
-          <div className="absolute -top-1.5 -right-1.5 w-5 h-5 border-t-2 border-r-2 border-cyan-400 rounded-tr-sm drop-shadow-[0_0_8px_rgba(0,240,255,0.9)]" />
-          <div className="absolute -bottom-1.5 -left-1.5 w-5 h-5 border-b-2 border-l-2 border-cyan-400 rounded-bl-sm drop-shadow-[0_0_8px_rgba(0,240,255,0.9)]" />
-          <div className="absolute -bottom-1.5 -right-1.5 w-5 h-5 border-b-2 border-r-2 border-cyan-400 rounded-br-sm drop-shadow-[0_0_8px_rgba(0,240,255,0.9)]" />
+          <div className="absolute inset-0 rounded-2xl border border-blue-400/45 pointer-events-none" />
+          <div className="absolute -top-1.5 -left-1.5 w-3 h-3 rounded-full bg-white border-2 border-blue-500 shadow-xs" />
+          <div className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-white border-2 border-blue-500 shadow-xs" />
+          <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 rounded-full bg-white border-2 border-blue-500 shadow-xs" />
+          <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full bg-white border-2 border-blue-500 shadow-xs" />
 
           {/* Hologram HUD Scale Pill */}
-          <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-cyan-950/80 backdrop-blur-md border border-cyan-400/40 text-[10px] font-mono text-cyan-300 whitespace-nowrap shadow-xs">
+          <div className="absolute -top-6 right-2 px-2 py-0.5 rounded-full bg-cyan-950/80 backdrop-blur-md border border-cyan-400/40 text-[9px] font-mono text-cyan-300 whitespace-nowrap shadow-xs">
             [ PINCH TO SCALE: {Math.round(holoScale * 100)}% ]
           </div>
         </div>
@@ -559,7 +591,11 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
 
       {/* Header Bar */}
       {isHolo ? (
-        <div className="flex items-center justify-between px-2 py-1.5 w-full bg-transparent border-none">
+        <div
+          className={`flex items-center justify-between px-2 py-1 w-full bg-transparent border-none transition-opacity duration-300 ${
+            showHudBrackets ? 'opacity-100' : 'opacity-25 hover:opacity-100'
+          }`}
+        >
           <div className="flex items-center gap-1.5">
             {/* Hologram Stylus/Touch Drag Grip & Title */}
             <div
@@ -1009,21 +1045,38 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             >
               <div className="flex justify-between items-center text-xs">
                 <span className="text-stone-700 dark:text-stone-300 font-medium tracking-tight text-[11px]"><MathText text={p.label} /></span>
-                <span
-                  data-testid={`param-val-${p.key}`}
-                  className="font-mono tabular-nums text-xs text-blue-600 dark:text-cyan-400 font-bold"
-                >
-                  {currentVal} {p.unit}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    data-testid={`param-autoplay-${p.key}`}
+                    aria-pressed={autoPlayKey === p.key}
+                    onClick={() => setAutoPlayKey((cur) => (cur === p.key ? null : p.key))}
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold transition cursor-pointer ${
+                      autoPlayKey === p.key
+                        ? 'bg-amber-400 text-stone-950 shadow-2xs'
+                        : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-cyan-300 border border-blue-400/30'
+                    }`}
+                    title={autoPlayKey === p.key ? 'Dừng tự động biến thiên' : 'Tự động biến thiên tham số này (Auto-Play)'}
+                  >
+                    {autoPlayKey === p.key ? '⏸' : '▶'}
+                  </button>
+                  <span
+                    data-testid={`param-val-${p.key}`}
+                    className="font-mono tabular-nums text-xs text-blue-600 dark:text-cyan-400 font-bold"
+                  >
+                    {currentVal} {p.unit}
+                  </span>
+                </div>
               </div>
 
               <div className="flex items-center gap-1.5">
                 <button
                   data-testid={`slider-minus-${p.key}`}
                   type="button"
-                  onClick={() =>
-                    handleParamChange(p.key, Math.max(p.min, Number((currentVal - p.step).toFixed(2))))
-                  }
+                  onClick={() => {
+                    if (autoPlayKey === p.key) setAutoPlayKey(null);
+                    handleParamChange(p.key, Math.max(p.min, Number((currentVal - p.step).toFixed(2))));
+                  }}
                   className={
                     isHolo
                       ? 'w-6 h-6 rounded-md bg-stone-200/50 dark:bg-stone-800/50 border border-stone-300/50 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-300/60 active:translate-y-px text-xs font-mono font-bold flex items-center justify-center cursor-pointer transition'
@@ -1040,18 +1093,20 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
                   max={p.max}
                   step={p.step}
                   value={currentVal}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleParamChange(p.key, parseFloat(e.target.value))
-                  }
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    if (autoPlayKey === p.key) setAutoPlayKey(null);
+                    handleParamChange(p.key, parseFloat(e.target.value));
+                  }}
                   className="flex-1 h-1.5 bg-stone-300/70 dark:bg-stone-700 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400"
                 />
 
                 <button
                   data-testid={`slider-plus-${p.key}`}
                   type="button"
-                  onClick={() =>
-                    handleParamChange(p.key, Math.min(p.max, Number((currentVal + p.step).toFixed(2))))
-                  }
+                  onClick={() => {
+                    if (autoPlayKey === p.key) setAutoPlayKey(null);
+                    handleParamChange(p.key, Math.min(p.max, Number((currentVal + p.step).toFixed(2))));
+                  }}
                   className={
                     isHolo
                       ? 'w-6 h-6 rounded-md bg-stone-200/50 dark:bg-stone-800/50 border border-stone-300/50 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-300/60 active:translate-y-px text-xs font-mono font-bold flex items-center justify-center cursor-pointer transition'
@@ -1065,6 +1120,67 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
           );
         })}
       </div>
+
+      {/* Tay nắm 6 chấm (6-Dot Grip Handle) + Thanh tác vụ ngữ cảnh 3 nút dưới đáy Hologram */}
+      {isHolo && (
+        <div className="flex flex-col items-center gap-1.5 pt-0.5 pb-1 select-none">
+          <div
+            data-testid="hologram-six-dot-grip"
+            onPointerDown={onGripPointerDown}
+            onPointerMove={onGripPointerMove}
+            onPointerUp={onGripPointerUp}
+            onPointerCancel={onGripPointerUp}
+            title="Chạm kéo 6 chấm để di chuyển mô phỏng khắp bảng"
+            className="grid grid-cols-3 gap-1 px-2.5 py-1 rounded-full bg-stone-900/15 dark:bg-white/15 hover:bg-stone-900/25 cursor-grab active:cursor-grabbing transition"
+          >
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <span key={idx} className="w-1 h-1 rounded-full bg-stone-700 dark:bg-white/90" />
+            ))}
+          </div>
+
+          <div
+            data-testid="hologram-bottom-context-bar"
+            className={`flex items-center gap-1 px-2 py-1 rounded-xl bg-white/95 backdrop-blur-md border border-[#DCD9D0] shadow-md transition-opacity duration-300 ${
+              showHudBrackets ? 'opacity-100' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
+            }`}
+          >
+            {onToggleDisplayMode && (
+              <button
+                type="button"
+                data-testid="holo-ctx-dock-btn"
+                onClick={onToggleDisplayMode}
+                className="flex flex-col items-center px-2 py-0.5 rounded-lg hover:bg-stone-100 text-stone-700 text-[10px] font-medium transition cursor-pointer"
+                title="Ghim sang nửa bảng (Split-Screen)"
+              >
+                <span className="text-xs leading-none">◫</span>
+                <span>Nửa bảng</span>
+              </button>
+            )}
+            <button
+              type="button"
+              data-testid="holo-ctx-reset-btn"
+              onClick={handleReset}
+              className="flex flex-col items-center px-2 py-0.5 rounded-lg hover:bg-stone-100 text-stone-700 text-[10px] font-medium transition cursor-pointer"
+              title="Khôi phục thông số gốc"
+            >
+              <RotateCcw className="w-3 h-3 text-stone-700" />
+              <span>Đặt lại</span>
+            </button>
+            {onClose && (
+              <button
+                type="button"
+                data-testid="holo-ctx-close-btn"
+                onClick={onClose}
+                className="flex flex-col items-center px-2 py-0.5 rounded-lg hover:bg-rose-50 text-stone-700 hover:text-rose-600 text-[10px] font-medium transition cursor-pointer"
+                title="Xóa mô phỏng khỏi bảng"
+              >
+                <span className="text-xs leading-none">✕</span>
+                <span>Xóa</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

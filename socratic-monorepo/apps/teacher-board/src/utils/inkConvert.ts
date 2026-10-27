@@ -66,11 +66,12 @@ interface AiOptions {
   hint?: string;
   timeoutMs?: number;
   endpoint?: string;
+  preferOffline?: boolean;
   /** cho phép kiểm thử thay phần xuất ảnh (jsdom không có canvas thật) */
   exportImage?: (strokes: Stroke[]) => Promise<string>;
 }
 
-/** Gọi Gemini Vision qua máy chủ. Trả null nếu không có khóa/không kết nối được/quá hạn — khi đó dùng bản cục bộ. */
+/** Gọi Neural OCR (Pix2Text-MFR-1.5 ONNX cục bộ hoặc Gemini Vision) qua máy chủ. Trả null nếu không kết nối được — khi đó dùng bản cục bộ tức thì. */
 export async function recognizeWithAi(strokes: Stroke[], opts: AiOptions = {}): Promise<ConvertResult | null> {
   const src = sourceStrokes(strokes);
   if (!src.length) return null;
@@ -85,7 +86,13 @@ export async function recognizeWithAi(strokes: Stroke[], opts: AiOptions = {}): 
   } catch {
     return null;
   }
-  const body = JSON.stringify({image_base64: image, hint: opts.hint ?? '', gemini_api_key: key});
+  const body = JSON.stringify({
+    image_base64: image,
+    raw_strokes_json: JSON.stringify(src),
+    allow_local_onnx: opts.preferOffline ?? true,
+    hint: opts.hint ?? '',
+    gemini_api_key: key,
+  });
   const headers: Record<string, string> = {'Content-Type': 'application/json'};
   if (key) headers['x-gemini-api-key'] = key;
 

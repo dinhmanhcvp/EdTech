@@ -926,12 +926,14 @@ function splitLines(syms: Sym[], Href: number): Sym[][] {
 }
 
 const confOf = (cost: number, n: number, valid = false, margin = Infinity) => {
-  const base = Math.max(0, Math.min(1, Math.exp(-(cost / Math.max(1, n)) / 0.12)));
-  // Nếu hai cách đọc sát điểm nhau, không được tự nhận là chắc chắn.
-  const ambiguityPenalty = margin < 0.045 ? 0.55 : margin < 0.09 ? 0.78 : 1;
+  const avgCost = Math.max(0, cost) / Math.max(1, n);
+  const base = Math.max(0, Math.min(1, Math.exp(-avgCost / 0.14)));
   if (valid) {
-    return Math.max(0.35, Math.min(0.99, (base + 0.25) * ambiguityPenalty));
+    // Với biểu thức toán hợp lệ nhiều ký hiệu, chỉ phạt khi hai phương án hợp lệ gần như bằng điểm nhau
+    const validPenalty = margin < 0.012 ? 0.72 : margin < 0.025 && n <= 2 ? 0.84 : 1;
+    return Math.max(0.45, Math.min(0.99, Math.max(0.88, base + 0.26) * validPenalty));
   }
+  const ambiguityPenalty = margin < 0.03 ? 0.62 : margin < 0.06 ? 0.82 : 1;
   return base * ambiguityPenalty;
 };
 

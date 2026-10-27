@@ -434,3 +434,233 @@ export function orthonormalize(m: M3): M3 {
   const r2 = cross(r0, r1);
   return [r0, r1, r2];
 }
+
+
+// ------------------------------------------------------------------ thiết diện phẳng (Cross-Section)
+export interface CrossSectionVertex {
+  pos3D: V3;
+  pos2D: [number, number]; // tọa độ 2D thực trên mặt phẳng cắt (trừ tâm thiết diện)
+  edge: [number, number];
+  edgeLabel: string;
+  angleDeg: number; // góc nội tiếp tại đỉnh (độ)
+  nextEdgeLen: number; // độ dài cạnh từ đỉnh này tới đỉnh kế tiếp
+}
+
+export interface CrossSectionResult {
+  valid: boolean;
+  shapeName: string; // 'Tam giác' | 'Tứ giác' | 'Ngũ giác' | 'Lục giác' | ...
+  isRegular: boolean;
+  area: number;
+  perimeter: number;
+  normal: V3;
+  d: number;
+  center3D: V3;
+  uAxis: V3;
+  vAxis: V3;
+  vertices: CrossSectionVertex[];
+}
+
+export const SHAPE_NAMES_VI: Record<number, string> = {
+  3: 'Tam giác',
+  4: 'Tứ giác',
+  5: 'Ngũ giác',
+  6: 'Lục giác',
+  7: 'Thất giác',
+  8: 'Bát giác',
+};
+
+/**
+ * Tính giao tuyến (thiết diện) giữa mặt phẳng `n · r = d` và khối đa diện lồi `solid`.
+ * Trả về đa giác 3D đã sắp xếp ngược chiều kim đồng hồ, cùng hình phẳng 2D trích xuất thật
+ * với đầy đủ số đo cạnh, góc (độ) tại từng đỉnh và diện tích thiết diện theo thời gian thực.
+ */
+export function computeCrossSection(solid: Solid, rawNormal: V3, d: number): CrossSectionResult {
+  const n = norm(rawNormal);
+  // Hệ trục tọa độ 2D trực chuẩn (uAxis, vAxis) nằm trên mặt phẳng cắt
+  const ref: V3 = Math.abs(n[2]) < 0.85 ? [0, 0, 1] : [1, 0, 0];
+  const uAxis = norm(cross(ref, n));
+  const vAxis = norm(cross(n, uAxis));
+
+  const edges = edgesOf(solid.faces);
+  const rawPts: {pos3D: V3; edge: [number, number]; edgeLabel: string}[] = [];
+  const eps = 1e-6;
+
+  for (const [a, b] of edges) {
+    const va = solid.verts[a];
+    const vb = solid.verts[b];
+    const da = dot(n, va) - d;
+    const db = dot(n, vb) - d;
+
+    if (Math.abs(da) <= eps && Math.abs(db) <= eps) {
+      // Cạnh nằm hoàn toàn trên mặt phẳng: thêm 2 đầu mút
+      const la = solid.labels[a] ?? `${a}`;
+      const lb = solid.labels[b] ?? `${b}`;
+      rawPts.push({pos3D: va, edge: [a, a], edgeLabel: la});
+      rawPts.push({pos3D: vb, edge: [b, b], edgeLabel: lb});
+      continue;
+    }
+
+    if ((da >= -eps && db <= eps) || (da <= eps && db >= -eps)) {
+      const denom = da - db;
+      const t = Math.abs(denom) < 1e-12 ? 0.5 : Math.max(0, Math.min(1, da / denom));
+      const p: V3 = [
+        va[0] + (vb[0] - va[0]) * t,
+        va[1] + (vb[1] - va[1]) * t,
+        va[2] + (vb[2] - va[2]) * t,
+      ];
+      const la = solid.labels[a] ?? `${a}`;
+      const lb = solid.labels[b] ?? `${b}`;
+      const edgeLabel = t < 0.03 ? la : t > 0.97 ? lb : `${la}${lb}`;
+      rawPts.push({pos3D: p, edge: [a, b], edgeLabel});
+    }
+  }
+
+  // Khử các điểm trùng nhau (khi mặt phẳng đi qua đỉnh khối đa diện)
+  const uniquePts: typeof rawPts = [];
+  for (const item of rawPts) {
+    const dup = uniquePts.find((u) => len(sub(u.pos3D, item.pos3D)) < 1e-4);
+    if (!dup) uniquePts.push(item);
+  }
+
+  if (uniquePts.length < 3) {
+    return {
+      valid: false,
+      shapeName: 'Không cắt khối',
+      isRegular: false,
+      area: 0,
+      perimeter: 0,
+      normal: n,
+      d,
+      center3D: [0, 0, 0],
+      uAxis,
+      vAxis,
+      vertices: [],
+    };
+  }
+
+  const center3D = centroid(uniquePts.map((x) => x.pos3D));
+
+  // Chiếu lên hệ trục 2D thực (uAxis, vAxis) trên mặt phẳng cắt và sắp xếp theo góc cực
+  const withAngle = uniquePts.map((item) => {
+    const rel = sub(item.pos3D, center3D);
+    const x2 = dot(rel, uAxis);
+    const y2 = dot(rel, vAxis);
+    const ang = Math.atan2(y2, x2);
+    return {...item, pos2D: [x2, y2] as [number, number], ang};
+  });
+
+  withAngle.sort((a, b) => a.ang - b.ang);
+
+  const k = withAngle.length;
+  let area = 0;
+  let perimeter = 0;
+  const edgeLens: number[] = [];
+  const anglesDeg: number[] = [];
+
+  for (let i = 0; i < k; i++) {
+    const cur = withAngle[i].pos2D;
+    const nxt = withAngle[(i + 1) % k].pos2D;
+    const prv = withAngle[(i - 1 + k) % k].pos2D;
+
+    area += cur[0] * nxt[1] - nxt[0] * cur[1];
+    const el = Math.hypot(nxt[0] - cur[0], nxt[1] - cur[1]);
+    edgeLens.push(el);
+    perimeter += el;
+
+    // Véc-tơ tới 2 đỉnh kề để tính góc nội tiếp
+    const v1x = prv[0] - cur[0];
+    const v1y = prv[1] - cur[1];
+    const v2x = nxt[0] - cur[0];
+    const v2y = nxt[1] - cur[1];
+    const l1 = Math.hypot(v1x, v1y) || 1;
+    const l2 = Math.hypot(v2x, v2y) || 1;
+    const cosTheta = Math.max(-1, Math.min(1, (v1x * v2x + v1y * v2y) / (l1 * l2)));
+    anglesDeg.push((Math.acos(cosTheta) * 180) / Math.PI);
+  }
+  area = Math.abs(area) * 0.5;
+
+  // Kiểm tra đa giác đều (các cạnh bằng nhau và các góc bằng nhau trong sai số nhỏ)
+  const avgLen = perimeter / k;
+  const avgAng = ((k - 2) * 180) / k;
+  const isRegular =
+    edgeLens.every((l) => Math.abs(l - avgLen) <= Math.max(0.04, avgLen * 0.04)) &&
+    anglesDeg.every((ang) => Math.abs(ang - avgAng) <= 2.5);
+
+  const baseName = SHAPE_NAMES_VI[k] || `Đa giác ${k} cạnh`;
+  let shapeName = isRegular ? `${baseName} đều` : baseName;
+  if (k === 4 && !isRegular) {
+    // Kiểm tra hình chữ nhật / hình thang / hình bình hành
+    const oppEqual = Math.abs(edgeLens[0] - edgeLens[2]) < 0.05 && Math.abs(edgeLens[1] - edgeLens[3]) < 0.05;
+    const rightAngles = anglesDeg.every((a) => Math.abs(a - 90) < 2.5);
+    if (oppEqual && rightAngles) shapeName = 'Hình chữ nhật';
+    else if (oppEqual) shapeName = 'Hình bình hành';
+  } else if (k === 4 && isRegular) {
+    shapeName = 'Hình vuông';
+  }
+
+  const vertices: CrossSectionVertex[] = withAngle.map((item, i) => ({
+    pos3D: item.pos3D,
+    pos2D: item.pos2D,
+    edge: item.edge,
+    edgeLabel: item.edgeLabel,
+    angleDeg: anglesDeg[i],
+    nextEdgeLen: edgeLens[i],
+  }));
+
+  return {
+    valid: true,
+    shapeName,
+    isRegular,
+    area,
+    perimeter,
+    normal: n,
+    d,
+    center3D,
+    uAxis,
+    vAxis,
+    vertices,
+  };
+}
+
+/** Mặt phẳng đi qua 3 điểm P, Q, R trong không gian 3D: trả về {normal, d}. */
+export function planeFromThreePoints(p1: V3, p2: V3, p3: V3): {normal: V3; d: number} {
+  const raw = cross(sub(p2, p1), sub(p3, p1));
+  const l = len(raw);
+  if (l < 1e-8) {
+    return {normal: [0, 0, 1], d: p1[2]};
+  }
+  const normal: V3 = [raw[0] / l, raw[1] / l, raw[2] / l];
+  const d = dot(normal, p1);
+  return {normal, d};
+}
+
+/** Danh sách các mẫu cắt thiết diện kinh điển cho từng loại khối đa diện. */
+export interface CrossSectionPreset {
+  id: string;
+  label: string;
+  normal: V3;
+  dRatio: number; // hệ số nhân với cạnh a
+}
+
+export function getCrossSectionPresets(kind: SolidKind): CrossSectionPreset[] {
+  if (kind === 'cube' || kind === 'box') {
+    return [
+      {id: 'triangle', label: 'Tam giác đều (3 cạnh)', normal: [1, 1, 1], dRatio: 0.58},
+      {id: 'quad', label: 'Tứ giác / Hình chữ nhật (4 cạnh)', normal: [0, 0.35, 1], dRatio: 0.0},
+      {id: 'pentagon', label: 'Ngũ giác (5 cạnh)', normal: [1, 1, 1], dRatio: 0.25},
+      {id: 'hexagon', label: 'Lục giác đều (6 cạnh)', normal: [1, 1, 1], dRatio: 0.0},
+    ];
+  }
+  if (kind === 'pyramid4') {
+    return [
+      {id: 'triangle', label: 'Tam giác (qua cạnh bên)', normal: [0.85, 0, 0.52], dRatio: 0.18},
+      {id: 'quad', label: 'Tứ giác (song song đáy)', normal: [0, 0, 1], dRatio: 0.0},
+      {id: 'pentagon', label: 'Ngũ giác (cắt 5 mặt)', normal: [0.6, 0.3, 0.74], dRatio: -0.1},
+    ];
+  }
+  return [
+    {id: 'triangle', label: 'Thiết diện Tam giác', normal: [0, 0, 1], dRatio: 0.0},
+    {id: 'quad', label: 'Thiết diện Tứ giác', normal: [0.7, 0, 0.7], dRatio: 0.0},
+    {id: 'slant', label: 'Thiết diện Xiên', normal: [1, 1, 1], dRatio: 0.12},
+  ];
+}

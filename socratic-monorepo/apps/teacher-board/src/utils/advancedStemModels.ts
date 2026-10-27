@@ -712,7 +712,7 @@ export function matchAdvancedKeywords(
     };
   }
   if (
-    /hình học động|đường euler|đối cực|phép nghịch đảo|dynamic geometry/i.test(
+    /hình học động|đường euler|đối cực|phép nghịch đảo|dynamic geometry|đường tròn ngoại tiếp|đường tròn nội tiếp|trực tâm|trọng tâm/i.test(
       t,
     )
   )

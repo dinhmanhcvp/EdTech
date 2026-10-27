@@ -40,7 +40,7 @@ export function functionsFromBlueprint(bp: SimulationBlueprint): string[] {
   if (bp.expressions?.length) return bp.expressions.filter(Boolean);
   const raw = bp.recognizedLatex || '';
   const parts = raw
-    .split(/\\\\|;|\n|\\quad|\\qquad|,\s*(?=[yf]\s*(?:\(x\))?\s*=)/)
+    .split(/\\\\|;|\n|\s+(?:và|and)\s+|\\quad|\\qquad|,\s*(?=\s*(?:y|f|g|h)\s*(?:\(\s*x\s*\))?\s*=)/i)
     .map((s) => s.trim())
     .filter((s) => /=/.test(s) || /x/.test(s));
   return parts.length ? parts : ['y = x^2 - 3'];
@@ -63,9 +63,61 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
   useEffect(() => setPcfg((prev) => syncParams(paramKeys, prev)), [paramKeys]);
   const pv = useMemo(() => paramValues(pcfg), [pcfg]);
 
+  // Auto-Play hoạt ảnh biến thiên tham số (▶ / ⏸)
+  const [isPlaying, setIsPlaying] = useState(false);
+  const playDirRef = useRef<Record<string, number>>({});
+  const playRafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!isPlaying || paramKeys.length === 0) {
+      if (playRafRef.current != null) {
+        cancelAnimationFrame(playRafRef.current);
+        playRafRef.current = null;
+      }
+      return;
+    }
+
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      setPcfg((prev) => {
+        const next = {...prev};
+        for (const k of paramKeys) {
+          const c = next[k];
+          if (!c) continue;
+          const span = c.max - c.min || 1;
+          const speed = span * 0.35; // quét hết miền trong ~2.8s
+          let dir = playDirRef.current[k] ?? 1;
+          let val = c.value + dir * speed * dt;
+          if (val >= c.max) {
+            val = c.max;
+            dir = -1;
+          } else if (val <= c.min) {
+            val = c.min;
+            dir = 1;
+          }
+          playDirRef.current[k] = dir;
+          next[k] = {...c, value: Number(val.toFixed(2))};
+        }
+        return next;
+      });
+      playRafRef.current = requestAnimationFrame(tick);
+    };
+
+    playRafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (playRafRef.current != null) {
+        cancelAnimationFrame(playRafRef.current);
+        playRafRef.current = null;
+      }
+    };
+  }, [isPlaying, paramKeys]);
+
   const [opt, setOpt] = useState({intersections: true, zeros: false, extrema: false, tangent: false, shade: false});
   const [pins, setPins] = useState<Pin[]>([]);
   const [hover, setHover] = useState<{px: number; py: number} | null>(null);
+  const [darkBoard, setDarkBoard] = useState<boolean>(true);
 
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -137,6 +189,13 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
 
     if (isHologram) {
       ctx.clearRect(0, 0, w, h);
+    } else if (darkBoard) {
+      // Nền bảng tối chuẩn tương giao (Obsidian Slate)
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, '#0F172A');
+      grad.addColorStop(1, '#1E293B');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
     } else {
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, w, h);
@@ -147,12 +206,15 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
     const syStep = niceStep(b.yMax - b.yMin);
     ctx.lineWidth = 1;
     ctx.font = '11px "JetBrains Mono", ui-monospace, monospace';
-    ctx.fillStyle = '#94A3B8';
+    const isDark = darkBoard && !isHologram;
+    const axisCol = isDark ? '#94A3B8' : '#475569';
+    const gridCol = isDark ? 'rgba(148, 163, 184, 0.14)' : '#EEF0F3';
+    ctx.fillStyle = isDark ? '#CBD5E1' : '#94A3B8';
     const ox = toScreen(v, w, h, 0, 0);
     for (let x = Math.ceil(b.xMin / sxStep) * sxStep; x <= b.xMax; x += sxStep) {
       const px = toScreen(v, w, h, x, 0).px;
-      ctx.strokeStyle = Math.abs(x) < 1e-9 ? '#475569' : '#EEF0F3';
-      ctx.lineWidth = Math.abs(x) < 1e-9 ? 1.6 : 1;
+      ctx.strokeStyle = Math.abs(x) < 1e-9 ? axisCol : gridCol;
+      ctx.lineWidth = Math.abs(x) < 1e-9 ? 1.8 : 1;
       ctx.beginPath();
       ctx.moveTo(px, 0);
       ctx.lineTo(px, h);
@@ -164,8 +226,8 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
     }
     for (let y = Math.ceil(b.yMin / syStep) * syStep; y <= b.yMax; y += syStep) {
       const py = toScreen(v, w, h, 0, y).py;
-      ctx.strokeStyle = Math.abs(y) < 1e-9 ? '#475569' : '#EEF0F3';
-      ctx.lineWidth = Math.abs(y) < 1e-9 ? 1.6 : 1;
+      ctx.strokeStyle = Math.abs(y) < 1e-9 ? axisCol : gridCol;
+      ctx.lineWidth = Math.abs(y) < 1e-9 ? 1.8 : 1;
       ctx.beginPath();
       ctx.moveTo(0, py);
       ctx.lineTo(w, py);
@@ -175,7 +237,7 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
         ctx.fillText(fmtNum(y, 2), Math.min(w - 4, Math.max(30, ox.px - 6)), py + 4);
       }
     }
-    ctx.fillStyle = '#475569';
+    ctx.fillStyle = isDark ? '#E2E8F0' : '#475569';
     ctx.textAlign = 'left';
     ctx.font = 'italic 13px Georgia, serif';
     ctx.fillText('x', w - 14, Math.min(h - 6, Math.max(14, ox.py - 8)));
@@ -199,15 +261,17 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
         ctx.lineTo(p.px, p.py);
       }
       ctx.closePath();
-      ctx.fillStyle = 'rgba(99,102,241,0.16)';
+      ctx.fillStyle = isDark ? 'rgba(56, 189, 248, 0.22)' : 'rgba(99,102,241,0.16)';
       ctx.fill();
     }
 
     // đường cong
-    cfns.forEach((f) => {
+    cfns.forEach((f, idx) => {
       if (!f.visible) return;
-      ctx.strokeStyle = f.color;
-      ctx.lineWidth = 2.6;
+      // Nổi bật sắc nét trên nền bảng tối
+      const strokeCol = isDark && idx === 1 && f.color === '#2563EB' ? '#38BDF8' : f.color;
+      ctx.strokeStyle = strokeCol;
+      ctx.lineWidth = 2.8;
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
       if (f.kind === 'explicit') {
@@ -239,17 +303,17 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
       }
     });
 
-    // điểm đặc biệt
+    // điểm đặc biệt (Giao điểm, nghiệm, cực trị)
     const showLabels = specials.length <= 10;
     specials.forEach((p) => {
       const s = toScreen(v, w, h, p.x, p.y);
       if (s.px < -10 || s.px > w + 10 || s.py < -10 || s.py > h + 10) return;
-      const col = p.kind === 'intersection' ? '#111827' : p.kind === 'zero' ? '#0891B2' : p.kind === 'max' ? '#DC2626' : '#2563EB';
-      ctx.fillStyle = '#fff';
+      const col = p.kind === 'intersection' ? (isDark ? '#FACC15' : '#111827') : p.kind === 'zero' ? '#0891B2' : p.kind === 'max' ? '#DC2626' : '#2563EB';
+      ctx.fillStyle = isDark ? '#0F172A' : '#fff';
       ctx.strokeStyle = col;
-      ctx.lineWidth = 2.2;
+      ctx.lineWidth = 2.4;
       ctx.beginPath();
-      ctx.arc(s.px, s.py, p.kind === 'intersection' ? 5.5 : 4.5, 0, Math.PI * 2);
+      ctx.arc(s.px, s.py, p.kind === 'intersection' ? 5.8 : 4.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
       if (showLabels) {
@@ -258,7 +322,7 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
         const tw = ctx.measureText(text).width;
         const lx = Math.min(w - tw - 10, Math.max(6, s.px + 8));
         const ly = Math.max(16, s.py - 10);
-        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.fillStyle = isDark ? 'rgba(15, 23, 42, 0.88)' : 'rgba(255,255,255,0.92)';
         ctx.fillRect(lx - 3, ly - 12, tw + 6, 16);
         ctx.fillStyle = col;
         ctx.textAlign = 'left';
@@ -311,7 +375,7 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
           ctx.stroke();
           ctx.setLineDash([]);
         }
-        ctx.strokeStyle = 'rgba(71,85,105,0.45)';
+        ctx.strokeStyle = isDark ? 'rgba(226,232,240,0.4)' : 'rgba(71,85,105,0.45)';
         ctx.setLineDash([3, 4]);
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -343,13 +407,13 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
         lines.forEach((t, i) => ctx.fillText(t, bx + 8, by + 16 + i * 14));
       } else {
         const wp = toWorld(v, w, h, hover.px, hover.py);
-        ctx.fillStyle = '#64748B';
+        ctx.fillStyle = isDark ? '#94A3B8' : '#64748B';
         ctx.font = '11px "JetBrains Mono", ui-monospace, monospace';
         ctx.textAlign = 'left';
         ctx.fillText(`(${fmtNum(wp.x, 2)} ; ${fmtNum(wp.y, 2)})`, Math.min(w - 96, hover.px + 10), Math.max(14, hover.py - 8));
       }
     }
-  }, [size, cfns, pv, specials, shade, pins, hover, opt.tangent]);
+  }, [size, cfns, pv, specials, shade, pins, hover, opt.tangent, isHologram, darkBoard]);
 
   const requestDraw = useCallback(() => {
     dirty.current = true;
@@ -504,18 +568,29 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
           {chip('extrema', 'Cực trị')}
           {chip('tangent', 'Tiếp tuyến')}
           {chip('shade', 'Diện tích')}
+          <button
+            type="button"
+            data-testid="graph-toggle-darkboard"
+            aria-pressed={darkBoard}
+            onClick={() => setDarkBoard((d) => !d)}
+            className={`${BTN} ${darkBoard ? 'bg-slate-800 border-slate-900 text-amber-300 shadow-sm' : 'bg-white border-[#DCD9D0] text-stone-700 hover:bg-stone-50'}`}
+          >
+            {darkBoard ? '🌙 Nền tối' : '☀ Nền sáng'}
+          </button>
           <button type="button" data-testid="graph-reset-view" onClick={refit} className={`${BTN} bg-white border-[#DCD9D0] text-stone-700 hover:bg-stone-50 ml-auto`}>
             ⌖ Khung gốc
           </button>
         </div>
       </div>
 
-      {/* canvas */}
+      {/* canvas + Cụm HUD Thanh trượt góc trên bên phải có nút Auto-Play ▶ */}
       <div className="relative rounded-2xl overflow-hidden border border-[#E6E4DD] bg-white shadow-sm" style={{height: size.h}}>
         <canvas
           ref={canvasRef}
           data-testid="graph-canvas"
           data-intersections={specials.filter((p) => p.kind === 'intersection').length}
+          data-fn-count={cfns.filter((f) => f.kind !== 'error' && f.visible).length}
+          data-dark-board={String(darkBoard)}
           data-view={`${viewRef.current.cx.toFixed(3)},${viewRef.current.cy.toFixed(3)},${viewRef.current.sx.toFixed(2)}`}
           style={{width: '100%', height: size.h, touchAction: 'none', cursor: gesture.current?.moved ? 'grabbing' : 'crosshair', display: 'block'}}
           onPointerDown={onPointerDown}
@@ -525,34 +600,75 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
           onPointerLeave={() => setHover(null)}
           onDoubleClick={refit}
         />
-        <div className="absolute left-2 top-2 text-[10px] font-mono text-stone-500 bg-white/85 rounded-md px-1.5 py-0.5 pointer-events-none">Kéo: dịch · Cuộn/chụm: thu phóng · Chạm: ghim điểm</div>
+        <div className="absolute left-2 top-2 text-[10px] font-mono text-stone-500 bg-white/85 rounded-md px-1.5 py-0.5 pointer-events-none">
+          Kéo: dịch · Cuộn/chụm: thu phóng · Chạm: ghim điểm
+        </div>
+
+        {/* Cụm HUD Thanh trượt tham số (A, B, m...) gọn ngay góc trên bên phải đồ thị kèm nút Auto-Play ▶ */}
+        {paramKeys.length > 0 && (
+          <div
+            data-testid="graph-hud-params"
+            data-interactive="true"
+            onPointerDown={(e) => e.stopPropagation()}
+            className="absolute right-2.5 top-2.5 z-20 w-56 rounded-xl bg-slate-900/88 backdrop-blur-md border border-slate-600/70 px-3 py-2 text-white shadow-lg flex flex-col gap-1.5"
+          >
+            <div className="flex items-center justify-between border-b border-slate-700/80 pb-1">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-300 font-bold">
+                Tham số biến thiên
+              </span>
+              <button
+                type="button"
+                data-testid="graph-autoplay-btn"
+                aria-pressed={isPlaying}
+                onClick={() => setIsPlaying((p) => !p)}
+                className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold transition cursor-pointer flex items-center gap-1 ${
+                  isPlaying
+                    ? 'bg-amber-400 text-slate-950 shadow-xs'
+                    : 'bg-cyan-500/20 hover:bg-cyan-500/35 text-cyan-200 border border-cyan-400/40'
+                }`}
+                title={isPlaying ? 'Tạm dừng chạy biến thiên tự động' : 'Tự động chạy biến thiên mượt mà'}
+              >
+                <span>{isPlaying ? '⏸ Pause' : '▶ Auto-Play'}</span>
+              </button>
+            </div>
+            <div className="flex flex-col gap-1.5" data-testid="graph-params">
+              {paramKeys.map((k) => {
+                const c = pcfg[k];
+                if (!c) return null;
+                return (
+                  <label key={k} className="flex flex-col gap-0.5">
+                    <span className="flex justify-between text-[11px] font-medium text-slate-200">
+                      <span className="font-serif italic text-xs text-amber-300">{k}</span>
+                      <span data-testid={`graph-param-val-${k}`} className="font-mono font-bold text-cyan-300 tabular-nums text-[11px]">
+                        {fmtNum(c.value, 2)}
+                      </span>
+                    </span>
+                    <input
+                      data-testid={`graph-param-${k}`}
+                      type="range"
+                      min={c.min}
+                      max={c.max}
+                      step={c.step}
+                      value={c.value}
+                      onChange={(e) => {
+                        setIsPlaying(false);
+                        setPcfg((p) => ({...p, [k]: {...p[k], value: parseFloat(e.target.value)}}));
+                      }}
+                      className="w-full h-1.5 accent-cyan-400 cursor-pointer"
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {shade && (
-          <div data-testid="graph-area-badge" className="absolute right-2 top-2 text-xs font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg px-2 py-1">
+          <div data-testid="graph-area-badge" className="absolute left-2 bottom-2 text-xs font-mono font-bold text-indigo-700 bg-indigo-50/95 border border-indigo-200 rounded-lg px-2 py-1">
             S ≈ {fmtNum(shade.area, 3)} (x từ {fmtNum(shade.a, 2)} đến {fmtNum(shade.b, 2)})
           </div>
         )}
       </div>
-
-      {/* thanh trượt tham số tự sinh */}
-      {paramKeys.length > 0 && (
-        <div className="grid grid-cols-2 gap-2" data-testid="graph-params">
-          {paramKeys.map((k) => {
-            const c = pcfg[k];
-            if (!c) return null;
-            return (
-              <label key={k} className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] px-3 py-2 flex flex-col gap-1">
-                <span className="flex justify-between text-[11px] font-medium text-stone-700">
-                  <span className="font-serif italic text-sm">{k}</span>
-                  <span data-testid={`graph-param-val-${k}`} className="font-mono font-bold text-blue-600 tabular-nums">
-                    {fmtNum(c.value, 2)}
-                  </span>
-                </span>
-                <input data-testid={`graph-param-${k}`} type="range" min={c.min} max={c.max} step={c.step} value={c.value} onChange={(e) => setPcfg((p) => ({...p, [k]: {...p[k], value: parseFloat(e.target.value)}}))} className="w-full h-1.5 accent-blue-600 cursor-pointer" />
-              </label>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 };

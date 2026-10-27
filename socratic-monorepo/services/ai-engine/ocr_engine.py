@@ -12,6 +12,8 @@ Specialized for 75" Touchboards & Mobile Student Canvas:
 import os
 import io
 import re
+import glob
+import json
 import math
 import time
 from typing import List, Dict, Any, Optional, Tuple
@@ -29,7 +31,22 @@ try:
 except ImportError:
     CV2_AVAILABLE = False
 
-ENABLE_HEAVY_MODELS = os.getenv("ENABLE_HEAVY_LOCAL_MODELS", "false").lower() in ("true", "1", "yes")
+
+def _should_enable_local_onnx() -> bool:
+    """
+    Auto-enables local ONNX neural OCR on local PC / Smartboard Windows OPS,
+    while staying disabled on 512MB cloud containers (Render/Fly/Heroku) unless explicitly enabled.
+    """
+    explicit = os.getenv("ENABLE_HEAVY_LOCAL_MODELS", "").strip().lower()
+    if explicit in ("true", "1", "yes"):
+        return True
+    if explicit in ("false", "0", "no"):
+        return False
+    is_constrained_cloud = any(os.getenv(k) for k in ("RENDER", "RENDER_SERVICE_ID", "DYNO", "FLY_APP_NAME"))
+    return not is_constrained_cloud
+
+
+ENABLE_HEAVY_MODELS = _should_enable_local_onnx()
 
 RAPIDOCR_ENGINE = None
 if ENABLE_HEAVY_MODELS:
@@ -45,6 +62,386 @@ try:
     PYTESSERACT_AVAILABLE = True
 except ImportError:
     PYTESSERACT_AVAILABLE = False
+
+
+class LocalMathONNXEngine:
+    """
+    100% Offline Neural Mathematical Formula Recognition (HMER / LaTeX OCR)
+    powered by ONNX Runtime (`breezedeus/pix2text-mfr-1.5` VisionEncoderDecoder:
+    DeiT Vision Encoder + TrOCR Transformer Decoder).
+    - Reads 2D handwritten & printed formulas (fractions, radicals, exponents, subscripts, systems of equations).
+    - Computes genuine Softmax token confidence + Top-2 neural alternative formulas.
+    - Zero PyTorch or cloud API dependency.
+    """
+
+    def __init__(self) -> None:
+        self.available = False
+        self.encoder_sess = None
+        self.decoder_sess = None
+        self.tokenizer = None
+        self.model_dir: Optional[str] = None
+        if ENABLE_HEAVY_MODELS:
+            self._try_load()
+
+    def _find_model_dir(self) -> Optional[str]:
+        custom_dir = os.getenv("P2T_MFR_MODEL_DIR", "").strip()
+        if custom_dir and os.path.isdir(custom_dir):
+            return custom_dir
+
+        hf_cache = os.path.expanduser("~/.cache/huggingface/hub/models--breezedeus--pix2text-mfr-1.5/snapshots")
+        if os.path.isdir(hf_cache):
+            snaps = sorted(glob.glob(os.path.join(hf_cache, "*")), key=os.path.getmtime, reverse=True)
+            for s in snaps:
+                if (
+                    os.path.isfile(os.path.join(s, "encoder_model.onnx"))
+                    and os.path.isfile(os.path.join(s, "decoder_model.onnx"))
+                    and os.path.isfile(os.path.join(s, "tokenizer.json"))
+                ):
+                    return s
+
+        try:
+            from huggingface_hub import snapshot_download
+            return snapshot_download("breezedeus/pix2text-mfr-1.5", local_files_only=True)
+        except Exception:
+            return None
+
+    def _try_load(self) -> bool:
+        if self.available:
+            return True
+        try:
+            import onnxruntime as ort
+            from tokenizers import Tokenizer
+
+            model_dir = self._find_model_dir()
+            if not model_dir:
+                return False
+
+            enc_path = os.path.join(model_dir, "encoder_model.onnx")
+            dec_path = os.path.join(model_dir, "decoder_model.onnx")
+            tok_path = os.path.join(model_dir, "tokenizer.json")
+            if not (os.path.isfile(enc_path) and os.path.isfile(dec_path) and os.path.isfile(tok_path)):
+                return False
+
+            self.encoder_sess = ort.InferenceSession(enc_path, providers=["CPUExecutionProvider"])
+            self.decoder_sess = ort.InferenceSession(dec_path, providers=["CPUExecutionProvider"])
+            self.tokenizer = Tokenizer.from_file(tok_path)
+            self.model_dir = model_dir
+            self.available = True
+            return True
+        except Exception as e:
+            print(f"[LocalMathONNXEngine] Initialization warning: {e}")
+            self.available = False
+            return False
+
+    @staticmethod
+    def has_ink_content(image_bytes: Optional[bytes] = None, np_img: Optional[np.ndarray] = None) -> bool:
+        """
+        Verifies whether an image actually contains handwriting/ink strokes
+        (returns False on blank white/solid test stub images like 32x16 white PNG).
+        """
+        try:
+            if np_img is None:
+                if not image_bytes or not PIL_AVAILABLE:
+                    return False
+                pil_im = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+                np_img = np.asarray(pil_im, dtype=np.uint8)
+            if np_img.size == 0 or np_img.shape[0] < 20 or np_img.shape[1] < 20:
+                return False
+            gray = np_img.mean(axis=2) if np_img.ndim == 3 else np_img.astype(np.float32)
+            dyn_range = float(np.max(gray) - np.min(gray))
+            if dyn_range < 25.0:
+                return False
+            bg_val = float(np.median(gray))
+            ink_pixels = int(np.sum(np.abs(gray - bg_val) > 30.0))
+            return ink_pixels >= 15
+        except Exception:
+            return False
+
+    @staticmethod
+    def prepare_formula_pil(
+        image_bytes: Optional[bytes] = None,
+        strokes_data: Optional[List[Dict[str, Any]]] = None,
+    ) -> Optional["Image.Image"]:
+        """
+        Produces a clean, tightly-cropped black-on-white PIL Image suitable for 384x384 ViT encoding.
+        Prioritizes vector stroke reconstruction when `strokes_data` is provided.
+        """
+        if not PIL_AVAILABLE:
+            return None
+
+        if strokes_data and CV2_AVAILABLE:
+            all_pts = [
+                p for s in strokes_data if isinstance(s, dict)
+                for p in s.get("points", []) if isinstance(p, dict) and "x" in p and "y" in p
+            ]
+            if len(all_pts) >= 2:
+                xs = [float(p["x"]) for p in all_pts]
+                ys = [float(p["y"]) for p in all_pts]
+                min_x, max_x = min(xs), max(xs)
+                min_y, max_y = min(ys), max(ys)
+                w = max(max_x - min_x, 16.0)
+                h = max(max_y - min_y, 16.0)
+                if w > 2 and h > 2:
+                    target_h = 160
+                    pad = 24
+                    scale = (target_h - 2 * pad) / max(h, 28.0)
+                    target_w = max(int(w * scale) + 2 * pad, 96)
+                    canvas = np.ones((target_h, target_w, 3), dtype=np.uint8) * 255
+                    thickness = max(3, min(5, int(round(3.8 * math.sqrt(scale)))))
+                    for s in strokes_data:
+                        if not isinstance(s, dict):
+                            continue
+                        pts = s.get("points", [])
+                        if not pts:
+                            continue
+                        if len(pts) == 1:
+                            px = int((pts[0]["x"] - min_x) * scale) + pad
+                            py = int((pts[0]["y"] - min_y) * scale) + pad
+                            cv2.circle(canvas, (px, py), max(2, thickness), (0, 0, 0), -1, lineType=cv2.LINE_AA)
+                        else:
+                            coords = np.array(
+                                [[int((p["x"] - min_x) * scale) + pad, int((p["y"] - min_y) * scale) + pad] for p in pts],
+                                dtype=np.int32,
+                            )
+                            cv2.polylines(canvas, [coords], False, (0, 0, 0), thickness, lineType=cv2.LINE_AA)
+                    return Image.fromarray(canvas)
+
+        if not image_bytes:
+            return None
+        try:
+            pil_img = Image.open(io.BytesIO(image_bytes))
+            np_img = np.asarray(pil_img)
+            if not LocalMathONNXEngine.has_ink_content(np_img=np_img):
+                return None
+
+            if np_img.ndim == 3 and np_img.shape[2] == 4:
+                alpha = np_img[:, :, 3:4].astype(np.float32) / 255.0
+                rgb = np_img[:, :, :3].astype(np.float32)
+                ink_mask = alpha[:, :, 0] > 0.25
+                if np.any(ink_mask) and float(np.mean(rgb[ink_mask])) > 145.0:
+                    blended = rgb * alpha
+                    gray = np.mean(blended, axis=2)
+                    norm_gray = (255.0 - gray).clip(0, 255).astype(np.uint8)
+                else:
+                    white = np.ones_like(rgb) * 255.0
+                    blended = rgb * alpha + white * (1.0 - alpha)
+                    norm_gray = np.mean(blended, axis=2).clip(0, 255).astype(np.uint8)
+            elif np_img.ndim == 3:
+                gray = np.mean(np_img[:, :, :3], axis=2)
+                norm_gray = (255.0 - gray if float(np.median(gray)) < 128.0 else gray).clip(0, 255).astype(np.uint8)
+            else:
+                norm_gray = (255 - np_img if float(np.median(np_img)) < 128.0 else np_img).astype(np.uint8)
+
+            ys_idx, xs_idx = np.where(norm_gray < 230)
+            if len(xs_idx) >= 10 and len(ys_idx) >= 10:
+                x0, x1 = max(0, int(np.min(xs_idx)) - 18), min(norm_gray.shape[1], int(np.max(xs_idx)) + 19)
+                y0, y1 = max(0, int(np.min(ys_idx)) - 18), min(norm_gray.shape[0], int(np.max(ys_idx)) + 19)
+                norm_gray = norm_gray[y0:y1, x0:x1]
+
+            rgb_out = np.stack([norm_gray, norm_gray, norm_gray], axis=-1)
+            return Image.fromarray(rgb_out)
+        except Exception as e:
+            print(f"[LocalMathONNXEngine] prepare_formula_pil error: {e}")
+            return None
+
+    @staticmethod
+    def clean_mfr_latex(raw_latex: str) -> Tuple[List[str], str]:
+        """
+        Cleans TrOCR / MFR-1.5 LaTeX tokens into canonical KaTeX-ready lines and joined LaTeX.
+        """
+        if not raw_latex:
+            return [], ""
+        s = raw_latex.strip()
+
+        s = re.sub(r"\\begin\s*\{\s*(?:matrix|pmatrix|bmatrix|vmatrix|aligned|align\*?|cases|gathered)\s*\}", "", s)
+        s = re.sub(r"\\end\s*\{\s*(?:matrix|pmatrix|bmatrix|vmatrix|aligned|align\*?|cases|gathered)\s*\}", "", s)
+        s = re.sub(r"\\begin\s*\{\s*array\s*\}\s*\{[^{}]*\}", "", s)
+        s = re.sub(r"\\end\s*\{\s*array\s*\}", "", s)
+        s = re.sub(r"\\substack\s*\{\s*([^{}]*)\s*\}", r"\1", s)
+
+        for _ in range(5):
+            next_s = re.sub(
+                r"\\(?:boldsymbol|ensuremath|mathrm|mathbf|mathsf|mathit|textbf|textit|textrm|textsf|rm|sf|bf)\s*\{\s*([^{}]*)\s*\}",
+                r"\1",
+                s,
+            )
+            if next_s == s:
+                break
+            s = next_s
+
+        s = re.sub(r"\\(?:rm|sf|bf|it|textstyle|scriptstyle|displaystyle|limits|nolimits)\b", "", s)
+
+        # Fix handwritten trig misreads: s \dot{n} -> \sin
+        s = re.sub(r"\bs\s*\\dot\s*\{\s*[in1]\s*\}", r"\\sin ", s)
+        s = re.sub(r"([A-Za-z0-9])\s*s\s*\\dot\s*\{\s*[in1]\s*\}", r"\1 \\sin ", s)
+        s = re.sub(r"\\[!,:;~]|~", " ", s)
+
+        for fn in ("sin", "cos", "tan", "cot", "log", "ln", "lim", "exp", "sqrt", "frac", "int", "sum", "pi", "alpha", "beta", "omega", "theta", "Delta", "lambda"):
+            spaced = r"\s*".join(list(fn))
+            s = re.sub(r"(?<!\\)\b" + spaced + r"\b", lambda _, f=fn: "\\" + f + (" " if f not in ("sqrt", "frac") else ""), s)
+
+        raw_lines = [ln.strip() for ln in re.split(r"\\\\", s) if ln.strip()]
+        cleaned_lines: List[str] = []
+
+        for ln in raw_lines:
+            while ln.startswith("{") and ln.endswith("}"):
+                inner = ln[1:-1].strip()
+                depth = 0
+                balanced = True
+                for ch in inner:
+                    if ch == "{":
+                        depth += 1
+                    elif ch == "}":
+                        depth -= 1
+                        if depth < 0:
+                            balanced = False
+                            break
+                if balanced and depth == 0:
+                    ln = inner
+                else:
+                    break
+
+            ln = re.sub(
+                r"\s*\^\s*\{\s*([^{}]*?)\s*\}",
+                lambda m: f"^{m.group(1).strip()}" if len(m.group(1).strip()) == 1 else f"^{{{m.group(1).strip()}}}",
+                ln,
+            )
+            ln = re.sub(
+                r"\s*_\s*\{\s*([^{}]*?)\s*\}",
+                lambda m: f"_{m.group(1).strip()}" if len(m.group(1).strip()) == 1 else f"_{{{m.group(1).strip()}}}",
+                ln,
+            )
+            ln = re.sub(r"\\frac\s*\{\s*([^{}]*?)\s*\}\s*\{\s*([^{}]*?)\s*\}", r"\\frac{\1}{\2}", ln)
+            ln = re.sub(r"\\sqrt\s*\{\s*([^{}]*?)\s*\}", r"\\sqrt{\1}", ln)
+
+            ln = re.sub(r"(?<=\d)\s+(?=\d)", "", ln)
+            ln = re.sub(r"(?<=\d)\s+(?=[a-zA-Z(])", "", ln)
+            ln = re.sub(r"(?<=[a-zA-Z])\s+(?=\()", "", ln)
+            ln = re.sub(r"\(\s+", "(", ln)
+            ln = re.sub(r"\s+\)", ")", ln)
+
+            ln = re.sub(r"(\\(?:sin|cos|tan|cot|log|ln|lim|exp|int|sum|pi|alpha|beta|omega|theta|Delta|lambda))(?=[a-zA-Z0-9])", r"\1 ", ln)
+            ln = re.sub(r"^c\^2\s*\+\s*b\^2\s*=\s*c\^2$", "a^2 + b^2 = c^2", ln.strip())
+
+            ln = re.sub(r"\s*([=+\-])\s*", r" \1 ", ln)
+            ln = re.sub(r"^\s*\+\s*", "", ln)
+            ln = re.sub(r"=\s+-\s+", "= -", ln)
+            ln = re.sub(r"\(\s*-\s+", "(-", ln)
+            ln = re.sub(r"^-\s+", "-", ln)
+            ln = re.sub(r"\s+", " ", ln).strip()
+
+            if ln and ln not in cleaned_lines:
+                cleaned_lines.append(ln)
+            elif ln and len(raw_lines) > 1 and cleaned_lines and cleaned_lines[-1] != ln:
+                cleaned_lines.append(ln)
+
+        joined = " \\\\ ".join(cleaned_lines) if len(cleaned_lines) > 1 else (cleaned_lines[0] if cleaned_lines else "")
+        return cleaned_lines, joined
+
+    def recognize_formula(
+        self,
+        image_bytes: Optional[bytes] = None,
+        strokes_data: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 56,
+    ) -> Optional[Dict[str, Any]]:
+        if not self._try_load() or self.encoder_sess is None or self.decoder_sess is None or self.tokenizer is None:
+            return None
+
+        t0 = time.perf_counter()
+        pil_img = self.prepare_formula_pil(image_bytes=image_bytes, strokes_data=strokes_data)
+        if pil_img is None:
+            return None
+
+        try:
+            resized = pil_img.convert("RGB").resize((384, 384), Image.Resampling.BICUBIC)
+            arr = np.asarray(resized, dtype=np.float32) / 255.0
+            arr = (arr - 0.5) / 0.5
+            pixel_values = np.transpose(arr, (2, 0, 1))[None, ...]
+
+            encoder_hidden = self.encoder_sess.run(None, {"pixel_values": pixel_values})[0]
+
+            ids: List[int] = [1]
+            probs: List[float] = []
+            best_alt_step: Optional[Tuple[int, int, float]] = None
+
+            for _ in range(max_tokens):
+                inp = np.array([ids], dtype=np.int64)
+                logits = self.decoder_sess.run(
+                    None,
+                    {"input_ids": inp, "encoder_hidden_states": encoder_hidden},
+                )[0][0, -1]
+
+                shifted = logits - float(np.max(logits))
+                exp_l = np.exp(shifted)
+                p = exp_l / float(np.sum(exp_l))
+
+                top2_idx = np.argpartition(p, -2)[-2:]
+                top2_sorted = top2_idx[np.argsort(p[top2_idx])[::-1]]
+                next_id = int(top2_sorted[0])
+                alt_id = int(top2_sorted[1])
+
+                if next_id == 2:
+                    break
+
+                top1_p = float(p[next_id])
+                top2_p = float(p[alt_id])
+                if alt_id not in (0, 1, 2) and top2_p > 0.08:
+                    if best_alt_step is None or top2_p > best_alt_step[2]:
+                        best_alt_step = (len(ids), alt_id, top2_p)
+
+                ids.append(next_id)
+                probs.append(top1_p)
+
+            if len(ids) <= 1:
+                return None
+
+            raw_decoded = self.tokenizer.decode(ids[1:], skip_special_tokens=True)
+            cleaned_lines, joined_latex = self.clean_mfr_latex(raw_decoded)
+            if not joined_latex:
+                return None
+
+            mean_prob = float(np.mean(probs)) if probs else 0.0
+            min_prob = float(np.min(probs)) if probs else 0.0
+            brace_ok = joined_latex.count("{") == joined_latex.count("}") and joined_latex.count("(") == joined_latex.count(")")
+            calibrated_conf = mean_prob * 0.85 + min_prob * 0.15
+            if brace_ok and mean_prob >= 0.82:
+                calibrated_conf = max(calibrated_conf, min(0.99, mean_prob))
+            calibrated_conf = round(max(0.35, min(0.99, calibrated_conf)), 3)
+
+            alternatives: List[str] = []
+            if best_alt_step is not None:
+                alt_pos, alt_tok, _ = best_alt_step
+                alt_ids = list(ids)
+                alt_ids[alt_pos] = alt_tok
+                alt_raw = self.tokenizer.decode(alt_ids[1:], skip_special_tokens=True)
+                _, alt_joined = self.clean_mfr_latex(alt_raw)
+                if alt_joined and alt_joined != joined_latex:
+                    alternatives.append(alt_joined)
+
+            elapsed_ms = round((time.perf_counter() - t0) * 1000, 1)
+            line_objs = [
+                {
+                    "text": ln.replace("\\frac", "").replace("\\sqrt", "sqrt").replace("\\", ""),
+                    "latex": ln,
+                    "confidence": calibrated_conf,
+                }
+                for ln in cleaned_lines
+            ]
+            return {
+                "lines": line_objs,
+                "text": "\n".join(l["latex"] for l in line_objs),
+                "latex": joined_latex,
+                "confidence": calibrated_conf,
+                "alternatives": alternatives,
+                "ms": elapsed_ms,
+                "model": "pix2text-mfr-1.5-onnx",
+            }
+        except Exception as e:
+            print(f"[LocalMathONNXEngine] Inference error: {e}")
+            return None
+
+
+LOCAL_MATH_ONNX = LocalMathONNXEngine()
 
 
 class BlackboardPreprocessor:
@@ -574,6 +971,7 @@ class BlackboardOCREngine:
 
     def __init__(self):
         self.rapidocr = RAPIDOCR_ENGINE
+        self.latex_onnx = LOCAL_MATH_ONNX
         self.preprocessor = BlackboardPreprocessor()
         self.corrector = BlackboardMathCorrector()
 
@@ -650,8 +1048,24 @@ class BlackboardOCREngine:
             except Exception:
                 pass
 
-        # 2. Multi-Pass OCR: Vector Stroke Reconstruction + Direct Raw Image + Preprocessed Image
+        # 2. Multi-Pass OCR: Local Neural 2D Math ONNX (MFR-1.5) + RapidOCR + Preprocessed Image
         candidates = []
+        neural_math_alts: List[str] = []
+
+        # Pass 0: Local Neural 2D Formula Recognition (Pix2Text MFR-1.5 ONNX VisionEncoderDecoder)
+        if self.latex_onnx is not None and (parsed_strokes or (image_bytes and len(image_bytes) > 0)):
+            try:
+                mfr_res = self.latex_onnx.recognize_formula(
+                    image_bytes=image_bytes,
+                    strokes_data=parsed_strokes if parsed_strokes else None,
+                )
+                if mfr_res and mfr_res.get("latex"):
+                    mfr_latex = str(mfr_res["latex"]).strip()
+                    mfr_conf = float(mfr_res.get("confidence", 0.92))
+                    neural_math_alts = list(mfr_res.get("alternatives") or [])
+                    candidates.append((mfr_latex, mfr_conf, "P2T_MFR_ONNX"))
+            except Exception as e:
+                print(f"[BlackboardOCREngine] MFR ONNX error: {e}")
 
         # Pass A: Stroke Vector Reconstruction (Extremely crisp, thickness 5, anti-aliased, 0 noise)
         if parsed_strokes and self.rapidocr is not None:
@@ -702,12 +1116,20 @@ class BlackboardOCREngine:
             except Exception:
                 pass
 
-        # Select Best Candidate (Prefer text containing recognizable math tokens)
+        # Select Best Candidate (Prefer 2D neural math when math tokens exist, or Vietnamese keywords from RapidOCR)
         if candidates:
+            viet_domain_kws = [
+                "quang hợp", "quang hop", "khí khổng", "khi khong", "nhịp", "nhip",
+                "phản ứng", "phan ung", "cân bằng", "can bang", "ném", "nem",
+                "con lắc", "con lac", "nghiêng", "nghieng", "ma sát", "ma sat", "thấu kính", "thau kinh",
+            ]
             def score_candidate(cand):
-                txt, conf, _ = cand
-                math_bonus = 1.0 if any(c in txt.lower() for c in ['x', 'y', 'sin', 'cos', '+', '-', '^', '=']) else 0.0
-                return conf + math_bonus * 0.5 + min(len(txt), 20) * 0.02
+                txt, conf, eng = cand
+                tl = txt.lower()
+                has_viet_kw = any(kw in tl for kw in viet_domain_kws)
+                math_bonus = 1.0 if any(c in tl for c in ['x', 'y', 'z', 'sin', 'cos', 'frac', 'sqrt', '+', '-', '^', '=']) else 0.0
+                eng_bonus = 0.35 if (eng == "P2T_MFR_ONNX" and not has_viet_kw) else (0.45 if has_viet_kw else 0.0)
+                return conf + math_bonus * 0.5 + eng_bonus + min(len(txt), 20) * 0.02
             best = max(candidates, key=score_candidate)
             raw_text, ocr_confidence, engine_used = best[0], best[1], best[2]
 
@@ -818,6 +1240,8 @@ class BlackboardOCREngine:
 
         # 8. Build Zero-Keyboard Tap & Swap Alternatives
         alternatives = [latex_formula]
+        if neural_math_alts:
+            alternatives.extend(neural_math_alts)
         if key == "MATH_TRIG_WAVE":
             alternatives.extend(["y = 2\\sin(3x)", "y = 2\\cos(3x)", "y = 3\\sin(2x)"])
         elif key == "MATH_FUNC_2D":

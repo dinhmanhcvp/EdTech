@@ -8,6 +8,7 @@ type HealthPayload = {
   status?: string;
   runtime?: {
     rapidocr?: boolean;
+    latex_onnx?: boolean;
     chromadb?: boolean;
     gemini_configured?: boolean;
     classroom_rooms?: number;
@@ -46,8 +47,9 @@ export const EngineHealthRail: React.FC = () => {
       const runtime = data.runtime;
       const hasLocalKey = typeof window !== 'undefined' && Boolean(window.localStorage.getItem('gemini_api_key'));
       const isGeminiReady = Boolean(runtime?.gemini_configured || hasLocalKey);
+      const isLocalOnnxReady = Boolean(runtime?.latex_onnx || runtime?.rapidocr);
 
-      if (!isGeminiReady) {
+      if (!isGeminiReady && !isLocalOnnxReady) {
         setState('degraded');
       } else {
         setState('online');
@@ -81,11 +83,14 @@ export const EngineHealthRail: React.FC = () => {
 
   const engineCount = health?.engines_active?.length ?? 0;
   const statusCopy = useMemo(() => {
-    if (state === 'online') return 'AI Vision sẵn sàng · Gemini 2.5';
+    if (state === 'online') {
+      if (health?.runtime?.latex_onnx) return 'Neural ONNX Offline · Sẵn sàng';
+      return 'AI Vision sẵn sàng · Gemini 2.5';
+    }
     if (state === 'degraded') return 'Backend OK · Cần khóa Gemini';
     if (state === 'checking') return 'Đang bắt tay backend...';
     return 'Render ngủ / Ngoại tuyến';
-  }, [state]);
+  }, [state, health]);
 
   const StatusIcon = state === 'offline' ? AlertTriangle : state === 'degraded' ? AlertTriangle : state === 'checking' ? Activity : CheckCircle2;
   const statusColor = state === 'online' ? 'text-emerald-700' : state === 'checking' ? 'text-blue-700' : state === 'degraded' ? 'text-amber-700' : 'text-rose-700';

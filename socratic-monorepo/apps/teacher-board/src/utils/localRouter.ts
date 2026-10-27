@@ -117,7 +117,9 @@ export const SOLID_TITLES: Record<SolidKind, string> = {
   dodecahedronLite: 'Khối đa diện',
 };
 
-export function makeSolidBlueprint(kind: SolidKind, dims?: {a?: number; b?: number; c?: number}): SimulationBlueprint {
+import type {SketchPlaneShape} from './sketchSolid';
+
+export function makeSolidBlueprint(kind: SolidKind, dims?: {a?: number; b?: number; c?: number; h?: number}): SimulationBlueprint {
   return {
     engine: 'GEOMETRY',
     templateId: 'GEO_SOLID',
@@ -129,6 +131,26 @@ export function makeSolidBlueprint(kind: SolidKind, dims?: {a?: number; b?: numb
       kind === 'cube'
         ? 'Hình lập phương có bao nhiêu mặt, cạnh, đỉnh? Có bao nhiêu cách khai triển khác nhau thành hình phẳng và vì sao hai mặt đối diện không bao giờ nằm cạnh nhau trong mạng khai triển?'
         : 'Khi khai triển khối này thành hình phẳng, diện tích toàn phần thay đổi thế nào? Chọn mặt đáy khác nhau thì hình khai triển có khác nhau không?',
+    curriculumLevel: 'THPT_STANDARD',
+  };
+}
+
+export function makePlaneGeometryBlueprint(shape: SketchPlaneShape): SimulationBlueprint {
+  return {
+    engine: 'MATH',
+    templateId: 'MATH_DYNAMIC_GEOMETRY',
+    recognizedLatex: `\\text{${shape.title}}`,
+    ocrAlternatives: [],
+    parameters: [],
+    meta: {
+      planeKind: shape.kind,
+      planeTitle: shape.title,
+      vertices2D: shape.vertices2D,
+      anglesDeg: shape.anglesDeg,
+      sideLengths: shape.sideLengths,
+    },
+    socraticQuestion:
+      'Khi kéo các đỉnh của tam giác, ba điểm O (tâm đường tròn ngoại tiếp), G (trọng tâm), H (trực tâm) có luôn thẳng hàng trên đường thẳng Euler không? Khoảng cách GH gấp mấy lần GO?',
     curriculumLevel: 'THPT_STANDARD',
   };
 }

@@ -1,4 +1,9 @@
 # Optional offline neural OCR & vector cache for dedicated edge hardware (minimum 2GB RAM required)
 -r requirements.txt
+onnxruntime
+tokenizers
+huggingface-hub
+opencv-python-headless
+rapid-latex-ocr
 rapidocr-onnxruntime
 chromadb

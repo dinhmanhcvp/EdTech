@@ -119,3 +119,41 @@ def test_vision_prompt_only_uses_registry_template_ids():
     ids = set(re.findall(r"\b(?:MATH|PHYS|CHEM|BIO)_[A-Z0-9_]+\b", build_vision_prompt("x", "MATH")))
     assert ids, "prompt phải liệt kê template"
     assert ids <= set(OFFLINE_TEMPLATE_REGISTRY), f"template không có trong Registry: {ids - set(OFFLINE_TEMPLATE_REGISTRY)}"
+
+
+def test_local_math_onnx_cleaner_and_offline_recognition(client, monkeypatch):
+    from ocr_engine import LocalMathONNXEngine, LOCAL_MATH_ONNX
+    import json
+
+    lines, joined = LocalMathONNXEngine.clean_mfr_latex(
+        r"\begin{matrix} \boldsymbol { y } = x ^ { 2 } \! - \! 3 \\ x + y = 5 \end{matrix}"
+    )
+    assert lines == ["y = x^2 - 3", "x + y = 5"]
+    assert joined == r"y = x^2 - 3 \\ x + y = 5"
+
+    # Kiểm tra nhận diện offline thực tế bằng mô hình Pix2Text-MFR-1.5 ONNX không cần GEMINI_API_KEY
+    if LOCAL_MATH_ONNX and LOCAL_MATH_ONNX.available:
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+        # Vẽ công thức đơn giản "1 + 1 = 2" hoặc lấy nét từ fixture
+        strokes = [
+            {"points": [{"x": 20, "y": 20}, {"x": 20, "y": 80}]},  # 1
+            {"points": [{"x": 55, "y": 50}, {"x": 95, "y": 50}]},  # + ngang
+            {"points": [{"x": 75, "y": 30}, {"x": 75, "y": 70}]},  # + dọc
+            {"points": [{"x": 130, "y": 20}, {"x": 130, "y": 80}]},  # 1
+            {"points": [{"x": 165, "y": 42}, {"x": 205, "y": 42}]},  # = trên
+            {"points": [{"x": 165, "y": 58}, {"x": 205, "y": 58}]},  # = dưới
+        ]
+        resp = client.post(
+            "/api/v1/canvas/recognize-ink",
+            json={
+                "image_base64": _png_b64(),
+                "raw_strokes_json": json.dumps(strokes),
+                "allow_local_onnx": True,
+            },
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["engine"] == "local_onnx"
+        assert data["confidence"] >= 0.75
+        assert len(data["lines"]) >= 1
+

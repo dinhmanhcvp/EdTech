@@ -14,8 +14,8 @@ import {
   type ConvertResult,
 } from '../../utils/inkConvert';
 import {MathView} from '../common/MathView';
-import {detectSolidFromStrokes} from '../../utils/sketchSolid';
-import {makeSolidBlueprint, SOLID_TITLES} from '../../utils/localRouter';
+import {detectSolidFromStrokes, detectPlaneShapeFromStrokes} from '../../utils/sketchSolid';
+import {makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES} from '../../utils/localRouter';
 import {detectSubject, SUBJECT_LABEL, type Subject} from '../../utils/subjectContext';
 import {findAmbiguousTokens, swapTokenInFormula} from '../../utils/ocrConfusions';
 import type {SimulationBlueprint} from '@socratic/types';
@@ -96,6 +96,10 @@ export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({
   const [selectedSubj, setSelectedSubj] = useState<Subject | null>(initialSubject);
   const src = useMemo(() => sourceStrokes(source), [source]);
   const sketch = useMemo(() => (editing || src.length < 4 ? null : detectSolidFromStrokes(src.map((x) => ({points: x.points})))), [src, editing]);
+  const planeSketch = useMemo(
+    () => (editing || sketch || src.length < 1 || src.length > 4 ? null : detectPlaneShapeFromStrokes(src.map((x) => ({points: x.points})))),
+    [src, editing, sketch],
+  );
   const local = useMemo<ConvertResult | null>(() => (editing || !src.length ? null : recognizeLocal(src)), [src, editing]);
   const [ai, setAi] = useState<ConvertResult | null>(initialAiResult ?? null);
   const [aiState, setAiState] = useState<'idle' | 'loading' | 'done' | 'unavailable'>(
@@ -439,8 +443,10 @@ ${joinedText}`), [joinedLatex, joinedText]);
                   >
                     {aiState === 'loading' ? (
                       <span className="inline-flex items-center gap-1">
-                        <Loader2 className="w-3 h-3 animate-spin" /> AI Vision…
+                        <Loader2 className="w-3 h-3 animate-spin" /> Neural OCR…
                       </span>
+                    ) : ai?.model?.includes('onnx') ? (
+                      <>🧠 Neural ONNX{ai ? ` · ${Math.round(ai.ms)} ms` : ''}</>
                     ) : (
                       <>✨ AI Vision{ai ? ` · ${Math.round(ai.ms)} ms` : ''}</>
                     )}
@@ -505,6 +511,36 @@ ${joinedText}`), [joinedLatex, joinedText]);
               >
                 Dựng khối 3D
               </button>
+            </div>
+          )}
+          {planeSketch && planeSketch.confidence >= 0.75 && (
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2" data-testid="ink-convert-plane-sketch">
+              <span className="text-xs text-blue-900">
+                Nét vẽ giống <b>{planeSketch.title}</b> ({planeSketch.note}).
+              </span>
+              <div className="ml-auto flex items-center gap-1.5">
+                <button
+                  data-testid="ink-convert-plane-build-2d"
+                  onClick={() => onVisualizeLocal(makePlaneGeometryBlueprint(planeSketch))}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition cursor-pointer"
+                >
+                  Dựng hình phẳng 2D
+                </button>
+                <button
+                  data-testid="ink-convert-plane-extrude-3d"
+                  onClick={() =>
+                    onVisualizeLocal(
+                      makeSolidBlueprint(
+                        planeSketch.vertices2D.length === 3 ? 'pyramid3' : 'pyramid4',
+                        {a: 2.5, h: 3},
+                      ),
+                    )
+                  }
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition cursor-pointer"
+                >
+                  Dựng chóp 3D từ đáy này
+                </button>
+              </div>
             </div>
           )}
 

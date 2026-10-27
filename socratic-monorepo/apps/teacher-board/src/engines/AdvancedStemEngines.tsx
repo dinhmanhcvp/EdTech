@@ -661,18 +661,41 @@ export const RevolutionEngine: React.FC<Props> = ({ blueprint }) => {
   );
 };
 
-export const DynamicGeometryEngine: React.FC<Props> = () => {
-  const [vertices, setVertices] = useState<Point2[]>([
-    [-2, -1],
-    [2, -1],
-    [0, 2],
-  ]);
+export const DynamicGeometryEngine: React.FC<Props> = ({ blueprint }) => {
+  const initialVertices = useMemo<Point2[]>(() => {
+    const raw = blueprint?.meta?.vertices2D;
+    if (Array.isArray(raw) && raw.length >= 3) {
+      return raw.slice(0, 3).map((pt: unknown) => {
+        if (Array.isArray(pt) && pt.length >= 2) {
+          return [
+            num(pt[0], 0, -4.5, 4.5),
+            num(pt[1], 0, -2.6, 2.6),
+          ] as Point2;
+        }
+        return [0, 0] as Point2;
+      });
+    }
+    return [
+      [-2, -1],
+      [2, -1],
+      [0, 2],
+    ];
+  }, [blueprint?.meta?.vertices2D]);
+
+  const [vertices, setVertices] = useState<Point2[]>(initialVertices);
+  useEffect(() => {
+    setVertices(initialVertices);
+  }, [initialVertices]);
+
   const [point, setPoint] = useState<Point2>([2.5, 1]);
   const [k, setK] = useState(4);
   const [layers, setLayers] = useState({
     centers: true,
     polar: true,
     inverse: false,
+    altitudes: false,
+    medians: false,
+    ninePoint: false,
   });
   const clipId = useId().replace(/:/g, "");
   const drag = useRef<{ id: number; index: number } | null>(null);
@@ -684,6 +707,65 @@ export const DynamicGeometryEngine: React.FC<Props> = () => {
   const end = (e: React.PointerEvent<SVGSVGElement>) => {
     if (drag.current?.id === e.pointerId) drag.current = null;
   };
+
+  // Trung điểm 3 cạnh BC, CA, AB và chân 3 đường cao
+  const midpoints = useMemo<Point2[]>(
+    () => [
+      [(vertices[1][0] + vertices[2][0]) / 2, (vertices[1][1] + vertices[2][1]) / 2],
+      [(vertices[2][0] + vertices[0][0]) / 2, (vertices[2][1] + vertices[0][1]) / 2],
+      [(vertices[0][0] + vertices[1][0]) / 2, (vertices[0][1] + vertices[1][1]) / 2],
+    ],
+    [vertices],
+  );
+
+  const altitudeFeet = useMemo<Point2[]>(() => {
+    const footOnLine = (p: Point2, a: Point2, b: Point2): Point2 => {
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+      const l2 = dx * dx + dy * dy;
+      if (l2 < 1e-12) return a;
+      const t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2;
+      return [a[0] + t * dx, a[1] + t * dy];
+    };
+    return [
+      footOnLine(vertices[0], vertices[1], vertices[2]),
+      footOnLine(vertices[1], vertices[2], vertices[0]),
+      footOnLine(vertices[2], vertices[0], vertices[1]),
+    ];
+  }, [vertices]);
+
+  // Số đo 3 cạnh và 3 góc (độ) của tam giác ABC
+  const triMetrics = useMemo(() => {
+    const d2 = (a: Point2, b: Point2) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+    const cLen = d2(vertices[0], vertices[1]);
+    const aLen = d2(vertices[1], vertices[2]);
+    const bLen = d2(vertices[2], vertices[0]);
+    const angAt = (p: Point2, q: Point2, r: Point2) => {
+      const ux = q[0] - p[0],
+        uy = q[1] - p[1];
+      const vx = r[0] - p[0],
+        vy = r[1] - p[1];
+      const l = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+      if (l < 1e-9) return 0;
+      return (Math.acos(Math.max(-1, Math.min(1, (ux * vx + uy * vy) / l))) * 180) / Math.PI;
+    };
+    const area =
+      0.5 *
+      Math.abs(
+        vertices[0][0] * (vertices[1][1] - vertices[2][1]) +
+          vertices[1][0] * (vertices[2][1] - vertices[0][1]) +
+          vertices[2][0] * (vertices[0][1] - vertices[1][1]),
+      );
+    return {
+      aLen,
+      bLen,
+      cLen,
+      angA: angAt(vertices[0], vertices[1], vertices[2]),
+      angB: angAt(vertices[1], vertices[2], vertices[0]),
+      angC: angAt(vertices[2], vertices[0], vertices[1]),
+      area,
+    };
+  }, [vertices]);
   return (
     <div
       className="p-4 flex flex-col gap-3"
@@ -732,6 +814,79 @@ export const DynamicGeometryEngine: React.FC<Props> = () => {
             stroke="#2563EB"
             strokeWidth="2.5"
           />
+          {centers && layers.altitudes && (
+            <>
+              {vertices.map((v, i) => (
+                <g key={`alt-${i}`}>
+                  <line
+                    x1={xy(v)[0]}
+                    y1={xy(v)[1]}
+                    x2={xy(altitudeFeet[i])[0]}
+                    y2={xy(altitudeFeet[i])[1]}
+                    stroke="#E11D48"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 3"
+                  />
+                  <circle
+                    cx={xy(altitudeFeet[i])[0]}
+                    cy={xy(altitudeFeet[i])[1]}
+                    r="3.2"
+                    fill="#E11D48"
+                  />
+                </g>
+              ))}
+            </>
+          )}
+          {centers && layers.medians && (
+            <>
+              {vertices.map((v, i) => (
+                <g key={`med-${i}`}>
+                  <line
+                    x1={xy(v)[0]}
+                    y1={xy(v)[1]}
+                    x2={xy(midpoints[i])[0]}
+                    y2={xy(midpoints[i])[1]}
+                    stroke="#8B5CF6"
+                    strokeWidth="1.5"
+                    strokeDasharray="3 3"
+                  />
+                  <circle
+                    cx={xy(midpoints[i])[0]}
+                    cy={xy(midpoints[i])[1]}
+                    r="3.2"
+                    fill="#8B5CF6"
+                  />
+                  <text
+                    x={xy(midpoints[i])[0] + 5}
+                    y={xy(midpoints[i])[1] - 4}
+                    fontSize="11"
+                    fill="#6D28D9"
+                  >
+                    {["M", "N", "E"][i]}
+                  </text>
+                </g>
+              ))}
+            </>
+          )}
+          {centers && layers.ninePoint && (
+            <>
+              <circle
+                cx={xy([(centers.o[0] + centers.h[0]) / 2, (centers.o[1] + centers.h[1]) / 2])[0]}
+                cy={xy([(centers.o[0] + centers.h[0]) / 2, (centers.o[1] + centers.h[1]) / 2])[1]}
+                r={(centers.radius * 42) / 2}
+                fill="none"
+                stroke="#0891B2"
+                strokeWidth="1.8"
+                strokeDasharray="6 3"
+              />
+              <circle
+                cx={xy([(centers.o[0] + centers.h[0]) / 2, (centers.o[1] + centers.h[1]) / 2])[0]}
+                cy={xy([(centers.o[0] + centers.h[0]) / 2, (centers.o[1] + centers.h[1]) / 2])[1]}
+                r="3.5"
+                fill="#0891B2"
+              />
+            </>
+          )}
           {centers && layers.centers && (
             <>
               <circle
@@ -876,18 +1031,42 @@ export const DynamicGeometryEngine: React.FC<Props> = () => {
       {layers.inverse && !inv && (
         <ErrorBox message="Không thể nghịch đảo điểm P tại gốc tọa độ." />
       )}
+      {centers && (
+        <div
+          data-testid="dynamic-geo-metrics"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-blue-50/70 border border-blue-200 px-3 py-2 text-xs font-mono text-blue-950"
+        >
+          <span>
+            Cạnh: a={fmtNum(triMetrics.aLen, 2)} · b={fmtNum(triMetrics.bLen, 2)} · c={fmtNum(triMetrics.cLen, 2)}
+          </span>
+          <span>
+            Góc: A={Math.round(triMetrics.angA)}° · B={Math.round(triMetrics.angB)}° · C={Math.round(triMetrics.angC)}°
+          </span>
+          <span>
+            S={fmtNum(triMetrics.area, 2)} · R={fmtNum(centers.radius, 2)} · r={fmtNum(centers.inradius, 2)}
+          </span>
+        </div>
+      )}
       <div className={`${panel} flex flex-wrap gap-3`}>
-        {(["centers", "polar", "inverse"] as const).map((key, i) => (
+        {(["centers", "altitudes", "medians", "ninePoint", "polar", "inverse"] as const).map((key, i) => (
           <label
             key={key}
             className="min-h-[44px] flex items-center gap-2 text-sm"
           >
             <input
               type="checkbox"
+              data-testid={`geo-layer-${key}`}
               checked={layers[key]}
               onChange={() => setLayers({ ...layers, [key]: !layers[key] })}
             />
-            {["Tâm và đường Euler", "Đối cực (R = 2)", "Nghịch đảo P′"][i]}
+            {[
+              "Tâm và đường Euler",
+              "3 Đường cao (AH)",
+              "3 Trung tuyến (AM)",
+              "Đường tròn 9 điểm Euler",
+              "Đối cực (R = 2)",
+              "Nghịch đảo P′",
+            ][i]}
           </label>
         ))}
       </div>
@@ -917,6 +1096,45 @@ export const DynamicGeometryEngine: React.FC<Props> = () => {
           set={(n) => setPoint([point[0], n])}
         />
         <div className="flex flex-wrap gap-2">
+          <button
+            className={button}
+            data-testid="geo-preset-equilateral"
+            onClick={() =>
+              setVertices([
+                [-2, -1.15],
+                [2, -1.15],
+                [0, 2.31],
+              ])
+            }
+          >
+            Tam giác đều
+          </button>
+          <button
+            className={button}
+            data-testid="geo-preset-right"
+            onClick={() =>
+              setVertices([
+                [-2, -1.2],
+                [2.2, -1.2],
+                [-2, 1.8],
+              ])
+            }
+          >
+            Tam giác vuông
+          </button>
+          <button
+            className={button}
+            data-testid="geo-preset-isosceles"
+            onClick={() =>
+              setVertices([
+                [-1.6, -1.3],
+                [1.6, -1.3],
+                [0, 2.1],
+              ])
+            }
+          >
+            Tam giác cân
+          </button>
           <button
             className={button}
             onClick={() =>

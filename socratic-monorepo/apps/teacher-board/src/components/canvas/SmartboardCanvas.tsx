@@ -3,8 +3,12 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
-import { routeLocally, makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES } from '../../utils/localRouter';
+import { routeLocally, makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES, type SolidKind } from '../../utils/localRouter';
 import { detectSolidFromStrokes, detectPlaneShapeFromStrokes } from '../../utils/sketchSolid';
+import { shapeFromBlueprint, solidWire, planeStats, VERTEX_LABELS } from '../../utils/inlineShape';
+import { type BoardView, FIT_VIEW, clampView, zoomAt, panBy, bufferQuality } from '../../utils/boardView';
+import { BoardViewControls } from './BoardViewControls';
+import { InlineShape } from './InlineShape';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -59,7 +63,7 @@ import { classifyLassoIntent, type LassoIntentResult } from '../../utils/lassoIn
 
 const ERASE_R = 14; // bán kính tẩy (đơn vị canvas)
 
-export type CanvasTool = 'PEN' | 'HIGHLIGHTER' | 'SHAPE' | 'LASSO' | 'ERASER';
+export type CanvasTool = 'PEN' | 'HIGHLIGHTER' | 'SHAPE' | 'LASSO' | 'ERASER' | 'PAN' | 'TEXT';
 export type ShapeType = 'CIRCLE' | 'LINE' | 'ARROW' | 'RECTANGLE';
 export type GridPattern = 'DOTS' | 'GRID' | 'BLANK';
 
@@ -390,6 +394,30 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [displayMode, setDisplayMode] = useState<'HOLOGRAM' | 'DOCK'>('HOLOGRAM');
   const [holoPosition, setHoloPosition] = useState<{ x: number; y: number }>({ x: 580, y: 35 });
   const [holoScale, setHoloScale] = useState<number>(1.0);
+
+  // ---- Thu phóng / di chuyển bảng, nhiều trang, chữ, toàn màn hình (như các bảng trắng trực tuyến) ----
+  const [view, setViewState] = useState<BoardView>(FIT_VIEW);
+  const viewRef = useRef<BoardView>(FIT_VIEW);
+  const applyView = (v: BoardView) => {
+    const el = boardWrapRef.current;
+    const next = clampView(v, el?.clientWidth || 1200, el?.clientHeight || 675);
+    viewRef.current = next;
+    setViewState(next);
+  };
+  const panRef = useRef<{ id: number; sx: number; sy: number; tx: number; ty: number } | null>(null);
+  const spaceDownRef = useRef(false);
+  const gestureRef = useRef<{ touches: Map<number, { x: number; y: number }>; active: boolean; d0: number; k0: number; mid0: { x: number; y: number }; v0: BoardView }>({
+    touches: new Map(),
+    active: false,
+    d0: 1,
+    k0: 1,
+    mid0: { x: 0, y: 0 },
+    v0: FIT_VIEW,
+  });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [pages, setPages] = useState<Stroke[][]>([[]]);
+  const [pageIdx, setPageIdx] = useState(0);
+  const [textDraft, setTextDraft] = useState<{ x: number; y: number; value: string } | null>(null);
 
   // Chế độ trực quan hình học tự động: khi vẽ xong đa giác/khối 3D, tự biến nét vẽ thành mô hình tương tác tại chỗ
   const [isGeometryLiveMode, setIsGeometryLiveMode] = useState<boolean>(initialGeometryLiveMode);
@@ -752,22 +780,24 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   };
 
   // Lớp nền đã vẽ sẵn (giấy + lưới + nét đã chốt): chỉ vẽ lại khi các thứ này đổi, còn nét đang viết chỉ chồng lên trên
+  const bufQ = bufferQuality(view.k);
   const baseCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const baseKeyRef = useRef<unknown[] | null>(null);
 
   const renderBase = useCallback(
-    (w: number, h: number) => {
+    (w: number, h: number, q = 1) => {
       let base = baseCanvasRef.current;
       if (!base) {
         base = document.createElement('canvas');
         baseCanvasRef.current = base;
       }
-      if (base.width !== w || base.height !== h) {
-        base.width = w;
-        base.height = h;
+      if (base.width !== Math.round(w * q) || base.height !== Math.round(h * q)) {
+        base.width = Math.round(w * q);
+        base.height = Math.round(h * q);
       }
       const ctx = base.getContext('2d');
       if (!ctx) return null;
+      ctx.setTransform(q, 0, 0, q, 0, 0);
       ctx.clearRect(0, 0, w, h);
 
       // Warm Alabaster Paper Surface Fill
@@ -848,13 +878,15 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     const prevKey = baseKeyRef.current;
     let base = baseCanvasRef.current;
     if (!base || !prevKey || prevKey.length !== key.length || key.some((k, i) => k !== prevKey[i])) {
-      base = renderBase(canvas.width, canvas.height);
+      base = renderBase(canvas.width / bufQ, canvas.height / bufQ, bufQ);
       baseKeyRef.current = key;
     }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (base) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(base, 0, 0);
     }
+    ctx.setTransform(bufQ, 0, 0, bufQ, 0, 0); // từ đây vẽ theo tọa độ bảng 1200×675
 
     // 3. Active freehand stroke
     if (currentStroke.length > 1) {
@@ -955,7 +987,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       ctx.stroke();
       ctx.restore();
     }
-  }, [strokes, currentStroke, selectedStrokes, lassoLoop, tool, strokeColor, strokeWidth, gridPattern, shapeStart, shapeCurrent, selectedShape, showWatermarkGuide, selectedRecordSlot, renderBase, eraserHover]);
+  }, [strokes, currentStroke, selectedStrokes, lassoLoop, tool, strokeColor, strokeWidth, gridPattern, shapeStart, shapeCurrent, selectedShape, showWatermarkGuide, selectedRecordSlot, renderBase, eraserHover, bufQ]);
 
   useEffect(() => {
     redraw();
@@ -1175,8 +1207,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
   const toBoard = (canvas: HTMLCanvasElement, clientX: number, clientY: number, pressure?: number, pen = false): Point => {
     const rect = canvas.getBoundingClientRect();
-    const sx = canvas.width / (rect.width || 1);
-    const sy = canvas.height / (rect.height || 1);
+    const sx = 1200 / (rect.width || 1);
+    const sy = 675 / (rect.height || 1);
     const pt: Point = { x: (clientX - rect.left) * sx, y: (clientY - rect.top) * sy };
     if (pen && pressure !== undefined && pressure > 0) pt.p = pressure;
     return pt;
@@ -1208,6 +1240,18 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     // chống chạm lòng bàn tay: khi vừa dùng bút thì bỏ qua cảm ứng ngón/lòng bàn tay; chỉ nhận một con trỏ mỗi lúc
     if (e.pointerType === 'pen') lastPenAtRef.current = performance.now();
     if (e.pointerType === 'touch' && performance.now() - lastPenAtRef.current < 1500) return;
+    if (gestureRef.current.active) return;
+    // Di chuyển bảng: công cụ Tay, giữ Space, hoặc chuột giữa
+    if (tool === 'PAN' || spaceDownRef.current || (e.pointerType === 'mouse' && e.button === 1)) {
+      e.preventDefault();
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        /* bỏ qua */
+      }
+      panRef.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, tx: viewRef.current.tx, ty: viewRef.current.ty };
+      return;
+    }
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     if (activePointerRef.current !== null && activePointerRef.current !== e.pointerId) return;
 
@@ -1219,6 +1263,12 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       /* bỏ qua: một số trình duyệt/jsdom không hỗ trợ */
     }
     const pt = toBoard(canvas, e.clientX, e.clientY, e.pressure, e.pointerType === 'pen');
+    if (tool === 'TEXT') {
+      activePointerRef.current = null;
+      // mở ô nhập sau khi sự kiện chuột kết thúc, nếu không thao tác nhấn sẽ lấy mất focus của ô vừa mở
+      window.setTimeout(() => setTextDraft({ x: pt.x, y: pt.y, value: '' }), 60);
+      return;
+    }
     isDrawingRef.current = true;
 
     // đầu tẩy của bút (nút 32) hoặc công cụ Tẩy
@@ -1253,6 +1303,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = e.currentTarget;
+    const pan = panRef.current;
+    if (pan && pan.id === e.pointerId) {
+      const el = boardWrapRef.current;
+      applyView(
+        panBy({ ...viewRef.current, tx: pan.tx, ty: pan.ty }, e.clientX - pan.sx, e.clientY - pan.sy, el?.clientWidth || 1200, el?.clientHeight || 675),
+      );
+      return;
+    }
     if (!isDrawingRef.current) {
       if (tool === 'ERASER' && e.pointerType !== 'touch') setEraserHover(toBoard(canvas, e.clientX, e.clientY));
       return;
@@ -1301,6 +1359,15 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   };
 
   const endPointer = (e: React.PointerEvent<HTMLCanvasElement>, cancelled = false) => {
+    if (panRef.current && panRef.current.id === e.pointerId) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        /* bỏ qua */
+      }
+      panRef.current = null;
+      return;
+    }
     if (activePointerRef.current !== null && e.pointerId !== undefined && activePointerRef.current !== e.pointerId) return;
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
@@ -1647,6 +1714,293 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     setStrokes((prev) => prev.filter((s) => s.id !== id));
     setSelectedStrokes((prev) => prev.filter((s) => s.id !== id));
   };
+  // Mở hình tại chỗ thành mô phỏng đầy đủ (khai triển, thông số) trong hologram; hình trên bảng vẫn giữ nguyên
+  const openShapeFull = (s: Stroke) => {
+    const sh = s.shape;
+    if (!sh) return;
+    let bp: SimulationBlueprint | null = null;
+    if (sh.kind === 'solid' && sh.solid) {
+      bp = makeSolidBlueprint(sh.solid.kind as SolidKind, sh.solid.dims);
+    } else if (sh.kind === 'plane' && sh.plane) {
+      const v = sh.plane.verts;
+      const cx = v.reduce((a, p) => a + p.x, 0) / v.length;
+      const cy = v.reduce((a, p) => a + p.y, 0) / v.length;
+      const D = Math.max(...v.map((p) => Math.hypot(p.x - cx, p.y - cy)), 1) * 2;
+      const k = 3.8 / D;
+      const st = planeStats(v);
+      bp = {
+        engine: 'MATH',
+        templateId: 'MATH_DYNAMIC_GEOMETRY',
+        recognizedLatex: `\\text{${sh.title}}`,
+        ocrAlternatives: [],
+        parameters: [],
+        meta: {
+          planeKind: 'custom',
+          planeTitle: sh.title,
+          vertices2D: v.map((p) => [Number(((p.x - cx) * k).toFixed(2)), Number((-(p.y - cy) * k).toFixed(2))]),
+          anglesDeg: st.angles,
+          sideLengths: st.sides,
+        },
+        socraticQuestion: 'Khi kéo các đỉnh của tam giác, ba điểm O, G, H có luôn thẳng hàng trên đường thẳng Euler không? Khoảng cách GH gấp mấy lần GO?',
+        curriculumLevel: 'THPT_STANDARD',
+      } as SimulationBlueprint;
+    }
+    if (!bp) return;
+    setHoloPosition({ x: Math.max(10, Math.min(630, s.points[0].x)), y: Math.max(10, Math.min(290, s.points[0].y)) });
+    setDisplayMode('HOLOGRAM');
+    setActiveBlueprint(bp);
+  };
+
+  // Vẽ hình tại chỗ lên ảnh xuất
+  const drawShapeOnCtx = (ctx: CanvasRenderingContext2D, s: Stroke) => {
+    const sh = s.shape;
+    const t = s.typeset;
+    if (!sh || !t) return;
+    const ox = s.points[0].x;
+    const oy = s.points[0].y;
+    ctx.save();
+    ctx.strokeStyle = s.color;
+    ctx.fillStyle = s.color;
+    ctx.lineWidth = Math.max(2.5, s.width || 3);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.font = 'italic 700 16px "Times New Roman", serif';
+    if (sh.kind === 'plane' && sh.plane) {
+      ctx.beginPath();
+      sh.plane.verts.forEach((p, i) => (i ? ctx.lineTo(ox + p.x, oy + p.y) : ctx.moveTo(ox + p.x, oy + p.y)));
+      ctx.closePath();
+      ctx.stroke();
+      sh.plane.verts.forEach((p, i) => ctx.fillText(VERTEX_LABELS[i], ox + p.x + 6, oy + p.y - 6));
+    } else if (sh.kind === 'solid' && sh.solid) {
+      const wire = solidWire(sh.solid.kind as SolidKind, sh.solid.dims, sh.solid.yaw, sh.solid.pitch, t.w, t.h);
+      for (const e of wire.edges) {
+        ctx.setLineDash(e.hidden ? [7, 6] : []);
+        ctx.beginPath();
+        ctx.moveTo(ox + wire.pts[e.a].x, oy + wire.pts[e.a].y);
+        ctx.lineTo(ox + wire.pts[e.b].x, oy + wire.pts[e.b].y);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      wire.pts.forEach((p, i) => ctx.fillText(wire.labels[i] ?? '', ox + p.x + 6, oy + p.y - 6));
+    }
+    ctx.restore();
+  };
+
+  // ---------------------------------------------------------------- thu phóng / di chuyển / trang / chữ
+  const wrapSize = () => ({ W: boardWrapRef.current?.clientWidth || 1200, H: boardWrapRef.current?.clientHeight || 675 });
+  const zoomStep = (f: number) => {
+    const { W, H } = wrapSize();
+    applyView(zoomAt(viewRef.current, viewRef.current.k * f, W / 2, H / 2, W, H));
+  };
+  const fitView = () => applyView(FIT_VIEW);
+  const toggleFullscreen = () => {
+    try {
+      if (document.fullscreenElement) void document.exitFullscreen();
+      else void document.documentElement.requestFullscreen?.();
+    } catch {
+      /* trình duyệt không cho phép */
+    }
+  };
+
+  const duplicateSelection = () => {
+    if (selectedStrokes.length === 0) return;
+    saveToUndo();
+    const stamp = Date.now().toString(36);
+    const clones: Stroke[] = selectedStrokes.map((s, i) => ({
+      ...s,
+      id: `${s.id.split('-dup')[0]}-dup${stamp}${i}`,
+      points: s.points.map((p) => ({ ...p, x: Math.min(1190, p.x + 32), y: Math.min(660, p.y + 32) })),
+    }));
+    setStrokes((prev) => [...prev, ...clones]);
+    setSelectedStrokes(clones);
+  };
+
+  const resetPageState = () => {
+    setSelectedStrokes([]);
+    setLassoLoop([]);
+    setUndoStack([]);
+    setRedoStack([]);
+    setSketchAlts(null);
+    setTextDraft(null);
+  };
+  const withCurrentPage = () => {
+    const n = pages.slice();
+    n[pageIdx] = strokes;
+    return n;
+  };
+  const goPage = (to: number) => {
+    if (to < 0 || to >= pages.length || to === pageIdx) return;
+    const n = withCurrentPage();
+    setPages(n);
+    setPageIdx(to);
+    setStrokes(n[to] ?? []);
+    resetPageState();
+  };
+  const addPage = () => {
+    const n = withCurrentPage();
+    n.splice(pageIdx + 1, 0, []);
+    setPages(n);
+    setPageIdx(pageIdx + 1);
+    setStrokes([]);
+    resetPageState();
+  };
+  const deletePage = () => {
+    if (pages.length <= 1) return;
+    const n = withCurrentPage();
+    n.splice(pageIdx, 1);
+    const to = Math.min(pageIdx, n.length - 1);
+    setPages(n);
+    setPageIdx(to);
+    setStrokes(n[to] ?? []);
+    resetPageState();
+  };
+
+  const escapeTex = (t: string) => t.replace(/\\/g, '\\textbackslash{}').replace(/([{}%#&_$^~])/g, (m) => (m === '^' || m === '~' ? `\\${m}{}` : `\\${m}`));
+  const commitText = () => {
+    const d = textDraft;
+    setTextDraft(null);
+    const val = d?.value.trim();
+    if (!d || !val) return;
+    const size = 30;
+    const w = Math.max(size, val.length * size * 0.55);
+    const st: Stroke = {
+      id: `text-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+      points: [{ x: Math.min(d.x, 1150), y: Math.min(d.y, 640) }],
+      color: strokeColor,
+      width: 0,
+      typeset: { latex: `\\text{${escapeTex(val)}}`, text: val, size, w, h: size * 1.5 },
+    };
+    saveToUndo();
+    setStrokes((prev) => [...prev, st]);
+  };
+
+  useEffect(() => {
+    const h = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', h);
+    return () => document.removeEventListener('fullscreenchange', h);
+  }, []);
+
+  // phím tắt: Space giữ để kéo bảng; Ctrl + / − / 0; Ctrl+Z/Y; Ctrl+D nhân đôi; Delete xóa vùng chọn
+  const kbRef = useRef<{ undo: () => void; redo: () => void; del: () => void; dup: () => void; zoom: (f: number) => void; fit: () => void; hasSel: boolean } | null>(null);
+  kbRef.current = { undo: handleUndo, redo: handleRedo, del: () => handleDeleteSelection(), dup: duplicateSelection, zoom: zoomStep, fit: fitView, hasSel: selectedStrokes.length > 0 };
+  useEffect(() => {
+    const editable = (t: EventTarget | null) => {
+      const el = t as HTMLElement | null;
+      return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
+    };
+    const down = (e: KeyboardEvent) => {
+      if (editable(e.target)) return;
+      const k = kbRef.current;
+      if (!k) return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (e.code === 'Space') {
+        spaceDownRef.current = true;
+        e.preventDefault();
+        (document.activeElement as HTMLElement | null)?.blur?.(); // nút dock đang giữ focus sẽ bị Space "bấm" nếu không bỏ focus
+        return;
+      }
+      if (mod && (e.key === '+' || e.key === '=')) {
+        e.preventDefault();
+        k.zoom(1.25);
+      } else if (mod && (e.key === '-' || e.key === '_')) {
+        e.preventDefault();
+        k.zoom(0.8);
+      } else if (mod && e.key === '0') {
+        e.preventDefault();
+        k.fit();
+      } else if (mod && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) k.redo();
+        else k.undo();
+      } else if (mod && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        k.redo();
+      } else if (mod && e.key.toLowerCase() === 'd' && k.hasSel) {
+        e.preventDefault();
+        k.dup();
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && k.hasSel) {
+        e.preventDefault();
+        k.del();
+      }
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.code === 'Space') spaceDownRef.current = false;
+    };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+    };
+  }, []);
+
+  // Ctrl/⌘ + cuộn (hoặc chụm trên bàn di chuột) = thu phóng quanh con trỏ; cuộn khi đã phóng to = di chuyển bảng
+  useEffect(() => {
+    const el = boardWrapRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if ((e.target as HTMLElement | null)?.closest?.('[data-testid="hologram-simulation-overlay"]')) return;
+      const v = viewRef.current;
+      const r = el.getBoundingClientRect();
+      const W = el.clientWidth;
+      const H = el.clientHeight;
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        applyView(zoomAt(v, v.k * Math.exp(-e.deltaY * 0.0025), e.clientX - r.left, e.clientY - r.top, W, H));
+      } else if (v.k > 1) {
+        e.preventDefault();
+        applyView(panBy(v, -(e.shiftKey ? e.deltaY : e.deltaX), e.shiftKey ? 0 : -e.deltaY, W, H));
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // Hai ngón chụm/kéo trên cảm ứng: thu phóng + di chuyển bảng (hủy nét đang vẽ dở)
+  const gestureDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== 'touch') return;
+    const g = gestureRef.current;
+    g.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (g.touches.size === 2) {
+      const [a, b] = Array.from(g.touches.values());
+      g.active = true;
+      g.d0 = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+      g.mid0 = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      g.v0 = viewRef.current;
+      livePointsRef.current = [];
+      setCurrentStroke([]);
+      isDrawingRef.current = false;
+      activePointerRef.current = null;
+      moveRef.current = null;
+      e.stopPropagation();
+    } else if (g.active) {
+      e.stopPropagation();
+    }
+  };
+  const gestureMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const g = gestureRef.current;
+    if (e.pointerType !== 'touch' || !g.touches.has(e.pointerId)) return;
+    g.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (!g.active || g.touches.size < 2) return;
+    e.stopPropagation();
+    const el = boardWrapRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const [a, b] = Array.from(g.touches.values());
+    const d = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const z = zoomAt(g.v0, g.v0.k * (d / g.d0), g.mid0.x - r.left, g.mid0.y - r.top, el.clientWidth, el.clientHeight);
+    applyView(panBy(z, mid.x - g.mid0.x, mid.y - g.mid0.y, el.clientWidth, el.clientHeight));
+  };
+  const gestureUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== 'touch') return;
+    const g = gestureRef.current;
+    const had = g.active;
+    g.touches.delete(e.pointerId);
+    if (had) e.stopPropagation();
+    if (g.touches.size === 0) g.active = false;
+  };
+
   const handleDeleteSelection = () => {
     if (selectedStrokes.length === 0) return;
     saveToUndo();
@@ -1655,6 +2009,34 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     setSelectedStrokes([]);
     setLassoLoop([]);
   };
+
+  // Hologram cao hơn bảng thì bảng cắt mất thanh trượt phía dưới: tự thu nhỏ vừa khung và đẩy lên cho thấy đủ.
+  // Chỉ chạy khi mô phỏng mới mở (người dùng tự kéo/phóng sau đó thì giữ nguyên).
+  useEffect(() => {
+    if (!activeBlueprint || displayMode !== 'HOLOGRAM') return;
+    const fit = () => {
+      const el = boardWrapRef.current?.querySelector('[data-testid="hologram-simulation-overlay"]') as HTMLElement | null;
+      if (!el || !boardScale) return;
+      const hCanvas = el.offsetHeight / boardScale;
+      const avail = 675 - 24;
+      if (hCanvas <= 0) return;
+      setHoloScale((cur) => {
+        const next = hCanvas * cur > avail ? Math.max(0.45, avail / hCanvas) : cur;
+        const nh = hCanvas * next;
+        setHoloPosition((p) => {
+          const y = Math.max(8, Math.min(p.y, 675 - nh - 8));
+          return y === p.y ? p : { ...p, y: Math.round(y) };
+        });
+        return next;
+      });
+    };
+    const t1 = setTimeout(fit, 700);
+    const t2 = setTimeout(fit, 1700);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [activeBlueprint?.templateId, activeBlueprint?.recognizedLatex, displayMode, boardScale]);
 
   // Theo dõi tỉ lệ hiển thị của bảng (canvas 1200 px → chiều rộng thật) để đặt công thức đúng cỡ
   useEffect(() => {
@@ -1678,8 +2060,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     let href = canvas.toDataURL('image/png');
     if (octx) {
       octx.drawImage(canvas, 0, 0);
+      octx.scale(canvas.width / 1200, canvas.height / 675);
       for (const s of strokes) {
         if (!s.typeset) continue;
+        if (s.shape) {
+          drawShapeOnCtx(octx, s);
+          continue;
+        }
         octx.fillStyle = s.color;
         octx.font = `italic ${Math.round(s.typeset.size)}px "Times New Roman", serif`;
         octx.textBaseline = 'top';
@@ -1837,6 +2224,37 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       const bb = bboxOfStrokes(strokesToTransform);
       const centerX = (bb.x0 + bb.x1) / 2;
       const centerY = (bb.y0 + bb.y1) / 2;
+
+      // Hình sạch thay thẳng cho nét vẽ trên bảng (như chữ → công thức chuẩn), không đưa vào hologram
+      const isSolid = bp.templateId === 'GEO_SOLID';
+      const bw = bb.x1 - bb.x0;
+      const bh = bb.y1 - bb.y0;
+      const side = Math.max(bw, bh, 170);
+      const sw = isSolid ? side : Math.max(bw, 110);
+      const sh = isSolid ? side : Math.max(bh, 110);
+      const shape = shapeFromBlueprint(bp, sw, sh);
+      if (shape) {
+        const ax = Math.max(0, Math.min(1200 - sw, centerX - sw / 2));
+        const ay = Math.max(0, Math.min(675 - sh, centerY - sh / 2));
+        const ids = new Set(strokesToTransform.map((s) => s.id));
+        const inkColor = strokesToTransform[0].color || '#18181B';
+        const made: Stroke = {
+          id: `shape-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+          points: [{ x: ax, y: ay }],
+          color: inkColor,
+          width: Math.max(2.5, Math.min(4, strokesToTransform[0].width || 3)),
+          typeset: { latex: '', text: shape.title, size: 20, w: sw, h: sh },
+          shape,
+        };
+        saveToUndo();
+        setStrokes((prev) => [...prev.filter((s) => !ids.has(s.id)), made]);
+        setSelectedStrokes([]);
+        setLassoLoop([]);
+        setFormulaInput('');
+        setIsLoading(false);
+        return;
+      }
+
       const targetW = 560;
       const targetH = 380;
       const newX = Math.max(10, Math.min(1200 - targetW - 10, centerX - targetW / 2));
@@ -2627,25 +3045,37 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         {/* Drawing Canvas Area (Always visible, NEVER covered, high-def 1200x675) */}
         <div
           ref={boardWrapRef}
-          className={`relative rounded-2xl overflow-hidden border border-[#E6E4DD] bg-[#F8F7F4] shadow-sm transition-all duration-200 ${
+          onPointerDownCapture={gestureDown}
+          onPointerMoveCapture={gestureMove}
+          onPointerUpCapture={gestureUp}
+          onPointerCancelCapture={gestureUp}
+          data-testid="board-wrap"
+          data-zoom={view.k.toFixed(3)}
+          style={{ maxWidth: 'min(1800px, calc((100vh - 120px) * 1.7778))' }}
+          className={`relative rounded-2xl overflow-hidden border border-[#E6E4DD] bg-[#EDEBE5] shadow-sm ${
             (activeBlueprint && displayMode === 'DOCK') || isCompilingShimmer
               ? isSplitView
                 ? 'w-full lg:w-1/2'
                 : 'w-full lg:w-[52%]'
-              : 'w-full max-w-[1400px]'
+              : 'w-full'
           }`}
         >
+          <div
+            data-testid="board-stage"
+            className="relative origin-top-left"
+            style={{ transform: `translate(${view.tx}px, ${view.ty}px) scale(${view.k})`, willChange: view.k === 1 ? undefined : 'transform' }}
+          >
           <canvas
             ref={canvasRef}
             data-testid="chalkboard-canvas"
-            width={1200}
-            height={675}
+            width={Math.round(1200 * bufQ)}
+            height={Math.round(675 * bufQ)}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerCancel}
             onPointerLeave={() => setEraserHover(null)}
-            className={`${tool === 'ERASER' ? 'cursor-none' : tool === 'LASSO' && selectedStrokes.length > 0 ? 'cursor-move' : 'cursor-crosshair'} touch-none w-full h-auto block`}
+            className={`${tool === 'PAN' ? 'cursor-grab' : tool === 'TEXT' ? 'cursor-text' : tool === 'ERASER' ? 'cursor-none' : tool === 'LASSO' && selectedStrokes.length > 0 ? 'cursor-move' : 'cursor-crosshair'} touch-none w-full h-auto block`}
           />
 
           {sketchAlts && (
@@ -2669,8 +3099,41 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
           {/* Lớp công thức chuẩn (KaTeX) đặt trên canvas; chỉ phần tay cầm nhận chuột nên bút vẫn viết xuyên qua được */}
           <div className="absolute inset-0 pointer-events-none" data-testid="typeset-layer">
+            {textDraft && (
+              <input
+                data-testid="text-draft-input"
+                autoFocus
+                value={textDraft.value}
+                onChange={(e) => setTextDraft((d) => (d ? { ...d, value: e.target.value } : d))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') commitText();
+                  else if (e.key === 'Escape') setTextDraft(null);
+                }}
+                onBlur={commitText}
+                placeholder="Gõ chữ rồi Enter…"
+                className="absolute pointer-events-auto bg-white/90 border-2 border-blue-500 rounded-md px-2 outline-none shadow-md"
+                style={{ left: `${(textDraft.x / 1200) * 100}%`, top: `${(textDraft.y / 675) * 100}%`, fontSize: Math.max(10, 30 * boardScale), color: strokeColor, minWidth: 160 * boardScale + 120, lineHeight: 1.3 }}
+              />
+            )}
             {strokes
-              .filter((s) => s.typeset)
+              .filter((s) => s.shape && s.typeset)
+              .map((s) => (
+                <InlineShape
+                  key={s.id}
+                  stroke={s}
+                  boardScale={boardScale}
+                  picked={selectedStrokes.some((q) => q.id === s.id)}
+                  onChange={(shape) => setStrokes((prev) => prev.map((q) => (q.id === s.id ? { ...q, shape } : q)))}
+                  onDelete={() => deleteTypeset(s.id)}
+                  onOpenFull={() => openShapeFull(s)}
+                  onMoveStart={(e) => onTypesetGripDown(e, s)}
+                  onMove={onTypesetGripMove}
+                  onMoveEnd={onTypesetGripUp}
+                  onInteractStart={saveToUndo}
+                />
+              ))}
+            {strokes
+              .filter((s) => s.typeset && !s.shape)
               .map((s) => {
                 const t = s.typeset!;
                 const picked = selectedStrokes.some((q) => q.id === s.id);
@@ -2803,6 +3266,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   </button>
                   <span className="w-px h-4 bg-stone-200 mx-0.5" />
                   <button
+                    data-testid="sel-btn-duplicate"
+                    onClick={duplicateSelection}
+                    title="Nhân đôi vùng chọn (Ctrl+D)"
+                    className="px-1.5 py-1 rounded-xl text-[11px] font-semibold text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition cursor-pointer"
+                  >
+                    Nhân đôi
+                  </button>
+                  <button
                     data-testid="sel-btn-delete"
                     onClick={handleDeleteSelection}
                     title="Xóa vùng chọn"
@@ -2813,6 +3284,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 </div>
               );
             })()}
+          </div>
+
           </div>
 
           {/* Chế độ Trực quan Hình học Tự động HUD Banner */}
@@ -3060,6 +3533,20 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         busyLabel={isAutoInking ? 'Đang viết thư pháp…' : isCompilingShimmer ? 'AI đang biên dịch…' : null}
         onOpenClassroom={() => setIsClassroomOpen(true)}
         classroomStudents={room.state.role === 'teacher' && room.state.roomId ? room.state.studentCount : null}
+      />
+      <BoardViewControls
+        zoom={view.k}
+        onZoomIn={() => zoomStep(1.25)}
+        onZoomOut={() => zoomStep(0.8)}
+        onFit={fitView}
+        isFullscreen={isFullscreen}
+        onFullscreen={toggleFullscreen}
+        page={pageIdx}
+        pageCount={pages.length}
+        onPrevPage={() => goPage(pageIdx - 1)}
+        onNextPage={() => goPage(pageIdx + 1)}
+        onAddPage={addPage}
+        onDeletePage={deletePage}
       />
       <AiFab
         selectionCount={selectedStrokes.length}

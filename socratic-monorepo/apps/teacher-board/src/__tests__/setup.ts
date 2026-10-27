@@ -18,6 +18,7 @@ if (typeof HTMLCanvasElement !== 'undefined') {
         ellipse: () => {},
         bezierCurveTo: () => {},
         quadraticCurveTo: () => {},
+        setTransform: () => {},
         drawImage: () => {},
         stroke: () => {},
         fill: () => {},

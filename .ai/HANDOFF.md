@@ -919,3 +919,27 @@ Student App tutor, online_tutor router/tests, shared contracts. Restore persiste
 
 ## Active scope — Mode 02 online reliability
 Own Student App tutor evaluation/draft utilities/tests, online_tutor backend/tests and shared tutor contracts. Implement stable retry IDs, draft recovery and authoritative response snapshots; preserve Teacher Board/unrelated edits.
+
+# 2026-10-27 — Hình học tại chỗ, thu phóng bảng, nhiều trang, kịch bản live demo
+
+## Hình học tại chỗ (không còn vào hologram)
+- Nét vẽ nhận ra khối/hình phẳng được **thay bằng hình sạch ngay trên bảng**, giống chữ → công thức. `Stroke.shape?: ShapeMeta` (utils/lassoGeometry.ts); đối tượng neo ở `points[0]`, giữ `typeset {w,h}` giả để chọn/tẩy/di chuyển/hoàn tác như công thức chuẩn. Lớp typeset lọc `!s.shape`; lớp mới render `components/canvas/InlineShape.tsx`.
+- `utils/inlineShape.ts` (thuần, có test): `fitPlaneVertices`, `planeStats`, `triangleCenters` (G, O, H, Euler), `solidWire` (nét liền/đứt theo mặt quay lưng), `shapeFromBlueprint`.
+- `transformStrokesToGeometryInPlace` (SmartboardCanvas.tsx) tạo shape; nếu blueprint không phải GEO_SOLID/MATH_DYNAMIC_GEOMETRY có đỉnh thì rơi về hologram cũ. Nút ⤢ trên hình gọi `openShapeFull` mở hologram đầy đủ (khai triển, cắt thiết diện).
+- Xuất ảnh vẽ cả hình tại chỗ (`drawShapeOnCtx`); chưa kiểm tra trực quan ảnh xuất.
+
+## Bảng trắng
+- `utils/boardView.ts` (thuần, có test): `zoomAt`, `clampView`, `panBy`, `bufferQuality`. State `view` + `viewRef` trong SmartboardCanvas; `board-stage` bọc canvas và lớp typeset bằng CSS transform; hologram nằm ngoài stage nên không bị phóng.
+- Canvas dùng bộ đệm `1200*Q × 675*Q` (`bufQ = bufferQuality(view.k)`); mọi vẽ qua `ctx.setTransform(Q…)`; `toBoard` dùng 1200/675 cố định. Test setup có thêm `setTransform` trong stub canvas.
+- Công cụ `PAN` (Tay) và `TEXT` (Chữ) thêm vào `CanvasTool` + dock; Space/chuột giữa/hai ngón kéo bảng; Ctrl+cuộn phóng; phím tắt Ctrl +/-/0, Ctrl+Z/Y/D, Delete (effect dùng `kbRef`).
+- Trang: `pages`, `pageIdx` trong SmartboardCanvas; `BoardViewControls.tsx` (góc trên trái, tránh đè dock). Trang chỉ nằm trong bộ nhớ.
+- Hologram cao hơn bảng tự thu nhỏ vừa khung (effect `fit` sau 0,7 s và 1,7 s khi mở).
+- `SimulationWidget` root có `data-template-id` để test.
+
+## Kịch bản live demo
+- `docs/KICH_BAN_LIVE_DEMO.md` + `src/__tests__/liveDemoCases.test.ts` (39 mô phỏng, mỗi mô phỏng một câu). Đã chạy trình duyệt thật cả 39 câu: 39/39 mở đúng mô phỏng, không lỗi trang (nhập qua ô công thức, không phải viết tay thật).
+
+## Kiểm tra
+- `tsc` sạch; vitest 38 file / 476 test đạt. Backend không đụng.
+- Chưa thử: bút/cảm ứng thật (hai ngón, Space trên bàn phím cứng), toàn màn hình thật (headless không kiểm), đồng bộ thu phóng/trang sang học sinh BYOD.
+- Lỗi cảnh báo có sẵn (không phải của đợt này): hydration `AiFab` (vị trí lấy từ window).

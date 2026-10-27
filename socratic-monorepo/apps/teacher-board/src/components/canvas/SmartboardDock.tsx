@@ -31,6 +31,8 @@ import {
   GraduationCap,
   BookOpen,
   MessageSquare,
+  Hand,
+  Type,
 } from 'lucide-react';
 import type {CanvasTool, ShapeType, GridPattern} from './SmartboardCanvas';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -230,6 +232,11 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
           Chọn
         </button>
 
+        <button data-testid="tool-pan" onClick={() => p.onTool('PAN')} className={`${base} ${p.tool === 'PAN' ? on : idle}`} title="Di chuyển bảng (hoặc giữ Space, hoặc hai ngón)">
+          <Hand className="w-5 h-5" />
+          Tay
+        </button>
+
         <button
           data-testid="tool-pen"
           onClick={() => {
@@ -250,6 +257,11 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
         <button onClick={() => p.onTool('HIGHLIGHTER')} className={`${base} ${p.tool === 'HIGHLIGHTER' ? 'bg-amber-400 border-amber-400 text-stone-900' : idle}`} title="Bút dạ quang">
           <Highlighter className="w-5 h-5" />
           Dạ quang
+        </button>
+
+        <button data-testid="tool-text" onClick={() => p.onTool('TEXT')} className={`${base} ${p.tool === 'TEXT' ? on : idle}`} title="Chèn chữ: chạm vào bảng, gõ rồi Enter">
+          <Type className="w-5 h-5" />
+          Chữ
         </button>
 
         <button

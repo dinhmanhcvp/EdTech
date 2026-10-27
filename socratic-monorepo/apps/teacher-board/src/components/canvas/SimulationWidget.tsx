@@ -559,6 +559,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
     <div
       data-testid="simulation-widget"
       data-display-mode={displayMode}
+      data-template-id={blueprint.templateId}
       onPointerDown={handleWidgetPointerDown}
       onPointerMove={isHolo && onGripPointerMove ? onGripPointerMove : triggerHudBrackets}
       onPointerUp={isHolo && onGripPointerUp ? onGripPointerUp : undefined}

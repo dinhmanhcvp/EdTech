@@ -96,13 +96,20 @@ describe('In-Place Geometry Transformation on Smartboard Canvas', () => {
       fireEvent.click(inplaceBtn);
     });
 
-    // Mô hình tương tác hình học 2D xuất hiện trên bảng dạng Hologram không nền
-    const holoOverlay = await screen.findByTestId('hologram-simulation-overlay');
-    expect(holoOverlay).toBeInTheDocument();
+    // Nét vẽ được thay bằng hình sạch ngay trên bảng (như chữ → công thức), KHÔNG nhảy sang hologram
+    const shape = await screen.findByTestId('inline-shape');
+    expect(shape.getAttribute('data-kind')).toBe('plane');
+    expect(shape.getAttribute('data-title')).toContain('Tam giác vuông');
+    expect(screen.queryByTestId('hologram-simulation-overlay')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId('shape-vertex-handle')).toHaveLength(3);
+    expect(screen.getAllByTestId('side-label')).toHaveLength(3);
 
-    // Các đỉnh kéo được trên bảng của DynamicGeometryEngine xuất hiện
-    const point0 = await screen.findByTestId('geo-point-0');
-    expect(point0).toBeInTheDocument();
+    // Mở mô phỏng đầy đủ khi cần (các đỉnh kéo được của DynamicGeometryEngine)
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('shape-open-full'));
+    });
+    expect(await screen.findByTestId('hologram-simulation-overlay')).toBeInTheDocument();
+    expect(await screen.findByTestId('geo-point-0')).toBeInTheDocument();
   });
 
   it('Biến nét vẽ 3D hình lập phương thành hình khối tương tác xoay 3D tại chỗ trên bảng', async () => {
@@ -122,11 +129,14 @@ describe('In-Place Geometry Transformation on Smartboard Canvas', () => {
       fireEvent.click(inplaceBtn);
     });
 
-    // Khối 3D lập phương xuất hiện ngay tại chỗ trên bảng
-    const holoOverlay = await screen.findByTestId('hologram-simulation-overlay');
-    expect(holoOverlay).toBeInTheDocument();
-    expect(await screen.findByTestId('geo-canvas')).toBeInTheDocument();
-    expect(screen.getByTestId('geo-title').textContent).toContain('Hình lập phương');
+    // Khối lập phương thành hình sạch tại chỗ: nét liền (thấy) và nét đứt (khuất), có vòng xoay
+    const shape = await screen.findByTestId('inline-shape');
+    expect(shape.getAttribute('data-kind')).toBe('solid');
+    expect(shape.getAttribute('data-title')).toContain('Hình lập phương');
+    expect(screen.queryByTestId('hologram-simulation-overlay')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId('edge-visible')).toHaveLength(9);
+    expect(screen.getAllByTestId('edge-hidden')).toHaveLength(3);
+    expect(screen.getByTestId('shape-rotate-handle')).toBeInTheDocument();
   });
 
   it('Thanh công cụ nổi dạng viên thuốc (Floating Pill Toolbar) ngay dưới hình 3D cho phép tương tác 1 chạm (Frame 38 Video)', () => {

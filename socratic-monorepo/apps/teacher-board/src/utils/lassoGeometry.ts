@@ -24,12 +24,25 @@ export interface TypesetMeta {
   h: number;
 }
 
+/**
+ * Hình học tại chỗ: nét vẽ tay được thay bằng hình sạch trên bảng. Neo tại points[0] (góc trên-trái);
+ * đỉnh/kích thước tính theo px canvas tương đối với neo nên di chuyển bằng lasso vẫn đúng.
+ */
+export interface ShapeMeta {
+  kind: 'plane' | 'solid';
+  title: string;
+  plane?: {verts: {x: number; y: number}[]; euler: boolean};
+  solid?: {kind: string; dims: Record<string, number | undefined>; yaw: number; pitch: number};
+}
+
 export interface Stroke {
   id: string;
   points: Point[];
   color: string;
   width: number;
   typeset?: TypesetMeta;
+  /** có `shape` thì `typeset` chỉ giữ w/h để chọn, tẩy, di chuyển như công thức chuẩn */
+  shape?: ShapeMeta;
 }
 
 export interface BoundingBox {

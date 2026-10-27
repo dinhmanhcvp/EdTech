@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SimulationWidget } from '../components/canvas/SimulationWidget';
+import { AiFab } from '../components/canvas/SmartboardDock';
 import type { SimulationBlueprint } from '@socratic/types';
 
 describe('Compact Hologram & Parameter Auto-Play UI/UX Upgrades', () => {
@@ -62,6 +63,40 @@ describe('Compact Hologram & Parameter Auto-Play UI/UX Upgrades', () => {
 
     fireEvent.click(screen.getByTestId('holo-ctx-close-btn'));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('hiển thị nút AI Hub dạng Đĩa Tròn Đặc Màu Trắng (Solid White Radial Disc) có tâm chữ AI và các tác vụ nằm gọn trong mặt đĩa', () => {
+    const onConvert = vi.fn();
+    const onVisualize = vi.fn();
+    const onLasso = vi.fn();
+    const onVoice = vi.fn();
+
+    render(
+      <AiFab
+        selectionCount={3}
+        busy={false}
+        listening={false}
+        onConvert={onConvert}
+        onVisualize={onVisualize}
+        onLasso={onLasso}
+        onVoice={onVoice}
+        detectedIntent="VISUALIZE"
+      />
+    );
+
+    const centerBtn = screen.getByTestId('ai-fab');
+    expect(centerBtn.className).toContain('bg-white');
+    expect(centerBtn.textContent).toContain('AI');
+
+    // Khi bấm mở, đĩa xoay tròn đặc màu trắng (216x216 rounded-full bg-white/98) bung ra 360 độ
+    fireEvent.click(centerBtn);
+    const discMenu = screen.getByTestId('ai-fab-menu');
+    expect(discMenu).toHaveAttribute('aria-hidden', 'false');
+    expect(discMenu.className).toContain('rounded-full');
+    expect(discMenu.className).toContain('bg-white/98');
+
+    fireEvent.click(screen.getByTestId('top-toolbar-btn-visualize'));
+    expect(onVisualize).toHaveBeenCalledTimes(1);
   });
 });
 

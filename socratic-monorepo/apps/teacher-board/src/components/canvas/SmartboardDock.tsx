@@ -302,10 +302,10 @@ export interface AiFabProps {
 }
 
 /**
- * Nút công cụ AI đa năng cao cấp:
- * - Có thể chạm giữ và kéo di chuyển tự do khắp mặt bảng bằng tay.
- * - Nhấp nhẹ vào nút để mở vòng tròn tác vụ tròn (Radial Fan-out Menu) xung quanh nút.
- * - Thiết kế kính mờ đa tầng (frosted obsidian glass), quầng sáng huyền ảo và viền kim loại sang trọng.
+ * Đĩa Xoay AI Trung Tâm (Solid White AI Radial Turntable Disc):
+ * - Thu gọn: Nút tròn trắng tinh khiết, gọn gàng, có thể chạm giữ và kéo trượt khắp mặt bảng (0ms latency).
+ * - Mở rộng: Nở thành một Đĩa Tròn Đặc Màu Trắng (216px × 216px) liền khối, tâm đĩa in chữ "AI",
+ *   vành đĩa chia đều các tác vụ (Icon mảnh + Nhãn 2 chữ nằm gọn bên trong mặt đĩa trắng, không bao giờ chồng lấp hay tràn mép).
  */
 export const AiFab: React.FC<AiFabProps> = ({
   selectionCount,
@@ -343,18 +343,26 @@ export const AiFab: React.FC<AiFabProps> = ({
     };
   }, []);
 
+  const winW = typeof window !== 'undefined' ? window.innerWidth : 1200;
+  const winH = typeof window !== 'undefined' ? window.innerHeight : 675;
+  const defaultX = Math.max(120, winW - 96);
+  const defaultY = Math.max(120, winH - 116);
+  const rawX = pos ? pos.x : defaultX;
+  const rawY = pos ? pos.y : defaultY;
+
+  // Khi mở đĩa tròn 216px (bán kính 108px), tự động dịch tâm vào trong nếu nút đang sát mép màn hình để đĩa tròn hiển thị trọn vẹn 360°
+  const discMargin = 114;
+  const displayX = open ? Math.max(discMargin, Math.min(winW - discMargin, rawX)) : rawX;
+  const displayY = open ? Math.max(discMargin, Math.min(winH - discMargin, rawY)) : rawY;
+
   const handlePointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
     isDraggingRef.current = false;
-    const winW = typeof window !== 'undefined' ? window.innerWidth : 1200;
-    const winH = typeof window !== 'undefined' ? window.innerHeight : 675;
-    const curX = pos?.x ?? winW - 56;
-    const curY = pos?.y ?? winH - 56;
     dragStartRef.current = {
       startX: e.clientX,
       startY: e.clientY,
-      initX: curX,
-      initY: curY,
+      initX: rawX,
+      initY: rawY,
     };
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -367,8 +375,6 @@ export const AiFab: React.FC<AiFabProps> = ({
     const dy = e.clientY - dragStartRef.current.startY;
     if (Math.hypot(dx, dy) > 4) {
       isDraggingRef.current = true;
-      const winW = typeof window !== 'undefined' ? window.innerWidth : 1200;
-      const winH = typeof window !== 'undefined' ? window.innerHeight : 675;
       const nextX = Math.max(36, Math.min(winW - 36, dragStartRef.current.initX + dx));
       const nextY = Math.max(36, Math.min(winH - 36, dragStartRef.current.initY + dy));
       setPos({ x: nextX, y: nextY });
@@ -395,40 +401,32 @@ export const AiFab: React.FC<AiFabProps> = ({
     setOpen((o) => !o);
   };
 
-  const winW = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  const winH = typeof window !== 'undefined' ? window.innerHeight : 675;
-  const curX = pos ? pos.x : winW - 56;
-  const curY = pos ? pos.y : winH - 56;
-
-  const isNearRight = curX > winW - 160;
-  const isNearBottom = curY > winH - 160;
-  const isNearLeft = curX < 160;
-  const isNearTop = curY < 160;
-
   const items = [
+    {
+      id: 'viz',
+      testid: 'top-toolbar-btn-visualize',
+      aliasTestId: 'radial-action-visualize',
+      label: 'Trực quan',
+      hint: selectionCount ? `Dựng mô phỏng từ ${selectionCount} nét đã chọn` : 'Khoanh vùng rồi kích hoạt mô phỏng',
+      icon: busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />,
+      run: onVisualize,
+      tone: 'text-blue-600',
+      activeTone: 'bg-blue-50 text-blue-700 ring-1 ring-blue-300 font-bold',
+      badge: selectionCount || undefined,
+      highlight: detectedIntent === 'VISUALIZE',
+    },
     {
       id: 'conv',
       testid: 'tool-convert-ink',
       aliasTestId: 'radial-action-latex',
       label: 'Chuyển LaTeX',
       hint: 'Chuyển chữ viết tay thành công thức chuẩn',
-      icon: <Wand2 className="w-5 h-5" />,
+      icon: <Wand2 className="w-4 h-4" />,
       run: onConvert,
-      accent: 'bg-gradient-to-br from-violet-600 to-indigo-700 text-white border-violet-300 shadow-violet-500/35',
+      tone: 'text-violet-600',
+      activeTone: 'bg-violet-50 text-violet-700 ring-1 ring-violet-300',
       badge: undefined,
       highlight: false,
-    },
-    {
-      id: 'viz',
-      testid: 'top-toolbar-btn-visualize',
-      aliasTestId: 'radial-action-visualize',
-      label: 'Trực quan hóa',
-      hint: selectionCount ? `Dựng mô phỏng từ ${selectionCount} nét đã chọn` : 'Khoanh vùng rồi kích hoạt mô phỏng',
-      icon: busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />,
-      run: onVisualize,
-      accent: 'bg-gradient-to-br from-blue-600 to-cyan-600 text-white border-blue-300 shadow-blue-500/35',
-      badge: selectionCount || undefined,
-      highlight: detectedIntent === 'VISUALIZE',
     },
     {
       id: 'grade',
@@ -436,9 +434,10 @@ export const AiFab: React.FC<AiFabProps> = ({
       aliasTestId: 'radial-action-grade',
       label: 'Chấm bài',
       hint: 'Chấm bài giải học sinh theo bước',
-      icon: <GraduationCap className="w-5 h-5" />,
+      icon: <GraduationCap className="w-4 h-4" />,
       run: onGrade || onConvert,
-      accent: 'bg-gradient-to-br from-emerald-600 to-teal-600 text-white border-emerald-300 shadow-emerald-500/35',
+      tone: 'text-emerald-600',
+      activeTone: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-300 font-bold',
       badge: undefined,
       highlight: detectedIntent === 'GRADE',
     },
@@ -446,11 +445,12 @@ export const AiFab: React.FC<AiFabProps> = ({
       id: 'lasso',
       testid: 'ai-fab-lasso',
       aliasTestId: 'radial-action-close',
-      label: 'Khoanh vùng AI',
+      label: 'Khoanh chọn',
       hint: 'Khoanh nét viết hoặc hình vẽ trên bảng',
-      icon: <Lasso className="w-5 h-5" />,
+      icon: <Lasso className="w-4 h-4" />,
       run: onLasso,
-      accent: 'bg-gradient-to-br from-sky-500 to-blue-600 text-white border-sky-300 shadow-sky-500/35',
+      tone: 'text-sky-600',
+      activeTone: 'bg-sky-50 text-sky-700 ring-1 ring-sky-300',
       badge: undefined,
       highlight: false,
     },
@@ -460,205 +460,187 @@ export const AiFab: React.FC<AiFabProps> = ({
       aliasTestId: 'radial-action-subject',
       label: subjectLock ? SUBJECT_LABEL[subjectLock] : 'Môn: Tự động',
       hint: 'Đổi ngữ cảnh phân môn Toán, Lý, Hóa, Sinh',
-      icon: <BookOpen className="w-5 h-5" />,
+      icon: <BookOpen className="w-4 h-4" />,
       run: onCycleSubject || (() => {}),
-      accent: 'bg-gradient-to-br from-amber-500 to-orange-600 text-white border-amber-300 shadow-amber-500/35',
+      tone: 'text-amber-600',
+      activeTone: 'bg-amber-50 text-amber-700 ring-1 ring-amber-300',
       badge: undefined,
-      highlight: false,
+      highlight: Boolean(subjectLock),
     },
     {
       id: 'voice',
       testid: 'ai-fab-voice',
       aliasTestId: 'radial-action-voice',
-      label: listening ? 'Đang nghe…' : 'Hỏi đáp AI',
-      hint: 'Hỏi đáp AI giọng nói / văn bản kèm mô hình minh họa động',
-      icon: listening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />,
+      label: listening ? 'Đang nghe…' : 'Giọng nói',
+      hint: 'Đọc công thức hoặc hỏi đáp AI bằng giọng nói',
+      icon: listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />,
       run: () => {
         onVoice();
         onAskQa?.();
       },
-      accent: listening
-        ? 'bg-gradient-to-br from-rose-600 to-red-600 text-white border-rose-300 shadow-rose-500/35 animate-pulse'
-        : 'bg-gradient-to-br from-rose-500 to-pink-600 text-white border-rose-300 shadow-rose-500/35',
+      tone: listening ? 'text-rose-600 animate-pulse' : 'text-rose-600',
+      activeTone: 'bg-rose-50 text-rose-700 ring-1 ring-rose-300',
       badge: undefined,
-      highlight: false,
+      highlight: listening,
     },
     {
       id: 'qa',
       testid: 'ai-fab-qa',
       aliasTestId: 'radial-action-qa',
-      label: 'Thẻ Hỏi Đáp',
+      label: 'Hỏi đáp AI',
       hint: 'Mở thẻ hỏi đáp AI kèm mô hình minh họa động tức thì',
-      icon: <MessageSquare className="w-5 h-5" />,
+      icon: <MessageSquare className="w-4 h-4" />,
       run: onAskQa || onVoice,
-      accent: 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-cyan-300 shadow-cyan-500/35',
+      tone: 'text-cyan-600',
+      activeTone: 'bg-cyan-50 text-cyan-700 ring-1 ring-cyan-300',
       badge: undefined,
       highlight: false,
     },
   ];
 
-  const getAngles = (): number[] => {
-    const count = items.length;
-    if (isNearRight && isNearBottom) {
-      const start = -195;
-      const end = -75;
-      const step = (end - start) / (count - 1);
-      return items.map((_, i) => start + i * step);
-    }
-    if (isNearLeft && isNearBottom) {
-      const start = -105;
-      const end = 15;
-      const step = (end - start) / (count - 1);
-      return items.map((_, i) => start + i * step);
-    }
-    if (isNearTop) {
-      const start = 15;
-      const end = 165;
-      const step = (end - start) / (count - 1);
-      return items.map((_, i) => start + i * step);
-    }
-    if (isNearRight) {
-      const start = 110;
-      const end = 250;
-      const step = (end - start) / (count - 1);
-      return items.map((_, i) => start + i * step);
-    }
-    const step = 360 / count;
-    return items.map((_, i) => -90 + i * step);
-  };
-
-  const angles = getAngles();
+  // Chia đều 360 độ quanh tâm đĩa trắng (bắt đầu từ góc -90 độ đỉnh trên)
+  const stepAngle = 360 / items.length;
+  const angles = items.map((_, i) => -90 + i * stepAngle);
 
   return (
     <div
       ref={root}
       data-testid="ai-fab-root"
-      className="fixed z-40 select-none touch-none"
-      style={
-        pos
-          ? { left: `${pos.x}px`, top: `${pos.y}px`, transform: 'translate(-50%, -50%)' }
-          : { right: '24px', bottom: '24px' }
-      }
+      className="fixed z-40 select-none touch-none transition-[left,top] duration-150 ease-out"
+      style={{
+        left: `${displayX}px`,
+        top: `${displayY}px`,
+        transform: 'translate(-50%, -50%)',
+      }}
     >
-      <div data-testid="draggable-ai-hub" className="contents">
-        {/* Vòng tròn tác vụ bung tròn đều xung quanh nút AI */}
+      <div data-testid="draggable-ai-hub" className="relative flex items-center justify-center">
+        {/* ĐĨA XOAY TRÒN ĐẶC MÀU TRẮNG (Solid White Radial Turntable Disc) */}
         <div
           data-testid="ai-fab-menu"
           aria-hidden={!open}
-          className="absolute inset-0 pointer-events-none"
+          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[216px] h-[216px] rounded-full bg-white/98 backdrop-blur-xl border border-[#E2E0D8] shadow-[0_18px_50px_rgba(15,23,42,0.26),0_2px_8px_rgba(15,23,42,0.08)] transition-all duration-200 flex items-center justify-center ${
+            open ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-50 pointer-events-none'
+          }`}
         >
+          {/* Vạch chia cung mảnh trên mặt đĩa trắng (Turntable Sector Dividers) */}
+          <svg
+            viewBox="0 0 216 216"
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            aria-hidden="true"
+          >
+            <circle cx="108" cy="108" r="103" fill="none" stroke="#F1EFEA" strokeWidth="1" />
+            <circle cx="108" cy="108" r="36" fill="none" stroke="#E6E4DD" strokeWidth="1" strokeDasharray="2 2" />
+            {angles.map((ang, idx) => {
+              const boundaryRad = ((ang + stepAngle / 2) * Math.PI) / 180;
+              const x1 = 108 + 38 * Math.cos(boundaryRad);
+              const y1 = 108 + 38 * Math.sin(boundaryRad);
+              const x2 = 108 + 98 * Math.cos(boundaryRad);
+              const y2 = 108 + 98 * Math.sin(boundaryRad);
+              return (
+                <line
+                  key={idx}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke="#EFECE6"
+                  strokeWidth="1"
+                />
+              );
+            })}
+          </svg>
+
+          {/* Vành nút tác vụ nằm gọn bên trong mặt đĩa trắng */}
           <div data-testid="radial-action-menu" className="contents">
             {items.map((it, i) => {
               const rad = (angles[i] * Math.PI) / 180;
-              const dist = 94;
-              const rx = Math.round(dist * Math.cos(rad));
-              const ry = Math.round(dist * Math.sin(rad));
+              const dist = 72;
+              const rx = Math.round(108 + dist * Math.cos(rad));
+              const ry = Math.round(108 + dist * Math.sin(rad));
               return (
-                <div
+                <button
                   key={it.id}
+                  type="button"
+                  data-testid={it.testid}
+                  tabIndex={open ? 0 : -1}
+                  onClick={() => {
+                    it.run();
+                    setOpen(false);
+                  }}
+                  title={it.hint}
                   style={{
                     left: `${rx}px`,
                     top: `${ry}px`,
-                    transitionDelay: open ? `${i * 25}ms` : '0ms',
                   }}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 transition-all duration-200 ${
-                    open ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-75 pointer-events-none'
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 w-[56px] h-[48px] rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all duration-150 hover:bg-stone-100/90 active:scale-95 cursor-pointer ${
+                    it.highlight ? it.activeTone : 'text-stone-700'
                   }`}
                 >
-                  <button
-                    type="button"
-                    data-testid={it.testid}
-                    tabIndex={open ? 0 : -1}
-                    onClick={() => {
-                      it.run();
-                      setOpen(false);
-                    }}
-                    title={it.hint}
-                    className={`relative w-12 h-12 rounded-full border-2 shadow-xl flex items-center justify-center transition-all duration-150 hover:scale-115 active:scale-95 cursor-pointer ${
-                      it.accent
-                    } ${it.highlight ? 'ring-4 ring-white/80 shadow-[0_0_20px_rgba(255,255,255,0.7)] animate-pulse' : ''}`}
-                  >
-                    <span data-testid={it.aliasTestId} className="hidden" />
-                    {it.icon}
-                    {it.badge ? (
-                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-white text-stone-900 text-[10px] font-bold flex items-center justify-center border border-stone-200 shadow-sm">
-                        {it.badge}
-                      </span>
-                    ) : null}
-                  </button>
-                  <span className="px-2.5 py-0.5 rounded-full bg-stone-900/90 backdrop-blur-md border border-white/20 shadow-lg text-[10px] font-semibold text-white whitespace-nowrap select-none">
-                    {it.label}
+                  <span data-testid={it.aliasTestId} className="pointer-events-none flex flex-col items-center justify-center gap-0.5">
+                    <span className={it.tone}>{it.icon}</span>
+                    <span className="text-[9.5px] font-medium text-stone-700 leading-none tracking-tight whitespace-nowrap">
+                      {it.label}
+                    </span>
                   </span>
-                </div>
+                  {it.badge ? (
+                    <span className="absolute -top-0.5 right-1 min-w-[15px] h-[15px] px-0.5 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center shadow-2xs">
+                      {it.badge}
+                    </span>
+                  ) : null}
+                </button>
               );
             })}
           </div>
         </div>
 
-        {/* Nút AI chính: Thiết kế kính mờ cao cấp, viền phát quang và kéo di chuyển khắp bảng */}
-        <div className="relative group flex items-center justify-center">
-          {/* Luminous Glow Ambient Ring */}
-          <div
-            className={`absolute -inset-1.5 rounded-full bg-gradient-to-tr from-blue-500/40 via-violet-500/30 to-amber-400/40 blur-md transition-opacity duration-300 pointer-events-none ${
-              open ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
-            }`}
-          />
-
-          <button
-            type="button"
-            data-testid="ai-fab"
-            onClick={handleClick}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            title="Công cụ AI: Chạm giữ để kéo di chuyển khắp bảng • Nhấp để mở vòng tròn tác vụ"
-            className={`relative w-15 h-15 rounded-full flex flex-col items-center justify-center cursor-grab active:cursor-grabbing border-2 shadow-[0_12px_36px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] transition-all duration-200 select-none ${
-              open
-                ? 'bg-stone-900 border-white/40 ring-4 ring-white/10 scale-95'
-                : detectedIntent === 'GRADE'
-                ? 'bg-gradient-to-b from-stone-900 via-stone-900 to-emerald-950 border-emerald-400 ring-4 ring-emerald-500/25 hover:scale-105'
-                : 'bg-gradient-to-b from-stone-900 via-stone-900 to-blue-950 border-cyan-400/80 ring-4 ring-cyan-500/25 hover:scale-105'
-            }`}
+        {/* NÚT TÂM "AI" MÀU TRẮNG TINH KHIẾT (Center White Hub / Collapsed Floating Button) */}
+        <button
+          type="button"
+          data-testid="ai-fab"
+          onClick={handleClick}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          title="Đĩa xoay AI: Chạm giữ để kéo di chuyển khắp bảng • Chạm nhẹ để đóng/mở đĩa công cụ AI"
+          className={`relative z-10 rounded-full flex flex-col items-center justify-center cursor-grab active:cursor-grabbing transition-all duration-200 select-none ${
+            open
+              ? 'w-[64px] h-[64px] bg-[#F8F7F4] hover:bg-stone-100 border-2 border-[#DCD9D0] text-stone-900 shadow-inner'
+              : 'w-[54px] h-[54px] bg-white hover:bg-stone-50 border border-[#DCD9D0] text-stone-900 shadow-[0_8px_28px_rgba(15,23,42,0.22),0_2px_6px_rgba(15,23,42,0.08)] hover:scale-105'
+          }`}
+        >
+          <span
+            data-testid="radial-ai-hub-btn"
+            className="flex flex-col items-center justify-center w-full h-full pointer-events-none"
           >
-            <span data-testid="radial-ai-hub-btn" className="hidden" />
-
-            {/* 3 tactile grip micro-dots */}
-            <div className="flex items-center gap-0.5 absolute top-1.5 opacity-60">
-              <span className="w-1 h-1 rounded-full bg-white/80" />
-              <span className="w-1 h-1 rounded-full bg-white/80" />
-              <span className="w-1 h-1 rounded-full bg-white/80" />
-            </div>
-
-            {/* Center Glyph */}
-            {open ? (
-              <X className="w-6 h-6 text-white transition-transform duration-200 rotate-90" />
-            ) : busy ? (
-              <Loader2 className="w-6 h-6 text-cyan-300 animate-spin" />
+            {busy ? (
+              <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
             ) : (
-              <Sparkles className="w-6 h-6 text-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)] animate-pulse" />
+              <>
+                <span className="text-[15px] font-extrabold tracking-tight text-stone-800 leading-none font-sans">
+                  AI
+                </span>
+                <span
+                  className={`mt-0.5 text-[7.5px] font-semibold uppercase tracking-wider leading-none ${
+                    detectedIntent === 'GRADE'
+                      ? 'text-emerald-600'
+                      : detectedIntent === 'VISUALIZE'
+                      ? 'text-blue-600'
+                      : 'text-stone-400'
+                  }`}
+                >
+                  {detectedIntent === 'GRADE' ? 'Chấm' : detectedIntent === 'VISUALIZE' ? 'Đồ thị' : open ? 'Đóng' : 'Công cụ'}
+                </span>
+              </>
             )}
+          </span>
 
-            {/* Sub-label pill attached to bottom */}
-            <span
-              className={`absolute -bottom-2 text-[8px] font-bold tracking-wider uppercase px-2 py-0.2 rounded-full shadow-md border ${
-                detectedIntent === 'GRADE'
-                  ? 'bg-emerald-600 text-white border-emerald-300'
-                  : detectedIntent === 'VISUALIZE'
-                  ? 'bg-blue-600 text-white border-blue-300'
-                  : 'bg-stone-800 text-stone-200 border-stone-600'
-              }`}
-            >
-              {detectedIntent === 'GRADE' ? 'CHẤM' : detectedIntent === 'VISUALIZE' ? 'TRỰC QUAN' : 'AI HUB'}
+          {/* Chấm tròn báo số nét đang chọn */}
+          {!open && selectionCount > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-blue-600 text-white text-[9.5px] font-bold flex items-center justify-center border-2 border-white shadow-sm">
+              {selectionCount}
             </span>
-
-            {/* Selection badge */}
-            {!open && selectionCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[10px] font-extrabold flex items-center justify-center border border-white/60 shadow-md animate-bounce">
-                {selectionCount}
-              </span>
-            )}
-          </button>
-        </div>
+          )}
+        </button>
       </div>
     </div>
   );

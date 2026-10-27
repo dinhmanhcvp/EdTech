@@ -711,3 +711,77 @@
 - **Kiểm tra & Xác minh:**
   - `npx.cmd tsc --noEmit --incremental false`: **0 lỗi TypeScript**.
   - `npx.cmd vitest run src/__tests__/compactHoloAndToolbarUx.test.tsx src/__tests__/hologramInteraction.test.tsx`: **16/16 tests passed 100%**.
+
+# 2026-10-27 — Mode 02 Student Board Context-Aware Workbench
+
+## Scope isolation
+- Audited the existing Student Board/AfterSchoolTutor implementation first.
+- Only `apps/student-app` was modified; no Teacher Board, canvas, lasso, engine, or Mode 01 file was touched.
+
+## Preserved strengths
+- Existing SocraticCompanionSession, LockedStepper, ConceptCheckGate, BKT engine, Smart Notes, and Visual Debugger components remain intact.
+- Existing four AfterSchoolTutor modes remain intact.
+
+## Added
+- `utils/classroomContext.ts`: read-only `ClassroomSessionSnapshot` bridge with localStorage ingestion and rich fallback data for teacher board/slide logs and on-board student work OCR diagnoses.
+- `components/companion/StudentBoardWorkbench.tsx`:
+  - classroom memory bar and refresh action;
+  - four adaptive student personas with persistent selection and scaffold-depth control;
+  - four diagnostic tabs: visual debugger, board/work inspector, dimensional/limit audit, and freehand scratchpad;
+  - per-line student-work diagnosis and targeted remediation;
+  - end-of-session student roadmap, class grouping, and 15-minute teacher roadmap drawer.
+- Integrated the workbench at the top of `AfterSchoolTutor`.
+
+## Verification
+- Student app tests: 18/18 passed.
+- Student app typecheck: passed.
+- Monorepo production build: student-app and teacher-board both passed.
+- Git scope check: only student-app files changed for this mission.
+
+## Integration contract
+- Student Board reads `socratic_classroom_session_snapshot` only; it never writes to Teacher Board state or imports Teacher Board modules.
+- The fallback data is clearly demo context and must be replaced by a signed/shared snapshot producer when the classroom bridge is deployed.
+
+# 2026-10-27 — Backend Completion for Mode 02
+
+## Backend additions
+- Added `services/ai-engine/student_context.py`, a SQLite-backed durable store for Student Board profiles, error memory, and session events.
+- Added `routers/student_context.py` endpoints:
+  - `GET /api/v1/student/context/{student_id}`
+  - `PUT /api/v1/student/profile/{student_id}`
+  - `POST /api/v1/student/errors/{student_id}`
+  - `POST /api/v1/student/events/{student_id}`
+  - `GET /api/v1/student/roadmap/{student_id}`
+  - `POST /api/v1/student/roadmap/{student_id}/prepare`
+- Runtime DB is `.data/student_context.sqlite3` and is ignored by Git.
+
+## End-to-end Student Board wiring
+- `classroomContext.ts` now fetches the backend context first, with localStorage/fallback offline behavior.
+- Persona changes persist to the backend.
+- Opening an on-board work item records error memory and a session event.
+- Wrap-up uses server-generated roadmap steps when the context API is online and records roadmap review events.
+- UI shows `Context API online`, syncing, or offline fallback state.
+
+## Verification
+- AI engine: 44 tests passed (2 Python deprecation warnings from dependencies).
+- Student app: 18 tests passed.
+- Student app typecheck: passed.
+- Full production build: student-app and teacher-board passed.
+- Teacher Board files remain untouched for this Mode 02 mission.
+
+
+# 2026-10-27 — Teacher Board Compact UI/UX & Solid White Radial Turntable AI Hub (`AiFab`)
+
+## Teacher Board UI/UX Upgrades (`apps/teacher-board`)
+- **Solid White Radial Turntable AI Hub (`SmartboardDock.tsx`)**:
+  - Redesigned `AiFab` into a crisp solid white circular button (`54px × 54px`, `bg-white border border-[#DCD9D0]`) with bold `AI` center typography and subtle intent subtitle (`Chấm` / `Đồ thị` / `Công cụ`).
+  - Expanded state renders a unified solid white turntable disc (`216px × 216px`, `rounded-full bg-white/98 backdrop-blur-xl border border-[#E2E0D8]`) with SVG radial sector dividers, a `64px` center `AI` hub button, and 7 sector buttons arranged evenly 360° inside the white disc at radius `72px` (`Toán $`, `Mô phỏng`, `Chấm bài`, `Thu gọn`, `Môn học`, `Giọng nói`, `Hỏi AI`) with zero overlap.
+  - Added smart viewport edge clamping (`discMargin = 114`) so opening the disc near screen corners automatically shifts the disc center inward to keep the entire 360° white disc visible.
+- **Parameter Auto-Play & Hologram Context Bar (`SimulationWidget.tsx` & `SmartboardCanvas.tsx`)**:
+  - Added `▶ / ⏸` Auto-Play parameter oscillation (`autoPlayKey`) on slider cards (`data-testid="param-autoplay-${p.key}"`).
+  - Added 4 corner selection dots, 6-Dot Drag Grip (`data-testid="hologram-six-dot-grip"`), and 3-button bottom context bar (`data-testid="hologram-bottom-context-bar"`) in `HOLOGRAM` mode synchronized with the 2s auto-hide HUD brackets.
+  - Anchored the Lasso selection action bar (`selection-toolbar`) directly below the selection bounding box (`bb.y1 + 10`) with automatic intent highlighting.
+
+## Verification
+- Teacher Board TypeScript check (`npx tsc --noEmit`): 0 errors.
+- Teacher Board test suite (`npx vitest run`): 33/33 test files passed (411/411 tests passed).

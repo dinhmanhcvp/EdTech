@@ -14,6 +14,10 @@
     * **Nâng cấp bể OpenRouter với `openrouter/free`:** Bổ sung router tự động chọn model miễn phí tốt nhất (`openrouter/free`) và `google/gemini-2.0-flash-001` lên đầu danh sách `DEFAULT_OPENROUTER_VISION_MODELS` và `DEFAULT_OPENROUTER_TEXT_MODELS`.
     * **Khử triệt để lỗi Header Injection trong Fetch:** Chuẩn hóa toàn bộ chuỗi key nhập từ textarea/localStorage, tự động thay thế `\r\n` thành dấu phẩy `,` trước khi gửi qua `fetch` (`x-gemini-api-key`, `x-openrouter-api-key`), ngăn chặn lỗi `TypeError: Invalid character in header` trên trình duyệt và proxy Render.
     * **Chẩn đoán 503 chi tiết:** Bổ sung `get_last_error_summary()` vào `KeyPoolManager`. Khi gặp 503, máy chủ trả về chi tiết chẩn đoán lỗi cụ thể (ví dụ: `Gemini: 429 Quota Exceeded | OpenRouter: 401 Unauthorized`) giúp người dùng và modal hiển thị hướng dẫn khắc phục chính xác.
+    * **Xác thực trực tiếp 4 key Gemini & OpenRouter từ người dùng:**
+      - OpenRouter key `sk-or-v1-dde...469`: Kiểm tra qua OpenRouter Auth API -> HTTP 200 OK (50 lượt free model hàng ngày).
+      - Phát hiện lỗi thiếu ký tự cuối ở key 1 (`AQ...fEXur` thiếu `g` ở cuối -> sửa thành `AQ...fEXurg`). Sau khi thêm `g`, cả 4 key Gemini đều xác thực thành công 100% với Google Generative Language API.
+      - Tinh chỉnh danh sách `GEMINI_MODELS` ưu tiên `gemini-flash-lite-latest` lên đầu tiên: đã kiểm thử thực tế `generateContent` thành công trên cả 4 key, tốc độ siêu nhanh và không bị giới hạn 20 RPD.
   - Toàn bộ 2 Tính năng chính đã được triển khai, kiểm thử và phân định ranh giới module rõ ràng.
   - 513/513 automated tests passed tuyệt đối (100%). TypeScript strict check 0 errors across all apps.
 - **Trạng thái Build & Test:**

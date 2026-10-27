@@ -624,14 +624,13 @@ def classify_with_vision_llm(
                     key_auth_error = False
                     last_key_err: Optional[Exception] = None
                     for model_name in [
-                        "gemini-1.5-flash",
-                        "gemini-2.0-flash",
+                        "gemini-flash-lite-latest",
                         "gemini-2.5-flash",
                         "gemini-flash-latest",
-                        "gemini-1.5-flash-8b",
-                        "gemini-1.5-pro",
+                        "gemini-3-flash-preview",
                         "gemini-2.5-pro",
                         "gemini-pro-latest",
+                        "gemini-1.5-flash",
                     ]:
                         try:
                             model = genai.GenerativeModel(model_name)

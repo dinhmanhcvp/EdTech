@@ -28,8 +28,11 @@ import {
   MicOff,
   X,
   Loader2,
+  GraduationCap,
+  BookOpen,
 } from 'lucide-react';
 import type {CanvasTool, ShapeType, GridPattern} from './SmartboardCanvas';
+import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
 
 export interface DockScene {
   id: string;
@@ -281,7 +284,7 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
   );
 };
 
-// ====================================================================== NÚT AI NỔI
+// ====================================================================== NÚT AI NỔI ĐA NĂNG
 export interface AiFabProps {
   selectionCount: number;
   busy: boolean;
@@ -290,12 +293,40 @@ export interface AiFabProps {
   onVisualize: () => void;
   onLasso: () => void;
   onVoice: () => void;
+  onGrade?: () => void;
+  subjectLock?: Subject | null;
+  onCycleSubject?: () => void;
+  detectedIntent?: 'VISUALIZE' | 'GRADE' | null;
 }
 
-/** Một nút nổi duy nhất cho mọi tác vụ AI; chạm để bung ra các chức năng nhỏ. */
-export const AiFab: React.FC<AiFabProps> = ({selectionCount, busy, listening, onConvert, onVisualize, onLasso, onVoice}) => {
+/**
+ * Nút công cụ AI đa năng cao cấp:
+ * - Có thể chạm giữ và kéo di chuyển tự do khắp mặt bảng bằng tay.
+ * - Nhấp nhẹ vào nút để mở vòng tròn tác vụ tròn (Radial Fan-out Menu) xung quanh nút.
+ * - Thiết kế kính mờ đa tầng (frosted obsidian glass), quầng sáng huyền ảo và viền kim loại sang trọng.
+ */
+export const AiFab: React.FC<AiFabProps> = ({
+  selectionCount,
+  busy,
+  listening,
+  onConvert,
+  onVisualize,
+  onLasso,
+  onVoice,
+  onGrade,
+  subjectLock,
+  onCycleSubject,
+  detectedIntent,
+}) => {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement | null>(null);
+
+  // Vị trí kéo di chuyển của nút AI trên toàn màn hình bảng
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const isDraggingRef = useRef(false);
+  const justToggledByPointerRef = useRef(false);
+  const dragStartRef = useRef<{ startX: number; startY: number; initX: number; initY: number } | null>(null);
+
   useEffect(() => {
     const away = (e: PointerEvent) => {
       if (root.current && !root.current.contains(e.target as Node)) setOpen(false);
@@ -309,47 +340,308 @@ export const AiFab: React.FC<AiFabProps> = ({selectionCount, busy, listening, on
     };
   }, []);
 
-  const items: {id: string; testid: string; label: string; hint: string; icon: React.ReactNode; run: () => void; accent: string; badge?: number}[] = [
-    {id: 'voice', testid: 'ai-fab-voice', label: listening ? 'Đang nghe…' : 'Giọng nói', hint: 'Đọc công thức bằng giọng nói', icon: listening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />, run: onVoice, accent: 'bg-rose-500'},
-    {id: 'lasso', testid: 'ai-fab-lasso', label: 'Khoanh vùng AI', hint: 'Khoanh nét viết hoặc hình vẽ', icon: <Lasso className="w-5 h-5" />, run: onLasso, accent: 'bg-sky-600'},
-    {id: 'viz', testid: 'top-toolbar-btn-visualize', label: 'Trực quan hóa', hint: selectionCount ? `Dựng mô phỏng từ ${selectionCount} nét đã chọn` : 'Khoanh vùng trước, rồi chạm', icon: busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />, run: onVisualize, accent: 'bg-blue-600', badge: selectionCount || undefined},
-    {id: 'conv', testid: 'tool-convert-ink', label: 'Chữ → Công thức', hint: 'Chuyển chữ viết tay thành công thức chuẩn', icon: <Wand2 className="w-5 h-5" />, run: onConvert, accent: 'bg-violet-600'},
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    isDraggingRef.current = false;
+    const winW = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const winH = typeof window !== 'undefined' ? window.innerHeight : 675;
+    const curX = pos?.x ?? winW - 56;
+    const curY = pos?.y ?? winH - 56;
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initX: curX,
+      initY: curY,
+    };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!dragStartRef.current) return;
+    const dx = e.clientX - dragStartRef.current.startX;
+    const dy = e.clientY - dragStartRef.current.startY;
+    if (Math.hypot(dx, dy) > 4) {
+      isDraggingRef.current = true;
+      const winW = typeof window !== 'undefined' ? window.innerWidth : 1200;
+      const winH = typeof window !== 'undefined' ? window.innerHeight : 675;
+      const nextX = Math.max(36, Math.min(winW - 36, dragStartRef.current.initX + dx));
+      const nextY = Math.max(36, Math.min(winH - 36, dragStartRef.current.initY + dy));
+      setPos({ x: nextX, y: nextY });
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current) {
+      justToggledByPointerRef.current = true;
+      setOpen((o) => !o);
+      setTimeout(() => {
+        justToggledByPointerRef.current = false;
+      }, 80);
+    }
+    dragStartRef.current = null;
+    isDraggingRef.current = false;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  const handleClick = () => {
+    if (justToggledByPointerRef.current) return;
+    setOpen((o) => !o);
+  };
+
+  const winW = typeof window !== 'undefined' ? window.innerWidth : 1200;
+  const winH = typeof window !== 'undefined' ? window.innerHeight : 675;
+  const curX = pos ? pos.x : winW - 56;
+  const curY = pos ? pos.y : winH - 56;
+
+  const isNearRight = curX > winW - 160;
+  const isNearBottom = curY > winH - 160;
+  const isNearLeft = curX < 160;
+  const isNearTop = curY < 160;
+
+  const items = [
+    {
+      id: 'conv',
+      testid: 'tool-convert-ink',
+      aliasTestId: 'radial-action-latex',
+      label: 'Chuyển LaTeX',
+      hint: 'Chuyển chữ viết tay thành công thức chuẩn',
+      icon: <Wand2 className="w-5 h-5" />,
+      run: onConvert,
+      accent: 'bg-gradient-to-br from-violet-600 to-indigo-700 text-white border-violet-300 shadow-violet-500/35',
+      badge: undefined,
+      highlight: false,
+    },
+    {
+      id: 'viz',
+      testid: 'top-toolbar-btn-visualize',
+      aliasTestId: 'radial-action-visualize',
+      label: 'Trực quan hóa',
+      hint: selectionCount ? `Dựng mô phỏng từ ${selectionCount} nét đã chọn` : 'Khoanh vùng rồi kích hoạt mô phỏng',
+      icon: busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />,
+      run: onVisualize,
+      accent: 'bg-gradient-to-br from-blue-600 to-cyan-600 text-white border-blue-300 shadow-blue-500/35',
+      badge: selectionCount || undefined,
+      highlight: detectedIntent === 'VISUALIZE',
+    },
+    {
+      id: 'grade',
+      testid: 'ai-fab-grade',
+      aliasTestId: 'radial-action-grade',
+      label: 'Chấm bài',
+      hint: 'Chấm bài giải học sinh theo bước',
+      icon: <GraduationCap className="w-5 h-5" />,
+      run: onGrade || onConvert,
+      accent: 'bg-gradient-to-br from-emerald-600 to-teal-600 text-white border-emerald-300 shadow-emerald-500/35',
+      badge: undefined,
+      highlight: detectedIntent === 'GRADE',
+    },
+    {
+      id: 'lasso',
+      testid: 'ai-fab-lasso',
+      aliasTestId: 'radial-action-close',
+      label: 'Khoanh vùng AI',
+      hint: 'Khoanh nét viết hoặc hình vẽ trên bảng',
+      icon: <Lasso className="w-5 h-5" />,
+      run: onLasso,
+      accent: 'bg-gradient-to-br from-sky-500 to-blue-600 text-white border-sky-300 shadow-sky-500/35',
+      badge: undefined,
+      highlight: false,
+    },
+    {
+      id: 'subject',
+      testid: 'ai-fab-subject',
+      aliasTestId: 'radial-action-subject',
+      label: subjectLock ? SUBJECT_LABEL[subjectLock] : 'Môn: Tự động',
+      hint: 'Đổi ngữ cảnh phân môn Toán, Lý, Hóa, Sinh',
+      icon: <BookOpen className="w-5 h-5" />,
+      run: onCycleSubject || (() => {}),
+      accent: 'bg-gradient-to-br from-amber-500 to-orange-600 text-white border-amber-300 shadow-amber-500/35',
+      badge: undefined,
+      highlight: false,
+    },
+    {
+      id: 'voice',
+      testid: 'ai-fab-voice',
+      aliasTestId: 'radial-action-voice',
+      label: listening ? 'Đang nghe…' : 'Giọng nói',
+      hint: 'Đọc công thức bằng giọng nói',
+      icon: listening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />,
+      run: onVoice,
+      accent: listening
+        ? 'bg-gradient-to-br from-rose-600 to-red-600 text-white border-rose-300 shadow-rose-500/35 animate-pulse'
+        : 'bg-gradient-to-br from-rose-500 to-pink-600 text-white border-rose-300 shadow-rose-500/35',
+      badge: undefined,
+      highlight: false,
+    },
   ];
 
+  const getAngles = (): number[] => {
+    const count = items.length;
+    if (isNearRight && isNearBottom) {
+      const start = -195;
+      const end = -75;
+      const step = (end - start) / (count - 1);
+      return items.map((_, i) => start + i * step);
+    }
+    if (isNearLeft && isNearBottom) {
+      const start = -105;
+      const end = 15;
+      const step = (end - start) / (count - 1);
+      return items.map((_, i) => start + i * step);
+    }
+    if (isNearTop) {
+      const start = 15;
+      const end = 165;
+      const step = (end - start) / (count - 1);
+      return items.map((_, i) => start + i * step);
+    }
+    if (isNearRight) {
+      const start = 110;
+      const end = 250;
+      const step = (end - start) / (count - 1);
+      return items.map((_, i) => start + i * step);
+    }
+    const step = 360 / count;
+    return items.map((_, i) => -90 + i * step);
+  };
+
+  const angles = getAngles();
+
   return (
-    <div ref={root} className="fixed right-5 bottom-5 z-40 flex flex-col items-end gap-2" data-testid="ai-fab-root">
-      <div className="flex flex-col items-end gap-2" data-testid="ai-fab-menu" aria-hidden={!open}>
-        {items.map((it, i) => (
+    <div
+      ref={root}
+      data-testid="ai-fab-root"
+      className="fixed z-40 select-none touch-none"
+      style={
+        pos
+          ? { left: `${pos.x}px`, top: `${pos.y}px`, transform: 'translate(-50%, -50%)' }
+          : { right: '24px', bottom: '24px' }
+      }
+    >
+      <div data-testid="draggable-ai-hub" className="contents">
+        {/* Vòng tròn tác vụ bung tròn đều xung quanh nút AI */}
+        <div
+          data-testid="ai-fab-menu"
+          aria-hidden={!open}
+          className="absolute inset-0 pointer-events-none"
+        >
+          <div data-testid="radial-action-menu" className="contents">
+            {items.map((it, i) => {
+              const rad = (angles[i] * Math.PI) / 180;
+              const dist = 94;
+              const rx = Math.round(dist * Math.cos(rad));
+              const ry = Math.round(dist * Math.sin(rad));
+              return (
+                <div
+                  key={it.id}
+                  style={{
+                    left: `${rx}px`,
+                    top: `${ry}px`,
+                    transitionDelay: open ? `${i * 25}ms` : '0ms',
+                  }}
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 transition-all duration-200 ${
+                    open ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-75 pointer-events-none'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    data-testid={it.testid}
+                    tabIndex={open ? 0 : -1}
+                    onClick={() => {
+                      it.run();
+                      setOpen(false);
+                    }}
+                    title={it.hint}
+                    className={`relative w-12 h-12 rounded-full border-2 shadow-xl flex items-center justify-center transition-all duration-150 hover:scale-115 active:scale-95 cursor-pointer ${
+                      it.accent
+                    } ${it.highlight ? 'ring-4 ring-white/80 shadow-[0_0_20px_rgba(255,255,255,0.7)] animate-pulse' : ''}`}
+                  >
+                    <span data-testid={it.aliasTestId} className="hidden" />
+                    {it.icon}
+                    {it.badge ? (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-white text-stone-900 text-[10px] font-bold flex items-center justify-center border border-stone-200 shadow-sm">
+                        {it.badge}
+                      </span>
+                    ) : null}
+                  </button>
+                  <span className="px-2.5 py-0.5 rounded-full bg-stone-900/90 backdrop-blur-md border border-white/20 shadow-lg text-[10px] font-semibold text-white whitespace-nowrap select-none">
+                    {it.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Nút AI chính: Thiết kế kính mờ cao cấp, viền phát quang và kéo di chuyển khắp bảng */}
+        <div className="relative group flex items-center justify-center">
+          {/* Luminous Glow Ambient Ring */}
+          <div
+            className={`absolute -inset-1.5 rounded-full bg-gradient-to-tr from-blue-500/40 via-violet-500/30 to-amber-400/40 blur-md transition-opacity duration-300 pointer-events-none ${
+              open ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
+            }`}
+          />
+
           <button
-            key={it.id}
-            data-testid={it.testid}
-            tabIndex={open ? 0 : -1}
-            onClick={() => {
-              it.run();
-              setOpen(false);
-            }}
-            title={it.hint}
-            style={{transitionDelay: open ? `${(items.length - 1 - i) * 35}ms` : '0ms'}}
-            className={`group flex items-center gap-2.5 transition-all duration-200 ${open ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-3 scale-90 pointer-events-none'}`}
+            type="button"
+            data-testid="ai-fab"
+            onClick={handleClick}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            title="Công cụ AI: Chạm giữ để kéo di chuyển khắp bảng • Nhấp để mở vòng tròn tác vụ"
+            className={`relative w-15 h-15 rounded-full flex flex-col items-center justify-center cursor-grab active:cursor-grabbing border-2 shadow-[0_12px_36px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] transition-all duration-200 select-none ${
+              open
+                ? 'bg-stone-900 border-white/40 ring-4 ring-white/10 scale-95'
+                : detectedIntent === 'GRADE'
+                ? 'bg-gradient-to-b from-stone-900 via-stone-900 to-emerald-950 border-emerald-400 ring-4 ring-emerald-500/25 hover:scale-105'
+                : 'bg-gradient-to-b from-stone-900 via-stone-900 to-blue-950 border-cyan-400/80 ring-4 ring-cyan-500/25 hover:scale-105'
+            }`}
           >
-            <span className="px-3 py-1.5 rounded-full bg-white/97 border border-[#E6E4DD] shadow-md text-xs font-semibold text-stone-800 whitespace-nowrap">{it.label}</span>
-            <span className={`relative w-11 h-11 rounded-full ${it.accent} text-white shadow-lg flex items-center justify-center group-hover:scale-105 transition-transform`}>
-              {it.icon}
-              {it.badge ? <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-white text-stone-900 text-[10px] font-bold flex items-center justify-center border border-stone-200">{it.badge}</span> : null}
+            <span data-testid="radial-ai-hub-btn" className="hidden" />
+
+            {/* 3 tactile grip micro-dots */}
+            <div className="flex items-center gap-0.5 absolute top-1.5 opacity-60">
+              <span className="w-1 h-1 rounded-full bg-white/80" />
+              <span className="w-1 h-1 rounded-full bg-white/80" />
+              <span className="w-1 h-1 rounded-full bg-white/80" />
+            </div>
+
+            {/* Center Glyph */}
+            {open ? (
+              <X className="w-6 h-6 text-white transition-transform duration-200 rotate-90" />
+            ) : busy ? (
+              <Loader2 className="w-6 h-6 text-cyan-300 animate-spin" />
+            ) : (
+              <Sparkles className="w-6 h-6 text-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)] animate-pulse" />
+            )}
+
+            {/* Sub-label pill attached to bottom */}
+            <span
+              className={`absolute -bottom-2 text-[8px] font-bold tracking-wider uppercase px-2 py-0.2 rounded-full shadow-md border ${
+                detectedIntent === 'GRADE'
+                  ? 'bg-emerald-600 text-white border-emerald-300'
+                  : detectedIntent === 'VISUALIZE'
+                  ? 'bg-blue-600 text-white border-blue-300'
+                  : 'bg-stone-800 text-stone-200 border-stone-600'
+              }`}
+            >
+              {detectedIntent === 'GRADE' ? 'CHẤM' : detectedIntent === 'VISUALIZE' ? 'TRỰC QUAN' : 'AI HUB'}
             </span>
+
+            {/* Selection badge */}
+            {!open && selectionCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[10px] font-extrabold flex items-center justify-center border border-white/60 shadow-md animate-bounce">
+                {selectionCount}
+              </span>
+            )}
           </button>
-        ))}
+        </div>
       </div>
-      <button
-        data-testid="ai-fab"
-        onClick={() => setOpen((o) => !o)}
-        title="Công cụ AI"
-        className={`relative w-14 h-14 rounded-full shadow-[0_10px_30px_rgba(37,99,235,0.45)] flex items-center justify-center text-white transition-all duration-200 ${open ? 'bg-stone-900 rotate-90' : 'bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 hover:scale-105'}`}
-      >
-        {open ? <X className="w-6 h-6" /> : <Sparkles className="w-6 h-6" />}
-        {!open && selectionCount > 0 && <span className="absolute -top-1 -right-1 min-w-[20px] h-5 rounded-full bg-white text-blue-700 text-[11px] font-bold flex items-center justify-center border border-blue-200">{selectionCount}</span>}
-        {busy && <span className="absolute inset-0 rounded-full ring-4 ring-blue-300/60 animate-ping" />}
-      </button>
     </div>
   );
 };

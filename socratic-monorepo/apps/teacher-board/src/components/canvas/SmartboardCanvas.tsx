@@ -2593,166 +2593,6 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 );
               })}
 
-            {/* Nút công cụ AI di chuyển khắp bảng kèm Menu tròn xung quanh */}
-            {selectedStrokes.length > 0 && !convertCtx && aiHubPos && (
-              <div
-                data-testid="draggable-ai-hub"
-                className="absolute z-40 pointer-events-auto select-none touch-none"
-                style={{
-                  left: `${(aiHubPos.x / 1200) * 100}%`,
-                  top: `${(aiHubPos.y / 675) * 100}%`,
-                }}
-              >
-                {/* Vòng tròn tác vụ hiện tròn xung quanh nút AI */}
-                {isRadialOpen && (
-                  <div className="absolute inset-0 pointer-events-none" data-testid="radial-action-menu">
-                    {[
-                      {
-                        id: 'latex',
-                        testId: 'radial-action-latex',
-                        label: 'Chuyển LaTeX',
-                        icon: Wand2,
-                        color: 'bg-violet-600 hover:bg-violet-700 text-white border-violet-300 shadow-violet-500/30',
-                        angle: -90,
-                        onClick: () => {
-                          setIsRadialOpen(false);
-                          openConvert('VISUAL');
-                        },
-                      },
-                      {
-                        id: 'visualize',
-                        testId: 'radial-action-visualize',
-                        label: 'Trực quan',
-                        icon: Sparkles,
-                        color: 'bg-blue-600 hover:bg-blue-700 text-white border-blue-300 shadow-blue-500/30',
-                        angle: -30,
-                        highlight: detectedLassoIntent?.intent === 'VISUALIZE',
-                        onClick: () => {
-                          setIsRadialOpen(false);
-                          handleVisualize();
-                        },
-                      },
-                      {
-                        id: 'grade',
-                        testId: 'radial-action-grade',
-                        label: 'Chấm bài',
-                        icon: GraduationCap,
-                        color: 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-300 shadow-emerald-500/30',
-                        angle: 30,
-                        highlight: detectedLassoIntent?.intent === 'GRADE',
-                        onClick: () => {
-                          setIsRadialOpen(false);
-                          openConvert('GRADE');
-                        },
-                      },
-                      {
-                        id: 'subject',
-                        testId: 'radial-action-subject',
-                        label: subjectLock ? SUBJECT_LABEL[subjectLock] : 'Môn học',
-                        icon: BookOpen,
-                        color: 'bg-amber-600 hover:bg-amber-700 text-white border-amber-300 shadow-amber-500/30',
-                        angle: 90,
-                        onClick: () => {
-                          const subjects: (Subject | null)[] = [null, 'MATH', 'PHYSICS', 'CHEMISTRY', 'BIOLOGY'];
-                          const curIdx = subjects.indexOf(subjectLock);
-                          const nextIdx = (curIdx + 1) % subjects.length;
-                          setSubjectLock(subjects[nextIdx]);
-                        },
-                      },
-                      {
-                        id: 'voice',
-                        testId: 'radial-action-voice',
-                        label: 'Giọng nói',
-                        icon: isVoiceListening ? MicOff : Mic,
-                        color: isVoiceListening
-                          ? 'bg-rose-600 text-white border-rose-300 shadow-rose-500/30 animate-pulse'
-                          : 'bg-cyan-600 hover:bg-cyan-700 text-white border-cyan-300 shadow-cyan-500/30',
-                        angle: 150,
-                        onClick: () => {
-                          setIsRadialOpen(false);
-                          handleVoiceDictation();
-                        },
-                      },
-                      {
-                        id: 'close',
-                        testId: 'radial-action-close',
-                        label: 'Bỏ chọn',
-                        icon: X,
-                        color: 'bg-stone-700 hover:bg-stone-800 text-white border-stone-400 shadow-stone-500/30',
-                        angle: 210,
-                        onClick: () => {
-                          setIsRadialOpen(false);
-                          setSelectedStrokes([]);
-                          setLassoLoop([]);
-                          setFormulaInput('');
-                        },
-                      },
-                    ].map((act) => {
-                      const rad = (act.angle * Math.PI) / 180;
-                      const dist = 86;
-                      const rx = Math.round(dist * Math.cos(rad));
-                      const ry = Math.round(dist * Math.sin(rad));
-                      const IconComp = act.icon;
-                      return (
-                        <div
-                          key={act.id}
-                          className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-auto animate-in zoom-in-75 duration-150"
-                          style={{ left: `${rx}px`, top: `${ry}px` }}
-                        >
-                          <button
-                            type="button"
-                            data-testid={act.testId}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              act.onClick();
-                            }}
-                            className={`w-11 h-11 rounded-full flex items-center justify-center border shadow-xl transition-all hover:scale-110 active:scale-95 cursor-pointer ${act.color} ${
-                              act.highlight ? 'ring-4 ring-white/70 animate-pulse' : ''
-                            }`}
-                            title={act.label}
-                          >
-                            <IconComp className="w-5 h-5" />
-                          </button>
-                          <span className="text-[10px] font-bold text-stone-900 bg-white/95 backdrop-blur px-2 py-0.5 rounded-md shadow-md border border-stone-200 mt-1 whitespace-nowrap">
-                            {act.label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Nút AI trung tâm có thể chạm giữ kéo di chuyển khắp màn hình */}
-                <div
-                  data-testid="radial-ai-hub-btn"
-                  onPointerDown={handleAiHubPointerDown}
-                  onPointerMove={handleAiHubPointerMove}
-                  onPointerUp={handleAiHubPointerUp}
-                  className={`relative -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex flex-col items-center justify-center cursor-grab active:cursor-grabbing border-2 shadow-2xl transition-all duration-150 select-none ${
-                    detectedLassoIntent?.intent === 'GRADE'
-                      ? 'bg-gradient-to-br from-stone-900 via-stone-800 to-emerald-950 text-white border-emerald-400 ring-4 ring-emerald-500/25 shadow-emerald-500/30'
-                      : 'bg-gradient-to-br from-stone-900 via-stone-800 to-blue-950 text-white border-blue-400 ring-4 ring-blue-500/25 shadow-blue-500/30'
-                  }`}
-                  title="Chạm giữ để kéo nút AI khắp bảng • Nhấp để mở vòng tròn tác vụ"
-                >
-                  {isAiVisionScanning ? (
-                    <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-6 h-6 text-amber-300 animate-pulse" />
-                  )}
-                  <span
-                    className={`absolute -bottom-2 text-[8px] font-bold tracking-wider uppercase px-1.5 py-0.2 rounded-full shadow-md border ${
-                      detectedLassoIntent?.intent === 'GRADE'
-                        ? 'bg-emerald-600 text-white border-emerald-300'
-                        : 'bg-blue-600 text-white border-blue-300'
-                    }`}
-                  >
-                    {detectedLassoIntent?.intent === 'GRADE' ? 'CHẤM' : 'TRỰC QUAN'}
-                  </span>
-                </div>
-              </div>
-            )}
-
             {/* Thanh công cụ nổi quanh vùng đang chọn */}
             {selectedStrokes.length > 0 && !convertCtx && (() => {
               const bb = bboxOfStrokes(selectedStrokes);
@@ -3019,7 +2859,16 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         selectionCount={selectedStrokes.length}
         busy={isLoading}
         listening={isVoiceListening}
-        onConvert={openConvert}
+        onConvert={() => openConvert('VISUAL')}
+        onGrade={() => openConvert('GRADE')}
+        subjectLock={subjectLock}
+        onCycleSubject={() => {
+          const subjects: (Subject | null)[] = [null, 'MATH', 'PHYSICS', 'CHEMISTRY', 'BIOLOGY'];
+          const curIdx = subjects.indexOf(subjectLock);
+          const nextIdx = (curIdx + 1) % subjects.length;
+          setSubjectLock(subjects[nextIdx]);
+        }}
+        detectedIntent={detectedLassoIntent?.intent ?? null}
         onVisualize={() => {
           if (selectedStrokes.length > 0) handleVisualize();
           else {

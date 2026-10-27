@@ -565,6 +565,41 @@
   - TypeScript strict check 0 errors trên toàn bộ các ứng dụng.
   - Tổng cộng: **457/457 tests passed 100%**.
 
+## 2026-10-27 — Tích Hợp Toàn Diện & Tái Thiết Kế Thẩm Mỹ Nút AI Nổi Góc Dưới Phải (AiFab)
+- **Yêu cầu & Mục tiêu hoàn thành:**
+  1. **Tích hợp vào nút công cụ AI ở góc dưới phải (AiFab):**
+     * Thay vì để nút AI góc dưới phải ở dạng menu dọc cứng nhắc, đã hợp nhất toàn bộ tính năng AI thông minh vào đúng nút này:
+       - Chuyển LaTeX (mở panel chuyển đổi chữ viết tay sang KaTeX).
+       - Trực quan hóa STEM (kích hoạt mô phỏng 60FPS).
+       - Chấm bài học sinh (mở panel chấm lời giải theo bước).
+       - Khoanh vùng AI (bật chế độ Lasso).
+       - Bộ chọn môn học (đổi nhanh ngữ cảnh phân môn Toán, Lý, Hóa, Sinh, Tự động).
+       - Giọng nói (đọc công thức bục giảng).
+     * Loại bỏ các nút trùng lặp dư thừa trên màn hình để giữ không gian giảng dạy sạch sẽ.
+  2. **Kéo di chuyển tự do khắp mặt bảng bằng tay:**
+     * Nút AI góc dưới phải ban đầu định vị gọn gàng ở góc màn hình, nhưng giáo viên có thể chạm giữ và kéo trượt đi bất kỳ vị trí nào trên toàn bộ mặt bảng cảm ứng (0ms latency, pointer capture mượt mà).
+     * Thuật toán phân bố góc quạt tròn (Radial Arc & Circle) tự động thích ứng với vị trí nút:
+       - Khi ở góc dưới phải: bung hình quạt tròn hướng lên trên và sang trái vào không gian mở của bảng đen.
+       - Khi được kéo vào giữa bảng: bung tròn đều 360 độ hoàn hảo.
+       - Khi được kéo lên trên hoặc sát cạnh: tự động đổi hướng quạt vào trong không gian hiển thị, không bị tràn ra ngoài màn hình.
+  3. **Thiết kế thẩm mỹ cao cấp (Ultra-premium Glassmorphic AI Orb):**
+     * Lớp kính mờ tối màu obsidian (backdrop-blur-2xl, bg-stone-900/90) với viền kim loại kép mạ bạc.
+     * Quầng sáng phát quang gradient đa tầng (blue-cyan-violet-amber) thở nhẹ nhàng (ambient luminous pulse).
+     * Ba vi chấm cảm ứng tinh tế ở đỉnh nút báo hiệu khả năng chạm kéo di chuyển bằng tay.
+     * Lõi biểu tượng AI đa sắc rực rỡ với hiệu ứng hào quang xoay chuyển mượt mà khi đóng mở.
+     * Huy hiệu intent thông minh gắn chìm dưới chân nút: tự động chuyển màu xanh ngọc bích CHẤM BÀI hoặc xanh sapphire TRỰC QUAN tùy theo nét vẽ được khoanh.
+- **Tệp đã chỉnh sửa:**
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardDock.tsx`
+  - `socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardCanvas.tsx`
+  - `.ai/HANDOFF.md`
+- **Kết quả Kiểm tra & Xác minh:**
+  - `apps/teacher-board`: 31/31 test files, 398/398 tests passed 100%.
+  - `apps/student-app`: 2/2 test files, 18/18 tests passed 100%.
+  - `services/ai-engine`: 6/6 test files, 41/41 tests passed 100%.
+  - TypeScript strict check 0 errors trên toàn monorepo.
+  - Tổng cộng: **457/457 tests passed 100%**.
+
+
 
 
 

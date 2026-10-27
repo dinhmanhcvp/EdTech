@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import type {OnlineTutorProgress} from '@socratic/types';
 import {
   GraduationCap,
   Sparkles,
@@ -19,7 +20,6 @@ import {
   Eye,
 } from 'lucide-react';
 import { MathView } from '../common/MathView';
-import { updateMasteryBKT, KnowledgeComponentState } from '../../utils/bktEngine';
 import {
   ChemicalBalanceScale,
   VectorForcePolygon,
@@ -27,6 +27,8 @@ import {
   CellOsmosisPressure,
 } from './VisualDebugWidgets';
 import {StudentBoardWorkbench} from './StudentBoardWorkbench';
+import {evaluateOnline, fetchTutorProgress} from '../../utils/onlineEvaluation';
+import {createTutorDraftStore} from '../../utils/tutorDrafts';
 
 export type TutorInteractionMode =
   | 'SOCRATIC_SOLVER'
@@ -62,7 +64,7 @@ const SAMPLE_EXERCISES: HomeworkExercise[] = [
     title: 'Ném xiên trong Trọng trường',
     subject: 'PHYSICS',
     classContextLatex: 'v_0 = 22\\text{ m/s}, \\quad \\alpha = 45^\\circ',
-    problemStatement: 'Từ đỉnh dốc cao 15 m, một vật được ném với vận tốc v₀ = 22 m/s ở góc 45°. Tính thời gian chạm đất khi có thêm lực cản không khí nhẹ.',
+    problemStatement: 'Từ độ cao 15 m, một vật được ném với vận tốc v₀ = 22 m/s ở góc 45°. Bỏ qua lực cản không khí. Lập phương trình vận tốc ngang và tọa độ thẳng đứng để xác định thời gian chạm đất.',
     difficulty: 'STANDARD',
     kcId: 'PHYSICS_PROJECTILE',
     steps: [
@@ -136,16 +138,58 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
   const [scaffoldLevel, setScaffoldLevel] = useState<1 | 2 | 3 | 4>(1);
   const [showWidget, setShowWidget] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedbackStatus, setFeedbackStatus] = useState<'VERIFIED_CORRECT' | 'VERIFIED_INCORRECT' | 'UNVERIFIED'>('UNVERIFIED');
   const [guardrailAlert, setGuardrailAlert] = useState<string | null>(null);
   const [struggleSeconds, setStruggleSeconds] = useState<number>(145);
-  const [eurekaTotal, setEurekaTotal] = useState<number>(150);
+  const [eurekaTotal, setEurekaTotal] = useState<number>(0);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState<Record<string, number>>({});
+  const [progressState, setProgressState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [reloadProgress, setReloadProgress] = useState(0);
+  const [drafts] = useState(() => createTutorDraftStore('student_default'));
+  const submitting = useRef(false);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   // Bayesian Knowledge Tracing states
   const [kcMastery, setKcMastery] = useState<Record<string, number>>({
-    PHYSICS_PROJECTILE: 0.62,
-    CHEM_REDOX: 0.45,
-    MATH_TRIG: 0.78,
+    PHYSICS_PROJECTILE: 0.25,
+    CHEM_REDOX: 0.20,
+    MATH_TRIG: 0.35,
   });
+
+  const applyProgress = (progress: OnlineTutorProgress) => {
+    setEurekaTotal(progress.total_points);
+    setCompletedSteps(Object.fromEntries(progress.problems.map(p => [p.problem_id, p.completed_step])));
+    setKcMastery(Object.fromEntries(progress.problems.map(p => [p.kc_id, p.mastery])));
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    let active = true;
+    setProgressState('loading');
+    const exercise = SAMPLE_EXERCISES.find(p => p.id === selectedExId)!;
+    const recoverDraft = (completed: number) => {
+      const step = drafts.resumeStep(selectedExId, completed, exercise.steps.length);
+      setCurrentStepIdx(step);
+      setStudentInput(drafts.read(selectedExId, step).answer);
+    };
+    recoverDraft(completedSteps[selectedExId] ?? 0);
+    fetchTutorProgress(controller.signal).then(progress => {
+      if (!active) return;
+      applyProgress(progress);
+      const saved = progress.problems.find(p => p.problem_id === selectedExId);
+      // Read the live draft, not the input captured before the request began.
+      recoverDraft(saved?.completed_step ?? 0);
+      setProgressState('ready');
+    }).catch(() => { if (active) setProgressState('error'); }).finally(() => clearTimeout(timeout));
+    return () => { active = false; controller.abort(); clearTimeout(timeout); };
+  }, [reloadProgress]);
 
   const currentExercise =
     SAMPLE_EXERCISES.find((e) => e.id === selectedExId) || SAMPLE_EXERCISES[0];
@@ -153,7 +197,8 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
   const currentMastery = kcMastery[currentExercise.kcId] ?? 0.50;
 
   // Xử lý gửi câu trả lời với Socratic Guardrails
-  const handleSubmitAnswer = () => {
+  const handleSubmitAnswer = async () => {
+    if (submitting.current) return;
     const raw = studentInput.trim().toLowerCase();
     setGuardrailAlert(null);
 
@@ -173,37 +218,36 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
       return;
     }
 
-    if (!studentInput.trim()) return;
+    if (!studentInput.trim() || progressState === 'loading') return;
 
-    // Kiểm tra tính đúng đắn tượng trưng
-    // Offline fallback may accept only an explicit normalized match. A long
-    // sentence is not evidence of correctness; the backend verifier remains
-    // authoritative whenever it is reachable.
-    const expectedNormalized = currentStep.expectedLatex.toLowerCase().replace(/\\/g, '').replace(/\s+/g, '');
-    const isCorrect = raw.replace(/\s+/g, '').includes(expectedNormalized);
-
-    // Cập nhật BKT
-    const bktResult = updateMasteryBKT(currentMastery, isCorrect);
-    setKcMastery((prev) => ({
-      ...prev,
-      [currentExercise.kcId]: bktResult.nextMastery,
-    }));
+    // Only the online verifier can update assessment state.
+    submitting.current = true;
+    setIsEvaluating(true);
+    const requestId = drafts.beginAttempt(currentExercise.id, currentStepIdx, studentInput);
+    const verdict = await evaluateOnline({problem_id: currentExercise.id, step: currentStepIdx + 1, answer: studentInput, request_id: requestId});
+    if (!mounted.current) return;
+    submitting.current = false;
+    setIsEvaluating(false);
+    setFeedback(verdict.feedback);
+    setFeedbackStatus(verdict.status);
+    if (verdict.progress) {
+      applyProgress(verdict.progress);
+      setProgressState('ready');
+    }
+    if (verdict.acknowledged) drafts.acknowledge(currentExercise.id, currentStepIdx, verdict.status === 'VERIFIED_CORRECT');
+    if (verdict.status === 'UNVERIFIED') return;
+    const isCorrect = verdict.status === 'VERIFIED_CORRECT';
 
     if (isCorrect) {
-      setFeedback('Chính xác! Lập luận của em rất chuẩn xác và bám sát kiến thức từ bảng thông minh.');
-      const pts = 30;
-      setEurekaTotal((prev) => prev + pts);
-      if (onEurekaEarned) onEurekaEarned(pts);
-
-      if (currentStepIdx < currentExercise.steps.length - 1) {
-        setTimeout(() => {
-          setCurrentStepIdx((i) => i + 1);
-          setStudentInput('');
-          setFeedback(null);
-          setShowWidget(false);
-          setScaffoldLevel(1);
-        }, 1500);
-      }
+      const alreadyCounted = (completedSteps[currentExercise.id] ?? 0) >= currentStepIdx + 1;
+      const pts = alreadyCounted ? 0 : Math.min(verdict.points, Math.max(0, (verdict.progress?.total_points ?? eurekaTotal) - eurekaTotal));
+      if (pts > 0) onEurekaEarned?.(pts);
+      const completed = verdict.progress?.problems.find(p => p.problem_id === currentExercise.id)?.completed_step ?? currentStepIdx + 1;
+      const next = drafts.resumeStep(currentExercise.id, completed, currentExercise.steps.length);
+      setCurrentStepIdx(next);
+      setStudentInput(drafts.read(currentExercise.id, next).answer);
+      setShowWidget(false);
+      setScaffoldLevel(1);
     } else {
       setFeedback('Chưa hoàn toàn chuẩn xác. Em hãy quan sát gợi ý vi mô bên dưới và thử lại.');
       setScaffoldLevel((lvl) => (lvl < 4 ? ((lvl + 1) as 1 | 2 | 3 | 4) : 4));
@@ -217,6 +261,10 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
       className="w-full max-w-6xl bg-white/95 border border-[#E6E4DD] rounded-[24px] shadow-[0_24px_80px_-36px_rgba(24,24,27,0.5)] overflow-hidden flex flex-col font-sans text-stone-900"
     >
       <StudentBoardWorkbench />
+      <div role="status" className="px-6 py-2 text-xs text-stone-600 bg-stone-50">
+        {progressState === 'loading' ? 'Đang tải tiến độ đã lưu…' : progressState === 'ready' ? 'Đã khôi phục tiến độ từ máy chủ.' : 'Chưa tải được tiến độ. Điểm hiển thị có thể chưa đầy đủ.'}
+        {progressState !== 'loading' && <button type="button" disabled={isEvaluating} className="ml-2 underline" onClick={() => setReloadProgress(n => n + 1)}>{progressState === 'error' ? 'Thử tải lại' : 'Đồng bộ tiến độ'}</button>}
+      </div>
 
       {/* Header bar */}
       <div className="bg-[#FCFBF9] border-b border-[#E6E4DD] px-6 py-4 flex flex-wrap items-center justify-between gap-4">
@@ -331,12 +379,16 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
                     <button
                       key={ex.id}
                       type="button"
+                      disabled={isEvaluating || progressState === 'loading'}
                       onClick={() => {
+                        const next = drafts.resumeStep(ex.id, completedSteps[ex.id] ?? 0, ex.steps.length);
                         setSelectedExId(ex.id);
-                        setCurrentStepIdx(0);
-                        setStudentInput('');
+                        setCurrentStepIdx(next);
+                        setStudentInput(drafts.read(ex.id, next).answer);
                         setFeedback(null);
                         setShowWidget(false);
+                        setGuardrailAlert(null);
+                        setScaffoldLevel(1);
                       }}
                       className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col gap-1.5 ${
                         isSelected
@@ -383,6 +435,12 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
 
             {/* Right Column: Step Scaffolding & Visual Debugger */}
             <div className="lg:col-span-8 flex flex-col gap-4">
+              {(completedSteps[currentExercise.id] ?? 0) >= currentExercise.steps.length && (
+                <div data-testid="tutor-completion" role="status" className="p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-sm">
+                  <div className="font-semibold flex items-center gap-2"><CheckCircle2 className="w-4 h-4" />Đã hoàn thành {currentExercise.steps.length}/{currentExercise.steps.length} bước hướng dẫn</div>
+                  <p className="mt-1 text-xs">Tiến độ đã lưu trên máy chủ. Em có thể chọn bài tiếp theo hoặc kiểm tra lại bước cuối; bước đã hoàn thành không cộng thêm điểm.</p>
+                </div>
+              )}
               {/* Problem statement card */}
               <div className="p-4 rounded-xl bg-[#FCFBF9] border border-[#E6E4DD] flex flex-col gap-2">
                 <div className="flex items-center justify-between">
@@ -446,7 +504,14 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
                       data-testid="tutor-step-input"
                       type="text"
                       value={studentInput}
-                      onChange={(e) => setStudentInput(e.target.value)}
+                      disabled={isEvaluating}
+                      maxLength={200}
+                      aria-label="Biểu thức trả lời"
+                      onChange={(e) => {
+                        if (submitting.current) return;
+                        drafts.write(currentExercise.id, currentStepIdx, e.target.value);
+                        setStudentInput(e.target.value);
+                      }}
                       onKeyDown={(e) => e.key === 'Enter' && handleSubmitAnswer()}
                       placeholder="Gõ biểu thức hoặc lập luận (VD: vx = v0*cos(alpha))"
                       className="flex-1 px-3 py-2 rounded-lg bg-white border border-[#DCD9D0] text-xs font-mono focus:outline-none focus:border-blue-500 shadow-inner"
@@ -454,10 +519,11 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
                     <button
                       type="button"
                       data-testid="tutor-submit-btn"
+                      disabled={isEvaluating}
                       onClick={handleSubmitAnswer}
                       className="px-4 py-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
                     >
-                      <span>Kiểm tra</span>
+                      <span>{isEvaluating ? 'Đang xác thực…' : 'Kiểm tra online'}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -467,13 +533,14 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
                 {feedback && (
                   <div
                     data-testid="tutor-feedback"
+                    role="status"
                     className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
-                      feedback.includes('Chính xác')
+                      feedbackStatus === 'VERIFIED_CORRECT'
                         ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium'
-                        : 'bg-rose-50 text-rose-800 border border-rose-200'
+                        : feedbackStatus === 'UNVERIFIED' ? 'bg-amber-50 text-amber-900 border border-amber-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
                     }`}
                   >
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    {feedbackStatus === 'VERIFIED_CORRECT' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
                     <span>{feedback}</span>
                   </div>
                 )}

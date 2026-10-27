@@ -117,7 +117,7 @@ const Scene: React.FC<{
         role="img"
         aria-label={label}
         viewBox="0 0 520 300"
-        className="w-full rounded-xl border border-stone-200 bg-white"
+        className="w-full rounded-xl border border-stone-200/50 bg-white/95 dark:bg-stone-900/90 shadow-sm"
         style={{ touchAction: "none" }}
         onPointerDown={(e) => {
           if (drag.current || e.button !== 0) return;
@@ -776,7 +776,7 @@ export const DynamicGeometryEngine: React.FC<Props> = ({ blueprint }) => {
         role="img"
         aria-label="Tam giác kéo đỉnh, đường Euler, đối cực và nghịch đảo"
         viewBox="0 0 520 320"
-        className="w-full rounded-xl border border-stone-200 bg-white"
+        className="w-full rounded-xl border border-stone-200/50 bg-white/95 dark:bg-stone-900/90 shadow-sm"
         style={{ touchAction: "none" }}
         onPointerMove={(e) => {
           const d = drag.current;
@@ -1651,7 +1651,7 @@ export const Sn2Engine: React.FC<Props> = () => {
         role="img"
         aria-label="Giản đồ năng lượng phản ứng một trạng thái chuyển tiếp"
         viewBox="0 0 520 155"
-        className="w-full rounded-xl border border-stone-200 bg-white"
+        className="w-full rounded-xl border border-stone-200/50 bg-white/95 dark:bg-stone-900/90 shadow-sm"
       >
         <line x1="35" y1="125" x2="490" y2="125" stroke="#78716C" />
         <path

@@ -67,6 +67,9 @@ export interface SmartboardCanvasProps {
   onApiCallSpy?: (endpoint: string, payload?: any) => void;
   apiEndpoint?: string;
   initialBlueprint?: SimulationBlueprint | null;
+  initialStrokes?: Stroke[];
+  initialSelectedStrokes?: Stroke[];
+  initialGeometryLiveMode?: boolean;
 }
 
 const PALETTE = [
@@ -311,6 +314,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   onApiCallSpy,
   apiEndpoint = '/api/v1/canvas/compile-lasso',
   initialBlueprint = null,
+  initialStrokes = [],
+  initialSelectedStrokes = [],
+  initialGeometryLiveMode = false,
 }) => {
   const [tool, setTool] = useState<CanvasTool>('PEN');
   const [selectedShape, setSelectedShape] = useState<ShapeType>('CIRCLE');
@@ -318,7 +324,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [strokeWidth, setStrokeWidth] = useState<number>(3.5);
   const [gridPattern, setGridPattern] = useState<GridPattern>('DOTS');
 
-  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [strokes, setStrokes] = useState<Stroke[]>(initialStrokes);
   const [undoStack, setUndoStack] = useState<Stroke[][]>([]);
   const [redoStack, setRedoStack] = useState<Stroke[][]>([]);
 
@@ -328,7 +334,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [shapeCurrent, setShapeCurrent] = useState<Point | null>(null);
 
   const [lassoLoop, setLassoLoop] = useState<Point[]>([]);
-  const [selectedStrokes, setSelectedStrokes] = useState<Stroke[]>([]);
+  const [selectedStrokes, setSelectedStrokes] = useState<Stroke[]>(initialSelectedStrokes);
   const [instantResult, setInstantResult] = useState<ConvertResult | null>(null);
   const [aiVisionResult, setAiVisionResult] = useState<ConvertResult | null>(null);
   const [isAiVisionScanning, setIsAiVisionScanning] = useState<boolean>(false);
@@ -384,6 +390,19 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [displayMode, setDisplayMode] = useState<'HOLOGRAM' | 'DOCK'>('HOLOGRAM');
   const [holoPosition, setHoloPosition] = useState<{ x: number; y: number }>({ x: 580, y: 35 });
   const [holoScale, setHoloScale] = useState<number>(1.0);
+
+  // Chế độ trực quan hình học tự động: khi vẽ xong đa giác/khối 3D, tự biến nét vẽ thành mô hình tương tác tại chỗ
+  const [isGeometryLiveMode, setIsGeometryLiveMode] = useState<boolean>(initialGeometryLiveMode);
+  const autoGeoTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const strokesRef = useRef<Stroke[]>([]);
+  useEffect(() => {
+    strokesRef.current = strokes;
+  }, [strokes]);
+  useEffect(() => {
+    return () => {
+      if (autoGeoTimerRef.current) clearTimeout(autoGeoTimerRef.current);
+    };
+  }, []);
   const isDraggingHoloRef = useRef(false);
   const holoDragStartRef = useRef<{ startX: number; startY: number; origX: number; origY: number }>({
     startX: 0,
@@ -1378,6 +1397,26 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       // Pure Natural Ink: Handwriting NEVER automatically turns into circles!
       setStrokes((prev) => [...prev, rawStroke]);
       setCurrentStroke([]);
+
+      // Chế độ trực quan hình học tự động: nhận diện và chuyển nét vẽ thành hình tương tác tại chỗ
+      if (isGeometryLiveMode) {
+        if (autoGeoTimerRef.current) clearTimeout(autoGeoTimerRef.current);
+        autoGeoTimerRef.current = setTimeout(() => {
+          const allCur = strokesRef.current;
+          if (allCur.length >= 1) {
+            const recent = allCur.slice(-12).filter((s) => !s.typeset);
+            if (recent.length >= 1) {
+              const solidSk = recent.length >= 4 ? detectSolidFromStrokes(recent) : null;
+              const planeSk = !solidSk && recent.length >= 1 && recent.length <= 4 ? detectPlaneShapeFromStrokes(recent) : null;
+              if (solidSk && solidSk.confidence >= 0.70) {
+                transformStrokesToGeometryInPlace(recent, makeSolidBlueprint(solidSk.kind, solidSk.dims));
+              } else if (planeSk && planeSk.confidence >= 0.78) {
+                transformStrokesToGeometryInPlace(recent, makePlaneGeometryBlueprint(planeSk));
+              }
+            }
+          }
+        }, 850);
+      }
     } else if (tool === 'LASSO') {
       // Magic Lasso Vector Hit-testing (Forgiving: >=25% points OR >=30% BBox overlap + 24px pad)
       const loop = pts;
@@ -1791,6 +1830,33 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     exec(main);
   };
 
+  // Chuyển nét vẽ thành hình tương tác ngay tại vị trí vừa vẽ trên bảng đen (Zero-Background Chalkboard Living Geometry)
+  const transformStrokesToGeometryInPlace = useCallback(
+    (strokesToTransform: Stroke[], bp: SimulationBlueprint) => {
+      if (!strokesToTransform || strokesToTransform.length === 0) return;
+      const bb = bboxOfStrokes(strokesToTransform);
+      const centerX = (bb.x0 + bb.x1) / 2;
+      const centerY = (bb.y0 + bb.y1) / 2;
+      const targetW = 560;
+      const targetH = 380;
+      const newX = Math.max(10, Math.min(1200 - targetW - 10, centerX - targetW / 2));
+      const newY = Math.max(10, Math.min(675 - targetH - 10, centerY - targetH / 2));
+
+      saveToUndo();
+      const selIds = new Set(strokesToTransform.map((s) => s.id));
+      setStrokes((prev) => prev.filter((s) => !selIds.has(s.id)));
+
+      setHoloPosition({ x: Math.round(newX), y: Math.round(newY) });
+      setDisplayMode('HOLOGRAM');
+      setActiveBlueprint(bp);
+      setSelectedStrokes([]);
+      setLassoLoop([]);
+      setFormulaInput('');
+      setIsLoading(false);
+    },
+    [strokes],
+  );
+
   const handleVisualize = async (overrideHint?: string) => {
     if (selectedStrokes.length === 0 && !overrideHint) return;
     setIsLoading(true);
@@ -1820,11 +1886,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     if (!overrideHint && !typesetHint && inkSelected.length >= 4) {
       const sk = detectSolidFromStrokes(inkSelected);
       if (sk && sk.confidence >= 0.7) {
-        setActiveBlueprint(makeSolidBlueprint(sk.kind, sk.dims));
-        setSelectedStrokes([]);
-        setLassoLoop([]);
-        setFormulaInput('');
-        setIsLoading(false);
+        transformStrokesToGeometryInPlace(inkSelected, makeSolidBlueprint(sk.kind, sk.dims));
         return;
       }
     }
@@ -1833,11 +1895,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     if (!overrideHint && !typesetHint && inkSelected.length >= 1 && inkSelected.length <= 4) {
       const planeSk = detectPlaneShapeFromStrokes(inkSelected);
       if (planeSk && planeSk.confidence >= 0.78) {
-        setActiveBlueprint(makePlaneGeometryBlueprint(planeSk));
-        setSelectedStrokes([]);
-        setLassoLoop([]);
-        setFormulaInput('');
-        setIsLoading(false);
+        transformStrokesToGeometryInPlace(inkSelected, makePlaneGeometryBlueprint(planeSk));
         return;
       }
     }
@@ -2097,9 +2155,28 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           onClose={() => setConvertCtx(null)}
           onApply={applyConvert}
           onVisualizeLocal={(bp) => {
-            setActiveBlueprint(bp);
-            setSelectedStrokes([]);
-            setLassoLoop([]);
+            const ink = convertCtx?.source && convertCtx.source.length > 0 ? convertCtx.source : selectedStrokes;
+            if (ink && ink.length > 0 && (bp.engine === 'GEOMETRY' || bp.templateId === 'MATH_DYNAMIC_GEOMETRY')) {
+              transformStrokesToGeometryInPlace(ink, bp);
+            } else {
+              if (ink && ink.length > 0) {
+                const ids = new Set(ink.map((s: Stroke) => s.id));
+                const bb = bboxOfStrokes(ink);
+                const centerX = (bb.x0 + bb.x1) / 2;
+                const centerY = (bb.y0 + bb.y1) / 2;
+                const targetW = 560;
+                const targetH = 380;
+                const newX = Math.max(10, Math.min(1200 - targetW - 10, centerX - targetW / 2));
+                const newY = Math.max(10, Math.min(675 - targetH - 10, centerY - targetH / 2));
+                setHoloPosition({ x: Math.round(newX), y: Math.round(newY) });
+                saveToUndo();
+                setStrokes((prev) => prev.filter((s) => !ids.has(s.id)));
+              }
+              setDisplayMode('HOLOGRAM');
+              setActiveBlueprint(bp);
+              setSelectedStrokes([]);
+              setLassoLoop([]);
+            }
             setConvertCtx(null);
           }}
           onVisualizeAi={(latex) => {
@@ -2661,6 +2738,32 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                       ✨ AI Vision
                     </span>
                   )}
+                  {(() => {
+                    const src = sourceStrokes(selectedStrokes);
+                    const solidSk = src.length >= 4 ? detectSolidFromStrokes(src) : null;
+                    const planeSk = !solidSk && src.length >= 1 && src.length <= 4 ? detectPlaneShapeFromStrokes(src) : null;
+                    const geoTitle =
+                      solidSk && solidSk.confidence >= 0.70
+                        ? SOLID_TITLES[solidSk.kind]
+                        : planeSk && planeSk.confidence >= 0.78
+                        ? planeSk.title
+                        : null;
+
+                    if (geoTitle) {
+                      return (
+                        <button
+                          data-testid="sel-btn-geo-inplace"
+                          onClick={() => handleVisualize()}
+                          className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs hover:from-blue-700 hover:to-indigo-700 transition cursor-pointer animate-in fade-in mr-0.5"
+                          title="Biến nét vẽ thành hình tương tác ngay tại vị trí này trên bảng"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                          <span>{geoTitle} (Tương tác tại chỗ)</span>
+                        </button>
+                      );
+                    }
+                    return null;
+                  })()}
                   <button
                     data-testid="sel-btn-visualize"
                     onClick={() => handleVisualize()}
@@ -2704,6 +2807,26 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               );
             })()}
           </div>
+
+          {/* Chế độ Trực quan Hình học Tự động HUD Banner */}
+          {isGeometryLiveMode && (
+            <div
+              data-testid="geo-live-mode-badge"
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-600/95 backdrop-blur-md text-white text-xs font-semibold shadow-lg border border-blue-400/40 animate-in fade-in"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+              <span>Chế độ trực quan hình học: Vẽ xong hình tự động biến thành mô hình tương tác tại chỗ</span>
+              <button
+                type="button"
+                data-testid="geo-live-mode-close"
+                onClick={() => setIsGeometryLiveMode(false)}
+                className="ml-1 p-0.5 hover:bg-white/20 rounded-full cursor-pointer transition"
+                title="Tắt chế độ trực quan hình học tự động"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           {/* Hologram Simulation Overlay - Zero-Background Living Ink on Blackboard */}
           {activeBlueprint && !isCompilingShimmer && displayMode === 'HOLOGRAM' && (
@@ -2923,6 +3046,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         isRecorderOpen={isStudioRecorderOpen}
         onToggleRecorder={() => setIsStudioRecorderOpen((o) => !o)}
         customSlotCount={Object.values(hasCustomSlots).filter(Boolean).length}
+        isGeometryLiveMode={isGeometryLiveMode}
+        onToggleGeometryLiveMode={() => setIsGeometryLiveMode((o) => !o)}
         scenes={AUTO_INK_SCENES.map((sc, i) => ({ id: sc.id, shortLabel: sc.shortLabel, hotkey: i + 1, active: activeAutoScene === sc.id, custom: !!hasCustomSlots[sc.id] }))}
         onScene={triggerAutoInk}
         busyLabel={isAutoInking ? 'Đang viết thư pháp…' : isCompilingShimmer ? 'AI đang biên dịch…' : null}

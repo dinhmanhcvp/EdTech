@@ -7,6 +7,7 @@
 export * from './simulation';
 export * from './schemas';
 export * from './pilot';
+export * from './onlineTutor';
 
 export type SubjectType = 'MATH' | 'PHYSICS' | 'CHEMISTRY' | 'BIOLOGY';
 

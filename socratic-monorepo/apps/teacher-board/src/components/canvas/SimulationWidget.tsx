@@ -1002,7 +1002,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               <MathPlotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} isHologram={isHolo} />
             )}
             {blueprint.engine === 'GEOMETRY' && (
-              <GeometryEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
+              <GeometryEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} isHologram={isHolo} />
             )}
             {blueprint.templateId === 'PHYS_GAS_STATE_PV' && <GasEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {blueprint.templateId === 'PHYS_DOUBLE_PENDULUM' && <DoublePendulumEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}

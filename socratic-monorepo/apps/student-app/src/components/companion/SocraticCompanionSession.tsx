@@ -156,8 +156,7 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
 
     const expectedClean = stepDef.expectedAnswerClean
       .replace(/\s+/g, '')
-      .replace(/→/g, '->')
-      .toLowerCase();
+      .replace(/→/g, '->');
 
     // Online-first: only the backend verifier can mark a step correct.
     let isCorrect = false;
@@ -183,7 +182,7 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       {
         const evalData = await resp.json();
-        verified = true;
+        verified = evalData.verification_source === 'SYMPY_DETERMINISTIC' && typeof evalData.is_step_correct === 'boolean' && evalData.error_category !== 'SYNTAX_ERROR';
         setConnectionState('online');
         if (evalData.is_step_correct !== undefined) {
           isCorrect = evalData.is_step_correct;
@@ -204,6 +203,7 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
     }
 
     if (!verified) {
+      setServerFeedback((value) => value || 'Máy chủ chưa xác thực được biểu thức. Bài chưa được tính điểm; hãy kiểm tra cú pháp và thử lại.');
       setIsLoading(false);
       return;
     }

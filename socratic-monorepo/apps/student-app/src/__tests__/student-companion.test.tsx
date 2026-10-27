@@ -90,7 +90,8 @@ describe('Student Socratic Companion & Dashboards (Phase 4)', () => {
   /**
    * TEST 3: Concept Check Gate (Reverse Explanation & Eureka Reward)
    */
-  it('test_concept_check_gate_awards_eureka_particles', () => {
+  it('test_concept_check_gate_awards_eureka_particles', async () => {
+    const mockFetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ok: true, json: async () => ({passed: true, eureka_points_awarded: 50, feedback: 'Tuyệt vời! +50 Eureka Particles'})} as Response);
     const onPassGate = vi.fn();
 
     render(
@@ -116,10 +117,12 @@ describe('Student Socratic Companion & Dashboards (Phase 4)', () => {
     fireEvent.click(verifyBtn);
 
     // Verify pass feedback and callback
+    await waitFor(() => expect(onPassGate).toHaveBeenCalledWith(50));
     const feedback = screen.getByTestId('concept-feedback');
     expect(feedback.textContent).toContain('Tuyệt vời!');
     expect(feedback.textContent).toContain('+50 Eureka Particles');
     expect(onPassGate).toHaveBeenCalledWith(50);
+    mockFetch.mockRestore();
   });
 
   /**

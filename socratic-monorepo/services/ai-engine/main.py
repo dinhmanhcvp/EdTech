@@ -28,6 +28,7 @@ from routers.visualize import RAPIDOCR_ENGINE, LOCAL_MATH_ONNX
 from cache.chroma_cache import CHROMADB_AVAILABLE
 from routers.student_context import router as student_context_router
 from student_context import store_ready
+from routers.online_tutor import router as online_tutor_router
 from llm.key_pool import global_key_pool
 
 app = FastAPI(
@@ -55,6 +56,7 @@ app.include_router(classroom_router)
 app.include_router(recognize_ink_router)
 app.include_router(classroom_ws_router)
 app.include_router(student_context_router)
+app.include_router(online_tutor_router)
 
 from fastapi.responses import Response, JSONResponse
 from graph_engine import generate_neon_graph

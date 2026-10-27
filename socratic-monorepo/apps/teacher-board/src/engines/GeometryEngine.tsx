@@ -37,6 +37,7 @@ interface Props {
   blueprint: SimulationBlueprint;
   params?: Record<string, number>;
   curriculumLevel?: CurriculumLevel;
+  isHologram?: boolean;
 }
 
 type Mode = 'solid' | 'ghost' | 'wire' | 'section';
@@ -76,7 +77,7 @@ export interface AuxSegment3D {
   label?: string;
 }
 
-export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
+export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
   const initialKind = ((blueprint.meta?.solid as SolidKind) || 'cube') as SolidKind;
   const [activeKind, setActiveKind] = useState<SolidKind>(initialKind);
   useEffect(() => {
@@ -90,7 +91,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
   const solid: Solid = useMemo(() => makeSolid(kind, dims), [kind, dims]);
   const edges = useMemo(() => edgesOf(solid.faces), [solid]);
   const [root, setRoot] = useState(0);
-  useEffect(() => setRoot(0), [kind]);
+  useEffect(() => setRoot(0), [kind, isHologram]);
   const plan = useMemo(() => planUnfold(solid, Math.min(root, solid.faces.length - 1)), [solid, root]);
 
   // ---------------- Công cụ Vẽ thêm Hình phụ 3D (Dựng đường phụ, trung điểm, đường cao, mặt phẳng) ----------------
@@ -270,47 +271,68 @@ export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
     }
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.setTransform?.(dpr, 0, 0, dpr, 0, 0);
 
     const isSectionMode = mode === 'section';
     const splitX = isSectionMode ? Math.round(w * 0.46) : 0;
 
-    const bg = ctx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, Math.max(w, h) * 0.7);
-    bg.addColorStop(0, '#FFFFFF');
-    bg.addColorStop(1, '#F1EFEA');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, w, h);
+    if (isHologram) {
+      ctx.clearRect(0, 0, w, h);
+    } else if (ctx.createRadialGradient) {
+      const bg = ctx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, Math.max(w, h) * 0.7);
+      bg.addColorStop(0, '#FFFFFF');
+      bg.addColorStop(1, '#F1EFEA');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+    } else {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, w, h);
+    }
 
     // Nếu ở chế độ Cắt Thiết Diện: Bên trái (0 .. splitX) vẽ Hình phẳng 2D trích xuất thật, Bên phải (splitX .. w) vẽ Hình 3D có mặt cắt xanh bán trong suốt
     if (isSectionMode) {
-      // Nền khu vực 2D bên trái (bảng kỹ thuật sáng rõ)
-      ctx.fillStyle = '#F8FAFC';
-      ctx.fillRect(0, 0, splitX, h);
+      if (!isHologram) {
+        // Nền khu vực 2D bên trái (bảng kỹ thuật sáng rõ)
+        ctx.fillStyle = '#F8FAFC';
+        ctx.fillRect(0, 0, splitX, h);
 
-      // Lưới kỹ thuật mịn bên trái
-      ctx.strokeStyle = '#E2E8F0';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let gx = 20; gx < splitX; gx += 24) {
-        ctx.moveTo(gx, 0);
-        ctx.lineTo(gx, h);
-      }
-      for (let gy = 20; gy < h; gy += 24) {
-        ctx.moveTo(0, gy);
-        ctx.lineTo(splitX, gy);
-      }
-      ctx.stroke();
+        // Lưới kỹ thuật mịn bên trái
+        ctx.strokeStyle = '#E2E8F0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let gx = 20; gx < splitX; gx += 24) {
+          ctx.moveTo(gx, 0);
+          ctx.lineTo(gx, h);
+        }
+        for (let gy = 20; gy < h; gy += 24) {
+          ctx.moveTo(0, gy);
+          ctx.lineTo(splitX, gy);
+        }
+        ctx.stroke();
 
-      // Đường phân cách dọc
-      ctx.strokeStyle = '#CBD5E1';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(splitX, 0);
-      ctx.lineTo(splitX, h);
-      ctx.stroke();
+        // Đường phân cách dọc
+        ctx.strokeStyle = '#CBD5E1';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(splitX, 0);
+        ctx.lineTo(splitX, h);
+        ctx.stroke();
+      } else {
+        // Chế độ Hologram (bảng đen sống động): Không vẽ khối chữ nhật đục!
+        // Đường phân cách dọc thanh mảnh dạng nét đứt màu cyan
+        ctx.save();
+        ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(splitX, 12);
+        ctx.lineTo(splitX, h - 12);
+        ctx.stroke();
+        ctx.restore();
+      }
 
       // Tiêu đề khung 2D bên trái
-      ctx.fillStyle = '#0F172A';
+      ctx.fillStyle = isHologram ? '#0891B2' : '#0F172A';
       ctx.font = '700 11px ui-sans-serif, system-ui';
       ctx.textAlign = 'left';
       ctx.fillText('MẶT CẮT 2D THẬT (TRÍCH XUẤT TRỰC GIAO)', 12, 20);
@@ -334,10 +356,10 @@ export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
         ctx.beginPath();
         pts2.forEach((p, idx) => (idx ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
         ctx.closePath();
-        ctx.fillStyle = 'rgba(6, 182, 212, 0.22)';
+        ctx.fillStyle = isHologram ? 'rgba(6, 182, 212, 0.35)' : 'rgba(6, 182, 212, 0.22)';
         ctx.fill();
         ctx.strokeStyle = '#0891B2';
-        ctx.lineWidth = 2.6;
+        ctx.lineWidth = 2.8;
         ctx.stroke();
 
         // Vẽ cung góc (độ) tại mỗi đỉnh
@@ -363,7 +385,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
           const midA = a1 + diff / 2;
           const ax = p.x + Math.cos(midA) * (arcR + 11);
           const ay = p.y + Math.sin(midA) * (arcR + 11);
-          ctx.fillStyle = '#0369A1';
+          ctx.fillStyle = isHologram ? '#0284C7' : '#0369A1';
           ctx.font = '700 10px "JetBrains Mono", ui-monospace, monospace';
           ctx.textAlign = 'center';
           ctx.fillText(`${Math.round(verts2D[idx].angleDeg)}°`, ax, ay + 3);
@@ -382,9 +404,9 @@ export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
           const lenStr = fmtNum(verts2D[idx].nextEdgeLen, 2);
           ctx.font = '700 10px "JetBrains Mono", ui-monospace, monospace';
           const tw = ctx.measureText(lenStr).width;
-          ctx.fillStyle = 'rgba(255,255,255,0.92)';
+          ctx.fillStyle = isHologram ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255,255,255,0.92)';
           ctx.fillRect(lx - tw / 2 - 3, ly - 8, tw + 6, 13);
-          ctx.fillStyle = '#0F172A';
+          ctx.fillStyle = isHologram ? '#38BDF8' : '#0F172A';
           ctx.textAlign = 'center';
           ctx.fillText(lenStr, lx, ly + 2);
         });
@@ -412,18 +434,18 @@ export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
         });
 
         // Nhãn diện tích & tên hình ở góc dưới khung 2D
-        ctx.fillStyle = 'rgba(236, 254, 255, 0.95)';
-        ctx.strokeStyle = '#67E8F9';
+        ctx.fillStyle = isHologram ? 'rgba(15, 23, 42, 0.85)' : 'rgba(236, 254, 255, 0.95)';
+        ctx.strokeStyle = isHologram ? '#0891B2' : '#67E8F9';
         ctx.lineWidth = 1;
         ctx.fillRect(10, h - 54, splitX - 20, 44);
         ctx.strokeRect(10, h - 54, splitX - 20, 44);
 
-        ctx.fillStyle = '#0E7490';
+        ctx.fillStyle = isHologram ? '#38BDF8' : '#0E7490';
         ctx.font = '700 12px ui-sans-serif, system-ui';
         ctx.textAlign = 'left';
         ctx.fillText(`${crossSection.shapeName} (${verts2D.length} cạnh)`, 18, h - 35);
         ctx.font = '700 11px "JetBrains Mono", ui-monospace, monospace';
-        ctx.fillStyle = '#155E75';
+        ctx.fillStyle = isHologram ? '#7DD3FC' : '#155E75';
         ctx.fillText(
           `S = ${fmtNum(crossSection.area, 3)}   •   P = ${fmtNum(crossSection.perimeter, 2)}`,
           18,
@@ -463,18 +485,20 @@ export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
     hitPolys.current = pfs.map((p) => ({face: p.i, poly: p.poly, z: p.z}));
 
     // bóng đổ mềm dưới khối
-    const gp = project(cam, [center[0], center[1], center[2]], center);
-    ctx.save();
-    ctx.translate(gp.x, h - 34);
-    ctx.scale(1, 0.18);
-    const sh = ctx.createRadialGradient(0, 0, 0, 0, 0, zoom * rNow * 1.1);
-    sh.addColorStop(0, 'rgba(0,0,0,0.18)');
-    sh.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = sh;
-    ctx.beginPath();
-    ctx.arc(0, 0, zoom * rNow * 1.1, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    if (ctx.createRadialGradient) {
+      const gp = project(cam, [center[0], center[1], center[2]], center);
+      ctx.save();
+      ctx.translate(gp.x, h - 34);
+      ctx.scale(1, 0.18);
+      const sh = ctx.createRadialGradient(0, 0, 0, 0, 0, zoom * rNow * 1.1);
+      sh.addColorStop(0, 'rgba(0,0,0,0.18)');
+      sh.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sh;
+      ctx.beginPath();
+      ctx.arc(0, 0, zoom * rNow * 1.1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
     // mặt (trong chế độ section thì khối bán trong suốt nhẹ để thấy rõ mặt cắt xanh bên trong)
     const alpha = mode === 'solid' ? 1 : mode === 'ghost' ? 0.34 : mode === 'section' ? 0.18 : 0;
@@ -623,7 +647,21 @@ export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
       }
     }
 
-    // nhãn đỉnh (khi còn là khối): đỉnh bị che hiện mờ, không có nền trắng
+    // Nút chấm cảm ứng tại các đỉnh khối 3D (Frame 36 trong video)
+    if (u < 0.02) {
+      solid.verts.forEach((v) => {
+        const p = project(cam, v, center);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+        ctx.strokeStyle = '#2563EB';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+    }
+
+    // nhãn đỉnh (khi còn là khối): đỉnh bị che hiện mờ
     if (showLabels && u < 0.02) {
       const frontOf = pfs.reduce<Record<number, boolean>>((m, f) => ((m[f.i] = f.front), m), {});
       const visVert = solid.verts.map(() => false);
@@ -756,7 +794,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
         ctx.restore();
       }
 
-      // 3. Mặt cầu ngoại tiếp (Circumscribed Sphere)
+      // 3. Mặt cầu ngoại tiếp (Circumscribed Sphere) — Vẽ 3 đường tròn lớn trực giao 3D (Đỏ XY, Xanh lá YZ, Xanh dương XZ) theo chuẩn Video Frame 35
       if (showCircumSphere && solid.verts.length > 0) {
         const c3 = centroid(solid.verts);
         const rSphere = Math.max(...solid.verts.map((v) => len(sub(v, c3))));
@@ -764,20 +802,109 @@ export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
         const pxR = rSphere * zoom;
 
         ctx.save();
-        ctx.strokeStyle = 'rgba(124, 58, 237, 0.55)';
-        ctx.fillStyle = 'rgba(124, 58, 237, 0.06)';
+
+        // 3a. Bóng khối cầu bán trong suốt dạng thủy tinh
+        if (ctx.createRadialGradient) {
+          const grad = ctx.createRadialGradient(
+            spCenter.x - pxR * 0.25,
+            spCenter.y - pxR * 0.25,
+            pxR * 0.1,
+            spCenter.x,
+            spCenter.y,
+            pxR,
+          );
+          grad.addColorStop(0, 'rgba(191, 219, 254, 0.25)');
+          grad.addColorStop(0.7, 'rgba(59, 130, 246, 0.08)');
+          grad.addColorStop(1, 'rgba(37, 99, 235, 0.22)');
+          ctx.fillStyle = grad;
+        } else {
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
+        }
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.65)';
         ctx.lineWidth = 1.8;
         ctx.beginPath();
         ctx.arc(spCenter.x, spCenter.y, pxR, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        // Đường xích đạo elip của mặt cầu ngoại tiếp
-        ctx.setLineDash([5, 4]);
+        // Hàm vẽ đường tròn lớn 3D có phân biệt nửa trước / nửa sau theo chiều sâu camera
+        const draw3DGreatCircle = (pts3D: V3[], color: string) => {
+          const count = pts3D.length;
+          const proj = pts3D.map((p) => project(cam, p, center));
+          for (let i = 0; i < count; i++) {
+            const pA = proj[i];
+            const pB = proj[(i + 1) % count];
+            const isFront = (pA.z + pB.z) / 2 > 0;
+            ctx.beginPath();
+            ctx.moveTo(pA.x, pA.y);
+            ctx.lineTo(pB.x, pB.y);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = isFront ? 2.5 : 1.4;
+            if (isFront) {
+              ctx.setLineDash([]);
+              ctx.globalAlpha = 0.95;
+            } else {
+              ctx.setLineDash([4, 4]);
+              ctx.globalAlpha = 0.42;
+            }
+            ctx.stroke();
+          }
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 1.0;
+        };
+
+        const NUM_CIRCLE_SEGS = 64;
+        const xyCircle: V3[] = [];
+        const yzCircle: V3[] = [];
+        const xzCircle: V3[] = [];
+        for (let i = 0; i < NUM_CIRCLE_SEGS; i++) {
+          const th = (i * Math.PI * 2) / NUM_CIRCLE_SEGS;
+          const cos = Math.cos(th);
+          const sin = Math.sin(th);
+          // Đường xích đạo XY: màu đỏ
+          xyCircle.push([c3[0] + rSphere * cos, c3[1] + rSphere * sin, c3[2]]);
+          // Đường kinh tuyến YZ: màu xanh lá
+          yzCircle.push([c3[0], c3[1] + rSphere * cos, c3[2] + rSphere * sin]);
+          // Đường kinh tuyến XZ: màu xanh dương
+          xzCircle.push([c3[0] + rSphere * cos, c3[1], c3[2] + rSphere * sin]);
+        }
+
+        draw3DGreatCircle(xyCircle, '#EF4444');
+        draw3DGreatCircle(yzCircle, '#10B981');
+        draw3DGreatCircle(xzCircle, '#3B82F6');
+
+        // Tâm mặt cầu O
         ctx.beginPath();
-        ctx.ellipse(spCenter.x, spCenter.y, pxR, pxR * 0.32, 0, 0, Math.PI * 2);
+        ctx.arc(spCenter.x, spCenter.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#2563EB';
+        ctx.fill();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 1.5;
         ctx.stroke();
-        ctx.setLineDash([]);
+
+        ctx.font = 'italic 700 13px Georgia, serif';
+        ctx.fillStyle = '#1E3A8A';
+        ctx.fillText('O', spCenter.x + 8, spCenter.y - 6);
+
+        // Bán kính R nối từ tâm O tới đỉnh thứ nhất
+        if (solid.verts[0]) {
+          const spV0 = project(cam, solid.verts[0], center);
+          ctx.setLineDash([4, 3]);
+          ctx.strokeStyle = '#2563EB';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(spCenter.x, spCenter.y);
+          ctx.lineTo(spV0.x, spV0.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          const mrx = (spCenter.x + spV0.x) / 2;
+          const mry = (spCenter.y + spV0.y) / 2;
+          ctx.font = 'italic 700 12px Georgia, serif';
+          ctx.fillStyle = '#2563EB';
+          ctx.fillText(`R = ${fmtNum(rSphere, 2)}`, mrx + 10, mry);
+        }
+
         ctx.restore();
       }
 
@@ -1113,7 +1240,9 @@ export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
         </div>
       </div>
 
-      <div className="relative rounded-2xl overflow-hidden border border-[#E6E4DD] bg-white shadow-sm" style={{height: size.h}}>
+      <div className={`relative rounded-2xl overflow-hidden ${
+          isHologram ? 'bg-transparent border-0 shadow-none' : 'border border-[#E6E4DD] bg-white shadow-sm'
+        }`} style={{height: size.h}}>
         <canvas
           ref={canvasRef}
           data-testid="geo-canvas"
@@ -1150,6 +1279,131 @@ export const GeometryEngine: React.FC<Props> = ({blueprint}) => {
             {plan.valid ? '✓ Mạng khai triển hợp lệ (không chồng mặt)' : '⚠ Cách mở này có mặt chồng nhau'}
           </div>
         )}
+      </div>
+
+      {/* Sleek Floating Pill Toolbar (Matches Frame 38 of Video) */}
+      <div
+        data-testid="geo-floating-pill-toolbar"
+        className="flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full bg-stone-900/90 backdrop-blur-md border border-white/20 shadow-xl self-center max-w-full overflow-x-auto select-none"
+      >
+        <button
+          type="button"
+          data-testid="geo-pill-labels"
+          aria-pressed={showLabels}
+          onClick={() => {
+            setShowLabels((v) => !v);
+            kick();
+          }}
+          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer flex items-center gap-1 ${
+            showLabels ? 'bg-blue-600 text-white shadow-xs' : 'text-stone-300 hover:text-white hover:bg-white/10'
+          }`}
+          title="Bật/tắt nhãn đỉnh A, B, C..."
+        >
+          <span>🏷️</span>
+          <span>Đỉnh</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="geo-pill-section"
+          aria-pressed={mode === 'section'}
+          onClick={() => {
+            const nextMode = mode === 'section' ? 'solid' : 'section';
+            setMode(nextMode);
+            if (nextMode === 'section') {
+              uRef.current = 0;
+              setUUi(0);
+            }
+            kick();
+          }}
+          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer flex items-center gap-1 ${
+            mode === 'section' ? 'bg-cyan-500 text-white shadow-xs' : 'text-stone-300 hover:text-white hover:bg-white/10'
+          }`}
+          title="Cắt thiết diện 3D và trích xuất mặt cắt phẳng 2D"
+        >
+          <span>📐</span>
+          <span>Thiết diện 2D+3D</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="geo-pill-sphere"
+          aria-pressed={showCircumSphere}
+          onClick={() => {
+            setShowCircumSphere((v) => !v);
+            if (mode === 'solid') setMode('ghost');
+            kick();
+          }}
+          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer flex items-center gap-1 ${
+            showCircumSphere ? 'bg-purple-600 text-white shadow-xs' : 'text-stone-300 hover:text-white hover:bg-white/10'
+          }`}
+          title="Mặt cầu 3D ngoại tiếp với 3 đường tròn lớn trực giao (XY, YZ, XZ)"
+        >
+          <span>🌐</span>
+          <span>Mặt cầu 3D</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="geo-pill-altitude"
+          aria-pressed={showAltitude}
+          onClick={() => {
+            setShowAltitude((v) => !v);
+            if (mode === 'solid') setMode('ghost');
+            kick();
+          }}
+          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer flex items-center gap-1 ${
+            showAltitude ? 'bg-rose-600 text-white shadow-xs' : 'text-stone-300 hover:text-white hover:bg-white/10'
+          }`}
+          title="Đường cao SO / SH vuông góc mặt đáy"
+        >
+          <span>⊥</span>
+          <span>Chiều cao</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="geo-pill-midpoints"
+          aria-pressed={showMidpoints}
+          onClick={() => {
+            setShowMidpoints((v) => !v);
+            kick();
+          }}
+          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer flex items-center gap-1 ${
+            showMidpoints ? 'bg-emerald-600 text-white shadow-xs' : 'text-stone-300 hover:text-white hover:bg-white/10'
+          }`}
+          title="Trung điểm các cạnh M, N, P..."
+        >
+          <span>•</span>
+          <span>Trung điểm</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="geo-pill-unfold"
+          onClick={() => {
+            if (uUi > 0.5) fold();
+            else unfold();
+          }}
+          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer flex items-center gap-1 ${
+            uUi > 0.5 ? 'bg-amber-500 text-white' : 'text-stone-300 hover:text-white hover:bg-white/10'
+          }`}
+          title="Khai triển hoặc gập lại mạng phẳng"
+        >
+          <span>◱</span>
+          <span>{uUi > 0.5 ? 'Gập lại' : 'Khai triển'}</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="geo-pill-reset"
+          onClick={resetView}
+          className="px-2 py-1 rounded-full text-[11px] font-medium text-stone-300 hover:text-white hover:bg-white/10 transition cursor-pointer flex items-center gap-0.5"
+          title="Đặt lại góc nhìn 3D"
+        >
+          <span>⌖</span>
+          <span>Đặt lại</span>
+        </button>
       </div>
 
       {/* hàng 1: kiểu hiển thị + chế độ Cắt Thiết Diện + Dựng Hình Phụ */}

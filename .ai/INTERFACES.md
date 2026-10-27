@@ -34,3 +34,12 @@ Canonical source: `socratic-monorepo/packages/types/src/index.ts`, re-exported b
 - Python AI routes and domain adapters: `services/ai-engine/routers`, `cache`, `llm`, and `symbolic`.
 
 Any contract change must update its source type, runtime schema (when applicable), all consumers, and this document in the same change.
+
+## Online tutor catalog v1
+- Server owner: services/ai-engine/routers/online_tutor.py.
+- POST /api/v1/student/tutor/{student_id}/attempts accepts problem_id, step (1-based), answer, request_id only.
+- Returns status (VERIFIED_CORRECT / VERIFIED_INCORRECT / UNVERIFIED), points, mastery, completed_step, catalog_version, feedback.
+- Reusing request_id with a changed body returns 409. Future steps return 409. Extra answer-key fields return 422.
+- Currently consumed by Student App AfterSchoolTutor; legacy companion uses its existing evaluation contract.
+
+- GET /api/v1/student/tutor/{student_id}/progress returns OnlineTutorProgress (packages/types/src/index.ts): catalog_version, total_points for catalog steps, problems with problem_id/kc_id/step_count/completed_step/mastery; no answer keys. Same student subject guard as attempts.

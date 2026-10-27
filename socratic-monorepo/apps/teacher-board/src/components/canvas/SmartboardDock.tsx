@@ -68,6 +68,8 @@ export interface SmartboardDockProps {
   isRecorderOpen: boolean;
   onToggleRecorder: () => void;
   customSlotCount: number;
+  isGeometryLiveMode?: boolean;
+  onToggleGeometryLiveMode?: () => void;
   scenes: DockScene[];
   onScene: (id: string) => void;
   busyLabel: string | null;
@@ -153,6 +155,24 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
             {label}
           </button>
         ))}
+        {p.onToggleGeometryLiveMode && (
+          <button
+            data-testid="tool-geo-live-mode-toggle"
+            onClick={() => {
+              p.onToggleGeometryLiveMode?.();
+              setPop(null);
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ml-1 ${
+              p.isGeometryLiveMode
+                ? 'bg-blue-600 border-blue-700 text-white shadow-xs'
+                : 'bg-white border-[#DCD9D0] text-blue-700 hover:bg-blue-50'
+            }`}
+            title="Bật/Tắt chế độ vẽ hình tự động biến thành mô hình tương tác tại chỗ"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>Trực quan hình học {p.isGeometryLiveMode ? '(BẬT)' : ''}</span>
+          </button>
+        )}
       </div>
 
       {/* Bảng nhỏ: thêm */}
@@ -235,11 +255,18 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
         <button
           data-testid="tool-shape"
           onClick={() => setPop(pop === 'shape' ? null : 'shape')}
-          className={`${base} ${shapeActive ? on : idle}`}
-          title="Hình vẽ: tròn, thẳng, mũi tên, chữ nhật"
+          className={`${base} ${shapeActive ? on : idle} relative`}
+          title={p.isGeometryLiveMode ? 'Hình vẽ (Chế độ trực quan hình học: Đang BẬT)' : 'Hình vẽ: tròn, thẳng, mũi tên, chữ nhật, trực quan hình học'}
         >
           {shapeActive ? ShapeIcon[p.selectedShape] : <Shapes className="w-5 h-5" />}
           Hình
+          {p.isGeometryLiveMode && (
+            <span
+              data-testid="dock-geo-live-indicator"
+              className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-blue-500 border-2 border-white animate-pulse"
+              title="Chế độ trực quan hình học tự động đang bật"
+            />
+          )}
         </button>
 
         <button data-testid="tool-eraser" onClick={() => p.onTool('ERASER')} className={`${base} ${p.tool === 'ERASER' ? on : idle}`} title="Tẩy từng đoạn nét">

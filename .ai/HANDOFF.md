@@ -17,12 +17,20 @@
   - Nâng cấp nhận diện phương trình mặt cầu 3D Oxyz ($x^2 + y^2 + z^2 = 10$) mượt mà qua cả Gemini 2.5 Flash Vision và bộ định tuyến ngoại tuyến.
   - Kiểm tra độ tin cậy OCR và các chip hoán đổi ký tự nghi ngờ (`Z ⇄ 2`, `n ⇄ \pi`, `l ⇄ 1`, `S ⇄ 5`, v.v.) hoạt động chính xác trên cả Smartboard Canvas và InkConvertPanel.
   - Cơ chế Pre-Clear Commit giữ trọn ngữ cảnh phân cảnh qua các lần xóa bảng trên bục giảng.
-  - 445/445 automated tests passed tuyệt đối (100%). TypeScript strict check 0 errors across all apps.
+  - **Tối ưu hóa toàn diện theo Video Demo Bảng AI Thông Minh (`docs/Bảng AI TQ.mp4`):**
+    * **Biến đổi nét vẽ thành hình học 3D tại chỗ (In-Place 3D Transformation):** Nét vẽ tay hình lập phương, chóp, hộp chữ nhật... được nhận diện tự động và chuyển đổi tức thì thành khối 3D Hologram không nền (`bg-transparent`), loại bỏ hoàn toàn các khung chữ nhật đục che khuất bảng đen.
+    * **Thanh công cụ nổi 1 chạm (`geo-floating-pill-toolbar` - Frame 38):** Thanh điều khiển dạng viên thuốc bo tròn phủ kính mờ (`backdrop-blur`) đặt ngay dưới khối 3D với 7 tác vụ tức thì: Nhãn đỉnh, Cắt thiết diện 2D+3D, Mặt cầu 3D trực giao, Chiều cao SO/SH, Trung điểm M-N-P, Khai triển/Gập, và Đặt lại view.
+    * **Mặt cầu 3D với 3 đường tròn lớn trực giao (3D Orthogonal Great Circles - Frame 35):** Mặt cầu ngoại tiếp/nội tiếp khối 3D hiển thị bằng 3 đường tròn lớn xoay theo phối cảnh 3D thực (Đỏ XY equator, Xanh lá YZ meridian, Xanh dương XZ meridian) kèm chiều sâu bán cầu trước/sau, tâm O và bán kính R.
+    * **Điểm chạm cảm ứng tại các đỉnh khối (Vertex Touch Handles - Frame 36):** Mỗi đỉnh khối 3D được đánh dấu chấm tròn cảm ứng viền xanh nổi bật để giáo viên/học sinh chạm chọn, đo đạc hoặc nối đoạn thẳng phụ trực tiếp trên bảng.
+    * **Mặt cắt 2D trực giao thả nổi bên trái bảng (Floating 2D Cross Section - Frames 40, 42, 45):** Khi cắt khối 3D, mặt cắt đa giác 2D thật nổi độc lập bên trái khối lập phương với đầy đủ số đo góc đỉnh, độ dài cạnh và diện tích S, chu vi P mà không bị đóng khung trong card trắng.
+    * **Hỏi đáp AI Giọng Nói (`VoiceAiQaCard.tsx` - Frames 40, 45):** Tích hợp câu hỏi chuẩn video *"Trong hình lập phương cạnh a, thiết diện nào có diện tích lớn nhất?"* kèm chứng minh lục giác đều ($S = rac{3\sqrt{3}}{4}a^2$) vs hình chữ nhật chéo ($S = a^2\sqrt{2}$) và nút bung mô hình 3D 1-chạm.
+  - 497/497 automated tests passed tuyệt đối (100%). TypeScript strict check 0 errors across all apps.
 - **Trạng thái Build & Test:**
   - `npx.cmd tsc --noEmit --incremental false` (cả 2 apps `teacher-board` và `student-app`): **Exit code 0 (0 lỗi TypeScript)**.
-  - `npx.cmd vitest run`: **33/33 test files passed, 404/404 tests passed 100%**.
-  - `pytest tests/` (`services/ai-engine`): **6/6 test files passed, 41/41 tests passed 100%**.
-  - **Tổng cộng: 445/445 automated tests đạt 100%**.
+  - `npx.cmd vitest run` (`teacher-board`): **34/34 test files passed, 417/417 tests passed 100%**.
+  - `npx.cmd vitest run` (`student-app`): **5/5 test files passed, 23/23 tests passed 100%**.
+  - `pytest tests/` (`services/ai-engine`): **57/57 tests passed 100%**.
+  - **Tổng cộng: 497/497 automated tests đạt 100%**.
 
 # 3. Quyết định kỹ thuật & Ngữ cảnh ẩn (Mental Model & Decisions)
 - **Zero-Background Holographic Canvas:** Không dùng `div` có nền đục che khuất chữ viết phấn. Canvas mô phỏng dùng `bg-transparent` và 4 góc HUD brackets tự mờ dần sau 2 giây (`opacity-0`) khi nhấc bút, giúp nét vẽ kỹ thuật số hòa quyện tự nhiên như thể nét mực đã tự thân cử động.
@@ -839,3 +847,80 @@
 - **Tổng cộng:** **481/481 automated tests passed (100%)**.
 - **Tổng cộng:** **481/481 automated tests passed (100%)**.
 
+
+## 2026-10-27 — Online-first evaluation boundary
+- Scope: Student App only; no Teacher Board files edited in this pass.
+- AfterSchoolTutor now posts answers to the backend evaluator through a bounded (15s) request. Only a boolean deterministic verdict can award points or update its existing client BKT.
+- Guidance/cache responses, syntax failures and network failures remain UNVERIFIED: preserve input, do not award points, advance steps or update mastery.
+- SocraticCompanionSession uses the relative proxy endpoint, removes local permissive correctness fallbacks, and preserves case in expected expressions.
+- Added adapter tests (network failure, guidance-only response, deterministic verdict) and UI regression for retained answer/no rewards on outage.
+- Verification: 22 student tests passed; student tsc passed; filtered student production build exit 0.
+- Remaining: BKT is still client-side and not calibrated against school data; exercise answers are still sent by client, so high-stakes grading needs a server-owned problem catalog; LaTeX expressions unsupported by the verifier remain unverified. ConceptCheckGate still needs server verification. Do not describe this pass as a completed production assessment engine.
+
+## 2026-10-27 — Server-owned online tutoring catalog v1
+- Implemented POST /api/v1/student/tutor/{student_id}/attempts, restricted to student/admin roles with student subject binding.
+- Catalog owns answer keys for the 3 existing homework exercises (5 steps). Request schema forbids caller-supplied expected_answer, mastery or points.
+- Server persists mastery and completed step per student/problem in SQLite. Transactions prevent concurrent rewards; request IDs replay the same result and reject changed bodies. Re-solving a completed step awards no further points or BKT update.
+- Scalar expressions use a bounded AST whitelist instead of eval/parse_expr. Unsupported expressions remain UNVERIFIED. Supported LaTeX normalization includes fractions and subscripts. Multi-value/inequality variants currently require canonical text matching rather than unrestricted symbolic proofs.
+- AfterSchoolTutor sends only catalog id, step, answer and request id; consumes server mastery/points, no longer computes BKT locally for this flow.
+- Corrected the projectile problem assumption: equations are for NO drag, matching the model being checked.
+- Voice/text ConceptCheckGate now calls the existing online verification API, preserves text on failure and removes fake microphone fallback. Quiet causal gate no longer accepts any non-empty sequence.
+- Remaining: Concept Gate keyword checking is heuristic (not semantic proof), quiet-mode checks remain client-side; generic SocraticCompanionSession still uses the legacy evaluation route; BKT parameters are uncalibrated defaults; online identity provisioning and per-school enrollment are separate deployment work. Do not claim all assessments have migrated.
+- Verified: 23 Student App tests; student tsc; 18 targeted backend tests including catalog/auth/anti-cheat. Student build exit 0 before final copy/disabled-state adjustment; rerunning checks below.
+
+# 2026-10-27 — In-Place Geometry Transformation on Blackboard & Multi-Key AI Studio Quota Clarification
+
+## 1. Giải đáp Quota & Usage Google AI Studio
+- Trong ảnh chụp Google AI Studio:
+  * Gemini 3.8 Flash: RPM 5/5, RPD 24/20 (vượt hạn mức ngày của tài khoản miễn phí).
+  * Gemini 2.5 Flash: RPM 4/5, RPD 26/20 (vượt hạn mức ngày của tài khoản miễn phí).
+- **Đánh giá mức độ an toàn:**
+  * **Hoàn toàn KHÔNG sao cả:** Đây là tài khoản Free Tier (không kích hoạt Pay-as-you-go). Google tuyệt đối không trừ tiền, không phát sinh nợ, và không khóa tài khoản. Khi vượt ngưỡng 20 RPD, Google chỉ trả về mã lỗi HTTP 429 (`RESOURCE_EXHAUSTED`).
+  * **Cơ chế Multi-Key Pool & OpenRouter Failover:** Đã hoàn tất `KeyPoolManager` tự động nhận diện HTTP 429 từ key bị hết quota này, đưa vào trạng thái cooldown, và xoay vòng sang 3 key Google còn lại trong pool hoặc failover sang OpenRouter. Người dùng trên bảng không bị gián đoạn hay lỗi. Hạn mức 20 RPD sẽ tự động reset vào 00:00 UTC (khoảng 7:00 sáng VN).
+
+## 2. Tính năng Trực quan hình học tại chỗ (In-Place Geometry Transformation)
+- **Yêu cầu:** "Cái chế độ trực quan hình học thì chỉ cần nhận diện được hình thì chuyển chính cái nét vẽ đó thành hình luôn và tương tác được chính trên hình đó luôn trên bảng".
+- **Thay đổi thực hiện:**
+  1. `socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardCanvas.tsx`:
+     - Bổ sung `transformStrokesToGeometryInPlace(strokesToTransform, blueprint)`:
+       * Đo chính xác bounding box của cụm nét vẽ: `bb = bboxOfStrokes(strokesToTransform)`.
+       * Di chuyển tọa độ hologram `holoPosition` về đúng vị trí tâm của hình vừa vẽ trên bảng (`centerX, centerY`).
+       * Xóa các nét vẽ tay thô khỏi `strokes` (lưu vào `undoStack`) để nét vẽ tay "biến hình" tại chỗ thành hình học sạch chuẩn mực.
+       * Chuyển `displayMode` sang `'HOLOGRAM'` và mount blueprint hình học tương tác.
+     - Tích hợp vào `handleVisualize`: Khi nhận dạng 3D (`detectSolidFromStrokes`) hoặc 2D (`detectPlaneShapeFromStrokes`), tự động chuyển đổi tại chỗ.
+     - Tích hợp vào `InkConvertPanel.tsx` `onVisualizeLocal`.
+     - Bổ sung nút 1-chạm `sel-btn-geo-inplace` trên thanh công cụ vùng chọn `selection-toolbar` hiển thị tên hình rõ ràng: `✨ [Tên hình] (Tương tác tại chỗ)`.
+     - Bổ sung **Chế độ trực quan hình học tự động** (`isGeometryLiveMode`): Khi bật, giáo viên chỉ cần cầm bút vẽ đa giác hoặc khối 3D trên bảng, sau 850ms nhấc bút hệ thống tự động nhận diện và biến nét vẽ thành mô hình sống tương tác ngay tại chỗ. Kèm HUD banner `geo-live-mode-badge` hiển thị trạng thái và cho phép tắt nhanh.
+  2. `socratic-monorepo/apps/teacher-board/src/engines/GeometryEngine.tsx`:
+     - Hỗ trợ prop `isHologram?: boolean`.
+     - Khi `isHologram={true}`: Sử dụng `ctx.clearRect` thay vì tô radial gradient đục màu trắng kem (`#FFFFFF` -> `#F1EFEA`).
+     - Lớp bao bọc canvas đổi thành `bg-transparent border-0 shadow-none`, hòa quyện hoàn hảo với mặt bảng đen (Zero-Background Chalkboard Living Ink).
+     - Guard an toàn cho các hàm canvas trong môi trường test/jsdom (`setTransform`, `createRadialGradient`).
+  3. `socratic-monorepo/apps/teacher-board/src/components/canvas/SimulationWidget.tsx`:
+     - Truyền `isHologram={isHolo}` xuống `GeometryEngine`.
+  4. `socratic-monorepo/apps/teacher-board/src/components/canvas/SmartboardDock.tsx`:
+     - Bổ sung nút chuyển đổi Chế độ trực quan hình học trong `shape-popover` (`tool-geo-live-mode-toggle`).
+     - Hiển thị chấm báo hiệu màu xanh dương nổi bật `dock-geo-live-indicator` trên nút `Hình` khi chế độ đang bật.
+
+## 3. Kết quả Xác minh & Kiểm thử (Verification)
+- `npx.cmd tsc --noEmit --incremental false` (`teacher-board`): **0 errors (Pass)**.
+- `npx.cmd tsc --noEmit --incremental false` (`student-app`): **0 errors (Pass)**.
+- Vitest `teacher-board`: **34/34 test files passed, 416/416 tests passed 100%** (bao gồm 5/5 tests mới trong `src/__tests__/inPlaceGeometryTransformation.test.tsx`).
+- Vitest `student-app`: **5/5 test files passed, 23/23 tests passed 100%**.
+- Pytest `services/ai-engine`: **57/57 tests passed 100%**.
+- **Tổng cộng: 496/496 automated tests passed tuyệt đối (100%)**.
+
+## Active scope: online progress restoration
+Student App tutor, online_tutor router/tests, shared contracts. Restore persisted steps/mastery/points; preserve unrelated Teacher Board work.
+
+## 2026-10-27 — Online progress restoration delivered
+- Added protected progress read API, including fresh-store initialization and per-student isolation; no answer-key exposure.
+- Student tutor restores steps, mastery and catalog points on mount, resumes each exercise on switching, removes sample 150-point balance and sample learned mastery. Loading/error/retry states expose unavailable progress.
+- Removed delayed automatic advancement timer to prevent modifying another exercise after selection changes. Restore never emits reward callbacks.
+- Shared OnlineTutorProgress contract added. Retry preserves typed answers at their original step.
+- Verification: 24 Student tests and 20 targeted backend tests passed; Vite config compatibility warning remains. Final build/typecheck recorded at completion.
+- Limits: client still uses student_default until school identity/session provisioning is implemented; auth-enabled deployment requires connecting session credentials. Catalog points exclude other reward systems. Other companion/quiet flows retain previously documented limits. No Teacher Board changes made in this pass; existing unrelated edits preserved. No commit.
+- Final verification: Student production build succeeded; student TypeScript check and 24 tests passed after retry adjustment; git diff --check passed (line-ending warnings only).
+
+## Active scope — Mode 02 online reliability
+Own Student App tutor evaluation/draft utilities/tests, online_tutor backend/tests and shared tutor contracts. Implement stable retry IDs, draft recovery and authoritative response snapshots; preserve Teacher Board/unrelated edits.

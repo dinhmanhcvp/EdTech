@@ -45,6 +45,35 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
     Array.from({ length: 32 }, () => 12)
   );
   const animFrameRef = useRef<number | null>(null);
+  const verifyingRef = useRef(false);
+  const passedRef = useRef(false);
+
+  const verifyExplanation = async (speech: string) => {
+    if (verifyingRef.current || passedRef.current) return;
+    verifyingRef.current = true;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    setFeedback('Đang xác thực giải thích…');
+    try {
+      const response = await fetch('/api/v1/companion/verify-voice-gate', {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, signal: controller.signal,
+        body: JSON.stringify({transcript: speech, concept: conceptTitle, expected_keywords: targetKeywords}),
+      });
+      if (!response.ok) throw new Error('unavailable');
+      const result = await response.json();
+      setFeedback(result.feedback || 'Chưa đủ thông tin để xác nhận.');
+      if (result.passed === true && typeof result.eureka_points_awarded === 'number') {
+        passedRef.current = true;
+        setIsPassed(true);
+        onPassGate(result.eureka_points_awarded);
+      }
+    } catch {
+      setFeedback('Chưa xác thực được giải thích online. Giữ nguyên nội dung và thử lại khi có kết nối.');
+    } finally {
+      clearTimeout(timeout);
+      verifyingRef.current = false;
+    }
+  };
 
   useEffect(() => {
     if (isRecording) {
@@ -141,12 +170,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
             norm.includes(removeDiacritics(kw))
           );
           if (allFound && !isPassed) {
-            setIsPassed(true);
-            const bonus = pointsAwarded * 2; // x2 Voice Defense Grit Bonus
-            setFeedback(
-              `Xuất sắc! Giọng nói của bạn đã bảo vệ trọn vẹn bản chất vật lý & hóa học. Nhận x2 Grit Bonus (+${bonus} Eureka Particles)!`
-            );
-            onPassGate(bonus);
+            void verifyExplanation(current);
             recognition.stop();
             setIsRecording(false);
           }
@@ -161,38 +185,11 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
       } catch {}
     }
 
-    // Fallback simulation for testing/demo
-    setIsRecording(true);
-    setTimeout(() => {
-      const demoTranscript =
-        'Theo định luật bảo toàn khối lượng và cơ năng, tổng số nguyên tử và năng lượng của hệ kín luôn bảo toàn không đổi.';
-      setTranscript(demoTranscript);
-      setIsPassed(true);
-      const bonus = pointsAwarded * 2;
-      setFeedback(
-        `Xuất sắc! Giọng nói của bạn đã bảo vệ trọn vẹn bản chất vật lý & hóa học. Nhận x2 Grit Bonus (+${bonus} Eureka Particles)!`
-      );
-      onPassGate(bonus);
-      setIsRecording(false);
-    }, 2500);
+    setFeedback('Trình duyệt chưa hỗ trợ nhận giọng nói. Em có thể nhập lời giải thích ở ô bên dưới.');
   };
 
   const handleFallbackTextVerify = () => {
-    const norm = removeDiacritics(transcript);
-    const hasEnough = targetKeywords.some((kw) =>
-      norm.includes(removeDiacritics(kw))
-    );
-    if (hasEnough || transcript.trim().length > 15) {
-      setIsPassed(true);
-      setFeedback(
-        `Tuyệt vời! Lập luận văn bản đã làm rõ bản chất khoa học. Nhận +${pointsAwarded} Eureka Particles!`
-      );
-      onPassGate(pointsAwarded);
-    } else {
-      setFeedback(
-        `Cần bổ sung thêm từ khóa cốt lõi: ${targetKeywords.join(', ')}!`
-      );
-    }
+    if (transcript.trim()) void verifyExplanation(transcript);
   };
 
   const handleVerifyCausalBlocks = () => {
@@ -201,7 +198,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
       causalBlocks[0].id === 1 &&
       causalBlocks[1].id === 2 &&
       causalBlocks[2].id === 3;
-    if (isSorted || causalBlocks.length > 0) {
+    if (isSorted) {
       setIsPassed(true);
       setFeedback(
         `Chính xác! Chuỗi nhân quả diễn biến đã được sắp xếp chuẩn xác. Nhận +${pointsAwarded} Eureka Particles!`

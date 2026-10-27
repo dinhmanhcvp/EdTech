@@ -100,8 +100,67 @@ def test_endpoint_returns_normalized_result_with_mock_model(client, monkeypatch)
 
 def test_endpoint_model_failure_is_503(client, monkeypatch):
     monkeypatch.setattr(ri, "recognize_with_gemini", lambda *a, **k: None)
+    monkeypatch.setattr(ri, "recognize_with_openrouter", lambda *a, **k: None)
+    monkeypatch.setattr(ri, "recognize_with_local_onnx", lambda *a, **k: None)
     resp = client.post("/api/v1/canvas/recognize-ink", json={"image_base64": _png_b64()}, headers={"x-gemini-api-key": "k"})
     assert resp.status_code == 503
+
+
+def test_vision_runs_before_local_even_with_allow_local_onnx(client, monkeypatch):
+    """Phân tầng: có khóa Cloud thì Vision trả lời trước; mô hình cục bộ chỉ là dự phòng."""
+    order = []
+
+    def fake_vision(image_bytes, hint, api_key):
+        order.append("vision")
+        return ri.parse_recognition('{"lines":[{"text":"con lắc kép","latex":"\\text{con lắc kép}","confidence":0.9}]}')
+
+    def fake_local(*a, **k):
+        order.append("local")
+        return {"lines": [{"text": "x", "latex": "x", "confidence": 0.9}], "text": "x", "latex": "x", "confidence": 0.9, "engine": "local_onnx"}
+
+    monkeypatch.setattr(ri, "recognize_with_gemini", fake_vision)
+    monkeypatch.setattr(ri, "recognize_with_local_onnx", fake_local)
+    r = client.post("/api/v1/canvas/recognize-ink", json={"image_base64": _png_b64(), "allow_local_onnx": True}, headers={"x-gemini-api-key": "k"})
+    assert r.status_code == 200 and r.json()["engine"] == "gemini"
+    assert order == ["vision"]
+
+
+def test_local_is_fallback_when_vision_fails(client, monkeypatch):
+    monkeypatch.setattr(ri, "recognize_with_gemini", lambda *a, **k: None)
+    monkeypatch.setattr(ri, "recognize_with_openrouter", lambda *a, **k: None)
+    monkeypatch.setattr(
+        ri, "recognize_with_local_onnx",
+        lambda *a, **k: {"lines": [{"text": "y=x", "latex": "y=x", "confidence": 0.9}], "text": "y=x", "latex": "y=x", "confidence": 0.9, "engine": "local_onnx"},
+    )
+    r = client.post("/api/v1/canvas/recognize-ink", json={"image_base64": _png_b64()}, headers={"x-gemini-api-key": "k"})
+    assert r.status_code == 200 and r.json()["engine"] == "local_onnx"
+
+
+def test_prepare_image_is_small_grayscale_jpeg():
+    from PIL import Image
+    import io as _io
+
+    big = Image.new("RGB", (2000, 1000), "white")
+    buf = _io.BytesIO()
+    big.save(buf, "PNG")
+    out = ri.prepare_image(buf.getvalue())
+    im = Image.open(_io.BytesIO(out))
+    assert im.format == "JPEG" and max(im.size) <= 720 and len(out) < len(buf.getvalue())
+
+
+def test_result_cache_returns_instantly_for_same_image(monkeypatch):
+    calls = {"n": 0}
+
+    def fake_call(image_bytes, hint, api_key, key_offset=0):
+        calls["n"] += 1
+        return ri.parse_recognition('{"lines":[{"text":"a","latex":"a","confidence":0.9}]}')
+
+    monkeypatch.setattr(ri, "_call_gemini", fake_call)
+    ri._cache.clear()
+    img = base64.b64decode(_png_b64().split(",")[-1]) if "," in _png_b64()[:64] else base64.b64decode(_png_b64())
+    r1 = ri.recognize_with_gemini(img, "", "k")
+    r2 = ri.recognize_with_gemini(img, "", "k")
+    assert r1["latex"] == "a" and r2.get("cached") is True and calls["n"] == 1
 
 
 # ---------------------------------------------------------------- prompt biên dịch cho Gemini Vision
@@ -152,7 +211,7 @@ def test_local_math_onnx_cleaner_and_offline_recognition(client, monkeypatch):
             json={
                 "image_base64": _png_b64(),
                 "raw_strokes_json": json.dumps(strokes),
-                "allow_local_onnx": True,
+                "prefer_offline": True,
             },
         )
         assert resp.status_code == 200

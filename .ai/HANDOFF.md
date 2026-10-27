@@ -982,27 +982,29 @@ Own Student App tutor evaluation/draft utilities/tests, online_tutor backend/tes
 # 2026-10-28 — Xây dựng Kịch bản & Danh sách Cảnh quay Video Pitch Khởi nghiệp (`docs/STARTUP_VIDEO_SKELETON.md`)
 
 ## 1. Mục tiêu hoàn thành
-- Xây dựng thành công bản thiết kế sản xuất điện ảnh kết hợp người thật và giao diện phần mềm 60FPS: **Director's Production Blueprint & Master Shot List Skeleton** tại `docs/STARTUP_VIDEO_SKELETON.md` (thời lượng mục tiêu 165s – 180s, phong cách Apple Keynote / YC Startup Pitch).
-- Phân vai chi tiết cho 4 Co-founders Viện CNTT&TT – ĐH Bách khoa Hà Nội (SoICT – HUST K68) cùng diễn viên giáo viên và học sinh:
-  * **Phan Trọng Đạt (`20235033` — Lead AI Architect):** Mở màn Hook Act I, Tầm nhìn công nghệ lõi và Báo cáo thực nghiệm $N = 412$ tại Act IV, Kêu gọi hành động tại Act V.
-  * **Đỗ Đình Vũ (`20235460` — Smartboard UX Lead):** Trình diễn trực tiếp trên màn hình 75" tại Act II (Magic Lasso, Tap & Swap Zero-Keyboard, Ghost Trail).
-  * **Lê Trường Giang (`20235317` — 60FPS Simulation Lead):** Trình diễn 4 động cơ xác định giải tích (RK4 Phase Space, Fresnel RLC, 3D Stereochemistry, DNA Double Helix).
-  * **Phạm Ngọc Tuyên (`20235455` — Backend & Growth Lead):** Bánh đà mã QR không tốn chi phí khách hàng (Act III) và Kinh tế đơn vị 350đ/tiết học, biên gộp 88% (Act IV).
+- Xây dựng thành công bản thiết kế sản xuất điện ảnh kết hợp người thật và giao diện phần mềm 60FPS: **Director's Production Blueprint & Master Shot List Skeleton** tại `docs/STARTUP_VIDEO_SKELETON.md` (thời lượng mục tiêu 165s – 180s, phong cách Apple Keynote / SV_STARTUP IX).
+- Phân vai chi tiết cho nhóm tác giả học sinh (Trường THCS Hùng Vương, Phú Thọ và Trường THPT Chuyên Vĩnh Phúc) cùng thầy cô cố vấn:
+  * **Lê Tiến Đức (Lớp 9A2, THCS Hùng Vương — Trưởng nhóm dự án):** Mở màn Hook Act I, Báo cáo thực nghiệm $N = 412$ tại Act IV, Tầm nhìn và Lời kêu gọi hành động tại Act V.
+  * **Thành viên khối 11 (Lớp 11A14, THPT Chuyên Vĩnh Phúc — Phụ trách STEM nâng cao):** Trình diễn trực tiếp trên màn hình tương tác 75" tại Act II (Magic Lasso, biến hình học tại chỗ 60FPS).
+  * **Nguyễn Hiếu Phong (Lớp 9A3, THCS Hùng Vương — Phụ trách kỹ thuật & kiểm thử):** Giới thiệu 10 động cơ thực nghiệm STEM 60FPS và tối ưu hóa xử lý cục bộ.
+  * **Hoàng Lan Anh (Lớp 9A2, THCS Hùng Vương — Phụ trách học liệu):** Giới thiệu cơ chế chia sẻ bài giảng qua mã QR vector <60KB và Trợ lý Socratic đồng hành tại nhà.
+  * **Đỗ Ngọc Hà (Lớp 8A5, THCS Hùng Vương — Phụ trách khảo sát):** Phân tích mô hình kinh tế đơn vị bền vững (350đ/tiết học, biên gộp ~88%, hòa vốn tháng thứ 7).
+  * **Thầy Phùng Văn Kiệm & Cô Vũ Thị Phương Anh:** Xuất hiện đồng hành trong các cảnh quay lớp học và định hướng sư phạm.
 
 ## 2. Cấu trúc 5 Phần sản xuất trong `docs/STARTUP_VIDEO_SKELETON.md`
-1. **Section 1: Pre-Production Setup, Cast & Locations Checklist:** Thiết lập 3 bối cảnh quay (Lớp học thông minh với màn hình 75", Bàn học sinh ban đêm, Phòng thí nghiệm SoICT-HUST); Kỹ thuật chống lóa màn hình 45 độ và bộ lọc phân cực CPL.
-2. **Section 2: The 5-Act Startup Narrative Arc (180s Total):**
-   - Act I (0:00–0:25): Cú sốc đề thi GDPT 2018 và nghịch lý 45.000 màn hình tương tác nhàn rỗi.
-   - Act II (0:25–1:05): Đột phá bục giảng Mode 01 với 10 STEM Engines 60FPS và biến hình trực tiếp tại chỗ.
-   - Act III (1:05–1:45): Cầu nối mã QR vector <60KB về nhà và Gia sư Socratic Mode 02 chặn copy lời giải, kích hoạt Visual Debuggers.
-   - Act IV (1:45–2:20): Bằng chứng thực nghiệm $N = 412$ (+25.4% câu hỏi Đúng/Sai, $p < 0.0001$) và Mô hình kinh tế đơn vị 350đ/tiết học nhờ offload 81.4% với SymPy/ChromaDB.
-   - Act V (2:20–2:45): 4 kỹ sư HUST, tầm nhìn mở rộng 2.850 trường THPT và thông điệp kết thúc.
-3. **Section 3: Master Time-Coded Shot-by-Shot Table:** 26 cảnh quay chi tiết từ 0:00 đến 2:45 với phân lớp A-Roll, B-Roll, UI-Roll, hành động trên trường quay, lời thoại gợi ý và thẻ đồ họa JetBrains Mono trên màn hình.
-4. **Section 4: Practical Filming & Match-Cut Choreography Guide:** Quy trình cắt ghép chuẩn xác giữa ngón tay chạm màn hình thật và bản ghi màn hình 4K 60FPS (Finger-to-Pixel Match-Cut); Ghi âm 32-bit float không méo tiếng và thu âm nền phòng (Room Tone).
-5. **Section 5: Post-Production & BGM/SFX Cue Sheet:** Tiến trình âm nhạc 4 track từ hồi hộp đến cao trào Apple Keynote; Bảng cue sheet 16 hiệu ứng âm thanh SFX đồng bộ đến từng giây; Bảng màu Editorial Daylight `#F8F7F4` và quy chuẩn typography.
+1. **Phần 1: Thiết lập tiền kỳ, nhân sự và bối cảnh quay phim:** Bố trí 3 bối cảnh (Lớp học thông minh 75", Bàn tự học buổi tối, Phòng thực hành STEM); Kỹ thuật chống lóa màn hình 45 độ và bộ lọc phân cực CPL.
+2. **Phần 2: Cấu trúc 5 hồi của câu chuyện khởi nghiệp (180 giây):**
+   - Hồi I (0:00–0:25): Nêu vấn đề và hai nghịch lý lớn trong học đường (45.000 màn hình nhàn rỗi, thói quen chép bài từ ứng dụng mạng).
+   - Hồi II (0:25–1:05): Đột phá công nghệ trực tiếp trên bục giảng (khoanh vùng biến hình học tại chỗ, 10 STEM engines 60FPS, chuẩn hóa ký hiệu 1 chạm).
+   - Hồi III (1:05–1:45): Cầu nối bài giảng qua mã QR vector và Trợ lý Socratic chặn chép bài, kích hoạt Visual Debuggers.
+   - Hồi IV (1:45–2:20): Bằng chứng thực nghiệm khoa học $N = 412$ (+25.4% câu hỏi bản chất, $p < 0.0001$) và Mô hình kinh tế bền vững 350đ/tiết học nhờ offload 81.4%.
+   - Hồi V (2:20–2:45): Nhóm tác giả học sinh, khát vọng lan tỏa tới hơn 2.850 trường phổ thông và thông điệp kết nối.
+3. **Phần 3: Bảng phân cảnh chi tiết từng giây:** 26 cảnh quay hoàn chỉnh từ 0:00 đến 2:45 với phân loại A-Roll, B-Roll, UI-Roll, hành động diễn xuất, mục tiêu phát ngôn và thẻ chữ đồ họa JetBrains Mono trên màn hình.
+4. **Phần 4: Hướng dẫn kỹ thuật quay phim và khớp cảnh chân thực:** Quy trình cắt ghép chuẩn xác giữa ngón tay chạm màn hình thật và bản ghi màn hình 4K 60FPS (Finger-to-Pixel Match-Cut); Ghi âm 32-bit float không vỡ tiếng và thu âm nền phòng (Room Tone).
+5. **Phần 5: Bảng kế hoạch âm nhạc và hiệu ứng âm thanh:** Tiến trình âm nhạc 4 đoạn từ trầm lắng đến cao trào truyền cảm hứng; Bảng cue sheet 16 hiệu ứng âm thanh SFX đồng bộ đến từng giây; Bảng màu tự nhiên và chuẩn mực typography.
 
 ## 3. Trạng thái Kiểm tra & Sẵn sàng
-- `docs/STARTUP_VIDEO_SKELETON.md`: Hoàn thành đầy đủ 100%, sẵn sàng bàn giao cho Claude viết kịch bản phân cảnh lời thoại chi tiết.
+- `docs/STARTUP_VIDEO_SKELETON.md`: Hoàn thành đầy đủ 100%, chuẩn hóa toàn bộ nhân sự là nhóm học sinh THCS Hùng Vương và THPT Chuyên Vĩnh Phúc, không còn nhắc đến thành viên HUST; ngôn từ chuẩn mực, đĩnh đạc, hạn chế tối đa dấu ngoặc đơn, không dùng từ dị.
 - TypeScript compiler check (`npx tsc --noEmit --incremental false`): **0 errors** trên toàn monorepo.
 
 
@@ -1012,3 +1014,19 @@ Own Student App tutor evaluation/draft utilities/tests, online_tutor backend/tes
 - Đầu ra: `docs/STARTUP_BUSINESS_REPORT_FINAL.{md,docx,pdf}` (34 trang, 19 bảng, 19 hình), sinh từ `docs/startup-report-assets/` (`part1-3.md` nguồn nội dung, `figs.py` biểu đồ, `build.py` dựng docx theo mẫu Downloads/"1 HV. STARTUP IX...").
 - Chạy lại: `python -X utf8 figs.py && python -X utf8 build.py` trong `docs/startup-report-assets` (cần LibreOffice + pymupdf để tính số trang mục lục).
 - Số liệu thực nghiệm 412 HS do người dùng xác nhận là thật; khác `pilot2026.json` (86 HS). Đã tính lại: tỷ trọng doanh thu năm 3 (72,3/18,6/4,8/4,3), SAM 1.285,78 tỷ, biên gộp năm 1 89,98%, cầu nối chi phí hoạt động 6.3 -> P&L (160/320/768 triệu, chưa có diễn giải gốc).
+
+# PHẦN D — KỊCH BẢN QUAY VIDEO STARTUP (2026-10-28)
+- `docs/STARTUP_VIDEO_SCRIPT_FINAL.md`: 28 cảnh (tách cảnh 25 và 26 của skeleton), thoại 140 từ/phút trên thời gian nói thực, lịch quay một ngày theo 4 nhóm G1-G4, danh sách UI-Roll. Tên "VŨ" lấy từ đề bài, skeleton chưa đặt tên.
+
+# PHẦN E — BÁO CÁO RÚT GỌN + Q&A (2026-10-28)
+- `docs/STARTUP_BUSINESS_REPORT_FINAL.*` đã rút gọn (thân báo cáo trang 4 đến 18, bìa/thông tin/mục lục 3 trang); bản đầy đủ 34 trang lưu ở `STARTUP_BUSINESS_REPORT_FULL_34p.*`. Mục 2 (Phần 2) giữ nguyên bằng `startup-report-assets/part2_verbatim.md`.
+- Nguồn: `part_a.md`, `part_b.md`, `figs.py` + `figs2.py`, `build.py`. `docs/QA_DEFENSE_PLAYBOOK.md`: 12 câu hỏi và danh sách việc cần xử lý trước bảo vệ.
+- LỖI ĐÃ PHÁT HIỆN (chưa sửa, ngoài phạm vi): `symbolic/sympy_verifier.py` kiểm tra thứ nguyên coi x,y,t,a,m... là đại lượng vật lý, báo sai cho Toán thuần (ví dụ x**3-1 so với (x-1)*(x**2+x+1)).
+
+# 2026-10-28 — Phân tầng nhận dạng: Vision trước, cục bộ dự phòng; tăng tốc Vision
+
+- **Lỗi gốc:** trình duyệt gửi `allow_local_onnx: true` mặc định, backend coi đó là "chạy cục bộ trước và trả luôn", nên Pix2Text-MFR (rất yếu với chữ tiếng Việt: "con lắc kép" → `c o n I \Box c k …`) trả lời trước Gemini và còn chậm (4–5 s).
+- **Backend** (`routers/recognize_ink.py`): có khóa Cloud thì Gemini → OpenRouter trước; ONNX cục bộ chỉ chạy trước khi `prefer_offline: true` hoặc khi không có khóa Cloud nào, và là dự phòng khi Vision hỏng. Tăng tốc: ảnh gửi đi là JPEG xám ≤ 720 px (`prepare_image`), gọi Gemini bằng REST (`_gemini_rest`, an toàn đa luồng, `responseMimeType=application/json`, `maxOutputTokens=700`, `thinkingBudget=0` cho 2.5-flash), mỗi lần gọi hạn 9 s, **nhân đôi yêu cầu sang khóa khác nếu lần đầu chậm quá 3 s** (`INK_HEDGE_AFTER_S`), nhớ kết quả theo ảnh (LRU 96, `cached: true`). Log chỉ dùng ASCII (console cp1252 từng làm 500).
+- **Trình duyệt:** `recognizeWithAi` gửi `prefer_offline` (mặc định false), nét gửi lên được thưa còn ≤ 48 điểm/nét, nhớ kết quả và dùng chung lần gọi đang chạy (panel Chuyển LaTeX và canvas không gọi trùng). Khi khoanh: KHÔNG điền kết quả cục bộ vào ô công thức; ô báo "AI đang đọc chữ…"; Vision về thì điền (trừ khi người dùng đã tự gõ: `formulaTouchedRef`); Vision null/lỗi thì mới điền bản cục bộ (`fallbackFormula`). Bấm Trực quan khi Vision đang chạy và ô còn trống thì chờ tối đa 9 s (`visionPromiseRef`). Panel Chuyển LaTeX không hiện bản cục bộ trong lúc chờ Vision.
+- Test: backend 22 (recognize_ink + key_pool, có test thứ tự tầng, cache, ảnh nhỏ); web 41 file / 503 test.
+- **Chưa đo được tốc độ thật sau tối ưu**: các khóa Gemini trong `.env` hiện là chuỗi giả 10 ký tự (API key not valid); trước đó đo Gemini 3,4–6,5 s/lượt qua SDK. Khóa thật nằm ở localStorage của trình duyệt người dùng. Cần đo lại bằng khóa thật.

@@ -111,6 +111,8 @@ export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({
       ? [{text: editing.text, latex: editing.latex, confidence: 1, alternatives: []}]
       : initialAiResult?.lines.length
       ? initialAiResult.lines
+      : isAiScanning
+      ? [{text: '', latex: '', confidence: 0, alternatives: []}] // đang chờ Vision: không hiện bản cục bộ yếu
       : local?.lines.length
       ? local.lines
       : [{text: '', latex: '', confidence: 0, alternatives: []}],
@@ -200,6 +202,11 @@ export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({
       if (!alive) return;
       if (!r) {
         setAiState('unavailable');
+        // Vision không dùng được: lúc này mới dùng bản đọc cục bộ
+        if (!edited && local?.lines.length) {
+          setEngine('local');
+          setLines(local.lines);
+        }
         return;
       }
       setAi(r);

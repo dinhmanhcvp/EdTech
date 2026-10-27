@@ -4,11 +4,17 @@ Chuyển ảnh chữ viết tay (công thức toán/lý/hóa, văn bản tiếng
 bằng Gemini Vision. Không có khóa API hoặc lỗi mạng -> trả mã 503 để trình duyệt tự dùng bộ nhận dạng cục bộ.
 """
 import base64
+import hashlib
 import io
 import json
 import os
 import re
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+import threading
+import time
+import urllib.error
+import urllib.request
+from collections import OrderedDict
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, TimeoutError as FuturesTimeout, wait
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
@@ -34,7 +40,80 @@ GEMINI_MODELS = [
     "gemini-1.5-flash",
 ]
 _TIMEOUT_S = float(os.getenv("INK_RECOGNIZE_TIMEOUT_S", "14"))
-_POOL = ThreadPoolExecutor(max_workers=3, thread_name_prefix="ink-recognize")
+_POOL = ThreadPoolExecutor(max_workers=6, thread_name_prefix="ink-recognize")
+# Tăng tốc Vision: ảnh nhỏ gọn, JSON trả thẳng, gọi REST (an toàn đa luồng), nhân đôi yêu cầu khi chậm, nhớ kết quả
+_MAX_SIDE = int(os.getenv("INK_IMAGE_MAX_SIDE", "720"))
+_HEDGE_S = float(os.getenv("INK_HEDGE_AFTER_S", "3.0"))
+_CALL_TIMEOUT_S = float(os.getenv("INK_GEMINI_CALL_TIMEOUT_S", "9"))
+_CACHE_MAX = 96
+_cache: "OrderedDict[str, Dict[str, Any]]" = OrderedDict()
+_cache_lock = threading.Lock()
+_GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+
+def prepare_image(image_bytes: bytes) -> bytes:
+    """Ảnh xám, cạnh dài tối đa ~720 px, JPEG: nhẹ hơn nhiều so với PNG gốc nên tải lên và suy luận nhanh hơn."""
+    try:
+        im = Image.open(io.BytesIO(image_bytes)).convert("L")
+        w, h = im.size
+        k = _MAX_SIDE / max(w, h)
+        if k < 1:
+            im = im.resize((max(1, round(w * k)), max(1, round(h * k))), Image.LANCZOS)
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=82, optimize=True)
+        return buf.getvalue()
+    except Exception:
+        return image_bytes
+
+
+def _cache_key(jpeg: bytes, hint: str) -> str:
+    return hashlib.sha1(jpeg + b"|" + hint.encode("utf-8")).hexdigest()
+
+
+def _cache_get(key: str) -> Optional[Dict[str, Any]]:
+    with _cache_lock:
+        hit = _cache.get(key)
+        if hit is not None:
+            _cache.move_to_end(key)
+            return dict(hit)
+    return None
+
+
+def _cache_put(key: str, value: Dict[str, Any]) -> None:
+    with _cache_lock:
+        _cache[key] = dict(value)
+        _cache.move_to_end(key)
+        while len(_cache) > _CACHE_MAX:
+            _cache.popitem(last=False)
+
+
+def _gemini_rest(model: str, key: str, prompt: str, jpeg: bytes, timeout: float) -> str:
+    """Một lần gọi generateContent qua REST. Lỗi HTTP ném ra urllib.error.HTTPError (có .code) để phân loại cooldown."""
+    gen_cfg: Dict[str, Any] = {"temperature": 0, "maxOutputTokens": 700, "responseMimeType": "application/json"}
+    if "2.5-flash" in model and "lite" not in model:
+        gen_cfg["thinkingConfig"] = {"thinkingBudget": 0}  # đọc chữ không cần "suy nghĩ" dài
+    payload = {
+        "contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(jpeg).decode("ascii")}}]}],
+        "generationConfig": gen_cfg,
+    }
+    req = urllib.request.Request(
+        _GEMINI_URL.format(model=model),
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json", "x-goog-api-key": key},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8", errors="replace"))
+    except urllib.error.HTTPError as e:
+        body = ""
+        try:
+            body = e.read().decode("utf-8", errors="replace")[:300]
+        except Exception:
+            pass
+        raise urllib.error.HTTPError(e.url, e.code, f"{e.reason} {body}", e.headers, None)
+    parts = (((data.get("candidates") or [{}])[0].get("content") or {}).get("parts")) or []
+    return "".join(p.get("text", "") for p in parts if isinstance(p, dict))
 
 PROMPT = (
     "Bạn là hệ thống nhận dạng chữ viết tay trên bảng của giáo viên (toán, vật lí, hóa học, sinh học; tiếng Việt có dấu).\n"
@@ -136,26 +215,25 @@ def parse_recognition(raw: str) -> Optional[Dict[str, Any]]:
     }
 
 
-def _call_gemini(image_bytes: bytes, hint: str, api_key: str) -> Optional[Dict[str, Any]]:
-    import google.generativeai as genai  # nhập muộn: máy không cài vẫn chạy được các phần khác
-
+def _call_gemini(image_bytes: bytes, hint: str, api_key: str, key_offset: int = 0) -> Optional[Dict[str, Any]]:
     candidate_keys = global_key_pool.get_ordered_keys("gemini", extra_key=api_key)
     if not candidate_keys and api_key:
         candidate_keys = [api_key]
+    if key_offset and len(candidate_keys) > 1:
+        k = key_offset % len(candidate_keys)
+        candidate_keys = candidate_keys[k:] + candidate_keys[:k]
 
-    img = Image.open(io.BytesIO(image_bytes))
+    jpeg = prepare_image(image_bytes)
     prompt = PROMPT + (f"\nGợi ý ngữ cảnh từ giáo viên: {hint}" if hint else "")
     last_err: Optional[Exception] = None
 
     for key_idx, current_key in enumerate(candidate_keys):
-        genai.configure(api_key=current_key)
         key_auth_error = False
         last_key_err: Optional[Exception] = None
         for name in GEMINI_MODELS:
             try:
-                model = genai.GenerativeModel(name)
-                resp = model.generate_content([prompt, img], generation_config={"temperature": 0})
-                parsed = parse_recognition(getattr(resp, "text", "") or "")
+                text = _gemini_rest(name, current_key, prompt, jpeg, _CALL_TIMEOUT_S)
+                parsed = parse_recognition(text)
                 if parsed is not None:
                     global_key_pool.mark_success("gemini", current_key)
                     parsed["model"] = name
@@ -167,13 +245,11 @@ def _call_gemini(image_bytes: bytes, hint: str, api_key: str) -> Optional[Dict[s
                 last_key_err = e
                 reason, _ = classify_error_cooldown(e)
                 if reason == "auth_error":
-                    # Khóa không hợp lệ (sai key / 401 / 403) -> ngắt ngay key này chuyển sang key khác
+                    # Khóa không hợp lệ -> bỏ key này, chuyển key khác
                     global_key_pool.mark_failure("gemini", current_key, e)
                     key_auth_error = True
                     break
-                # Nếu là quota_exhausted hoặc rate_limit của model này:
-                # Quota của Google AI Studio tính THEO MODEL (vd: 2.5 Flash hết 20 RPD nhưng 1.5 Flash vẫn còn 1500 RPD)!
-                # Tiếp tục thử model tiếp theo trong GEMINI_MODELS trên cùng key.
+                # quota / rate limit tính THEO MODEL: thử model kế tiếp trên cùng key
         else:
             if not key_auth_error and last_key_err is not None:
                 global_key_pool.mark_failure("gemini", current_key, last_key_err)
@@ -183,13 +259,43 @@ def _call_gemini(image_bytes: bytes, hint: str, api_key: str) -> Optional[Dict[s
 
 
 def recognize_with_gemini(image_bytes: bytes, hint: str, api_key: str) -> Optional[Dict[str, Any]]:
-    """Gọi Gemini trong luồng riêng với thời hạn cứng để không treo máy chủ."""
-    fut = _POOL.submit(_call_gemini, image_bytes, hint, api_key)
-    try:
-        return fut.result(timeout=_TIMEOUT_S)
-    except FuturesTimeout:
-        print(f"[recognize-ink] quá thời hạn {_TIMEOUT_S}s")
+    """Gemini Vision với: nhớ kết quả theo ảnh, và nhân đôi yêu cầu sang khóa khác nếu lần đầu chậm quá _HEDGE_S giây."""
+    jpeg = prepare_image(image_bytes)
+    ck = _cache_key(jpeg, hint)
+    hit = _cache_get(ck)
+    if hit is not None:
+        hit["cached"] = True
+        return hit
+
+    futs = [_POOL.submit(_call_gemini, image_bytes, hint, api_key, 0)]
+    deadline = time.monotonic() + _TIMEOUT_S
+    hedged = False
+    result: Optional[Dict[str, Any]] = None
+    while futs and time.monotonic() < deadline:
+        wait_for = max(0.05, (_HEDGE_S if not hedged else deadline - time.monotonic()))
+        done, pending = wait(futs, timeout=min(wait_for, deadline - time.monotonic()), return_when=FIRST_COMPLETED)
+        for f in done:
+            futs.remove(f)
+            try:
+                r = f.result()
+            except Exception:
+                r = None
+            if r is not None and result is None:
+                result = r
+        if result is not None:
+            break
+        if not done and not hedged and len(global_key_pool.get_ordered_keys("gemini", extra_key=api_key)) > 1:
+            hedged = True
+            futs.append(_POOL.submit(_call_gemini, image_bytes, hint, api_key, 1))
+        elif not done:
+            hedged = True  # chỉ một khóa: không có gì để nhân đôi, chờ tiếp
+    for f in futs:
+        f.cancel()
+    if result is None:
+        print(f"[recognize-ink] no result within {_TIMEOUT_S}s")
         return None
+    _cache_put(ck, result)
+    return result
 
 
 def _call_openrouter(image_bytes: bytes, hint: str, openrouter_key: str = "") -> Optional[Dict[str, Any]]:
@@ -217,7 +323,7 @@ def recognize_with_openrouter(image_bytes: bytes, hint: str, openrouter_key: str
     try:
         return fut.result(timeout=_TIMEOUT_S)
     except FuturesTimeout:
-        print(f"[recognize-ink] OpenRouter quá thời hạn {_TIMEOUT_S}s")
+        print(f"[recognize-ink] OpenRouter timeout {_TIMEOUT_S}s")
         return None
 
 
@@ -234,7 +340,7 @@ def recognize_with_local_onnx(
     try:
         from ocr_engine import LOCAL_MATH_ONNX, RAPIDOCR_ENGINE, BlackboardOCREngine, LocalMathONNXEngine
     except Exception as e:
-        print(f"[recognize-ink] Không thể nạp ocr_engine: {e}")
+        print(f"[recognize-ink] cannot load ocr_engine: {e}")
         return None
 
     parsed_strokes = None
@@ -331,7 +437,9 @@ async def recognize_ink(request: Request):
 
     hint = str(body.get("hint") or "")[:300]
     raw_strokes_json = body.get("raw_strokes_json")
-    prefer_offline = bool(body.get("prefer_offline") or body.get("allow_local_onnx"))
+    # Phân tầng: Vision (Gemini → OpenRouter) trước, mô hình cục bộ chỉ là phương án dự phòng.
+    # Chỉ khi khách yêu cầu RÕ "prefer_offline" mới chạy cục bộ trước.
+    prefer_offline = bool(body.get("prefer_offline"))
 
     req_gemini_key = (request.headers.get("x-gemini-api-key") or body.get("gemini_api_key") or "").strip().strip("'\"")
     req_openrouter_key = (request.headers.get("x-openrouter-api-key") or body.get("openrouter_api_key") or "").strip().strip("'\"")
@@ -343,11 +451,11 @@ async def recognize_ink(request: Request):
     openrouter_key = req_openrouter_key or (ordered_openrouter_keys[0] if ordered_openrouter_keys else "")
     has_any_cloud_key = bool(api_key or openrouter_key)
 
-    # 1. Ưu tiên chạy Local Neural ONNX (Pix2Text MFR-1.5 + RapidOCR) khi bật offline/local hoặc khi chưa có khóa Cloud
+    # 1. Local Neural ONNX (Pix2Text MFR-1.5 + RapidOCR) chỉ chạy trước khi bật prefer_offline hoặc khi KHÔNG có khóa Cloud nào
     local_result: Optional[Dict[str, Any]] = None
     if prefer_offline or not has_any_cloud_key:
         local_result = recognize_with_local_onnx(image_bytes, raw_strokes_json=raw_strokes_json, hint=hint)
-        if local_result is not None and (prefer_offline or not has_any_cloud_key or local_result.get("confidence", 0) >= 0.80):
+        if local_result is not None:
             return local_result
 
     if not has_any_cloud_key:

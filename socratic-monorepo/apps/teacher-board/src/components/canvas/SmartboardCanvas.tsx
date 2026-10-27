@@ -364,6 +364,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [instantResult, setInstantResult] = useState<ConvertResult | null>(null);
   const [aiVisionResult, setAiVisionResult] = useState<ConvertResult | null>(null);
   const [isAiVisionScanning, setIsAiVisionScanning] = useState<boolean>(false);
+  // Phân tầng nhận dạng: Vision trước, bản cục bộ chỉ khi Vision hỏng/không có khóa
+  const visionPromiseRef = useRef<Promise<ConvertResult | null> | null>(null);
+  const visionPendingRef = useRef(false);
+  const formulaTouchedRef = useRef(false);
   // Chuyển chữ viết tay → công thức chuẩn: nguồn nét (hoặc công thức đang sửa)
   const [convertCtx, setConvertCtx] = useState<{
     source: Stroke[];
@@ -684,6 +688,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           if (alive) setThumbnailUrl(null);
         });
 
+      let fallbackFormula = '';
+      formulaTouchedRef.current = false;
       try {
         // Ưu tiên kiểm tra hình khối 3D hoặc đa giác phẳng 2D trước khi nhận dạng chữ viết tay,
         // tránh việc bộ nhận dạng ký tự biến hình lập phương hoặc tam giác thành các ký tự rời rạc.
@@ -709,16 +715,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             if (alive) {
               setInstantResult(res);
               const fullLatex = res.lines.map((l) => l.latex).join(' \\\\ ');
-              // Chữ tiếng Việt không phải công thức: đừng đưa chuỗi ký tự đọc bừa vào ô công thức;
-              // nếu gần với tên một mô phỏng thì dùng tên chuẩn, còn lại đợi Vision đọc.
+              // Bản cục bộ chỉ là DỰ PHÒNG: không điền vào ô công thức ngay, chờ Vision; nếu Vision hỏng mới dùng.
+              // Chữ tiếng Việt không phải công thức thì không đưa chuỗi ký tự đọc bừa vào ô.
               const wordy = looksLikeWords(fullLatex);
               const viName = wordy ? matchViName(fullLatex) : null;
-              setFormulaInput((prev) => {
-                if (!prev.trim()) {
-                  return wordy ? (viName ? viName.canon : '') : fullLatex;
-                }
-                return prev;
-              });
+              fallbackFormula = wordy ? (viName ? viName.canon : '') : fullLatex;
             }
           } else {
             if (alive) setInstantResult(null);
@@ -740,17 +741,28 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
       // Tự động kích hoạt Gemini Vision ở chế độ chạy nền ngay khi giáo viên khoanh Lasso
       setIsAiVisionScanning(true);
-      recognizeWithAi(src)
+      visionPendingRef.current = true;
+      const visionP = recognizeWithAi(src);
+      visionPromiseRef.current = visionP;
+      visionP
         .then((aiRes) => {
+          visionPendingRef.current = false;
           if (!alive) return;
           setIsAiVisionScanning(false);
+          const isGeo =
+            (src.length >= 4 && (detectSolidFromStrokes(src)?.confidence ?? 0) >= 0.72) ||
+            (src.length >= 1 && src.length <= 4 && (detectPlaneShapeFromStrokes(src)?.confidence ?? 0) >= 0.78);
+          if (!aiRes || aiRes.lines.length === 0) {
+            // Vision không dùng được (không khóa, hết hạn mức, lỗi mạng): dùng bản đọc cục bộ
+            if (!isGeo && fallbackFormula && !formulaTouchedRef.current) setFormulaInput((prev) => (prev.trim() ? prev : fallbackFormula));
+          }
           if (aiRes && aiRes.lines.length > 0) {
             setAiVisionResult(aiRes);
             const aiLatex = aiRes.lines.map((l) => l.latex).join(' \\\\ ');
             const isGeoSketch =
               (src.length >= 4 && (detectSolidFromStrokes(src)?.confidence ?? 0) >= 0.72) ||
               (src.length >= 1 && src.length <= 4 && (detectPlaneShapeFromStrokes(src)?.confidence ?? 0) >= 0.78);
-            if (aiLatex.trim() && !isGeoSketch) {
+            if (aiLatex.trim() && !isGeoSketch && !formulaTouchedRef.current) {
               // Vision đọc chữ có thể sai dấu ("con lốc kép"): nếu gần tên một mô phỏng thì dùng tên chuẩn
               const aiPlain = aiRes.lines.map((l) => l.text).join(' ');
               const aiViName = looksLikeWords(aiPlain) ? matchViName(aiPlain) : null;
@@ -759,8 +771,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           }
         })
         .catch(() => {
+          visionPendingRef.current = false;
           if (!alive) return;
           setIsAiVisionScanning(false);
+          if (fallbackFormula && !formulaTouchedRef.current) setFormulaInput((prev) => (prev.trim() ? prev : fallbackFormula));
         });
     } else {
       setThumbnailUrl(null);
@@ -2319,8 +2333,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       .map((s) => s.typeset!.latex)
       .join(' \\\\ ');
     const inkSelected = sourceStrokes(selectedStrokes);
+    // Vision đang đọc mà người dùng chưa gõ gì: chờ tối đa 9 s (bản cục bộ yếu, không dùng làm kết quả chính)
+    let awaitedAi: ConvertResult | null = null;
+    if (!overrideHint && !formulaInput.trim() && visionPendingRef.current && visionPromiseRef.current) {
+      awaitedAi = await Promise.race([visionPromiseRef.current, new Promise<null>((r) => setTimeout(() => r(null), 9000))]);
+    }
+    const aiRes = awaitedAi && awaitedAi.lines.length > 0 ? awaitedAi : aiVisionResult;
     let detectedInstantLatex = instantResult ? instantResult.lines.map((l) => l.latex).join(' \\\\ ') : '';
-    const aiVisionLatex = aiVisionResult ? aiVisionResult.lines.map((l) => l.latex).join(' \\\\ ') : '';
+    const aiVisionLatex = aiRes ? aiRes.lines.map((l) => l.latex).join(' \\\\ ') : '';
     if (!detectedInstantLatex && !overrideHint && !formulaInput && inkSelected.length > 0) {
       try {
         const localRec = recognizeLocal(inkSelected);
@@ -2332,7 +2352,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       }
     }
     // Chữ tiếng Việt đọc từ máy (không phải công thức) mà không giống tên mô phỏng nào thì bỏ đi, đừng coi chuỗi ký tự bừa là công thức
-    const wordSources = [detectedInstantLatex, aiVisionResult ? aiVisionResult.lines.map((l) => l.text).join(' ') : ''];
+    const wordSources = [detectedInstantLatex, aiRes ? aiRes.lines.map((l) => l.text).join(' ') : ''];
     const namedWords = wordSources.some((t) => !!t && looksLikeWords(t) && !!matchViName(t));
     if (detectedInstantLatex && looksLikeWords(detectedInstantLatex)) {
       const viLocal = matchViName(detectedInstantLatex);
@@ -3414,11 +3434,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                         type="text"
                         data-testid="lasso-formula-input"
                         value={formulaInput}
-                        onChange={(e) => setFormulaInput(e.target.value)}
+                        onChange={(e) => {
+                          formulaTouchedRef.current = true;
+                          setFormulaInput(e.target.value);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleVisualize();
                         }}
-                        placeholder="Công thức hoặc tên mô phỏng…"
+                        placeholder={isAiVisionScanning ? 'AI đang đọc chữ…' : 'Công thức hoặc tên mô phỏng…'}
                         className="w-full px-3 py-2 rounded-xl bg-[#F8F7F4] border border-[#E6E4DD] text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-blue-500 font-mono transition"
                       />
                     </div>

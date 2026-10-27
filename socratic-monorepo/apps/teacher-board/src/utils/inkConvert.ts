@@ -72,8 +72,65 @@ interface AiOptions {
   exportImage?: (strokes: Stroke[]) => Promise<string>;
 }
 
-/** Gọi Neural OCR (Pix2Text-MFR-1.5 ONNX cục bộ hoặc Gemini Vision) qua máy chủ. Trả null nếu không kết nối được — khi đó dùng bản cục bộ tức thì. */
+/** Giảm nét gửi lên máy chủ: tối đa ~48 điểm mỗi nét, làm tròn 0,1 — chỉ để máy chủ dựng lại ảnh khi phải dùng mô hình cục bộ dự phòng. */
+export function thinStrokesForUpload(strokes: Stroke[], maxPts = 48) {
+  return strokes.map((s) => {
+    const n = s.points.length;
+    const step = Math.max(1, Math.ceil(n / maxPts));
+    const pts = [] as { x: number; y: number }[];
+    for (let i = 0; i < n; i += step) pts.push({ x: Math.round(s.points[i].x * 10) / 10, y: Math.round(s.points[i].y * 10) / 10 });
+    const last = s.points[n - 1];
+    const lx = last ? Math.round(last.x * 10) / 10 : 0;
+    const ly = last ? Math.round(last.y * 10) / 10 : 0;
+    if (last && (pts.length === 0 || pts[pts.length - 1].x !== lx || pts[pts.length - 1].y !== ly)) pts.push({ x: lx, y: ly });
+    return { points: pts };
+  });
+}
+
+/** Chữ ký của một cụm nét (để nhớ kết quả và dùng chung một lần gọi khi nhiều nơi cùng hỏi). */
+function inkSignature(strokes: Stroke[], hint: string): string {
+  let h = 2166136261;
+  for (const s of strokes) {
+    for (const p of s.points) {
+      h = Math.imul(h ^ Math.round(p.x * 4), 16777619);
+      h = Math.imul(h ^ Math.round(p.y * 4), 16777619);
+    }
+    h = Math.imul(h ^ 7919, 16777619);
+  }
+  return `${strokes.length}:${strokes.reduce((n, s) => n + s.points.length, 0)}:${(h >>> 0).toString(36)}:${hint}`;
+}
+const aiCache = new Map<string, ConvertResult>();
+const aiInflight = new Map<string, Promise<ConvertResult | null>>();
+
+/**
+ * Nhận dạng bằng Vision (Gemini → OpenRouter) qua máy chủ; mô hình cục bộ chỉ là dự phòng ở phía máy chủ khi Vision hỏng.
+ * Cùng một cụm nét: trả ngay kết quả đã nhớ, hoặc dùng chung lần gọi đang chạy. Trả null nếu không có kết quả — khi đó giao diện dùng bản cục bộ ở trình duyệt.
+ */
 export async function recognizeWithAi(strokes: Stroke[], opts: AiOptions = {}): Promise<ConvertResult | null> {
+  const src = sourceStrokes(strokes);
+  if (!src.length) return null;
+  if (!opts.fetchImpl && !opts.exportImage) {
+    const sig = inkSignature(src, opts.hint ?? '');
+    const hit = aiCache.get(sig);
+    if (hit) return { ...hit, ms: 0 };
+    const flying = aiInflight.get(sig);
+    if (flying) return flying;
+    const p = recognizeWithAiUncached(strokes, opts)
+      .then((r) => {
+        if (r) {
+          aiCache.set(sig, r);
+          if (aiCache.size > 40) aiCache.delete(aiCache.keys().next().value as string);
+        }
+        return r;
+      })
+      .finally(() => aiInflight.delete(sig));
+    aiInflight.set(sig, p);
+    return p;
+  }
+  return recognizeWithAiUncached(strokes, opts);
+}
+
+async function recognizeWithAiUncached(strokes: Stroke[], opts: AiOptions = {}): Promise<ConvertResult | null> {
   const src = sourceStrokes(strokes);
   if (!src.length) return null;
   const doFetch = opts.fetchImpl ?? (typeof fetch !== 'undefined' ? fetch : undefined);
@@ -92,8 +149,8 @@ export async function recognizeWithAi(strokes: Stroke[], opts: AiOptions = {}): 
   }
   const bodyPayload: Record<string, unknown> = {
     image_base64: image,
-    raw_strokes_json: JSON.stringify(src),
-    allow_local_onnx: opts.preferOffline ?? true,
+    raw_strokes_json: JSON.stringify(thinStrokesForUpload(src)),
+    prefer_offline: opts.preferOffline ?? false,
     hint: opts.hint ?? '',
     gemini_api_key: key,
   };

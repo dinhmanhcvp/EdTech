@@ -72,7 +72,7 @@ export default function StudentAppPage() {
   const academicRank = getAcademicRank(totalEureka);
 
   return (
-    <main className="min-h-screen bg-[#F8F7F4] text-[#18181B] flex flex-col antialiased font-sans">
+    <main className="min-h-screen bg-[#F8F7F4] text-[#18181B] flex flex-col antialiased font-sans paper-grid">
       {/* Precision Header */}
       <header className="h-12 border-b border-[#E6E4DD] bg-white/90 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-50 shadow-[0_1px_8px_-1px_rgba(20,20,19,0.03)]">
         <div className="flex items-center gap-3">
@@ -81,7 +81,7 @@ export default function StudentAppPage() {
               SOCRATIC
             </span>
             <span className="text-stone-400 text-xs font-mono">/</span>
-            <span className="text-xs text-stone-600 font-medium">After-School Platform</span>
+            <span className="font-display text-lg text-stone-800">After-School</span>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-semibold hidden md:inline-flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-600" />
               Tính năng 2: Gia Sư AI & Tự Học Sau Giờ Học
@@ -215,7 +215,7 @@ export default function StudentAppPage() {
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 p-6 flex flex-col items-center justify-center">
+      <div className="flex-1 w-full max-w-[1500px] mx-auto p-4 md:p-6 flex flex-col items-center justify-center">
         {activeTab === 'COMPANION' && (
           <div className="w-full flex justify-center">
             <SocraticCompanionSession

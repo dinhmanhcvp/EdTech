@@ -61,3 +61,6 @@ socratic-video/
 tmp/
 .antigravity/
 .claude/
+
+# Student Context runtime database
+socratic-monorepo/services/ai-engine/.data/

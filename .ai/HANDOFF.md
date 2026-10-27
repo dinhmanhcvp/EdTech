@@ -785,3 +785,54 @@
 ## Verification
 - Teacher Board TypeScript check (`npx tsc --noEmit`): 0 errors.
 - Teacher Board test suite (`npx vitest run`): 33/33 test files passed (411/411 tests passed).
+
+
+# 2026-10-27 — Production Pilot Hardening for Mode 02
+
+## Production controls
+- Added signed bearer token guard (`security.py`) with roles `student`, `teacher`, `admin` and expiry.
+- Added `STUDENT_CONTEXT_REQUIRE_AUTH`, `STUDENT_CONTEXT_SECRET`, `STUDENT_CONTEXT_DB`, and production env example.
+- Student routes enforce role boundaries when auth is enabled: students can manage their own profile/errors/events; teachers/admins can publish snapshots and prepare teacher roadmaps.
+- Added persistent `classroom_snapshots` storage and `PUT /api/v1/student/snapshot` for the teacher-side read-only context bridge.
+- Added `/health/ready` and student context store readiness in `/health`.
+- Added production runbook: `docs/MODE2_PRODUCTION_RUNBOOK.md`.
+- Added `.data/` runtime database to `.gitignore`.
+
+## Verified behavior
+- Auth disabled locally preserves development flow.
+- Auth enabled: unauthenticated context request returns 401; student token reads context with 200; student token cannot publish snapshot and receives 403.
+- Backend tests: 45 passed (two dependency deprecation warnings).
+- Student tests: 18 passed.
+- Full production build: student-app and teacher-board passed.
+
+## Deployment boundary
+- Suitable for a single-instance, controlled school pilot with SQLite/WAL backups and an OIDC/reverse-proxy identity boundary.
+- Before multi-instance or multi-school scale, replace the HMAC compatibility guard with school OIDC/JWKS validation and move the store to managed Postgres; retain the same API contract.
+- Snapshot producers must use tenant-prefixed class IDs and send only minimum pedagogical data; do not store raw audio or secrets in snapshots.
+
+# 2026-10-27 — Mode 02 UI/UX Pass
+
+## UX decisions
+- The Student Board workbench is collapsed by default into a compact context strip so students land in tutoring instead of a dense dashboard.
+- The expanded workbench follows a clear sequence: context/profile → diagnostic tab → personal error panel → session roadmap.
+- Bridge status is visible but quiet: online, syncing, or offline fallback.
+- Profile controls and the four diagnostic tabs remain available on demand; no raw LaTeX or emoji was added.
+- Visual DNA remains warm alabaster, porcelain cards, stone wells, hairline borders, editorial serif/mono hierarchy, and restrained accent colors.
+
+## Verification
+- Student typecheck passed.
+- Student tests: 18/18 passed.
+- Student production build passed.
+
+# 2026-10-27 — Premium Web Design Polish
+
+## UI changes
+- Added Instrument Serif display typography, selection treatment, thin scrollbar styling, and a subtle paper grid background.
+- Improved Student App header hierarchy with editorial display type and a wider responsive content frame.
+- Upgraded AfterSchoolTutor and StudentBoardWorkbench surfaces with more refined radius/shadow language from the visual DNA.
+- Preserved the compact-first UX: context workbench stays collapsed until the user asks for detail.
+
+## Verification
+- Student typecheck passed.
+- Student tests: 18/18 passed.
+- Student production build passed.

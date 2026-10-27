@@ -26,6 +26,7 @@ import {
   FunctionExtremaTangent,
   CellOsmosisPressure,
 } from './VisualDebugWidgets';
+import {StudentBoardWorkbench} from './StudentBoardWorkbench';
 
 export type TutorInteractionMode =
   | 'SOCRATIC_SOLVER'
@@ -212,8 +213,10 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
   return (
     <div
       data-testid="after-school-tutor"
-      className="w-full max-w-5xl bg-white border border-[#E6E4DD] rounded-2xl shadow-xl overflow-hidden flex flex-col font-sans text-stone-900"
+      className="w-full max-w-6xl bg-white/95 border border-[#E6E4DD] rounded-[24px] shadow-[0_24px_80px_-36px_rgba(24,24,27,0.5)] overflow-hidden flex flex-col font-sans text-stone-900"
     >
+      <StudentBoardWorkbench />
+
       {/* Header bar */}
       <div className="bg-[#FCFBF9] border-b border-[#E6E4DD] px-6 py-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">

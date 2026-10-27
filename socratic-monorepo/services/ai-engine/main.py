@@ -26,6 +26,8 @@ from routers.classroom_ws import router as classroom_ws_router
 from routers.classroom_ws import _public_size
 from routers.visualize import RAPIDOCR_ENGINE, LOCAL_MATH_ONNX
 from cache.chroma_cache import CHROMADB_AVAILABLE
+from routers.student_context import router as student_context_router
+from student_context import store_ready
 
 app = FastAPI(
     title="Socratic Vision Board - Deterministic & Socratic AI Engine",
@@ -51,6 +53,7 @@ app.include_router(companion_router)
 app.include_router(classroom_router)
 app.include_router(recognize_ink_router)
 app.include_router(classroom_ws_router)
+app.include_router(student_context_router)
 
 from fastapi.responses import Response, JSONResponse
 from graph_engine import generate_neon_graph
@@ -83,6 +86,7 @@ def health_check():
             "AdvancedStemEngines"
         ],
         "runtime": {
+            "student_context_store": store_ready(),
             "rapidocr": RAPIDOCR_ENGINE is not None,
             "latex_onnx": bool(LOCAL_MATH_ONNX and LOCAL_MATH_ONNX.available),
             "chromadb": CHROMADB_AVAILABLE,
@@ -103,6 +107,11 @@ def health_check():
             "tier3_llm": "Socratic Scaffolding (Zero answer leak)"
         }
     }
+
+@app.get("/health/ready")
+def readiness_check():
+    ready = store_ready()
+    return {"ready": ready, "checks": {"student_context_store": ready}}
 
 
 if __name__ == "__main__":

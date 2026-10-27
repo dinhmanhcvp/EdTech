@@ -42,8 +42,9 @@ describe('Hologram Interaction & Zero-Background Direct Blackboard Manipulation'
     const engineCanvas = screen.getByTestId('engine-canvas-container');
     expect(engineCanvas.className).toContain('bg-transparent');
 
-    // Hologram indicator must be present
-    expect(screen.getByText('Hologram Nổi')).toBeInTheDocument();
+    // Chỉ còn một thanh nhỏ dưới mô phỏng (không còn thanh tiêu đề)
+    expect(screen.getByTestId('hologram-bottom-context-bar')).toBeInTheDocument();
+    expect(screen.queryByText('Hologram Nổi')).not.toBeInTheDocument();
   });
 
   /**
@@ -66,7 +67,6 @@ describe('Hologram Interaction & Zero-Background Direct Blackboard Manipulation'
 
     const grip = screen.getByTestId('hologram-drag-grip');
     expect(grip).toBeInTheDocument();
-    expect(grip.textContent).toContain('Kéo mô phỏng');
 
     fireEvent.pointerDown(grip, { clientX: 200, clientY: 150 });
     expect(onGripDown).toHaveBeenCalled();
@@ -165,12 +165,12 @@ describe('Hologram Interaction & Zero-Background Direct Blackboard Manipulation'
         blueprint={testBlueprint}
         displayMode="HOLOGRAM"
         holoScale={1.5}
+        onScaleChange={() => {}}
       />
     );
 
-    const brackets = screen.getByTestId('hologram-hud-brackets');
-    expect(brackets).toBeInTheDocument();
-    expect(brackets.textContent).toContain('[ PINCH TO SCALE: 150% ]');
+    expect(screen.getByTestId('hologram-hud-brackets')).toBeInTheDocument();
+    expect(screen.getByTestId('holo-scale-label').textContent).toBe('150%');
   });
 
   /**

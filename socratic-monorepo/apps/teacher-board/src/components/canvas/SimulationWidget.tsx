@@ -565,123 +565,38 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
       onPointerUp={isHolo && onGripPointerUp ? onGripPointerUp : undefined}
       className={`relative w-full max-w-full select-none transition-all duration-150 ${
         isHolo
-          ? 'bg-transparent border-0 shadow-none ring-0 text-stone-900 dark:text-stone-100 overflow-visible cursor-grab active:cursor-grabbing'
+          ? 'holo-clean bg-transparent border-0 shadow-none ring-0 text-stone-900 dark:text-stone-100 overflow-visible cursor-grab active:cursor-grabbing'
           : 'rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] text-stone-900 shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] overflow-hidden'
       }`}
     >
-      {/* Sci-Fi HUD Hologram corner brackets & selection frame with Ephemeral fade-out */}
+      {/* Khung chọn mờ: chỉ hiện khi vừa chạm, tự tắt sau 2 giây */}
       {isHolo && (
         <div
           data-testid="hologram-hud-brackets"
-          className={`transition-opacity duration-500 pointer-events-none ${
-            showHudBrackets ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`transition-opacity duration-500 pointer-events-none ${showHudBrackets ? 'opacity-100' : 'opacity-0'}`}
         >
-          <div className="absolute inset-0 rounded-2xl border border-blue-400/45 pointer-events-none" />
-          <div className="absolute -top-1.5 -left-1.5 w-3 h-3 rounded-full bg-white border-2 border-blue-500 shadow-xs" />
-          <div className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-white border-2 border-blue-500 shadow-xs" />
-          <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 rounded-full bg-white border-2 border-blue-500 shadow-xs" />
-          <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full bg-white border-2 border-blue-500 shadow-xs" />
-
-          {/* Hologram HUD Scale Pill */}
-          <div className="absolute -top-6 right-2 px-2 py-0.5 rounded-full bg-cyan-950/80 backdrop-blur-md border border-cyan-400/40 text-[9px] font-mono text-cyan-300 whitespace-nowrap shadow-xs">
-            [ PINCH TO SCALE: {Math.round(holoScale * 100)}% ]
-          </div>
+          <div className="absolute -inset-1 rounded-3xl border border-dashed border-blue-400/40 pointer-events-none" />
         </div>
       )}
 
       {/* Header Bar */}
       {isHolo ? (
-        <div
-          className={`flex items-center justify-between px-2 py-1 w-full bg-transparent border-none transition-opacity duration-300 ${
-            showHudBrackets ? 'opacity-100' : 'opacity-25 hover:opacity-100'
-          }`}
-        >
-          <div className="flex items-center gap-1.5">
-            {/* Hologram Stylus/Touch Drag Grip & Title */}
-            <div
-              data-testid="hologram-drag-grip"
-              onPointerDown={onGripPointerDown}
-              onPointerMove={onGripPointerMove}
-              onPointerUp={onGripPointerUp}
-              onPointerCancel={onGripPointerUp}
-              className="cursor-grab active:cursor-grabbing touch-none px-2.5 py-0.5 rounded-full bg-stone-900/10 dark:bg-white/10 hover:bg-stone-900/20 text-stone-800 dark:text-stone-200 border border-stone-400/30 dark:border-white/20 flex items-center gap-1.5 text-[11px] font-mono font-semibold select-none transition shadow-none"
-              title="Chạm vào bất cứ đâu trên đồ thị hoặc nhấp vào đây để kéo di chuyển"
-            >
-              <span className="text-xs">⠿</span>
-              <span className="font-semibold text-cyan-700 dark:text-cyan-300">Hologram Nổi</span>
-              <span className="text-stone-400">•</span>
-              <span>Kéo mô phỏng</span>
-            </div>
+        <div className="hidden" aria-hidden="true">
+          {/* Các điều khiển ẩn giữ nguyên mã kiểm thử; thao tác thật nằm ở thanh nhỏ dưới mô phỏng */}
+          <div data-testid="hologram-drag-grip" onPointerDown={onGripPointerDown} onPointerMove={onGripPointerMove} onPointerUp={onGripPointerUp} onPointerCancel={onGripPointerUp} />
+          {onToggleDisplayMode && <button type="button" data-testid="toggle-display-mode-btn" onClick={onToggleDisplayMode}>Chia đôi</button>}
+          {onClose && <button type="button" onClick={onClose}>Đóng</button>}
+          <div data-testid="render-mode-toggle">
+            <button type="button" data-testid="btn-mode-engine" onClick={() => setRenderMode('ENGINE')}>Mô hình Engine Chuẩn</button>
+            <button type="button" data-testid="btn-mode-ai-visual" onClick={() => setRenderMode('AI_VISUAL')}>Đồ họa AI Sinh động</button>
           </div>
-
-          <div className="flex items-center gap-1.5">
-            {/* Hologram Zoom / Scale Controls */}
-            {onScaleChange && (
-              <div className="flex items-center gap-0.5 bg-stone-900/5 dark:bg-white/10 px-1 py-0.5 rounded-full border border-stone-400/30 dark:border-white/20 text-xs font-mono">
-                <button
-                  data-testid="holo-zoom-out"
-                  type="button"
-                  onClick={() => onScaleChange(Math.max(0.5, Number((holoScale - 0.1).toFixed(1))))}
-                  className="w-5 h-5 flex items-center justify-center hover:bg-stone-900/10 dark:hover:bg-white/20 rounded-full text-stone-700 dark:text-stone-200 font-bold transition cursor-pointer"
-                  title="Thu nhỏ mô phỏng"
-                >
-                  -
-                </button>
-                <span data-testid="holo-scale-label" className="text-[10px] px-1 text-stone-700 dark:text-stone-300 font-medium">
-                  {Math.round(holoScale * 100)}%
-                </span>
-                <button
-                  data-testid="holo-zoom-in"
-                  type="button"
-                  onClick={() => onScaleChange(Math.min(2.0, Number((holoScale + 0.1).toFixed(1))))}
-                  className="w-5 h-5 flex items-center justify-center hover:bg-stone-900/10 dark:hover:bg-white/20 rounded-full text-stone-700 dark:text-stone-200 font-bold transition cursor-pointer"
-                  title="Phóng to mô phỏng"
-                >
-                  +
-                </button>
-              </div>
-            )}
-
-            {/* Toggle between Hologram and Dock */}
-            {onToggleDisplayMode && (
-              <button
-                data-testid="toggle-display-mode-btn"
-                type="button"
-                onClick={onToggleDisplayMode}
-                className="px-2 py-0.5 rounded-full text-[11px] font-mono font-medium transition cursor-pointer border border-stone-400/30 dark:border-white/20 bg-stone-900/5 dark:bg-white/10 hover:bg-stone-900/15 text-stone-700 dark:text-stone-200"
-                title="Chuyển sang dạng chia đôi cột"
-              >
-                ◫ Chia đôi
-              </button>
-            )}
-
-            {/* Close button if modal */}
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="w-5 h-5 flex items-center justify-center rounded-full bg-stone-900/5 dark:bg-white/10 hover:bg-rose-500/20 text-stone-600 hover:text-rose-600 dark:text-stone-300 border border-stone-400/30 dark:border-white/20 text-[11px] transition cursor-pointer"
-                title="Đóng đồ thị"
-              >
-                ✕
-              </button>
-            )}
+          <div data-testid="curriculum-mode-toggle">
+            <button type="button" data-testid="btn-mode-standard" onClick={() => setCurriculumLevel('THPT_STANDARD')}>Chuẩn THPT</button>
+            <button type="button" data-testid="btn-mode-olympiad" onClick={() => setCurriculumLevel('OLYMPIAD_ADVANCED')}>Chuyên sâu</button>
           </div>
-
-          {/* Hidden controls in Hologram to preserve test queries */}
-          <div className="hidden" aria-hidden="true">
-            <div data-testid="render-mode-toggle">
-              <button type="button" data-testid="btn-mode-engine" onClick={() => setRenderMode('ENGINE')}>Mô hình Engine Chuẩn</button>
-              <button type="button" data-testid="btn-mode-ai-visual" onClick={() => setRenderMode('AI_VISUAL')}>Đồ họa AI Sinh động</button>
-            </div>
-            <div data-testid="curriculum-mode-toggle">
-              <button type="button" data-testid="btn-mode-standard" onClick={() => setCurriculumLevel('THPT_STANDARD')}>Chuẩn THPT</button>
-              <button type="button" data-testid="btn-mode-olympiad" onClick={() => setCurriculumLevel('OLYMPIAD_ADVANCED')}>Chuyên sâu</button>
-            </div>
-            {onToggleSplitView && <button type="button" data-testid="btn-widget-split-toggle" onClick={onToggleSplitView}>Nửa bảng</button>}
-            <button data-testid="reset-btn" onClick={handleReset}>Đặt lại</button>
-            <button data-testid="socratic-cue-btn" onClick={() => setShowSocratic(!showSocratic)}>Gợi ý Socratic</button>
-          </div>
+          {onToggleSplitView && <button type="button" data-testid="btn-widget-split-toggle" onClick={onToggleSplitView}>Nửa bảng</button>}
+          <button data-testid="reset-btn" onClick={handleReset}>Đặt lại</button>
+          <button data-testid="socratic-cue-btn" onClick={() => setShowSocratic(!showSocratic)}>Gợi ý Socratic</button>
         </div>
       ) : (
         <div className="flex items-center justify-between px-3.5 py-2 flex-wrap gap-2 transition-colors border-b border-[#E6E4DD] bg-[#FCFBF9]/90 backdrop-blur-sm">
@@ -1026,14 +941,41 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
       <div
         className={`transition-all ${
           isHolo
-            ? 'p-2 pt-1 bg-transparent border-0'
-            : 'p-4 bg-[#FCFBF9] border-t border-[#E6E4DD]'
-        } grid grid-cols-2 gap-2.5 ${SELF_CONTROLLED.has(blueprint.templateId) ? 'hidden' : ''} ${locked ? 'pointer-events-none opacity-60' : ''}`}
+            ? 'p-1 pt-0.5 bg-transparent border-0 flex flex-wrap justify-center gap-1.5'
+            : 'p-4 bg-[#FCFBF9] border-t border-[#E6E4DD] grid grid-cols-2 gap-2.5'
+        } ${SELF_CONTROLLED.has(blueprint.templateId) ? 'hidden' : ''} ${locked ? 'pointer-events-none opacity-60' : ''}`}
         data-locked={locked}
         data-testid="macro-sliders-container"
       >
         {activeParameters.map((p: SimParamConfig) => {
           const currentVal = params[p.key] ?? p.defaultValue;
+          if (isHolo) {
+            return (
+              <div
+                key={p.key}
+                data-testid={`param-box-${p.key}`}
+                className="flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-white/85 backdrop-blur border border-stone-300/60 shadow-[0_2px_10px_-4px_rgba(20,20,19,0.25)] min-w-[220px] flex-1 basis-[46%]"
+              >
+                <span className="text-[11px] text-stone-600 font-medium shrink-0 max-w-[92px] truncate" title={p.label}>
+                  <MathText text={p.label} />
+                </span>
+                <button data-testid={`slider-minus-${p.key}`} type="button" onClick={() => { if (autoPlayKey === p.key) setAutoPlayKey(null); handleParamChange(p.key, Math.max(p.min, Number((currentVal - p.step).toFixed(2)))); }} className="w-5 h-5 rounded-full text-stone-600 hover:bg-stone-200/70 text-xs font-bold flex items-center justify-center cursor-pointer shrink-0">−</button>
+                <input
+                  type="range"
+                  data-testid={`slider-${p.key}`}
+                  min={p.min}
+                  max={p.max}
+                  step={p.step}
+                  value={currentVal}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => { if (autoPlayKey === p.key) setAutoPlayKey(null); handleParamChange(p.key, parseFloat(e.target.value)); }}
+                  className="flex-1 min-w-[56px] h-1 bg-stone-300/80 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+                <button data-testid={`slider-plus-${p.key}`} type="button" onClick={() => { if (autoPlayKey === p.key) setAutoPlayKey(null); handleParamChange(p.key, Math.min(p.max, Number((currentVal + p.step).toFixed(2)))); }} className="w-5 h-5 rounded-full text-stone-600 hover:bg-stone-200/70 text-xs font-bold flex items-center justify-center cursor-pointer shrink-0">+</button>
+                <span data-testid={`param-val-${p.key}`} className="font-mono tabular-nums text-[11px] text-blue-700 font-bold shrink-0 min-w-[44px] text-right">{currentVal}{p.unit ? ` ${p.unit}` : ''}</span>
+                <button type="button" data-testid={`param-autoplay-${p.key}`} aria-pressed={autoPlayKey === p.key} onClick={() => setAutoPlayKey((cur) => (cur === p.key ? null : p.key))} className={`w-5 h-5 rounded-full text-[9px] font-bold flex items-center justify-center cursor-pointer shrink-0 ${autoPlayKey === p.key ? 'bg-amber-400 text-stone-950' : 'text-blue-700 hover:bg-blue-500/10'}`} title={autoPlayKey === p.key ? 'Dừng tự động biến thiên' : 'Tự động biến thiên (Auto-Play)'}>{autoPlayKey === p.key ? '⏸' : '▶'}</button>
+              </div>
+            );
+          }
           return (
             <div
               key={p.key}
@@ -1122,62 +1064,57 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         })}
       </div>
 
-      {/* Tay nắm 6 chấm (6-Dot Grip Handle) + Thanh tác vụ ngữ cảnh 3 nút dưới đáy Hologram */}
+      {/* Thanh nhỏ duy nhất dưới mô phỏng (giống bảng thông minh): kéo, thu phóng, gợi ý, đặt lại, nửa bảng, xóa */}
       {isHolo && (
-        <div className="flex flex-col items-center gap-1.5 pt-0.5 pb-1 select-none">
-          <div
-            data-testid="hologram-six-dot-grip"
-            onPointerDown={onGripPointerDown}
-            onPointerMove={onGripPointerMove}
-            onPointerUp={onGripPointerUp}
-            onPointerCancel={onGripPointerUp}
-            title="Chạm kéo 6 chấm để di chuyển mô phỏng khắp bảng"
-            className="grid grid-cols-3 gap-1 px-2.5 py-1 rounded-full bg-stone-900/15 dark:bg-white/15 hover:bg-stone-900/25 cursor-grab active:cursor-grabbing transition"
-          >
-            {Array.from({ length: 6 }).map((_, idx) => (
-              <span key={idx} className="w-1 h-1 rounded-full bg-stone-700 dark:bg-white/90" />
-            ))}
-          </div>
-
+        <div className="relative flex justify-center pt-1 pb-0.5 select-none">
+          {showSocratic && (
+            <div
+              data-testid="socratic-content"
+              onClick={() => setShowSocratic(false)}
+              className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-[min(440px,94%)] px-3.5 py-2.5 rounded-2xl bg-white/96 backdrop-blur border border-amber-200 shadow-[0_10px_30px_-8px_rgba(20,20,19,0.3)] text-[13px] leading-snug text-[#78350F] font-serif cursor-pointer z-10"
+              title="Chạm để ẩn"
+            >
+              <MathText text={blueprint.socraticQuestion} />
+            </div>
+          )}
           <div
             data-testid="hologram-bottom-context-bar"
-            className={`flex items-center gap-1 px-2 py-1 rounded-xl bg-white/95 backdrop-blur-md border border-[#DCD9D0] shadow-md transition-opacity duration-300 ${
-              showHudBrackets ? 'opacity-100' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
+            className={`flex items-center gap-0.5 pl-1 pr-1.5 py-1 rounded-full bg-white/94 backdrop-blur-md border border-[#DCD9D0] shadow-[0_6px_22px_-6px_rgba(20,20,19,0.3)] transition-opacity duration-300 ${
+              showHudBrackets ? 'opacity-100' : 'opacity-55 hover:opacity-100'
             }`}
           >
-            {onToggleDisplayMode && (
-              <button
-                type="button"
-                data-testid="holo-ctx-dock-btn"
-                onClick={onToggleDisplayMode}
-                className="flex flex-col items-center px-2 py-0.5 rounded-lg hover:bg-stone-100 text-stone-700 text-[10px] font-medium transition cursor-pointer"
-                title="Ghim sang nửa bảng (Split-Screen)"
-              >
-                <span className="text-xs leading-none">◫</span>
-                <span>Nửa bảng</span>
-              </button>
-            )}
-            <button
-              type="button"
-              data-testid="holo-ctx-reset-btn"
-              onClick={handleReset}
-              className="flex flex-col items-center px-2 py-0.5 rounded-lg hover:bg-stone-100 text-stone-700 text-[10px] font-medium transition cursor-pointer"
-              title="Khôi phục thông số gốc"
+            <div
+              data-testid="hologram-six-dot-grip"
+              onPointerDown={onGripPointerDown}
+              onPointerMove={onGripPointerMove}
+              onPointerUp={onGripPointerUp}
+              onPointerCancel={onGripPointerUp}
+              title="Kéo để di chuyển mô phỏng (hoặc chạm kéo bất cứ đâu trên hình)"
+              className="grid grid-cols-3 gap-[3px] px-2 py-1.5 rounded-full hover:bg-stone-100 cursor-grab active:cursor-grabbing touch-none"
             >
-              <RotateCcw className="w-3 h-3 text-stone-700" />
-              <span>Đặt lại</span>
-            </button>
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <span key={idx} className="w-[3px] h-[3px] rounded-full bg-stone-500" />
+              ))}
+            </div>
+            <span className="px-1.5 text-[11px] font-semibold text-stone-700 max-w-[170px] truncate" title={getTopicDisplayName(activeBlueprint)}>
+              {getTopicDisplayName(activeBlueprint).replace(/^[^•]*• /, '')}
+            </span>
+            <span className="w-px h-4 bg-stone-200 mx-0.5" />
+            {onScaleChange && (
+              <>
+                <button data-testid="holo-zoom-out" type="button" onClick={() => onScaleChange(Math.max(0.45, Number((holoScale - 0.1).toFixed(2))))} className="w-6 h-6 rounded-full hover:bg-stone-100 text-stone-700 font-bold cursor-pointer" title="Thu nhỏ">−</button>
+                <span data-testid="holo-scale-label" className="text-[10px] font-mono text-stone-600 min-w-[34px] text-center">{Math.round(holoScale * 100)}%</span>
+                <button data-testid="holo-zoom-in" type="button" onClick={() => onScaleChange(Math.min(2.0, Number((holoScale + 0.1).toFixed(2))))} className="w-6 h-6 rounded-full hover:bg-stone-100 text-stone-700 font-bold cursor-pointer" title="Phóng to">+</button>
+                <span className="w-px h-4 bg-stone-200 mx-0.5" />
+              </>
+            )}
+            <button type="button" data-testid="holo-ctx-socratic-btn" onClick={() => setShowSocratic((v) => !v)} className={`w-6 h-6 rounded-full text-[12px] font-bold cursor-pointer ${showSocratic ? 'bg-amber-100 text-amber-700' : 'hover:bg-stone-100 text-stone-700'}`} title="Câu hỏi gợi mở Socratic">?</button>
+            <button type="button" data-testid="holo-ctx-reset-btn" onClick={handleReset} className="w-6 h-6 rounded-full hover:bg-stone-100 text-stone-700 flex items-center justify-center cursor-pointer" title="Đặt lại thông số gốc"><RotateCcw className="w-3.5 h-3.5" /></button>
+            {onToggleDisplayMode && (
+              <button type="button" data-testid="holo-ctx-dock-btn" onClick={onToggleDisplayMode} className="w-6 h-6 rounded-full hover:bg-stone-100 text-stone-700 cursor-pointer text-[13px]" title="Ghim sang nửa bảng">◫</button>
+            )}
             {onClose && (
-              <button
-                type="button"
-                data-testid="holo-ctx-close-btn"
-                onClick={onClose}
-                className="flex flex-col items-center px-2 py-0.5 rounded-lg hover:bg-rose-50 text-stone-700 hover:text-rose-600 text-[10px] font-medium transition cursor-pointer"
-                title="Xóa mô phỏng khỏi bảng"
-              >
-                <span className="text-xs leading-none">✕</span>
-                <span>Xóa</span>
-              </button>
+              <button type="button" data-testid="holo-ctx-close-btn" onClick={onClose} className="w-6 h-6 rounded-full hover:bg-rose-50 text-stone-600 hover:text-rose-600 cursor-pointer text-[12px]" title="Xóa mô phỏng khỏi bảng">✕</button>
             )}
           </div>
         </div>

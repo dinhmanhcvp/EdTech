@@ -55,3 +55,29 @@ body {
   line-height: normal;
 }
 
+
+/* ---------------------------------------------------------------------------------------------
+   Hologram gọn: mô phỏng như nét vẽ trực tiếp trên bảng, không thẻ nền dày (áp cho mọi template).
+   Chỉ nhắm vào khung chứa lớn (div/svg/table), không động tới nút, ô nhập, thanh trượt.
+   --------------------------------------------------------------------------------------------- */
+.holo-clean [data-testid="engine-canvas-container"] { padding: 0; }
+.holo-clean [data-testid="engine-canvas-container"] > div { width: 100%; }
+.holo-clean [data-testid="engine-canvas-container"] div.bg-white,
+.holo-clean [data-testid="engine-canvas-container"] svg.bg-white,
+.holo-clean [data-testid="engine-canvas-container"] table.bg-white,
+.holo-clean [data-testid="engine-canvas-container"] [class*="bg-[#F4F3EE]"],
+.holo-clean [data-testid="engine-canvas-container"] [class*="bg-[#F8F7F4]"],
+.holo-clean [data-testid="engine-canvas-container"] [class*="bg-[#FCFBF9]"],
+.holo-clean [data-testid="engine-canvas-container"] div.bg-stone-50,
+.holo-clean [data-testid="engine-canvas-container"] div.bg-stone-100 {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+.holo-clean [data-testid="engine-canvas-container"] [class*="border-[#E"],
+.holo-clean [data-testid="engine-canvas-container"] [class*="border-[#D"] {
+  border-color: rgba(120, 113, 108, 0.16) !important;
+}
+.holo-clean [data-testid="engine-canvas-container"] [class*="p-4"],
+.holo-clean [data-testid="engine-canvas-container"] [class*="px-4"] { padding-left: 0.5rem; padding-right: 0.5rem; }
+.holo-clean [data-testid="engine-canvas-container"] p.text-\[11px\],
+.holo-clean [data-testid="engine-canvas-container"] p.text-xs { opacity: 0.85; }

@@ -89,7 +89,7 @@ describe('In-Place Geometry Transformation on Smartboard Canvas', () => {
     const inplaceBtn = await screen.findByTestId('sel-btn-geo-inplace');
     expect(inplaceBtn).toBeInTheDocument();
     expect(inplaceBtn.textContent).toContain('Tam giác vuông');
-    expect(inplaceBtn.textContent).toContain('Tương tác tại chỗ');
+    expect(inplaceBtn.textContent).toContain('hình tại chỗ');
 
     // Bấm nút chuyển đổi tại chỗ
     await act(async () => {
@@ -123,7 +123,7 @@ describe('In-Place Geometry Transformation on Smartboard Canvas', () => {
     const inplaceBtn = await screen.findByTestId('sel-btn-geo-inplace');
     expect(inplaceBtn).toBeInTheDocument();
     expect(inplaceBtn.textContent).toContain('Hình lập phương');
-    expect(inplaceBtn.textContent).toContain('Tương tác tại chỗ');
+    expect(inplaceBtn.textContent).toContain('hình tại chỗ');
 
     await act(async () => {
       fireEvent.click(inplaceBtn);

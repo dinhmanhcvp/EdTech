@@ -338,6 +338,10 @@ export interface AiFabProps {
   subjectLock?: Subject | null;
   onCycleSubject?: () => void;
   detectedIntent?: 'VISUALIZE' | 'GRADE' | null;
+  /** Thẻ tác vụ cho vùng đang khoanh (công thức, trực quan, chấm bài…) — hiện ngay cạnh nút AI */
+  panel?: React.ReactNode;
+  /** Toạ độ màn hình cạnh vùng khoanh: nút AI nhảy tới đây khi vừa khoanh xong */
+  anchor?: {x: number; y: number} | null;
 }
 
 /**
@@ -359,8 +363,13 @@ export const AiFab: React.FC<AiFabProps> = ({
   subjectLock,
   onCycleSubject,
   detectedIntent,
+  panel,
+  anchor,
 }) => {
   const [open, setOpen] = useState(false);
+  const hasPanel = !!panel;
+  const [panelOpen, setPanelOpen] = useState(true);
+  const prevHasPanel = useRef(false);
   const root = useRef<HTMLDivElement | null>(null);
 
   // Vị trí kéo di chuyển của nút AI trên toàn màn hình bảng
@@ -381,6 +390,19 @@ export const AiFab: React.FC<AiFabProps> = ({
       window.removeEventListener('keydown', esc);
     };
   }, []);
+
+  useEffect(() => {
+    if (hasPanel && !prevHasPanel.current) {
+      setPanelOpen(true);
+      setOpen(false);
+      if (anchor) {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        setPos({ x: Math.max(40, Math.min(w - 40, anchor.x)), y: Math.max(40, Math.min(h - 40, anchor.y)) });
+      }
+    }
+    prevHasPanel.current = hasPanel;
+  }, [hasPanel, anchor]);
 
   const winW = typeof window !== 'undefined' ? window.innerWidth : 1200;
   const winH = typeof window !== 'undefined' ? window.innerHeight : 675;
@@ -423,7 +445,8 @@ export const AiFab: React.FC<AiFabProps> = ({
   const handlePointerUp = (e: React.PointerEvent) => {
     if (!isDraggingRef.current) {
       justToggledByPointerRef.current = true;
-      setOpen((o) => !o);
+      if (hasPanel) setPanelOpen((o) => !o);
+      else setOpen((o) => !o);
       setTimeout(() => {
         justToggledByPointerRef.current = false;
       }, 80);
@@ -437,7 +460,8 @@ export const AiFab: React.FC<AiFabProps> = ({
 
   const handleClick = () => {
     if (justToggledByPointerRef.current) return;
-    setOpen((o) => !o);
+    if (hasPanel) setPanelOpen((o) => !o);
+    else setOpen((o) => !o);
   };
 
   const items = [
@@ -631,6 +655,21 @@ export const AiFab: React.FC<AiFabProps> = ({
             })}
           </div>
         </div>
+
+        {/* THẺ TÁC VỤ CHO VÙNG ĐANG KHOANH: nằm ngay cạnh nút AI, không còn thanh riêng */}
+        {hasPanel && panelOpen && (
+          <div
+            data-testid="ai-hub-panel"
+            onPointerDown={(e) => e.stopPropagation()}
+            className="absolute z-20 w-[372px] max-w-[calc(100vw-24px)] rounded-3xl bg-white/97 backdrop-blur-xl border border-[#E2E0D8] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+            style={{
+              ...(displayY > 360 ? { bottom: 'calc(100% + 12px)' } : { top: 'calc(100% + 12px)' }),
+              ...(displayX > winW - 400 ? { right: '-14px' } : { left: '4px' }), // mở về phía xa vùng khoanh để không che nét
+            }}
+          >
+            {panel}
+          </div>
+        )}
 
         {/* NÚT TÂM "AI" MÀU TRẮNG TINH KHIẾT (Center White Hub / Collapsed Floating Button) */}
         <button

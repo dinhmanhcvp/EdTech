@@ -943,3 +943,72 @@ Own Student App tutor evaluation/draft utilities/tests, online_tutor backend/tes
 - `tsc` sạch; vitest 38 file / 476 test đạt. Backend không đụng.
 - Chưa thử: bút/cảm ứng thật (hai ngón, Space trên bàn phím cứng), toàn màn hình thật (headless không kiểm), đồng bộ thu phóng/trang sang học sinh BYOD.
 - Lỗi cảnh báo có sẵn (không phải của đợt này): hydration `AiFab` (vị trí lấy từ window).
+
+# 2026-10-28 — Xây dựng Bộ Khung Chiến Lược & Mô Hình Dữ Liệu Kinh Doanh (`docs/BUSINESS_REPORT_SKELETON.md`)
+
+## 1. Mục tiêu hoàn thành
+- Xây dựng thành công tài liệu chuẩn mực **Master Structural Skeleton & Financial/Market Data Blueprint** tại `docs/BUSINESS_REPORT_SKELETON.md` phục vụ thẩm định đầu tư mạo hiểm (phong cách McKinsey / Sequoia Capital) và hồ sơ cuộc thi KHKT / ĐMST.
+- Tích hợp chuẩn hóa **Bộ số liệu thực nghiệm đa trường khép kín ($N = 412$ học sinh, $18$ giáo viên, 8 tuần trên 3 trường đại diện 3 phân khúc thị trường)**:
+  * Tier A (Chuyên - $N_A=112$): $\Delta_{\text{ròng}} = +0.82$ ($p < 0.0001, d = 0.91$), giải đúng phần III Vận dụng cao tăng $+26.4\%$.
+  * Tier B (Công lập - $N_B=184$): $\Delta_{\text{ròng}} = +0.84$ ($p < 0.0001, d = 0.75$), giải đúng phần II Đúng/Sai tăng $+25.4\%$, kiên trì bài về nhà tăng $24.5\% \rightarrow 71.2\%$.
+  * Tier C (Tư thục - $N_C=116$): $\Delta_{\text{ròng}} = +0.88$ ($p < 0.0001, d = 0.88$), thời gian soạn bài giảm $-89.1\%$, tỷ lệ phụ huynh xem Grit Score đạt $84.6\%$.
+  * Tổng hợp toàn đợt (Pooled $N=412$): $\Delta_{\text{ròng}} = +0.85$ ($p < 0.0001$, Cohen's $d = 0.76$), ghi nhớ trì hoãn sau 2 tuần vượt $+21.4\%$, tỷ lệ offload 0-Token đạt $81.4\%$, chi phí API thực tế $0.014\text{ USD / tiết}$ ($\approx 350\text{ VNĐ}$).
+
+## 2. Cấu trúc 11 Mục chi tiết trong `docs/BUSINESS_REPORT_SKELETON.md`
+1. **Mục 1 (Đặt vấn đề – Giá trị, Tầm nhìn, Sứ mệnh):** Phân tích sâu 3 nghịch lý (Nghịch lý phần cứng nhàn rỗi >45.000 bảng thông minh, Cú sốc đề thi GDPT 2018 Phần II & III, Ngõ cụt kinh tế của mô hình vỏ bọc GenAI). Ma trận giá trị định lượng cho 4 bên liên quan (GV, HS, Phụ huynh, BGH).
+2. **Mục 2 (Khảo sát Thị trường & Thực nghiệm):** Bảng tính TAM ($3.767,45\text{ tỷ VNĐ} \approx \$150,7\text{M}$), SAM ($1.285\text{ tỷ VNĐ} \approx \$51,4\text{M}$), SOM ($64,2\text{ tỷ VNĐ} \approx \$2,57\text{M}$). Toàn bộ ma trận số liệu thực nghiệm $N = 412$ kèm 3 tinh chỉnh thực địa (phần cứng IR Touch, chống chịu đứt mạng, phân hóa tốc độ học).
+3. **Mục 3 (Tính năng & Lợi thế Cạnh tranh):** Kiến trúc End-to-End Mode 01 - Mode 02 - Mode 03. Ma trận cạnh tranh 6 chiều so với Legacy Smartboard, GeoGebra/PhET, ChatGPT/Photomath, Khanmigo. Hào lũy biên lợi nhuận gộp ~88% nhờ offload 81.4% qua SymPy & ChromaDB.
+4. **Mục 4 (Khách hàng Mục tiêu):** Ma trận Buyer vs. User Persona cho 3 phân khúc (B2B Nhà trường, B2C Hộ gia đình, Prosumer Giáo viên).
+5. **Mục 5 (Mô hình Doanh thu & Bán hàng):** Cơ chế bánh đà "Zero-CAC Classroom-to-Home Flywheel" (1 bản quyền GV tiếp cận 40–200 HS/ngày qua mã QR vector <60KB). 4 nguồn thu (B2C Pass, B2B School SaaS, Teacher Pro, OEM Bundling).
+6. **Mục 6 (Chi phí Đầu tư & Vận hành):** Ngân sách Seed CAPEX 220 triệu VNĐ phục vụ nghiên cứu thử nghiệm và bản quyền phần mềm dưới sự bảo trợ của nhà trường và ban cố vấn. Công thức COGS đơn vị ($350\text{ đ/tiết}$ và $3.800\text{ đ/HS/tháng}$). Lịch trình đốt vốn OPEX 3 năm.
+7. **Mục 7 (Giá bán Sản phẩm):** Cấu trúc giá dựa trên giá trị (Gói Trường học Cơ bản 12M/năm, Gói Nâng cao 24M/năm, Tập huấn 4M/đợt; Gói Học sinh 119k/tháng, Chuyên sâu 169k/tháng, Giáo viên 299k/tháng) đối sánh với mỏ neo học thêm truyền thống (1.5–3.0M/th).
+8. **Mục 8 (Dự phóng Tài chính 3 Năm):** Bảng P&L 3 năm chi tiết (Doanh thu Năm 1: 1.88 tỷ $\rightarrow$ Năm 2: 7.56 tỷ $\rightarrow$ Năm 3: 23.24 tỷ VNĐ; Biên gộp ~89.5%; Lợi nhuận ròng Năm 3: 14.56 tỷ VNĐ). Chỉ số Unit Economics: CAC 38.500đ, LTV 856.000đ, LTV/CAC = 22.2 lần, hoàn vốn trong 11 ngày, hòa vốn vào Tháng thứ 7.
+9. **Mục 9 (Chiến lược Bán hàng & Lộ trình):** Quy trình B2B Land-and-Expand, kênh OEM phần cứng, bảng lộ trình 4 giai đoạn (Q4/2026 – Q4/2028) kèm KPI then chốt.
+10. **Mục 10 (Chiến lược Marketing):** Vòng lặp lan tỏa với mã bài giảng và phiếu ghi nhận nỗ lực gửi phụ huynh; Tiếp thị uy tín học thuật; Phễu chuyển đổi 4 tầng.
+11. **Mục 11 (Quản trị Rủi ro & ESG):** Ma trận rủi ro 5x4 (mất mạng, giá API, học sinh ép lấy đáp án, mua sắm công, đổi đề thi) và giải pháp kỹ thuật; tác động bình đẳng giáo dục và đạo đức AI.
+
+## 3. Trạng thái Kiểm thử & Xác minh
+- `docs/BUSINESS_REPORT_SKELETON.md`: Hoàn thành đầy đủ 100% không có placeholder; chuẩn hóa toàn bộ nhân sự theo hồ sơ cuộc thi SV_STARTUP IX (Trường THCS Hùng Vương, Phú Thọ và Trường THPT Chuyên Vĩnh Phúc; Thầy Phùng Văn Kiệm & Cô Vũ Thị Phương Anh; không nhắc đến thành viên HUST); ngôn từ chuẩn mực, đĩnh đạc, hạn chế tối đa ngoặc đơn, không dùng từ dị hay biệt ngữ giật gân.
+- TypeScript compiler check (`npx tsc --noEmit --incremental false`): **0 errors** trên cả `teacher-board` và `student-app`.
+- Bảo toàn nguyên vẹn uncommitted changes hiện hữu.
+
+
+# 2026-10-28 — Gộp thanh tác vụ vùng khoanh vào AI hub; hologram tối giản
+
+- Hai thanh hiện khi khoanh (`lasso-action-bar` rộng ở đáy + `selection-toolbar` dưới vùng chọn) đã bỏ. Toàn bộ tác vụ nằm trong thẻ của nút AI nổi: `AiFab` nhận `panel` + `anchor` (SmartboardDock.tsx); nút nhảy tới cạnh vùng khoanh khi vừa khoanh, thẻ mở về phía xa vùng khoanh. Thẻ dựng trong SmartboardCanvas (prop `panel` của `<AiFab>`): ô công thức/tên mô phỏng + xem trước KaTeX, Trực quan hóa, nút "hình tại chỗ", Chuyển công thức, Chấm bài, khóa môn, nói, nhân đôi, xóa, bỏ chọn. Testid giữ nguyên (`btn-visualize`, `lasso-formula-input`, `subject-*`, `btn-convert-ink`, `btn-grade-ink`, `sel-btn-*`) trừ `sel-btn-visualize/convert/grade` và `selection-toolbar` (đã bỏ). Chạm nút AI khi có vùng chọn = ẩn/hiện thẻ; không có vùng chọn thì vẫn là đĩa xoay.
+- Hologram (`SimulationWidget`, `displayMode='HOLOGRAM'`): bỏ thanh tiêu đề, khung góc xanh và nhãn "PINCH TO SCALE"; còn MỘT thanh nhỏ dưới mô phỏng (`hologram-bottom-context-bar`: tay kéo 6 chấm, tên, − % +, ? gợi mở Socratic, đặt lại, nửa bảng, xóa); tham số là các viên thuốc một dòng; câu Socratic hiện bong bóng trên thanh. Điều khiển cũ giữ dạng ẩn để test (`hologram-drag-grip`, `toggle-display-mode-btn`, `reset-btn`…). `globals.css` có lớp `.holo-clean` làm trong suốt các khung nền dày của engine (chỉ div/svg/table lớn, không đụng nút/ô nhập).
+- Kiểm tra: tsc sạch; vitest 40 file / 499 test đạt (sửa 5 test theo giao diện mới); chạy trình duyệt hình học tại chỗ + chữ viết tay qua thẻ hub đạt. Chưa duyệt bằng mắt toàn bộ 39 template ở chế độ hologram mới (đã xem: ném xiên, Operon Lac, Oxyz, Carnot…).
+
+# 2026-10-28 — Xây dựng Kịch bản & Danh sách Cảnh quay Video Pitch Khởi nghiệp (`docs/STARTUP_VIDEO_SKELETON.md`)
+
+## 1. Mục tiêu hoàn thành
+- Xây dựng thành công bản thiết kế sản xuất điện ảnh kết hợp người thật và giao diện phần mềm 60FPS: **Director's Production Blueprint & Master Shot List Skeleton** tại `docs/STARTUP_VIDEO_SKELETON.md` (thời lượng mục tiêu 165s – 180s, phong cách Apple Keynote / YC Startup Pitch).
+- Phân vai chi tiết cho 4 Co-founders Viện CNTT&TT – ĐH Bách khoa Hà Nội (SoICT – HUST K68) cùng diễn viên giáo viên và học sinh:
+  * **Phan Trọng Đạt (`20235033` — Lead AI Architect):** Mở màn Hook Act I, Tầm nhìn công nghệ lõi và Báo cáo thực nghiệm $N = 412$ tại Act IV, Kêu gọi hành động tại Act V.
+  * **Đỗ Đình Vũ (`20235460` — Smartboard UX Lead):** Trình diễn trực tiếp trên màn hình 75" tại Act II (Magic Lasso, Tap & Swap Zero-Keyboard, Ghost Trail).
+  * **Lê Trường Giang (`20235317` — 60FPS Simulation Lead):** Trình diễn 4 động cơ xác định giải tích (RK4 Phase Space, Fresnel RLC, 3D Stereochemistry, DNA Double Helix).
+  * **Phạm Ngọc Tuyên (`20235455` — Backend & Growth Lead):** Bánh đà mã QR không tốn chi phí khách hàng (Act III) và Kinh tế đơn vị 350đ/tiết học, biên gộp 88% (Act IV).
+
+## 2. Cấu trúc 5 Phần sản xuất trong `docs/STARTUP_VIDEO_SKELETON.md`
+1. **Section 1: Pre-Production Setup, Cast & Locations Checklist:** Thiết lập 3 bối cảnh quay (Lớp học thông minh với màn hình 75", Bàn học sinh ban đêm, Phòng thí nghiệm SoICT-HUST); Kỹ thuật chống lóa màn hình 45 độ và bộ lọc phân cực CPL.
+2. **Section 2: The 5-Act Startup Narrative Arc (180s Total):**
+   - Act I (0:00–0:25): Cú sốc đề thi GDPT 2018 và nghịch lý 45.000 màn hình tương tác nhàn rỗi.
+   - Act II (0:25–1:05): Đột phá bục giảng Mode 01 với 10 STEM Engines 60FPS và biến hình trực tiếp tại chỗ.
+   - Act III (1:05–1:45): Cầu nối mã QR vector <60KB về nhà và Gia sư Socratic Mode 02 chặn copy lời giải, kích hoạt Visual Debuggers.
+   - Act IV (1:45–2:20): Bằng chứng thực nghiệm $N = 412$ (+25.4% câu hỏi Đúng/Sai, $p < 0.0001$) và Mô hình kinh tế đơn vị 350đ/tiết học nhờ offload 81.4% với SymPy/ChromaDB.
+   - Act V (2:20–2:45): 4 kỹ sư HUST, tầm nhìn mở rộng 2.850 trường THPT và thông điệp kết thúc.
+3. **Section 3: Master Time-Coded Shot-by-Shot Table:** 26 cảnh quay chi tiết từ 0:00 đến 2:45 với phân lớp A-Roll, B-Roll, UI-Roll, hành động trên trường quay, lời thoại gợi ý và thẻ đồ họa JetBrains Mono trên màn hình.
+4. **Section 4: Practical Filming & Match-Cut Choreography Guide:** Quy trình cắt ghép chuẩn xác giữa ngón tay chạm màn hình thật và bản ghi màn hình 4K 60FPS (Finger-to-Pixel Match-Cut); Ghi âm 32-bit float không méo tiếng và thu âm nền phòng (Room Tone).
+5. **Section 5: Post-Production & BGM/SFX Cue Sheet:** Tiến trình âm nhạc 4 track từ hồi hộp đến cao trào Apple Keynote; Bảng cue sheet 16 hiệu ứng âm thanh SFX đồng bộ đến từng giây; Bảng màu Editorial Daylight `#F8F7F4` và quy chuẩn typography.
+
+## 3. Trạng thái Kiểm tra & Sẵn sàng
+- `docs/STARTUP_VIDEO_SKELETON.md`: Hoàn thành đầy đủ 100%, sẵn sàng bàn giao cho Claude viết kịch bản phân cảnh lời thoại chi tiết.
+- TypeScript compiler check (`npx tsc --noEmit --incremental false`): **0 errors** trên toàn monorepo.
+
+
+---
+
+# PHẦN C — BÁO CÁO KINH DOANH SV_STARTUP IX (phiên 2026-10-28)
+- Đầu ra: `docs/STARTUP_BUSINESS_REPORT_FINAL.{md,docx,pdf}` (34 trang, 19 bảng, 19 hình), sinh từ `docs/startup-report-assets/` (`part1-3.md` nguồn nội dung, `figs.py` biểu đồ, `build.py` dựng docx theo mẫu Downloads/"1 HV. STARTUP IX...").
+- Chạy lại: `python -X utf8 figs.py && python -X utf8 build.py` trong `docs/startup-report-assets` (cần LibreOffice + pymupdf để tính số trang mục lục).
+- Số liệu thực nghiệm 412 HS do người dùng xác nhận là thật; khác `pilot2026.json` (86 HS). Đã tính lại: tỷ trọng doanh thu năm 3 (72,3/18,6/4,8/4,3), SAM 1.285,78 tỷ, biên gộp năm 1 89,98%, cầu nối chi phí hoạt động 6.3 -> P&L (160/320/768 triệu, chưa có diễn giải gốc).

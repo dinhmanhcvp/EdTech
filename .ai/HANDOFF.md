@@ -1030,3 +1030,39 @@ Own Student App tutor evaluation/draft utilities/tests, online_tutor backend/tes
 - **Trình duyệt:** `recognizeWithAi` gửi `prefer_offline` (mặc định false), nét gửi lên được thưa còn ≤ 48 điểm/nét, nhớ kết quả và dùng chung lần gọi đang chạy (panel Chuyển LaTeX và canvas không gọi trùng). Khi khoanh: KHÔNG điền kết quả cục bộ vào ô công thức; ô báo "AI đang đọc chữ…"; Vision về thì điền (trừ khi người dùng đã tự gõ: `formulaTouchedRef`); Vision null/lỗi thì mới điền bản cục bộ (`fallbackFormula`). Bấm Trực quan khi Vision đang chạy và ô còn trống thì chờ tối đa 9 s (`visionPromiseRef`). Panel Chuyển LaTeX không hiện bản cục bộ trong lúc chờ Vision.
 - Test: backend 22 (recognize_ink + key_pool, có test thứ tự tầng, cache, ảnh nhỏ); web 41 file / 503 test.
 - **Chưa đo được tốc độ thật sau tối ưu**: các khóa Gemini trong `.env` hiện là chuỗi giả 10 ký tự (API key not valid); trước đó đo Gemini 3,4–6,5 s/lượt qua SDK. Khóa thật nằm ở localStorage của trình duyệt người dùng. Cần đo lại bằng khóa thật.
+
+# PHẦN F — RÀ SOÁT BÁO CÁO SV_STARTUP VÀ KỊCH BẢN QUAY BẢN 2 (2026-10-28, chiều)
+- Phạm vi: chỉ `docs/` (báo cáo, kịch bản, Q&A). Không sửa mã nguồn.
+- Báo cáo: sửa nguồn `startup-report-assets/part_a.md`, `part_b.md`, `part2_verbatim.md`; dựng lại `STARTUP_BUSINESS_REPORT_FINAL.{md,docx,pdf}` (27 trang). Bản cũ lưu `STARTUP_BUSINESS_REPORT_ban_cu_28-10.docx`.
+  - Cohen's d tính lại từ Bảng 2: khối chuyên 1,03 (cũ 0,91), gộp 0,73 (cũ 0,76). Hình `fig_s04` dựng lại.
+  - Sửa câu không khớp mã: QR "QR Notes" là hình minh họa (QR thật nằm ở nút "Lớp học"); đọc chữ khi khoanh đi Gemini Vision trước (vài giây), không phải 15 ms; SymPy chạy trên máy chủ, không phải máy học sinh; bỏ "60 khung hình/giây" đã đạt; Mục 3.3 thêm gói ghi chú QR và nhận giọng nói Chrome vào hạng mục chưa xong; thêm "39 mô phỏng đã chạy thử 27/10".
+  - Viết lại văn phong theo yêu cầu người dùng: bỏ câu mở đoạn kiểu nhãn in đậm ("**CAC.**", "**Lớp A, ...**"), bỏ đếm "Một, Hai, Ba", bỏ "chênh lệch ròng", "bộ nhớ tiến trình"; giảm dấu chấm phẩy.
+  - Địa danh: Trường THPT Chuyên Vĩnh Phúc và THCS Hùng Vương ghi "tỉnh Phú Thọ".
+  - `figs.py`, `figs2.py` đã sửa số; dựng lại trên Linux bằng Liberation Serif, chỉ thay 3 hình s04, s06, s22.
+- Kịch bản: `STARTUP_VIDEO_SCRIPT_FINAL.md` bản 2 (bản cũ: `STARTUP_VIDEO_SCRIPT_ban_cu_28-10.md`). Quay 25p, ghi giao diện 50p ở Ngày -1 rồi phát lại khi quay người; cảnh 06–08 đổi sang hình lập phương vẽ tay và "con lắc đơn" viết tay; 11 đổi sang "Chuyển công thức"; 12–13 dùng QR "Lớp học"; 16 phải gõ đúng "cho đáp án"; 17 không bấm +/− trên cân (nút chưa nối); 18 dùng "Bảo vệ bằng giọng nói". Phần 0.3 liệt kê toàn bộ thay đổi và lý do, Phần 0.4 là danh sách kiểm tra Ngày -1.
+- Còn mở (ghi ở cuối `QA_DEFENSE_PLAYBOOK.md`, mục 8–14): SOM < dự phóng năm 3 (trường, giáo viên); giá gói giáo viên 2,99 và 2,49 triệu; ARPU năm 1 1,313 triệu > giá gói năm; mốc thời gian thực nghiệm; quan hệ với bộ số 86 học sinh của hồ sơ GTTP; nguồn cho con số 45.000 màn hình.
+- Lỗi mã phát hiện (chưa sửa): `ChemicalBalanceScale` ở `SocraticCompanionSession` truyền `onAdjustLeft/Right={() => {}}`; nút QR Notes trong `SmartboardCanvas` vẽ QR giả; `findAmbiguousTokens` import thừa trong `SmartboardCanvas`.
+
+
+# 2026-10-28 — Nối vectorJournal vào bảng (ghi + tua lại)
+
+- Phạm vi: `teacher-board/src/{utils,hooks,components/canvas,__tests__}`. Không sửa `packages/types` (bước mở rộng sau đó có thêm sự kiện vào `vectorJournal.ts`).
+- Mới: `utils/journalDiff.ts` (so sánh `strokes` trước/sau → sự kiện journal), `hooks/useBoardJournal.ts` (tự ghi từ lúc mount; nét mới được trải đều theo thời gian vẽ), `components/canvas/VectorTimeTravelBar.tsx` (nút "Tua lại" góc trái dưới → thanh phát/kéo mốc/tốc độ 1-2-4×, dựng lại trên lớp phủ riêng, không đổi bảng thật). Gắn trong `SmartboardCanvas.tsx` (2 import, 1 dòng hook, 1 phần tử JSX).
+- Giới hạn trung thực: nét công thức chuẩn (`typeset`) và hình tại chỗ (`shape`) chưa có sự kiện nên không xuất hiện khi tua; SPAWN_SIM/PARAM_CHANGE chưa được ghi từ UI; bản ghi chỉ nằm trong bộ nhớ trang (mất khi tải lại, chưa lưu `.socr`); đổi trang bảng được ghi như xóa + vẽ lại.
+- Kiểm tra: tsc teacher-board 0 lỗi; vitest 42 file/510 test đạt (thêm `boardJournalWiring.test.tsx`, 7 test); kiểm thử trình duyệt thật: vẽ 2 nét → thanh tua 0:17, kéo về cuối dựng lại đủ cả hai nét.
+
+
+# 2026-10-28 — Adapter Socratic: failover model Gemini
+
+- `services/ai-engine/llm/provider_adapter.py`: trước đây chỉ gọi `gemini-2.5-flash` (hạn mức thấp) và phạt khóa ngay khi lỗi. Nay thử `SOCRATIC_GEMINI_MODELS` (flash-lite → 2.5-flash → flash-latest) trên cùng khóa, chỉ `mark_failure` khi mọi model đều lỗi. Thêm `tests/test_provider_adapter.py` (2 test, dùng genai giả). pytest: 67 đạt.
+- Đính chính spec: adapter ĐÃ gọi Gemini/OpenRouter (sửa `docs/CURRENT_SPECS.md` dòng 162). Không có Ollama.
+- Quyết định giữ PNG cho `exportIsolatedWebp`: backend (`llm/key_pool.py:442`, `routers/visualize.py:708`) gắn cứng `data:image/png`, đổi sang WebP sẽ sai mime cho OpenRouter/OpenAI. Muốn WebP phải dò mime phía backend trước.
+
+
+# 2026-10-28 — Journal mở rộng: công thức, hình, mô phỏng, tệp .socr
+
+- `utils/vectorJournal.ts`: thêm sự kiện `ADD_OBJECT` (công thức typeset / hình tại chỗ, neo tại điểm) và `REMOVE_SIM`; `reconstructBoardState` trả thêm `objects`; `ERASE_STROKE`/`CLEAR_CANVAS` cũng xóa object.
+- `utils/journalDiff.ts`: nét có `typeset`/`shape` ghi thành `ADD_OBJECT` (đổi mực → công thức sẽ thấy ERASE rồi ADD); thêm `diffSimEvents` (SPAWN_SIM/REMOVE_SIM khi `activeBlueprint` đổi). `hooks/useBoardJournal.ts` nhận tham số `sim`; `SmartboardCanvas.tsx` truyền blueprint + `holoPosition`.
+- `utils/journalRender.ts` (vẽ lớp phủ tua: nét, chữ công thức, cạnh hình phẳng/khối, thẻ tên mô phỏng), `utils/socrFile.ts` (lưu/nạp `.socr`, giới hạn 8 MB, loại sự kiện sai). `VectorTimeTravelBar` thêm nút Lưu/Mở.
+- Giới hạn còn lại: công thức vẽ bằng chữ thường (`typeset.text`), không KaTeX; mô phỏng chỉ là thẻ tên, chưa ghi `PARAM_CHANGE`/`PINCH_TRANSFORM` (state riêng của từng engine); nạp `.socr` chỉ để xem lại, chưa khôi phục lên bảng thật; chưa có lưu tự động xuống đĩa/IndexedDB.
+- Kiểm tra: tsc 0 lỗi; vitest 42 file/515 test đạt; trình duyệt thật: nét + chữ dựng lại ở mốc cuối, lưu → nạp lại `.socr` thành công. Chưa chạy e2e, student-app, pytest sau đợt này.

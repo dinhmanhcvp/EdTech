@@ -23,6 +23,8 @@ import { ClassroomPanel } from './ClassroomPanel';
 import { useClassroom } from '../../hooks/useClassroom';
 import { slimBlueprint } from '../../utils/classroomState';
 import { OcrReviewModal } from './OcrReviewModal';
+import { VectorTimeTravelBar } from './VectorTimeTravelBar';
+import { useBoardJournal } from '../../hooks/useBoardJournal';
 import { findAmbiguousTokens } from '../../utils/ocrConfusions';
 import { MathView } from '../common/MathView';
 import { FormulaBlock, MathText } from '../ui/MathText';
@@ -419,6 +421,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   // Hologram On-Board Overlay vs Split-View Dock States
   const [displayMode, setDisplayMode] = useState<'HOLOGRAM' | 'DOCK'>('HOLOGRAM');
   const [holoPosition, setHoloPosition] = useState<{ x: number; y: number }>({ x: 580, y: 35 });
+  const journal = useBoardJournal(
+    strokes,
+    currentStroke.length > 0,
+    activeBlueprint ? { key: activeBlueprint, template: activeBlueprint.templateId, x: holoPosition.x, y: holoPosition.y } : null,
+  );
   const [holoScale, setHoloScale] = useState<number>(1.0);
 
   // ---- Thu phóng / di chuyển bảng, nhiều trang, chữ, toàn màn hình (như các bảng trắng trực tuyến) ----
@@ -2981,6 +2988,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               </button>
             </div>
           )}
+
+          <VectorTimeTravelBar getJournal={journal.snapshot} eventCount={journal.eventCount} />
 
           {/* Lớp công thức chuẩn (KaTeX) đặt trên canvas; chỉ phần tay cầm nhận chuột nên bút vẫn viết xuyên qua được */}
           <div className="absolute inset-0 pointer-events-none" data-testid="typeset-layer">

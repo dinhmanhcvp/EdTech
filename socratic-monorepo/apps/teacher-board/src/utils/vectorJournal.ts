@@ -6,7 +6,7 @@
  * Theo đặc tả Mục 7 của NGHIEN_CUU_HOAN_THIEN_TOAN_DIEN_HE_THONG_STEM_HOLOGRAPHIC.md
  */
 
-import { Stroke, Point } from './lassoGeometry';
+import { Stroke, Point, TypesetMeta, ShapeMeta } from './lassoGeometry';
 
 // ==========================================
 // 1. DATA MODEL FOR VECTOR JOURNAL EVENTS
@@ -75,7 +75,28 @@ export type EraseStrokeEvent = {
   strokeId: string;
 };
 
+/** Công thức chuẩn hoặc hình tại chỗ thay cho nét viết tay; neo tại (x, y) như `points[0]` của Stroke. */
+export type AddObjectEvent = {
+  t: number;
+  type: 'ADD_OBJECT';
+  strokeId: string;
+  x: number;
+  y: number;
+  color: string;
+  width?: number;
+  typeset?: TypesetMeta;
+  shape?: ShapeMeta;
+};
+
+export type RemoveSimEvent = {
+  t: number;
+  type: 'REMOVE_SIM';
+  id: string;
+};
+
 export type BoardJournalEvent =
+  | AddObjectEvent
+  | RemoveSimEvent
   | StrokeStartEvent
   | StrokeMoveEvent
   | StrokeEndEvent
@@ -586,9 +607,21 @@ export interface ReconstructedSim {
   matrix?: number[];
 }
 
+export interface ReconstructedObject {
+  id: string;
+  x: number;
+  y: number;
+  color: string;
+  width: number;
+  typeset?: TypesetMeta;
+  shape?: ShapeMeta;
+}
+
 export interface ReconstructedBoardState {
   strokes: Stroke[];
   simulations: Map<string, ReconstructedSim>;
+  /** công thức chuẩn / hình tại chỗ, theo thứ tự thêm vào */
+  objects: ReconstructedObject[];
 }
 
 /**
@@ -599,6 +632,7 @@ export function reconstructBoardState(events: BoardJournalEvent[]): Reconstructe
   const strokes: Stroke[] = [];
   const activeStrokePointers = new Map<number, Stroke>();
   const simulations = new Map<string, ReconstructedSim>();
+  const objects: ReconstructedObject[] = [];
 
   let strokeCounter = 0;
 
@@ -608,6 +642,25 @@ export function reconstructBoardState(events: BoardJournalEvent[]): Reconstructe
         strokes.length = 0;
         activeStrokePointers.clear();
         simulations.clear();
+        objects.length = 0;
+        break;
+      }
+
+      case 'ADD_OBJECT': {
+        objects.push({
+          id: ev.strokeId,
+          x: ev.x,
+          y: ev.y,
+          color: ev.color,
+          width: ev.width || 3,
+          typeset: ev.typeset,
+          shape: ev.shape,
+        });
+        break;
+      }
+
+      case 'REMOVE_SIM': {
+        simulations.delete(ev.id);
         break;
       }
 
@@ -644,6 +697,8 @@ export function reconstructBoardState(events: BoardJournalEvent[]): Reconstructe
         if (index !== -1) {
           strokes.splice(index, 1);
         }
+        const oi = objects.findIndex((o) => o.id === ev.strokeId);
+        if (oi !== -1) objects.splice(oi, 1);
         break;
       }
 
@@ -687,5 +742,6 @@ export function reconstructBoardState(events: BoardJournalEvent[]): Reconstructe
   return {
     strokes,
     simulations,
+    objects,
   };
 }

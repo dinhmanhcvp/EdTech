@@ -97,10 +97,17 @@ describe('bảng dụng cụ / hộp thoại vẽ từ đề', () => {
     let ctl: GeoController | null = null;
     render(<GeometryProblemPanel mode="edit" scene={sc} upTo={0} onClose={() => undefined} onApply={onApply} onPickConfig={(c) => (pick = c)} onController={(c) => (ctl = c)} />);
     expect(ctl!.parts).toBe(3);
+    // cảnh lưu kiểu cũ "vẽ đến hết phần 0": các phần a, b đang ẩn; mỗi lần bấm hiện thêm một phần
+    expect(ctl!.shownParts).toBe(0);
+    expect(ctl!.togglableParts).toBe(2);
     act(() => ctl!.next());
-    expect(onApply).toHaveBeenLastCalledWith(sc, 1);
+    expect(onApply.mock.calls[onApply.mock.calls.length - 1][0].hiddenParts).toEqual([2]);
     act(() => ctl!.next());
-    expect(onApply).toHaveBeenLastCalledWith(sc, 2);
+    expect(onApply.mock.calls[onApply.mock.calls.length - 1][0].hiddenParts).toEqual([]);
+    expect(ctl!.shownParts).toBe(2);
+    act(() => ctl!.togglePart(1));
+    expect(onApply.mock.calls[onApply.mock.calls.length - 1][0].hiddenParts).toEqual([1]);
+    act(() => ctl!.togglePart(1));
     // thêm yêu cầu bằng lời (từ chữ viết khoanh trên bảng): vào chính hình này
     let res: ReturnType<GeoController['addRequirementText']> | null = null;
     act(() => {
@@ -135,6 +142,9 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
   const ctl = (over: Partial<GeoController> = {}): GeoController => ({
     parts: 3,
     upTo: 1,
+    shownParts: 1,
+    togglableParts: 3,
+    togglePart: vi.fn(),
     tool: null,
     picks: [],
     canUndo: true,
@@ -202,7 +212,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
   });
 
   it('tầng 3 Phần đề: bấm lặp lại không đóng đĩa; nút bị khóa ở hai đầu', () => {
-    const g = ctl({upTo: 2});
+    const g = ctl({shownParts: 3, togglableParts: 3});
     render(<AiFab {...base} geo={g} />);
     fireEvent.click(screen.getByTestId('ai-fab'));
     fireEvent.click(screen.getByTestId('ai-fab-draw'));

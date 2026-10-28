@@ -4,7 +4,7 @@
  * Điểm/đường mới gắn vào `part` đang hiển thị nên bật/tắt từng phần của đề vẫn đúng.
  */
 import {add, dot, mul, sub, type V3} from './solids';
-import {appendPart, modelFromScene, renderScene, sceneFromModel, type GeoScene} from './geometryProblem';
+import {appendPart, modelFromScene, partShown, renderScene, sceneFromModel, type GeoScene} from './geometryProblem';
 import type {ShapeMeta} from './lassoGeometry';
 
 const NAMES = 'MNPQRTUVWXYZHKIJEFGL'.split('');
@@ -79,8 +79,87 @@ export const addRequirement = (sc: GeoScene, text: string) => appendPart(sc, tex
 
 /** Tên đỉnh theo chỉ số hiển thị (phục vụ chọn điểm bằng chạm). */
 export function visibleNames(sc: GeoScene, upTo: number): string[] {
-  return sc.order.filter((n) => (sc.ptPart[n] ?? 0) <= upTo);
+  return sc.order.filter((n) => partShown(sc, sc.ptPart[n] ?? 0, upTo));
 }
+
+// ------------------------------------------------------------------ bật/tắt từng phần của đề (a, b, c, d…)
+/** Phần i có nét vẽ riêng (điểm, đường, thiết diện, đường tròn, điểm trùng)? Phần chỉ là lời đề (không vẽ gì) thì không có nút. */
+export function partHasContent(sc: GeoScene, i: number): boolean {
+  return (
+    Object.entries(sc.ptPart).some(([n, p]) => p === i && sc.order.includes(n)) ||
+    sc.aux.some((a) => a[2] === i) ||
+    sc.polys.some((p) => p.part === i) ||
+    Object.values(sc.mergedPart).some((p) => p === i) ||
+    (sc.circles ?? []).some((c) => c.part === i)
+  );
+}
+
+/** Các phần khác mà phần i dùng điểm của chúng (VD thiết diện (MOD) cần M của phần a và O của phần b). */
+export function partDeps(sc: GeoScene, i: number): number[] {
+  const used = new Set<string>();
+  sc.aux.forEach(([a, b, p]) => {
+    if (p === i) {
+      used.add(a);
+      used.add(b);
+    }
+  });
+  sc.polys.forEach((poly) => {
+    if (poly.part === i) poly.names.forEach((n) => used.add(n));
+  });
+  Object.entries(sc.merged).forEach(([orig, aliases]) => {
+    if (aliases.some((al) => sc.mergedPart[al] === i)) used.add(orig);
+  });
+  // điểm được nhắc trong lời của phần (VD "mặt phẳng (MOD)" cần M ở phần a và O ở phần b dù thiết diện chỉ có các đỉnh gốc)
+  for (const tok of sc.parts[i]?.text.match(/(?<![\p{L}'])(?:[A-Z]'?){1,6}(?![\p{L}'])/gu) ?? []) {
+    for (const n of tok.match(/[A-Z]'?/g) ?? []) if (sc.pts[n] !== undefined) used.add(n);
+  }
+  const deps = new Set<number>();
+  used.forEach((n) => {
+    const p = sc.ptPart[n] ?? 0;
+    if (p !== 0 && p !== i) deps.add(p);
+  });
+  return [...deps];
+}
+
+const closureDeps = (sc: GeoScene, i: number, seen = new Set<number>()): Set<number> => {
+  for (const d of partDeps(sc, i)) if (!seen.has(d)) closureDeps(sc, d, seen.add(d));
+  return seen;
+};
+
+export interface PartChip {
+  index: number;
+  label: string;
+  text: string;
+  shown: boolean;
+}
+
+/** Các nút a, b, c… của hình (bỏ phần 0 và các phần không vẽ gì). */
+export function partChips(sc: GeoScene): PartChip[] {
+  const hidden = new Set(sc.hiddenParts ?? []);
+  return sc.parts
+    .map((p, i) => ({index: i, label: p.label, text: p.text, shown: !hidden.has(i)}))
+    .filter((c) => c.index > 0 && partHasContent(sc, c.index));
+}
+
+/** Bật phần i (kéo theo các phần nó cần) hoặc tắt (kéo theo các phần cần nó). Các nét khác giữ nguyên, không vẽ lại hình. */
+export function setPartShown(sc: GeoScene, i: number, show: boolean): GeoScene {
+  const hidden = new Set(sc.hiddenParts ?? []);
+  if (show) {
+    hidden.delete(i);
+    closureDeps(sc, i).forEach((d) => hidden.delete(d));
+  } else {
+    hidden.add(i);
+    sc.parts.forEach((_, k) => {
+      if (k !== i && k > 0 && closureDeps(sc, k).has(i)) hidden.add(k);
+    });
+  }
+  return {...sc, hiddenParts: [...hidden].sort((a, b) => a - b)};
+}
+
+export const togglePart = (sc: GeoScene, i: number) => setPartShown(sc, i, (sc.hiddenParts ?? []).includes(i));
+
+/** Chỉ hiện các phần 0..k (kiểu cũ: vẽ đến hết phần k). */
+export const showUpTo = (sc: GeoScene, k: number): GeoScene => ({...sc, hiddenParts: sc.parts.map((_, i) => i).filter((i) => i > k)});
 
 // ------------------------------------------------------------------ bố trí hình trên bảng
 export interface GeoLayout {

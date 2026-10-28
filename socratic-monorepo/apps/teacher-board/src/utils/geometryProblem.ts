@@ -994,6 +994,8 @@ export interface GeoScene {
   rot?: {yaw: number; pitch: number};
   /** tô màu từng mặt của khối */
   colors?: boolean;
+  /** các phần của đề đang ẨN (bật/tắt từng phần a, b, c…); phần 0 luôn hiện. Nét tự vẽ thêm bằng dụng cụ thuộc phần 0 nên không mất khi bật/tắt */
+  hiddenParts?: number[];
   /** khai triển thành lưới phẳng: 0 = khối, 1 = lưới (đang gấp/mở khi ở giữa) */
   net?: number;
   /** mặt phẳng cắt ngang song song đáy ở độ cao 0..1 (thiết diện đổi theo khi kéo) */
@@ -1098,18 +1100,22 @@ function renderNet(sc: GeoScene, t: number): DrawnFigure | null {
   return {title: sc.title, dim: 3, verts, labels, edges, marks: [], polys: [], curves: [], faces};
 }
 
+/** Phần p của đề có đang hiện không (phần 0 luôn hiện). */
+export const partShown = (sc: GeoScene, p: number, upTo = Infinity) => p === 0 || (p <= upTo && !(sc.hiddenParts ?? []).includes(p));
+
 export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
   if (sc.net && sc.net > 0 && sc.dim === 3) {
     const nf = renderNet(sc, Math.min(1, sc.net));
     if (nf) return nf;
   }
   const m = modelFromScene(sc);
-  const included = (n: string) => (m.ptPart.get(n) ?? 0) <= upTo;
+  const included = (n: string) => partShown(sc, m.ptPart.get(n) ?? 0, upTo);
   const names = m.order.filter(included);
   const idx = new Map(names.map((n, i) => [n, i]));
   const v = m.view ?? {k: 1, bx: 0, by: 0};
   const rot = sc.rot && m.dim === 3 ? sc.rot : null;
-  const basePts = [...m.pts.entries()].filter(([n]) => (m.ptPart.get(n) ?? 0) === 0).map(([, p]) => p);
+  const baseSet = new Set(m.edges.flat());
+  const basePts = [...m.pts.entries()].filter(([n]) => baseSet.has(n)).map(([, p]) => p);
   const cen0 = centroid(basePts);
   const R0 = Math.max(1e-6, ...basePts.map((p) => len(sub(p, cen0))));
   // xoay tự do: quay quanh trục đứng (yaw) rồi trục ngang (pitch); +z hướng về phía người xem
@@ -1135,7 +1141,7 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
   const verts = names.map((n) => pv(m.pts.get(n)!));
 
   // mặt thấy được: nhìn theo r = (KX, KY, 1) (phía sau là z âm)
-  const cen = centroid([...m.pts.entries()].filter(([n]) => (m.ptPart.get(n) ?? 0) === 0).map(([, p]) => p));
+  const cen = centroid(basePts);
   const R: V3 = [KX, KY, 1];
   const facePts = m.faces.map((f) => f.map((n) => m.pts.get(n)!));
   const normals = facePts.map((fp) => {
@@ -1173,7 +1179,7 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
     edges.push({a: idx.get(a)!, b: idx.get(b)!, hidden, aux: false});
   }
   m.aux.forEach(([a, b], i) => {
-    if ((m.auxPart[i] ?? 0) > upTo || !idx.has(a) || !idx.has(b)) return;
+    if (!partShown(sc, m.auxPart[i] ?? 0, upTo) || !idx.has(a) || !idx.has(b)) return;
     let hidden = false;
     if (m.faces.length > 0) hidden = !onFace(mul(add(m.pts.get(a)!, m.pts.get(b)!), 0.5)).some((f) => faceVisible[f]);
     if (hidden && sc.hideHidden) return;
@@ -1182,11 +1188,11 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
 
   const labels = names.map((n) => {
     if (n.startsWith('#') && !m.merged.has(n)) return '';
-    const extra = (m.merged.get(n) ?? []).filter((al) => (m.mergedPart.get(al) ?? 0) <= upTo);
+    const extra = (m.merged.get(n) ?? []).filter((al) => partShown(sc, m.mergedPart.get(al) ?? 0, upTo));
     return [n.startsWith('#') ? '' : n, ...extra].filter(Boolean).join('≡');
   });
   // mặt phẳng cắt ngang kéo được: thiết diện song song đáy
-  const polysOut = m.polys.map((p, i) => ({p, part: m.polyPart[i] ?? 0})).filter(({p, part}) => part <= upTo && p.every((n) => idx.has(n))).map(({p}) => p.map((n) => idx.get(n)!));
+  const polysOut = m.polys.map((p, i) => ({p, part: m.polyPart[i] ?? 0})).filter(({p, part}) => partShown(sc, part, upTo) && p.every((n) => idx.has(n))).map(({p}) => p.map((n) => idx.get(n)!));
   if (sc.slice !== undefined && m.dim === 3) {
     const sec = sliceSection(sc, sc.slice);
     if (sec) {
@@ -1208,7 +1214,7 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
     marks: [...m.marks].filter((n) => idx.has(n)).map((n) => idx.get(n)!),
     polys: polysOut,
     curves: m.circles
-      .filter((c) => c.part <= upTo)
+      .filter((c) => partShown(sc, c.part, upTo))
       .map((c) => {
         const ref = len(cross(c.normal, [1, 0, 0] as V3)) > 0.1 ? cross(c.normal, [1, 0, 0] as V3) : cross(c.normal, [0, 1, 0] as V3);
         const u = norm(ref);

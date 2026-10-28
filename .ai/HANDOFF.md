@@ -62,6 +62,13 @@
 - Giữ nguyên có chủ đích: thanh trượt của hologram nền tối (GraphEngine, thanh dưới GeometryEngine); `globals.css` (cấm sửa).
 - Chưa làm: GraphEngine/GeometryEngine 3D đã có DPR sẵn nên không đụng; chưa đo fps canvas ×3 trên máy yếu; các mục review 1–2 của dựng hình động (đường tròn quá lớn khi tam giác gần thẳng hàng; replay chưa vẽ đường dựng) vẫn mở.
 
+# 3e. Nâng cấp canvas Lý/Hóa/Sinh + UX (29/10/2026)
+- `utils/canvasKit.ts` (kiểm thử bằng ctx giả): `hudCard` (thẻ số liệu kính mờ), `hatch`, `angleArc`, `lensBody`, `glowPath`, `shadedBlock`, `roundRectPath`.
+- PhysicsSandbox: con lắc (trần gạch chéo, cung góc θ, vạch tham chiếu), thấu kính lồi trong suốt + tia có quầng, mặt phẳng nghiêng (gradient, cung α, gạch nền, khối đổ bóng), ném xiên (đỉnh H, cung góc phóng, nền gạch). ChemLab chuẩn độ: burette thủy tinh có vạch chia/mặt khum/khóa, bình tam giác có bóng, dải đổi màu chỉ thị, điểm tương đương, nhãn trục. Bio quang hợp: nhãn trục không đè, thẻ số liệu.
+- UX: nút trong engine SVG cao ≥ 40 px (≥ 34 px với dải chế độ), có phản hồi nhấn (active:scale).
+- Giữ nguyên: ADN/tim/lá (Bio), phân tử 3D và phản ứng (ChemLab) vì đã đẹp; giao thoa sóng, RLC chỉ nâng nét chung.
+- Lưu ý: file `InlineShape`, `GeometryProblemPanel`, `geoTools`, `geometryProblem`, `SmartboardDock`, `geoTools.test` đang được phiên khác sửa (2 test geoTools đang đỏ không do phần này) — không stage chung.
+
 # 4. Chỉ thị cho Agent tiếp theo (Immediate Next Steps)
 1. **Kiểm tra trạng thái ban đầu:**
    - Chạy lệnh `git status -s` để xác nhận nhánh `main` sạch sẽ và đồng bộ với remote.
@@ -1264,3 +1271,13 @@ Tham chiếu: hai video `1792910979915_…mp4` (lập phương → tô màu mặ
 - Tầng 2 hiện gồm: Dựng, Đo, Phần, Hiển thị, (Khai triển, Cắt ngang chỉ với khối), Chỉnh sửa.
 - Kiểm tra: tsc 0 lỗi (trừ `src/app/zz-preview/page.tsx` của phiên khác, lỗi sẵn có không thuộc phần này), vitest 1058 qua; trình duyệt thật: lập phương xoay bằng kéo, tô màu 3 mặt, khai triển thành lưới chữ thập, cắt ngang S = 1a².
 - **Chưa làm**: kéo mặt phẳng cắt bằng ngón tay (hiện bấm Lên/Xuống), cắt xiên qua 3 điểm có thanh kéo, khai triển theo thanh trượt kéo tay (hiện bật/tắt có hoạt họa), khai triển phần thiết diện như video 2, cắt xiên khai triển; mặt cầu/mặt nón/trụ không có mặt đa giác nên chưa khai triển; hình vẽ tay nắn tại chỗ (bát diện…) vẫn không có các chức năng này; `zz-preview` cần xử lý riêng.
+
+
+# 2026-10-29 (bổ sung) — Nút a), b), c) ngay dưới hình: bật/tắt từng phần của đề
+
+- Vẽ từ đề nhiều phần: chỉ vẽ hình gốc; dưới hình có hàng nút a), b), c)… (mờ khi ẩn, xanh khi hiện). Bấm hiện nét của phần đó theo thời gian thực, bấm lần nữa ẩn. Các phần độc lập: bật/tắt phần này không đụng nét phần khác, hình không dịch (tọa độ khung cố định), không vẽ lại.
+- Mô hình: `GeoScene.hiddenParts` (phần 0 luôn hiện); `partShown`, `renderScene` lọc theo đó; `geoTools.ts`: `partChips`, `setPartShown`, `togglePart`, `partDeps`, `partHasContent`, `showUpTo`. Phụ thuộc: bật phần cần điểm của phần khác thì tự bật phần đó (thiết diện (MOD) ở c) cần M của a và O của b, nhận qua cả lời của phần); tắt một phần thì các phần cần nó cũng tắt. Phần chỉ là lời đề (không vẽ gì) không có nút.
+- Nét tự vẽ bằng dụng cụ (đoạn, trung điểm, chân vuông góc, thiết diện 3 điểm) gắn vào phần 0 nên luôn hiện và không mất khi bật/tắt a, b, c. Yêu cầu viết lên bảng thêm một phần mới (nút mới).
+- Khung xoay/khai triển chỉ tính các đỉnh của hình gốc, thêm điểm tự vẽ không làm khung nhảy.
+- Hub tầng 3 "Phần k/n": Ẩn phần cuối / Vẽ phần tiếp vẫn có (hiện phần ẩn đầu tiên / ẩn phần hiện cuối). Cảnh lưu kiểu cũ (vẽ đến hết phần k) được đổi sang `hiddenParts`.
+- Test: `geoPartToggle.test.ts`, `geoPartChips.test.tsx`, cập nhật `geoTools.test.tsx`. tsc 0 lỗi (trừ `zz-preview` của phiên khác), vitest 1074.

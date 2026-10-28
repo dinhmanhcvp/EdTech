@@ -27,13 +27,16 @@ interface Props {
   /** hình khối đang chọn: kéo ngón tay trên hình để xoay 3D (yaw/pitch tuyệt đối) */
   onRotate?: (yaw: number, pitch: number) => void;
   rotation?: {yaw: number; pitch: number} | null;
+  /** nút a, b, c… của hình dựng từ đề: bật/tắt từng phần ngay trên bảng */
+  partChips?: {index: number; label: string; text: string; shown: boolean}[];
+  onTogglePart?: (index: number) => void;
 }
 
 const fmt = (v: number) => v.toFixed(1).replace('.', ',');
 const midOf = (a: P2, b: P2): P2 => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
 
 /** Hình học vẽ thẳng lên bảng: không khung, không nền; chỉ có nét hình, nhãn đỉnh và tay cầm nhỏ. */
-export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onOpenTools, onRotate, rotation}) => {
+export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onOpenTools, onRotate, rotation, partChips, onTogglePart}) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const s = stroke.shape!;
   const t = stroke.typeset!;
@@ -112,6 +115,26 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
     >
       <div className="absolute" style={{left: `${(stroke.points[0].x / 1200) * 100}%`, top: `${(stroke.points[0].y / 675) * 100}%`, width: w * boardScale, height: h * boardScale}}>
         {picked && <div className="absolute -inset-1.5 rounded-md border-2 border-blue-500/80 pointer-events-none" />}
+        {partChips && partChips.length > 0 && onTogglePart && (
+          <div data-testid="geo-part-chips" className="absolute left-0 flex items-center gap-1.5" style={{top: '100%', marginTop: 8, pointerEvents: 'auto'}}>
+            {partChips.map((c) => (
+              <button
+                key={c.index}
+                type="button"
+                data-testid={`geo-part-${c.index}`}
+                aria-pressed={c.shown}
+                title={`${c.shown ? 'Ẩn' : 'Vẽ'} phần ${c.label} ${c.text.slice(0, 80)}`}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => onTogglePart(c.index)}
+                className={`min-w-[30px] px-2.5 py-1 rounded-full text-[12px] font-semibold border transition-all duration-150 cursor-pointer select-none ${
+                  c.shown ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white/60 border-dashed border-stone-400 text-stone-500 opacity-60 hover:opacity-100 hover:text-stone-800'
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        )}
         <svg ref={svgRef} viewBox={`0 0 ${w} ${h}`} width={w * boardScale} height={h * boardScale} style={{overflow: 'visible'}}>
           {s.kind === 'plane' && stats && (
             <g>
@@ -546,7 +569,7 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
           </div>
         )}
         {s.kind === 'solid' && (
-          <div className="absolute left-0 text-[10px] font-mono text-stone-500 pointer-events-none" style={{top: h * boardScale + 26, whiteSpace: 'nowrap'}}>
+          <div className="absolute left-0 text-[10px] font-mono text-stone-500 pointer-events-none" style={{top: h * boardScale + (partChips && partChips.length > 0 ? 46 : 26), whiteSpace: 'nowrap'}}>
             {sk?.fixed ? (pickMode ? (pickMode === 'edge' ? 'Chạm vào cạnh để đặt điểm' : 'Chạm vào điểm để chọn') : 'Hình dựng từ đề · mở dụng cụ vẽ để thêm điểm, đoạn, thiết diện') : sk ? 'Hình giữ đúng nét bạn vẽ · nét đứt: cạnh khuất · kéo đỉnh để chỉnh · ⤢ mở mô hình 3D để xoay' : 'Nét liền: cạnh thấy · nét đứt: cạnh khuất · kéo vòng xoay để xoay khối'}
           </div>
         )}

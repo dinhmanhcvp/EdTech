@@ -705,7 +705,7 @@ export const AiFab: React.FC<AiFabProps> = ({
         ? [
             sub('tools', 'Dựng', 'Đoạn nối, trung điểm, điểm trên cạnh, chân vuông góc, thiết diện', <Ruler className="w-4 h-4" />, () => setPath(['draw', 'tools']), {keep: true, highlight: GEO_TOOLS.some((t) => t.id === geo.tool)}),
             sub('measure', 'Đo', 'Đo độ dài đoạn thẳng và số đo góc ngay trên hình', <Compass className="w-4 h-4" />, () => setPath(['draw', 'measure']), {keep: true, highlight: GEO_MEASURE.some((t) => t.id === geo.tool)}),
-            sub('parts', `Phần ${geo.upTo + 1}/${geo.parts}`, 'Hiện thêm hoặc ẩn bớt từng phần. Muốn thêm yêu cầu: viết lên bảng (VD: vẽ đường tròn ngoại tiếp) rồi khoanh và bấm Vẽ hình', <ChevronRight className="w-4 h-4" />, () => setPath(['draw', 'parts']), {keep: true}),
+            sub('parts', `Phần ${geo.shownParts}/${geo.togglableParts}`, 'Hiện thêm hoặc ẩn bớt từng phần. Muốn thêm yêu cầu: viết lên bảng (VD: vẽ đường tròn ngoại tiếp) rồi khoanh và bấm Vẽ hình', <ChevronRight className="w-4 h-4" />, () => setPath(['draw', 'parts']), {keep: true}),
             sub('view', 'Hiển thị', 'Xoay 3D, tô màu mặt, nét khuất, mở mô phỏng 3D, xuất TikZ', <Eye className="w-4 h-4" />, () => setPath(['draw', 'view']), {keep: true}),
             ...(geo.canNet
               ? [
@@ -771,8 +771,8 @@ export const AiFab: React.FC<AiFabProps> = ({
   } else if (tierKey === 'draw/parts' && geo) {
     items = [
       back,
-      sub('prev', 'Ẩn phần cuối', 'Bớt phần vừa vẽ', <ChevronLeft className="w-4 h-4" />, () => geo.prev(), {keep: true, disabled: geo.upTo <= 0}),
-      sub('next', 'Vẽ phần tiếp', 'Hiện thêm phần tiếp theo của đề', <ChevronRight className="w-4 h-4" />, () => geo.next(), {keep: true, disabled: geo.upTo >= geo.parts - 1}),
+      sub('prev', 'Ẩn phần cuối', 'Bớt phần vừa vẽ', <ChevronLeft className="w-4 h-4" />, () => geo.prev(), {keep: true, disabled: geo.shownParts <= 0}),
+      sub('next', 'Vẽ phần tiếp', 'Hiện thêm phần tiếp theo của đề', <ChevronRight className="w-4 h-4" />, () => geo.next(), {keep: true, disabled: geo.shownParts >= geo.togglableParts}),
     ];
   } else if (tierKey === 'draw/edit' && geo) {
     items = [

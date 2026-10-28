@@ -4,7 +4,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Eraser, Redo2, Undo2, X} from 'lucide-react';
 import {buildScene, type GeoScene} from '../../utils/geometryProblem';
 import {canUnfold, polygonStats, sliceSection} from '../../utils/netUnfold';
-import {addFoot, addMidpoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, sceneGrew, measureDistance, toTikz, visibleNames} from '../../utils/geoTools';
+import {addFoot, addMidpoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, toTikz, togglePart, visibleNames} from '../../utils/geoTools';
 
 export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'dist' | 'angle';
 
@@ -23,6 +23,10 @@ export interface GeoController {
   picks: string[];
   canUndo: boolean;
   canRedo: boolean;
+  /** số phần (a, b, c…) đang hiện / tổng số phần có nét vẽ */
+  shownParts: number;
+  togglableParts: number;
+  togglePart: (i: number) => void;
   /** đang ẩn hẳn nét khuất (mặc định nét đứt chuẩn SGK) */
   hideHidden: boolean;
   toggleHidden: () => void;
@@ -92,6 +96,13 @@ const ALL_TOOLS = [...GEO_TOOLS, ...GEO_MEASURE];
 
 const SAMPLE = 'Cho hình chóp S.ABCD có đáy ABCD là hình vuông cạnh a, SA vuông góc với đáy, SA = a√2.\na) Gọi M là trung điểm SB.\nb) Gọi O = AC ∩ BD.\nc) Tìm thiết diện của hình chóp cắt bởi mặt phẳng (MOD).';
 
+/** Cảnh cũ lưu kiểu "vẽ đến hết phần k" → kiểu bật/tắt từng phần (các phần sau k ẩn) */
+function normalizeParts(scene: GeoScene, upTo?: number): {scene: GeoScene; upTo: number} {
+  const last = scene.parts.length - 1;
+  if (upTo === undefined || upTo >= last || scene.hiddenParts) return {scene, upTo: last};
+  return {scene: showUpTo(scene, upTo), upTo: last};
+}
+
 export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initialText, onClose, onCreate, onApply, onDeleteFigure, onPickConfig, onController, onOpen3D, figureId}) => {
   // ---------------- chế độ MỚI: nhập đề
   const [text, setText] = useState(initialText ?? '');
@@ -99,7 +110,7 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
   const built = useMemo(() => (mode === 'new' && text.trim() ? buildScene(text) : null), [mode, text]);
 
   // ---------------- chế độ SỬA: lịch sử, công cụ, chọn điểm
-  const [hist, setHist] = useState<{scene: GeoScene; upTo: number}[]>(() => (scene ? [{scene, upTo: upTo ?? 0}] : []));
+  const [hist, setHist] = useState<{scene: GeoScene; upTo: number}[]>(() => (scene ? [normalizeParts(scene, upTo)] : []));
   const [at, setAt] = useState(0);
   const [tool, setTool] = useState<GeoTool | null>(null);
   const [picks, setPicks] = useState<string[]>([]);
@@ -170,7 +181,8 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
     onApply?.(t.scene, t.upTo);
   };
 
-  const part = cur ? Math.min(cur.upTo, cur.scene.parts.length - 1) : 0;
+  // nét tự vẽ bằng dụng cụ thuộc phần 0: luôn hiện, giữ nguyên khi bật/tắt các phần a, b, c
+  const part = 0;
   const apply = (t: GeoTool, names: string[], edge?: {t: number}) => {
     if (!cur) return;
     const sc = cur.scene;
@@ -254,8 +266,18 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
         setPicks([]);
         if (t) setInfo('');
       },
-      next: () => stepTo(cur.upTo + 1),
-      prev: () => stepTo(cur.upTo - 1),
+      shownParts: partChips(cur.scene).filter((c) => c.shown).length,
+      togglableParts: partChips(cur.scene).length,
+      togglePart: (i) => patchScene({hiddenParts: togglePart(cur.scene, i).hiddenParts}),
+      next: () => {
+        const nxt = partChips(cur.scene).find((c) => !c.shown);
+        if (nxt) patchScene({hiddenParts: setPartShown(cur.scene, nxt.index, true).hiddenParts});
+      },
+      prev: () => {
+        const shown = partChips(cur.scene).filter((c) => c.shown);
+        const last = shown[shown.length - 1];
+        if (last) patchScene({hiddenParts: setPartShown(cur.scene, last.index, false).hiddenParts});
+      },
       undo: () => jump(at - 1),
       redo: () => jump(at + 1),
       remove: () => onDeleteFigure?.(),

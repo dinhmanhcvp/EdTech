@@ -14,7 +14,7 @@ import { looksLikeWords, matchViName } from '../../utils/viKeywords';
 import { InlineShape } from './InlineShape';
 import { GeometryProblemPanel, type GeoPickConfig, type GeoController } from './GeometryProblemPanel';
 import { buildScene, parseGeometryProblem, type GeoScene } from '../../utils/geometryProblem';
-import { layoutGeo, problemTextForPlane, problemTextForSolid } from '../../utils/geoTools';
+import { layoutGeo, partChips, problemTextForPlane, problemTextForSolid, showUpTo, togglePart } from '../../utils/geoTools';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -1828,6 +1828,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   // Đặt hình dựng từ đề lên bảng; `origin` = tọa độ bảng của góc trên-trái của hình gốc
   const insertGeoFigure = (scene: GeoScene, upTo: number, source: string, at?: { x: number; y: number }, replaceIds?: Set<string>) => {
     const origin = at ?? { x: 450, y: 170 };
+    // vẽ đến hết phần k → các phần sau ẩn (nút a, b, c… ngay dưới hình để bật/tắt từng phần)
+    if (upTo < scene.parts.length - 1) scene = showUpTo(scene, upTo);
+    upTo = scene.parts.length - 1;
     const L = layoutGeo(scene, upTo, origin);
     const id = `geo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
     const made: Stroke = {
@@ -3326,6 +3329,15 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   onPickEdge={geoPickCfg?.onPickEdge}
                   onRotate={geoPanel?.mode === 'edit' && geoPanel.id === s.id && s.shape?.geo?.scene.dim === 3 && geoCtl?.figureId === s.id ? (yaw, pitch) => geoCtl.setRot(yaw, pitch) : undefined}
                   rotation={s.shape?.geo?.scene.rot ?? null}
+                  partChips={s.shape?.geo ? partChips(s.shape.geo.scene) : undefined}
+                  onTogglePart={
+                    s.shape?.geo
+                      ? (i) => {
+                          if (geoPanel?.mode === 'edit' && geoPanel.id === s.id && geoCtl?.figureId === s.id) geoCtl.togglePart(i);
+                          else applyGeo(s.id, togglePart(s.shape!.geo!.scene, i), s.shape!.geo!.upTo);
+                        }
+                      : undefined
+                  }
                 />
               ))}
             {strokes

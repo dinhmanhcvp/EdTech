@@ -37,6 +37,17 @@
   - Trong Vitest / React Testing Library với `SocraticCompanionSession`, component render song song tab chẩn đoán bên trái và stepper bên phải, các câu query `getByTestId` dễ bị trùng element; luôn dùng `getAllByTestId` hoặc scoped `within(...)`.
   - Tuyệt đối chạy `tsc` với `--incremental false` để không tạo/ghi đè file `tsconfig.tsbuildinfo`.
 
+# 3b. Thử nghiệm nâng cấp hình vẽ engine SVG & Nghiên cứu Công cụ Hình học Không gian (28/10/2026)
+- **Nghiên cứu Chuyên sâu Hệ sinh thái Công cụ Vẽ Hình học & Hình học Không gian:**
+  - Đã hoàn thành báo cáo nghiên cứu chi tiết: `docs/tai-lieu-nghien-cuu-stem/NGHIEN_CUU_CHUYEN_SAU_CONG_CU_HINH_HOC_KHONG_GIAN.md`.
+  - Khảo sát 5 nhóm công cụ: DGS Sư phạm (GeoGebra 3D, Cabri 3D, Desmos 3D), Hệ thống TeX/Xuất bản (TikZ-3dplot, Asymptote), Math Animation (Manim/3B1B), WebGL Frameworks (Three.js/R3F, Babylon.js, CSG Manifold), và Smartboard AI Canvas.
+  - Phân tích sâu 5 thách thức kỹ thuật cốt lõi: Nét đứt/Nét khuất (Dual-depth pass shader), Cắt thiết diện (CSG cross-section), Phép chiếu SGK (Axonometric vs Perspective), Trải phẳng đa diện (Polyhedral Net) và Depth Snapping trên màn cảm ứng 2D.
+  - Đề xuất kiến trúc kỹ thuật module 3D cho Bảng tương tác thông minh (Smartboard) và Gia sư AI Socratic.
+- Thêm `apps/teacher-board/src/engines/visualKit.tsx`: `VisualDefs` (gradient thủy tinh/kim loại/thép, quầng sáng, bóng mềm), `SphereGrad`, `GroundShadow`, `useEased` (làm mượt đại lượng vẽ), `usePrefersReducedMotion`, `useUid`.
+- Áp dụng thử cho `DaniellEngine` và `LeChatelierEngine` (`ChemEngines.tsx`). Chỉ đổi cách vẽ: giữ nguyên mô hình, `data-*`, `data-testid`. Màu khí NO₂ vẫn lấy thẳng từ mô hình (đậm lên ngay khi nén); chỉ piston, độ dày điện cực, độ sáng bóng đèn được làm mượt.
+- `prefers-reduced-motion`: hình đứng yên, bỏ mọi `<animate*>`. Test: `__tests__/visualKit.test.tsx`.
+- Chưa đo fps trên máy yếu. Chưa nhân rộng sang các engine khác; `proRenderer.ts` (canvas) vẫn chưa engine nào dùng.
+
 # 4. Chỉ thị cho Agent tiếp theo (Immediate Next Steps)
 1. **Kiểm tra trạng thái ban đầu:**
    - Chạy lệnh `git status -s` để xác nhận nhánh `main` sạch sẽ và đồng bộ với remote.
@@ -1200,3 +1211,11 @@ Yêu cầu: khối 3D vẽ tay phải được nắn thẳng và nối đỉnh t
 - Vẽ hình: tầng `draw` khi chưa có hình = `Vẽ từ vùng` (có vùng khoanh → `onDrawSelected` = `handleVisualize(undefined, true)`, chỉ dựng hình học, không đọc ra đề thì báo lỗi) hoặc `Khoanh đề` (chưa khoanh → bật khoanh) + `Gõ đề` (lối phụ, `ai-fab-draw-typed`). Khi đã có hình: Dụng cụ/Phần/Yêu cầu/Hoàn tác/Làm lại/Xóa hình như cũ.
 - Thẻ cạnh hub chỉ còn chip nhỏ (`lasso-action-bar`): ảnh nét, trạng thái đọc, huy hiệu ý định, nút "Sửa chữ" (`btn-edit-text`) mở ô `lasso-formula-input`. Đã bỏ `btn-visualize`, `btn-convert-ink`, `btn-grade-ink`, `subject-*`, `sel-btn-geo-inplace` (dùng ô hub tương ứng).
 - Kiểm tra: tsc 0 lỗi; teacher-board 54 file/943 test (sửa 6 test cũ, thêm 1); trình duyệt thật: viết nét → khoanh → hub mở tại vùng với 8 ô + chip. Chưa thử đầu-cuối đề hình học viết tay → Vẽ từ vùng trên trình duyệt thật. Chưa commit.
+
+
+# 2026-10-28 (đêm, bổ sung 10) — Vẽ hình chạy ngay theo vùng khoanh; tầng 2 theo nghiên cứu hình học không gian
+
+- Bấm **Vẽ hình** khi có vùng khoanh chạy ngay (`handleDrawSelection` trong `SmartboardCanvas.tsx`): (1) chữ có sẵn (gõ/công thức/AI đã đọc) → `parseGeometryProblem` (tên hình trần như S.ABCD, tam giác nhọn/tù ABC, hình hộp/lập phương, hoặc cả đề nhiều phần) → `insertGeoFigure`; (2) nét vẽ tay → `detectSolidFromStrokes` (phân biệt hộp chữ nhật/lập phương theo tỉ lệ cạnh) rồi `detectPlaneShapeFromStrokes` → nắn tại chỗ; (3) chưa có gì → chờ Vision đọc chữ (tối đa 9 s) rồi thử lại; không nhận ra thì báo lỗi gợi ý. Sau đó hub mở tầng 2.
+- Tầng 2 (khi đã có hình dựng từ đề), theo `docs/tai-lieu-nghien-cuu-stem/NGHIEN_CUU_CHUYEN_SAU_CONG_CU_HINH_HOC_KHONG_GIAN.md`: Dựng (5 dụng cụ), **Đo** (độ dài a√k, góc độ; `measureDistance/measureAngle/fmtLen` trong `geoTools.ts`), Phần đề (+ Yêu cầu), **Ẩn nét khuất/Hiện nét đứt** (`GeoScene.hideHidden`, mặc định nét đứt chuẩn SGK), **Xem 3D** (mở mô phỏng GEO_SOLID qua `matchInstantStemBlueprint`), **Xuất TikZ** (`toTikz`, chép vào bộ nhớ tạm), Chỉnh sửa (hoàn tác/làm lại/xóa). `GeoController` thêm `hideHidden/toggleHidden/exportTikz/open3D`.
+- Mới: `tam giác nhọn/tù ABC` (`tri_obtuse`). Test mới `geoResearchTools.test.ts`; sửa `geoTools.test.tsx`.
+- Chưa làm (có trong nghiên cứu): khai triển lưới đa diện (Net) và thanh trượt thiết diện động trên hình dựng, khóa góc chiếu SGK vs xoay tự do, bắt điểm theo mặt. Hình vẽ tay đã nắn tại chỗ (không phải hình dựng từ đề) chưa có tầng 2 vì chưa có `GeoScene`. Chưa thử đầu-cuối bằng nét viết tay thật.

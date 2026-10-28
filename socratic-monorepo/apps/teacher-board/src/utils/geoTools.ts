@@ -123,5 +123,66 @@ export function layoutGeo(sc: GeoScene, upTo: number, origin: {x: number; y: num
   };
 }
 
+// ------------------------------------------------------------------ đo (đơn vị: cạnh a = 1)
+/** Độ dài dạng a√k/m khi gọn được, ngược lại số thập phân. */
+export function fmtLen(x: number): string {
+  if (x < 1e-9) return '0';
+  for (const den of [1, 2, 3, 4]) {
+    const k = x * x * den * den;
+    const kr = Math.round(k);
+    if (kr > 0 && kr <= 200 && Math.abs(k - kr) < 1e-6) {
+      const root = Math.round(Math.sqrt(kr));
+      if (root * root === kr) {
+        const num = root === 1 ? 'a' : `${root}a`;
+        return den === 1 ? num : `${num}/${den}`;
+      }
+      return den === 1 ? `a√${kr}` : `a√${kr}/${den}`;
+    }
+  }
+  return `${+x.toFixed(2)}a`;
+}
+
+export function measureDistance(sc: GeoScene, a: string, b: string): string {
+  const P = sc.pts[a];
+  const Q = sc.pts[b];
+  if (!P || !Q) return '';
+  const d = Math.hypot(P[0] - Q[0], P[1] - Q[1], P[2] - Q[2]);
+  return `${a}${b} = ${fmtLen(d)} (≈ ${+d.toFixed(3)}a)`;
+}
+
+/** Góc ∠(a v c) tại đỉnh v, tính bằng độ. */
+export function measureAngle(sc: GeoScene, a: string, v: string, c: string): string {
+  const A = sc.pts[a];
+  const V = sc.pts[v];
+  const C = sc.pts[c];
+  if (!A || !V || !C) return '';
+  const u = sub(A, V);
+  const w = sub(C, V);
+  const lu = Math.hypot(u[0], u[1], u[2]);
+  const lw = Math.hypot(w[0], w[1], w[2]);
+  if (lu < 1e-9 || lw < 1e-9) return '';
+  const deg = (Math.acos(Math.max(-1, Math.min(1, dot(u, w) / (lu * lw)))) * 180) / Math.PI;
+  return `∠${a}${v}${c} = ${+deg.toFixed(1)}°`;
+}
+
+// ------------------------------------------------------------------ xuất mã TikZ (nét đứt theo chuẩn SGK)
+export function toTikz(sc: GeoScene, upTo: number): string {
+  const fig = renderScene(sc, upTo);
+  const S = 50; // px → cm
+  const pt = (i: number) => `(${(fig.verts[i].x / S).toFixed(2)},${(-fig.verts[i].y / S).toFixed(2)})`;
+  const lines: string[] = ['\\begin{tikzpicture}[line join=round]'];
+  fig.verts.forEach((_, i) => lines.push(`  \\coordinate (P${i}) at ${pt(i)};`));
+  for (const e of fig.edges) {
+    const opt = [e.hidden ? 'dashed' : '', e.aux ? 'blue' : ''].filter(Boolean).join(',');
+    lines.push(`  \\draw${opt ? `[${opt}]` : ''} (P${e.a}) -- (P${e.b});`);
+  }
+  for (const poly of fig.polys) lines.push(`  \\fill[blue,opacity=0.15] ${poly.map((i) => `(P${i})`).join(' -- ')} -- cycle;`);
+  fig.labels.forEach((l, i) => {
+    if (l) lines.push(`  \\node[above right] at (P${i}) {$${l.replace(/≡/g, '\\equiv ')}$};`);
+  });
+  lines.push('\\end{tikzpicture}');
+  return lines.join('\n');
+}
+
 export const geoTitle = (sc: GeoScene) => sc.title;
 export {sceneFromModel};

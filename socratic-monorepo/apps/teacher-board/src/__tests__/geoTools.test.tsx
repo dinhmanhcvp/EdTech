@@ -133,6 +133,10 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     picks: [],
     canUndo: true,
     canRedo: false,
+    hideHidden: false,
+    toggleHidden: vi.fn(),
+    exportTikz: vi.fn(),
+    open3D: vi.fn(),
     setTool: vi.fn(),
     next: vi.fn(),
     prev: vi.fn(),
@@ -155,7 +159,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     expect(tier()).toBe('draw');
     // tầng 2 thay hẳn các ô tầng 1
     expect(ids()).not.toContain('ai-fab-voice');
-    expect(ids()).toEqual(expect.arrayContaining(['ai-fab-back', 'ai-fab-draw-tools', 'ai-fab-draw-parts', 'ai-fab-draw-req', 'ai-fab-draw-undo', 'ai-fab-draw-redo', 'ai-fab-draw-remove']));
+    expect(ids()).toEqual(expect.arrayContaining(['ai-fab-back', 'ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-parts', 'ai-fab-draw-hidden', 'ai-fab-draw-view3d', 'ai-fab-draw-export', 'ai-fab-draw-edit']));
     fireEvent.click(screen.getByTestId('ai-fab-back'));
     expect(tier()).toBe('root');
   });
@@ -219,7 +223,42 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     expect(ids()).not.toContain('ai-fab-lasso');
     fireEvent.click(screen.getByTestId('ai-fab-draw'));
     fireEvent.click(screen.getByTestId('ai-fab-draw-new'));
-    expect(onDrawSelected).toHaveBeenCalledTimes(1);
+    // bấm Vẽ hình đã chạy một lần; 'Vẽ từ vùng' ở tầng 2 là nút thử lại
+    expect(onDrawSelected).toHaveBeenCalledTimes(2);
     expect(onLasso).not.toHaveBeenCalled();
+  });
+
+  it('tầng 2 theo nghiên cứu: nét khuất, xem 3D, xuất TikZ chạy đúng; Đo và Chỉnh sửa là tầng 3', () => {
+    const g = ctl();
+    render(<AiFab {...base} geo={g} />);
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw-hidden'));
+    expect(g.toggleHidden).toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('ai-fab-draw-export'));
+    expect(g.exportTikz).toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('ai-fab-draw-view3d'));
+    expect(g.open3D).toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw-measure'));
+    expect(tier()).toBe('draw/measure');
+    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-dist', 'ai-fab-draw-angle']);
+    fireEvent.click(screen.getByTestId('ai-fab-draw-angle'));
+    expect(g.setTool).toHaveBeenCalledWith('angle');
+    fireEvent.click(screen.getByTestId('ai-fab-back'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw-edit'));
+    expect(ids()).toEqual(expect.arrayContaining(['ai-fab-draw-undo', 'ai-fab-draw-redo', 'ai-fab-draw-remove']));
+    fireEvent.click(screen.getByTestId('ai-fab-back'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw-parts'));
+    expect(ids()).toContain('ai-fab-draw-req');
+  });
+
+  it('có vùng khoanh chưa thành hình: bấm Vẽ hình chạy ngay rồi mở tầng 2', () => {
+    const onDrawSelected = vi.fn();
+    render(<AiFab {...base} selectionCount={3} onDrawSelected={onDrawSelected} />);
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw'));
+    expect(onDrawSelected).toHaveBeenCalledTimes(1);
+    expect(tier()).toBe('draw');
   });
 });

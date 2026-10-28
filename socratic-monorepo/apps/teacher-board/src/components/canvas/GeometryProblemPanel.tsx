@@ -3,9 +3,9 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Eraser, Redo2, Undo2, X} from 'lucide-react';
 import {buildScene, type GeoScene} from '../../utils/geometryProblem';
-import {addFoot, addMidpoint, addPointOnSegment, addRequirement, addSection, addSegment, visibleNames} from '../../utils/geoTools';
+import {addFoot, addMidpoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, toTikz, visibleNames} from '../../utils/geoTools';
 
-export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section';
+export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'dist' | 'angle';
 
 export interface GeoPickConfig {
   pickMode: 'point' | 'edge' | null;
@@ -22,6 +22,13 @@ export interface GeoController {
   picks: string[];
   canUndo: boolean;
   canRedo: boolean;
+  /** đang ẩn hẳn nét khuất (mặc định nét đứt chuẩn SGK) */
+  hideHidden: boolean;
+  toggleHidden: () => void;
+  /** chép mã TikZ của hình (nét đứt đúng chuẩn) vào bộ nhớ tạm */
+  exportTikz: () => void;
+  /** mở mô phỏng 3D xoay/cắt/khai triển của khối này */
+  open3D: () => void;
   setTool: (t: GeoTool | null) => void;
   next: () => void;
   prev: () => void;
@@ -43,6 +50,7 @@ interface Props {
   onDeleteFigure?: () => void;
   onPickConfig?: (cfg: GeoPickConfig | null) => void;
   onController?: (c: GeoController | null) => void;
+  onOpen3D?: (scene: GeoScene) => void;
 }
 
 export const GEO_TOOLS: {id: GeoTool; label: string; need: number; hint: string}[] = [
@@ -53,9 +61,16 @@ export const GEO_TOOLS: {id: GeoTool; label: string; need: number; hint: string}
   {id: 'section', label: 'Thiết diện', need: 3, hint: 'Chạm 3 điểm xác định mặt phẳng cắt'},
 ];
 
+/** dụng cụ đo (tầng Đo của hub): không đổi hình, chỉ hiện kết quả */
+export const GEO_MEASURE: {id: GeoTool; label: string; need: number; hint: string}[] = [
+  {id: 'dist', label: 'Độ dài', need: 2, hint: 'Chạm 2 điểm để đo khoảng cách (đơn vị cạnh a)'},
+  {id: 'angle', label: 'Góc', need: 3, hint: 'Chạm 3 điểm, điểm giữa là đỉnh góc'},
+];
+const ALL_TOOLS = [...GEO_TOOLS, ...GEO_MEASURE];
+
 const SAMPLE = 'Cho hình chóp S.ABCD có đáy ABCD là hình vuông cạnh a, SA vuông góc với đáy, SA = a√2.\na) Gọi M là trung điểm SB.\nb) Gọi O = AC ∩ BD.\nc) Tìm thiết diện của hình chóp cắt bởi mặt phẳng (MOD).';
 
-export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initialText, onClose, onCreate, onApply, onDeleteFigure, onPickConfig, onController}) => {
+export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initialText, onClose, onCreate, onApply, onDeleteFigure, onPickConfig, onController, onOpen3D}) => {
   const [reqOpen, setReqOpen] = useState(false);
   // ---------------- chế độ MỚI: nhập đề
   const [text, setText] = useState(initialText ?? '');
@@ -68,6 +83,7 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
   const [tool, setTool] = useState<GeoTool | null>(null);
   const [picks, setPicks] = useState<string[]>([]);
   const [req, setReq] = useState('');
+  const [info, setInfo] = useState('');
   const cur = hist[at];
   const curRef = useRef(cur);
   curRef.current = cur;
@@ -95,6 +111,16 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
     if (!cur) return;
     const sc = cur.scene;
     let next = sc;
+    if (t === 'dist') {
+      setInfo(measureDistance(sc, names[0], names[1]));
+      setPicks([]);
+      return;
+    }
+    if (t === 'angle') {
+      setInfo(measureAngle(sc, names[0], names[1], names[2]));
+      setPicks([]);
+      return;
+    }
     if (t === 'segment') next = addSegment(sc, names[0], names[1], part);
     else if (t === 'midpoint') next = addMidpoint(sc, names[0], names[1], part).scene;
     else if (t === 'onEdge') next = addPointOnSegment(sc, names[0], names[1], edge?.t ?? 0.5, part).scene;
@@ -107,7 +133,7 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
   // đăng ký cấu hình chọn điểm với bảng
   useEffect(() => {
     if (mode !== 'edit' || !onPickConfig) return;
-    const spec = GEO_TOOLS.find((x) => x.id === tool);
+    const spec = ALL_TOOLS.find((x) => x.id === tool);
     if (!tool || !spec) {
       onPickConfig(null);
       return;
@@ -136,9 +162,22 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       picks,
       canUndo: at > 0,
       canRedo: at < hist.length - 1,
+      hideHidden: !!cur.scene.hideHidden,
+      toggleHidden: () => commit({...cur.scene, hideHidden: !cur.scene.hideHidden}, cur.upTo),
+      exportTikz: () => {
+        const code = toTikz(cur.scene, cur.upTo);
+        try {
+          void navigator.clipboard?.writeText(code);
+          setInfo('Đã chép mã TikZ vào bộ nhớ tạm, dán vào LaTeX để in đề');
+        } catch {
+          setInfo('Không chép được vào bộ nhớ tạm');
+        }
+      },
+      open3D: () => onOpen3D?.(cur.scene),
       setTool: (t) => {
         setTool(t);
         setPicks([]);
+        if (t) setInfo('');
       },
       next: () => stepTo(cur.upTo + 1),
       prev: () => stepTo(cur.upTo - 1),
@@ -214,12 +253,12 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
 
   if (!cur) return null;
   const sc = cur.scene;
-  const spec = GEO_TOOLS.find((x) => x.id === tool);
+  const spec = ALL_TOOLS.find((x) => x.id === tool);
   const names = visibleNames(sc, cur.upTo);
   return (
     <>
       {/* chip gợi ý nhỏ khi đang dùng dụng cụ; phần còn lại điều khiển qua AI hub */}
-      {(spec || reqOpen) && (
+      {(spec || reqOpen || info) && (
         <div data-testid="geo-chip" className="absolute left-1/2 -translate-x-1/2 top-14 z-40 pointer-events-auto flex items-center gap-2 rounded-full bg-white/97 border border-[#DCD9D0] shadow-md px-3 py-1.5 text-[12px] text-stone-800">
           {reqOpen ? (
             <>
@@ -253,8 +292,9 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
             </>
           ) : (
             <>
-              <span data-testid="geo-tool-hint">{`${spec!.label}: ${spec!.hint}${picks.length ? ` (đã chọn: ${picks.join(', ')})` : ''}`}</span>
-              <button data-testid="geo-tool-off" onClick={() => setTool(null)} className="text-stone-400 hover:text-stone-700" title="Thôi dùng dụng cụ">
+              {info && <b data-testid="geo-measure" className="text-blue-700">{info}</b>}
+              {spec && <span data-testid="geo-tool-hint">{`${spec.label}: ${spec.hint}${picks.length ? ` (đã chọn: ${picks.join(', ')})` : ''}`}</span>}
+              <button data-testid="geo-tool-off" onClick={() => { setTool(null); setInfo(''); }} className="text-stone-400 hover:text-stone-700" title="Thôi dùng dụng cụ">
                 <X className="w-4 h-4" />
               </button>
             </>

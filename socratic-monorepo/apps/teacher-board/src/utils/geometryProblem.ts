@@ -141,7 +141,7 @@ const pointsIn = (s: string): string[] => s.match(/[A-Z]'?/g) ?? [];
 const key2 = (a: string, b: string) => (a < b ? `${a}${b}` : `${b}${a}`);
 
 // ------------------------------------------------------------------ hình đáy (hệ tọa độ phẳng, y hướng lên)
-type BaseKind = 'tri' | 'tri_right' | 'tri_iso' | 'tri_eq' | 'square' | 'rect' | 'para' | 'rhombus' | 'trap' | 'trap_right' | 'trap_iso';
+type BaseKind = 'tri' | 'tri_obtuse' | 'tri_right' | 'tri_iso' | 'tri_eq' | 'square' | 'rect' | 'para' | 'rhombus' | 'trap' | 'trap_right' | 'trap_iso';
 interface BaseDesc {
   kind: BaseKind;
   at?: string;
@@ -215,6 +215,12 @@ function baseCoords(desc: BaseDesc, names: string[], L: (a: string, b: string) =
       out[b1] = [-base / 2, 0];
       out[b2] = [base / 2, 0];
       out[apex] = [0, h];
+      return out;
+    }
+    if (desc.kind === 'tri_obtuse') {
+      out[A] = [0, 0];
+      out[B] = [2, 0];
+      out[C] = [-0.6, 0.85];
       return out;
     }
     const ab = L(A, B);
@@ -496,12 +502,14 @@ function buildFigure(text: string, notes: string[]): Model | null {
 
   // ---- tam giác / tứ giác phẳng
   const quad = /(hình vuông|hình chữ nhật|hình bình hành|hình thoi|hình thang(?: vuông| cân)?)\s*([A-Z]{4})/.exec(text);
-  const tri = /tam giác\s*([A-Z]{3})(?![A-Z])/.exec(text);
+  const tri = /tam giác\s*(?:nhọn|tù|thường|bất kỳ)?\s*([A-Z]{3})(?![A-Z])/.exec(text);
   if (quad || tri) {
     const names = pointsIn(quad ? quad[2] : tri![1]);
     const desc: BaseDesc = quad
       ? {kind: ({'hình vuông': 'square', 'hình chữ nhật': 'rect', 'hình bình hành': 'para', 'hình thoi': 'rhombus', 'hình thang': 'trap', 'hình thang vuông': 'trap_right', 'hình thang cân': 'trap_iso'} as Record<string, BaseKind>)[quad[1]]}
-      : describeBase(text, names);
+      : /tam giác\s*tù/.test(text)
+        ? {kind: 'tri_obtuse'}
+        : describeBase(text, names);
     const c = baseCoords(desc, names, L, T.all, T.angle);
     const m = model(quad ? `${quad[1][0].toUpperCase()}${quad[1].slice(1)} ${names.join('')}` : `Tam giác ${names.join('')}`, 2);
     names.forEach((n) => put(m, n, [c[n][0], c[n][1], 0]));
@@ -852,6 +860,8 @@ export interface GeoScene {
   view: {k: number; bx: number; by: number};
   notes: string[];
   ignored: string[];
+  /** ẩn hẳn nét khuất (mặc định vẽ nét đứt theo chuẩn SGK) */
+  hideHidden?: boolean;
 }
 
 const toScene = (m: Model, parts: GeoScene['parts']): GeoScene => ({
@@ -944,12 +954,14 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
       const adj = m.faces.map((f, i) => ({f, i})).filter(({f}) => f.includes(a) && f.includes(b));
       hidden = adj.length > 0 && !adj.some(({i}) => faceVisible[i]);
     }
+    if (hidden && sc.hideHidden) continue;
     edges.push({a: idx.get(a)!, b: idx.get(b)!, hidden, aux: false});
   }
   m.aux.forEach(([a, b], i) => {
     if ((m.auxPart[i] ?? 0) > upTo || !idx.has(a) || !idx.has(b)) return;
     let hidden = false;
     if (m.faces.length > 0) hidden = !onFace(mul(add(m.pts.get(a)!, m.pts.get(b)!), 0.5)).some((f) => faceVisible[f]);
+    if (hidden && sc.hideHidden) return;
     edges.push({a: idx.get(a)!, b: idx.get(b)!, hidden, aux: true});
   });
 

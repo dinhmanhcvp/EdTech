@@ -2436,7 +2436,64 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     [strokes],
   );
 
-  const handleVisualize = async (overrideHint?: string, geoOnly = false) => {
+  /**
+   * Chức năng Vẽ hình: chạy ngay theo loại vùng khoanh.
+   * 1) chữ đã có (gõ, công thức, AI đã đọc): tên hình (S.ABCD, tam giác nhọn ABC) hoặc cả đề → dựng hình từng phần
+   * 2) nét vẽ tay: hình hộp/lập phương/chóp/lăng trụ hoặc đa giác phẳng → nắn thành hình tại chỗ
+   * 3) chưa có gì: chờ AI đọc chữ viết tay rồi thử lại bước 1
+   */
+  const handleDrawSelection = async () => {
+    if (selectedStrokes.length === 0) return;
+    setIsLoading(true);
+    setErrorMessage(null);
+    const typesetHint = selectedStrokes
+      .filter((s) => s.typeset)
+      .map((s) => (s.id.startsWith('text-') ? s.typeset!.text : s.typeset!.latex))
+      .join('\n');
+    const ink = sourceStrokes(selectedStrokes);
+    const fromText = (ai: ConvertResult | null) => {
+      const sources = [formulaInput, ai ? ai.lines.map((l) => l.text).join('\n') : '', ai ? ai.lines.map((l) => l.latex).join('\n') : '', typesetHint, instantResult ? instantResult.lines.map((l) => l.latex).join('\n') : ''].filter((x) => x && x.trim());
+      for (const src of sources) {
+        const r = parseGeometryProblem(src);
+        if (r.scene) return { scene: r.scene, src };
+      }
+      return null;
+    };
+    const place = (hit: { scene: GeoScene; src: string }) => {
+      const bb = bboxOfStrokes(selectedStrokes);
+      insertGeoFigure(hit.scene, hit.scene.parts.length > 1 ? 0 : hit.scene.parts.length - 1, hit.src, { x: Math.min(820, bb.x1 + 50), y: Math.max(20, bb.y0) });
+      setFormulaInput('');
+      setIsLoading(false);
+    };
+    let hit = fromText(aiVisionResult);
+    if (hit) return place(hit);
+    // nét vẽ tay: khối trước (phân biệt hộp chữ nhật / lập phương theo tỉ lệ cạnh), rồi đa giác phẳng
+    if (!typesetHint && ink.length >= 4) {
+      const sk = detectSolidFromStrokes(ink);
+      if (sk && sk.confidence >= 0.7) {
+        transformStrokesToGeometryInPlace(ink, makeSolidBlueprint(sk.kind, sk.dims, sk.wire));
+        return;
+      }
+    }
+    if (!typesetHint && ink.length >= 1 && ink.length <= 4) {
+      const pl = detectPlaneShapeFromStrokes(ink);
+      if (pl && pl.confidence >= 0.78) {
+        transformStrokesToGeometryInPlace(ink, makePlaneGeometryBlueprint(pl));
+        return;
+      }
+    }
+    // có thể là chữ viết tay: chờ AI đọc (tối đa 9 giây) rồi thử lại
+    let ai: ConvertResult | null = null;
+    if (visionPendingRef.current && visionPromiseRef.current) {
+      ai = await Promise.race([visionPromiseRef.current, new Promise<null>((r) => setTimeout(() => r(null), 9000))]);
+    }
+    hit = fromText(ai && ai.lines.length > 0 ? ai : aiVisionResult);
+    if (hit) return place(hit);
+    setIsLoading(false);
+    flashError('Chưa nhận ra hình trong vùng khoanh. Khoanh trọn nét vẽ hình, tên hình kèm đỉnh (VD: S.ABCD) hoặc cả đề bài; nếu AI đọc sai chữ thì bấm Sửa chữ.');
+  };
+
+  const handleVisualize = async (overrideHint?: string) => {
     if (selectedStrokes.length === 0 && !overrideHint) return;
     setIsLoading(true);
     setErrorMessage(null);
@@ -2494,11 +2551,6 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         insertGeoFigure(gp.scene, gp.scene.parts.length > 1 ? 0 : gp.scene.parts.length - 1, gpSource, at);
         setFormulaInput('');
         setIsLoading(false);
-        return;
-      }
-      if (geoOnly) {
-        setIsLoading(false);
-        flashError('Chưa đọc ra đề bài hình học trong vùng khoanh. Khoanh trọn đề (kèm tên đỉnh), hoặc bấm Sửa chữ để chỉnh lại rồi vẽ lại.');
         return;
       }
     }
@@ -3153,6 +3205,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               }}
               onPickConfig={setGeoPickCfg}
               onController={setGeoCtl}
+              onOpen3D={(sc) => {
+                const bp = matchInstantStemBlueprint(`${sc.title} ${sc.parts[0]?.text ?? ''}`) ?? matchInstantStemBlueprint(sc.title);
+                if (bp) setActiveBlueprint(bp);
+                else flashError('Hình này chưa có mô phỏng 3D riêng.');
+              }}
             />
           )}
 
@@ -3538,7 +3595,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         geo={geoPanel?.mode === 'edit' && geoStroke ? geoCtl : null}
         onGeoNew={() => setGeoPanel({ mode: 'new' })}
         openAtPath={hubOpenAt}
-        onDrawSelected={() => handleVisualize(undefined, true)}
+        onDrawSelected={() => void handleDrawSelection()}
         onDuplicate={duplicateSelection}
         onDelete={handleDeleteSelection}
         onDeselect={() => {

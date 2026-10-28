@@ -45,10 +45,14 @@ import {
   CornerDownRight,
   Scissors,
   Copy,
+  Compass,
+  Eye,
+  EyeOff,
+  Box,
 } from 'lucide-react';
 import type {CanvasTool, ShapeType, GridPattern} from './SmartboardCanvas';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
-import { GEO_TOOLS, type GeoController, type GeoTool } from './GeometryProblemPanel';
+import { GEO_TOOLS, GEO_MEASURE, type GeoController, type GeoTool } from './GeometryProblemPanel';
 
 export interface DockScene {
   id: string;
@@ -391,6 +395,8 @@ const GEO_TOOL_ICONS: Record<GeoTool, React.ReactNode> = {
   onEdge: <MapPin className="w-4 h-4" />,
   foot: <CornerDownRight className="w-4 h-4" />,
   section: <Scissors className="w-4 h-4" />,
+  dist: <Ruler className="w-4 h-4" />,
+  angle: <Compass className="w-4 h-4" />,
 };
 
 /**
@@ -624,7 +630,11 @@ export const AiFab: React.FC<AiFabProps> = ({
       label: 'Vẽ hình',
       hint: 'Vẽ hình hình học từ đề bài, vẽ từng phần và vẽ thêm trên hình',
       icon: <PenTool className="w-4 h-4" />,
-      run: () => setPath(['draw']),
+      // bấm là chạy ngay theo loại vùng khoanh (nét vẽ tay, tên hình, cả đề), rồi mở tầng 2 gồm các công cụ chuyên sâu
+      run: () => {
+        if (selectionCount > 0 && !geo) onDrawSelected?.();
+        setPath(['draw']);
+      },
       keep: true,
       tone: 'text-emerald-600',
       activeTone: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-300 font-bold',
@@ -690,18 +700,19 @@ export const AiFab: React.FC<AiFabProps> = ({
       back,
       ...(geo
         ? [
-            sub('tools', 'Dụng cụ', 'Đoạn nối, trung điểm, điểm trên cạnh, chân vuông góc, thiết diện', <Ruler className="w-4 h-4" />, () => setPath(['draw', 'tools']), {keep: true, highlight: !!geo.tool}),
-            sub('parts', `Phần ${geo.upTo + 1}/${geo.parts}`, 'Hiện thêm hoặc ẩn bớt từng phần của đề', <ChevronRight className="w-4 h-4" />, () => setPath(['draw', 'parts']), {keep: true}),
-            sub('req', 'Yêu cầu', 'Thêm yêu cầu bằng lời, VD: Gọi N là trung điểm SC', <Plus className="w-4 h-4" />, () => geo.openRequirement()),
-            sub('undo', 'Hoàn tác', 'Quay lại bước vẽ trước', <Undo2 className="w-4 h-4" />, () => geo.undo(), {keep: true, disabled: !geo.canUndo}),
-            sub('redo', 'Làm lại', 'Làm lại bước vừa hoàn tác', <Redo2 className="w-4 h-4" />, () => geo.redo(), {keep: true, disabled: !geo.canRedo}),
-            sub('remove', 'Xóa hình', 'Xóa hình đang chọn khỏi bảng', <Trash2 className="w-4 h-4" />, () => geo.remove(), {tone: 'text-rose-600'}),
+            sub('tools', 'Dựng', 'Đoạn nối, trung điểm, điểm trên cạnh, chân vuông góc, thiết diện', <Ruler className="w-4 h-4" />, () => setPath(['draw', 'tools']), {keep: true, highlight: GEO_TOOLS.some((t) => t.id === geo.tool)}),
+            sub('measure', 'Đo', 'Đo độ dài đoạn thẳng và số đo góc ngay trên hình', <Compass className="w-4 h-4" />, () => setPath(['draw', 'measure']), {keep: true, highlight: GEO_MEASURE.some((t) => t.id === geo.tool)}),
+            sub('parts', `Phần ${geo.upTo + 1}/${geo.parts}`, 'Hiện thêm hoặc ẩn bớt từng phần của đề, thêm yêu cầu', <ChevronRight className="w-4 h-4" />, () => setPath(['draw', 'parts']), {keep: true}),
+            sub('hidden', geo.hideHidden ? 'Hiện nét đứt' : 'Ẩn nét khuất', 'Đổi giữa nét đứt chuẩn SGK cho cạnh bị che và ẩn hẳn các cạnh đó', geo.hideHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />, () => geo.toggleHidden(), {keep: true, highlight: geo.hideHidden}),
+            sub('view3d', 'Xem 3D', 'Mở mô phỏng 3D của khối: xoay, cắt thiết diện, khai triển', <Box className="w-4 h-4" />, () => geo.open3D()),
+            sub('export', 'Xuất TikZ', 'Chép mã TikZ của hình (nét đứt đúng chuẩn) để dán vào LaTeX', <Download className="w-4 h-4" />, () => geo.exportTikz(), {keep: true}),
+            sub('edit', 'Chỉnh sửa', 'Hoàn tác, làm lại, xóa hình', <PenLine className="w-4 h-4" />, () => setPath(['draw', 'edit']), {keep: true}),
           ]
         : [
             sub(
               'new',
               selectionCount > 0 ? 'Vẽ từ vùng' : 'Khoanh đề',
-              selectionCount > 0 ? 'Dựng hình từ đề bài đang khoanh (chữ viết tay hoặc gõ, có ký hiệu ⊥ ∥ ∩ ≡)' : 'Khoanh quanh đề bài đã viết rồi chọn lại Vẽ hình',
+              selectionCount > 0 ? 'Dựng hình từ vùng đang khoanh: nét vẽ tay, tên hình (S.ABCD…) hoặc cả đề bài' : 'Khoanh quanh nét vẽ, tên hình hoặc đề bài rồi chọn lại Vẽ hình',
               <Lasso className="w-4 h-4" />,
               () => (selectionCount > 0 ? onDrawSelected?.() : onLasso()),
             ),
@@ -715,11 +726,26 @@ export const AiFab: React.FC<AiFabProps> = ({
         sub(t.id, t.label, t.hint, GEO_TOOL_ICONS[t.id], () => geo.setTool(geo.tool === t.id ? null : t.id), {highlight: geo.tool === t.id}),
       ),
     ];
+  } else if (tierKey === 'draw/measure' && geo) {
+    items = [
+      back,
+      ...GEO_MEASURE.map((t) =>
+        sub(t.id, t.label, t.hint, GEO_TOOL_ICONS[t.id], () => geo.setTool(geo.tool === t.id ? null : t.id), {highlight: geo.tool === t.id}),
+      ),
+    ];
   } else if (tierKey === 'draw/parts' && geo) {
     items = [
       back,
       sub('prev', 'Ẩn phần cuối', 'Bớt phần vừa vẽ', <ChevronLeft className="w-4 h-4" />, () => geo.prev(), {keep: true, disabled: geo.upTo <= 0}),
       sub('next', 'Vẽ phần tiếp', 'Hiện thêm phần tiếp theo của đề', <ChevronRight className="w-4 h-4" />, () => geo.next(), {keep: true, disabled: geo.upTo >= geo.parts - 1}),
+      sub('req', 'Yêu cầu', 'Thêm yêu cầu bằng lời, VD: Gọi N là trung điểm SC', <Plus className="w-4 h-4" />, () => geo.openRequirement()),
+    ];
+  } else if (tierKey === 'draw/edit' && geo) {
+    items = [
+      back,
+      sub('undo', 'Hoàn tác', 'Quay lại bước vẽ trước', <Undo2 className="w-4 h-4" />, () => geo.undo(), {keep: true, disabled: !geo.canUndo}),
+      sub('redo', 'Làm lại', 'Làm lại bước vừa hoàn tác', <Redo2 className="w-4 h-4" />, () => geo.redo(), {keep: true, disabled: !geo.canRedo}),
+      sub('remove', 'Xóa hình', 'Xóa hình đang chọn khỏi bảng', <Trash2 className="w-4 h-4" />, () => geo.remove(), {tone: 'text-rose-600'}),
     ];
   }
 

@@ -1,9 +1,10 @@
 'use client';
 
-import React, {useMemo, useRef} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import type {ShapeMeta, Stroke} from '../../utils/lassoGeometry';
 import {VERTEX_LABELS, planeStats, solidWire, triangleCenters, type P2} from '../../utils/inlineShape';
 import type {SolidKind} from '../../utils/localRouter';
+import {BUNDLES, KIND_COLOR, KIND_LABEL, addConstructs, arcPath, distToPolygon, evalConstructs, hasConstruct, polygonBundles, toggleConstruct, type ConstructKind, type PlaneConstruct} from '../../utils/planeConstruct';
 
 interface Props {
   stroke: Stroke;
@@ -45,6 +46,21 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
   const verts = s.plane?.verts ?? [];
   const stats = useMemo(() => (s.kind === 'plane' ? planeStats(verts) : null), [s.kind, verts]);
   const centers = s.plane?.euler && verts.length === 3 ? triangleCenters(verts) : null;
+  // dựng hình động: lưu theo loại + chỉ số đỉnh/cạnh nên tự cập nhật khi kéo đỉnh
+  const constructs = s.plane?.constructs;
+  const drawn = useMemo(() => (s.kind === 'plane' ? evalConstructs(verts, constructs) : null), [s.kind, verts, constructs]);
+  const [build, setBuild] = useState(false);
+  const [menu, setMenu] = useState<{kind: 'v' | 's'; i: number} | null>(null);
+  useEffect(() => {
+    if (!build) setMenu(null);
+  }, [build]);
+  const applyConstructs = (next: PlaneConstruct[]) => {
+    if (!s.plane) return;
+    onInteractStart();
+    onChange({...s, plane: {...s.plane, constructs: next}});
+  };
+  const polyCx = verts.length ? verts.reduce((a, b) => a + b.x, 0) / verts.length : 0;
+  const polyCy = verts.length ? verts.reduce((a, b) => a + b.y, 0) / verts.length : 0;
 
   const down = (kind: 'vertex' | 'rotate', i: number, e: React.PointerEvent<Element>) => {
     e.stopPropagation();
@@ -74,7 +90,10 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
     }
   };
   const up = () => {
+    const d = drag.current;
     drag.current = null;
+    // chạm nhẹ (không kéo) vào đỉnh khi đang ở chế độ dựng hình → hiện các phép dựng từ đỉnh đó
+    if (d && !d.started && d.kind === 'vertex' && build && s.kind === 'plane') setMenu({kind: 'v', i: d.i});
   };
 
   const sw = Math.max(2.2, stroke.width || 3);
@@ -125,6 +144,79 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
                   </g>
                 );
               })}
+              {drawn && (
+                <g data-testid="construct-draw" data-count={(constructs ?? []).length} style={{pointerEvents: 'none'}}>
+                  {drawn.circles.map((c, k) => (
+                    <circle key={`cc${k}`} data-testid="construct-circle" cx={c.c.x} cy={c.c.y} r={c.r} fill="none" stroke={c.color} strokeWidth={1.8} strokeDasharray={c.dashed ? '6 5' : undefined} />
+                  ))}
+                  {drawn.segs.map((g, k) => (
+                    <line key={`cs${k}`} data-testid="construct-seg" x1={g.a.x} y1={g.a.y} x2={g.b.x} y2={g.b.y} stroke={g.color} strokeWidth={g.thin ? 1.2 : 2.2} strokeLinecap="round" strokeDasharray={g.dashed ? '6 5' : undefined} />
+                  ))}
+                  {drawn.arcs.flatMap((a, k) =>
+                    Array.from({length: a.n}, (_, j) => <path key={`ca${k}-${j}`} d={arcPath(a.at, a.a1, a.a2, a.r + j * 4)} fill="none" stroke={a.color} strokeWidth={1.4} />),
+                  )}
+                  {drawn.rights.map((r, k) => (
+                    <path
+                      key={`cr${k}`}
+                      d={`M ${r.at.x + r.u.x * r.size} ${r.at.y + r.u.y * r.size} L ${r.at.x + (r.u.x + r.v.x) * r.size} ${r.at.y + (r.u.y + r.v.y) * r.size} L ${r.at.x + r.v.x * r.size} ${r.at.y + r.v.y * r.size}`}
+                      fill="none"
+                      stroke={r.color}
+                      strokeWidth={1.4}
+                    />
+                  ))}
+                  {drawn.ticks.flatMap((tk, k) =>
+                    Array.from({length: tk.n}, (_, j) => {
+                      const off = (j - (tk.n - 1) / 2) * 4;
+                      const cx = tk.at.x + tk.dir.x * off;
+                      const cy = tk.at.y + tk.dir.y * off;
+                      return <line key={`ct${k}-${j}`} x1={cx + tk.dir.y * 5} y1={cy - tk.dir.x * 5} x2={cx - tk.dir.y * 5} y2={cy + tk.dir.x * 5} stroke={tk.color} strokeWidth={1.6} strokeLinecap="round" />;
+                    }),
+                  )}
+                  {drawn.points.map((p, k) => {
+                    // nhãn điểm nằm TRÊN cạnh thì đặt phía trong (nhãn độ dài cạnh ở phía ngoài); điểm ở giữa hình thì đặt chếch lên phải
+                    const ox = p.x - polyCx;
+                    const oy = p.y - polyCy;
+                    const L = Math.hypot(ox, oy);
+                    const onEdge = distToPolygon(p, verts) < 3;
+                    const dirx = L < 9 ? 0.75 : onEdge ? -ox / L : ox / L;
+                    const diry = L < 9 ? -0.65 : onEdge ? -oy / L : oy / L;
+                    return (
+                      <g key={`cp${k}`} data-testid={p.minor ? undefined : 'construct-point'} data-label={p.label || undefined}>
+                        <circle cx={p.x} cy={p.y} r={p.minor ? 2.2 : 3.8} fill={p.color} />
+                        {p.label && (
+                          <text x={p.x + dirx * 13} y={p.y + diry * 13 + 5} fontSize={15} fontWeight={700} textAnchor="middle" fill={p.color} fontFamily="'Times New Roman', serif" fontStyle="italic">
+                            {p.label}
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
+                </g>
+              )}
+              {build && verts.map((p, i) => {
+                const q = verts[(i + 1) % verts.length];
+                const on = menu?.kind === 's' && menu.i === i;
+                return (
+                  <g key={`sd${i}`}>
+                    {on && <line x1={p.x} y1={p.y} x2={q.x} y2={q.y} stroke="#2563EB" strokeWidth={sw + 3} strokeLinecap="round" opacity={0.35} />}
+                    <line
+                      data-testid="side-hit"
+                      x1={p.x}
+                      y1={p.y}
+                      x2={q.x}
+                      y2={q.y}
+                      stroke="transparent"
+                      strokeWidth={22}
+                      style={{pointerEvents: 'auto', cursor: 'pointer', touchAction: 'none'}}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        setMenu({kind: 's', i});
+                      }}
+                    />
+                  </g>
+                );
+              })}
+              {build && menu?.kind === 'v' && verts[menu.i] && <circle cx={verts[menu.i].x} cy={verts[menu.i].y} r={17} fill="none" stroke="#2563EB" strokeWidth={2.4} opacity={0.6} />}
               {centers && (
                 <g data-testid="euler-overlay">
                   <circle cx={centers.O.x} cy={centers.O.y} r={centers.R} fill="none" stroke="#7C3AED" strokeWidth={1.2} strokeDasharray="5 4" opacity={0.7} />
@@ -319,6 +411,16 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
               Euler
             </button>
           )}
+          {s.kind === 'plane' && verts.length >= 3 && (
+            <button
+              data-testid="shape-build-toggle"
+              title="Dựng hình: chạm đỉnh hoặc cạnh để dựng trung tuyến, đường cao, phân giác, trung trực…"
+              onClick={() => setBuild((b) => !b)}
+              className={`px-1.5 py-0.5 hover:bg-blue-50 ${build ? 'text-blue-700 font-bold bg-blue-50' : 'text-stone-600'}`}
+            >
+              📐 Dựng hình
+            </button>
+          )}
           {s.geo && onOpenTools && (
             <button data-testid="shape-geo-tools" title="Mở dụng cụ vẽ thêm trên hình" onClick={onOpenTools} className="px-1.5 py-0.5 hover:bg-blue-50 text-blue-700 font-semibold">
               ✎ Dụng cụ
@@ -331,6 +433,69 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
             ✕
           </button>
         </div>
+        {s.kind === 'plane' && verts.length >= 3 && build && menu && verts[menu.i] && (() => {
+          const n = verts.length;
+          const anchor = menu.kind === 'v' ? verts[menu.i] : midOf(verts[menu.i], verts[(menu.i + 1) % n]);
+          const items: ConstructKind[] = menu.kind === 'v' ? (n === 3 ? ['median', 'altitude', 'bisector', 'midline', 'parallel'] : ['bisector', 'midline']) : ['midpoint', 'perpBisector'];
+          const title = menu.kind === 'v' ? `Đỉnh ${VERTEX_LABELS[menu.i]}` : `Cạnh ${VERTEX_LABELS[menu.i]}${VERTEX_LABELS[(menu.i + 1) % n]}`;
+          return (
+            <div
+              data-testid="construct-menu"
+              className="pointer-events-auto absolute z-20 flex flex-col gap-1 rounded-xl border border-[#DCD9D0] bg-white/95 p-1.5 shadow-lg"
+              style={{left: anchor.x * boardScale + 18, top: anchor.y * boardScale + 6, minWidth: 168, touchAction: 'manipulation'}}
+            >
+              <div className="px-1.5 text-[11px] font-semibold text-stone-500">{title}</div>
+              {items.map((k) => {
+                const on = hasConstruct(constructs, {k, i: menu.i});
+                return (
+                  <button
+                    key={k}
+                    data-testid={`construct-${k}`}
+                    data-on={on}
+                    onClick={() => applyConstructs(toggleConstruct(constructs, {k, i: menu.i}))}
+                    className={`rounded-lg px-3 py-2 text-left text-[13px] font-semibold transition ${on ? 'text-white' : 'bg-stone-50 text-stone-800 hover:bg-stone-100'}`}
+                    style={on ? {background: KIND_COLOR[k]} : undefined}
+                  >
+                    {on ? '✓ ' : ''}
+                    {KIND_LABEL[k]}
+                  </button>
+                );
+              })}
+              <button data-testid="construct-menu-close" onClick={() => setMenu(null)} className="rounded-lg px-3 py-1.5 text-center text-[12px] text-stone-500 hover:bg-stone-100">
+                Xong
+              </button>
+            </div>
+          );
+        })()}
+        {s.kind === 'plane' && verts.length >= 3 && (build || (drawn && drawn.facts.length > 0)) && (
+          <div className="absolute left-0 flex flex-col gap-1" style={{top: h * boardScale + 30, width: Math.max(w * boardScale, 380)}}>
+            {build && (
+              <div data-testid="construct-palette" className="pointer-events-auto flex flex-wrap gap-1" style={{touchAction: 'manipulation'}}>
+                {(verts.length === 3 ? BUNDLES : polygonBundles(verts.length)).map((b) => (
+                  <button
+                    key={b.id}
+                    data-testid={`bundle-${b.id}`}
+                    onClick={() => applyConstructs(addConstructs(constructs, b.items))}
+                    className="rounded-lg border border-[#DCD9D0] bg-white/95 px-2.5 py-1.5 text-[12px] font-semibold text-stone-800 shadow-sm hover:bg-blue-50"
+                  >
+                    {b.label}
+                  </button>
+                ))}
+                <button data-testid="construct-clear" onClick={() => applyConstructs([])} className="rounded-lg border border-rose-200 bg-white/95 px-2.5 py-1.5 text-[12px] font-semibold text-rose-600 shadow-sm hover:bg-rose-50">
+                  Xóa dựng
+                </button>
+              </div>
+            )}
+            {build && !menu && <div className="pointer-events-none text-[11px] text-stone-500">Chạm vào một đỉnh hoặc một cạnh để dựng; kéo đỉnh để xem các đường dựng thay đổi.</div>}
+            {drawn && drawn.facts.length > 0 && (
+              <div data-testid="construct-facts" className="pointer-events-none rounded-md bg-white/85 px-2 py-1 font-mono text-[11px] leading-snug text-slate-700">
+                {drawn.facts.slice(-6).map((f, k) => (
+                  <div key={k}>{f}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {s.kind === 'plane' && (
           <div className="absolute left-0 text-[10px] font-mono text-stone-500 pointer-events-none" style={{top: h * boardScale + 6, whiteSpace: 'nowrap'}} data-testid="shape-area">
             {stats && `S = ${fmt(stats.area)} đvdt · ${verts.length === 3 ? 'tam giác' : `${verts.length} cạnh`} · kéo đỉnh để biến đổi`}

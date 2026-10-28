@@ -7,6 +7,7 @@ import { routeLocally, matchStemModel, makeSolidBlueprint, makePlaneGeometryBlue
 import { detectSolidFromStrokes, detectPlaneShapeFromStrokes, type SketchWireGraph } from '../../utils/sketchSolid';
 import { buildSketchWire } from '../../utils/sketchWire';
 import { shapeFromBlueprint, solidWire, planeStats, VERTEX_LABELS } from '../../utils/inlineShape';
+import { drawConstructsOnCtx, evalConstructs } from '../../utils/planeConstruct';
 import { type BoardView, FIT_VIEW, clampView, zoomAt, panBy, bufferQuality } from '../../utils/boardView';
 import { BoardViewControls } from './BoardViewControls';
 import { looksLikeWords, matchViName } from '../../utils/viKeywords';
@@ -1914,6 +1915,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       ctx.closePath();
       ctx.stroke();
       sh.plane.verts.forEach((p, i) => ctx.fillText(VERTEX_LABELS[i], ox + p.x + 6, oy + p.y - 6));
+      drawConstructsOnCtx(ctx, evalConstructs(sh.plane.verts, sh.plane.constructs), ox, oy);
     } else if (sh.kind === 'solid' && sh.sketch) {
       const sk = sh.sketch;
       for (const e of sk.edges) {

@@ -31,7 +31,7 @@ export interface TypesetMeta {
 export interface ShapeMeta {
   kind: 'plane' | 'solid';
   title: string;
-  plane?: {verts: {x: number; y: number}[]; euler: boolean};
+  plane?: {verts: {x: number; y: number}[]; euler: boolean; /** các phép dựng động (trung tuyến, phân giác…) lưu theo loại + chỉ số, không lưu tọa độ */ constructs?: import('./planeConstruct').PlaneConstruct[]};
   solid?: {kind: string; dims: Record<string, number | undefined>; yaw: number; pitch: number};
   /**
    * Hình khối giữ nguyên theo nét người vẽ (đã nắn thẳng, nối đỉnh), tọa độ tương đối với neo.

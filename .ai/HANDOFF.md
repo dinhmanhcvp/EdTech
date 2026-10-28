@@ -51,6 +51,11 @@
 - CHƯA làm: 3 engine canvas (`BioSystemEngine`, `ChemistryLabEngine`, `PhysicsSandboxEngine`) — thời gian nằm trong vòng vẽ nên cần tách mô hình thời gian trước khi hỗ trợ giảm chuyển động; `AdvancedStemEngines` (Oxyz, tinh thể, CFT, SN2, cyclohexane, Lotka–Volterra, tín hiệu) đã có gradient sẵn nên giữ nguyên.
 - Chưa đo fps trên máy yếu. `proRenderer.ts` (canvas) vẫn chưa engine nào dùng.
 
+# 3c. Dựng hình động trên hình phẳng (28/10/2026)
+- `utils/planeConstruct.ts` (thuần tính toán): trung điểm, trung tuyến, đường cao, phân giác, trung trực, đường trung bình, song song, đường chéo, nối trung điểm (Varignon), các tâm G/H/I/O, đường tròn ngoại/nội tiếp/9 điểm. Lưu theo loại + chỉ số (`ShapeMeta.plane.constructs`), không lưu tọa độ nên kéo đỉnh là cập nhật theo; kèm nhận xét đo trực tiếp (AG:GM = 2, DB/DC = AB/AC…).
+- `InlineShape.tsx`: nút "📐 Dựng hình" → chạm đỉnh/cạnh hiện menu phép dựng; gói nhanh G/H/I/O/9 điểm; tam giác tù có đoạn kéo dài nét đứt. Xuất ảnh vẽ qua `drawConstructsOnCtx` (SmartboardCanvas.drawShapeOnCtx).
+- CHƯA làm: hình dựng từ ĐỀ BÀI (`GeoScene`, `sketch.fixed`) vẫn dùng bộ dụng cụ chạm-điểm cũ (đoạn nối, trung điểm, chân vuông góc, thiết diện), chưa có phân giác/trung trực động; đường tròn bàng tiếp, tiếp tuyến, dựng tự do (qua điểm bất kỳ) chưa có. `utils/planeConstraints.ts` (chưa theo dõi, chưa ai dùng) không đụng tới.
+
 # 4. Chỉ thị cho Agent tiếp theo (Immediate Next Steps)
 1. **Kiểm tra trạng thái ban đầu:**
    - Chạy lệnh `git status -s` để xác nhận nhánh `main` sạch sẽ và đồng bộ với remote.

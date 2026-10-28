@@ -144,3 +144,12 @@ function contextHeaders(): Record<string, string> {
   const token = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_STUDENT_CONTEXT_TOKEN : undefined;
   return token ? {Authorization: `Bearer ${token}`} : {};
 }
+
+/** Máy chủ trả mốc cập nhật dạng giây Unix ("1793165802.45"); hiển thị giờ Việt Nam thay vì số thô. */
+export function formatUpdatedAt(raw: string | number): string {
+  const text = String(raw);
+  if (!/^\d{9,11}(\.\d+)?$/.test(text)) return text;
+  const d = new Date(Number(text) * 1000);
+  const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' });
+  return `Hôm nay · ${time}`;
+}

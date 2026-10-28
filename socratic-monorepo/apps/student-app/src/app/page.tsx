@@ -82,7 +82,7 @@ export default function StudentAppPage() {
             </span>
             <span className="text-stone-400 text-xs font-mono">/</span>
             <span className="font-display text-lg text-stone-800">After-School</span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-semibold hidden md:inline-flex items-center gap-1">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-semibold hidden xl:inline-flex whitespace-nowrap items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-600" />
               Tính năng 2: Gia Sư AI & Tự Học Sau Giờ Học
             </span>

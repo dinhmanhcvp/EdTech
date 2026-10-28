@@ -1,7 +1,7 @@
 // apps/student-app/src/__tests__/student-companion.test.tsx
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MathNumpad } from '../components/companion/MathNumpad';
 import {
   ChemicalBalanceScale,
@@ -517,6 +517,31 @@ describe('Student Socratic Companion & Dashboards (Phase 4)', () => {
     expect(screen.getByTestId('balance-scale-wrapper')).toBeTruthy();
     expect(screen.getAllByTestId('chemical-balance-scale').length).toBeGreaterThanOrEqual(1);
   });
+
+  it('balance scale +/- buttons change the atom counts and reach the balanced state', () => {
+    render(<SocraticCompanionSession />);
+    fireEvent.click(screen.getByTestId('problem-tab-chemistry'));
+    fireEvent.click(screen.getByTestId('director-wrong-btn'));
+    const wrapper = () => screen.getByTestId('balance-scale-wrapper');
+    const scale = () => within(wrapper()).getByTestId('chemical-balance-scale');
+    expect(scale().textContent).toContain('2 Oxi (O)');
+    expect(scale().textContent).toContain('3 Oxi (O)');
+    // vế trái +2 hai lần = 6, vế phải +3 một lần = 6
+    fireEvent.click(within(wrapper()).getByTestId('adjust-left-plus'));
+    fireEvent.click(within(wrapper()).getByTestId('adjust-left-plus'));
+    fireEvent.click(within(wrapper()).getByTestId('adjust-right-plus'));
+    expect(scale().textContent).toContain('Cân bằng hoàn hảo');
+    expect(within(wrapper()).getByTestId('apply-balanced-btn')).toBeTruthy();
+    // không âm khi bấm trừ quá tay
+    for (let i = 0; i < 6; i++) fireEvent.click(within(wrapper()).getByTestId('adjust-left-minus'));
+    expect(scale().textContent).toContain('0 Oxi (O)');
+  });
 });
 
-
+describe('formatUpdatedAt', () => {
+  it('đổi giây Unix thành giờ dễ đọc và giữ nguyên chuỗi đã định dạng', async () => {
+    const { formatUpdatedAt } = await import('../utils/classroomContext');
+    expect(formatUpdatedAt('1793165802.4520407')).toMatch(/^Hôm nay · \d{2}:\d{2}$/);
+    expect(formatUpdatedAt('Hôm nay · 10:42')).toBe('Hôm nay · 10:42');
+  });
+});

@@ -59,6 +59,10 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
   const [isFrictionMissing, setIsFrictionMissing] = useState<boolean>(false);
   const [serverVisualDebugger, setServerVisualDebugger] = useState<any>(null);
   const [serverFeedback, setServerFeedback] = useState<string | null>(null);
+  const [balanceAdj, setBalanceAdj] = useState<{ left: number; right: number }>({ left: 0, right: 0 });
+  useEffect(() => {
+    setBalanceAdj({ left: 0, right: 0 });
+  }, [serverVisualDebugger, selectedProblemId]);
   const [isSessionCompleted, setIsSessionCompleted] = useState<boolean>(false);
 
   // Socratic Chat & Red-team Attack Testing State
@@ -594,12 +598,12 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
                 {(serverVisualDebugger?.widget_type === 'CHEMICAL_BALANCE_SCALE' || (activeProblem.subject === 'CHEMISTRY' && currentStep === 4)) && (
                   <div data-testid="balance-scale-wrapper">
                     <ChemicalBalanceScale
-                      leftAtomsCount={serverVisualDebugger?.payload?.left_atoms?.O ?? 2}
-                      rightAtomsCount={serverVisualDebugger?.payload?.right_atoms?.O ?? 3}
+                      leftAtomsCount={Math.max(0, (serverVisualDebugger?.payload?.left_atoms?.O ?? 2) + balanceAdj.left)}
+                      rightAtomsCount={Math.max(0, (serverVisualDebugger?.payload?.right_atoms?.O ?? 3) + balanceAdj.right)}
                       elementName="Oxi (O)"
                       feedbackText={serverFeedback || "Vế phải đang có 3 Oxi, vế trái chỉ có 2. Hãy tìm BCNN là 6!"}
-                      onAdjustLeft={() => {}}
-                      onAdjustRight={() => {}}
+                      onAdjustLeft={(d) => setBalanceAdj((a) => ({ ...a, left: a.left + d }))}
+                      onAdjustRight={(d) => setBalanceAdj((a) => ({ ...a, right: a.right + d }))}
                       onApplyBalanced={() => setFormulaInput('4Fe + 3O₂ → 2Fe₂O₃')}
                     />
                   </div>

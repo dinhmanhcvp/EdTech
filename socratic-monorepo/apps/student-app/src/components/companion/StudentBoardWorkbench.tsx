@@ -4,7 +4,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Activity, BookOpen, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Eraser, FileText, Gauge, GitBranch, Layers, Pencil, RefreshCw, ShieldAlert, SlidersHorizontal, Sparkles, Target, UserRound, Users, X} from 'lucide-react';
 import {MathView} from '../common/MathView';
 import {ChemicalBalanceScale} from './VisualDebugWidgets';
-import {fetchClassroomSessionContext, fetchStudentRoadmap, getClassroomContextFallback, readClassroomSessionSnapshot, recordStudentError, recordStudentEvent, saveStudentProfile, type ClassroomSessionSnapshot, type ClassroomBoardSnapshot, type ClassroomStudentWork} from '../../utils/classroomContext';
+import {formatUpdatedAt, fetchClassroomSessionContext, fetchStudentRoadmap, getClassroomContextFallback, readClassroomSessionSnapshot, recordStudentError, recordStudentEvent, saveStudentProfile, type ClassroomSessionSnapshot, type ClassroomBoardSnapshot, type ClassroomStudentWork} from '../../utils/classroomContext';
 
 type ProfileId = 'FOUNDATION' | 'TRAP_HUNTER' | 'OLYMPIAD' | 'VISUAL';
 type Pane = 'VISUAL' | 'BOARD' | 'AUDIT' | 'SCRATCH';
@@ -92,7 +92,7 @@ export const StudentBoardWorkbench: React.FC = () => {
       <div className="px-5 py-4 bg-[#FCFBF9] border-b border-[#E6E4DD] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-stone-900 text-white flex items-center justify-center"><Layers className="w-4 h-4" /></div>
-          <div><div className="flex items-center gap-2"><h2 className="text-sm font-semibold">Ngữ cảnh tiết học hôm nay</h2><span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">Read-only bridge</span></div><p className="text-[11px] text-stone-500">{snapshot.className} · {snapshot.lessonTitle} · cập nhật {snapshot.updatedAt}</p></div>
+          <div><div className="flex items-center gap-2"><h2 className="text-sm font-semibold">Ngữ cảnh tiết học hôm nay</h2><span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">Read-only bridge</span></div><p className="text-[11px] text-stone-500">{snapshot.className} · {snapshot.lessonTitle} · cập nhật {formatUpdatedAt(snapshot.updatedAt)}</p></div>
         </div>
         <div className="flex items-center gap-2"><span className={`text-[10px] font-mono px-2 py-1 rounded-full border ${bridgeStatus === 'online' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : bridgeStatus === 'loading' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-stone-100 text-stone-600 border-stone-200'}`}>{bridgeStatus === 'online' ? 'Context API online' : bridgeStatus === 'loading' ? 'Đang đồng bộ' : 'Offline fallback'}</span><button type="button" onClick={() => setIsExpanded((open) => !open)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-stone-900 text-white text-xs font-semibold">{isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />} {isExpanded ? 'Thu gọn' : 'Mở ngữ cảnh'}</button></div>
       </div>

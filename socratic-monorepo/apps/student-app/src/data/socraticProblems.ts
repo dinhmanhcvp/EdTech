@@ -71,7 +71,7 @@ export const SOCRATIC_PROBLEMS: SocraticProblem[] = [
     subtitle: 'Khảo sát gia tốc a và điều kiện trượt trên dốc nghiêng góc α có hệ số ma sát μ',
     difficultyBadge: 'Chuẩn THPT',
     problemStatement:
-      'Một vật khối lượng m = 2\\text{ kg} bắt đầu trượt không vận tốc đầu từ đỉnh mặt phẳng nghiêng góc \\alpha = 30^\\circ có chiều dài s = 10\\text{ m}. Hệ số ma sát trượt giữa vật và mặt dốc là \\mu = 0.2. Lấy g = 9.8\\text{ m/s}^2. Hãy thiết lập phương trình động lực học và tính vận tốc v_{max} của vật ở chân dốc.',
+      'Một vật khối lượng $m = 2\\text{ kg}$ bắt đầu trượt không vận tốc đầu từ đỉnh mặt phẳng nghiêng góc $\\alpha = 30^\\circ$ có chiều dài $s = 10\\text{ m}$. Hệ số ma sát trượt giữa vật và mặt dốc là $\\mu = 0.2$. Lấy $g = 9.8\\text{ m/s}^2$. Hãy thiết lập phương trình động lực học và tính vận tốc $v_{max}$ của vật ở chân dốc.',
     givenParameters: {
       m: '2.0 kg',
       alpha: '30°',
@@ -234,7 +234,7 @@ export const SOCRATIC_PROBLEMS: SocraticProblem[] = [
     subtitle: 'Bảo toàn electron đa mức oxi hóa Fe3O4 + HNO3 và cân bằng Haber N2 + 3H2 ⇌ 2NH3',
     difficultyBadge: 'Chuyên / HSG',
     problemStatement:
-      'Cân bằng phản ứng oxi hóa khử sau bằng phương pháp thăng bằng electron: \\text{Fe}_3\\text{O}_4 + \\text{HNO}_3 \\rightarrow \\text{Fe(NO}_3)_3 + \\text{NO} \\uparrow + \\text{H}_2\\text{O}. Xác định chất khử, chất oxi hóa và tỉ lệ mol chất khử : chất oxi hóa đóng vai trò môi trường.',
+      'Cân bằng phản ứng oxi hóa khử sau bằng phương pháp thăng bằng electron: $\\text{Fe}_3\\text{O}_4 + \\text{HNO}_3 \\rightarrow \\text{Fe(NO}_3)_3 + \\text{NO} \\uparrow + \\text{H}_2\\text{O}$. Xác định chất khử, chất oxi hóa và tỉ lệ mol chất khử : chất oxi hóa đóng vai trò môi trường.',
     givenParameters: {
       Fe_ox: '+8/3',
       N_ox_reactant: '+5',
@@ -403,7 +403,7 @@ export const SOCRATIC_PROBLEMS: SocraticProblem[] = [
     subtitle: 'Tìm tham số m để đồ thị có 2 cực trị đối xứng qua O(0,0) và tính diện tích hình phẳng',
     difficultyBadge: 'Chuyên / HSG',
     problemStatement:
-      'Cho hàm số y = f(x) = x^3 - 3mx^2 + 3(m^2 - 1)x. Tìm tất cả các giá trị của tham số m để đồ thị hàm số có 2 điểm cực trị A, B đối xứng nhau qua gốc tọa độ O(0, 0). Khi m = 0, hãy tính diện tích hình phẳng S giới hạn bởi đồ thị và trục Ox trên đoạn [-2, 2].',
+      'Cho hàm số $y = f(x) = x^3 - 3mx^2 + 3(m^2 - 1)x$. Tìm tất cả các giá trị của tham số m để đồ thị hàm số có 2 điểm cực trị A, B đối xứng nhau qua gốc tọa độ O(0, 0). Khi $m = 0$, hãy tính diện tích hình phẳng S giới hạn bởi đồ thị và trục Ox trên đoạn [-2, 2].',
     givenParameters: {
       degree: 3,
       a: 1,
@@ -566,7 +566,7 @@ export const SOCRATIC_PROBLEMS: SocraticProblem[] = [
     subtitle: 'Khảo sát cấu trúc di truyền p²AA + 2pqAa + q²aa = 1 dưới áp lực chọn lọc tự nhiên và đột biến Operon',
     difficultyBadge: 'Chuyên / HSG',
     problemStatement:
-      'Một quần thể thực vật giao phấn ngẫu nhiên ban đầu có tần số alen A là p = 0.6 và alen a là q = 0.4. Khi quần thể đạt trạng thái cân bằng Hardy-Weinberg, tính tỉ lệ kiểu gen. Nếu chọn lọc tự nhiên đào thải 50% cá thể mang kiểu hình lặn aa (s = 0.5), hãy xác định tần số alen a ở thế hệ tiếp theo và giải thích cơ chế khi Operon Lac đột biến vùng vận hành O.',
+      'Một quần thể thực vật giao phấn ngẫu nhiên ban đầu có tần số alen A là $p = 0.6$ và alen a là $q = 0.4$. Khi quần thể đạt trạng thái cân bằng Hardy-Weinberg, tính tỉ lệ kiểu gen. Nếu chọn lọc tự nhiên đào thải 50% cá thể mang kiểu hình lặn aa ($s = 0.5$), hãy xác định tần số alen a ở thế hệ tiếp theo và giải thích cơ chế khi Operon Lac đột biến vùng vận hành O.',
     givenParameters: {
       p: 0.6,
       q: 0.4,
@@ -728,7 +728,7 @@ export const SOCRATIC_PROBLEMS: SocraticProblem[] = [
     subtitle: 'Khảo sát số nguyên tử hai vế và thăng bằng hệ số phản ứng',
     difficultyBadge: 'Chuẩn THPT',
     problemStatement:
-      'Cho sắt tác dụng với khí oxi tạo thành gỉ sắt: \\text{Fe} + \\text{O}_2 \\rightarrow \\text{Fe}_2\\text{O}_3. Hãy cân bằng phản ứng và giải thích bảo toàn khối lượng.',
+      'Cho sắt tác dụng với khí oxi tạo thành gỉ sắt: $\\text{Fe} + \\text{O}_2 \\rightarrow \\text{Fe}_2\\text{O}_3$. Hãy cân bằng phản ứng và giải thích bảo toàn khối lượng.',
     givenParameters: {
       Reactants: 'Fe, O₂',
       Product: 'Fe₂O₃',

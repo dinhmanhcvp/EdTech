@@ -86,10 +86,8 @@ describe('In-Place Geometry Transformation on Smartboard Canvas', () => {
     );
 
     // Nút biến nét vẽ thành hình tương tác xuất hiện trên thanh công cụ vùng chọn
-    const inplaceBtn = await screen.findByTestId('sel-btn-geo-inplace');
+    const inplaceBtn = await screen.findByTestId('top-toolbar-btn-visualize');
     expect(inplaceBtn).toBeInTheDocument();
-    expect(inplaceBtn.textContent).toContain('Tam giác vuông');
-    expect(inplaceBtn.textContent).toContain('hình tại chỗ');
 
     // Bấm nút chuyển đổi tại chỗ
     await act(async () => {
@@ -120,10 +118,8 @@ describe('In-Place Geometry Transformation on Smartboard Canvas', () => {
       />
     );
 
-    const inplaceBtn = await screen.findByTestId('sel-btn-geo-inplace');
+    const inplaceBtn = await screen.findByTestId('top-toolbar-btn-visualize');
     expect(inplaceBtn).toBeInTheDocument();
-    expect(inplaceBtn.textContent).toContain('Hình lập phương');
-    expect(inplaceBtn.textContent).toContain('hình tại chỗ');
 
     await act(async () => {
       fireEvent.click(inplaceBtn);

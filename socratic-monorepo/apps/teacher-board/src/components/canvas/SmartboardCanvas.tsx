@@ -69,6 +69,8 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { classifyLassoIntent, type LassoIntentResult } from '../../utils/lassoIntent';
+import { apiBase } from '../../utils/apiBase';
+import { studentAppUrl } from '../../utils/apiBase';
 
 const ERASE_R = 14; // bán kính tẩy (đơn vị canvas)
 
@@ -434,6 +436,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [formulaInput, setFormulaInput] = useState<string>('');
+  const [editingText, setEditingText] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Tự động phân loại intent: Trực quan hóa công thức hay Chấm bài học sinh
@@ -2262,7 +2265,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           body: JSON.stringify(payload),
         });
       } catch {
-        res = await fetch('http://127.0.0.1:8000/api/v1/notes/export', {
+        res = await fetch(`${apiBase()}/api/v1/notes/export`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -2433,7 +2436,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     [strokes],
   );
 
-  const handleVisualize = async (overrideHint?: string) => {
+  const handleVisualize = async (overrideHint?: string, geoOnly = false) => {
     if (selectedStrokes.length === 0 && !overrideHint) return;
     setIsLoading(true);
     setErrorMessage(null);
@@ -2491,6 +2494,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         insertGeoFigure(gp.scene, gp.scene.parts.length > 1 ? 0 : gp.scene.parts.length - 1, gpSource, at);
         setFormulaInput('');
         setIsLoading(false);
+        return;
+      }
+      if (geoOnly) {
+        setIsLoading(false);
+        flashError('Chưa đọc ra đề bài hình học trong vùng khoanh. Khoanh trọn đề (kèm tên đỉnh), hoặc bấm Sửa chữ để chỉnh lại rồi vẽ lại.');
         return;
       }
     }
@@ -2601,7 +2609,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               body: JSON.stringify(payload),
             });
           } else {
-            resp = await fetch(`http://127.0.0.1:8000${apiEndpoint}`, {
+            resp = await fetch(`${apiBase()}${apiEndpoint}`, {
               method: 'POST',
               headers: requestHeaders,
               body: JSON.stringify(payload),
@@ -3530,33 +3538,33 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         geo={geoPanel?.mode === 'edit' && geoStroke ? geoCtl : null}
         onGeoNew={() => setGeoPanel({ mode: 'new' })}
         openAtPath={hubOpenAt}
+        onDrawSelected={() => handleVisualize(undefined, true)}
+        onDuplicate={duplicateSelection}
+        onDelete={handleDeleteSelection}
+        onDeselect={() => {
+          setSelectedStrokes([]);
+          setLassoLoop([]);
+          setFormulaInput('');
+        }}
         anchor={(() => {
           if (selectedStrokes.length === 0 || !canvasRef.current) return null;
           const bb = bboxOfStrokes(selectedStrokes);
           const r = canvasRef.current.getBoundingClientRect();
-          return { x: r.left + (bb.x1 / 1200) * r.width + 46, y: r.top + (bb.y0 / 675) * r.height + 20 };
+          return { x: r.left + (bb.x1 / 1200) * r.width + 130, y: r.top + ((bb.y0 + bb.y1) / 2 / 675) * r.height };
         })()}
         panel={
           selectedStrokes.length > 0 && !convertCtx
             ? (() => {
-                const src = sourceStrokes(selectedStrokes);
-                const solidSk = src.length >= 4 ? detectSolidFromStrokes(src) : null;
-                const planeSk = !solidSk && src.length >= 1 && src.length <= 4 ? detectPlaneShapeFromStrokes(src) : null;
-                const geoTitle =
-                  solidSk && solidSk.confidence >= 0.7 ? SOLID_TITLES[solidSk.kind] : planeSk && planeSk.confidence >= 0.78 ? planeSk.title : null;
                 const isGrade = detectedLassoIntent?.intent === 'GRADE';
-                const chip = 'px-2 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer border';
+                // Chỉ còn một chip nhỏ cạnh hub: trạng thái đọc chữ + sửa chữ khi AI đọc sai. Mọi tác vụ nằm trong đĩa AI.
                 return (
-                  <div data-testid="lasso-action-bar" className="flex flex-col gap-2 p-2.5">
-                    {/* Đầu thẻ: ảnh nét viết, trạng thái đọc, ý định tự nhận, đóng */}
+                  <div data-testid="lasso-action-bar" className="flex flex-col gap-1.5 p-2">
                     <div className="flex items-center gap-2">
                       {thumbnailUrl ? (
-                        <img src={thumbnailUrl} alt="OCR Preview" data-testid="ocr-debug-thumbnail" className="w-11 h-8 object-contain rounded-lg border border-[#E6E4DD] bg-[#FCFBF9]" />
-                      ) : (
-                        <div className="w-11 h-8 flex items-center justify-center rounded-lg border border-dashed border-[#E6E4DD] text-[9px] text-stone-400 font-mono">Lasso</div>
-                      )}
+                        <img src={thumbnailUrl} alt="OCR Preview" data-testid="ocr-debug-thumbnail" className="w-10 h-7 object-contain rounded-md border border-[#E6E4DD] bg-[#FCFBF9]" />
+                      ) : null}
                       <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-xs font-semibold text-stone-900 leading-tight">{selectedStrokes.length} nét</span>
+                        <span className="text-[11px] font-semibold text-stone-900 leading-tight">{selectedStrokes.length} nét</span>
                         <span className="text-[10px] text-stone-500 font-mono leading-tight truncate">
                           {isAiVisionScanning ? (
                             <span className="text-violet-700 font-medium inline-flex items-center gap-1 animate-pulse">
@@ -3584,117 +3592,39 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                       )}
                       <button
                         type="button"
-                        data-testid="sel-btn-deselect"
-                        onClick={() => {
-                          setSelectedStrokes([]);
-                          setLassoLoop([]);
-                          setFormulaInput('');
-                        }}
-                        className="w-6 h-6 rounded-full hover:bg-stone-100 text-stone-500 hover:text-stone-900 flex items-center justify-center cursor-pointer shrink-0"
-                        title="Bỏ chọn vùng"
+                        data-testid="btn-edit-text"
+                        onClick={() => setEditingText((v) => !v)}
+                        className="px-2 py-1 rounded-lg text-[11px] font-medium text-stone-600 hover:bg-stone-100 cursor-pointer shrink-0"
+                        title="Sửa chữ hoặc công thức khi AI đọc sai"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        Sửa chữ
                       </button>
                     </div>
-
-                    {/* Ô công thức / tên mô phỏng, xem trước KaTeX */}
-                    <div className="relative">
-                      {formulaInput.trim().length > 0 && (
-                        <div data-testid="live-teacher-formula-preview" className="mb-1.5 px-2.5 py-1 rounded-xl bg-blue-50/70 border border-blue-100 text-xs overflow-x-auto text-stone-900 font-semibold">
-                          <FormulaBlock latex={formulaInput} />
-                        </div>
-                      )}
-                      <input
-                        type="text"
-                        data-testid="lasso-formula-input"
-                        value={formulaInput}
-                        onChange={(e) => {
-                          formulaTouchedRef.current = true;
-                          setFormulaInput(e.target.value);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleVisualize();
-                        }}
-                        placeholder={isAiVisionScanning ? 'AI đang đọc chữ…' : 'Công thức hoặc tên mô phỏng…'}
-                        className="w-full px-3 py-2 rounded-xl bg-[#F8F7F4] border border-[#E6E4DD] text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-blue-500 font-mono transition"
-                      />
-                    </div>
-
-                    {/* Hành động chính */}
-                    <button
-                      data-testid="btn-visualize"
-                      onClick={() => handleVisualize()}
-                      disabled={isLoading}
-                      className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition cursor-pointer disabled:opacity-50 ${
-                        isGrade ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
-                      }`}
-                      title="Dựng mô phỏng trực quan"
-                    >
-                      {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                      <span>{isLoading ? 'Đang dựng…' : 'Trực quan hóa'}</span>
-                    </button>
-                    {geoTitle && (
-                      <button
-                        data-testid="sel-btn-geo-inplace"
-                        onClick={() => handleVisualize()}
-                        className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition cursor-pointer"
-                        title="Biến nét vẽ thành hình sạch ngay tại chỗ trên bảng"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                        <span>{geoTitle} (hình tại chỗ)</span>
-                      </button>
+                    {(editingText || formulaInput.trim().length > 0) && (
+                      <div className="relative">
+                        {formulaInput.trim().length > 0 && (
+                          <div data-testid="live-teacher-formula-preview" className="mb-1.5 px-2.5 py-1 rounded-xl bg-blue-50/70 border border-blue-100 text-xs overflow-x-auto text-stone-900 font-semibold">
+                            <FormulaBlock latex={formulaInput} />
+                          </div>
+                        )}
+                        {editingText && (
+                          <input
+                            type="text"
+                            data-testid="lasso-formula-input"
+                            value={formulaInput}
+                            onChange={(e) => {
+                              formulaTouchedRef.current = true;
+                              setFormulaInput(e.target.value);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleVisualize();
+                            }}
+                            placeholder={isAiVisionScanning ? 'AI đang đọc chữ…' : 'Công thức hoặc tên mô phỏng…'}
+                            className="w-full px-3 py-2 rounded-xl bg-[#F8F7F4] border border-[#E6E4DD] text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-blue-500 font-mono transition"
+                          />
+                        )}
+                      </div>
                     )}
-                    <div className="grid grid-cols-2 gap-2">
-                      <button type="button" data-testid="btn-convert-ink" onClick={() => openConvert('VISUAL')} className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer border bg-violet-50 hover:bg-violet-100 border-violet-200 text-violet-700" title="Chuyển chữ viết tay thành công thức chuẩn">
-                        <Wand2 className="w-3.5 h-3.5" /> Chuyển công thức
-                      </button>
-                      <button
-                        type="button"
-                        data-testid="btn-grade-ink"
-                        onClick={() => openConvert('GRADE')}
-                        className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer border ${
-                          isGrade ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-800'
-                        }`}
-                        title="Chấm bài giải của học sinh trên bảng"
-                      >
-                        <GraduationCap className="w-3.5 h-3.5" /> Chấm bài
-                      </button>
-                    </div>
-
-                    {/* Môn học + công cụ nhanh */}
-                    <div className="flex items-center gap-1 flex-wrap" data-testid="subject-lock">
-                      <button data-testid="subject-auto" onClick={() => setSubjectLock(null)} className={`${chip} ${subjectLock === null ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-[#DCD9D0] hover:bg-stone-50'}`}>
-                        Tự động
-                      </button>
-                      {([['MATH', '#2563EB'], ['PHYSICS', '#7C3AED'], ['CHEMISTRY', '#D97706'], ['BIOLOGY', '#059669']] as [Subject, string][]).map(([k, c]) => (
-                        <button
-                          key={k}
-                          data-testid={`subject-${k.toLowerCase()}`}
-                          onClick={() => setSubjectLock(subjectLock === k ? null : k)}
-                          className={chip}
-                          style={subjectLock === k ? { background: c, color: '#fff', borderColor: c } : { color: c, borderColor: `${c}55`, background: `${c}0c` }}
-                        >
-                          {SUBJECT_LABEL[k]}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-1 border-t border-[#EFECE6] pt-2">
-                      <button
-                        type="button"
-                        data-testid="voice-blueprint-mic-btn"
-                        onClick={handleVoiceDictation}
-                        className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium cursor-pointer ${isVoiceListening ? 'bg-rose-50 text-rose-700 animate-pulse' : 'text-stone-600 hover:bg-stone-100'}`}
-                        title="Đọc công thức bằng giọng nói"
-                      >
-                        {isVoiceListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />} Nói
-                      </button>
-                      <button data-testid="sel-btn-duplicate" onClick={duplicateSelection} className="px-2 py-1 rounded-lg text-[11px] font-medium text-stone-600 hover:bg-stone-100 cursor-pointer" title="Nhân đôi vùng chọn (Ctrl+D)">
-                        Nhân đôi
-                      </button>
-                      <button data-testid="sel-btn-delete" onClick={handleDeleteSelection} className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-stone-500 hover:text-rose-600 hover:bg-rose-50 cursor-pointer" title="Xóa vùng chọn (Delete)">
-                        <Trash2 className="w-3.5 h-3.5" /> Xóa
-                      </button>
-                    </div>
                   </div>
                 );
               })()
@@ -3836,7 +3766,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 onClick={() => {
                   setIsQrModalOpen(false);
                   if (typeof window !== 'undefined') {
-                    window.open('http://localhost:3002', '_blank');
+                    window.open(studentAppUrl(), '_blank');
                   }
                 }}
                 className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition cursor-pointer shadow-sm"

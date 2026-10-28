@@ -105,7 +105,7 @@ describe('AiFab: một nút AI nổi, bung ra các chức năng nhỏ', () => {
     expect(screen.getByTestId('ai-fab-menu').getAttribute('aria-hidden')).toBe('true');
     fireEvent.click(screen.getByTestId('ai-fab'));
     expect(screen.getByTestId('ai-fab-menu').getAttribute('aria-hidden')).toBe('false');
-    for (const id of ['tool-convert-ink', 'top-toolbar-btn-visualize', 'ai-fab-lasso', 'ai-fab-voice']) expect(screen.getByTestId(id)).toBeTruthy();
+    for (const id of ['tool-convert-ink', 'top-toolbar-btn-visualize', 'ai-fab-draw', 'ai-fab-voice']) expect(screen.getByTestId(id)).toBeTruthy();
   });
 
   it('chọn chức năng gọi hàm tương ứng rồi tự thu gọn', () => {

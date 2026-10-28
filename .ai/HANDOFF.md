@@ -1183,3 +1183,20 @@ Yêu cầu: khối 3D vẽ tay phải được nắn thẳng và nối đỉnh t
 - `SmartboardCanvas.tsx` (`handleVisualize`, bước −1): thử lần lượt các nguồn chữ [ô công thức, Vision `text`, Vision `latex`, chữ gõ, hint] và lấy nguồn đầu tiên dựng được hình; nguồn đó được lưu làm `geo.source`.
 - Test mới `handwrittenProblem.test.ts` (6): mô phỏng đúng kiểu kết quả Vision (LaTeX lẫn chữ, đỉnh tách cách, dấu phẩy). Chưa thử đầu-cuối với nét viết tay thật + Gemini (cần khóa và người viết tay tiếng Việt); chất lượng phụ thuộc Vision đọc đúng chữ cái đỉnh.
 - tsc 0 lỗi; teacher-board 54 file/942 test. Chưa commit (gồm cả sửa trọng tâm tam giác A'B'C' ở bước trước).
+
+
+# 2026-10-28 (đêm, bổ sung 8) — Sẵn sàng deploy Vercel + Render
+
+- Kế hoạch đầy đủ ở `socratic-monorepo/DEPLOY.md` (viết lại). Chưa deploy thật; mọi kiểm chứng là giả lập local (venv sạch, APP_ENV=production, không .env).
+- Frontend: `src/utils/apiBase.ts` (cả teacher-board và student-app) thay mọi `http://127.0.0.1:8000` cứng; ưu tiên localStorage `backend_url` → `NEXT_PUBLIC_BACKEND_URL` → loopback chỉ khi chạy localhost → '' (rewrite). `studentAppUrl()`/`teacherAppUrl()` cho nút liên kết chéo. `next.config.js` (2 app): build trên Vercel dừng nếu thiếu `BACKEND_URL` hoặc có `NEXT_PUBLIC_GEMINI/OPENROUTER_API_KEY`. `vercel.json`: region sin1, header bảo mật, cache bất biến.
+- Backend: `uvicorn[standard]` (WebSocket Lớp học), `deploy_guard.py` (RateLimit POST recognize-ink/compile-lasso, `admin_ok`, `warm_up`), `main.py` (GZip, CORS regex, warm-up khi production, `.env` dùng setdefault), `visualize.py` (ghi khóa AI bị tắt ở production trừ khi có ADMIN_TOKEN), `tests/test_deploy_guard.py` (8).
+- `render.yaml` (gốc) viết lại; `.github/workflows/keepalive.yml` (biến kho `RENDER_URL`); `.env.production.example` và `.env.example` cập nhật.
+- Chưa làm: tách bundle `/` (629 kB) bằng next/dynamic; OCR RapidOCR trên Render (cần ≥2 GB); xoay khóa AI từng dán vào chat. Chưa commit (không stage `tsconfig.tsbuildinfo`, `e2e/socratic-flow.test.tsx`, tệp video/slide).
+
+
+# 2026-10-28 (đêm, bổ sung 9) — Mọi chức năng đi qua vùng khoanh; AI hub bay tới vùng
+
+- Bỏ thẻ tác vụ lớn sau khi khoanh. Khoanh xong: hub bay tới cạnh vùng và TỰ MỞ bộ chức năng của vùng (`AiFab`, `selectionCount>0`): Trực quan, Chuyển LaTeX, Chấm bài, Vẽ hình, Môn, Nhân đôi (`sel-btn-duplicate`), Xóa (`sel-btn-delete`), Bỏ chọn (`sel-btn-deselect`). Bỏ ô "Chọn vùng" khỏi hub (khoanh dùng nút ở thanh dưới).
+- Vẽ hình: tầng `draw` khi chưa có hình = `Vẽ từ vùng` (có vùng khoanh → `onDrawSelected` = `handleVisualize(undefined, true)`, chỉ dựng hình học, không đọc ra đề thì báo lỗi) hoặc `Khoanh đề` (chưa khoanh → bật khoanh) + `Gõ đề` (lối phụ, `ai-fab-draw-typed`). Khi đã có hình: Dụng cụ/Phần/Yêu cầu/Hoàn tác/Làm lại/Xóa hình như cũ.
+- Thẻ cạnh hub chỉ còn chip nhỏ (`lasso-action-bar`): ảnh nét, trạng thái đọc, huy hiệu ý định, nút "Sửa chữ" (`btn-edit-text`) mở ô `lasso-formula-input`. Đã bỏ `btn-visualize`, `btn-convert-ink`, `btn-grade-ink`, `subject-*`, `sel-btn-geo-inplace` (dùng ô hub tương ứng).
+- Kiểm tra: tsc 0 lỗi; teacher-board 54 file/943 test (sửa 6 test cũ, thêm 1); trình duyệt thật: viết nét → khoanh → hub mở tại vùng với 8 ô + chip. Chưa thử đầu-cuối đề hình học viết tay → Vẽ từ vùng trên trình duyệt thật. Chưa commit.

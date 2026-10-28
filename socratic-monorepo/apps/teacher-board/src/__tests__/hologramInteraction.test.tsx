@@ -331,21 +331,21 @@ describe('Hologram Interaction & Zero-Background Direct Blackboard Manipulation'
     const bar = screen.getByTestId('lasso-action-bar');
     expect(bar).toBeInTheDocument();
 
-    // Subject context selector is prominent
-    expect(screen.getByTestId('subject-lock')).toBeInTheDocument();
-    expect(screen.getByTestId('subject-auto')).toBeInTheDocument();
-    expect(screen.getByTestId('subject-math')).toBeInTheDocument();
-    expect(screen.getByTestId('subject-physics')).toBeInTheDocument();
-    expect(screen.getByTestId('subject-chemistry')).toBeInTheDocument();
-    expect(screen.getByTestId('subject-biology')).toBeInTheDocument();
+    // Mọi tác vụ nằm trong đĩa AI đã tự mở tại vùng khoanh (không còn thẻ lớn)
+    expect(screen.getByTestId('ai-fab-menu').getAttribute('aria-hidden')).toBe('false');
+    expect(screen.queryByTestId('subject-lock')).toBeNull();
+    expect(screen.queryByTestId('btn-visualize')).toBeNull();
 
-    // Clicking subject changes domain context
-    fireEvent.click(screen.getByTestId('subject-physics'));
+    // Subject context selector is in the hub: clicking cycles the domain context
+    expect(screen.getByTestId('ai-fab-subject')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('ai-fab-subject'));
 
     // Core actions are present
-    expect(screen.getByTestId('btn-convert-ink')).toBeInTheDocument();
-    expect(screen.getByTestId('btn-visualize')).toBeInTheDocument();
-    expect(screen.getByTestId('btn-grade-ink')).toBeInTheDocument();
+    expect(screen.getByTestId('tool-convert-ink')).toBeInTheDocument();
+    expect(screen.getByTestId('top-toolbar-btn-visualize')).toBeInTheDocument();
+    expect(screen.getByTestId('ai-fab-grade')).toBeInTheDocument();
+    expect(screen.getByTestId('ai-fab-draw')).toBeInTheDocument();
+    expect(screen.queryByTestId('ai-fab-lasso')).toBeNull();
 
     // 10 hardcoded instant suggestion chips must NOT clutter the bar
     expect(screen.queryByTestId('smart-chip-physics')).toBeNull();
@@ -376,7 +376,7 @@ describe('Hologram Interaction & Zero-Background Direct Blackboard Manipulation'
     fireEvent.pointerUp(canvas);
 
     // 1. Open "Chuyển thành công thức" -> VISUAL mode
-    const btnConvert = screen.getByTestId('btn-convert-ink');
+    const btnConvert = screen.getByTestId('tool-convert-ink');
     fireEvent.click(btnConvert);
 
     const convertPanel = screen.getByTestId('ink-convert-panel');
@@ -445,8 +445,7 @@ describe('Hologram Interaction & Zero-Background Direct Blackboard Manipulation'
     expect(screen.getByTestId('radial-action-visualize')).toBeInTheDocument();
     expect(screen.getByTestId('radial-action-grade')).toBeInTheDocument();
     expect(screen.getByTestId('radial-action-subject')).toBeInTheDocument();
-    expect(screen.getByTestId('radial-action-voice')).toBeInTheDocument();
-    expect(screen.getByTestId('radial-action-close')).toBeInTheDocument();
+    expect(screen.getByTestId('radial-action-draw')).toBeInTheDocument();
 
     // 5. Clicking "Chuyển LaTeX" directly opens LaTeX conversion modal
     fireEvent.click(screen.getByTestId('radial-action-latex'));

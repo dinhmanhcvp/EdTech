@@ -155,7 +155,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     expect(tier()).toBe('draw');
     // tầng 2 thay hẳn các ô tầng 1
     expect(ids()).not.toContain('ai-fab-voice');
-    expect(ids()).toEqual(expect.arrayContaining(['ai-fab-back', 'ai-fab-draw-new', 'ai-fab-draw-tools', 'ai-fab-draw-parts', 'ai-fab-draw-req', 'ai-fab-draw-undo', 'ai-fab-draw-redo', 'ai-fab-draw-remove']));
+    expect(ids()).toEqual(expect.arrayContaining(['ai-fab-back', 'ai-fab-draw-tools', 'ai-fab-draw-parts', 'ai-fab-draw-req', 'ai-fab-draw-undo', 'ai-fab-draw-redo', 'ai-fab-draw-remove']));
     fireEvent.click(screen.getByTestId('ai-fab-back'));
     expect(tier()).toBe('root');
   });
@@ -197,8 +197,9 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     const {rerender} = render(<AiFab {...base} geo={null} onGeoNew={onGeoNew} />);
     fireEvent.click(screen.getByTestId('ai-fab'));
     fireEvent.click(screen.getByTestId('ai-fab-draw'));
-    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-new']);
-    fireEvent.click(screen.getByTestId('ai-fab-draw-new'));
+    // chưa khoanh gì: gợi ý khoanh đề; vẫn có lối phụ gõ đề
+    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-new', 'ai-fab-draw-typed']);
+    fireEvent.click(screen.getByTestId('ai-fab-draw-typed'));
     expect(onGeoNew).toHaveBeenCalled();
     expect(screen.getByTestId('ai-fab-menu').getAttribute('aria-hidden')).toBe('true');
     // Esc đưa về tầng 1
@@ -207,5 +208,18 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     rerender(<AiFab {...base} geo={ctl()} openAtPath={{path: ['draw'], nonce: 1}} />);
     expect(screen.getByTestId('ai-fab-menu').getAttribute('aria-hidden')).toBe('false');
     expect(tier()).toBe('draw');
+  });
+
+  it('có vùng khoanh: tầng 1 là bộ chức năng của vùng (không còn Chọn vùng); Vẽ hình dựng từ vùng khoanh', () => {
+    const onDrawSelected = vi.fn();
+    const onLasso = vi.fn();
+    render(<AiFab {...base} selectionCount={4} onDrawSelected={onDrawSelected} onLasso={onLasso} onGeoNew={() => undefined} />);
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    expect(ids()).toEqual(expect.arrayContaining(['sel-btn-duplicate', 'sel-btn-delete', 'sel-btn-deselect', 'ai-fab-draw']));
+    expect(ids()).not.toContain('ai-fab-lasso');
+    fireEvent.click(screen.getByTestId('ai-fab-draw'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw-new'));
+    expect(onDrawSelected).toHaveBeenCalledTimes(1);
+    expect(onLasso).not.toHaveBeenCalled();
   });
 });

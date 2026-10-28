@@ -44,6 +44,7 @@ import {
   MapPin,
   CornerDownRight,
   Scissors,
+  Copy,
 } from 'lucide-react';
 import type {CanvasTool, ShapeType, GridPattern} from './SmartboardCanvas';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -358,6 +359,11 @@ export interface AiFabProps {
   geo?: GeoController | null;
   /** mở hộp nhập đề mới */
   onGeoNew?: () => void;
+  /** vẽ hình từ nét đã khoanh (đề bài viết tay hoặc gõ chữ trong vùng khoanh) */
+  onDrawSelected?: () => void;
+  onDuplicate?: () => void;
+  onDelete?: () => void;
+  onDeselect?: () => void;
   /** yêu cầu mở hub tại một tầng (vd ['draw','tools']); đổi `nonce` để kích hoạt lại */
   openAtPath?: {path: string[]; nonce: number} | null;
 }
@@ -410,13 +416,16 @@ export const AiFab: React.FC<AiFabProps> = ({
   anchor,
   geo,
   onGeoNew,
+  onDrawSelected,
+  onDuplicate,
+  onDelete,
+  onDeselect,
   openAtPath,
 }) => {
   const [open, setOpen] = useState(false);
   // phân tầng: [] = tầng 1; ['draw'] = Vẽ hình; ['draw','tools'] / ['draw','parts'] = tầng 3
   const [path, setPath] = useState<string[]>([]);
   const hasPanel = !!panel;
-  const [panelOpen, setPanelOpen] = useState(true);
   const prevHasPanel = useRef(false);
   const root = useRef<HTMLDivElement | null>(null);
 
@@ -456,8 +465,9 @@ export const AiFab: React.FC<AiFabProps> = ({
 
   useEffect(() => {
     if (hasPanel && !prevHasPanel.current) {
-      setPanelOpen(true);
-      setOpen(false);
+      // khoanh xong: hub bay tới vùng khoanh và tự mở bộ chức năng của vùng
+      setPath([]);
+      setOpen(true);
       if (anchor) {
         const w = window.innerWidth;
         const h = window.innerHeight;
@@ -508,8 +518,7 @@ export const AiFab: React.FC<AiFabProps> = ({
   const handlePointerUp = (e: React.PointerEvent) => {
     if (!isDraggingRef.current) {
       justToggledByPointerRef.current = true;
-      if (hasPanel) setPanelOpen((o) => !o);
-      else setOpen((o) => !o);
+      setOpen((o) => !o);
       setTimeout(() => {
         justToggledByPointerRef.current = false;
       }, 80);
@@ -523,11 +532,10 @@ export const AiFab: React.FC<AiFabProps> = ({
 
   const handleClick = () => {
     if (justToggledByPointerRef.current) return;
-    if (hasPanel) setPanelOpen((o) => !o);
-    else setOpen((o) => !o);
+    setOpen((o) => !o);
   };
 
-  const rootItems: HubItem[] = [
+  let rootItems: HubItem[] = [
     {
       id: 'viz',
       testid: 'top-toolbar-btn-visualize',
@@ -566,19 +574,6 @@ export const AiFab: React.FC<AiFabProps> = ({
       activeTone: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-300 font-bold',
       badge: undefined,
       highlight: detectedIntent === 'GRADE',
-    },
-    {
-      id: 'lasso',
-      testid: 'ai-fab-lasso',
-      aliasTestId: 'radial-action-close',
-      label: 'Chọn vùng',
-      hint: 'Kéo khung chữ nhật quanh nét viết hoặc hình vẽ',
-      icon: <Lasso className="w-4 h-4" />,
-      run: onLasso,
-      tone: 'text-sky-600',
-      activeTone: 'bg-sky-50 text-sky-700 ring-1 ring-sky-300',
-      badge: undefined,
-      highlight: false,
     },
     {
       id: 'subject',
@@ -638,6 +633,31 @@ export const AiFab: React.FC<AiFabProps> = ({
     },
   ];
 
+  const selItem = (id: string, label: string, hint: string, icon: React.ReactNode, run: () => void, tone: string): HubItem => ({
+    id,
+    testid: `sel-btn-${id}`,
+    label,
+    hint,
+    icon,
+    run,
+    tone,
+    activeTone: '',
+    highlight: false,
+  });
+  if (selectionCount > 0) {
+    const pick = (id: string) => rootItems.find((r) => r.id === id)!;
+    rootItems = [
+      pick('viz'),
+      pick('conv'),
+      pick('grade'),
+      pick('draw'),
+      pick('subject'),
+      selItem('duplicate', 'Nhân đôi', 'Nhân đôi vùng chọn (Ctrl+D)', <Copy className="w-4 h-4" />, () => onDuplicate?.(), 'text-stone-600'),
+      selItem('delete', 'Xóa', 'Xóa vùng chọn (Delete)', <Trash2 className="w-4 h-4" />, () => onDelete?.(), 'text-rose-600'),
+      selItem('deselect', 'Bỏ chọn', 'Bỏ chọn vùng', <X className="w-4 h-4" />, () => onDeselect?.(), 'text-stone-500'),
+    ];
+  }
+
   const back: HubItem = {
     id: 'back',
     testid: 'ai-fab-back',
@@ -668,7 +688,6 @@ export const AiFab: React.FC<AiFabProps> = ({
   if (tierKey === 'draw') {
     items = [
       back,
-      sub('new', 'Từ đề bài', 'Dán đề bài (đủ hoặc tóm tắt, có ký hiệu ⊥ ∥ ∩ ≡) để dựng hình', <FileText className="w-4 h-4" />, () => onGeoNew?.()),
       ...(geo
         ? [
             sub('tools', 'Dụng cụ', 'Đoạn nối, trung điểm, điểm trên cạnh, chân vuông góc, thiết diện', <Ruler className="w-4 h-4" />, () => setPath(['draw', 'tools']), {keep: true, highlight: !!geo.tool}),
@@ -678,7 +697,16 @@ export const AiFab: React.FC<AiFabProps> = ({
             sub('redo', 'Làm lại', 'Làm lại bước vừa hoàn tác', <Redo2 className="w-4 h-4" />, () => geo.redo(), {keep: true, disabled: !geo.canRedo}),
             sub('remove', 'Xóa hình', 'Xóa hình đang chọn khỏi bảng', <Trash2 className="w-4 h-4" />, () => geo.remove(), {tone: 'text-rose-600'}),
           ]
-        : []),
+        : [
+            sub(
+              'new',
+              selectionCount > 0 ? 'Vẽ từ vùng' : 'Khoanh đề',
+              selectionCount > 0 ? 'Dựng hình từ đề bài đang khoanh (chữ viết tay hoặc gõ, có ký hiệu ⊥ ∥ ∩ ≡)' : 'Khoanh quanh đề bài đã viết rồi chọn lại Vẽ hình',
+              <Lasso className="w-4 h-4" />,
+              () => (selectionCount > 0 ? onDrawSelected?.() : onLasso()),
+            ),
+            sub('typed', 'Gõ đề', 'Dán hoặc gõ đề bài (đủ hoặc tóm tắt) để dựng hình', <FileText className="w-4 h-4" />, () => onGeoNew?.()),
+          ]),
     ];
   } else if (tierKey === 'draw/tools' && geo) {
     items = [
@@ -792,14 +820,14 @@ export const AiFab: React.FC<AiFabProps> = ({
         </div>
 
         {/* THẺ TÁC VỤ CHO VÙNG ĐANG KHOANH: nằm ngay cạnh nút AI, không còn thanh riêng */}
-        {hasPanel && panelOpen && (
+        {hasPanel && (
           <div
             data-testid="ai-hub-panel"
             onPointerDown={(e) => e.stopPropagation()}
-            className="absolute z-20 w-[372px] max-w-[calc(100vw-24px)] rounded-3xl bg-white/97 backdrop-blur-xl border border-[#E2E0D8] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+            className="absolute z-20 w-[300px] max-w-[calc(100vw-24px)] rounded-2xl bg-white/97 backdrop-blur-xl border border-[#E2E0D8] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
             style={{
-              ...(displayY > 360 ? { bottom: 'calc(100% + 12px)' } : { top: 'calc(100% + 12px)' }),
-              ...(displayX > winW - 400 ? { right: '-14px' } : { left: '4px' }), // mở về phía xa vùng khoanh để không che nét
+              ...(displayY > 360 ? { bottom: open ? 'calc(50% + 114px)' : 'calc(100% + 12px)' } : { top: open ? 'calc(50% + 114px)' : 'calc(100% + 12px)' }),
+              ...(displayX > winW - 340 ? { right: '-14px' } : { left: open ? '50%' : '4px', ...(open ? { transform: 'translateX(-50%)' } : {}) }),
             }}
           >
             {panel}

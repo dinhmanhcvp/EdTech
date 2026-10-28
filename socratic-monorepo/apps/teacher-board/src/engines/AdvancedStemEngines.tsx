@@ -3,6 +3,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { SimulationBlueprint } from "@socratic/types";
 import { fmtNum } from "../utils/mathExpr";
+import { usePrefersReducedMotion } from "./visualKit";
 import {
   add3,
   mul3,
@@ -2090,13 +2091,20 @@ export const CellRespirationEngine: React.FC<Props> = ({ blueprint }) => {
     [cyanide, dnp, o2Level]
   );
 
+  const reducedMotion = usePrefersReducedMotion();
   useEffect(() => {
-    if (res.rotorSpeed <= 0) return;
-    const interval = setInterval(() => {
-      setRotorAngle((a) => (a + res.rotorSpeed * 10) % 360);
-    }, 50);
-    return () => clearInterval(interval);
-  }, [res.rotorSpeed]);
+    if (res.rotorSpeed <= 0 || reducedMotion) return;
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.max(0, Math.min(0.1, (now - last) / 1000));
+      last = now;
+      setRotorAngle((a) => (a + res.rotorSpeed * 200 * dt) % 360); // cùng tốc độ cũ (rotorSpeed × 10° / 50 ms), nhưng mượt theo khung hình
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [res.rotorSpeed, reducedMotion]);
 
   return (
     <div

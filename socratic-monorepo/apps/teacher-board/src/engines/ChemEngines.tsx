@@ -4,6 +4,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {SimulationBlueprint, CurriculumLevel} from '@socratic/types';
 import {fmtNum} from '../utils/mathExpr';
 import {Slider} from './StemModelEngines';
+import {GroundShadow, SphereGrad, VisualDefs, useEased, usePrefersReducedMotion, useUid} from './visualKit';
 import {M3, mulMM, mulMV, orthonormalize, rotAxis, type V3 as SV3} from '../utils/solids';
 import {
   ATOM_R,
@@ -38,7 +39,11 @@ export const VseprEngine: React.FC<Props> = ({blueprint}) => {
   const start = (blueprint.meta?.molecule as VseprMolecule) ?? VSEPR_LIBRARY[0];
   const [mol, setMol] = useState<VseprMolecule>(start);
   const [R, setR] = useState<M3>(() => mulMM(rotAxis([1, 0, 0], -0.35), rotAxis([0, 1, 0], 0.6)));
+  const reducedV = usePrefersReducedMotion();
   const [auto, setAuto] = useState(true);
+  useEffect(() => {
+    if (reducedV) setAuto(false); // giảm chuyển động: phân tử không tự xoay, vẫn kéo để xoay
+  }, [reducedV]);
   const [showLone, setShowLone] = useState(true);
   const [showDipole, setShowDipole] = useState(false);
   const drag = useRef<{x: number; y: number} | null>(null);
@@ -238,7 +243,10 @@ export const LeChatelierEngine: React.FC<Props> = () => {
   const view = lcView(N0, V, T, xi);
   const mark = (label: string) => setHist((h) => [...h, {t: ref.current.t, c: lcView(N0, ref.current.V, ref.current.T, ref.current.xi).cNO2, mark: label}]);
   const gasH = 50 + (V / 3) * 190;
-  const pistonY = 275 - gasH;
+  const uid = useUid();
+  const reduced = usePrefersReducedMotion();
+  const gasHe = useEased(gasH, 14);
+  const pistonYe = 275 - gasHe;
   const brown = `rgba(150, 70, 30, ${0.08 + 0.86 * view.color})`;
   const no2n = Math.round((view.nNO2 / N0) * 26);
   const n2o4n = Math.round((view.nN2O4 / (N0 / 2)) * 13);
@@ -264,33 +272,57 @@ export const LeChatelierEngine: React.FC<Props> = () => {
       </div>
       <div className="grid md:grid-cols-[3fr_2fr] gap-3">
         <svg viewBox="0 0 400 300" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="lc-svg">
-          <rect x="90" y={pistonY} width="220" height={gasH} fill={brown} data-testid="lc-gas" />
-          <rect x="90" y="25" width="6" height="250" fill="#78716C" />
-          <rect x="304" y="25" width="6" height="250" fill="#78716C" />
-          <rect x="90" y="272" width="220" height="8" fill="#78716C" />
-          <rect x="90" y={pistonY - 14} width="220" height="14" rx="3" fill="#A8A29E" stroke="#57534E" />
-          <rect x="192" y="6" width="16" height={pistonY - 14 - 6} fill="#78716C" />
-          <rect x="168" y="2" width="64" height="9" rx="4" fill="#44403C" />
+          <defs>
+            <VisualDefs id={uid} />
+            <SphereGrad id={`${uid}-no2a`} light="#FDBA74" base="#C2410C" dark="#7C2D12" />
+            <SphereGrad id={`${uid}-no2b`} light="#FB923C" base="#9A3412" dark="#431407" />
+            <SphereGrad id={`${uid}-n2o4`} light="#F1F5F9" base="#94A3B8" dark="#475569" />
+            <linearGradient id={`${uid}-gas`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#7C2D12" stopOpacity="0.7" />
+              <stop offset="1" stopColor="#7C2D12" stopOpacity="1" />
+            </linearGradient>
+            <radialGradient id={`${uid}-bath`} cx="0.5" cy="1" r="0.9">
+              <stop offset="0" stopColor={Tc > 60 ? '#FB923C' : Tc < 5 ? '#7DD3FC' : '#E7E5E4'} stopOpacity={Tc > 60 || Tc < 5 ? 0.55 : 0.25} />
+              <stop offset="1" stopColor="#fff" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <ellipse cx="200" cy="288" rx="150" ry="9" fill={`url(#${uid}-bath)`} />
+          <GroundShadow id={uid} cx={200} cy={282} rx={118} />
+          {/* khí trong xi lanh: màu lấy thẳng từ mô hình (đậm lên NGAY khi nén), chỉ piston trượt mượt */}
+          <rect x="96" y={pistonYe} width="208" height={gasHe} fill={brown} data-testid="lc-gas" />
+          <rect x="96" y={pistonYe} width="208" height={gasHe} fill={`url(#${uid}-gas)`} opacity={0.18 + 0.2 * view.color} pointerEvents="none" />
+          {/* thành xi lanh bằng thủy tinh */}
+          <rect x="90" y="25" width="6" height="250" rx="2" fill="#A8A29E" />
+          <rect x="304" y="25" width="6" height="250" rx="2" fill="#A8A29E" />
+          <rect x="90" y="25" width="220" height="250" fill={`url(#${uid}-glass)`} pointerEvents="none" />
+          <rect x="88" y="270" width="224" height="10" rx="3" fill={`url(#${uid}-steel)`} stroke="#57534E" strokeWidth="1" />
           {Array.from({length: no2n}, (_, i) => (
-            <g key={`n${i}`} transform={`translate(${104 + rnd(i, 1) * 192},${pistonY + 10 + rnd(i, 2) * (gasH - 22)})`}>
-              <circle r="4.6" fill="#9A3412" />
-              <circle cx="7" cy="2" r="3.6" fill="#C2410C" />
-              <animateTransform attributeName="transform" type="translate" additive="sum" values="0,0;3,-3;-2,2;0,0" dur={`${1.1 + rnd(i, 3)}s`} repeatCount="indefinite" />
+            <g key={`n${i}`} transform={`translate(${104 + rnd(i, 1) * 192},${pistonYe + 10 + rnd(i, 2) * Math.max(8, gasHe - 22)})`}>
+              <circle r="4.6" fill={`url(#${uid}-no2b)`} />
+              <circle cx="7" cy="2" r="3.6" fill={`url(#${uid}-no2a)`} />
+              {!reduced && <animateTransform attributeName="transform" type="translate" additive="sum" values="0,0;3,-3;-2,2;0,0" keyTimes="0;0.33;0.66;1" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1" dur={`${1.1 + rnd(i, 3)}s`} repeatCount="indefinite" />}
             </g>
           ))}
           {Array.from({length: n2o4n}, (_, i) => (
-            <g key={`d${i}`} transform={`translate(${108 + rnd(i, 4) * 184},${pistonY + 10 + rnd(i, 5) * (gasH - 22)})`}>
-              <circle r="4.3" fill="#94A3B8" stroke="#475569" />
-              <circle cx="9" r="4.3" fill="#94A3B8" stroke="#475569" />
-              <line x1="3" y1="0" x2="6" y2="0" stroke="#475569" strokeWidth="2" />
-              <animateTransform attributeName="transform" type="translate" additive="sum" values="0,0;-2,3;3,-1;0,0" dur={`${1.4 + rnd(i, 6)}s`} repeatCount="indefinite" />
+            <g key={`d${i}`} transform={`translate(${108 + rnd(i, 4) * 184},${pistonYe + 10 + rnd(i, 5) * Math.max(8, gasHe - 22)})`}>
+              <line x1="3" y1="0" x2="6" y2="0" stroke="#475569" strokeWidth="2.4" strokeLinecap="round" />
+              <circle r="4.3" fill={`url(#${uid}-n2o4)`} stroke="#475569" strokeWidth="0.8" />
+              <circle cx="9" r="4.3" fill={`url(#${uid}-n2o4)`} stroke="#475569" strokeWidth="0.8" />
+              {!reduced && <animateTransform attributeName="transform" type="translate" additive="sum" values="0,0;-2,3;3,-1;0,0" keyTimes="0;0.33;0.66;1" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1" dur={`${1.4 + rnd(i, 6)}s`} repeatCount="indefinite" />}
             </g>
           ))}
-          <text x="320" y={pistonY + 18} fontSize="11" fill="#57534E">V = {fmtNum(V, 3)} L</text>
+          {/* piston + thanh truyền bằng thép */}
+          <rect x="192" y="6" width="16" height={Math.max(0, pistonYe - 14 - 6)} fill={`url(#${uid}-metal)`} stroke="#57534E" strokeWidth="0.8" />
+          <rect x="192" y="6" width="16" height={Math.max(0, pistonYe - 14 - 6)} fill="#78716C" opacity="0.55" pointerEvents="none" />
+          <rect x="168" y="2" width="64" height="9" rx="4" fill="#44403C" />
+          <rect x="90" y={pistonYe - 14} width="220" height="14" rx="3" fill={`url(#${uid}-steel)`} stroke="#57534E" />
+          <rect x="94" y={pistonYe - 12} width="212" height="3" rx="1.5" fill="#fff" opacity="0.5" pointerEvents="none" />
+          <text x="320" y={pistonYe + 18} fontSize="11" fill="#57534E">V = {fmtNum(V, 3)} L</text>
           <text x="320" y="262" fontSize="11" fill="#57534E">p = {fmtNum(view.pressure, 3)} atm</text>
           {Tc > 60 && (
             <g>
               <path d="M180,296 q-8,-12 0,-20 q6,8 14,-2 q8,12 -2,22 z" fill="#F97316" />
+              <path d="M184,294 q-4,-7 0,-12 q3,5 8,-1 q4,7 -1,13 z" fill="#FDE047" opacity="0.9" />
             </g>
           )}
           {Tc < 5 && <text x="130" y="296" fontSize="12" fill="#0EA5E9">❄ bể nước đá</text>}
@@ -381,6 +413,12 @@ export const DaniellEngine: React.FC<Props> = ({blueprint}) => {
   };
   const aT = Math.max(8, 22 + (st.dmAnode / 65) * 40);
   const cT = Math.min(34, 22 + (st.dmCathode / 65) * 40);
+  const uid = useUid();
+  const reduced = usePrefersReducedMotion();
+  const aTe = useEased(aT, 12);
+  const cTe = useEased(cT, 12);
+  const glowE = useEased(glow, 8);
+  const catOpE = useEased(0.45 + 0.35 * Math.min(1, st.cCathode), 8);
   const ionDots = (n: number, x0: number, color: string, key: string) =>
     Array.from({length: n}, (_, i) => <circle key={`${key}${i}`} cx={x0 + ((i * 37) % 70)} cy={150 + ((i * 53) % 60)} r="3.2" fill={color} opacity="0.8" />);
   const nAn = Math.min(14, Math.round(4 + Math.log10(Math.max(st.cAnode, 1e-3) * 1000) * 3));
@@ -397,6 +435,7 @@ export const DaniellEngine: React.FC<Props> = ({blueprint}) => {
       </div>
       <svg viewBox="0 0 560 330" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="daniell-svg">
         <defs>
+          <VisualDefs id={uid} />
           <marker id="earr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto">
             <path d="M0,0 L10,5 L0,10 z" fill="#F59E0B" />
           </marker>
@@ -406,8 +445,9 @@ export const DaniellEngine: React.FC<Props> = ({blueprint}) => {
         <circle cx="280" cy="40" r="22" fill="#fff" stroke="#44403C" strokeWidth="3" />
         <text x="280" y="38" fontSize="9" textAnchor="middle" fill="#57534E">V</text>
         <text x="280" y="50" fontSize="11" textAnchor="middle" fontWeight="700" fill="#18181B" data-testid="daniell-voltmeter">{fmtNum(E, 3)}</text>
-        <circle cx="200" cy="40" r="14" fill={`rgba(250, 204, 21, ${0.15 + 0.85 * glow})`} stroke="#A16207" strokeWidth="2.5" />
-        {glow > 0.05 && Array.from({length: 8}, (_, i) => <line key={i} x1={200 + Math.cos((i * Math.PI) / 4) * 18} y1={40 + Math.sin((i * Math.PI) / 4) * 18} x2={200 + Math.cos((i * Math.PI) / 4) * (22 + glow * 6)} y2={40 + Math.sin((i * Math.PI) / 4) * (22 + glow * 6)} stroke="#FACC15" strokeWidth="2" />)}
+        <circle cx="200" cy="40" r={14 + 22 * glowE} fill={`url(#${uid}-halo)`} opacity={glowE} pointerEvents="none" />
+        <circle cx="200" cy="40" r="14" fill={`rgba(250, 204, 21, ${0.15 + 0.85 * glowE})`} stroke="#A16207" strokeWidth="2.5" />
+        {glowE > 0.05 && Array.from({length: 8}, (_, i) => <line key={i} x1={200 + Math.cos((i * Math.PI) / 4) * 18} y1={40 + Math.sin((i * Math.PI) / 4) * 18} x2={200 + Math.cos((i * Math.PI) / 4) * (22 + glowE * 6)} y2={40 + Math.sin((i * Math.PI) / 4) * (22 + glowE * 6)} stroke="#FACC15" strokeWidth="2" strokeLinecap="round" />)}
         <g transform="translate(375,40)" onClick={() => setClosed((c) => !c)} style={{cursor: 'pointer'}} data-testid="daniell-switch">
           <circle r="5" fill="#44403C" />
           <line x1="0" y1="0" x2={closed ? 30 : 24} y2={closed ? 0 : -16} stroke={closed ? '#16A34A' : '#DC2626'} strokeWidth="4" strokeLinecap="round" />
@@ -418,21 +458,31 @@ export const DaniellEngine: React.FC<Props> = ({blueprint}) => {
             <line x1="330" y1="40" x2="300" y2="40" stroke="#F59E0B" strokeWidth="0" />
             <line x1="410" y1="40" x2="436" y2="40" stroke="#F59E0B" strokeWidth="3" markerEnd="url(#earr)" />
             <text x="132" y="30" fontSize="10" fill="#B45309">e⁻</text>
+            {!reduced && [0, 1, 2].map((k) => (
+              <circle key={`e${k}`} r="2.6" fill="#F59E0B" opacity="0.9">
+                <animateMotion path="M120,120 L120,40 L440,40 L440,120" dur="3.4s" begin={`${-k * 1.13}s`} repeatCount="indefinite" />
+              </circle>
+            ))}
           </g>
         )}
         {/* cốc */}
         {[{x: 40, c: ION_COLOR[cell.anode.metal], el: cell.anode, side: 'an'}, {x: 330, c: ION_COLOR[cell.cathode.metal], el: cell.cathode, side: 'cat'}].map(({x, c, el, side}) => (
           <g key={side}>
-            <rect x={x} y="130" width="190" height="165" rx="10" fill={c} opacity={side === 'cat' ? 0.45 + 0.35 * Math.min(1, st.cCathode) : 0.35} stroke="#78716C" strokeWidth="3" />
+            <GroundShadow id={uid} cx={x + 95} cy={298} rx={98} />
+            <rect x={x} y="130" width="190" height="165" rx="10" fill={c} opacity={side === 'cat' ? catOpE : 0.35} />
+            <rect x={x} y="130" width="190" height="165" rx="10" fill={`url(#${uid}-glass)`} stroke="#78716C" strokeWidth="3" pointerEvents="none" />
+            <rect x={x + 8} y="138" width="5" height="120" rx="2.5" fill="#fff" opacity="0.55" pointerEvents="none" />
             <text x={x + 95} y="315" fontSize="12" textAnchor="middle" fill="#57534E">{side === 'an' ? `${el.metal}²⁺ ${fmtNum(st.cAnode, 3)} M` : `${el.metal}²⁺ ${fmtNum(st.cCathode, 3)} M`}</text>
           </g>
         ))}
         {ionDots(nAn, 54, '#64748B', 'a')}
         {ionDots(nCat, 345, '#0284C7', 'c')}
         {/* điện cực */}
-        <rect data-testid="electrode-anode" x={110 - aT / 2} y="100" width={aT} height="150" rx="3" fill={cell.anode.color} stroke="#334155" strokeWidth="2" />
+        <rect data-testid="electrode-anode" x={110 - aTe / 2} y="100" width={aTe} height="150" rx="3" fill={cell.anode.color} stroke="#334155" strokeWidth="2" />
+        <rect x={110 - aTe / 2} y="100" width={aTe} height="150" rx="3" fill={`url(#${uid}-metal)`} pointerEvents="none" />
         <text x="110" y="92" fontSize="12" textAnchor="middle" fontWeight="700">(−) {cell.anode.metal}</text>
-        <rect data-testid="electrode-cathode" x={440 - cT / 2} y="100" width={cT} height="150" rx="3" fill={cell.cathode.color} stroke="#7C2D12" strokeWidth="2" />
+        <rect data-testid="electrode-cathode" x={440 - cTe / 2} y="100" width={cTe} height="150" rx="3" fill={cell.cathode.color} stroke="#7C2D12" strokeWidth="2" />
+        <rect x={440 - cTe / 2} y="100" width={cTe} height="150" rx="3" fill={`url(#${uid}-metal)`} pointerEvents="none" />
         <text x="440" y="92" fontSize="12" textAnchor="middle" fontWeight="700">(+) {cell.cathode.metal}</text>
         {/* cầu muối */}
         <path d="M150,175 L150,110 Q150,100 160,100 L400,100 Q410,100 410,110 L410,175" fill="none" stroke="#FDE68A" strokeWidth="16" strokeLinecap="round" opacity="0.9" />
@@ -440,9 +490,9 @@ export const DaniellEngine: React.FC<Props> = ({blueprint}) => {
         <text x="280" y="116" fontSize="10" textAnchor="middle" fill="#92400E">cầu muối KNO₃</text>
         {closed && (
           <>
-            <circle r="4" fill="#7C3AED"><animate attributeName="cx" values="170;390" dur="2.2s" repeatCount="indefinite" /><animate attributeName="cy" values="101;101" dur="2.2s" repeatCount="indefinite" /></circle>
+            <circle r="4" cx={reduced ? 280 : undefined} cy="101" fill="#7C3AED">{!reduced && <animate attributeName="cx" values="170;390" keyTimes="0;1" calcMode="spline" keySplines="0.45 0 0.55 1" dur="2.2s" repeatCount="indefinite" />}</circle>
             <text fontSize="9" fill="#6D28D9" x="285" y="94">K⁺ →</text>
-            <circle r="4" fill="#0891B2"><animate attributeName="cx" values="390;170" dur="2.6s" repeatCount="indefinite" /><animate attributeName="cy" values="99;99" dur="2.6s" repeatCount="indefinite" /></circle>
+            <circle r="4" cx={reduced ? 300 : undefined} cy="99" fill="#0891B2">{!reduced && <animate attributeName="cx" values="390;170" keyTimes="0;1" calcMode="spline" keySplines="0.45 0 0.55 1" dur="2.6s" repeatCount="indefinite" />}</circle>
             <text fontSize="9" fill="#0E7490" x="226" y="94">← NO₃⁻</text>
           </>
         )}

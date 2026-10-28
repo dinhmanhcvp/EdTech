@@ -4,6 +4,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {SimulationBlueprint, CurriculumLevel} from '@socratic/types';
 import {fmtNum} from '../utils/mathExpr';
 import {Slider} from './StemModelEngines';
+import {GroundShadow, SphereGrad, VisualDefs, useEased, usePrefersReducedMotion, useUid} from './visualKit';
 import {
   along,
   carnotCycle,
@@ -52,6 +53,11 @@ export const GasEngine: React.FC<Props> = ({blueprint}) => {
   const gamma = diatomic ? 7 / 5 : 5 / 3;
   const cv = diatomic ? 2.5 : 1.5;
   const V1 = 5;
+  const uid = useUid();
+  const reduced = usePrefersReducedMotion();
+  useEffect(() => {
+    if (reduced) setPlay(false); // giảm chuyển động: chu trình không tự chạy, bấm ▶ để chạy
+  }, [reduced]);
 
   const procs: Process[] = useMemo(() => {
     if (mode === 'carnot') return carnotCycle(n, Math.max(Th, Tc + 20), Tc, V1, V1 * ratio, gamma);
@@ -107,17 +113,26 @@ export const GasEngine: React.FC<Props> = ({blueprint}) => {
       </div>
       <div className="grid md:grid-cols-[2fr_3fr] gap-3">
         <svg viewBox="0 0 220 230" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="gas-cylinder">
+          <defs>
+            <VisualDefs id={uid} />
+            <SphereGrad id={`${uid}-cold`} light="#BFDBFE" base="#2563EB" dark="#1E3A8A" />
+            <SphereGrad id={`${uid}-hot`} light="#FECACA" base="#DC2626" dark="#7F1D1D" />
+          </defs>
+          <GroundShadow id={uid} cx={110} cy={220} rx={78} ry={5} />
           <rect x="40" y={205 - gasH} width="140" height={gasH} fill={`rgba(${Math.round(60 + 195 * hot)},${Math.round(130 - 60 * hot)},${Math.round(230 - 190 * hot)},0.3)`} />
-          <rect x="36" y="20" width="6" height="190" fill="#78716C" />
-          <rect x="178" y="20" width="6" height="190" fill="#78716C" />
-          <rect x="36" y="208" width="148" height="7" fill="#78716C" />
-          <rect x="40" y={205 - gasH - 12} width="140" height="12" rx="3" fill="#A8A29E" stroke="#57534E" />
-          <rect x="104" y="6" width="12" height={205 - gasH - 18} fill="#78716C" />
+          <rect x="36" y="20" width="6" height="190" rx="2" fill="#A8A29E" />
+          <rect x="178" y="20" width="6" height="190" rx="2" fill="#A8A29E" />
+          <rect x="40" y="20" width="140" height="190" fill={`url(#${uid}-glass)`} pointerEvents="none" />
+          <rect x="34" y="208" width="152" height="8" rx="3" fill={`url(#${uid}-steel)`} stroke="#57534E" strokeWidth="0.8" />
           {Array.from({length: 22}, (_, i) => (
-            <circle key={i} cx={52 + rnd(i, 1) * 116} cy={205 - gasH + 6 + rnd(i, 2) * Math.max(gasH - 14, 4)} r="3.2" fill={hot > 0.5 ? '#DC2626' : '#2563EB'}>
-              <animate attributeName="cx" values={`${52 + rnd(i, 1) * 116};${52 + rnd(i, 5) * 116};${52 + rnd(i, 1) * 116}`} dur={`${(1.6 + rnd(i, 3)) / speed}s`} repeatCount="indefinite" />
+            <circle key={i} cx={52 + rnd(i, 1) * 116} cy={205 - gasH + 6 + rnd(i, 2) * Math.max(gasH - 14, 4)} r="3.4" fill={`url(#${uid}-${hot > 0.5 ? 'hot' : 'cold'})`}>
+              {!reduced && <animate attributeName="cx" values={`${52 + rnd(i, 1) * 116};${52 + rnd(i, 5) * 116};${52 + rnd(i, 1) * 116}`} keyTimes="0;0.5;1" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" dur={`${(1.6 + rnd(i, 3)) / speed}s`} repeatCount="indefinite" />}
             </circle>
           ))}
+          <rect x="104" y="6" width="12" height={Math.max(0, 205 - gasH - 18)} fill="#78716C" stroke="#57534E" strokeWidth="0.6" />
+          <rect x="104" y="6" width="12" height={Math.max(0, 205 - gasH - 18)} fill={`url(#${uid}-metal)`} pointerEvents="none" />
+          <rect x="40" y={205 - gasH - 12} width="140" height="12" rx="3" fill={`url(#${uid}-steel)`} stroke="#57534E" />
+          <rect x="44" y={205 - gasH - 10} width="132" height="2.5" rx="1.2" fill="#fff" opacity="0.5" pointerEvents="none" />
           <text x="6" y="226" fontSize="10" fill="#57534E">T = {fmtNum(cur.T, 4)} K · V = {fmtNum(cur.V, 3)} L</text>
         </svg>
         <svg viewBox="0 0 370 232" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="gas-pv">
@@ -181,6 +196,11 @@ export const DoublePendulumEngine: React.FC<Props> = () => {
   const [damp, setDamp] = useState(0);
   const [running, setRunning] = useState(true);
   const [tick, setTick] = useState(0);
+  const uid = useUid();
+  const reduced = usePrefersReducedMotion();
+  useEffect(() => {
+    if (reduced) setRunning(false); // giảm chuyển động: con lắc không tự thả, bấm ▶ để chạy
+  }, [reduced]);
   const P: DPParams = useMemo(() => ({L1: 1, L2, m1: 1, m2, g: 9.81, damping: damp}), [L2, m2, damp]);
   const sim = useRef<{A: DPState; B: DPState; t: number; trailA: [number, number][]; trailB: [number, number][]; sep: [number, number][]; E0: number}>({
     A: [0, 0, 0, 0], B: [0, 0, 0, 0], t: 0, trailA: [], trailB: [], sep: [], E0: 0,
@@ -237,12 +257,16 @@ export const DoublePendulumEngine: React.FC<Props> = () => {
   const drift = S.E0 !== 0 ? Math.abs(dpEnergy(S.A, P) - S.E0) / (2 * P.g * P.L1) : 0;
   const sepMax = Math.max(0.01, ...S.sep.map((p) => p[1]));
   const tMax = Math.max(5, S.t);
-  const rod = (p: ReturnType<typeof dpPositions>, color: string, op: number) => (
+  const rod = (p: ReturnType<typeof dpPositions>, color: string, op: number, grad: string) => (
     <g opacity={op}>
-      <line x1={X(0)} y1={Y(0)} x2={X(p.x1)} y2={Y(p.y1)} stroke={color} strokeWidth="3" />
-      <line x1={X(p.x1)} y1={Y(p.y1)} x2={X(p.x2)} y2={Y(p.y2)} stroke={color} strokeWidth="3" />
-      <circle cx={X(p.x1)} cy={Y(p.y1)} r={7 + 3 * P.m1} fill={color} />
-      <circle cx={X(p.x2)} cy={Y(p.y2)} r={7 + 3 * P.m2} fill={color} />
+      <line x1={X(0)} y1={Y(0)} x2={X(p.x1)} y2={Y(p.y1)} stroke="#CBD5E1" strokeWidth="3.4" strokeLinecap="round" />
+      <line x1={X(p.x1)} y1={Y(p.y1)} x2={X(p.x2)} y2={Y(p.y2)} stroke="#CBD5E1" strokeWidth="3.4" strokeLinecap="round" />
+      <line x1={X(0)} y1={Y(0)} x2={X(p.x1)} y2={Y(p.y1)} stroke={color} strokeWidth="1.4" strokeLinecap="round" opacity="0.8" />
+      <line x1={X(p.x1)} y1={Y(p.y1)} x2={X(p.x2)} y2={Y(p.y2)} stroke={color} strokeWidth="1.4" strokeLinecap="round" opacity="0.8" />
+      <circle cx={X(p.x1)} cy={Y(p.y1)} r={9 + 3 * P.m1} fill={color} opacity="0.22" filter={`url(#${uid}-soft)`} />
+      <circle cx={X(p.x2)} cy={Y(p.y2)} r={9 + 3 * P.m2} fill={color} opacity="0.3" filter={`url(#${uid}-soft)`} />
+      <circle cx={X(p.x1)} cy={Y(p.y1)} r={7 + 3 * P.m1} fill={`url(#${uid}-${grad})`} />
+      <circle cx={X(p.x2)} cy={Y(p.y2)} r={7 + 3 * P.m2} fill={`url(#${uid}-${grad})`} />
     </g>
   );
   return (
@@ -255,11 +279,16 @@ export const DoublePendulumEngine: React.FC<Props> = () => {
       </div>
       <div className="grid md:grid-cols-[3fr_2fr] gap-3">
         <svg viewBox="0 0 380 270" className="w-full rounded-xl border border-[#E6E4DD] bg-slate-900" data-testid="dp-svg">
+          <defs>
+            <VisualDefs id={uid} />
+            <SphereGrad id={`${uid}-bobA`} light="#E0F2FE" base="#38BDF8" dark="#0369A1" />
+            <SphereGrad id={`${uid}-bobB`} light="#FFE4E6" base="#F43F5E" dark="#9F1239" />
+          </defs>
           <polyline points={S.trailB.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(' ')} fill="none" stroke="#FB7185" strokeWidth="1.6" opacity="0.7" />
           <polyline points={S.trailA.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(' ')} fill="none" stroke="#60A5FA" strokeWidth="1.6" opacity="0.8" />
-          {rod(pb, '#F43F5E', 0.8)}
-          {rod(pa, '#38BDF8', 0.95)}
-          <circle cx={X(0)} cy={Y(0)} r="4" fill="#E2E8F0" />
+          {rod(pb, '#F43F5E', 0.8, 'bobB')}
+          {rod(pa, '#38BDF8', 0.95, 'bobA')}
+          <circle cx={X(0)} cy={Y(0)} r="5" fill="#E2E8F0" stroke="#64748B" strokeWidth="1.5" />
         </svg>
         <svg viewBox="0 0 280 160" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="dp-chart">
           <text x="8" y="12" fontSize="10" fill="#78716C">Khoảng cách giữa hai quả nặng cuối (m)</text>
@@ -293,8 +322,14 @@ export const CoriolisEngine: React.FC<Props> = () => {
   const [frame, setFrame] = useState<'rot' | 'in'>('rot');
   const [t, setT] = useState(0);
   const R = 4;
+  const uid = useUid();
+  const reduced = usePrefersReducedMotion();
   const path = useMemo(() => coriolisPath(v, omega, R), [v, omega]);
   useEffect(() => {
+    if (reduced) {
+      setT(path.tHit); // giảm chuyển động: hiện sẵn toàn bộ quỹ đạo
+      return;
+    }
     let raf = 0;
     let last = performance.now();
     const loop = (now: number) => {
@@ -305,7 +340,7 @@ export const CoriolisEngine: React.FC<Props> = () => {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [path.tHit]);
+  }, [path.tHit, reduced]);
   const tt = Math.min(t, path.tHit);
   const idx = Math.min(path.inertial.length - 1, Math.round((tt / Math.max(path.tHit, 1e-9)) * (path.inertial.length - 1)));
   const sc = 34;
@@ -338,7 +373,7 @@ export const CoriolisEngine: React.FC<Props> = () => {
       </div>
       <svg viewBox="0 0 400 300" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="cor-svg">
         <g transform={`rotate(${(-diskAngle * 180) / Math.PI} ${cx} ${cy})`}>
-          <circle cx={cx} cy={cy} r={R * sc} fill="#E0F2FE" stroke="#0369A1" strokeWidth="3" />
+          <circle cx={cx} cy={cy} r={R * sc} fill={`url(#${uid}-disk)`} stroke="#0369A1" strokeWidth="3" />
           {Array.from({length: 12}, (_, i) => {
             const a = (i * Math.PI) / 6;
             return <line key={i} x1={cx} y1={cy} x2={cx + Math.cos(a) * R * sc} y2={cy + Math.sin(a) * R * sc} stroke="#BAE6FD" strokeWidth="1" />;
@@ -348,7 +383,8 @@ export const CoriolisEngine: React.FC<Props> = () => {
           <text x={cx + R * sc - 22} y={cy - 6} fontSize="10" fill="#B45309">mốc</text>
         </g>
         <polyline points={trail.map((p) => `${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(' ')} fill="none" stroke="#E11D48" strokeWidth="2.6" />
-        <circle cx={X(ball.x)} cy={Y(ball.y)} r="8" fill="#E11D48" stroke="#fff" strokeWidth="2" data-testid="cor-ball" />
+        <circle cx={X(ball.x) + 2} cy={Y(ball.y) + 4} r="8" fill="#292524" opacity="0.2" filter={`url(#${uid}-soft)`} />
+        <circle cx={X(ball.x)} cy={Y(ball.y)} r="8" fill={`url(#${uid}-ball)`} stroke="#fff" strokeWidth="2" data-testid="cor-ball" />
         {frame === 'rot' && omega !== 0 && tt < path.tHit && (
           <g>
             <line x1={X(ball.x)} y1={Y(ball.y)} x2={X(ball.x) + vRot.x * 40} y2={Y(ball.y) - vRot.y * 40} stroke="#16A34A" strokeWidth="3" markerEnd="url(#cva)" />
@@ -357,6 +393,12 @@ export const CoriolisEngine: React.FC<Props> = () => {
           </g>
         )}
         <defs>
+          <VisualDefs id={uid} />
+          <radialGradient id={`${uid}-disk`} cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stopColor="#F0F9FF" />
+            <stop offset="1" stopColor="#BAE6FD" />
+          </radialGradient>
+          <SphereGrad id={`${uid}-ball`} light="#FECDD3" base="#E11D48" dark="#881337" />
           <marker id="cva" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#16A34A" /></marker>
           <marker id="cfa" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7C3AED" /></marker>
         </defs>
@@ -398,7 +440,9 @@ export const FraunhoferEngine: React.FC<Props> = ({blueprint}) => {
   const missing = orders.filter((o) => o.missing);
   const secondary = useMemo(() => secondaryMaximaBetween(P), [P]);
   const hw = principalHalfWidth(P);
-  const color = wavelengthToRgb(lambda);
+  const lamE = useEased(lambda, 12);
+  const color = wavelengthToRgb(lamE); // đổi λ: màu vân chuyển mượt, đường cong vẫn tính theo λ thật
+  const uid = useUid();
   const strip = pts.filter((_, i) => i % 2 === 0);
   return (
     <div className="p-4 flex flex-col gap-3" data-testid="fraunhofer-engine" data-n={N} data-secondary={secondary} data-orders={orders.length} data-missing={missing.length}>
@@ -407,6 +451,13 @@ export const FraunhoferEngine: React.FC<Props> = ({blueprint}) => {
         <span className="ml-auto text-xs text-stone-600">β = πb sinθ/λ · γ = πd sinθ/λ</span>
       </div>
       <svg viewBox={`0 0 ${W} 240`} className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="fraunhofer-chart">
+        <defs>
+          <linearGradient id={`${uid}-area`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor={color === '#000000' ? '#2563EB' : color} stopOpacity="0.35" />
+            <stop offset="1" stopColor={color === '#000000' ? '#2563EB' : color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={`${pts.map((p, i) => `${i ? 'L' : 'M'}${sx(p.s).toFixed(1)},${sy(p.I).toFixed(1)}`).join(' ')} L${sx(smax).toFixed(1)},170 L${sx(-smax).toFixed(1)},170 Z`} fill={`url(#${uid}-area)`} pointerEvents="none" />
         <line x1="20" y1="170" x2={W - 20} y2="170" stroke="#57534E" />
         {[-1, -0.5, 0, 0.5, 1].map((f) => (
           <g key={f}>

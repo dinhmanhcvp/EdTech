@@ -4,6 +4,7 @@ import React, {useMemo, useState} from 'react';
 import {SimulationBlueprint, CurriculumLevel} from '@socratic/types';
 import {fmtNum} from '../utils/mathExpr';
 import {Slider} from './StemModelEngines';
+import {SphereGrad, VisualDefs, useEased, usePrefersReducedMotion, useUid} from './visualKit';
 import {stomata, osmosis, operonLac, type CellType, type LacMutant} from '../utils/bioModels';
 import {
   boxStatsFromData,
@@ -44,10 +45,12 @@ export const StomataEngine: React.FC<Props> = () => {
   const [moisture, setMoisture] = useState(75);
   const [temp, setTemp] = useState(26);
   const r = useMemo(() => stomata(light, moisture, temp), [light, moisture, temp]);
-  const gap = r.aperture * 40;
+  const uid = useUid();
+  const gap = useEased(r.aperture * 40, 9); // khe khí khổng mở/đóng mượt; số liệu vẫn lấy từ mô hình
+  const turgorE = useEased(r.turgor, 9);
   const rx = 30;
   const cx = 260;
-  const turgorCol = `hsl(${140 - 40 * (1 - r.turgor)}, ${45 + 25 * r.turgor}%, ${70 - 22 * r.turgor}%)`;
+  const turgorCol = `hsl(${140 - 40 * (1 - turgorE)}, ${45 + 25 * turgorE}%, ${70 - 22 * turgorE}%)`;
   const kDots = Math.round(r.potassium * 14);
   const label = {open: 'Mở rộng', narrow: 'Mở hẹp', closed: 'Đóng kín'}[r.state];
   const arrows = (n: number, down: boolean, color: string, x0: number) =>
@@ -65,23 +68,36 @@ export const StomataEngine: React.FC<Props> = () => {
       </div>
       <svg viewBox="0 0 520 300" className="w-full rounded-xl border border-[#E6E4DD] bg-gradient-to-b from-sky-50 to-white" data-testid="stomata-svg">
         <defs>
+          <VisualDefs id={uid} />
+          <SphereGrad id={`${uid}-chl`} light="#BBF7D0" base="#16A34A" dark="#14532D" />
+          <SphereGrad id={`${uid}-k`} light="#EDE9FE" base="#7C3AED" dark="#4C1D95" />
+          <linearGradient id={`${uid}-epi`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#DCFCE7" />
+            <stop offset="1" stopColor="#86EFAC" />
+          </linearGradient>
+          <radialGradient id={`${uid}-guard`} cx="0.35" cy="0.3" r="0.9">
+            <stop offset="0" stopColor="#fff" stopOpacity="0.5" />
+            <stop offset="0.6" stopColor="#fff" stopOpacity="0" />
+            <stop offset="1" stopColor="#000" stopOpacity="0.14" />
+          </radialGradient>
           <marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="context-stroke" />
           </marker>
         </defs>
-        <rect x="0" y="120" width="520" height="62" fill="#BBF7D0" opacity="0.5" />
+        <rect x="0" y="120" width="520" height="62" fill={`url(#${uid}-epi)`} opacity="0.7" />
         <text x="12" y="116" fontSize="11" fill="#166534">Biểu bì lá</text>
         {/* hai tế bào bảo vệ */}
         {[-1, 1].map((side) => {
           const x = cx + side * (gap / 2 + rx);
           return (
             <g key={side} data-testid={side < 0 ? 'guard-left' : 'guard-right'}>
-              <ellipse cx={x} cy={151} rx={rx} ry={52 + 6 * r.turgor} fill={turgorCol} stroke="#15803D" strokeWidth="2.5" />
+              <ellipse cx={x} cy={151} rx={rx} ry={52 + 6 * turgorE} fill={turgorCol} stroke="#15803D" strokeWidth="2.5" />
+              <ellipse cx={x} cy={151} rx={rx} ry={52 + 6 * turgorE} fill={`url(#${uid}-guard)`} pointerEvents="none" />
               {[0, 1, 2].map((i) => (
-                <circle key={i} cx={x + (i - 1) * 9} cy={146 + (i % 2) * 14} r="4.5" fill="#16A34A" opacity="0.8" />
+                <circle key={i} cx={x + (i - 1) * 9} cy={146 + (i % 2) * 14} r="4.8" fill={`url(#${uid}-chl)`} />
               ))}
               {Array.from({length: kDots}, (_, i) => (
-                <circle key={`k${i}`} cx={x - 18 + (i % 4) * 12} cy={118 + Math.floor(i / 4) * 12} r="2.6" fill="#7C3AED" />
+                <circle key={`k${i}`} cx={x - 18 + (i % 4) * 12} cy={118 + Math.floor(i / 4) * 12} r="2.9" fill={`url(#${uid}-k)`} />
               ))}
             </g>
           );
@@ -131,6 +147,9 @@ export const OsmosisEngine: React.FC<Props> = ({blueprint}) => {
   const wallH = 130;
   const scale = type === 'plant' ? Math.max(0.35, r.volume) : Math.sqrt(Math.max(r.volume, 0.2));
   const burst = r.state === 'burst';
+  const uid = useUid();
+  const reduced = usePrefersReducedMotion();
+  const scaleE = useEased(scale, 8); // tế bào co/trương mượt; trạng thái (vỡ, teo) vẫn lấy từ mô hình
   return (
     <div className="p-4 flex flex-col gap-3" data-testid="osmosis-engine" data-state={r.state} data-volume={r.volume.toFixed(3)} data-type={type}>
       <div className="flex flex-wrap items-baseline gap-3">
@@ -140,6 +159,21 @@ export const OsmosisEngine: React.FC<Props> = ({blueprint}) => {
       <div className="grid md:grid-cols-[3fr_2fr] gap-3">
         <svg viewBox="0 0 400 260" className="w-full rounded-xl border border-[#E6E4DD] bg-sky-50/60" data-testid="osmosis-svg">
           <defs>
+            <VisualDefs id={uid} />
+            <radialGradient id={`${uid}-rbc`} cx="0.38" cy="0.32" r="0.8">
+              <stop offset="0" stopColor="#FECACA" />
+              <stop offset="0.55" stopColor="#F87171" />
+              <stop offset="1" stopColor="#B91C1C" />
+            </radialGradient>
+            <radialGradient id={`${uid}-vac`} cx="0.5" cy="0.4" r="0.7">
+              <stop offset="0" stopColor="#E0F2FE" />
+              <stop offset="1" stopColor="#93C5FD" />
+            </radialGradient>
+            <linearGradient id={`${uid}-proto`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#DCFCE7" />
+              <stop offset="1" stopColor="#86EFAC" />
+            </linearGradient>
+            <SphereGrad id={`${uid}-chl`} light="#BBF7D0" base="#16A34A" dark="#14532D" />
             <marker id="oarr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
               <path d="M0,0 L10,5 L0,10 z" fill={flowCol} />
             </marker>
@@ -147,10 +181,11 @@ export const OsmosisEngine: React.FC<Props> = ({blueprint}) => {
           {type === 'plant' ? (
             <g transform="translate(200,130)">
               <rect x={-wallW / 2} y={-wallH / 2} width={wallW} height={wallH} rx="16" fill="#FEF3C7" stroke="#B45309" strokeWidth="5" />
-              <rect data-testid="protoplast" x={(-wallW / 2 + 7) * Math.min(scale, 1)} y={(-wallH / 2 + 7) * Math.min(scale, 1)} width={(wallW - 14) * Math.min(scale, 1)} height={(wallH - 14) * Math.min(scale, 1)} rx="14" fill="#BBF7D0" stroke="#16A34A" strokeWidth="3" />
-              <ellipse cx="0" cy="0" rx={50 * Math.min(scale, 1.05)} ry={30 * Math.min(scale, 1.05)} fill="#BFDBFE" opacity="0.8" />
-              <circle cx={-60 * Math.min(scale, 1)} cy={-24 * Math.min(scale, 1)} r="8" fill="#16A34A" />
-              <circle cx={58 * Math.min(scale, 1)} cy={26 * Math.min(scale, 1)} r="8" fill="#16A34A" />
+              <rect x={-wallW / 2} y={-wallH / 2} width={wallW} height={wallH} rx="16" fill={`url(#${uid}-glass)`} pointerEvents="none" />
+              <rect data-testid="protoplast" x={(-wallW / 2 + 7) * Math.min(scaleE, 1)} y={(-wallH / 2 + 7) * Math.min(scaleE, 1)} width={(wallW - 14) * Math.min(scaleE, 1)} height={(wallH - 14) * Math.min(scaleE, 1)} rx="14" fill={`url(#${uid}-proto)`} stroke="#16A34A" strokeWidth="3" />
+              <ellipse cx="0" cy="0" rx={50 * Math.min(scaleE, 1.05)} ry={30 * Math.min(scaleE, 1.05)} fill={`url(#${uid}-vac)`} opacity="0.9" />
+              <circle cx={-60 * Math.min(scaleE, 1)} cy={-24 * Math.min(scaleE, 1)} r="8" fill={`url(#${uid}-chl)`} />
+              <circle cx={58 * Math.min(scaleE, 1)} cy={26 * Math.min(scaleE, 1)} r="8" fill={`url(#${uid}-chl)`} />
             </g>
           ) : burst ? (
             <g transform="translate(200,130)" data-testid="rbc-burst">
@@ -165,13 +200,13 @@ export const OsmosisEngine: React.FC<Props> = ({blueprint}) => {
               {r.state === 'crenated' ? (
                 <path d={Array.from({length: 33}, (_, i) => {
                   const a = (i / 32) * Math.PI * 2;
-                  const rad = 52 * scale * (i % 2 ? 1.12 : 0.9);
+                  const rad = 52 * scaleE * (i % 2 ? 1.12 : 0.9);
                   return `${i ? 'L' : 'M'}${(Math.cos(a) * rad).toFixed(1)},${(Math.sin(a) * rad).toFixed(1)}`;
-                }).join(' ') + 'Z'} fill="#F87171" stroke="#B91C1C" strokeWidth="2.5" />
+                }).join(' ') + 'Z'} fill={`url(#${uid}-rbc)`} stroke="#B91C1C" strokeWidth="2.5" />
               ) : (
                 <>
-                  <ellipse cx="0" cy="0" rx={78 * scale} ry={78 * scale} fill="#F87171" stroke="#B91C1C" strokeWidth="3" />
-                  <ellipse cx="0" cy="0" rx={r.state === 'swollen' ? 8 : 28 * scale} ry={r.state === 'swollen' ? 6 : 18 * scale} fill="#FECACA" opacity="0.9" />
+                  <ellipse cx="0" cy="0" rx={78 * scaleE} ry={78 * scaleE} fill={`url(#${uid}-rbc)`} stroke="#B91C1C" strokeWidth="3" />
+                  <ellipse cx="0" cy="0" rx={r.state === 'swollen' ? 8 : 28 * scaleE} ry={r.state === 'swollen' ? 6 : 18 * scaleE} fill="#FECACA" opacity="0.9" />
                 </>
               )}
             </g>
@@ -181,8 +216,9 @@ export const OsmosisEngine: React.FC<Props> = ({blueprint}) => {
             const inward = r.waterFlow === 'in';
             return (
               <g key={i}>
-                <line x1={x} y1={inward ? 18 : 50} x2={x} y2={inward ? 50 : 18} stroke={flowCol} strokeWidth="3" markerEnd="url(#oarr)" />
-                <line x1={x} y1={inward ? 242 : 210} x2={x} y2={inward ? 210 : 242} stroke={flowCol} strokeWidth="3" markerEnd="url(#oarr)" />
+                <line x1={x} y1={inward ? 18 : 50} x2={x} y2={inward ? 50 : 18} stroke={flowCol} strokeWidth="3" strokeLinecap="round" markerEnd="url(#oarr)" />
+                <line x1={x} y1={inward ? 242 : 210} x2={x} y2={inward ? 210 : 242} stroke={flowCol} strokeWidth="3" strokeLinecap="round" markerEnd="url(#oarr)" />
+                {!reduced && <circle cx={x + 10} r="2.6" fill={flowCol} opacity="0.7"><animate attributeName="cy" values={inward ? '18;60' : '60;18'} keyTimes="0;1" calcMode="spline" keySplines="0.4 0 0.6 1" dur="1.6s" begin={`${-i * 0.4}s`} repeatCount="indefinite" /></circle>}
               </g>
             );
           })}
@@ -240,7 +276,15 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
     {k: 'lacY', x: 424, w: 70, n: 'permease', v: r.enzymes.lacY},
     {k: 'lacA', x: 496, w: 70, n: 'transacetylase', v: r.enzymes.lacA},
   ];
-  const mrnaLen = Math.round(r.expression * 236);
+  const uid = useUid();
+  const reduced = usePrefersReducedMotion();
+  const exprE = useEased(r.expression, 8);
+  const brkE = useEased(r.lactoseBreakdown, 8);
+  const ezZ = useEased(r.enzymes.lacZ, 8);
+  const ezY = useEased(r.enzymes.lacY, 8);
+  const ezA = useEased(r.enzymes.lacA, 8);
+  const mrnaLen = Math.round(exprE * 236);
+  const polStill = {transcribing: 260, weak: 180, blocked: 140, none: 140}[r.rnaPol as string] ?? 140; // giảm chuyển động: RNA pol đứng yên ở vị trí đặc trưng
   const toggle = (on: boolean, set: (b: boolean) => void, label: string, color: string, id: string) => (
     <button data-testid={id} onClick={() => set(!on)} className={`px-3.5 py-2 rounded-xl border text-xs font-semibold transition ${on ? 'text-white border-transparent' : 'bg-white text-stone-600 border-[#DCD9D0]'}`} style={on ? {background: color} : undefined}>
       {label}: {on ? 'CÓ' : 'KHÔNG'}
@@ -262,8 +306,17 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
         </label>
       </div>
       <svg viewBox="0 0 600 300" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="lac-svg">
+        <defs>
+          <VisualDefs id={uid} />
+          <SphereGrad id={`${uid}-pol`} light="#BFDBFE" base="#2563EB" dark="#1E3A8A" />
+          <SphereGrad id={`${uid}-pol0`} light="#E7E5E4" base="#A8A29E" dark="#57534E" />
+          <linearGradient id={`${uid}-dna`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#F5F5F4" />
+            <stop offset="1" stopColor="#D6D3D1" />
+          </linearGradient>
+        </defs>
         {/* sợi ADN */}
-        <rect x="20" y="150" width="560" height="14" rx="7" fill="#E7E5E4" />
+        <rect x="20" y="150" width="560" height="14" rx="7" fill={`url(#${uid}-dna)`} stroke="#D6D3D1" />
         {[
           {x: 40, w: 56, n: 'CAP', c: '#BBF7D0'},
           {x: 100, w: 82, n: 'Promoter', c: '#BFDBFE'},
@@ -271,12 +324,14 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
         ].map((s) => (
           <g key={s.n}>
             <rect x={s.x} y="138" width={s.w} height="38" rx="6" fill={s.c} stroke="#78716C" />
+            <rect x={s.x} y="138" width={s.w} height="38" rx="6" fill={`url(#${uid}-glass)`} pointerEvents="none" />
             <text x={s.x + s.w / 2} y="162" fontSize="10.5" textAnchor="middle" fill="#292524">{s.n}</text>
           </g>
         ))}
         {genes.map((g) => (
           <g key={g.k}>
             <rect x={g.x} y="138" width={g.w} height="38" rx="6" fill="#FDE68A" stroke="#78716C" />
+            <rect x={g.x} y="138" width={g.w} height="38" rx="6" fill={`url(#${uid}-glass)`} pointerEvents="none" />
             <text x={g.x + g.w / 2} y="162" fontSize="11" textAnchor="middle" fill="#292524" fontWeight="700">{g.k}</text>
           </g>
         ))}
@@ -306,14 +361,14 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
         )}
         {/* RNA polymerase */}
         <g data-testid="rna-pol">
-          <ellipse cx="140" cy="118" rx="26" ry="15" fill={r.rnaPol === 'blocked' ? '#A8A29E' : '#2563EB'} stroke="#1E3A8A" strokeWidth="2">
-            {r.rnaPol === 'transcribing' && <animate attributeName="cx" values="140;260;380;520;140" dur="3.2s" repeatCount="indefinite" />}
-            {r.rnaPol === 'weak' && <animate attributeName="cx" values="140;230;140" dur="5s" repeatCount="indefinite" />}
+          <ellipse cx={reduced ? polStill : 140} cy="118" rx="26" ry="15" fill={`url(#${uid}-${r.rnaPol === 'blocked' ? 'pol0' : 'pol'})`} stroke="#1E3A8A" strokeWidth="2">
+            {!reduced && r.rnaPol === 'transcribing' && <animate attributeName="cx" values="140;260;380;520;140" keyTimes="0;0.25;0.5;0.75;1" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1" dur="3.2s" repeatCount="indefinite" />}
+            {!reduced && r.rnaPol === 'weak' && <animate attributeName="cx" values="140;230;140" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" dur="5s" repeatCount="indefinite" />}
           </ellipse>
-          <text x="140" y="122" fontSize="9" textAnchor="middle" fill="#fff" fontWeight="700">
+          <text x={reduced ? polStill : 140} y="122" fontSize="9" textAnchor="middle" fill="#fff" fontWeight="700">
             RNA pol
-            {r.rnaPol === 'transcribing' && <animate attributeName="x" values="140;260;380;520;140" dur="3.2s" repeatCount="indefinite" />}
-            {r.rnaPol === 'weak' && <animate attributeName="x" values="140;230;140" dur="5s" repeatCount="indefinite" />}
+            {!reduced && r.rnaPol === 'transcribing' && <animate attributeName="x" values="140;260;380;520;140" keyTimes="0;0.25;0.5;0.75;1" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1" dur="3.2s" repeatCount="indefinite" />}
+            {!reduced && r.rnaPol === 'weak' && <animate attributeName="x" values="140;230;140" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" dur="5s" repeatCount="indefinite" />}
           </text>
         </g>
         {r.rnaPol === 'blocked' && (
@@ -329,13 +384,13 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
         {genes.map((g) => (
           <g key={`e${g.k}`}>
             <rect x={g.x} y="248" width={g.w} height="8" rx="4" fill="#E7E5E4" />
-            <rect x={g.x} y="248" width={g.w * g.v} height="8" rx="4" fill="#16A34A" />
+            <rect x={g.x} y="248" width={g.w * (g.k === 'lacZ' ? ezZ : g.k === 'lacY' ? ezY : ezA)} height="8" rx="4" fill="#16A34A" />
             <text x={g.x + g.w / 2} y="272" fontSize="8.5" textAnchor="middle" fill="#57534E">{g.n}</text>
           </g>
         ))}
         <text x="28" y="262" fontSize="10.5" fill="#57534E">Phân giải lactose</text>
         <rect x="28" y="268" width="180" height="8" rx="4" fill="#E7E5E4" />
-        <rect x="28" y="268" width={180 * r.lactoseBreakdown} height="8" rx="4" fill="#2563EB" />
+        <rect x="28" y="268" width={180 * brkE} height="8" rx="4" fill="#2563EB" />
       </svg>
       <div className={`${card} flex flex-col gap-1.5`}>
         <p data-testid="lac-explanation" className="text-xs text-stone-800">{r.explanation}</p>
@@ -347,6 +402,7 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
 
 // ====================================================================== BOXPLOT
 export const BoxplotEngine: React.FC<Props> = ({blueprint}) => {
+  const reduced = usePrefersReducedMotion();
   const input = (blueprint.meta?.input as BoxInput) ?? {kind: 'data', data: [3, 5, 7, 8, 12, 15, 18, 21, 24, 40]};
   const [data, setData] = useState<number[]>(input.kind === 'data' ? input.data : []);
   const [summary, setSummary] = useState(input.kind === 'summary' ? input : null);
@@ -419,7 +475,7 @@ export const BoxplotEngine: React.FC<Props> = ({blueprint}) => {
         {stats.outliers.map((o, i) => (
           <g key={i} data-testid="outlier">
             <circle cx={sx(o)} cy="70" r="6" fill="#E11D48" stroke="#fff" strokeWidth="1.5">
-              <animate attributeName="r" values="6;8.5;6" dur="1.2s" repeatCount="indefinite" />
+              {!reduced && <animate attributeName="r" values="6;8.5;6" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" dur="1.2s" repeatCount="indefinite" />}
             </circle>
             <text x={sx(o)} y="56" fontSize="10" textAnchor="middle" fill="#BE123C" fontWeight="700">{fmtNum(o, 4)}</text>
           </g>

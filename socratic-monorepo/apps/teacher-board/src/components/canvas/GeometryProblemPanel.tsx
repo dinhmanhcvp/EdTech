@@ -14,6 +14,23 @@ export interface GeoPickConfig {
   onPickEdge: (a: string, b: string, t: number) => void;
 }
 
+/** Bộ điều khiển hình dựng từ đề: AI hub phân tầng dùng để điều khiển, không cần bảng riêng. */
+export interface GeoController {
+  parts: number;
+  upTo: number;
+  tool: GeoTool | null;
+  picks: string[];
+  canUndo: boolean;
+  canRedo: boolean;
+  setTool: (t: GeoTool | null) => void;
+  next: () => void;
+  prev: () => void;
+  undo: () => void;
+  redo: () => void;
+  remove: () => void;
+  openRequirement: () => void;
+}
+
 interface Props {
   mode: 'new' | 'edit';
   /** chế độ sửa: cảnh và số phần đang hiện của hình trên bảng */
@@ -25,9 +42,10 @@ interface Props {
   onApply?: (scene: GeoScene, upTo: number) => void;
   onDeleteFigure?: () => void;
   onPickConfig?: (cfg: GeoPickConfig | null) => void;
+  onController?: (c: GeoController | null) => void;
 }
 
-const TOOLS: {id: GeoTool; label: string; need: number; hint: string}[] = [
+export const GEO_TOOLS: {id: GeoTool; label: string; need: number; hint: string}[] = [
   {id: 'segment', label: 'Đoạn nối', need: 2, hint: 'Chạm 2 điểm để nối thành đoạn thẳng'},
   {id: 'midpoint', label: 'Trung điểm', need: 2, hint: 'Chạm 2 điểm để lấy trung điểm'},
   {id: 'onEdge', label: 'Điểm trên cạnh', need: 1, hint: 'Chạm vào một cạnh để đặt điểm tại chỗ chạm'},
@@ -37,7 +55,8 @@ const TOOLS: {id: GeoTool; label: string; need: number; hint: string}[] = [
 
 const SAMPLE = 'Cho hình chóp S.ABCD có đáy ABCD là hình vuông cạnh a, SA vuông góc với đáy, SA = a√2.\na) Gọi M là trung điểm SB.\nb) Gọi O = AC ∩ BD.\nc) Tìm thiết diện của hình chóp cắt bởi mặt phẳng (MOD).';
 
-export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initialText, onClose, onCreate, onApply, onDeleteFigure, onPickConfig}) => {
+export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initialText, onClose, onCreate, onApply, onDeleteFigure, onPickConfig, onController}) => {
+  const [reqOpen, setReqOpen] = useState(false);
   // ---------------- chế độ MỚI: nhập đề
   const [text, setText] = useState(initialText ?? '');
   const [drawAll, setDrawAll] = useState(false);
@@ -88,7 +107,7 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
   // đăng ký cấu hình chọn điểm với bảng
   useEffect(() => {
     if (mode !== 'edit' || !onPickConfig) return;
-    const spec = TOOLS.find((x) => x.id === tool);
+    const spec = GEO_TOOLS.find((x) => x.id === tool);
     if (!tool || !spec) {
       onPickConfig(null);
       return;
@@ -106,6 +125,31 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
     return () => onPickConfig(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tool, picks, at, hist, mode]);
+
+  // đăng ký bộ điều khiển với AI hub (mỗi lần trạng thái đổi)
+  useEffect(() => {
+    if (mode !== 'edit' || !onController || !cur) return;
+    onController({
+      parts: cur.scene.parts.length,
+      upTo: cur.upTo,
+      tool,
+      picks,
+      canUndo: at > 0,
+      canRedo: at < hist.length - 1,
+      setTool: (t) => {
+        setTool(t);
+        setPicks([]);
+      },
+      next: () => stepTo(cur.upTo + 1),
+      prev: () => stepTo(cur.upTo - 1),
+      undo: () => jump(at - 1),
+      redo: () => jump(at + 1),
+      remove: () => onDeleteFigure?.(),
+      openRequirement: () => setReqOpen(true),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, tool, picks, at, hist]);
+  useEffect(() => () => onController?.(null), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addReq = () => {
     if (!cur || !req.trim()) return;
@@ -170,104 +214,54 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
 
   if (!cur) return null;
   const sc = cur.scene;
-  const spec = TOOLS.find((x) => x.id === tool);
+  const spec = GEO_TOOLS.find((x) => x.id === tool);
   const names = visibleNames(sc, cur.upTo);
   return (
-    <div data-testid="geo-toolbox" className={box}>
-      <div className="flex items-center gap-2">
-        <b className="text-sm truncate">{sc.title}</b>
-        <button className="ml-auto text-stone-400 hover:text-stone-700" onClick={onClose} title="Đóng bảng dụng cụ">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="flex items-center gap-1.5">
-        <button data-testid="geo-undo" disabled={at <= 0} onClick={() => jump(at - 1)} className="p-1.5 rounded-md border border-[#DCD9D0] disabled:opacity-30" title="Hoàn tác">
-          <Undo2 className="w-3.5 h-3.5" />
-        </button>
-        <button data-testid="geo-redo" disabled={at >= hist.length - 1} onClick={() => jump(at + 1)} className="p-1.5 rounded-md border border-[#DCD9D0] disabled:opacity-30" title="Làm lại">
-          <Redo2 className="w-3.5 h-3.5" />
-        </button>
-        <button data-testid="geo-delete" onClick={onDeleteFigure} className="ml-auto flex items-center gap-1 px-2 py-1 rounded-md border border-rose-200 text-rose-700 hover:bg-rose-50">
-          <Eraser className="w-3.5 h-3.5" /> Xóa hình
-        </button>
-      </div>
-
-      <div>
-        <div className="text-[10px] font-mono uppercase tracking-wider text-stone-500 mb-1">Các phần của đề</div>
-        <div className="flex flex-col gap-1">
-          {sc.parts.map((p, i) => (
-            <button
-              key={i}
-              data-testid={`geo-part-${i}`}
-              data-active={i <= cur.upTo ? 'true' : 'false'}
-              onClick={() => stepTo(i)}
-              className={`text-left rounded-md border px-2 py-1 truncate ${i <= cur.upTo ? 'bg-blue-50 border-blue-300 text-blue-900' : 'bg-white border-[#E6E4DD] text-stone-500'}`}
-              title={p.text}
-            >
-              <b>{p.label}</b> {p.text.replace(/\s+/g, ' ').slice(0, 46) || '(hình gốc)'}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-1.5 mt-1.5">
-          <button data-testid="geo-prev" disabled={cur.upTo <= 0} onClick={() => stepTo(cur.upTo - 1)} className="flex-1 rounded-md border border-[#DCD9D0] py-1 disabled:opacity-30">
-            ◀ Ẩn phần cuối
-          </button>
-          <button data-testid="geo-next" disabled={cur.upTo >= sc.parts.length - 1} onClick={() => stepTo(cur.upTo + 1)} className="flex-1 rounded-md bg-blue-600 text-white py-1 disabled:opacity-30">
-            Vẽ phần tiếp ▶
-          </button>
-        </div>
-      </div>
-
-      <div>
-        <div className="text-[10px] font-mono uppercase tracking-wider text-stone-500 mb-1">Dụng cụ vẽ trên hình</div>
-        <div className="flex flex-wrap gap-1">
-          {TOOLS.map((t) => (
-            <button
-              key={t.id}
-              data-testid={`geo-tool-${t.id}`}
-              onClick={() => {
-                setTool(tool === t.id ? null : t.id);
-                setPicks([]);
-              }}
-              className={`px-2 py-1 rounded-md border ${tool === t.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-[#DCD9D0] text-stone-700 hover:bg-stone-50'}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <div data-testid="geo-tool-hint" className="mt-1 text-stone-600 min-h-[16px]">
-          {spec ? `${spec.hint}${picks.length ? ` (đã chọn: ${picks.join(', ')})` : ''}` : `Có ${names.length} điểm trên hình. Chọn dụng cụ rồi chạm vào hình.`}
-        </div>
-      </div>
-
-      <div>
-        <div className="text-[10px] font-mono uppercase tracking-wider text-stone-500 mb-1">Thêm yêu cầu bằng lời</div>
-        <div className="flex gap-1.5">
-          <input
-            data-testid="geo-req-input"
-            value={req}
-            onChange={(e) => setReq(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addReq()}
-            placeholder="VD: Gọi N là trung điểm SC"
-            className="flex-1 rounded-md border border-[#DCD9D0] px-2 py-1 outline-none focus:border-blue-500"
-          />
-          <button data-testid="geo-req-add" onClick={addReq} className="rounded-md bg-blue-600 text-white px-2.5">
-            Vẽ thêm
-          </button>
-        </div>
-      </div>
-
-      {(sc.notes.length > 0 || sc.ignored.length > 0) && (
-        <div className="rounded-lg bg-stone-50 border border-[#E6E4DD] p-2 flex flex-col gap-0.5 max-h-28 overflow-auto">
-          {sc.notes.slice(-6).map((n, i) => (
-            <div key={i} className="text-emerald-700">✓ {n}</div>
-          ))}
-          {sc.ignored.slice(-4).map((n, i) => (
-            <div key={`i${i}`} className="text-amber-700">⚠ {n}</div>
-          ))}
+    <>
+      {/* chip gợi ý nhỏ khi đang dùng dụng cụ; phần còn lại điều khiển qua AI hub */}
+      {(spec || reqOpen) && (
+        <div data-testid="geo-chip" className="absolute left-1/2 -translate-x-1/2 top-14 z-40 pointer-events-auto flex items-center gap-2 rounded-full bg-white/97 border border-[#DCD9D0] shadow-md px-3 py-1.5 text-[12px] text-stone-800">
+          {reqOpen ? (
+            <>
+              <input
+                data-testid="geo-req-input"
+                autoFocus
+                value={req}
+                onChange={(e) => setReq(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    addReq();
+                    setReqOpen(false);
+                  } else if (e.key === 'Escape') setReqOpen(false);
+                }}
+                placeholder="Yêu cầu thêm, VD: Gọi N là trung điểm SC"
+                className="w-[300px] rounded-md border border-[#DCD9D0] px-2 py-1 outline-none focus:border-blue-500"
+              />
+              <button
+                data-testid="geo-req-add"
+                onClick={() => {
+                  addReq();
+                  setReqOpen(false);
+                }}
+                className="rounded-md bg-blue-600 text-white px-2.5 py-1"
+              >
+                Vẽ thêm
+              </button>
+              <button onClick={() => setReqOpen(false)} className="text-stone-400 hover:text-stone-700" title="Đóng">
+                <X className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <span data-testid="geo-tool-hint">{`${spec!.label}: ${spec!.hint}${picks.length ? ` (đã chọn: ${picks.join(', ')})` : ''}`}</span>
+              <button data-testid="geo-tool-off" onClick={() => setTool(null)} className="text-stone-400 hover:text-stone-700" title="Thôi dùng dụng cụ">
+                <X className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       )}
-    </div>
+      <span data-testid="geo-toolbox" className="hidden" data-points={names.length} data-part={cur.upTo} data-parts={sc.parts.length} />
+    </>
   );
 };

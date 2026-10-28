@@ -11,7 +11,7 @@ import { type BoardView, FIT_VIEW, clampView, zoomAt, panBy, bufferQuality } fro
 import { BoardViewControls } from './BoardViewControls';
 import { looksLikeWords, matchViName } from '../../utils/viKeywords';
 import { InlineShape } from './InlineShape';
-import { GeometryProblemPanel, type GeoPickConfig } from './GeometryProblemPanel';
+import { GeometryProblemPanel, type GeoPickConfig, type GeoController } from './GeometryProblemPanel';
 import { parseGeometryProblem, type GeoScene } from '../../utils/geometryProblem';
 import { layoutGeo } from '../../utils/geoTools';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
@@ -418,6 +418,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   // hình dựng từ đề bài: hộp thoại nhập đề / bảng dụng cụ vẽ thêm
   const [geoPanel, setGeoPanel] = useState<{ mode: 'new'; text?: string } | { mode: 'edit'; id: string } | null>(null);
   const [geoPickCfg, setGeoPickCfg] = useState<GeoPickConfig | null>(null);
+  // AI hub phân tầng: bộ điều khiển hình đang chọn + yêu cầu mở hub tại tầng 'Vẽ hình'
+  const [geoCtl, setGeoCtl] = useState<GeoController | null>(null);
+  const [hubOpenAt, setHubOpenAt] = useState<{ path: string[]; nonce: number } | null>(null);
   // khóa môn học (bộ chọn phân môn nhanh): ép ngữ cảnh nhận diện cho bộ biên dịch AI
   const [subjectLock, setSubjectLock] = useState<Subject | null>(null);
   // phương án thay thế khi hình phác thảo mơ hồ (Tap & Swap)
@@ -3130,6 +3133,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 setGeoPickCfg(null);
               }}
               onPickConfig={setGeoPickCfg}
+              onController={setGeoCtl}
             />
           )}
 
@@ -3166,7 +3170,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   onMove={onTypesetGripMove}
                   onMoveEnd={onTypesetGripUp}
                   onInteractStart={saveToUndo}
-                  onOpenTools={s.shape?.geo ? () => setGeoPanel({ mode: 'edit', id: s.id }) : undefined}
+                  onOpenTools={s.shape?.geo ? () => { setGeoPanel({ mode: 'edit', id: s.id }); setHubOpenAt({ path: ['draw'], nonce: Date.now() }); } : undefined}
                   pickMode={geoPanel?.mode === 'edit' && geoPanel.id === s.id ? geoPickCfg?.pickMode ?? null : null}
                   pickedNames={geoPanel?.mode === 'edit' && geoPanel.id === s.id ? geoPickCfg?.picks : undefined}
                   onPickPoint={geoPickCfg?.onPickPoint}
@@ -3467,7 +3471,6 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         onToggleRecorder={() => setIsStudioRecorderOpen((o) => !o)}
         customSlotCount={Object.values(hasCustomSlots).filter(Boolean).length}
         isGeometryLiveMode={isGeometryLiveMode}
-        onOpenGeometryProblem={() => setGeoPanel({ mode: 'new' })}
         onToggleGeometryLiveMode={() => setIsGeometryLiveMode((o) => !o)}
         scenes={AUTO_INK_SCENES.map((sc, i) => ({ id: sc.id, shortLabel: sc.shortLabel, hotkey: i + 1, active: activeAutoScene === sc.id, custom: !!hasCustomSlots[sc.id] }))}
         onScene={triggerAutoInk}
@@ -3513,6 +3516,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         onLasso={() => setTool('LASSO')}
         onVoice={handleVoiceDictation}
         onAskQa={() => setIsVoiceQaOpen(true)}
+        geo={geoPanel?.mode === 'edit' && geoStroke ? geoCtl : null}
+        onGeoNew={() => setGeoPanel({ mode: 'new' })}
+        openAtPath={hubOpenAt}
         anchor={(() => {
           if (selectedStrokes.length === 0 || !canvasRef.current) return null;
           const bb = bboxOfStrokes(selectedStrokes);
@@ -3627,19 +3633,6 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                         <span>{geoTitle} (hình tại chỗ)</span>
                       </button>
                     )}
-                    <button
-                      type="button"
-                      data-testid="sel-btn-geo-problem"
-                      onClick={() => {
-                        const g = selectedStrokes.find((q) => q.shape?.geo);
-                        if (g) setGeoPanel({ mode: 'edit', id: g.id });
-                        else setGeoPanel({ mode: 'new', text: formulaInput || selectedStrokes.find((q) => q.typeset)?.typeset?.text });
-                      }}
-                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold border bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-800 cursor-pointer"
-                      title="Vẽ hình từ đề bài hình học, vẽ từng phần, thêm điểm/đoạn/thiết diện trực tiếp trên hình"
-                    >
-                      {selectedStrokes.some((q) => q.shape?.geo) ? 'Dụng cụ vẽ hình' : 'Vẽ hình từ đề bài'}
-                    </button>
                     <div className="grid grid-cols-2 gap-2">
                       <button type="button" data-testid="btn-convert-ink" onClick={() => openConvert('VISUAL')} className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer border bg-violet-50 hover:bg-violet-100 border-violet-200 text-violet-700" title="Chuyển chữ viết tay thành công thức chuẩn">
                         <Wand2 className="w-3.5 h-3.5" /> Chuyển công thức

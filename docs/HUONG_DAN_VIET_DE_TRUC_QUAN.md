@@ -238,7 +238,16 @@ Các mã dưới đây có trong kiểu dữ liệu (`packages/types`) hoặc ba
 
 ## 9. Vẽ hình từ đề bài hình học
 
-Mở bằng: Dock → **Hình** → **Vẽ từ đề bài**, hoặc khoanh đề (viết tay đã được đọc hoặc gõ bằng Chèn chữ) rồi bấm **Vẽ hình từ đề bài** trong thẻ hành động của AI hub. Bấm **Trực quan hóa** trên một đoạn đề cũng dựng hình nếu đề có điều kiện cụ thể (tên hình trần như `hình chóp S.ABCD` vẫn mở mô hình 3D có sẵn).
+Mở bằng nút **AI → Vẽ hình** (tầng 1 của AI hub). Bấm vào thì các ô xung quanh nút AI **đổi thành các chức năng tầng 2**, và mỗi tầng có một ô **Quay lại** ở trên cùng; không mở bảng hay màn hình khác. Bấm **Trực quan hóa** trên một đoạn đề cũng dựng hình nếu đề có điều kiện cụ thể (tên hình trần như `hình chóp S.ABCD` vẫn mở mô hình 3D có sẵn).
+
+Cây chức năng của AI hub khi vẽ hình:
+
+- **Tầng 1:** Trực quan · Chuyển LaTeX · Chấm bài · Chọn vùng · Môn · Giọng nói · Hỏi đáp AI · **Vẽ hình**
+- **Tầng 2 (Vẽ hình):** Quay lại · **Từ đề bài** (mở ô dán đề) · và khi đã có hình: **Dụng cụ** · **Phần đề** · **Yêu cầu** (thêm bằng lời) · Hoàn tác · Làm lại · Xóa hình
+- **Tầng 3 Dụng cụ:** Quay lại · Đoạn nối · Trung điểm · Điểm trên cạnh · Chân vuông góc · Thiết diện
+- **Tầng 3 Phần đề:** Quay lại · Ẩn phần cuối · Vẽ phần tiếp
+
+Chọn một dụng cụ thì đĩa đóng lại để bạn chạm lên hình; nút AI hiện tên dụng cụ đang dùng. Chạm nút AI lần nữa sẽ mở lại đúng tầng đang dùng. Esc hoặc chạm ra ngoài đưa đĩa về tầng 1. Nút **✎ Dụng cụ** trên hình mở thẳng tầng Vẽ hình.
 
 **Đề viết đầy đủ hoặc tóm tắt đều được.** Ví dụ:
 
@@ -252,8 +261,8 @@ Mở bằng: Dock → **Hình** → **Vẽ từ đề bài**, hoặc khoanh đ�
 
 **Điểm và đường phụ:** trung điểm, điểm thuộc cạnh, trọng tâm, tâm đáy, hình chiếu (chân đường vuông góc, đường cao), giao của hai đường (`O = AC ∩ BD`), giao của đường với mặt phẳng, giao tuyến hai mặt phẳng (`d = (SAB) ∩ (SCD)`), thiết diện (`thiết diện cắt bởi (MNP)`), điểm trùng nhau (`I ≡ O`), đoạn nối hai điểm.
 
-**Vẽ từng phần:** đề có các phần `a)`, `b)`, `c)` (hoặc `KL:`) được tách riêng. Mặc định chỉ vẽ **hình gốc**; trong bảng dụng cụ bấm **Vẽ phần tiếp** để hiện thêm từng phần, hoặc **Ẩn phần cuối** để bớt đi. Hình gốc không dịch chuyển hay đổi tỉ lệ khi thêm phần. Tích **Vẽ đủ mọi phần ngay** nếu muốn vẽ hết một lần.
+**Vẽ từng phần:** đề có các phần `a)`, `b)`, `c)` (hoặc `KL:`) được tách riêng. Mặc định chỉ vẽ **hình gốc**; trong AI → Vẽ hình → Phần đề bấm **Vẽ phần tiếp** để hiện thêm từng phần, hoặc **Ẩn phần cuối** để bớt đi. Hình gốc không dịch chuyển hay đổi tỉ lệ khi thêm phần. Tích **Vẽ đủ mọi phần ngay** nếu muốn vẽ hết một lần.
 
-**Vẽ thêm trực tiếp trên hình (bảng dụng cụ, nút ✎ Dụng cụ trên hình):** Đoạn nối (chạm 2 điểm), Trung điểm (2 điểm), Điểm trên cạnh (chạm vào cạnh), Chân vuông góc (điểm rồi 2 điểm của đường thẳng), Thiết diện (3 điểm); ô **Thêm yêu cầu bằng lời** (ví dụ `Gọi N là trung điểm SC`); Hoàn tác / Làm lại.
+**Vẽ thêm trực tiếp trên hình (AI → Vẽ hình → Dụng cụ):** Đoạn nối (chạm 2 điểm), Trung điểm (2 điểm), Điểm trên cạnh (chạm vào cạnh), Chân vuông góc (điểm rồi 2 điểm của đường thẳng), Thiết diện (3 điểm); **Yêu cầu** để thêm bằng lời (ví dụ `Gọi N là trung điểm SC`); Hoàn tác / Làm lại.
 
-**Giới hạn:** chỉ chiếu xiên kiểu sách giáo khoa (chưa xoay 3D tự do); không có đường tròn, mặt cầu, mặt nón, mặt trụ; đề nhiều bước tính toán chỉ được dựng phần hình, không giải bài; câu không hiểu được hiện trong danh sách ⚠ của bảng dụng cụ thay vì bị bỏ qua lặng lẽ.
+**Giới hạn:** chỉ chiếu xiên kiểu sách giáo khoa (chưa xoay 3D tự do); không có đường tròn, mặt cầu, mặt nón, mặt trụ; đề nhiều bước tính toán chỉ được dựng phần hình, không giải bài; câu không hiểu được hiện trong danh sách ⚠ ở ô xem trước (khi nhập đề) thay vì bị bỏ qua lặng lẽ.

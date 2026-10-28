@@ -1165,3 +1165,13 @@ Yêu cầu: khối 3D vẽ tay phải được nắn thẳng và nối đỉnh t
 - Nối vào: Dock → Hình → "Vẽ từ đề bài"; thẻ hành động của AI hub (`sel-btn-geo-problem`: "Vẽ hình từ đề bài" / "Dụng cụ vẽ hình" khi chọn hình đã dựng); `handleVisualize` (đề có điều kiện cụ thể → dựng hình; đề nhiều phần chỉ vẽ phần gốc); nút ✎ Dụng cụ trên hình (`InlineShape`). `ShapeMeta.geo` giữ cảnh; `ShapeMeta.sketch` thêm `aux/marks/polys/names/fixed` (đường phụ màu xanh, chấm điểm phụ, thiết diện tô nhạt, chạm chọn điểm).
 - Kiểm tra: tsc 0 lỗi; teacher-board 53 file/931 test (mới: `geometryProblem.test.ts`, `geoTools.test.tsx`); trình duyệt thật: dán đề chóp S.ABCD 3 phần → chỉ hình gốc; "Vẽ phần tiếp" ×3 hiện M, O, hai đường chéo, thiết diện (MOD) tô xanh, hình gốc không dịch; dụng cụ trung điểm chạm A, C ra điểm mới.
 - Chưa làm: xoay 3D tự do/kéo điểm tự do trên hình dựng (chiếu xiên cố định); đường tròn/mặt cầu/mặt nón; khớp ràng buộc hình phẳng (`planeConstraints.ts` đã viết nhưng chưa nối); đọc đề dài nhiều bước phức tạp qua Gemini. Chưa commit.
+
+
+# 2026-10-28 (đêm, bổ sung 6) — AI hub phân tầng; Vẽ hình thành chức năng riêng của hub
+
+- Yêu cầu: tách vẽ hình thành chức năng tầng 1 của AI hub; bấm vào thì các ô quanh nút AI đổi thành chức năng tầng 2 (và tầng 3) kèm nút Quay lại, không mở nhiều màn hình.
+- `SmartboardDock.tsx` `AiFab`: trạng thái `path` (`[]` | `['draw']` | `['draw','tools'|'parts']`); `rootItems` (8 ô, thêm `ai-fab-draw`), `back` (`ai-fab-back`), ô con `ai-fab-draw-*`; thuộc tính `keep` (không đóng đĩa), `disabled`; `data-tier` trên `radial-action-menu`; đóng bằng Esc/chạm ngoài → về tầng 1, đóng sau khi chọn dụng cụ thì giữ tầng; nhãn nút tâm hiện tên dụng cụ đang dùng. Props mới: `geo` (GeoController), `onGeoNew`, `openAtPath {path, nonce}`. Gỡ nút "Vẽ từ đề bài" ở popover Hình của Dock và `sel-btn-geo-problem` ở thẻ hành động.
+- `GeometryProblemPanel.tsx`: chế độ sửa không còn bảng lớn: thành bộ điều khiển không giao diện (`onController` → `GeoController`: parts/upTo/tool/picks/canUndo/canRedo/setTool/next/prev/undo/redo/remove/openRequirement) + chip nhỏ (`geo-chip`) hiện gợi ý dụng cụ hoặc ô nhập yêu cầu; chế độ mới (nhập đề) giữ hộp thoại. `GEO_TOOLS` xuất ra để hub dùng.
+- `SmartboardCanvas.tsx`: `geoCtl`, `hubOpenAt`; ✎ Dụng cụ trên hình mở hub tại tầng `draw`.
+- Test: `geoTools.test.tsx` (bộ điều khiển + 4 test AiFab phân tầng); tsc 0 lỗi; teacher-board 53 file/935 test. Trình duyệt thật (1024×768): AI → Vẽ hình → Từ đề bài → dán đề → vẽ → AI → Dụng cụ cho tầng 3 gồm Quay lại + 5 dụng cụ quanh nút AI. Chưa commit.
+- Lưu ý: đĩa 216 px chứa tối đa 8 ô; tầng 2 khi đã có hình đúng 8 ô (Quay lại + 7). Thêm ô nữa phải sang tầng 3.

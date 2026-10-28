@@ -33,9 +33,21 @@ import {
   MessageSquare,
   Hand,
   Type,
+  ArrowLeft,
+  PenTool,
+  FileText,
+  Ruler,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  CircleDot,
+  MapPin,
+  CornerDownRight,
+  Scissors,
 } from 'lucide-react';
 import type {CanvasTool, ShapeType, GridPattern} from './SmartboardCanvas';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
+import { GEO_TOOLS, type GeoController, type GeoTool } from './GeometryProblemPanel';
 
 export interface DockScene {
   id: string;
@@ -72,7 +84,6 @@ export interface SmartboardDockProps {
   customSlotCount: number;
   isGeometryLiveMode?: boolean;
   onToggleGeometryLiveMode?: () => void;
-  onOpenGeometryProblem?: () => void;
   scenes: DockScene[];
   onScene: (id: string) => void;
   busyLabel: string | null;
@@ -174,19 +185,6 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             <span>Trực quan hình học {p.isGeometryLiveMode ? '(BẬT)' : ''}</span>
-          </button>
-        )}
-        {p.onOpenGeometryProblem && (
-          <button
-            data-testid="geo-problem-open"
-            onClick={() => {
-              p.onOpenGeometryProblem?.();
-              setPop(null);
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ml-1 bg-white border-[#DCD9D0] text-emerald-700 hover:bg-emerald-50"
-            title="Dán đề bài hình học (đủ hoặc tóm tắt, có ký hiệu ⊥ ∥ ∩ ≡): vẽ từng phần, vẽ thêm trực tiếp trên hình"
-          >
-            <span>Vẽ từ đề bài</span>
           </button>
         )}
       </div>
@@ -356,7 +354,38 @@ export interface AiFabProps {
   panel?: React.ReactNode;
   /** Toạ độ màn hình cạnh vùng khoanh: nút AI nhảy tới đây khi vừa khoanh xong */
   anchor?: {x: number; y: number} | null;
+  /** Vẽ hình từ đề: bộ điều khiển của hình đang chọn (null/undefined nếu chưa có hình) */
+  geo?: GeoController | null;
+  /** mở hộp nhập đề mới */
+  onGeoNew?: () => void;
+  /** yêu cầu mở hub tại một tầng (vd ['draw','tools']); đổi `nonce` để kích hoạt lại */
+  openAtPath?: {path: string[]; nonce: number} | null;
 }
+
+interface HubItem {
+  id: string;
+  testid: string;
+  aliasTestId?: string;
+  label: string;
+  hint: string;
+  icon: React.ReactNode;
+  run: () => void;
+  tone: string;
+  activeTone: string;
+  badge?: number;
+  highlight: boolean;
+  /** true: giữ đĩa mở (đi tầng khác, bấm lặp lại) */
+  keep?: boolean;
+  disabled?: boolean;
+}
+
+const GEO_TOOL_ICONS: Record<GeoTool, React.ReactNode> = {
+  segment: <Minus className="w-4 h-4" />,
+  midpoint: <CircleDot className="w-4 h-4" />,
+  onEdge: <MapPin className="w-4 h-4" />,
+  foot: <CornerDownRight className="w-4 h-4" />,
+  section: <Scissors className="w-4 h-4" />,
+};
 
 /**
  * Đĩa Xoay AI Trung Tâm (Solid White AI Radial Turntable Disc):
@@ -379,8 +408,13 @@ export const AiFab: React.FC<AiFabProps> = ({
   detectedIntent,
   panel,
   anchor,
+  geo,
+  onGeoNew,
+  openAtPath,
 }) => {
   const [open, setOpen] = useState(false);
+  // phân tầng: [] = tầng 1; ['draw'] = Vẽ hình; ['draw','tools'] / ['draw','parts'] = tầng 3
+  const [path, setPath] = useState<string[]>([]);
   const hasPanel = !!panel;
   const [panelOpen, setPanelOpen] = useState(true);
   const prevHasPanel = useRef(false);
@@ -394,9 +428,17 @@ export const AiFab: React.FC<AiFabProps> = ({
 
   useEffect(() => {
     const away = (e: PointerEvent) => {
-      if (root.current && !root.current.contains(e.target as Node)) setOpen(false);
+      if (root.current && !root.current.contains(e.target as Node)) {
+        setOpen(false);
+        setPath([]);
+      }
     };
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        setPath([]);
+      }
+    };
     document.addEventListener('pointerdown', away);
     window.addEventListener('keydown', esc);
     return () => {
@@ -404,6 +446,13 @@ export const AiFab: React.FC<AiFabProps> = ({
       window.removeEventListener('keydown', esc);
     };
   }, []);
+
+  useEffect(() => {
+    if (openAtPath) {
+      setPath(openAtPath.path);
+      setOpen(true);
+    }
+  }, [openAtPath?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (hasPanel && !prevHasPanel.current) {
@@ -478,7 +527,7 @@ export const AiFab: React.FC<AiFabProps> = ({
     else setOpen((o) => !o);
   };
 
-  const items = [
+  const rootItems: HubItem[] = [
     {
       id: 'viz',
       testid: 'top-toolbar-btn-visualize',
@@ -573,7 +622,78 @@ export const AiFab: React.FC<AiFabProps> = ({
       badge: undefined,
       highlight: false,
     },
+    {
+      id: 'draw',
+      testid: 'ai-fab-draw',
+      aliasTestId: 'radial-action-draw',
+      label: 'Vẽ hình',
+      hint: 'Vẽ hình hình học từ đề bài, vẽ từng phần và vẽ thêm trên hình',
+      icon: <PenTool className="w-4 h-4" />,
+      run: () => setPath(['draw']),
+      keep: true,
+      tone: 'text-emerald-600',
+      activeTone: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-300 font-bold',
+      badge: undefined,
+      highlight: !!geo,
+    },
   ];
+
+  const back: HubItem = {
+    id: 'back',
+    testid: 'ai-fab-back',
+    label: 'Quay lại',
+    hint: 'Về tầng trước',
+    icon: <ArrowLeft className="w-4 h-4" />,
+    run: () => setPath((pt) => pt.slice(0, -1)),
+    keep: true,
+    tone: 'text-stone-600',
+    activeTone: '',
+    highlight: false,
+  };
+  const sub = (id: string, label: string, hint: string, icon: React.ReactNode, run: () => void, extra: Partial<HubItem> = {}): HubItem => ({
+    id,
+    testid: `ai-fab-draw-${id}`,
+    label,
+    hint,
+    icon,
+    run,
+    tone: 'text-emerald-600',
+    activeTone: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-300',
+    highlight: false,
+    ...extra,
+  });
+
+  const tierKey = path.join('/');
+  let items: HubItem[] = rootItems;
+  if (tierKey === 'draw') {
+    items = [
+      back,
+      sub('new', 'Từ đề bài', 'Dán đề bài (đủ hoặc tóm tắt, có ký hiệu ⊥ ∥ ∩ ≡) để dựng hình', <FileText className="w-4 h-4" />, () => onGeoNew?.()),
+      ...(geo
+        ? [
+            sub('tools', 'Dụng cụ', 'Đoạn nối, trung điểm, điểm trên cạnh, chân vuông góc, thiết diện', <Ruler className="w-4 h-4" />, () => setPath(['draw', 'tools']), {keep: true, highlight: !!geo.tool}),
+            sub('parts', `Phần ${geo.upTo + 1}/${geo.parts}`, 'Hiện thêm hoặc ẩn bớt từng phần của đề', <ChevronRight className="w-4 h-4" />, () => setPath(['draw', 'parts']), {keep: true}),
+            sub('req', 'Yêu cầu', 'Thêm yêu cầu bằng lời, VD: Gọi N là trung điểm SC', <Plus className="w-4 h-4" />, () => geo.openRequirement()),
+            sub('undo', 'Hoàn tác', 'Quay lại bước vẽ trước', <Undo2 className="w-4 h-4" />, () => geo.undo(), {keep: true, disabled: !geo.canUndo}),
+            sub('redo', 'Làm lại', 'Làm lại bước vừa hoàn tác', <Redo2 className="w-4 h-4" />, () => geo.redo(), {keep: true, disabled: !geo.canRedo}),
+            sub('remove', 'Xóa hình', 'Xóa hình đang chọn khỏi bảng', <Trash2 className="w-4 h-4" />, () => geo.remove(), {tone: 'text-rose-600'}),
+          ]
+        : []),
+    ];
+  } else if (tierKey === 'draw/tools' && geo) {
+    items = [
+      back,
+      ...GEO_TOOLS.map((t) =>
+        sub(t.id, t.label, t.hint, GEO_TOOL_ICONS[t.id], () => geo.setTool(geo.tool === t.id ? null : t.id), {highlight: geo.tool === t.id}),
+      ),
+    ];
+  } else if (tierKey === 'draw/parts' && geo) {
+    items = [
+      back,
+      sub('prev', 'Ẩn phần cuối', 'Bớt phần vừa vẽ', <ChevronLeft className="w-4 h-4" />, () => geo.prev(), {keep: true, disabled: geo.upTo <= 0}),
+      sub('next', 'Vẽ phần tiếp', 'Hiện thêm phần tiếp theo của đề', <ChevronRight className="w-4 h-4" />, () => geo.next(), {keep: true, disabled: geo.upTo >= geo.parts - 1}),
+    ];
+  }
 
   // Chia đều 360 độ quanh tâm đĩa trắng (bắt đầu từ góc -90 độ đỉnh trên)
   const stepAngle = 360 / items.length;
@@ -628,7 +748,7 @@ export const AiFab: React.FC<AiFabProps> = ({
           </svg>
 
           {/* Vành nút tác vụ nằm gọn bên trong mặt đĩa trắng */}
-          <div data-testid="radial-action-menu" className="contents">
+          <div data-testid="radial-action-menu" data-tier={tierKey || 'root'} key={tierKey} className="contents">
             {items.map((it, i) => {
               const rad = (angles[i] * Math.PI) / 180;
               const dist = 72;
@@ -640,16 +760,17 @@ export const AiFab: React.FC<AiFabProps> = ({
                   type="button"
                   data-testid={it.testid}
                   tabIndex={open ? 0 : -1}
+                  disabled={it.disabled}
                   onClick={() => {
                     it.run();
-                    setOpen(false);
+                    if (!it.keep) setOpen(false);
                   }}
                   title={it.hint}
                   style={{
                     left: `${rx}px`,
                     top: `${ry}px`,
                   }}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 w-[56px] h-[48px] rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all duration-150 hover:bg-stone-100/90 active:scale-95 cursor-pointer ${
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 w-[56px] h-[48px] rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all duration-150 hover:bg-stone-100/90 active:scale-95 cursor-pointer disabled:opacity-30 disabled:pointer-events-none ${
                     it.highlight ? it.activeTone : 'text-stone-700'
                   }`}
                 >
@@ -720,7 +841,7 @@ export const AiFab: React.FC<AiFabProps> = ({
                       : 'text-stone-400'
                   }`}
                 >
-                  {detectedIntent === 'GRADE' ? 'Chấm' : detectedIntent === 'VISUALIZE' ? 'Đồ thị' : open ? 'Đóng' : 'Công cụ'}
+                  {geo?.tool ? (GEO_TOOLS.find((g) => g.id === geo.tool)?.label ?? 'Vẽ') : detectedIntent === 'GRADE' ? 'Chấm' : detectedIntent === 'VISUALIZE' ? 'Đồ thị' : open ? 'Đóng' : 'Công cụ'}
                 </span>
               </>
             )}

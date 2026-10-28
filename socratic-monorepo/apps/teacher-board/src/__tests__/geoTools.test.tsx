@@ -3,7 +3,8 @@ import {describe, it, expect, vi} from 'vitest';
 import {render, screen, fireEvent, act} from '@testing-library/react';
 import {buildScene, renderScene} from '../utils/geometryProblem';
 import {addFoot, addMidpoint, addPointOnSegment, addSection, addSegment, addRequirement, layoutGeo, nextName} from '../utils/geoTools';
-import {GeometryProblemPanel} from '../components/canvas/GeometryProblemPanel';
+import {GeometryProblemPanel, type GeoController} from '../components/canvas/GeometryProblemPanel';
+import {AiFab} from '../components/canvas/SmartboardDock';
 
 const PYR = 'Cho hình chóp S.ABCD đáy ABCD là hình vuông cạnh a, SA vuông góc với đáy, SA = a√2';
 const scene = () => buildScene(PYR).scene!;
@@ -89,32 +90,122 @@ describe('bảng dụng cụ / hộp thoại vẽ từ đề', () => {
     expect((screen.getByTestId('geo-problem-draw') as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('chế độ sửa: bước từng phần, thêm yêu cầu, hoàn tác, chọn điểm bằng chạm', () => {
+  it('chế độ sửa: bộ điều khiển bước từng phần, thêm yêu cầu, hoàn tác, chọn điểm bằng chạm', () => {
     const sc = buildScene(`${PYR}. a) Gọi M là trung điểm SB. b) Gọi O = AC ∩ BD.`).scene!;
     const onApply = vi.fn();
     let pick: any = null;
-    render(<GeometryProblemPanel mode="edit" scene={sc} upTo={0} onClose={() => undefined} onApply={onApply} onPickConfig={(c) => (pick = c)} />);
-    fireEvent.click(screen.getByTestId('geo-next'));
+    let ctl: GeoController | null = null;
+    render(<GeometryProblemPanel mode="edit" scene={sc} upTo={0} onClose={() => undefined} onApply={onApply} onPickConfig={(c) => (pick = c)} onController={(c) => (ctl = c)} />);
+    expect(ctl!.parts).toBe(3);
+    act(() => ctl!.next());
     expect(onApply).toHaveBeenLastCalledWith(sc, 1);
-    fireEvent.click(screen.getByTestId('geo-next'));
+    act(() => ctl!.next());
     expect(onApply).toHaveBeenLastCalledWith(sc, 2);
-    // thêm yêu cầu bằng lời
+    // thêm yêu cầu bằng lời qua ô nhỏ
+    act(() => ctl!.openRequirement());
     fireEvent.change(screen.getByTestId('geo-req-input'), {target: {value: 'Gọi N là trung điểm SC'}});
     fireEvent.click(screen.getByTestId('geo-req-add'));
     const last = onApply.mock.calls[onApply.mock.calls.length - 1];
     expect(last[0].parts).toHaveLength(4);
     expect(last[1]).toBe(3);
     // hoàn tác về trước khi thêm
-    fireEvent.click(screen.getByTestId('geo-undo'));
+    expect(ctl!.canUndo).toBe(true);
+    act(() => ctl!.undo());
     expect(onApply.mock.calls[onApply.mock.calls.length - 1][0].parts).toHaveLength(3);
+    expect(ctl!.canRedo).toBe(true);
     // dụng cụ trung điểm: chọn hai điểm
-    fireEvent.click(screen.getByTestId('geo-tool-midpoint'));
+    act(() => ctl!.setTool('midpoint'));
     expect(pick.pickMode).toBe('point');
+    expect(screen.getByTestId('geo-chip').textContent).toContain('Trung điểm');
     act(() => pick.onPickPoint('A'));
-    // sau lần chọn đầu cấu hình được đăng ký lại với 1 điểm đã chọn
     expect(pick.picks).toEqual(['A']);
     act(() => pick.onPickPoint('B'));
     const after = onApply.mock.calls[onApply.mock.calls.length - 1][0];
     expect(Object.keys(after.pts).length).toBe(Object.keys(sc.pts).length + 1);
+  });
+});
+
+describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
+  const ctl = (over: Partial<GeoController> = {}): GeoController => ({
+    parts: 3,
+    upTo: 1,
+    tool: null,
+    picks: [],
+    canUndo: true,
+    canRedo: false,
+    setTool: vi.fn(),
+    next: vi.fn(),
+    prev: vi.fn(),
+    undo: vi.fn(),
+    redo: vi.fn(),
+    remove: vi.fn(),
+    openRequirement: vi.fn(),
+    ...over,
+  });
+  const base = {selectionCount: 0, busy: false, listening: false, onConvert: () => undefined, onVisualize: () => undefined, onLasso: () => undefined, onVoice: () => undefined};
+  const tier = () => screen.getByTestId('radial-action-menu').getAttribute('data-tier');
+  const ids = () => Array.from(screen.getByTestId('radial-action-menu').querySelectorAll('button')).map((b) => b.getAttribute('data-testid'));
+
+  it('tầng 1 có thêm Vẽ hình; bấm vào thì vòng đổi sang tầng 2 có nút Quay lại', () => {
+    render(<AiFab {...base} geo={ctl()} onGeoNew={() => undefined} />);
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    expect(tier()).toBe('root');
+    expect(ids()).toContain('ai-fab-draw');
+    fireEvent.click(screen.getByTestId('ai-fab-draw'));
+    expect(tier()).toBe('draw');
+    // tầng 2 thay hẳn các ô tầng 1
+    expect(ids()).not.toContain('ai-fab-voice');
+    expect(ids()).toEqual(expect.arrayContaining(['ai-fab-back', 'ai-fab-draw-new', 'ai-fab-draw-tools', 'ai-fab-draw-parts', 'ai-fab-draw-req', 'ai-fab-draw-undo', 'ai-fab-draw-redo', 'ai-fab-draw-remove']));
+    fireEvent.click(screen.getByTestId('ai-fab-back'));
+    expect(tier()).toBe('root');
+  });
+
+  it('tầng 3 Dụng cụ: chọn dụng cụ thì đĩa đóng nhưng mở lại vẫn ở tầng 3', () => {
+    const g = ctl();
+    render(<AiFab {...base} geo={g} />);
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw-tools'));
+    expect(tier()).toBe('draw/tools');
+    expect(ids().filter((i) => i?.startsWith('ai-fab-draw-'))).toHaveLength(5);
+    fireEvent.click(screen.getByTestId('ai-fab-draw-midpoint'));
+    expect(g.setTool).toHaveBeenCalledWith('midpoint');
+    expect(screen.getByTestId('ai-fab-menu').getAttribute('aria-hidden')).toBe('true');
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    expect(tier()).toBe('draw/tools');
+    // Quay lại hai lần về tầng 1
+    fireEvent.click(screen.getByTestId('ai-fab-back'));
+    expect(tier()).toBe('draw');
+    fireEvent.click(screen.getByTestId('ai-fab-back'));
+    expect(tier()).toBe('root');
+  });
+
+  it('tầng 3 Phần đề: bấm lặp lại không đóng đĩa; nút bị khóa ở hai đầu', () => {
+    const g = ctl({upTo: 2});
+    render(<AiFab {...base} geo={g} />);
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw-parts'));
+    expect((screen.getByTestId('ai-fab-draw-next') as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByTestId('ai-fab-draw-prev'));
+    expect(g.prev).toHaveBeenCalled();
+    expect(screen.getByTestId('ai-fab-menu').getAttribute('aria-hidden')).toBe('false');
+  });
+
+  it('chưa có hình thì tầng 2 chỉ có Từ đề bài; yêu cầu mở lại hub tại tầng được chỉ định', () => {
+    const onGeoNew = vi.fn();
+    const {rerender} = render(<AiFab {...base} geo={null} onGeoNew={onGeoNew} />);
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw'));
+    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-new']);
+    fireEvent.click(screen.getByTestId('ai-fab-draw-new'));
+    expect(onGeoNew).toHaveBeenCalled();
+    expect(screen.getByTestId('ai-fab-menu').getAttribute('aria-hidden')).toBe('true');
+    // Esc đưa về tầng 1
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    fireEvent.keyDown(window, {key: 'Escape'});
+    rerender(<AiFab {...base} geo={ctl()} openAtPath={{path: ['draw'], nonce: 1}} />);
+    expect(screen.getByTestId('ai-fab-menu').getAttribute('aria-hidden')).toBe('false');
+    expect(tier()).toBe('draw');
   });
 });

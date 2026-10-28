@@ -95,7 +95,7 @@ describe('In-Place Geometry Transformation on Smartboard Canvas', () => {
     expect(shape.getAttribute('data-title')).toContain('Tam giác');
     expect(screen.queryByTestId('hologram-simulation-overlay')).not.toBeInTheDocument();
     // tầng 2 có đủ chức năng chuyên sâu cho hình vừa dựng
-    for (const id of ['ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-hidden', 'ai-fab-draw-export']) expect(await screen.findByTestId(id)).toBeInTheDocument();
+    for (const id of ['ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-view']) expect(await screen.findByTestId(id)).toBeInTheDocument();
   });
 
   it('Hình lập phương vẽ tay: Vẽ hình nhận ra lập phương (không phải hộp) và có đủ dụng cụ', async () => {
@@ -109,7 +109,7 @@ describe('In-Place Geometry Transformation on Smartboard Canvas', () => {
     expect(screen.queryByTestId('hologram-simulation-overlay')).not.toBeInTheDocument();
     // hình khối có nét đứt cho cạnh khuất
     expect(screen.getAllByTestId('edge-hidden').length).toBeGreaterThan(0);
-    for (const id of ['ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-view3d']) expect(await screen.findByTestId(id)).toBeInTheDocument();
+    for (const id of ['ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-view']) expect(await screen.findByTestId(id)).toBeInTheDocument();
   });
 
   it('Thanh công cụ nổi dạng viên thuốc (Floating Pill Toolbar) ngay dưới hình 3D cho phép tương tác 1 chạm (Frame 38 Video)', () => {

@@ -9,6 +9,7 @@
  * Phần nào không hiểu được thì trả về trong `ignored` để người dùng biết, không bịa.
  */
 import {add, cross, dot, len, mul, norm, sub, type V3} from './solids';
+import {faceOnView, sliceSection, unfoldNet} from './netUnfold';
 
 export interface DrawnFigure {
   title: string;
@@ -22,7 +23,15 @@ export interface DrawnFigure {
   polys: number[][];
   /** đường cong (đường tròn ngoại/nội tiếp…) đã chiếu xuống bảng, tọa độ cùng hệ với verts */
   curves: {pts: {x: number; y: number}[]; label: string}[];
+  /** mặt của khối đã chiếu (khi bật tô màu): chỉ số đỉnh, màu, mặt nhìn thấy hay bị che */
+  faces: {poly: number[]; color: string; visible: boolean}[];
 }
+
+/** bảng màu các mặt (tô nhạt, dễ phân biệt mặt nào là mặt nào) */
+export const FACE_COLORS = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
+
+/** góc nhìn khởi đầu khi chuyển từ góc chuẩn SGK sang xoay tự do */
+export const DEFAULT_ORBIT = {yaw: 0.6, pitch: 0.4};
 
 export interface GeometryParse {
   figure: DrawnFigure | null;
@@ -981,6 +990,14 @@ export interface GeoScene {
   notes: string[];
   ignored: string[];
   circles?: GeoCircle[];
+  /** xoay tự do (phép chiếu trực giao); không có = góc chuẩn SGK (chiếu xiên cố định) */
+  rot?: {yaw: number; pitch: number};
+  /** tô màu từng mặt của khối */
+  colors?: boolean;
+  /** khai triển thành lưới phẳng: 0 = khối, 1 = lưới (đang gấp/mở khi ở giữa) */
+  net?: number;
+  /** mặt phẳng cắt ngang song song đáy ở độ cao 0..1 (thiết diện đổi theo khi kéo) */
+  slice?: number;
   /** ẩn hẳn nét khuất (mặc định vẽ nét đứt theo chuẩn SGK) */
   hideHidden?: boolean;
 }
@@ -1031,16 +1048,91 @@ export const sceneFromModel = toScene;
 
 // ------------------------------------------------------------------ chiếu xuống bảng
 /** Vẽ cảnh đến hết phần `upTo` (mặc định tất cả). Tọa độ theo khung cố định của hình gốc (có thể âm với phần vẽ thêm ra ngoài). */
+/** Quay quanh trục đứng (yaw) rồi trục ngang (pitch); +z hướng về phía người xem. */
+function rotYP(p: V3, yaw: number, pitch: number): V3 {
+  const cy = Math.cos(yaw);
+  const sy = Math.sin(yaw);
+  const cp = Math.cos(pitch);
+  const sp = Math.sin(pitch);
+  const x1 = p[0] * cy + p[2] * sy;
+  const z1 = -p[0] * sy + p[2] * cy;
+  return [x1, p[1] * cp - z1 * sp, p[1] * sp + z1 * cp];
+}
+
+/** Hình đang khai triển (t > 0): mỗi mặt là một đa giác riêng, nhãn đỉnh lặp ở từng mặt, máy ảnh chuyển dần sang nhìn thẳng vào lưới. */
+function renderNet(sc: GeoScene, t: number): DrawnFigure | null {
+  const st = unfoldNet(sc, t);
+  if (!st) return null;
+  const base = sc.rot ?? DEFAULT_ORBIT;
+  const fo = faceOnView(st.rootNormal);
+  const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+  const yaw = base.yaw + wrap(fo.yaw - base.yaw) * t;
+  const pitch = base.pitch + (fo.pitch - base.pitch) * t;
+  const solidPts = [...new Set(sc.faces.flat())].map((n) => sc.pts[n]);
+  const R0 = Math.max(1e-6, ...solidPts.map((p) => len(sub(p, st.solidCenter))));
+  const lerp = (a: number, b: number) => a + (b - a) * t;
+  const R = lerp(R0, st.flatRadius);
+  const center = add(mul(st.solidCenter, 1 - t), mul(st.flatCenter, t));
+  const k = 300 / (2.2 * R);
+  const proj = (p: V3) => {
+    const q = rotYP(sub(p, center), yaw, pitch);
+    return {x: Math.round((150 + k * q[0]) * 10) / 10, y: Math.round((150 - k * q[1]) * 10) / 10, z: q[2]};
+  };
+  const order = st.faces
+    .map((f, i) => ({f, i, z: f.pts.reduce((s, p) => s + proj(p).z, 0) / f.pts.length}))
+    .sort((a, b) => a.z - b.z);
+  const verts: {x: number; y: number}[] = [];
+  const labels: string[] = [];
+  const edges: DrawnFigure['edges'] = [];
+  const faces: DrawnFigure['faces'] = [];
+  for (const {f, i} of order) {
+    const first = verts.length;
+    f.pts.forEach((p, j) => {
+      const q = proj(p);
+      verts.push({x: q.x, y: q.y});
+      labels.push(f.names[j].startsWith('#') ? '' : f.names[j]);
+    });
+    for (let j = 0; j < f.pts.length; j++) edges.push({a: first + j, b: first + ((j + 1) % f.pts.length), hidden: false, aux: false});
+    faces.push({poly: f.pts.map((_, j) => first + j), color: FACE_COLORS[i % FACE_COLORS.length], visible: rotYP(f.normal, yaw, pitch)[2] > -0.05});
+  }
+  return {title: sc.title, dim: 3, verts, labels, edges, marks: [], polys: [], curves: [], faces};
+}
+
 export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
+  if (sc.net && sc.net > 0 && sc.dim === 3) {
+    const nf = renderNet(sc, Math.min(1, sc.net));
+    if (nf) return nf;
+  }
   const m = modelFromScene(sc);
   const included = (n: string) => (m.ptPart.get(n) ?? 0) <= upTo;
   const names = m.order.filter(included);
   const idx = new Map(names.map((n, i) => [n, i]));
   const v = m.view ?? {k: 1, bx: 0, by: 0};
-  const verts = names.map((n) => {
-    const p = rawProject(m, m.pts.get(n)!);
-    return {x: Math.round((p.x - v.bx) * v.k * 10) / 10, y: Math.round((p.y - v.by) * v.k * 10) / 10};
-  });
+  const rot = sc.rot && m.dim === 3 ? sc.rot : null;
+  const basePts = [...m.pts.entries()].filter(([n]) => (m.ptPart.get(n) ?? 0) === 0).map(([, p]) => p);
+  const cen0 = centroid(basePts);
+  const R0 = Math.max(1e-6, ...basePts.map((p) => len(sub(p, cen0))));
+  // xoay tự do: quay quanh trục đứng (yaw) rồi trục ngang (pitch); +z hướng về phía người xem
+  const rotate = (p: V3): V3 => {
+    if (!rot) return p;
+    const cy = Math.cos(rot.yaw);
+    const sy = Math.sin(rot.yaw);
+    const cp = Math.cos(rot.pitch);
+    const sp = Math.sin(rot.pitch);
+    const x1 = p[0] * cy + p[2] * sy;
+    const z1 = -p[0] * sy + p[2] * cy;
+    return [x1, p[1] * cp - z1 * sp, p[1] * sp + z1 * cp];
+  };
+  const pv = (p: V3) => {
+    if (rot) {
+      const q = rotate(sub(p, cen0));
+      const k = 300 / (2.2 * R0);
+      return {x: Math.round((150 + k * q[0]) * 10) / 10, y: Math.round((150 - k * q[1]) * 10) / 10};
+    }
+    const r = rawProject(m, p);
+    return {x: Math.round((r.x - v.bx) * v.k * 10) / 10, y: Math.round((r.y - v.by) * v.k * 10) / 10};
+  };
+  const verts = names.map((n) => pv(m.pts.get(n)!));
 
   // mặt thấy được: nhìn theo r = (KX, KY, 1) (phía sau là z âm)
   const cen = centroid([...m.pts.entries()].filter(([n]) => (m.ptPart.get(n) ?? 0) === 0).map(([, p]) => p));
@@ -1052,7 +1144,7 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
     n = norm(n);
     return dot(n, sub(centroid(fp), cen)) < 0 ? mul(n, -1) : n;
   });
-  const faceVisible = normals.map((n) => dot(n, R) > 1e-6);
+  const faceVisible = normals.map((n) => (rot ? rotate(n)[2] > 1e-6 : dot(n, R) > 1e-6));
   const onFace = (p: V3): number[] => {
     const out: number[] = [];
     facePts.forEach((fp, i) => {
@@ -1093,6 +1185,20 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
     const extra = (m.merged.get(n) ?? []).filter((al) => (m.mergedPart.get(al) ?? 0) <= upTo);
     return [n.startsWith('#') ? '' : n, ...extra].filter(Boolean).join('≡');
   });
+  // mặt phẳng cắt ngang kéo được: thiết diện song song đáy
+  const polysOut = m.polys.map((p, i) => ({p, part: m.polyPart[i] ?? 0})).filter(({p, part}) => part <= upTo && p.every((n) => idx.has(n))).map(({p}) => p.map((n) => idx.get(n)!));
+  if (sc.slice !== undefined && m.dim === 3) {
+    const sec = sliceSection(sc, sc.slice);
+    if (sec) {
+      const first = verts.length;
+      sec.forEach((p) => {
+        verts.push(pv(p));
+        labels.push('');
+      });
+      sec.forEach((_, i) => edges.push({a: first + i, b: first + ((i + 1) % sec.length), hidden: false, aux: true}));
+      polysOut.push(sec.map((_, i) => first + i));
+    }
+  }
   return {
     title: m.title,
     dim: m.dim,
@@ -1100,7 +1206,7 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
     labels,
     edges,
     marks: [...m.marks].filter((n) => idx.has(n)).map((n) => idx.get(n)!),
-    polys: m.polys.map((p, i) => ({p, part: m.polyPart[i] ?? 0})).filter(({p, part}) => part <= upTo && p.every((n) => idx.has(n))).map(({p}) => p.map((n) => idx.get(n)!)),
+    polys: polysOut,
     curves: m.circles
       .filter((c) => c.part <= upTo)
       .map((c) => {
@@ -1111,11 +1217,16 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
         for (let i = 0; i <= 96; i++) {
           const t = (i / 96) * Math.PI * 2;
           const p = add(c.center, add(mul(u, c.r * Math.cos(t)), mul(w, c.r * Math.sin(t))));
-          const q = rawProject(m, p);
-          pts.push({x: Math.round((q.x - v.bx) * v.k * 10) / 10, y: Math.round((q.y - v.by) * v.k * 10) / 10});
+          pts.push(pv(p));
         }
         return {pts, label: c.label};
       }),
+    faces: sc.colors
+      ? m.faces
+          .map((f, i) => ({f, i}))
+          .filter(({f}) => f.every((n) => idx.has(n)))
+          .map(({f, i}) => ({poly: f.map((n) => idx.get(n)!), color: FACE_COLORS[i % FACE_COLORS.length], visible: faceVisible[i]}))
+      : [],
   };
 }
 

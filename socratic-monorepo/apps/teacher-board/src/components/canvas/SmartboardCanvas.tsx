@@ -3324,6 +3324,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   pickedNames={geoPanel?.mode === 'edit' && geoPanel.id === s.id ? geoPickCfg?.picks : undefined}
                   onPickPoint={geoPickCfg?.onPickPoint}
                   onPickEdge={geoPickCfg?.onPickEdge}
+                  onRotate={geoPanel?.mode === 'edit' && geoPanel.id === s.id && s.shape?.geo?.scene.dim === 3 && geoCtl?.figureId === s.id ? (yaw, pitch) => geoCtl.setRot(yaw, pitch) : undefined}
+                  rotation={s.shape?.geo?.scene.rot ?? null}
                 />
               ))}
             {strokes

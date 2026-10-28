@@ -141,6 +141,17 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     canRedo: false,
     hideHidden: false,
     toggleHidden: vi.fn(),
+    is3D: true,
+    rot: null,
+    setRot: vi.fn(),
+    resetView: vi.fn(),
+    colors: false,
+    toggleColors: vi.fn(),
+    canNet: true,
+    net: 0,
+    setNet: vi.fn(),
+    slice: null,
+    setSlice: vi.fn(),
     exportTikz: vi.fn(),
     open3D: vi.fn(),
     setTool: vi.fn(),
@@ -165,7 +176,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     expect(tier()).toBe('draw');
     // tầng 2 thay hẳn các ô tầng 1
     expect(ids()).not.toContain('ai-fab-voice');
-    expect(ids()).toEqual(expect.arrayContaining(['ai-fab-back', 'ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-parts', 'ai-fab-draw-hidden', 'ai-fab-draw-view3d', 'ai-fab-draw-export', 'ai-fab-draw-edit']));
+    expect(ids()).toEqual(expect.arrayContaining(['ai-fab-back', 'ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-parts', 'ai-fab-draw-view', 'ai-fab-draw-edit']));
     fireEvent.click(screen.getByTestId('ai-fab-back'));
     expect(tier()).toBe('root');
   });
@@ -208,7 +219,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     fireEvent.click(screen.getByTestId('ai-fab'));
     fireEvent.click(screen.getByTestId('ai-fab-draw'));
     // chưa khoanh gì: gợi ý khoanh đề; vẫn có lối phụ gõ đề
-    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-new', 'ai-fab-draw-typed', 'ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-hidden', 'ai-fab-draw-view3d', 'ai-fab-draw-export']);
+    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-new', 'ai-fab-draw-typed', 'ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-view']);
     expect((screen.getByTestId('ai-fab-draw-tools') as HTMLButtonElement).disabled).toBe(true); // mờ cho tới khi có hình
     fireEvent.click(screen.getByTestId('ai-fab-draw-typed'));
     expect(onGeoNew).toHaveBeenCalled();
@@ -240,6 +251,13 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     render(<AiFab {...base} geo={g} />);
     fireEvent.click(screen.getByTestId('ai-fab'));
     fireEvent.click(screen.getByTestId('ai-fab-draw'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw-view'));
+    expect(tier()).toBe('draw/view');
+    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-orbit', 'ai-fab-draw-colors', 'ai-fab-draw-hidden', 'ai-fab-draw-view3d', 'ai-fab-draw-export']);
+    fireEvent.click(screen.getByTestId('ai-fab-draw-orbit'));
+    expect(g.setRot).toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('ai-fab-draw-colors'));
+    expect(g.toggleColors).toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('ai-fab-draw-hidden'));
     expect(g.toggleHidden).toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('ai-fab-draw-export'));
@@ -247,6 +265,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     fireEvent.click(screen.getByTestId('ai-fab-draw-view3d'));
     expect(g.open3D).toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('ai-fab'));
+    fireEvent.click(screen.getByTestId('ai-fab-back'));
     fireEvent.click(screen.getByTestId('ai-fab-draw-measure'));
     expect(tier()).toBe('draw/measure');
     expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-dist', 'ai-fab-draw-angle']);
@@ -267,5 +286,28 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     fireEvent.click(screen.getByTestId('ai-fab-draw'));
     expect(onDrawSelected).toHaveBeenCalledTimes(1);
     expect(tier()).toBe('draw');
+  });
+
+  it('Khai triển và Cắt ngang là chức năng tầng 2 của hình khối; cắt ngang có tầng 3 lên/xuống', () => {
+    const g = ctl();
+    render(<AiFab {...base} geo={g} />);
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw'));
+    expect(ids()).toEqual(expect.arrayContaining(['ai-fab-draw-net', 'ai-fab-draw-slice']));
+    fireEvent.click(screen.getByTestId('ai-fab-draw-net'));
+    expect(g.setNet).toHaveBeenCalledWith(1);
+    fireEvent.click(screen.getByTestId('ai-fab-draw-slice'));
+    expect(g.setSlice).toHaveBeenCalledWith(0.5);
+    expect(tier()).toBe('draw/slice');
+    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-up', 'ai-fab-draw-down', 'ai-fab-draw-off']);
+  });
+
+  it('hình phẳng không có Khai triển / Cắt ngang', () => {
+    const g = ctl({is3D: false, canNet: false});
+    render(<AiFab {...base} geo={g} />);
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw'));
+    expect(ids()).not.toContain('ai-fab-draw-net');
+    expect(ids()).not.toContain('ai-fab-draw-slice');
   });
 });

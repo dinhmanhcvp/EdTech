@@ -49,9 +49,12 @@ import {
   Eye,
   EyeOff,
   Box,
+  Palette,
+  Layers,
 } from 'lucide-react';
 import type {CanvasTool, ShapeType, GridPattern} from './SmartboardCanvas';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
+import { DEFAULT_ORBIT } from '../../utils/geometryProblem';
 import { GEO_TOOLS, GEO_MEASURE, type GeoController, type GeoTool } from './GeometryProblemPanel';
 
 export interface DockScene {
@@ -703,9 +706,16 @@ export const AiFab: React.FC<AiFabProps> = ({
             sub('tools', 'Dựng', 'Đoạn nối, trung điểm, điểm trên cạnh, chân vuông góc, thiết diện', <Ruler className="w-4 h-4" />, () => setPath(['draw', 'tools']), {keep: true, highlight: GEO_TOOLS.some((t) => t.id === geo.tool)}),
             sub('measure', 'Đo', 'Đo độ dài đoạn thẳng và số đo góc ngay trên hình', <Compass className="w-4 h-4" />, () => setPath(['draw', 'measure']), {keep: true, highlight: GEO_MEASURE.some((t) => t.id === geo.tool)}),
             sub('parts', `Phần ${geo.upTo + 1}/${geo.parts}`, 'Hiện thêm hoặc ẩn bớt từng phần. Muốn thêm yêu cầu: viết lên bảng (VD: vẽ đường tròn ngoại tiếp) rồi khoanh và bấm Vẽ hình', <ChevronRight className="w-4 h-4" />, () => setPath(['draw', 'parts']), {keep: true}),
-            sub('hidden', geo.hideHidden ? 'Hiện nét đứt' : 'Ẩn nét khuất', 'Đổi giữa nét đứt chuẩn SGK cho cạnh bị che và ẩn hẳn các cạnh đó', geo.hideHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />, () => geo.toggleHidden(), {keep: true, highlight: geo.hideHidden}),
-            sub('view3d', 'Xem 3D', 'Mở mô phỏng 3D của khối: xoay, cắt thiết diện, khai triển', <Box className="w-4 h-4" />, () => geo.open3D()),
-            sub('export', 'Xuất TikZ', 'Chép mã TikZ của hình (nét đứt đúng chuẩn) để dán vào LaTeX', <Download className="w-4 h-4" />, () => geo.exportTikz(), {keep: true}),
+            sub('view', 'Hiển thị', 'Xoay 3D, tô màu mặt, nét khuất, mở mô phỏng 3D, xuất TikZ', <Eye className="w-4 h-4" />, () => setPath(['draw', 'view']), {keep: true}),
+            ...(geo.canNet
+              ? [
+                  sub('net', geo.net > 0.5 ? 'Gấp lại' : 'Khai triển', geo.net > 0.5 ? 'Gấp lưới phẳng lại thành khối' : 'Mở khối thành lưới phẳng các mặt (có hoạt họa gấp/mở)', <Layers className="w-4 h-4" />, () => geo.setNet(geo.net > 0.5 ? 0 : 1), {keep: true, highlight: geo.net > 0}),
+                  sub('slice', 'Cắt ngang', 'Mặt phẳng cắt song song đáy: kéo lên xuống để thiết diện đổi theo', <Scissors className="w-4 h-4" />, () => {
+                    if (geo.slice === null) geo.setSlice(0.5);
+                    setPath(['draw', 'slice']);
+                  }, {keep: true, highlight: geo.slice !== null}),
+                ]
+              : []),
             sub('edit', 'Chỉnh sửa', 'Hoàn tác, làm lại, xóa hình', <PenLine className="w-4 h-4" />, () => setPath(['draw', 'edit']), {keep: true}),
           ]
         : [
@@ -720,9 +730,7 @@ export const AiFab: React.FC<AiFabProps> = ({
             // các chức năng chuyên sâu luôn hiện để biết có gì; mờ cho tới khi có hình
             sub('tools', 'Dựng', 'Cần có hình trước: vẽ từ vùng khoanh hoặc gõ đề', <Ruler className="w-4 h-4" />, () => undefined, {disabled: true}),
             sub('measure', 'Đo', 'Cần có hình trước: đo độ dài và góc', <Compass className="w-4 h-4" />, () => undefined, {disabled: true}),
-            sub('hidden', 'Nét khuất', 'Cần có hình trước: đổi nét đứt chuẩn SGK / ẩn nét khuất', <EyeOff className="w-4 h-4" />, () => undefined, {disabled: true}),
-            sub('view3d', 'Xem 3D', 'Cần có hình trước: mô phỏng 3D xoay, cắt, khai triển', <Box className="w-4 h-4" />, () => undefined, {disabled: true}),
-            sub('export', 'Xuất TikZ', 'Cần có hình trước: chép mã TikZ để dán vào LaTeX', <Download className="w-4 h-4" />, () => undefined, {disabled: true}),
+            sub('view', 'Hiển thị', 'Cần có hình trước: xoay 3D, tô màu mặt, nét khuất, xem 3D, xuất TikZ', <Eye className="w-4 h-4" />, () => undefined, {disabled: true}),
           ]),
     ];
   } else if (tierKey === 'draw/tools' && geo) {
@@ -738,6 +746,27 @@ export const AiFab: React.FC<AiFabProps> = ({
       ...GEO_MEASURE.map((t) =>
         sub(t.id, t.label, t.hint, GEO_TOOL_ICONS[t.id], () => geo.setTool(geo.tool === t.id ? null : t.id), {highlight: geo.tool === t.id}),
       ),
+    ];
+  } else if (tierKey === 'draw/view' && geo) {
+    items = [
+      back,
+      ...(geo.is3D
+        ? [
+            sub('orbit', geo.rot ? 'Góc SGK' : 'Xoay tự do', geo.rot ? 'Về góc nhìn chuẩn sách giáo khoa (chiếu xiên, song song giữ song song)' : 'Bật xoay 3D: kéo ngón tay trên hình để xoay, cạnh khuất tự thành nét đứt', <Box className="w-4 h-4" />, () => (geo.rot ? geo.resetView() : geo.setRot(DEFAULT_ORBIT.yaw, DEFAULT_ORBIT.pitch)), {keep: true, highlight: !!geo.rot}),
+            sub('colors', geo.colors ? 'Bỏ màu mặt' : 'Tô màu mặt', 'Tô màu từng mặt của khối để phân biệt các mặt', <Palette className="w-4 h-4" />, () => geo.toggleColors(), {keep: true, highlight: geo.colors}),
+          ]
+        : []),
+      sub('hidden', geo.hideHidden ? 'Hiện nét đứt' : 'Ẩn nét khuất', 'Đổi giữa nét đứt chuẩn SGK cho cạnh bị che và ẩn hẳn các cạnh đó', geo.hideHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />, () => geo.toggleHidden(), {keep: true, highlight: geo.hideHidden}),
+      sub('view3d', 'Xem 3D', 'Mở mô phỏng 3D của khối: xoay, cắt thiết diện, khai triển', <Box className="w-4 h-4" />, () => geo.open3D()),
+      sub('export', 'Xuất TikZ', 'Chép mã TikZ của hình (nét đứt đúng chuẩn) để dán vào LaTeX', <Download className="w-4 h-4" />, () => geo.exportTikz(), {keep: true}),
+    ];
+  } else if (tierKey === 'draw/slice' && geo) {
+    const sl = geo.slice ?? 0.5;
+    items = [
+      back,
+      sub('up', 'Lên', 'Nâng mặt phẳng cắt lên 10%', <ChevronRight className="w-4 h-4 -rotate-90" />, () => geo.setSlice(Math.min(0.95, sl + 0.1)), {keep: true, disabled: geo.slice === null || sl >= 0.95}),
+      sub('down', 'Xuống', 'Hạ mặt phẳng cắt xuống 10%', <ChevronRight className="w-4 h-4 rotate-90" />, () => geo.setSlice(Math.max(0.05, sl - 0.1)), {keep: true, disabled: geo.slice === null || sl <= 0.05}),
+      sub('off', 'Tắt cắt', 'Bỏ mặt phẳng cắt', <X className="w-4 h-4" />, () => geo.setSlice(null), {keep: true, disabled: geo.slice === null}),
     ];
   } else if (tierKey === 'draw/parts' && geo) {
     items = [

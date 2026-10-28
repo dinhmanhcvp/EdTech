@@ -62,3 +62,40 @@ describe('nét vẽ tay đã nhận dạng → hình dựng có đủ dụng c�
     expect(d('A', "A'")).toBeCloseTo(1, 3);
   });
 });
+
+import {renderScene as renderSc} from '../utils/geometryProblem';
+
+describe('xoay tự do và tô màu mặt', () => {
+  const sc = parseGeometryProblem("hình lập phương ABCD.A'B'C'D' cạnh a").scene!;
+  it('góc chuẩn SGK không đổi khi không đặt rot; có rot thì đổi hình chiếu', () => {
+    const a = renderSc(sc);
+    const b = renderSc({...sc, rot: {yaw: 0.6, pitch: 0.4}});
+    expect(a.verts).not.toEqual(b.verts);
+    expect(renderSc({...sc, rot: undefined}).verts).toEqual(a.verts);
+  });
+  it('khối xoay: luôn 3 mặt thấy và 3 mặt khuất của lập phương, cạnh khuất là nét đứt', () => {
+    for (const rot of [{yaw: 0.6, pitch: 0.4}, {yaw: -1.1, pitch: 0.7}, {yaw: 2.5, pitch: -0.5}]) {
+      const f = renderSc({...sc, rot, colors: true});
+      expect(f.faces).toHaveLength(6);
+      expect(f.faces.filter((x) => x.visible)).toHaveLength(3);
+      const dashed = f.edges.filter((e) => e.hidden).length;
+      expect(dashed).toBe(3);
+    }
+  });
+  it('màu từng mặt khác nhau; tắt màu thì không có mặt tô', () => {
+    const f = renderSc({...sc, rot: {yaw: 0.6, pitch: 0.4}, colors: true});
+    expect(new Set(f.faces.map((x) => x.color)).size).toBe(6);
+    expect(renderSc({...sc, rot: {yaw: 0.6, pitch: 0.4}}).faces).toHaveLength(0);
+  });
+  it('xoay không làm hình nhảy khỏi khung 300x300', () => {
+    for (let i = 0; i < 12; i++) {
+      const f = renderSc({...sc, rot: {yaw: i * 0.5, pitch: (i % 5) * 0.3 - 0.6}});
+      for (const p of f.verts) {
+        expect(p.x).toBeGreaterThan(-20);
+        expect(p.x).toBeLessThan(320);
+        expect(p.y).toBeGreaterThan(-20);
+        expect(p.y).toBeLessThan(320);
+      }
+    }
+  });
+});

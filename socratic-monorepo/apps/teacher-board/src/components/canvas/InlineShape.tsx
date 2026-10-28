@@ -4,6 +4,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import type {ShapeMeta, Stroke} from '../../utils/lassoGeometry';
 import {VERTEX_LABELS, planeStats, solidWire, triangleCenters, type P2} from '../../utils/inlineShape';
 import type {SolidKind} from '../../utils/localRouter';
+import {DEFAULT_ORBIT} from '../../utils/geometryProblem';
 import {BUNDLES, KIND_COLOR, KIND_LABEL, addConstructs, arcPath, distToPolygon, evalConstructs, hasConstruct, polygonBundles, toggleConstruct, type ConstructKind, type PlaneConstruct} from '../../utils/planeConstruct';
 
 interface Props {
@@ -23,19 +24,23 @@ interface Props {
   onPickPoint?: (name: string) => void;
   onPickEdge?: (a: string, b: string, t: number) => void;
   onOpenTools?: () => void;
+  /** hình khối đang chọn: kéo ngón tay trên hình để xoay 3D (yaw/pitch tuyệt đối) */
+  onRotate?: (yaw: number, pitch: number) => void;
+  rotation?: {yaw: number; pitch: number} | null;
 }
 
 const fmt = (v: number) => v.toFixed(1).replace('.', ',');
 const midOf = (a: P2, b: P2): P2 => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
 
 /** Hình học vẽ thẳng lên bảng: không khung, không nền; chỉ có nét hình, nhãn đỉnh và tay cầm nhỏ. */
-export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onOpenTools}) => {
+export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onOpenTools, onRotate, rotation}) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const s = stroke.shape!;
   const t = stroke.typeset!;
   const w = t.w;
   const h = t.h;
   const ink = stroke.color;
+  const rotDrag = useRef<{sx: number; sy: number; yaw: number; pitch: number; started: boolean} | null>(null);
   const drag = useRef<{kind: 'vertex' | 'rotate'; i: number; sx: number; sy: number; ox: number; oy: number; started: boolean} | null>(null);
 
   const wire = useMemo(
@@ -251,6 +256,42 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
           )}
           {s.kind === 'solid' && sk && (
             <g data-testid="sketch-wire" data-fitted={sk.labels.length > 0 ? 'true' : 'false'} data-geo={sk.fixed ? 'true' : 'false'}>
+              {onRotate && (
+                <rect
+                  data-testid="geo-rotate-surface"
+                  x={-30}
+                  y={-30}
+                  width={w + 60}
+                  height={h + 60}
+                  fill="transparent"
+                  style={{pointerEvents: 'auto', cursor: 'grab', touchAction: 'none'}}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+                    const r0 = rotation ?? DEFAULT_ORBIT;
+                    rotDrag.current = {sx: e.clientX, sy: e.clientY, yaw: r0.yaw, pitch: r0.pitch, started: false};
+                  }}
+                  onPointerMove={(e) => {
+                    const d = rotDrag.current;
+                    if (!d) return;
+                    const dx = e.clientX - d.sx;
+                    const dy = e.clientY - d.sy;
+                    if (!d.started) {
+                      if (Math.hypot(dx, dy) < 3) return;
+                      d.started = true;
+                      onInteractStart();
+                    }
+                    onRotate(d.yaw + dx * 0.01, Math.max(-1.5, Math.min(1.5, d.pitch + dy * 0.01)));
+                  }}
+                  onPointerUp={() => (rotDrag.current = null)}
+                  onPointerCancel={() => (rotDrag.current = null)}
+                />
+              )}
+              {(sk.faces ?? [])
+                .filter((f) => f.visible)
+                .map((f, i) => (
+                  <polygon key={`face${i}`} data-testid="geo-face" points={f.poly.map((k) => `${sk.verts[k].x},${sk.verts[k].y}`).join(' ')} fill={f.color} fillOpacity={0.3} stroke="none" style={{pointerEvents: 'none'}} />
+                ))}
               {(sk.polys ?? []).map((poly, i) => (
                 <polygon key={`poly${i}`} data-testid="geo-section" points={poly.map((k) => `${sk.verts[k].x},${sk.verts[k].y}`).join(' ')} fill="#2563EB" fillOpacity={0.14} stroke="#2563EB" strokeWidth={1.5} strokeDasharray="4 3" />
               ))}

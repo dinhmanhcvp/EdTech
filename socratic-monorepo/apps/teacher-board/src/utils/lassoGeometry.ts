@@ -49,6 +49,8 @@ export interface ShapeMeta {
     polys?: number[][];
     /** đường tròn ngoại/nội tiếp… đã chiếu xuống bảng */
     curves?: {pts: {x: number; y: number}[]; label: string}[];
+    /** mặt đã tô màu của khối */
+    faces?: {poly: number[]; color: string; visible: boolean}[];
     /** hình dựng từ đề: đỉnh không kéo được, chạm để chọn điểm */
     fixed?: boolean;
   };

@@ -56,6 +56,12 @@
 - `InlineShape.tsx`: nút "📐 Dựng hình" → chạm đỉnh/cạnh hiện menu phép dựng; gói nhanh G/H/I/O/9 điểm; tam giác tù có đoạn kéo dài nét đứt. Xuất ảnh vẽ qua `drawConstructsOnCtx` (SmartboardCanvas.drawShapeOnCtx).
 - CHƯA làm: hình dựng từ ĐỀ BÀI (`GeoScene`, `sketch.fixed`) vẫn dùng bộ dụng cụ chạm-điểm cũ (đoạn nối, trung điểm, chân vuông góc, thiết diện), chưa có phân giác/trung trực động; đường tròn bàng tiếp, tiếp tuyến, dựng tự do (qua điểm bất kỳ) chưa có. `utils/planeConstraints.ts` (chưa theo dõi, chưa ai dùng) không đụng tới.
 
+# 3d. Nâng cấp thẩm mỹ lớp dùng chung (29/10/2026)
+- `engines/visualKit.tsx` thêm: `RANGE_CLASS`/`rangeFill` (thanh trượt rãnh tô theo giá trị, núm lớn), `CurvePath` (đường cong có quầng), `CHART_BG`, `setupHiDpiCanvas` (canvas nền ×1–3 theo DPR/kích thước hiển thị, mã vẽ vẫn dùng LW×LH = 620×340).
+- Áp dụng: `Slider` (StemModel, dùng ở mọi engine), `Control` + `button` aria-pressed + nền Scene (Advanced), thanh trượt macro của SimulationWidget, thanh trượt GeometryEngine (khai triển/kích thước), nền biểu đồ SVG ở Stem/MoreStem/Phys/Chem/Advanced, đường cong HW/thẩm thấu/Lotka–Volterra; canvas Bio/ChemLab/PhysicsSandbox/MathPlot render sắc nét.
+- Giữ nguyên có chủ đích: thanh trượt của hologram nền tối (GraphEngine, thanh dưới GeometryEngine); `globals.css` (cấm sửa).
+- Chưa làm: GraphEngine/GeometryEngine 3D đã có DPR sẵn nên không đụng; chưa đo fps canvas ×3 trên máy yếu; các mục review 1–2 của dựng hình động (đường tròn quá lớn khi tam giác gần thẳng hàng; replay chưa vẽ đường dựng) vẫn mở.
+
 # 4. Chỉ thị cho Agent tiếp theo (Immediate Next Steps)
 1. **Kiểm tra trạng thái ban đầu:**
    - Chạy lệnh `git status -s` để xác nhận nhánh `main` sạch sẽ và đồng bộ với remote.
@@ -1244,3 +1250,17 @@ Yêu cầu: khối 3D vẽ tay phải được nắn thẳng và nối đỉnh t
 - **Vẽ hình** (`handleDrawSelection`): nét vẽ tay nhận dạng được (lập phương/hộp chữ nhật/chóp tứ giác đều/tứ diện đều/lăng trụ tam giác; tam giác đều/vuông/cân/thường, hình vuông/chữ nhật/bình hành) được thay bằng HÌNH DỰNG (`GeoScene`) tại đúng chỗ nét vẽ (`problemTextForSolid/Plane` trong `geoTools.ts` → `buildScene`), nên có đủ dụng cụ tầng 2. Kích thước hộp lấy theo tỉ lệ nét vẽ; hình phẳng thì dùng hình mẫu của loại đó (không giữ tỉ lệ nét vẽ). Bát diện/lăng trụ lục giác chưa có hình dựng: vẫn nắn tại chỗ như cũ (không có tầng 2).
 - Tầng 2 luôn hiện đủ chức năng chuyên sâu; chưa có hình thì Dựng/Đo/Nét khuất/Xem 3D/Xuất TikZ mờ (`disabled`) kèm gợi ý. `tam giác đều/cân/vuông ABC` thêm vào bộ phân tích đề.
 - Test: `geoResearchTools.test.ts` (+nét vẽ tay→hình dựng), `inPlaceGeometryTransformation.test.tsx` viết lại; tsc 0 lỗi, vitest 989.
+
+
+# 2026-10-29 — Hình dựng tương tác như video mẫu: viết lên bảng thay hộp gõ, xoay 3D, tô màu mặt, khai triển, cắt ngang
+
+Tham chiếu: hai video `1792910979915_…mp4` (lập phương → tô màu mặt → xoay → khai triển lưới chữ thập) và `1792910979922_…mp4` (vẽ khối → thiết diện → khai triển thiết diện, thanh công cụ nhỏ dưới hình).
+
+- **Viết yêu cầu lên bảng, khoanh, bấm Vẽ hình** (`handleDrawSelection` trong `SmartboardCanvas.tsx`): khi đã có hình dựng trên bảng, chữ khoanh được áp lên CHÍNH hình đó qua `GeoController.addRequirementText` (không tạo hình mới); không hiểu thì báo lỗi gợi ý cách viết. Chọn trúng hình dựng thì chỉ mở dụng cụ của nó. Đã bỏ hộp gõ "Yêu cầu" (và ô `ai-fab-draw-req`). Hỗ trợ trong `addExtras` (`geometryProblem.ts`): đường tròn ngoại/nội tiếp (tam giác, tứ giác nội tiếp được, đáy của khối), đường tròn đường kính AB, tâm O của đường tròn, trực tâm H, trung tuyến AM, phân giác AD. Đường tròn lưu ở `GeoScene.circles` và vẽ qua `DrawnFigure.curves` (`geo-circle`).
+- **Xoay 3D**: `GeoScene.rot {yaw,pitch}` (không đặt = góc chuẩn SGK, chiếu xiên). Chiếu trực giao, cạnh khuất tự thành nét đứt theo mặt nhìn thấy, khung hình cố định 300×300 theo bán kính bao. Kéo ngón tay trên hình (`geo-rotate-surface` trong `InlineShape.tsx`, chỉ khi hình đang chọn) gọi `GeoController.setRot` (cập nhật tại chỗ, không thêm bước hoàn tác). Hub: tầng 2 → Hiển thị → Xoay tự do / Góc SGK.
+- **Tô màu mặt**: `GeoScene.colors`; `DrawnFigure.faces`, màu theo `FACE_COLORS`, chỉ tô mặt nhìn thấy (`geo-face`).
+- **Khai triển lưới** (`utils/netUnfold.ts`, mới): cây khung các mặt (gốc là mặt đáy), mỗi mặt quay quanh cạnh chung với mặt cha góc t·θ; `GeoScene.net` 0..1 có hoạt họa 700 ms (`tween` trong `GeometryProblemPanel.tsx`); máy ảnh chuyển dần sang nhìn thẳng vào lưới (`faceOnView`). Kiểm tra bằng test: lập phương, hộp, chóp tứ giác, tứ diện đều, lăng trụ tam giác đều đều khai triển phẳng, không co giãn, không chồng nhau. Hub: tầng 2 → Khai triển / Gấp lại.
+- **Cắt ngang**: `GeoScene.slice` 0..1, mặt phẳng song song đáy (`sliceSection`, `polygonStats`); thiết diện tô xanh và hiện diện tích/chu vi theo đơn vị a. Hub: tầng 2 → Cắt ngang → Lên/Xuống/Tắt cắt.
+- Tầng 2 hiện gồm: Dựng, Đo, Phần, Hiển thị, (Khai triển, Cắt ngang chỉ với khối), Chỉnh sửa.
+- Kiểm tra: tsc 0 lỗi (trừ `src/app/zz-preview/page.tsx` của phiên khác, lỗi sẵn có không thuộc phần này), vitest 1058 qua; trình duyệt thật: lập phương xoay bằng kéo, tô màu 3 mặt, khai triển thành lưới chữ thập, cắt ngang S = 1a².
+- **Chưa làm**: kéo mặt phẳng cắt bằng ngón tay (hiện bấm Lên/Xuống), cắt xiên qua 3 điểm có thanh kéo, khai triển theo thanh trượt kéo tay (hiện bật/tắt có hoạt họa), khai triển phần thiết diện như video 2, cắt xiên khai triển; mặt cầu/mặt nón/trụ không có mặt đa giác nên chưa khai triển; hình vẽ tay nắn tại chỗ (bát diện…) vẫn không có các chức năng này; `zz-preview` cần xử lý riêng.

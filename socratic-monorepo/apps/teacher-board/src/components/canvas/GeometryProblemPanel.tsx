@@ -3,6 +3,7 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Eraser, Redo2, Undo2, X} from 'lucide-react';
 import {buildScene, type GeoScene} from '../../utils/geometryProblem';
+import {canUnfold, polygonStats, sliceSection} from '../../utils/netUnfold';
 import {addFoot, addMidpoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, sceneGrew, measureDistance, toTikz, visibleNames} from '../../utils/geoTools';
 
 export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'dist' | 'angle';
@@ -25,6 +26,23 @@ export interface GeoController {
   /** đang ẩn hẳn nét khuất (mặc định nét đứt chuẩn SGK) */
   hideHidden: boolean;
   toggleHidden: () => void;
+  /** hình khối (3D): góc nhìn hiện tại; null = góc chuẩn SGK (chiếu xiên cố định) */
+  is3D: boolean;
+  rot: {yaw: number; pitch: number} | null;
+  /** đặt góc xoay (kéo tay): cập nhật tại chỗ, không thêm bước hoàn tác */
+  setRot: (yaw: number, pitch: number) => void;
+  /** về góc chuẩn SGK */
+  resetView: () => void;
+  colors: boolean;
+  toggleColors: () => void;
+  /** hình khối có thể khai triển thành lưới */
+  canNet: boolean;
+  /** mức khai triển 0..1 (0 = khối); đặt có hoạt họa gấp/mở mượt */
+  net: number;
+  setNet: (t: number) => void;
+  /** mặt phẳng cắt ngang song song đáy: null = tắt, 0..1 = độ cao */
+  slice: number | null;
+  setSlice: (v: number | null) => void;
   /** chép mã TikZ của hình (nét đứt đúng chuẩn) vào bộ nhớ tạm */
   exportTikz: () => void;
   /** mở mô phỏng 3D xoay/cắt/khai triển của khối này */
@@ -96,6 +114,50 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
     setAt(h.length - 1);
     onApply?.(next, nextUpTo);
   };
+  // đổi thuộc tính hiển thị của bước hiện tại tại chỗ (không thêm vào lịch sử): dùng khi kéo xoay hình để giữ mượt
+  const patchScene = (p: Partial<GeoScene>) => {
+    const c = curRef.current;
+    if (!c) return;
+    const scene = {...c.scene, ...p};
+    setHist((h) => h.map((x, i) => (i === at ? {...x, scene} : x)));
+    curRef.current = {...c, scene};
+    onApply?.(scene, c.upTo);
+  };
+  // hoạt họa mượt: nội suy một thuộc tính hiển thị (net, slice) theo từng khung hình
+  const rafRef = useRef<number | null>(null);
+  const tween = (key: 'net' | 'slice', to: number, ms: number) => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    const c0 = curRef.current;
+    if (!c0) return;
+    const from = c0.scene[key] ?? (key === 'slice' ? to : 0);
+    const t0 = performance.now();
+    const finish = (v: number) => {
+      const off = key === 'slice' ? ms === 0 : v <= 0.001;
+      patchScene({[key]: off ? undefined : v} as Partial<GeoScene>);
+      const c = curRef.current;
+      if (key === 'slice' && !off && c) {
+        const sec = sliceSection(c.scene, v);
+        setInfo(sec ? `Thiết diện ${sec.length}-giác: S = ${+polygonStats(sec).area.toFixed(3)}a², chu vi = ${+polygonStats(sec).perimeter.toFixed(3)}a` : 'Mặt phẳng này không cắt khối');
+      } else if (key === 'slice') setInfo('');
+    };
+    if (ms === 0) return finish(to);
+    const step = (now: number) => {
+      const k = Math.min(1, (now - t0) / ms);
+      const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      const v = from + (to - from) * e;
+      if (k < 1) {
+        patchScene({[key]: v} as Partial<GeoScene>);
+        rafRef.current = requestAnimationFrame(step);
+      } else {
+        rafRef.current = null;
+        finish(to);
+      }
+    };
+    rafRef.current = requestAnimationFrame(step);
+  };
+  useEffect(() => () => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+  }, []);
   const stepTo = (k: number) => {
     if (!cur) return;
     const v = Math.max(0, Math.min(cur.scene.parts.length - 1, k));
@@ -165,6 +227,17 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       canUndo: at > 0,
       canRedo: at < hist.length - 1,
       hideHidden: !!cur.scene.hideHidden,
+      is3D: cur.scene.dim === 3,
+      rot: cur.scene.rot ?? null,
+      setRot: (yaw, pitch) => patchScene({rot: {yaw, pitch}}),
+      resetView: () => commit({...cur.scene, rot: undefined}, cur.upTo),
+      colors: !!cur.scene.colors,
+      toggleColors: () => commit({...cur.scene, colors: !cur.scene.colors}, cur.upTo),
+      canNet: canUnfold(cur.scene),
+      net: cur.scene.net ?? 0,
+      setNet: (t) => tween('net', t, 700),
+      slice: cur.scene.slice ?? null,
+      setSlice: (v) => (v === null ? tween('slice', 0, 0) : tween('slice', Math.max(0.05, Math.min(0.95, v)), 350)),
       toggleHidden: () => commit({...cur.scene, hideHidden: !cur.scene.hideHidden}, cur.upTo),
       exportTikz: () => {
         const code = toTikz(cur.scene, cur.upTo);

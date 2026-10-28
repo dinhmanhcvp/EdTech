@@ -4,9 +4,9 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Eraser, Redo2, Undo2, X} from 'lucide-react';
 import {buildScene, type GeoScene} from '../../utils/geometryProblem';
 import {canUnfold, polygonStats, sliceSection} from '../../utils/netUnfold';
-import {addFoot, addMidpoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, toTikz, togglePart, visibleNames} from '../../utils/geoTools';
+import {addFoot, addMidpoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, solidStats, toTikz, togglePart, visibleNames, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane} from '../../utils/geoTools';
 
-export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'dist' | 'angle';
+export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'dist' | 'angle' | 'dpl' | 'dln' | 'alp' | 'dih';
 
 export interface GeoPickConfig {
   pickMode: 'point' | 'edge' | null;
@@ -39,6 +39,8 @@ export interface GeoController {
   resetView: () => void;
   colors: boolean;
   toggleColors: () => void;
+  /** đo thể tích và diện tích của khối */
+  measureSolid: () => void;
   /** hình khối có thể khai triển thành lưới */
   canNet: boolean;
   /** mức khai triển 0..1 (0 = khối); đặt có hoạt họa gấp/mở mượt */
@@ -91,6 +93,10 @@ export const GEO_TOOLS: {id: GeoTool; label: string; need: number; hint: string}
 export const GEO_MEASURE: {id: GeoTool; label: string; need: number; hint: string}[] = [
   {id: 'dist', label: 'Độ dài', need: 2, hint: 'Chạm 2 điểm để đo khoảng cách (đơn vị cạnh a)'},
   {id: 'angle', label: 'Góc', need: 3, hint: 'Chạm 3 điểm, điểm giữa là đỉnh góc'},
+  {id: 'dpl', label: 'Điểm–mặt', need: 4, hint: 'Khoảng cách điểm đến mặt phẳng: chạm điểm cần đo, rồi 3 điểm của mặt phẳng'},
+  {id: 'dln', label: 'Điểm–đường', need: 3, hint: 'Khoảng cách điểm đến đường thẳng: chạm điểm cần đo, rồi 2 điểm của đường thẳng'},
+  {id: 'alp', label: 'Đường–mặt', need: 5, hint: 'Góc đường thẳng và mặt phẳng: chạm 2 điểm của đường thẳng, rồi 3 điểm của mặt phẳng'},
+  {id: 'dih', label: 'Nhị diện', need: 4, hint: 'Góc nhị diện: chạm 2 điểm của cạnh chung, rồi một điểm ở mỗi mặt'},
 ];
 const ALL_TOOLS = [...GEO_TOOLS, ...GEO_MEASURE];
 
@@ -197,6 +203,13 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       setPicks([]);
       return;
     }
+    if (t === 'dpl' || t === 'dln' || t === 'alp' || t === 'dih') {
+      setInfo(
+        t === 'dpl' ? measureDistPointPlane(sc, names[0], names[1], names[2], names[3]) : t === 'dln' ? measureDistPointLine(sc, names[0], names[1], names[2]) : t === 'alp' ? measureAngleLinePlane(sc, names[0], names[1], names[2], names[3], names[4]) : measureDihedral(sc, names[0], names[1], names[2], names[3]),
+      );
+      setPicks([]);
+      return;
+    }
     if (t === 'segment') next = addSegment(sc, names[0], names[1], part);
     else if (t === 'midpoint') next = addMidpoint(sc, names[0], names[1], part).scene;
     else if (t === 'onEdge') next = addPointOnSegment(sc, names[0], names[1], edge?.t ?? 0.5, part).scene;
@@ -245,6 +258,7 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       resetView: () => commit({...cur.scene, rot: undefined}, cur.upTo),
       colors: !!cur.scene.colors,
       toggleColors: () => commit({...cur.scene, colors: !cur.scene.colors}, cur.upTo),
+      measureSolid: () => setInfo(solidStats(cur.scene)),
       canNet: canUnfold(cur.scene),
       net: cur.scene.net ?? 0,
       setNet: (t) => tween('net', t, 700),
@@ -287,7 +301,7 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
         const next = addRequirement(before, text.trim());
         if (!sceneGrew(before, next)) return {grew: false, notes: [], ignored: next.ignored.slice(before.ignored.length)};
         commit(next, next.parts.length - 1);
-        return {grew: true, notes: next.notes.slice(before.notes.length), ignored: []};
+        return {grew: true, notes: next.notes.slice(before.notes.length), ignored: next.ignored.slice(before.ignored.length)};
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

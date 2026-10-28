@@ -157,6 +157,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     resetView: vi.fn(),
     colors: false,
     toggleColors: vi.fn(),
+    measureSolid: vi.fn(),
     canNet: true,
     net: 0,
     setNet: vi.fn(),
@@ -278,7 +279,9 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     fireEvent.click(screen.getByTestId('ai-fab-back'));
     fireEvent.click(screen.getByTestId('ai-fab-draw-measure'));
     expect(tier()).toBe('draw/measure');
-    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-dist', 'ai-fab-draw-angle']);
+    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-dist', 'ai-fab-draw-angle', 'ai-fab-draw-dpl', 'ai-fab-draw-dln', 'ai-fab-draw-alp', 'ai-fab-draw-dih', 'ai-fab-draw-stats']);
+    fireEvent.click(screen.getByTestId('ai-fab-draw-stats'));
+    expect(g.measureSolid).toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('ai-fab-draw-angle'));
     expect(g.setTool).toHaveBeenCalledWith('angle');
     fireEvent.click(screen.getByTestId('ai-fab-back'));

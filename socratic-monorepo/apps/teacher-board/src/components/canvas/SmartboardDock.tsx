@@ -400,6 +400,10 @@ const GEO_TOOL_ICONS: Record<GeoTool, React.ReactNode> = {
   section: <Scissors className="w-4 h-4" />,
   dist: <Ruler className="w-4 h-4" />,
   angle: <Compass className="w-4 h-4" />,
+  dpl: <Layers className="w-4 h-4" />,
+  dln: <Minus className="w-4 h-4" />,
+  alp: <CornerDownRight className="w-4 h-4" />,
+  dih: <Box className="w-4 h-4" />,
 };
 
 /**
@@ -743,9 +747,10 @@ export const AiFab: React.FC<AiFabProps> = ({
   } else if (tierKey === 'draw/measure' && geo) {
     items = [
       back,
-      ...GEO_MEASURE.map((t) =>
+      ...GEO_MEASURE.filter((t) => geo.is3D || t.id === 'dist' || t.id === 'angle' || t.id === 'dln').map((t) =>
         sub(t.id, t.label, t.hint, GEO_TOOL_ICONS[t.id], () => geo.setTool(geo.tool === t.id ? null : t.id), {highlight: geo.tool === t.id}),
       ),
+      sub('stats', 'Thể tích', 'Thể tích, diện tích xung quanh và toàn phần của khối', <Sparkles className="w-4 h-4" />, () => geo.measureSolid(), {keep: true, disabled: !geo.is3D}),
     ];
   } else if (tierKey === 'draw/view' && geo) {
     items = [

@@ -199,7 +199,7 @@ export function layoutGeo(sc: GeoScene, upTo: number, origin: {x: number; y: num
       marks: fig.marks,
       polys: fig.polys,
       faces: fig.faces,
-      curves: fig.curves.map((c) => ({label: c.label, pts: c.pts.map((p) => ({x: origin.x + p.x - ax, y: origin.y + p.y - ay}))})),
+      curves: fig.curves.map((c) => ({label: c.label, dashed: c.dashed, own: c.own, pts: c.pts.map((p) => ({x: origin.x + p.x - ax, y: origin.y + p.y - ay}))})),
       fixed: true,
     },
   };
@@ -313,6 +313,138 @@ export function problemTextForPlane(kind: string): string | null {
     default:
       return null;
   }
+}
+
+
+// ------------------------------------------------------------------ đo nâng cao: khoảng cách, góc đường–mặt, nhị diện, thể tích, diện tích
+const PI = Math.PI;
+const cleanNum = (x: number) => `${+x.toFixed(3)}`.replace('.', ',');
+
+/** Số dạng đẹp: p·√k/q (q ≤ 12) nếu khớp, kèm giá trị thập phân. */
+export function fmtQuantity(x: number, unit: string, withPi = false): string {
+  const u = withPi ? `π${unit ? ' ' + unit : ''}`.trim() : unit;
+  const val = withPi ? x / PI : x;
+  const tail = `${u ? ' ' + u : ''}`;
+  for (let q = 1; q <= 12; q++) {
+    for (const k of [1, 2, 3, 5, 6, 7]) {
+      const p = (val * q) / Math.sqrt(k);
+      const pr = Math.round(p);
+      if (pr >= 1 && pr <= 80 && Math.abs(p - pr) < 1e-7) {
+        const root = k === 1 ? '' : `√${k}`;
+        const num = k === 1 ? `${pr}` : pr === 1 ? root : `${pr}${root}`;
+        const form = q === 1 ? num : `${num}/${q}`;
+        return `${form}${tail} (≈ ${cleanNum(x)})`;
+      }
+    }
+  }
+  return `${cleanNum(val)}${tail}`;
+}
+
+const P3 = (sc: GeoScene, n: string): V3 | null => (sc.pts[n] as V3 | undefined) ?? null;
+const lenV = (v: V3) => Math.hypot(v[0], v[1], v[2]);
+const crossV = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+
+/** Khoảng cách từ điểm p đến mặt phẳng (a, b, c). */
+export function measureDistPointPlane(sc: GeoScene, p: string, a: string, b: string, c: string): string {
+  const [P, A, B, C] = [P3(sc, p), P3(sc, a), P3(sc, b), P3(sc, c)];
+  if (!P || !A || !B || !C) return '';
+  const n = crossV(sub(B, A), sub(C, A));
+  const nl = lenV(n);
+  if (nl < 1e-9) return `Ba điểm ${a}${b}${c} thẳng hàng, không xác định mặt phẳng`;
+  const d = Math.abs(dot(n, sub(P, A))) / nl;
+  return `d(${p}, (${a}${b}${c})) = ${fmtQuantity(d, 'a')}`;
+}
+
+/** Khoảng cách từ điểm p đến đường thẳng ab. */
+export function measureDistPointLine(sc: GeoScene, p: string, a: string, b: string): string {
+  const [P, A, B] = [P3(sc, p), P3(sc, a), P3(sc, b)];
+  if (!P || !A || !B) return '';
+  const d = sub(B, A);
+  if (lenV(d) < 1e-9) return '';
+  const dist = lenV(crossV(sub(P, A), d)) / lenV(d);
+  return `d(${p}, ${a}${b}) = ${fmtQuantity(dist, 'a')}`;
+}
+
+/** Góc giữa đường thẳng ab và mặt phẳng (c, d, e), tính bằng độ. */
+export function measureAngleLinePlane(sc: GeoScene, a: string, b: string, c: string, d: string, e: string): string {
+  const [A, B, C, D, E] = [P3(sc, a), P3(sc, b), P3(sc, c), P3(sc, d), P3(sc, e)];
+  if (!A || !B || !C || !D || !E) return '';
+  const u = sub(B, A);
+  const n = crossV(sub(D, C), sub(E, C));
+  if (lenV(u) < 1e-9 || lenV(n) < 1e-9) return '';
+  const s = Math.abs(dot(u, n)) / (lenV(u) * lenV(n));
+  const deg = (Math.asin(Math.min(1, s)) * 180) / PI;
+  return `(${a}${b}, (${c}${d}${e})) = ${+deg.toFixed(1)}°`;
+}
+
+/** Góc nhị diện theo cạnh ab, với c ở mặt thứ nhất và d ở mặt thứ hai (góc giữa hai đường vuông góc với cạnh). */
+export function measureDihedral(sc: GeoScene, a: string, b: string, c: string, d: string): string {
+  const [A, B, C, D] = [P3(sc, a), P3(sc, b), P3(sc, c), P3(sc, d)];
+  if (!A || !B || !C || !D) return '';
+  const e = sub(B, A);
+  const el = lenV(e);
+  if (el < 1e-9) return '';
+  const k: V3 = [e[0] / el, e[1] / el, e[2] / el];
+  const perp = (X: V3): V3 => {
+    const w = sub(X, A);
+    return sub(w, mul(k, dot(w, k)));
+  };
+  const v1 = perp(C);
+  const v2 = perp(D);
+  if (lenV(v1) < 1e-9 || lenV(v2) < 1e-9) return 'Điểm nằm trên đường thẳng của cạnh, không xác định mặt';
+  const deg = (Math.acos(Math.max(-1, Math.min(1, dot(v1, v2) / (lenV(v1) * lenV(v2))))) * 180) / PI;
+  return `Nhị diện [${c}, ${a}${b}, ${d}] = ${+deg.toFixed(1)}°`;
+}
+
+/** Thể tích và diện tích của khối đang vẽ (đơn vị a, a²: a³). Khối tròn xoay tính theo công thức. */
+export function solidStats(sc: GeoScene): string {
+  const circles = (sc.circles ?? []).filter((c) => c.own);
+  if (sc.title === 'Hình cầu' && circles[0]) {
+    const r = circles[0].r;
+    return `Mặt cầu bán kính ${cleanNum(r)}a: V = ${fmtQuantity((4 / 3) * PI * r ** 3, 'a³', true)}; S = ${fmtQuantity(4 * PI * r * r, 'a²', true)}`;
+  }
+  if (sc.title === 'Hình nón' && circles[0]) {
+    const apex = sc.order.find((n) => (sc.pts[n] as V3)[1] > 1e-9 && Math.abs((sc.pts[n] as V3)[0]) < 1e-9);
+    const h = apex ? (sc.pts[apex] as V3)[1] : 0;
+    const r = circles[0].r;
+    const l = Math.hypot(r, h);
+    return `Hình nón r = ${cleanNum(r)}a, h = ${cleanNum(h)}a, l = ${cleanNum(l)}a: V = ${fmtQuantity((PI * r * r * h) / 3, 'a³', true)}; Sxq = ${fmtQuantity(PI * r * l, 'a²', true)}; Stp = ${fmtQuantity(PI * r * l + PI * r * r, 'a²', true)}`;
+  }
+  if (sc.title === 'Hình trụ' && circles[0]) {
+    const top = circles.find((c) => c.center[1] > 1e-9);
+    const h = top ? top.center[1] : 0;
+    const r = circles[0].r;
+    return `Hình trụ r = ${cleanNum(r)}a, h = ${cleanNum(h)}a: V = ${fmtQuantity(PI * r * r * h, 'a³', true)}; Sxq = ${fmtQuantity(2 * PI * r * h, 'a²', true)}; Stp = ${fmtQuantity(2 * PI * r * h + 2 * PI * r * r, 'a²', true)}`;
+  }
+  if (sc.dim !== 3 || sc.faces.length < 4) return 'Chỉ tính được thể tích với khối đa diện, hình nón, hình trụ, hình cầu';
+  const faces = sc.faces.filter((f) => f.every((n) => !!sc.pts[n]));
+  const all = [...new Set(faces.flat())].map((n) => sc.pts[n] as V3);
+  const center = mul(all.reduce((s, p) => add(s, p), [0, 0, 0] as V3), 1 / all.length);
+  const area = (f: string[]) => {
+    let s: V3 = [0, 0, 0];
+    const ps = f.map((n) => sc.pts[n] as V3);
+    for (let i = 0; i < ps.length; i++) s = add(s, crossV(ps[i], ps[(i + 1) % ps.length]));
+    return lenV(s) / 2;
+  };
+  let vol = 0;
+  const areas = faces.map(area);
+  faces.forEach((f, i) => {
+    const ps = f.map((n) => sc.pts[n] as V3);
+    const nrm = crossV(sub(ps[1], ps[0]), sub(ps[2], ps[0]));
+    const nl = lenV(nrm);
+    if (nl > 1e-12) vol += (areas[i] * Math.abs(dot(nrm, sub(center, ps[0])))) / nl / 3;
+  });
+  const total = areas.reduce((s, x) => s + x, 0);
+  const base = areas[0];
+  // lăng trụ/hộp: có mặt đối song song, cùng diện tích với đáy
+  const n0 = crossV(sub(sc.pts[faces[0][1]] as V3, sc.pts[faces[0][0]] as V3), sub(sc.pts[faces[0][2]] as V3, sc.pts[faces[0][0]] as V3));
+  const hasTop = faces.some((f, i) => {
+    if (i === 0 || Math.abs(areas[i] - base) > 1e-7) return false;
+    const n = crossV(sub(sc.pts[f[1]] as V3, sc.pts[f[0]] as V3), sub(sc.pts[f[2]] as V3, sc.pts[f[0]] as V3));
+    return lenV(crossV(n0, n)) < 1e-7 * lenV(n0) * lenV(n);
+  });
+  const sxq = total - base - (hasTop ? base : 0);
+  return `V = ${fmtQuantity(vol, 'a³')}; Sđáy = ${fmtQuantity(base, 'a²')}; Sxq = ${fmtQuantity(sxq, 'a²')}; Stp = ${fmtQuantity(total, 'a²')}`;
 }
 
 export const geoTitle = (sc: GeoScene) => sc.title;

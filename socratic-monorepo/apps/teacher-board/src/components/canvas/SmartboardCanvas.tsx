@@ -23,7 +23,8 @@ import { layoutTypeset, typesetStroke, sourceStrokes, bboxOfStrokes, latexToPlai
 import { SimulationWidget } from './SimulationWidget';
 import { InkConvertPanel } from './InkConvertPanel';
 import { SmartboardDock, AiFab } from './SmartboardDock';
-import { VoiceAiQaCard } from './VoiceAiQaCard';
+import { BoardAskCard } from './BoardAskCard';
+import { buildBoardContext } from '../../utils/boardContext';
 import { ClassroomPanel } from './ClassroomPanel';
 import { useClassroom } from '../../hooks/useClassroom';
 import { slimBlueprint } from '../../utils/classroomState';
@@ -455,7 +456,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
   const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
   const [isVoiceQaOpen, setIsVoiceQaOpen] = useState<boolean>(false);
-  const [voiceQaQuery, setVoiceQaQuery] = useState<string>('Trong hình lập phương, thiết diện nào có diện tích lớn nhất?');
+  const [voiceQaQuery, setVoiceQaQuery] = useState<string>('');
+  // tăng mỗi lần giọng nói thu được câu hỏi để thẻ hỏi đáp tự gửi ngay
+  const [voiceQaNonce, setVoiceQaNonce] = useState<number>(0);
+  // giá trị tham số mô phỏng đang hiển thị, để AI biết "đang kéo tới đâu" khi trả lời
+  const [simParams, setSimParams] = useState<Record<string, number>>({});
   const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
   const [qrCopied, setQrCopied] = useState<boolean>(false);
 
@@ -1873,6 +1878,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         setLassoLoop([]);
         setFormulaInput('');
         flashInfo(`Đã thêm vào hình: ${res.notes.slice(-3).join('; ')}`);
+        if (res.ignored.length > 0) setTimeout(() => flashError(res.ignored.slice(0, 2).join(' · '), 5000), 300);
         return;
       }
     }
@@ -2333,8 +2339,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           const text = event.results[0][0].transcript;
           setIsVoiceListening(false);
           setVoiceNotice(`Đã nhận: "${text}"`);
-          if (/\?|thiết diện|lập phương|lớn nhất|tương giao|tại sao|như thế nào|mấy điểm|là gì/i.test(text)) {
+          if (/\?|thiết diện|lập phương|lớn nhất|tương giao|tại sao|như thế nào|mấy điểm|là gì|bao nhiêu|vì sao|hãy giải thích|giải thích|tính|hình này|đồ thị này/i.test(text)) {
             setVoiceQaQuery(text);
+            setVoiceQaNonce((n) => n + 1);
             setIsVoiceQaOpen(true);
             setTimeout(() => setVoiceNotice(null), 1200);
             return;
@@ -2511,6 +2518,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             setFormulaInput('');
             setIsLoading(false);
             flashInfo(`Đã thêm vào hình: ${res.notes.slice(-3).join('; ')}`);
+            if (res.ignored.length > 0) setTimeout(() => flashError(res.ignored.slice(0, 2).join(' · '), 5000), 300);
             return true;
           }
         }
@@ -2541,6 +2549,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       insertGeoFigure(hit.scene, hit.scene.parts.length > 1 ? 0 : hit.scene.parts.length - 1, hit.src, { x: Math.min(820, bb.x1 + 50), y: Math.max(20, bb.y0) });
       setFormulaInput('');
       setIsLoading(false);
+      if (hit.scene.ignored.length > 0) flashError(`Đã vẽ hình; ${hit.scene.ignored.slice(0, 2).join(' · ')}`, 5000);
     };
     // nét vẽ tay đã nhận dạng: thay bằng hình dựng (đủ dụng cụ tầng 2) đặt đúng chỗ các nét
     const placeSketch = (scene: GeoScene, src: string) => {
@@ -2582,6 +2591,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     setIsLoading(false);
     flashError('Chưa nhận ra hình trong vùng khoanh. Khoanh trọn nét vẽ hình, tên hình kèm đỉnh (VD: S.ABCD) hoặc cả đề bài; nếu AI đọc sai chữ thì bấm Sửa chữ.');
   };
+
+  // Ảnh chụp trạng thái bảng gửi kèm câu hỏi AI: lấy lúc hỏi (không dùng bản cũ) nên luôn khớp với những gì đang hiện.
+  useEffect(() => setSimParams({}), [activeBlueprint?.templateId]);
+  const getBoardContext = useCallback(
+    () => buildBoardContext({ strokes, selected: selectedStrokes, blueprint: activeBlueprint, params: simParams, subject: subjectLock }),
+    [strokes, selectedStrokes, activeBlueprint, simParams, subjectLock],
+  );
 
   const handleVisualize = async (overrideHint?: string) => {
     if (selectedStrokes.length === 0 && !overrideHint) return;
@@ -3447,6 +3463,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 onGripPointerUp={handleHoloGripUp}
                 remoteParams={room.state.role === 'teacher' ? room.state.params : undefined}
                 onParamChange={(k, v) => {
+                  setSimParams((p) => ({ ...p, [k]: v }));
                   if (room.state.role === 'teacher') room.send({ type: 'SLIDER', key: k, value: v });
                 }}
                 onClose={() => setActiveBlueprint(null)}
@@ -3589,6 +3606,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 onToggleDisplayMode={() => setDisplayMode('HOLOGRAM')}
                 remoteParams={room.state.role === 'teacher' ? room.state.params : undefined}
                 onParamChange={(k, v) => {
+                  setSimParams((p) => ({ ...p, [k]: v }));
                   if (room.state.role === 'teacher') room.send({ type: 'SLIDER', key: k, value: v });
                 }}
                 onClose={() => setActiveBlueprint(null)}
@@ -3775,15 +3793,18 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             : null
         }
       />
-      <VoiceAiQaCard
+      <BoardAskCard
         isOpen={isVoiceQaOpen}
         initialQuery={voiceQaQuery}
+        autoAskNonce={voiceQaNonce}
         isListening={isVoiceListening}
         onStartVoice={handleVoiceDictation}
         onClose={() => setIsVoiceQaOpen(false)}
-        onSpawnBlueprint={(bp) => {
-          setActiveBlueprint(bp);
+        subject={subjectLock}
+        getContext={getBoardContext}
+        onVisualize={(text) => {
           setIsVoiceQaOpen(false);
+          void handleVisualize(text);
         }}
       />
       {isClassroomOpen && <ClassroomPanel room={room} templateId={activeBlueprint?.templateId ?? null} onClose={() => setIsClassroomOpen(false)} />}

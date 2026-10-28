@@ -99,3 +99,45 @@ describe('xoay tự do và tô màu mặt', () => {
     }
   });
 });
+
+import {fmtQuantity, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane, solidStats} from '../utils/geoTools';
+
+describe('đo nâng cao: khoảng cách, góc đường–mặt, nhị diện, thể tích', () => {
+  const cube = parseGeometryProblem("hình lập phương ABCD.A'B'C'D' cạnh a").scene!;
+  const pyr = parseGeometryProblem('hình chóp S.ABCD đáy ABCD là hình vuông cạnh a, SA vuông góc với đáy, SA = a√2').scene!;
+  it('fmtQuantity viết dạng đẹp', () => {
+    expect(fmtQuantity(Math.SQRT2, 'a')).toContain('√2 a');
+    expect(fmtQuantity(1 / 3, 'a³')).toContain('1/3 a³');
+    expect(fmtQuantity(Math.sqrt(3) / 2, 'a')).toContain('√3/2 a');
+    expect(fmtQuantity((4 / 3) * Math.PI, 'a³', true)).toContain('4/3 π a³');
+  });
+  it('khoảng cách điểm–mặt: lập phương, A đến (A\'B\'C\'D\') bằng a; C\' đến (ABCD) bằng a', () => {
+    expect(measureDistPointPlane(cube, 'A', "A'", "B'", "C'")).toContain('= 1 a');
+    expect(measureDistPointPlane(cube, "C'", 'A', 'B', 'C')).toContain('= 1 a');
+  });
+  it('khoảng cách điểm–đường: đường chéo, B đến AC bằng a√2/2', () => {
+    expect(measureDistPointLine(cube, 'B', 'A', 'C')).toContain('√2/2 a');
+  });
+  it('góc đường–mặt: SC và (ABCD) của chóp có SA = a√2: tan = √2/√2 = 1 → 45°', () => {
+    expect(measureAngleLinePlane(pyr, 'S', 'C', 'A', 'B', 'D')).toContain('= 45°');
+  });
+  it('nhị diện [A, BC, D]… cạnh BC của lập phương: mặt đáy và mặt bên vuông nên 90°', () => {
+    expect(measureDihedral(cube, 'B', 'C', 'A', "B'")).toContain('= 90°');
+    expect(measureDihedral(cube, 'B', 'C', 'A', "D'")).toContain('= 45°');
+  });
+  it('thể tích và diện tích', () => {
+    expect(solidStats(cube)).toContain('V = 1 a³');
+    expect(solidStats(cube)).toContain('Stp = 6 a²');
+    expect(solidStats(cube)).toContain('Sxq = 4 a²');
+    expect(solidStats(pyr)).toContain('V = √2/3 a³');
+    const box = parseGeometryProblem("hình hộp chữ nhật ABCD.A'B'C'D' có AB = 3, AD = 2, AA' = 1").scene!;
+    expect(solidStats(box)).toContain('V = 6 a³');
+    expect(solidStats(box)).toContain('Stp = 22 a²');
+  });
+  it('khối tròn xoay theo công thức', () => {
+    expect(solidStats(parseGeometryProblem('Hình nón r = 3, h = 4').scene!)).toContain('V = 12 π a³');
+    expect(solidStats(parseGeometryProblem('Hình nón r = 3, h = 4').scene!)).toContain('Sxq = 15 π a²');
+    expect(solidStats(parseGeometryProblem('Hình trụ R = 2, h = 5').scene!)).toContain('V = 20 π a³');
+    expect(solidStats(parseGeometryProblem('Hình cầu tâm O bán kính R = 3').scene!)).toContain('V = 36 π a³');
+  });
+});

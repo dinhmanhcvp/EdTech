@@ -22,7 +22,7 @@ export interface DrawnFigure {
   /** đa giác tô nhạt (thiết diện), chỉ số đỉnh theo thứ tự */
   polys: number[][];
   /** đường cong (đường tròn ngoại/nội tiếp…) đã chiếu xuống bảng, tọa độ cùng hệ với verts */
-  curves: {pts: {x: number; y: number}[]; label: string}[];
+  curves: {pts: {x: number; y: number}[]; label: string; dashed?: boolean; own?: boolean}[];
   /** mặt của khối đã chiếu (khi bật tô màu): chỉ số đỉnh, màu, mặt nhìn thấy hay bị che */
   faces: {poly: number[]; color: string; visible: boolean}[];
 }
@@ -47,7 +47,7 @@ const KEYWORDS = [
   'hình thang cân', 'hình thang', 'tứ diện', 'lăng trụ', 'tam giác', 'chóp đều', 'đôi một', 'vuông góc', 'song song', 'trung điểm', 'trọng tâm',
   'đường cao', 'chiều cao', 'giao tuyến', 'giao điểm', 'thiết diện', 'hình chiếu', 'mặt phẳng', 'đường thẳng', 'đường chéo', 'cạnh', 'đáy', 'vuông', 'cân',
   'đều', 'tâm', 'thuộc', 'giao', 'trùng', 'là', 'tại', 'cắt', 'bằng', 'góc', 'giữa', 'qua', 'kẻ', 'nối', 'đoạn', 'lên', 'trên', 'với', 'của', 'và', 'đứng',
-  'tính', 'cho', 'gọi', 'chân', 'đường tròn', 'đường kính', 'ngoại tiếp', 'nội tiếp', 'trực tâm', 'trung tuyến', 'phân giác',
+  'tính', 'cho', 'gọi', 'chân', 'đường tròn', 'đường kính', 'ngoại tiếp', 'nội tiếp', 'trực tâm', 'trung tuyến', 'phân giác', 'lần lượt', 'sao cho', 'hình nón', 'hình trụ', 'hình cầu', 'khối nón', 'khối trụ', 'khối cầu', 'mặt cầu', 'bán kính', 'đường sinh',
 ];
 const KW_RE = new RegExp(`(?<!\\p{L})(?:${KEYWORDS.map((k) => k.replace(/ /g, '\\s+')).join('|')})(?!\\p{L})`, 'giu');
 
@@ -306,6 +306,12 @@ export interface GeoCircle {
   /** phần của đề đã thêm đường tròn này */
   part: number;
   label: string;
+  /** 'sphere': đường viền của mặt cầu (hình tròn có tâm và bán kính bằng của cầu, không nằm trong một mặt phẳng cố định) */
+  kind?: 'circle' | 'sphere';
+  /** thuộc về chính khối (nón, trụ, cầu): vẽ cùng màu nét, không phải đường tròn thêm */
+  own?: boolean;
+  /** nửa xa người xem bị che: vẽ nét đứt (đường tròn đáy dưới của nón, trụ; xích đạo cầu) */
+  hideBack?: boolean;
 }
 
 interface Model {
@@ -366,6 +372,81 @@ function buildFigure(text: string, notes: string[]): Model | null {
     m.ptPart.set(name, 0);
   };
   const cycle = (names: string[]): [string, string][] => names.map((n, i) => [n, names[(i + 1) % names.length]]);
+
+  // ---- hình nón, hình trụ, hình cầu (khối tròn xoay): dựng bằng điểm, đường sinh và các đường tròn
+  const roundKind = /(?:hình|khối|mặt)\s*(nón|trụ|cầu)(?![\p{L}])/u.exec(text);
+  if (roundKind) {
+    const val = (re: RegExp): number | null => {
+      const mm = re.exec(text);
+      return mm ? evalLength(mm[1].replace(/[.,]+$/, '')) : null;
+    };
+    const NUM = '([\\d.,√a/()*+\\-]+)';
+    const rr = val(new RegExp(`bán kính(?: đáy)?\\s*(?:[rR]\\s*)?=\\s*${NUM}`)) ?? val(new RegExp(`(?<![A-Za-z])[rR]\\s*=\\s*${NUM}`));
+    const hh = val(new RegExp(`(?:chiều cao|đường cao)\\s*(?:[hH]\\s*)?=\\s*${NUM}`)) ?? val(new RegExp(`(?<![A-Za-z])h\\s*=\\s*${NUM}`));
+    const ll = val(new RegExp(`đường sinh\\s*(?:[lL]\\s*)?=\\s*${NUM}`));
+    const kind = roundKind[1];
+    const mk = (title: string): Model => model(title, 3);
+    const addPt = (m: Model, n: string, p: V3, mark = false) => {
+      put(m, n, p);
+      if (mark) m.marks.add(n);
+    };
+    const nameOf = (re: RegExp, dflt: string) => re.exec(text)?.[1] ?? dflt;
+    if (kind === 'cầu') {
+      const R = rr ?? 1;
+      const O = nameOf(/(?:tâm|cầu)\s*(?:là\s*)?([A-Z]'?)(?![A-Za-z'])/u, 'O');
+      const m = mk('Hình cầu');
+      addPt(m, O, [0, 0, 0], true);
+      addPt(m, 'A', [-R, 0, 0]);
+      addPt(m, 'B', [R, 0, 0]);
+      m.aux.push(['A', 'B']);
+      m.auxPart.push(0);
+      m.circles.push({center: [0, 0, 0], normal: [0, 1, 0], r: R, part: 0, label: 'mặt cầu', kind: 'sphere', own: true});
+      m.circles.push({center: [0, 0, 0], normal: [0, 1, 0], r: R, part: 0, label: 'đường xích đạo', own: true, hideBack: true});
+      m.notes.push(`mặt cầu tâm ${O}, bán kính ${+R.toFixed(3)}`);
+      return m;
+    }
+    let r = rr ?? 1;
+    let h = hh ?? 1.5;
+    if (ll !== null) {
+      if (rr !== null && hh === null) h = Math.sqrt(Math.max(1e-6, ll * ll - r * r));
+      else if (hh !== null && rr === null) r = Math.sqrt(Math.max(1e-6, ll * ll - h * h));
+      else if (rr === null && hh === null) {
+        r = ll * 0.6;
+        h = ll * 0.8;
+      }
+    }
+    if (kind === 'nón') {
+      const S = nameOf(/đỉnh\s*([A-Z]'?)(?![A-Za-z'])/u, 'S');
+      const O = nameOf(/tâm(?: đáy)?\s*([A-Z]'?)(?![A-Za-z'])/u, 'O');
+      const m = mk('Hình nón');
+      addPt(m, S, [0, h, 0], true);
+      addPt(m, O, [0, 0, 0], true);
+      addPt(m, 'A', [-r, 0, 0]);
+      addPt(m, 'B', [r, 0, 0]);
+      m.edges.push([S, 'A'], [S, 'B']);
+      m.aux.push([S, O], [O, 'B']);
+      m.auxPart.push(0, 0);
+      m.circles.push({center: [0, 0, 0], normal: [0, 1, 0], r, part: 0, label: 'đường tròn đáy', own: true, hideBack: true});
+      m.notes.push(`hình nón đỉnh ${S}, bán kính đáy ${+r.toFixed(3)}, chiều cao ${+h.toFixed(3)}, đường sinh ${+Math.hypot(r, h).toFixed(3)}`);
+      return m;
+    }
+    const O = nameOf(/tâm(?: đáy)?\s*([A-Z]'?)(?![A-Za-z'])/u, 'O');
+    const O2 = `${O}'`;
+    const m = mk('Hình trụ');
+    addPt(m, O, [0, 0, 0], true);
+    addPt(m, O2, [0, h, 0], true);
+    addPt(m, 'A', [-r, 0, 0]);
+    addPt(m, 'B', [r, 0, 0]);
+    addPt(m, "A'", [-r, h, 0]);
+    addPt(m, "B'", [r, h, 0]);
+    m.edges.push(['A', "A'"], ['B', "B'"]);
+    m.aux.push([O, O2], [O, 'B']);
+    m.auxPart.push(0, 0);
+    m.circles.push({center: [0, 0, 0], normal: [0, 1, 0], r, part: 0, label: 'đường tròn đáy', own: true, hideBack: true});
+    m.circles.push({center: [0, h, 0], normal: [0, 1, 0], r, part: 0, label: 'đường tròn đáy trên', own: true});
+    m.notes.push(`hình trụ bán kính ${+r.toFixed(3)}, chiều cao ${+h.toFixed(3)}`);
+    return m;
+  }
 
   // ---- hình lập phương / hình hộp
   const box =
@@ -565,7 +646,56 @@ const footOnLine = (p: V3, a: V3, b: V3): V3 => {
 };
 const footOnPlane = (p: V3, pl: {n: V3; d: number}): V3 => sub(p, mul(pl.n, dot(pl.n, p) - pl.d));
 
-function addExtras(m: Model, text: string): void {
+/**
+ * "Gọi M, N lần lượt là trung điểm của AB và CC'" → "M là trung điểm AB; N là trung điểm CC'"
+ * ", sao cho" được gộp vào câu trước (không bị tách ở dấu phẩy).
+ */
+export function expandRespectively(text: string): string {
+  const t = text.replace(/,\s*(?=sao cho)/g, ' ');
+  const re = /((?:[A-Z]'?\s*(?:,|và)\s*)+[A-Z]'?)\s*lần lượt\s*(là|thuộc)\s*(trung điểm|trọng tâm|các cạnh|cạnh|đoạn thẳng|đoạn)?\s*(?:của\s*)?([^;.\n]*)/gu;
+  return t.replace(re, (whole, namesRaw: string, rel: string, what: string | undefined, rest: string) => {
+    const names = namesRaw.match(/[A-Z]'?/g) ?? [];
+    const objs = rest.split(/\s*(?:,|và)\s*/).map((s) => s.trim()).filter(Boolean);
+    if (names.length < 2 || objs.length !== names.length) return whole;
+    const relation = rel === 'thuộc' ? 'thuộc' : what === 'trọng tâm' ? 'là trọng tâm' : 'là trung điểm';
+    return names.map((n, i) => `${n} ${relation} ${objs[i]}`).join('; ');
+  });
+}
+
+/** Vị trí t ∈ (0,1) của điểm M trên đoạn XY (từ X) theo "sao cho SM = 2MA", "AM = 2/3 AB"…; null nếu không có/không hiểu. */
+export function ratioOnSegment(clause: string, X: string, Y: string, M: string): number | null {
+  const mm = /sao cho\s*([A-Z]'?[A-Z]'?)\s*=\s*(\(?\s*\d+(?:[.,]\d+)?(?:\s*\/\s*\d+(?:[.,]\d+)?)?\s*\)?)?\s*\*?\s*([A-Z]'?[A-Z]'?)/.exec(clause);
+  if (!mm) return null;
+  let c = 1;
+  if (mm[2]) {
+    const raw = mm[2].replace(/[()\s]/g, '').replace(/,/g, '.');
+    const parts = raw.split('/').map(parseFloat);
+    c = parts.length === 2 ? parts[0] / parts[1] : parts[0];
+  }
+  if (!(c > 0) || !Number.isFinite(c)) return null;
+  const kind = (tok: string): 'whole' | 'p1' | 'p2' | null => {
+    const ns = pointsIn(tok);
+    if (ns.length !== 2) return null;
+    const has2 = (a: string, b: string) => (ns[0] === a && ns[1] === b) || (ns[0] === b && ns[1] === a);
+    if (has2(X, Y)) return 'whole';
+    if (has2(X, M)) return 'p1';
+    if (has2(M, Y)) return 'p2';
+    return null;
+  };
+  const L = kind(mm[1]);
+  const R = kind(mm[3]);
+  if (!L || !R || L === R) return null;
+  let t: number | null = null;
+  if (R === 'whole') t = L === 'p1' ? c : 1 - c;
+  else if (L === 'whole') t = R === 'p1' ? 1 / c : 1 - 1 / c;
+  else if (L === 'p1' && R === 'p2') t = c / (1 + c);
+  else if (L === 'p2' && R === 'p1') t = 1 / (1 + c);
+  return t !== null && t > 0.01 && t < 0.99 ? t : null;
+}
+
+function addExtras(m: Model, text0: string): void {
+  // câu mới bắt đầu bằng chữ hoa ngay sau dấu chấm ("…CC'.Tìm giao điểm…") phải tách câu; "S.ABCD" (chữ hoa liền chữ hoa) thì giữ nguyên
+  const text = expandRespectively(text0.replace(/([A-Za-z0-9')])\.([A-ZĐ][a-zà-ỹ])/g, '$1; $2'));
   const P = (n: string) => m.pts.get(n);
   const has = (n: string) => m.pts.has(n);
   const clauses = text.split(/[;\n]|,(?!\d)|\.(?![A-Z]|\d)|\s+và\s+/).map((s) => s.trim()).filter(Boolean);
@@ -627,7 +757,8 @@ function addExtras(m: Model, text: string): void {
       if ((r = /([A-Z]'?)\s*thuộc\s*(?:cạnh\s*|đoạn(?: thẳng)?\s*)?([A-Z]'?[A-Z]'?)/.exec(c)) && !has(r[1]) && !new RegExp(`[A-Z]'?${r[1]}\\s*vuông góc`).test(c)) {
         const s = segOf(r[2]);
         if (s && P(s[0]) && P(s[1])) {
-          define(r[1], add(P(s[0])!, mul(sub(P(s[1])!, P(s[0])!), 1 / 3)), `${r[1]} thuộc ${r[2]}`);
+          const tt = ratioOnSegment(c, s[0], s[1], r[1]) ?? 1 / 3;
+          define(r[1], add(P(s[0])!, mul(sub(P(s[1])!, P(s[0])!), tt)), `${r[1]} thuộc ${r[2]}${tt !== 1 / 3 ? ` (tỉ lệ ${+tt.toFixed(3)})` : ''}`);
           continue;
         }
       }
@@ -710,6 +841,27 @@ function addExtras(m: Model, text: string): void {
             addAux(s1[0], s1[1]);
             continue;
           }
+        }
+      }
+      // "tìm giao điểm của MN với mặt phẳng (A'B'C'D')" (không cho tên: tự đặt)
+      const lp2 = /giao điểm\s*(?:của\s*)?(?:đường thẳng\s*)?([A-Z]'?[A-Z]'?)\s*(?:và|với)\s*(?:mặt phẳng\s*)?\(\s*((?:[A-Z]'?){3,5})\s*\)(?:\s*(?:là|tại|=)\s*([A-Z]'?))?/.exec(c);
+      if (lp2) {
+        const s1 = segOf(lp2[1]);
+        const pn = pointsIn(lp2[2]);
+        const nm = lp2[3] ?? ['K', 'I', 'J', 'H', 'L', 'E', 'F', 'G', 'Q', 'R'].find((x) => !has(x) && !(m.merged.get(x) ?? []).length && ![...m.merged.values()].some((al) => al.includes(x)));
+        if (s1 && nm && !has(nm) && has(s1[0]) && has(s1[1]) && pn.length >= 3 && pn.every(has)) {
+          const pl = planeOf(P(pn[0])!, P(pn[1])!, P(pn[2])!);
+          const d = sub(P(s1[1])!, P(s1[0])!);
+          const den = pl ? dot(pl.n, d) : 0;
+          if (pl && Math.abs(den) > 1e-9) {
+            const t = (pl.d - dot(pl.n, P(s1[0])!)) / den;
+            define(nm, add(P(s1[0])!, mul(d, t)), `${nm} là giao của ${lp2[1]} với (${lp2[2]})`);
+            addAux(t < 0 ? s1[0] : s1[1], nm);
+            addAux(s1[0], s1[1]);
+            continue;
+          }
+          m.ignored.push(`${lp2[1]} song song với (${lp2[2]}), không có giao điểm`);
+          continue;
         }
       }
       // qua M kẻ đường thẳng song song AB cắt XY tại N
@@ -845,6 +997,14 @@ function addExtras(m: Model, text: string): void {
     }
   }
 
+  // điểm được định nghĩa ("X là …") nhưng không dựng được: báo rõ để người dùng sửa câu chữ
+  for (const c of clauses) {
+    const def = /(?<![\p{L}'])([A-Z]'?)\s+là\s+/u.exec(c);
+    if (!def) continue;
+    const known = has(def[1]) || [...m.merged.values()].some((al) => al.includes(def[1]));
+    if (!known) m.ignored.push(`Chưa hiểu: "${c.slice(0, 70)}"`);
+  }
+
   // ---- yêu cầu bằng lời trên hình đang có: đường tròn ngoại/nội tiếp, đường tròn đường kính, tâm, trực tâm, trung tuyến, phân giác
   const basePoly = (): string[] | null => {
     if (m.faces.length > 0) return m.faces[0].length === 3 || m.faces[0].length === 4 ? m.faces[0] : null;
@@ -954,6 +1114,22 @@ function addExtras(m: Model, text: string): void {
   }
 }
 
+/** Các điểm mẫu trên đường tròn (mặt cầu: sáu điểm trên ba trục). */
+export function circleSamples(c: GeoCircle, n = 96): V3[] {
+  if (c.kind === 'sphere') {
+    return ([[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]] as V3[]).map((d) => add(c.center, mul(d, c.r)));
+  }
+  const ref = len(cross(c.normal, [1, 0, 0] as V3)) > 0.1 ? cross(c.normal, [1, 0, 0] as V3) : cross(c.normal, [0, 1, 0] as V3);
+  const u = norm(ref);
+  const w = cross(c.normal, u);
+  const out: V3[] = [];
+  for (let i = 0; i <= n; i++) {
+    const t = (i / n) * Math.PI * 2;
+    out.push(add(c.center, add(mul(u, c.r * Math.cos(t)), mul(w, c.r * Math.sin(t)))));
+  }
+  return out;
+}
+
 // ------------------------------------------------------------------ khung chiếu cố định
 const KX = 0.5 * Math.cos(Math.PI / 4);
 const KY = 0.5 * Math.sin(Math.PI / 4);
@@ -961,8 +1137,9 @@ const rawProject = (m: Model, p: V3) => (m.dim === 2 ? {x: p[0], y: -p[1]} : {x:
 
 /** Khung chiếu lấy từ HÌNH GỐC (các đỉnh nằm trên cạnh của hình): các phần vẽ thêm sau không làm hình dịch hay đổi tỉ lệ. */
 function fixView(m: Model, target = 300): void {
-  const base = new Set(m.edges.flat());
+  const base = new Set(m.edges.length > 0 ? m.edges.flat() : [...m.pts.keys()]);
   const ps = [...base].map((n) => rawProject(m, m.pts.get(n)!));
+  for (const c of m.circles) if (c.own) for (const q of circleSamples(c, 24)) ps.push(rawProject(m, q));
   const xs = ps.map((p) => p.x);
   const ys = ps.map((p) => p.y);
   const bx = Math.min(...xs);
@@ -1114,10 +1291,10 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
   const idx = new Map(names.map((n, i) => [n, i]));
   const v = m.view ?? {k: 1, bx: 0, by: 0};
   const rot = sc.rot && m.dim === 3 ? sc.rot : null;
-  const baseSet = new Set(m.edges.flat());
+  const baseSet = new Set(m.edges.length > 0 ? m.edges.flat() : [...m.pts.keys()]);
   const basePts = [...m.pts.entries()].filter(([n]) => baseSet.has(n)).map(([, p]) => p);
   const cen0 = centroid(basePts);
-  const R0 = Math.max(1e-6, ...basePts.map((p) => len(sub(p, cen0))));
+  const R0 = Math.max(1e-6, ...basePts.map((p) => len(sub(p, cen0))), ...m.circles.filter((c) => c.own).flatMap((c) => circleSamples(c, 24).map((p) => len(sub(p, cen0)))));
   // xoay tự do: quay quanh trục đứng (yaw) rồi trục ngang (pitch); +z hướng về phía người xem
   const rotate = (p: V3): V3 => {
     if (!rot) return p;
@@ -1215,17 +1392,39 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
     polys: polysOut,
     curves: m.circles
       .filter((c) => partShown(sc, c.part, upTo))
-      .map((c) => {
-        const ref = len(cross(c.normal, [1, 0, 0] as V3)) > 0.1 ? cross(c.normal, [1, 0, 0] as V3) : cross(c.normal, [0, 1, 0] as V3);
-        const u = norm(ref);
-        const w = cross(c.normal, u);
-        const pts: {x: number; y: number}[] = [];
-        for (let i = 0; i <= 96; i++) {
-          const t = (i / 96) * Math.PI * 2;
-          const p = add(c.center, add(mul(u, c.r * Math.cos(t)), mul(w, c.r * Math.sin(t))));
-          pts.push(pv(p));
+      .flatMap((c) => {
+        const own = !!c.own;
+        if (c.kind === 'sphere') {
+          // đường viền mặt cầu: hình tròn bán kính R quanh tâm (tỉ lệ theo phép chiếu đang dùng)
+          const c2 = pv(c.center);
+          const px = rot ? 300 / (2.2 * R0) : v.k;
+          const pts: {x: number; y: number}[] = [];
+          for (let i = 0; i <= 96; i++) {
+            const t = (i / 96) * Math.PI * 2;
+            pts.push({x: Math.round((c2.x + c.r * px * Math.cos(t)) * 10) / 10, y: Math.round((c2.y + c.r * px * Math.sin(t)) * 10) / 10});
+          }
+          return [{pts, label: c.label, own}];
         }
-        return {pts, label: c.label};
+        const samples = circleSamples(c, 96);
+        if (!c.hideBack) return [{pts: samples.map(pv), label: c.label, own}];
+        // nửa xa người xem bị thân khối che: tách thành các đoạn nét liền (gần) và nét đứt (xa)
+        const dir: V3 = rot ? [0, 0, 1] : [KX, KY, 1];
+        const depth = (p: V3) => dot(rot ? rotate(sub(p, c.center)) : sub(p, c.center), dir);
+        const runs: {pts: {x: number; y: number}[]; dashed: boolean}[] = [];
+        samples.forEach((p, i) => {
+          const dashed = depth(p) < -1e-9;
+          const last = runs[runs.length - 1];
+          if (!last || last.dashed !== dashed) {
+            const prev = i > 0 ? pv(samples[i - 1]) : null;
+            runs.push({pts: prev ? [prev, pv(p)] : [pv(p)], dashed});
+          } else last.pts.push(pv(p));
+        });
+        // đường tròn khép kín: đoạn đầu và đoạn cuối cùng loại nét là một đoạn liền
+        if (runs.length > 1 && runs[0].dashed === runs[runs.length - 1].dashed) {
+          const first = runs.shift()!;
+          runs[runs.length - 1].pts.push(...first.pts.slice(1));
+        }
+        return runs.map((r) => ({pts: r.pts, label: c.label, dashed: r.dashed, own}));
       }),
     faces: sc.colors
       ? m.faces
@@ -1294,6 +1493,19 @@ export function cleanHandwritten(raw: string): string {
   return t.replace(/[ \t]+/g, ' ').trim();
 }
 
+/** Tọa độ trong đề: A(1;2;3) (Oxyz) hoặc A(1;2) (Oxy), cũng nhận dấu phẩy. */
+export function parseCoords(raw: string): Map<string, V3> {
+  const out = new Map<string, V3>();
+  const num = (s: string) => parseFloat(s.replace(',', '.'));
+  for (const mm of raw.matchAll(/(?<![A-Za-z'])([A-Z]'?)\s*\(\s*(-?\d+(?:[.,]\d+)?)\s*[;,]\s*(-?\d+(?:[.,]\d+)?)(?:\s*[;,]\s*(-?\d+(?:[.,]\d+)?))?\s*\)/g)) {
+    out.set(mm[1], [num(mm[2]), num(mm[3]), mm[4] !== undefined ? num(mm[4]) : 0]);
+  }
+  return out;
+}
+
+/** Có ít nhất một điểm cho bằng ba tọa độ → hệ Oxyz. */
+const coordsAre3D = (raw: string) => /(?<![A-Za-z'])[A-Z]'?\s*\(\s*-?\d+(?:[.,]\d+)?\s*[;,]\s*-?\d+(?:[.,]\d+)?\s*[;,]\s*-?\d+(?:[.,]\d+)?\s*\)/.test(raw);
+
 export function buildScene(raw0: string): SceneBuild {
   const raw = cleanHandwritten(raw0);
   const parts = splitParts(raw);
@@ -1304,6 +1516,25 @@ export function buildScene(raw0: string): SceneBuild {
   if (!m) {
     figText = normalizeProblem(raw);
     m = buildFigure(figText, notes);
+  }
+  // tọa độ cho sẵn: đặt các điểm đúng chỗ (hình không nhận ra nhưng có ≥ 2 điểm có tọa độ → vẽ các điểm đó)
+  const coords = parseCoords(raw);
+  if (coords.size > 0) {
+    const is3D = coordsAre3D(raw);
+    if (m && (m.dim === 3) === is3D) {
+      for (const [n, p] of coords) if (m.pts.has(n)) m.pts.set(n, p);
+      m.notes.push(`đặt tọa độ ${[...coords.keys()].filter((n) => m!.pts.has(n)).join(', ')}`);
+    } else if (!m && coords.size >= 2) {
+      const bare: Model = {pts: new Map(), order: [], edges: [], aux: [], faces: [], marks: new Set(), polys: [], merged: new Map(), cur: 0, ptPart: new Map(), auxPart: [], polyPart: [], mergedPart: new Map(), circles: [], dim: is3D ? 3 : 2, title: is3D ? 'Hình trong không gian Oxyz' : 'Hình trong mặt phẳng Oxy', notes, ignored: []};
+      for (const [n, p] of coords) {
+        bare.pts.set(n, is3D ? p : [p[0], p[1], 0]);
+        bare.order.push(n);
+        bare.ptPart.set(n, 0);
+        bare.marks.add(n);
+      }
+      m = bare;
+      m.notes.push(`${coords.size} điểm theo tọa độ`);
+    }
   }
   if (!m) return {scene: null, notes, ignored: raw.trim() ? ['Chưa nhận ra hình trong đề (cần tên hình và các đỉnh, ví dụ "hình chóp S.ABCD" hoặc "tam giác ABC vuông tại A")'] : []};
   fixView(m);

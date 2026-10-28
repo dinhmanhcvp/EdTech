@@ -12,6 +12,9 @@ import pytest
 @pytest.fixture(autouse=True)
 def _isolate_env_file_and_environ(tmp_path, monkeypatch):
     saved = dict(os.environ)
+    from llm.model_router import model_router
+
+    model_router.__init__()  # bộ đếm hạn mức theo (khóa, model) không rò sang bài sau
     monkeypatch.setenv("SOCRATIC_ENV_FILE", str(tmp_path / "test.env"))
     yield
     for k in list(os.environ):

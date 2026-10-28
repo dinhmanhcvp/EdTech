@@ -21,6 +21,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from deploy_guard import RateLimitMiddleware, is_production, warm_up
+from llm import gemini_rest
+from llm.model_router import model_router
 from routers.visualize import router as visualize_router
 from routers.companion import router as companion_router
 from routers.classroom import router as classroom_router
@@ -114,6 +116,8 @@ def health_check():
             "latex_onnx": bool(LOCAL_MATH_ONNX and LOCAL_MATH_ONNX.available),
             "chromadb": CHROMADB_AVAILABLE,
             "gemini_configured": gemini_configured,
+            # hạn mức từng model (RPM/RPD đang dùng, đã dùng hôm nay trên tất cả khóa): để biết model nào sắp hết lượt
+            "model_quota": model_router.status(global_key_pool._collect_env_gemini_keys(), list(dict.fromkeys(gemini_rest.vision_models() + gemini_rest.text_models()))),
             "vision_provider": (os.getenv("VISION_PROVIDER", "auto") or "auto").strip().lower(),
             "key_pool": {
                 "gemini_total": pool_status["gemini"]["total"],

@@ -30,6 +30,7 @@ except ImportError:
 
 from ocr_engine import global_ocr_engine, RAPIDOCR_ENGINE, LOCAL_MATH_ONNX, ENABLE_HEAVY_MODELS
 from llm import gemini_rest
+from llm.model_router import model_router
 from llm.key_pool import global_key_pool, call_openrouter_vision, mask_api_key, _split_keys, classify_error_cooldown, gemini_vision_enabled, openrouter_vision_enabled
 
 router = APIRouter(prefix="/api/v1/canvas", tags=["Canvas & Magic Lasso"])
@@ -630,40 +631,32 @@ def classify_with_vision_llm(
             jpeg = b""
             print(f"[Gemini Vision] Image prepare error: {ie}")
         if jpeg:
-            wait = global_key_pool.seconds_until_slot("gemini", gemini_keys)
-            if 0 < wait <= 2.0:
-                time.sleep(wait)
             prompt_g = few_shot_prompt + f"\nClassify this blackboard handwriting. Hint: {hint_text or ''}"
-            for g_key in gemini_keys:
-                last_key_err: Optional[Exception] = None
-                succeeded = False
-                for model_name in gemini_rest.vision_models():
-                    if not global_key_pool.try_reserve("gemini", g_key):
-                        break
+            bad_keys: set = set()
+            for g_key, model_name in model_router.plan("vision", gemini_keys, gemini_rest.vision_models(), skip=bad_keys):
+                t_call = time.time()
+                try:
+                    raw_g = gemini_rest.generate_image(model_name, g_key, prompt_g, jpeg, 9.0, max_tokens=1400)
+                    model_router.note_latency(model_name, time.time() - t_call)
+                    m = re.search(r'\{.*\}', raw_g, re.DOTALL)
+                    if not m:
+                        continue
                     try:
-                        raw_g = gemini_rest.generate_image(model_name, g_key, prompt_g, jpeg, 9.0, max_tokens=1400)
-                        m = re.search(r'\{.*\}', raw_g, re.DOTALL)
-                        if not m:
-                            continue
-                        try:
-                            data = json.loads(m.group(0))
-                        except json.JSONDecodeError:
-                            data = json.loads(re.sub(r",\s*([\}\]])", r"\1", m.group(0)))
-                        if "templateId" in data and data["templateId"] in OFFLINE_TEMPLATE_REGISTRY:
-                            global_key_pool.mark_success("gemini", g_key)
-                            data["_provider"] = "GEMINI"
-                            data["_model"] = model_name
-                            print(f"[Gemini Vision] Succeeded with model: {model_name} (key {mask_api_key(g_key)})")
-                            return data
-                    except Exception as me:
-                        print(f"[Gemini Vision] Model {model_name} error on {mask_api_key(g_key)}: {str(me)[:120]}")
-                        last_key_err = me
-                        if classify_error_cooldown(me)[0] == "auth_error":
-                            global_key_pool.mark_failure("gemini", g_key, me)
-                            last_key_err = None
-                            break
-                if last_key_err is not None and not succeeded:
-                    global_key_pool.mark_failure("gemini", g_key, last_key_err)
+                        data = json.loads(m.group(0))
+                    except json.JSONDecodeError:
+                        data = json.loads(re.sub(r",\s*([\}\]])", r"\1", m.group(0)))
+                    if "templateId" in data and data["templateId"] in OFFLINE_TEMPLATE_REGISTRY:
+                        global_key_pool.mark_success("gemini", g_key)
+                        data["_provider"] = "GEMINI"
+                        data["_model"] = model_name
+                        print(f"[Gemini Vision] Succeeded with model: {model_name} (key {mask_api_key(g_key)})")
+                        return data
+                except Exception as me:
+                    print(f"[Gemini Vision] Model {model_name} error on {mask_api_key(g_key)}: {str(me)[:120]}")
+                    model_router.note_failure(g_key, model_name, me, time.time() - t_call)
+                    if classify_error_cooldown(me)[0] == "auth_error":
+                        global_key_pool.mark_failure("gemini", g_key, me)
+                        bad_keys.add(g_key)
 
     # 2. Try OpenRouter Vision Pool (tự động dự phòng khi Gemini chạm Rate Limit hoặc khi dùng OpenRouter)
     if openrouter_keys and openrouter_vision_enabled():

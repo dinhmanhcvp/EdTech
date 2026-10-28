@@ -1315,3 +1315,11 @@ Tham chiếu: hai video `1792910979915_…mp4` (lập phương → tô màu mặ
 - **Kiểm thử đầu cuối thật** (header khóa từ `.env.local`): 10 lần Vision liên tiếp 1,5 đến 4,6 s, 100% qua Gemini, không 429; hỏi đáp `/ask-board` 2,7 s (`gemini-3.5-flash`). Chưa thử tải cao hay giờ cao điểm (503 "high demand" có xuất hiện lẻ tẻ ở vài model khi đo, đã có model dự phòng).
 - `render.yaml`, `.env.production.example`, `DEPLOY.md` cập nhật (`GEMINI_API_KEYS` mỗi khóa một dự án Google, `GEMINI_RPM_PER_KEY`).
 - Gộp commit của các phiên khác: xem commit "chore: merge pending work …"; e2e `socratic-flow` đã sửa theo giao diện hub mới (`btn-visualize` → `top-toolbar-btn-visualize`) và theo điểm thưởng 50 của cổng khái niệm.
+
+
+# 2026-10-29 (bổ sung 4) — Điều phối theo RPD (`llm/model_router.py`)
+
+- Yêu cầu: model RPD lớn dành cho Vision, hỏi đáp, gia sư; model RPD nhỏ nhường/đỡ. `ModelRouter.plan(feature, keys, models)` trả lần lượt (khóa, model) còn lượt: model theo RPD giảm dần (chức năng khác: tăng dần), RPD bằng nhau thì model nhanh hơn (độ trễ trung bình trượt, phạt phai dần nửa đời 120 s), trong cùng model chọn khóa dùng ít nhất trong ngày. Bộ đếm RPM (cửa sổ 60 s) và RPD (đặt lại nửa đêm giờ Thái Bình Dương) cho từng cặp (khóa, model); chạm 90% RPD thì nhường. Lỗi "PerDay" → cặp nghỉ tới nửa đêm Thái Bình Dương; 404/"no longer available" (khóa mới không còn 2.5-flash) → nghỉ 24 giờ không phạt độ trễ; `quotaValue` trong lỗi 429 được học lại làm RPM/RPD thật.
+- Nối vào `recognize_ink.py`, `visualize.py`, `board_qa.py` (hỏi đáp), `provider_adapter.py` (gia sư). `/health` → `runtime.model_quota` (RPM, RPD, đã dùng hôm nay, độ trễ trung bình).
+- **Hạn mức thật chưa biết**: Google không công bố qua API; tìm trên web chỉ thấy số cũ của 2.5 (flash 10 RPM/250 RPD, flash-lite 15/1000). Mặc định dùng giả định 10/250 cho model 3.x. Người dùng cần chép số thật từ trang Rate limit của AI Studio vào `GEMINI_MODEL_LIMITS=model:rpm:rpd,...` (Render và `.env`); khi đó thứ tự sẽ theo RPD thật.
+- Đo thật 10 lần Vision + 1 hỏi đáp: 1,2 đến 1,8 s, đều qua `gemini-3-flash-preview` (nhanh nhất khi RPD bằng nhau), chia đều qua các khóa. pytest 119.

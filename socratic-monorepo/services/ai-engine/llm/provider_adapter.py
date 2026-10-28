@@ -5,10 +5,12 @@ Guarantees NO ANSWER LEAKAGE — only returns scaffolding questions.
 """
 import os
 import json
+import time
 from typing import Dict, Any, Optional
 
 from llm import gemini_rest
-from llm.key_pool import global_key_pool, call_openrouter_text
+from llm.key_pool import global_key_pool, call_openrouter_text, classify_error_cooldown
+from llm.model_router import model_router
 
 # Giữ cùng thứ tự ưu tiên với routers/recognize_ink.py: model hạn mức cao trước.
 SOCRATIC_GEMINI_MODELS = gemini_rest.text_models()
@@ -34,28 +36,29 @@ def generate_socratic_guidance(student_message: str, current_step: int, subject:
         try:
             import google.generativeai as genai
             user_prompt = f"Môn học: {subject}. Bước học sinh đang thực hiện: bước {current_step}. Tin nhắn học sinh: \"{student_message}\". Hãy đưa ra đúng 1 câu hỏi Socratic gợi mở ngắn gọn (<60 từ) giúp học sinh tự tìm ra bước giải tiếp theo mà KHÔNG nói ra đáp án."
-            for g_key in gemini_keys:
-                last_err: Optional[Exception] = None
-                for model_name in SOCRATIC_GEMINI_MODELS:
-                    try:
-                        genai.configure(api_key=g_key)
-                        model = genai.GenerativeModel(model_name, system_instruction=SOCRATIC_SYSTEM_PROMPT)
-                        resp = model.generate_content(user_prompt)
-                        txt = getattr(resp, "text", "") or ""
-                        if txt.strip():
-                            global_key_pool.mark_success("gemini", g_key)
-                            return {
-                                "source": "LLM_GEMINI_POOL",
-                                "socratic_question": txt.strip(),
-                                "step_status": "IN_PROGRESS",
-                                "eureka_points_delta": 5,
-                            }
-                    except Exception as me:
-                        # hạn mức tính riêng từng model: thử model kế tiếp trên cùng khóa
-                        last_err = me
-                # chỉ phạt khóa khi mọi model đều lỗi
-                if last_err is not None:
-                    global_key_pool.mark_failure("gemini", g_key, last_err)
+            bad: set = set()
+            for g_key, model_name in model_router.plan("tutor", gemini_keys, SOCRATIC_GEMINI_MODELS, skip=bad):
+                t_call = time.time()
+                try:
+                    genai.configure(api_key=g_key)
+                    model = genai.GenerativeModel(model_name, system_instruction=SOCRATIC_SYSTEM_PROMPT)
+                    resp = model.generate_content(user_prompt)
+                    model_router.note_latency(model_name, time.time() - t_call)
+                    txt = getattr(resp, "text", "") or ""
+                    if txt.strip():
+                        global_key_pool.mark_success("gemini", g_key)
+                        return {
+                            "source": "LLM_GEMINI_POOL",
+                            "socratic_question": txt.strip(),
+                            "step_status": "IN_PROGRESS",
+                            "eureka_points_delta": 5,
+                        }
+                except Exception as me:
+                    # hạn mức tính riêng từng (khóa, model): thử cặp kế tiếp
+                    model_router.note_failure(g_key, model_name, me, time.time() - t_call)
+                    if classify_error_cooldown(me)[0] == "auth_error":
+                        global_key_pool.mark_failure("gemini", g_key, me)
+                        bad.add(g_key)
         except Exception:
             pass
 

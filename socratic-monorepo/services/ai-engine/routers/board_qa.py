@@ -21,6 +21,7 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field
 
 from llm import gemini_rest
+from llm.model_router import model_router
 from llm.key_pool import call_openrouter_text, classify_error_cooldown, global_key_pool
 
 router = APIRouter(prefix="/api/v1/canvas", tags=["Board Q&A"])
@@ -121,26 +122,20 @@ def _gemini_text(model: str, key: str, system: str, user: str, timeout: float) -
 def _llm_json(system: str, user: str, gemini_key: str = "", openrouter_key: str = "") -> Optional[Tuple[str, str, str]]:
     """(văn bản, nhà cung cấp, mô hình) hoặc None nếu không có khóa/mọi khóa đều lỗi."""
     keys = global_key_pool.get_ordered_keys("gemini", extra_key=gemini_key or None)
-    # mọi khóa đủ số lượt mỗi phút: chờ ngắn nếu sắp có chỗ, không thì sang OpenRouter (không đập vào 429)
-    wait = global_key_pool.seconds_until_slot("gemini", keys)
-    if 0 < wait <= 2.5:
-        time.sleep(wait)
-    for key in keys:
-        last: Optional[BaseException] = None
-        for model in GEMINI_MODELS:
-            if not global_key_pool.try_reserve("gemini", key):
-                break
-            try:
-                text = _gemini_text(model, key, system, user, _CALL_TIMEOUT_S)
-                if text.strip():
-                    global_key_pool.mark_success("gemini", key)
-                    return text, "gemini", model
-            except Exception as e:  # hạn mức tính riêng từng mô hình: thử mô hình kế trên cùng khóa
-                last = e
-                if classify_error_cooldown(e)[0] == "auth_error":
-                    break
-        if last is not None:
-            global_key_pool.mark_failure("gemini", key, last)
+    bad: set = set()
+    for key, model in model_router.plan("qa", keys, GEMINI_MODELS, skip=bad):
+        t_call = time.time()
+        try:
+            text = _gemini_text(model, key, system, user, _CALL_TIMEOUT_S)
+            model_router.note_latency(model, time.time() - t_call)
+            if text.strip():
+                global_key_pool.mark_success("gemini", key)
+                return text, "gemini", model
+        except Exception as e:  # hạn mức tính riêng từng model: thử cặp (khóa, model) kế tiếp
+            model_router.note_failure(key, model, e, time.time() - t_call)
+            if classify_error_cooldown(e)[0] == "auth_error":
+                global_key_pool.mark_failure("gemini", key, e)
+                bad.add(key)
     res = call_openrouter_text(system, user, pool=global_key_pool, extra_key=openrouter_key or None, timeout_s=_CALL_TIMEOUT_S, max_tokens=1100, models=OPENROUTER_QA_MODELS)
     if res and res[0].strip():
         return res[0], "openrouter", res[1]

@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 
 from llm import gemini_rest
+from llm.model_router import model_router
 from llm.key_pool import call_openrouter_vision, classify_error_cooldown, gemini_vision_enabled, global_key_pool, mask_api_key, openrouter_vision_enabled
 
 try:
@@ -197,39 +198,30 @@ def _call_gemini(image_bytes: bytes, hint: str, api_key: str, key_offset: int = 
     jpeg = prepare_image(image_bytes)
     prompt = PROMPT + (f"\nGợi ý ngữ cảnh từ giáo viên: {hint}" if hint else "")
     last_err: Optional[Exception] = None
-    # mọi khóa đang đủ số lượt mỗi phút: chờ ngắn nếu sắp có chỗ, không thì để OpenRouter đỡ (không đập vào 429)
-    wait = global_key_pool.seconds_until_slot("gemini", candidate_keys)
-    if 0 < wait <= 2.5:
-        time.sleep(wait)
-
-    for key_idx, current_key in enumerate(candidate_keys):
-        key_auth_error = False
-        last_key_err: Optional[Exception] = None
-        for name in GEMINI_MODELS:
-            if not global_key_pool.try_reserve("gemini", current_key):
-                break
-            try:
-                text = _gemini_rest(name, current_key, prompt, jpeg, _CALL_TIMEOUT_S)
-                parsed = parse_recognition(text)
-                if parsed is not None:
-                    global_key_pool.mark_success("gemini", current_key)
-                    parsed["model"] = name
-                    parsed["key_index"] = key_idx + 1
-                    parsed["masked_key"] = mask_api_key(current_key)
-                    return parsed
-            except Exception as e:
-                last_err = e
-                last_key_err = e
-                reason, _ = classify_error_cooldown(e)
-                if reason == "auth_error":
-                    # Khóa không hợp lệ -> bỏ key này, chuyển key khác
-                    global_key_pool.mark_failure("gemini", current_key, e)
-                    key_auth_error = True
-                    break
-                # quota / rate limit tính THEO MODEL: thử model kế tiếp trên cùng key
-        else:
-            if not key_auth_error and last_key_err is not None:
-                global_key_pool.mark_failure("gemini", current_key, last_key_err)
+    # (khóa, model) theo hạn mức: model RPD lớn trước, khóa dùng ít nhất trước; hết lượt thì thôi để OpenRouter đỡ (không đập vào 429)
+    bad_keys: set = set()
+    tried: Dict[str, int] = {}
+    key_pos = {k: i + 1 for i, k in enumerate(candidate_keys)}
+    for current_key, name in model_router.plan("vision", candidate_keys, GEMINI_MODELS, skip=bad_keys):
+        tried[current_key] = tried.get(current_key, 0) + 1
+        t_call = time.time()
+        try:
+            text = _gemini_rest(name, current_key, prompt, jpeg, _CALL_TIMEOUT_S)
+            model_router.note_latency(name, time.time() - t_call)
+            parsed = parse_recognition(text)
+            if parsed is not None:
+                global_key_pool.mark_success("gemini", current_key)
+                parsed["model"] = name
+                parsed["key_index"] = key_pos.get(current_key, 1)
+                parsed["masked_key"] = mask_api_key(current_key)
+                return parsed
+        except Exception as e:
+            last_err = e
+            model_router.note_failure(current_key, name, e, time.time() - t_call)
+            if classify_error_cooldown(e)[0] == "auth_error":
+                # khóa không hợp lệ: bỏ khóa này cho lần gọi này và cách ly
+                global_key_pool.mark_failure("gemini", current_key, e)
+                bad_keys.add(current_key)
     if last_err:
         print(f"[recognize-ink] Gemini pool error across {len(candidate_keys)} key(s): {last_err}")
     return None

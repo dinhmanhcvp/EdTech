@@ -223,9 +223,9 @@ def test_local_math_onnx_cleaner_and_offline_recognition(client, monkeypatch):
         assert len(data["lines"]) >= 1
 
 
-def test_default_vision_goes_through_openrouter_only(client, monkeypatch):
-    """Mặc định (VISION_PROVIDER=openrouter): khóa Gemini bị bỏ qua, Vision chỉ đi qua OpenRouter."""
-    monkeypatch.delenv("VISION_PROVIDER", raising=False)
+def test_vision_provider_openrouter_ignores_gemini_keys(client, monkeypatch):
+    """VISION_PROVIDER=openrouter: khóa Gemini bị bỏ qua, Vision chỉ đi qua OpenRouter."""
+    monkeypatch.setenv("VISION_PROVIDER", "openrouter")
     called = []
     monkeypatch.setattr(ri, "recognize_with_gemini", lambda *a, **k: called.append("gemini"))
     monkeypatch.setattr(
@@ -245,3 +245,22 @@ def test_openrouter_default_models_are_current():
     from llm.key_pool import DEFAULT_OPENROUTER_VISION_MODELS as M
     assert M[0] == "google/gemini-2.5-flash" and "openrouter/free" not in M
     assert any(m.endswith(":free") for m in M[-1:])  # miễn phí chỉ là dự phòng cuối
+
+
+def test_default_vision_tries_gemini_pool_first(client, monkeypatch):
+    """Mặc định (auto): bể khóa Gemini trước; Gemini lỗi mới sang OpenRouter."""
+    monkeypatch.delenv("VISION_PROVIDER", raising=False)
+    order = []
+    monkeypatch.setattr(ri, "recognize_with_gemini", lambda *a, **k: order.append("gemini") or ri.parse_recognition('{"lines":[{"text":"x","latex":"x","confidence":0.9}]}'))
+    monkeypatch.setattr(ri, "recognize_with_openrouter", lambda *a, **k: order.append("openrouter"))
+    r = client.post("/api/v1/canvas/recognize-ink", json={"image_base64": _png_b64()}, headers={"x-gemini-api-key": "g", "x-openrouter-api-key": "o"})
+    assert r.status_code == 200 and r.json()["engine"] == "gemini"
+    assert order == ["gemini"]
+
+
+def test_gemini_failure_falls_back_to_openrouter(client, monkeypatch):
+    monkeypatch.delenv("VISION_PROVIDER", raising=False)
+    monkeypatch.setattr(ri, "recognize_with_gemini", lambda *a, **k: None)
+    monkeypatch.setattr(ri, "recognize_with_openrouter", lambda *a, **k: ri.parse_recognition('{"lines":[{"text":"y","latex":"y","confidence":0.9}]}'))
+    r = client.post("/api/v1/canvas/recognize-ink", json={"image_base64": _png_b64()}, headers={"x-gemini-api-key": "g", "x-openrouter-api-key": "o"})
+    assert r.status_code == 200 and r.json()["engine"] == "openrouter"

@@ -43,7 +43,8 @@ Những thay đổi đã làm để bản web không chậm hơn local:
    | Biến | Giá trị | Ghi chú |
    |---|---|---|
    | `OPENROUTER_API_KEYS` | `sk-or-v1-…` | **Bắt buộc cho AI Vision**. Nhiều khóa ngăn bằng dấu phẩy để tự xoay vòng |
-   | `VISION_PROVIDER` | `openrouter` (đã đặt sẵn) | Vision chỉ qua OpenRouter; đặt `auto` để dùng thêm khóa Gemini trực tiếp |
+   | `VISION_PROVIDER` | `auto` (đã đặt sẵn) | Gemini trước, OpenRouter dự phòng; `openrouter` hoặc `gemini` để chỉ dùng một bên |
+   | `GEMINI_API_KEYS` | `AQ.…1,AQ.…2` | Nhiều khóa, mỗi khóa một dự án Google; `GEMINI_RPM_PER_KEY` (mặc định 8) giữ mỗi khóa dưới hạn mức |
    | `OPENROUTER_VISION_MODELS` | để trống | Tùy chọn. Mặc định thử lần lượt `google/gemini-2.5-flash`, `google/gemini-2.5-flash-lite`, `qwen/qwen3-vl-30b-a3b-instruct`, `openai/gpt-4o-mini`, rồi `google/gemma-4-31b-it:free` |
    | `CORS_ORIGINS` | để trống lúc đầu | Điền sau bước 4 (hai địa chỉ Vercel) |
    | `ADMIN_TOKEN` | Render tự sinh | Chỉ cần khi muốn ghi khóa AI qua API (xem mục 6) |
@@ -94,7 +95,7 @@ Ngoài ra: giao diện tự gọi `/health` ngay khi mở trang (thanh trạng t
 
 **OCR thần kinh (RapidOCR/ONNX) và ChromaDB** không cài mặc định vì nặng (gói Free chỉ 512 MB RAM). Hệ quả: nhận dạng ảnh không có khóa OpenRouter kém hơn máy của bạn (máy bạn đang có RapidOCR). Việc chính (chữ → công thức, vẽ tay → khối, định tuyến mô phỏng, hình học, đề viết tay qua OpenRouter) chạy trong trình duyệt hoặc qua Gemini nên không bị ảnh hưởng. Nếu cần OCR đầy đủ, dùng gói Render ≥ 2 GB RAM và đổi lệnh build thành `pip install -r requirements-edge.txt`.
 
-**AI Vision qua OpenRouter**: nạp credit theo số tiền nhỏ trên openrouter.ai/credits rồi tạo khóa ở openrouter.ai/keys, đặt vào `OPENROUTER_API_KEYS`. Mã model đã đối chiếu với danh mục công khai của OpenRouter ngày 2026-10-28, nhưng giá và độ trễ có thể đổi: xem trang models của OpenRouter và đặt `OPENROUTER_VISION_MODELS` nếu muốn đổi thứ tự. Model `:free` chỉ là dự phòng cuối vì hay bị giới hạn lượt. Người dùng cũng có thể tự nhập khóa OpenRouter riêng trong hộp thoại *Kết nối AI*: khóa đó chỉ lưu trong trình duyệt của họ và không bị tính vào giới hạn tần suất.
+**AI (Vision, hỏi đáp, gia sư): bể khóa Gemini trước, OpenRouter dự phòng.** Đặt `GEMINI_API_KEYS` (nhiều khóa ngăn bằng dấu phẩy, **mỗi khóa từ một dự án Google khác nhau** vì hạn mức tính theo dự án) và `OPENROUTER_API_KEYS` làm dự phòng. Mỗi khóa Gemini bị giữ dưới `GEMINI_RPM_PER_KEY` lượt mỗi phút (mặc định 8, hạ xuống nếu hay gặp 429), hết lượt thì chuyển khóa khác rồi OpenRouter nên lúc quay video không bị ngắt. Hết hạn mức theo ngày thì khóa đó nghỉ 6 giờ (`KEY_COOLDOWN_DAILY_QUOTA_S`). Model mặc định đã đo thật ngày 2026-10-29: Vision `gemini-3-flash-preview` (1,5 đến 4,5 s, tắt suy nghĩ), hỏi đáp `gemini-3.5-flash` (~2,7 s); đổi bằng `GEMINI_VISION_MODELS` và `GEMINI_QA_MODELS`. Mã model OpenRouter đã đối chiếu với danh mục công khai ngày 2026-10-28, giá và độ trễ có thể đổi. Người dùng cũng có thể tự nhập khóa riêng trong hộp thoại *Kết nối AI* (chỉ lưu trong trình duyệt của họ, không bị tính vào giới hạn tần suất của máy chủ).
 
 ## 6. Bảo mật bản công khai
 

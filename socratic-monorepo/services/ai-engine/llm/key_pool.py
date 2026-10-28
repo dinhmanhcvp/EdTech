@@ -16,7 +16,8 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
+from collections import deque
+from typing import Any, Callable, Deque, Dict, List, Optional, Tuple, TypeVar
 
 T = TypeVar("T")
 
@@ -42,14 +43,33 @@ DEFAULT_OPENROUTER_TEXT_MODELS = [
 
 
 def gemini_vision_enabled() -> bool:
-    """Vision mặc định CHỈ đi qua OpenRouter (VISION_PROVIDER=openrouter). Đặt `auto` hoặc `gemini` để dùng thêm khóa Gemini trực tiếp."""
-    return (os.getenv("VISION_PROVIDER", "openrouter") or "openrouter").strip().lower() in ("auto", "gemini")
+    """
+    Vision: `auto` (mặc định) = bể khóa Gemini trước (nhiều khóa, có giới hạn tần suất từng khóa), OpenRouter dự phòng;
+    `openrouter` = chỉ OpenRouter; `gemini` = chỉ Gemini.
+    """
+    return (os.getenv("VISION_PROVIDER", "auto") or "auto").strip().lower() in ("auto", "gemini")
+
+
+def openrouter_vision_enabled() -> bool:
+    return (os.getenv("VISION_PROVIDER", "auto") or "auto").strip().lower() in ("auto", "openrouter")
+
+
+def rpm_limit(provider: str) -> int:
+    """Số yêu cầu tối đa mỗi phút cho MỖI khóa (0 = không giới hạn). Đặt thấp hơn hạn mức thật của gói để không bao giờ chạm 429."""
+    name = "GEMINI_RPM_PER_KEY" if provider == "gemini" else "OPENROUTER_RPM_PER_KEY"
+    default = "8" if provider == "gemini" else "0"
+    try:
+        return max(0, int(os.getenv(name, default)))
+    except ValueError:
+        return int(default)
 
 # Thời gian cách ly tạm thời (giây) khi một key gặp lỗi
 COOLDOWN_RATE_LIMIT_S = float(os.getenv("KEY_COOLDOWN_RATE_LIMIT_S", "60"))
 COOLDOWN_QUOTA_EXHAUSTED_S = float(os.getenv("KEY_COOLDOWN_QUOTA_S", "900"))
 COOLDOWN_AUTH_ERROR_S = float(os.getenv("KEY_COOLDOWN_AUTH_S", "1800"))
 COOLDOWN_TRANSIENT_S = float(os.getenv("KEY_COOLDOWN_TRANSIENT_S", "15"))
+# hết hạn mức THEO NGÀY: thử lại sớm chỉ phí lượt, nên cách ly lâu (hạn mức Gemini đặt lại vào nửa đêm giờ Thái Bình Dương)
+COOLDOWN_DAILY_QUOTA_S = float(os.getenv("KEY_COOLDOWN_DAILY_QUOTA_S", str(6 * 3600)))
 
 
 def _split_keys(raw: Optional[str]) -> List[str]:
@@ -91,6 +111,10 @@ def classify_error_cooldown(err: BaseException) -> Tuple[str, float]:
         w in msg for w in ("api_key_invalid", "invalid api key", "unauthorized", "permission_denied", "401", "403")
     ):
         return ("auth_error", COOLDOWN_AUTH_ERROR_S)
+
+    compact = msg.replace(" ", "").replace("_", "")
+    if "perday" in compact or "requestsperday" in compact or "dailylimit" in compact:
+        return ("quota_exhausted", COOLDOWN_DAILY_QUOTA_S)
 
     if any(
         w in msg
@@ -161,12 +185,51 @@ class KeyPoolManager:
         self._rr_cursor: Dict[str, int] = {"gemini": 0, "openrouter": 0}
         self._runtime_gemini_keys: List[str] = []
         self._runtime_openrouter_keys: List[str] = []
+        # nhật ký thời điểm gọi theo từng khóa (cửa sổ trượt 60 s) để tự giữ dưới hạn mức mỗi phút
+        self._req_log: Dict[Tuple[str, str], Deque[float]] = {}
+
+    def try_reserve(self, provider: str, key: str, now: Optional[float] = None) -> bool:
+        """Giữ một lượt gọi cho khóa này. False nếu khóa đã đủ `rpm_limit` lượt trong 60 s gần nhất (hãy thử khóa khác)."""
+        limit = rpm_limit(provider)
+        if limit <= 0 or not key:
+            return True
+        t = time.time() if now is None else now
+        with self._lock:
+            dq = self._req_log.setdefault((provider, key), deque())
+            while dq and t - dq[0] >= 60.0:
+                dq.popleft()
+            if len(dq) >= limit:
+                return False
+            dq.append(t)
+            return True
+
+    def seconds_until_slot(self, provider: str, keys: List[str], now: Optional[float] = None) -> float:
+        """Còn bao lâu nữa thì có ít nhất một khóa trong `keys` được phép gọi (0 nếu đã có)."""
+        limit = rpm_limit(provider)
+        if limit <= 0 or not keys:
+            return 0.0
+        t = time.time() if now is None else now
+        best = 60.0
+        with self._lock:
+            for k in keys:
+                dq = self._req_log.get((provider, k))
+                live = [x for x in (dq or []) if t - x < 60.0]
+                if len(live) < limit:
+                    return 0.0
+                best = min(best, 60.0 - (t - live[0]))
+        return max(0.0, best)
+
+    def usage_last_minute(self, provider: str, key: str, now: Optional[float] = None) -> int:
+        t = time.time() if now is None else now
+        with self._lock:
+            return len([x for x in self._req_log.get((provider, key), ()) if t - x < 60.0])
 
     def clear_runtime_keys(self) -> None:
         with self._lock:
             self._runtime_gemini_keys.clear()
             self._runtime_openrouter_keys.clear()
             self._states.clear()
+            self._req_log.clear()
             self._rr_cursor = {"gemini": 0, "openrouter": 0}
 
     def add_runtime_keys(
@@ -517,6 +580,7 @@ def call_openrouter_text(
     models: Optional[List[str]] = None,
     timeout_s: float = 8.0,
     opener: Optional[Callable[..., Any]] = None,
+    max_tokens: Optional[int] = None,
 ) -> Optional[Tuple[str, str]]:
     """
     Gọi OpenRouter Text Chat Completions cho Gia sư Socratic / Hỏi đáp AI khi Gemini chạm giới hạn.
@@ -540,6 +604,8 @@ def call_openrouter_text(
                     {"role": "user", "content": user_prompt},
                 ],
             }
+            if max_tokens:
+                payload["max_tokens"] = max_tokens  # không đặt thì OpenRouter tính theo trần của mô hình (65k) và từ chối khi số dư thấp (HTTP 402)
             req = urllib.request.Request(
                 OPENROUTER_API_URL,
                 data=json.dumps(payload).encode("utf-8"),

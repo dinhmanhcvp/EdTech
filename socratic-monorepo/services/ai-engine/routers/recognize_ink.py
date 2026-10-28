@@ -19,7 +19,8 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
-from llm.key_pool import call_openrouter_vision, classify_error_cooldown, gemini_vision_enabled, global_key_pool, mask_api_key
+from llm import gemini_rest
+from llm.key_pool import call_openrouter_vision, classify_error_cooldown, gemini_vision_enabled, global_key_pool, mask_api_key, openrouter_vision_enabled
 
 try:
     from PIL import Image
@@ -30,15 +31,8 @@ except ImportError:  # pragma: no cover
 
 router = APIRouter(prefix="/api/v1/canvas", tags=["Handwriting Recognition"])
 
-GEMINI_MODELS = [
-    "gemini-flash-lite-latest",
-    "gemini-2.5-flash",
-    "gemini-flash-latest",
-    "gemini-3-flash-preview",
-    "gemini-2.5-pro",
-    "gemini-pro-latest",
-    "gemini-1.5-flash",
-]
+# thứ tự và cách tắt suy nghĩ lấy từ llm/gemini_rest.py (đã đo thật); ghi đè bằng GEMINI_VISION_MODELS
+GEMINI_MODELS = gemini_rest.vision_models()
 _TIMEOUT_S = float(os.getenv("INK_RECOGNIZE_TIMEOUT_S", "14"))
 _POOL = ThreadPoolExecutor(max_workers=6, thread_name_prefix="ink-recognize")
 # Tăng tốc Vision: ảnh nhỏ gọn, JSON trả thẳng, gọi REST (an toàn đa luồng), nhân đôi yêu cầu khi chậm, nhớ kết quả
@@ -88,32 +82,9 @@ def _cache_put(key: str, value: Dict[str, Any]) -> None:
 
 
 def _gemini_rest(model: str, key: str, prompt: str, jpeg: bytes, timeout: float) -> str:
-    """Một lần gọi generateContent qua REST. Lỗi HTTP ném ra urllib.error.HTTPError (có .code) để phân loại cooldown."""
-    gen_cfg: Dict[str, Any] = {"temperature": 0, "maxOutputTokens": 700, "responseMimeType": "application/json"}
-    if "2.5-flash" in model and "lite" not in model:
-        gen_cfg["thinkingConfig"] = {"thinkingBudget": 0}  # đọc chữ không cần "suy nghĩ" dài
-    payload = {
-        "contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(jpeg).decode("ascii")}}]}],
-        "generationConfig": gen_cfg,
-    }
-    req = urllib.request.Request(
-        _GEMINI_URL.format(model=model),
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json", "x-goog-api-key": key},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8", errors="replace"))
-    except urllib.error.HTTPError as e:
-        body = ""
-        try:
-            body = e.read().decode("utf-8", errors="replace")[:300]
-        except Exception:
-            pass
-        raise urllib.error.HTTPError(e.url, e.code, f"{e.reason} {body}", e.headers, None)
-    parts = (((data.get("candidates") or [{}])[0].get("content") or {}).get("parts")) or []
-    return "".join(p.get("text", "") for p in parts if isinstance(p, dict))
+    """Một lần generateContent qua REST (xem llm/gemini_rest.py). Lỗi HTTP ném ra urllib.error.HTTPError (có .code) để phân loại cooldown."""
+    return gemini_rest.generate_image(model, key, prompt, jpeg, timeout, max_tokens=700)
+
 
 PROMPT = (
     "Bạn là hệ thống nhận dạng chữ viết tay trên bảng của giáo viên (toán, vật lí, hóa học, sinh học; tiếng Việt có dấu).\n"
@@ -226,11 +197,17 @@ def _call_gemini(image_bytes: bytes, hint: str, api_key: str, key_offset: int = 
     jpeg = prepare_image(image_bytes)
     prompt = PROMPT + (f"\nGợi ý ngữ cảnh từ giáo viên: {hint}" if hint else "")
     last_err: Optional[Exception] = None
+    # mọi khóa đang đủ số lượt mỗi phút: chờ ngắn nếu sắp có chỗ, không thì để OpenRouter đỡ (không đập vào 429)
+    wait = global_key_pool.seconds_until_slot("gemini", candidate_keys)
+    if 0 < wait <= 2.5:
+        time.sleep(wait)
 
     for key_idx, current_key in enumerate(candidate_keys):
         key_auth_error = False
         last_key_err: Optional[Exception] = None
         for name in GEMINI_MODELS:
+            if not global_key_pool.try_reserve("gemini", current_key):
+                break
             try:
                 text = _gemini_rest(name, current_key, prompt, jpeg, _CALL_TIMEOUT_S)
                 parsed = parse_recognition(text)
@@ -471,7 +448,7 @@ async def recognize_ink(request: Request):
             return result
 
     # 3. Tự động chuyển sang bể khóa OpenRouter Vision nếu tất cả khóa Gemini chạm giới hạn hoặc lỗi
-    if openrouter_key:
+    if openrouter_key and openrouter_vision_enabled():
         or_result = recognize_with_openrouter(image_bytes, hint, openrouter_key)
         if or_result is not None:
             or_result["engine"] = "openrouter"

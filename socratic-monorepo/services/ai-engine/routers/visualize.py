@@ -29,7 +29,8 @@ except ImportError:
     CV2_AVAILABLE = False
 
 from ocr_engine import global_ocr_engine, RAPIDOCR_ENGINE, LOCAL_MATH_ONNX, ENABLE_HEAVY_MODELS
-from llm.key_pool import global_key_pool, call_openrouter_vision, mask_api_key, _split_keys, classify_error_cooldown, gemini_vision_enabled
+from llm import gemini_rest
+from llm.key_pool import global_key_pool, call_openrouter_vision, mask_api_key, _split_keys, classify_error_cooldown, gemini_vision_enabled, openrouter_vision_enabled
 
 router = APIRouter(prefix="/api/v1/canvas", tags=["Canvas & Magic Lasso"])
 
@@ -615,59 +616,57 @@ def classify_with_vision_llm(
 
     few_shot_prompt = build_vision_prompt(hint_text, subject_lock)
 
-    # 1. Try Gemini Pool (xoay vòng qua tất cả các khóa Gemini; ưu tiên gemini-1.5-flash hạn mức lớn 1500 RPD)
-    if gemini_keys:
+    # 1. Bể khóa Gemini qua REST (llm/gemini_rest.py: model đã đo, tắt suy nghĩ), mỗi khóa có giới hạn số lượt mỗi phút
+    if gemini_keys and PIL_AVAILABLE:
         try:
-            import google.generativeai as genai
-            pil_img = Image.open(io.BytesIO(image_bytes)) if PIL_AVAILABLE else None
-            if pil_img:
-                for g_key in gemini_keys:
-                    genai.configure(api_key=g_key)
-                    key_auth_error = False
-                    last_key_err: Optional[Exception] = None
-                    for model_name in [
-                        "gemini-flash-lite-latest",
-                        "gemini-2.5-flash",
-                        "gemini-flash-latest",
-                        "gemini-3-flash-preview",
-                        "gemini-2.5-pro",
-                        "gemini-pro-latest",
-                        "gemini-1.5-flash",
-                    ]:
+            pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            if max(pil_img.size) > 1000:
+                k = 1000 / max(pil_img.size)
+                pil_img = pil_img.resize((max(1, int(pil_img.width * k)), max(1, int(pil_img.height * k))))
+            jbuf = io.BytesIO()
+            pil_img.save(jbuf, "JPEG", quality=86)
+            jpeg = jbuf.getvalue()
+        except Exception as ie:
+            jpeg = b""
+            print(f"[Gemini Vision] Image prepare error: {ie}")
+        if jpeg:
+            wait = global_key_pool.seconds_until_slot("gemini", gemini_keys)
+            if 0 < wait <= 2.0:
+                time.sleep(wait)
+            prompt_g = few_shot_prompt + f"\nClassify this blackboard handwriting. Hint: {hint_text or ''}"
+            for g_key in gemini_keys:
+                last_key_err: Optional[Exception] = None
+                succeeded = False
+                for model_name in gemini_rest.vision_models():
+                    if not global_key_pool.try_reserve("gemini", g_key):
+                        break
+                    try:
+                        raw_g = gemini_rest.generate_image(model_name, g_key, prompt_g, jpeg, 9.0, max_tokens=1400)
+                        m = re.search(r'\{.*\}', raw_g, re.DOTALL)
+                        if not m:
+                            continue
                         try:
-                            model = genai.GenerativeModel(model_name)
-                            response = model.generate_content([few_shot_prompt, pil_img])
-                            if response and response.text:
-                                m = re.search(r'\{.*\}', response.text, re.DOTALL)
-                                if m:
-                                    clean_j = m.group(0)
-                                    try:
-                                        data = json.loads(clean_j)
-                                    except json.JSONDecodeError:
-                                        clean_j = re.sub(r",\s*([\}\]])", r"\1", clean_j)
-                                        data = json.loads(clean_j)
-                                    if "templateId" in data and data["templateId"] in OFFLINE_TEMPLATE_REGISTRY:
-                                        global_key_pool.mark_success("gemini", g_key)
-                                        data["_provider"] = "GEMINI"
-                                        data["_model"] = model_name
-                                        print(f"[Gemini Vision] Succeeded with model: {model_name} (key {mask_api_key(g_key)})")
-                                        return data
-                        except Exception as me:
-                            print(f"[Gemini Vision] Model {model_name} error on {mask_api_key(g_key)}: {me}")
-                            last_key_err = me
-                            reason, _ = classify_error_cooldown(me)
-                            if reason == "auth_error":
-                                global_key_pool.mark_failure("gemini", g_key, me)
-                                key_auth_error = True
-                                break
-                    else:
-                        if not key_auth_error and last_key_err is not None:
-                            global_key_pool.mark_failure("gemini", g_key, last_key_err)
-        except Exception as ge:
-            print(f"[Gemini Vision] Init error: {ge}")
+                            data = json.loads(m.group(0))
+                        except json.JSONDecodeError:
+                            data = json.loads(re.sub(r",\s*([\}\]])", r"\1", m.group(0)))
+                        if "templateId" in data and data["templateId"] in OFFLINE_TEMPLATE_REGISTRY:
+                            global_key_pool.mark_success("gemini", g_key)
+                            data["_provider"] = "GEMINI"
+                            data["_model"] = model_name
+                            print(f"[Gemini Vision] Succeeded with model: {model_name} (key {mask_api_key(g_key)})")
+                            return data
+                    except Exception as me:
+                        print(f"[Gemini Vision] Model {model_name} error on {mask_api_key(g_key)}: {str(me)[:120]}")
+                        last_key_err = me
+                        if classify_error_cooldown(me)[0] == "auth_error":
+                            global_key_pool.mark_failure("gemini", g_key, me)
+                            last_key_err = None
+                            break
+                if last_key_err is not None and not succeeded:
+                    global_key_pool.mark_failure("gemini", g_key, last_key_err)
 
     # 2. Try OpenRouter Vision Pool (tự động dự phòng khi Gemini chạm Rate Limit hoặc khi dùng OpenRouter)
-    if openrouter_keys:
+    if openrouter_keys and openrouter_vision_enabled():
         try:
             or_res = call_openrouter_vision(
                 prompt=few_shot_prompt + f"\nClassify this blackboard handwriting. Hint: {hint_text or ''}",
@@ -1098,7 +1097,7 @@ async def compile_lasso(request: Request):
 
 def _upsert_env_vars(updates: Dict[str, str]) -> None:
     """Cập nhật các khóa vào tệp .env mà không xóa mất các biến môi trường khác."""
-    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+    env_path = os.getenv("SOCRATIC_ENV_FILE") or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
     existing_lines: List[str] = []
     if os.path.exists(env_path):
         try:

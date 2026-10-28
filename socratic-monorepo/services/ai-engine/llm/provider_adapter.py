@@ -7,10 +7,11 @@ import os
 import json
 from typing import Dict, Any, Optional
 
+from llm import gemini_rest
 from llm.key_pool import global_key_pool, call_openrouter_text
 
 # Giữ cùng thứ tự ưu tiên với routers/recognize_ink.py: model hạn mức cao trước.
-SOCRATIC_GEMINI_MODELS = ["gemini-flash-lite-latest", "gemini-2.5-flash", "gemini-flash-latest"]
+SOCRATIC_GEMINI_MODELS = gemini_rest.text_models()
 
 SOCRATIC_SYSTEM_PROMPT = """
 Bạn là Trợ lý Gia sư Socratic 1:1 cho học sinh KHTN (Toán, Lý, Hóa, Sinh).

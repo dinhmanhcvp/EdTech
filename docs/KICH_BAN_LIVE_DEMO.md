@@ -16,12 +16,12 @@ Không qua hologram. Nét tay được thay bằng hình sạch tại chính v�
 | Muốn show | Vẽ gì | Thao tác | Kết quả |
 |---|---|---|---|
 | Hình phẳng | 3 nét thẳng khép kín thành tam giác (hoặc vuông, chữ nhật, bình hành) | Chọn → khoanh → nút xanh **"… (Tương tác tại chỗ)"** | Tam giác sạch, nhãn đỉnh A B C, độ dài cạnh, số đo góc; **kéo từng đỉnh** thì số liệu đổi theo; nút **Euler** hiện O, G, H và đường thẳng Euler |
-| Khối 3D | Hình lập phương/hộp/chóp/lăng trụ vẽ bằng ≥ 4 nét (mặt trước, mặt sau, các cạnh nối) | như trên | Khối sạch có **nét liền (cạnh thấy) và nét đứt (cạnh khuất)**, nhãn đỉnh A B C D A' B' C' D'; **vòng xoay ⟳ ở góc** để xoay khối, nét liền/đứt đổi theo góc nhìn |
+| Khối 3D | Hình lập phương/hộp/chóp/lăng trụ vẽ bằng ≥ 4 nét (mặt trước, mặt sau, các cạnh nối) | như trên | Nét tay được **nắn thẳng và nối đỉnh đúng hình bạn vẽ** (không thay bằng khối mẫu), có **nét đứt cho cạnh khuất**, nhãn đỉnh A B C D A' B' C' D'; **kéo từng đỉnh** để chỉnh hình; **⤢** mở mô hình 3D để xoay |
 | Tự động | Dock → **Hình** → bật **Trực quan hình học** | vẽ xong chờ khoảng 1 giây | Tự biến thành hình, không cần khoanh |
 
 Trên mỗi hình có thanh nhỏ: ⠿ di chuyển, **⤢ mở mô phỏng đầy đủ** (hologram có khai triển, cắt thiết diện, mặt cầu, đường cao…), ✕ xóa. Có thể khoanh cả hình để dời, tẩy chạm vào để xóa, Hoàn tác khôi phục nét vẽ.
 
-Gợi ý lời: "Em vẽ nháp, bảng nhận ra đó là hình lập phương và thay bằng hình chuẩn. Nét đứt là cạnh bị che. Em xoay thử."
+Gợi ý lời: "Em vẽ nháp, bảng nắn các nét thành đường thẳng và nối đúng các đỉnh em vẽ. Nét đứt là cạnh bị che. Em kéo thử một đỉnh, rồi mở mô hình 3D để xoay."
 
 ## B. Toán (11)
 

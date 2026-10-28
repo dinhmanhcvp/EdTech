@@ -33,6 +33,11 @@ export interface ShapeMeta {
   title: string;
   plane?: {verts: {x: number; y: number}[]; euler: boolean};
   solid?: {kind: string; dims: Record<string, number | undefined>; yaw: number; pitch: number};
+  /**
+   * Hình khối giữ nguyên theo nét người vẽ (đã nắn thẳng, nối đỉnh), tọa độ tương đối với neo.
+   * Có `sketch` thì vẽ theo đây, không vẽ lại từ khối mẫu; `solid` còn lại để mở mô hình 3D đầy đủ.
+   */
+  sketch?: {verts: {x: number; y: number}[]; edges: {a: number; b: number; hidden: boolean}[]; labels: string[]};
 }
 
 export interface Stroke {

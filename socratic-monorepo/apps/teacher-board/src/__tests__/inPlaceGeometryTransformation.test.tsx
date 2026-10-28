@@ -129,14 +129,17 @@ describe('In-Place Geometry Transformation on Smartboard Canvas', () => {
       fireEvent.click(inplaceBtn);
     });
 
-    // Khối lập phương thành hình sạch tại chỗ: nét liền (thấy) và nét đứt (khuất), có vòng xoay
+    // Hình giữ ĐÚNG nét người vẽ (nắn thẳng, nối đỉnh), không thay bằng khối mẫu: 8 đỉnh kéo được, 12 cạnh,
+    // cạnh khuất (3 cạnh tại một đỉnh) vẽ nét đứt; không có vòng xoay vì hình không còn là mẫu 3D
     const shape = await screen.findByTestId('inline-shape');
     expect(shape.getAttribute('data-kind')).toBe('solid');
     expect(shape.getAttribute('data-title')).toContain('Hình lập phương');
     expect(screen.queryByTestId('hologram-simulation-overlay')).not.toBeInTheDocument();
+    expect(screen.getByTestId('sketch-wire')).toBeInTheDocument();
     expect(screen.getAllByTestId('edge-visible')).toHaveLength(9);
     expect(screen.getAllByTestId('edge-hidden')).toHaveLength(3);
-    expect(screen.getByTestId('shape-rotate-handle')).toBeInTheDocument();
+    expect(screen.getAllByTestId('shape-vertex-handle')).toHaveLength(8);
+    expect(screen.queryByTestId('shape-rotate-handle')).not.toBeInTheDocument();
   });
 
   it('Thanh công cụ nổi dạng viên thuốc (Floating Pill Toolbar) ngay dưới hình 3D cho phép tương tác 1 chạm (Frame 38 Video)', () => {

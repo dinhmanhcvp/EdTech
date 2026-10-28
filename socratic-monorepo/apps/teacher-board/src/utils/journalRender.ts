@@ -26,6 +26,17 @@ function drawShape(ctx: Ctx, o: ReconstructedObject) {
     ctx.closePath();
     ctx.stroke();
     v.forEach((p, i) => ctx.fillText('ABCDEFGH'[i] ?? '', o.x + p.x + 6, o.y + p.y - 6));
+  } else if (sh.sketch) {
+    const sk = sh.sketch;
+    for (const e of sk.edges) {
+      ctx.setLineDash(e.hidden ? [6, 5] : []);
+      ctx.beginPath();
+      ctx.moveTo(o.x + sk.verts[e.a].x, o.y + sk.verts[e.a].y);
+      ctx.lineTo(o.x + sk.verts[e.b].x, o.y + sk.verts[e.b].y);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    sk.verts.forEach((p, i) => ctx.fillText(sk.labels[i] ?? '', o.x + p.x + 6, o.y + p.y - 6));
   } else if (sh.solid) {
     const w = o.typeset?.w ?? 260;
     const h = o.typeset?.h ?? 200;

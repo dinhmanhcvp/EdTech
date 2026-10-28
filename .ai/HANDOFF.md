@@ -1117,3 +1117,16 @@ Môi trường: backend `python main.py` (Gemini 3 khóa + RapidOCR + ONNX đang
 - **Backend `routers/visualize.py`**: bộ khớp từ khóa dự phòng dùng `k in hint` quá rộng (ph, la, mu, int, sin, tim…; còn coi `x^2+y^2` là Oxyz) → hàm `_has` (từ ngắn ≤ 4 chữ cái không được dính chữ cái khác; chữ số thì được). Test `tests/test_fallback_keywords.py`.
 - Kiểm tra: tsc 0 lỗi; teacher-board 49 file/900 test; pytest 74. Trên trình duyệt thật (1920×1080): nhịp tim, thấu kính, tốc độ phản ứng (bọt khí + đường Arrhenius) và mặt cầu tâm (1,−2,3) R=5 đều mở đúng. Chưa commit.
 - Chưa làm: `PARAM_CHANGE`/engine state vào journal; các engine "tự vẽ điều khiển" chưa có kiểm tra tương tác sâu (chỉ kiểm dựng được, không lỗi React).
+
+
+# 2026-10-28 (đêm, bổ sung 3) — Hình học tại chỗ giữ ĐÚNG nét người vẽ
+
+Yêu cầu: khối 3D vẽ tay phải được nắn thẳng và nối đỉnh thành chính hình đó, không thay bằng khối mẫu (trước đây dùng `makeSolid(kind, dims)` với góc nhìn mặc định nên hộp dẹt thành khối cân đối).
+
+- `sketchSolid.ts`: `detectSolidFromStrokes` trả thêm `wire` (đỉnh + cạnh của nét người vẽ, đã nắn thẳng/nối chữ T/gộp đỉnh).
+- `utils/sketchWire.ts` (mới) `buildSketchWire`: giữ nguyên tọa độ đỉnh của người vẽ; dùng khối mẫu CHỈ để đặt nhãn đỉnh và suy ra cạnh khuất: ghép đồ thị nét vẽ vào đồ thị khối (quay lui), khớp phép chiếu song song affine (bình phương tối thiểu, sai số ≤ 8,5% đường chéo), từ hướng nhìn suy mặt thấy/khuất; hai cách hiểu nhìn trước/sau → chọn cách "nhìn từ trên xuống". Không khớp → mọi cạnh nét liền, nhãn theo thứ tự (không bịa nét đứt).
+- `ShapeMeta.sketch` (lassoGeometry.ts) + `makeSolidBlueprint(kind, dims, wire)` (meta.sketch) + `transformStrokesToGeometryInPlace` (khung ôm sát nét, hình nằm đúng chỗ đã vẽ) + `InlineShape` (vẽ theo `sketch`, kéo đỉnh được, bỏ vòng xoay, gợi ý mới) + xuất ảnh bảng và `journalRender`. `shape.solid` vẫn giữ để ⤢ mở mô hình 3D xoay/khai triển. Đường InkConvertPanel "Dựng khối 3D" cũng truyền `wire`.
+- Hình phẳng: vốn đã dùng đỉnh người vẽ (chỉ `title` phân loại) nên không đổi.
+- Test: `sketchWire.test.ts` (7), cập nhật `inPlaceGeometryTransformation.test.tsx`. tsc 0 lỗi; teacher-board 50 file/906 test.
+- Trên trình duyệt thật: hộp dẹt nét run (không phải lập phương) → hình thẳng cùng vị trí, tỉ lệ dẹt giữ nguyên, 9 nét liền + 3 nét đứt, nhãn A…D', 8 đỉnh kéo được và cạnh đi theo.
+- Giới hạn: hình không còn xoay tại chỗ (xoay bằng ⤢); lăng trụ lục giác không có mẫu phát hiện từ nét; hình vẽ phối cảnh mạnh có thể không khớp → toàn nét liền.

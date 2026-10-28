@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
 import { routeLocally, matchStemModel, makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES, type SolidKind } from '../../utils/localRouter';
-import { detectSolidFromStrokes, detectPlaneShapeFromStrokes } from '../../utils/sketchSolid';
+import { detectSolidFromStrokes, detectPlaneShapeFromStrokes, type SketchWireGraph } from '../../utils/sketchSolid';
+import { buildSketchWire } from '../../utils/sketchWire';
 import { shapeFromBlueprint, solidWire, planeStats, VERTEX_LABELS } from '../../utils/inlineShape';
 import { type BoardView, FIT_VIEW, clampView, zoomAt, panBy, bufferQuality } from '../../utils/boardView';
 import { BoardViewControls } from './BoardViewControls';
@@ -1554,7 +1555,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               const solidSk = recent.length >= 4 ? detectSolidFromStrokes(recent) : null;
               const planeSk = !solidSk && recent.length >= 1 && recent.length <= 4 ? detectPlaneShapeFromStrokes(recent) : null;
               if (solidSk && solidSk.confidence >= 0.70) {
-                transformStrokesToGeometryInPlace(recent, makeSolidBlueprint(solidSk.kind, solidSk.dims));
+                transformStrokesToGeometryInPlace(recent, makeSolidBlueprint(solidSk.kind, solidSk.dims, solidSk.wire));
               } else if (planeSk && planeSk.confidence >= 0.78) {
                 transformStrokesToGeometryInPlace(recent, makePlaneGeometryBlueprint(planeSk));
               }
@@ -1849,6 +1850,17 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       ctx.closePath();
       ctx.stroke();
       sh.plane.verts.forEach((p, i) => ctx.fillText(VERTEX_LABELS[i], ox + p.x + 6, oy + p.y - 6));
+    } else if (sh.kind === 'solid' && sh.sketch) {
+      const sk = sh.sketch;
+      for (const e of sk.edges) {
+        ctx.setLineDash(e.hidden ? [7, 6] : []);
+        ctx.beginPath();
+        ctx.moveTo(ox + sk.verts[e.a].x, oy + sk.verts[e.a].y);
+        ctx.lineTo(ox + sk.verts[e.b].x, oy + sk.verts[e.b].y);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      sk.verts.forEach((p, i) => ctx.fillText(sk.labels[i] ?? '', ox + p.x + 6, oy + p.y - 6));
     } else if (sh.kind === 'solid' && sh.solid) {
       const wire = solidWire(sh.solid.kind as SolidKind, sh.solid.dims, sh.solid.yaw, sh.solid.pitch, t.w, t.h);
       for (const e of wire.edges) {
@@ -2307,13 +2319,20 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       const isSolid = bp.templateId === 'GEO_SOLID';
       const bw = bb.x1 - bb.x0;
       const bh = bb.y1 - bb.y0;
+      // Khối vẽ tay: giữ đúng hình người vẽ (nắn thẳng + nối đỉnh), khung ôm sát nét; chỉ khi không có đồ thị nét mới dùng khối mẫu
+      const sketchGraph = isSolid ? (bp.meta?.sketch as SketchWireGraph | undefined) : undefined;
+      const PAD = 28;
+      const keepDrawn = !!sketchGraph && bw >= 20 && bh >= 20;
       const side = Math.max(bw, bh, 170);
-      const sw = isSolid ? side : Math.max(bw, 110);
-      const sh = isSolid ? side : Math.max(bh, 110);
+      const sw = keepDrawn ? bw + 2 * PAD : isSolid ? side : Math.max(bw, 110);
+      const sh = keepDrawn ? bh + 2 * PAD : isSolid ? side : Math.max(bh, 110);
       const shape = shapeFromBlueprint(bp, sw, sh);
       if (shape) {
-        const ax = Math.max(0, Math.min(1200 - sw, centerX - sw / 2));
-        const ay = Math.max(0, Math.min(675 - sh, centerY - sh / 2));
+        const ax = keepDrawn ? Math.max(0, Math.min(1200 - sw, bb.x0 - PAD)) : Math.max(0, Math.min(1200 - sw, centerX - sw / 2));
+        const ay = keepDrawn ? Math.max(0, Math.min(675 - sh, bb.y0 - PAD)) : Math.max(0, Math.min(675 - sh, centerY - sh / 2));
+        if (keepDrawn && shape.solid) {
+          shape.sketch = buildSketchWire(shape.solid.kind as SolidKind, shape.solid.dims, sketchGraph!, {x: ax, y: ay});
+        }
         const ids = new Set(strokesToTransform.map((s) => s.id));
         const inkColor = strokesToTransform[0].color || '#18181B';
         const made: Stroke = {
@@ -2408,7 +2427,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     if (!overrideHint && !typesetHint && !namedWords && inkSelected.length >= 4) {
       const sk = detectSolidFromStrokes(inkSelected);
       if (sk && sk.confidence >= 0.7) {
-        transformStrokesToGeometryInPlace(inkSelected, makeSolidBlueprint(sk.kind, sk.dims));
+        transformStrokesToGeometryInPlace(inkSelected, makeSolidBlueprint(sk.kind, sk.dims, sk.wire));
         return;
       }
     }

@@ -31,9 +31,10 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
   const drag = useRef<{kind: 'vertex' | 'rotate'; i: number; sx: number; sy: number; ox: number; oy: number; started: boolean} | null>(null);
 
   const wire = useMemo(
-    () => (s.kind === 'solid' && s.solid ? solidWire(s.solid.kind as SolidKind, s.solid.dims, s.solid.yaw, s.solid.pitch, w, h) : null),
-    [s.kind, s.solid, w, h],
+    () => (s.kind === 'solid' && s.solid && !s.sketch ? solidWire(s.solid.kind as SolidKind, s.solid.dims, s.solid.yaw, s.solid.pitch, w, h) : null),
+    [s.kind, s.solid, s.sketch, w, h],
   );
+  const sk = s.sketch;
   const verts = s.plane?.verts ?? [];
   const stats = useMemo(() => (s.kind === 'plane' ? planeStats(verts) : null), [s.kind, verts]);
   const centers = s.plane?.euler && verts.length === 3 ? triangleCenters(verts) : null;
@@ -41,7 +42,7 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
   const down = (kind: 'vertex' | 'rotate', i: number, e: React.PointerEvent<Element>) => {
     e.stopPropagation();
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
-    const o = kind === 'vertex' ? verts[i] : {x: s.solid?.yaw ?? 0, y: s.solid?.pitch ?? 0};
+    const o = kind === 'vertex' ? (sk ? sk.verts[i] : verts[i]) : {x: s.solid?.yaw ?? 0, y: s.solid?.pitch ?? 0};
     drag.current = {kind, i, sx: e.clientX, sy: e.clientY, ox: o.x, oy: o.y, started: false};
   };
   const move = (e: React.PointerEvent<Element>) => {
@@ -54,7 +55,10 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
       d.started = true;
       onInteractStart();
     }
-    if (d.kind === 'vertex' && s.plane) {
+    if (d.kind === 'vertex' && sk) {
+      const nv = sk.verts.map((p, k) => (k === d.i ? {x: d.ox + dx / boardScale, y: d.oy + dy / boardScale} : p));
+      onChange({...s, sketch: {...sk, verts: nv}});
+    } else if (d.kind === 'vertex' && s.plane) {
       const nv = verts.map((p, k) => (k === d.i ? {x: d.ox + dx / boardScale, y: d.oy + dy / boardScale} : p));
       onChange({...s, plane: {...s.plane, verts: nv}});
     } else if (d.kind === 'rotate' && s.solid) {
@@ -146,6 +150,47 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
               ))}
             </g>
           )}
+          {s.kind === 'solid' && sk && (
+            <g data-testid="sketch-wire" data-fitted={sk.labels.length > 0 ? 'true' : 'false'}>
+              {sk.edges.map((e, i) => (
+                <line
+                  key={i}
+                  data-testid={e.hidden ? 'edge-hidden' : 'edge-visible'}
+                  x1={sk.verts[e.a].x}
+                  y1={sk.verts[e.a].y}
+                  x2={sk.verts[e.b].x}
+                  y2={sk.verts[e.b].y}
+                  stroke={ink}
+                  strokeWidth={e.hidden ? sw * 0.7 : sw}
+                  strokeDasharray={e.hidden ? '7 6' : undefined}
+                  strokeLinecap="round"
+                  opacity={e.hidden ? 0.75 : 1}
+                />
+              ))}
+              {sk.verts.map((p, i) => (
+                <g key={i}>
+                  <text x={p.x + 7} y={p.y - 6} fontSize={15} fontWeight={700} fill={ink} fontFamily="'Times New Roman', serif" fontStyle="italic">
+                    {sk.labels[i] ?? ''}
+                  </text>
+                  <circle
+                    data-testid="shape-vertex-handle"
+                    cx={p.x}
+                    cy={p.y}
+                    r={10}
+                    fill={ink}
+                    fillOpacity={0.1}
+                    stroke={ink}
+                    strokeWidth={1.2}
+                    style={{pointerEvents: 'auto', cursor: 'grab', touchAction: 'none'}}
+                    onPointerDown={(e) => down('vertex', i, e)}
+                    onPointerMove={move}
+                    onPointerUp={up}
+                    onPointerCancel={up}
+                  />
+                </g>
+              ))}
+            </g>
+          )}
           {s.kind === 'solid' && wire && (
             <g>
               {wire.edges.map((e, i) => (
@@ -226,7 +271,7 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
         )}
         {s.kind === 'solid' && (
           <div className="absolute left-0 text-[10px] font-mono text-stone-500 pointer-events-none" style={{top: h * boardScale + 26, whiteSpace: 'nowrap'}}>
-            Nét liền: cạnh thấy · nét đứt: cạnh khuất · kéo vòng xoay để xoay khối
+            {sk ? 'Hình giữ đúng nét bạn vẽ · nét đứt: cạnh khuất · kéo đỉnh để chỉnh · ⤢ mở mô hình 3D để xoay' : 'Nét liền: cạnh thấy · nét đứt: cạnh khuất · kéo vòng xoay để xoay khối'}
           </div>
         )}
       </div>

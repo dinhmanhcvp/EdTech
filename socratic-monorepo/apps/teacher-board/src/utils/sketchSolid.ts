@@ -22,6 +22,13 @@ export interface SketchSolid {
   vertices: number;
   edges: number;
   note: string;
+  /** Hình do người vẽ, đã nắn thẳng và nối đỉnh (tọa độ cùng hệ với nét vẽ): dùng để giữ nguyên hình thay vì thay bằng mẫu. */
+  wire?: SketchWireGraph;
+}
+
+export interface SketchWireGraph {
+  verts: SketchPt[];
+  edges: [number, number][];
 }
 
 const dist = (a: SketchPt, b: SketchPt) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -313,7 +320,15 @@ export function detectSolidFromStrokes(strokes: SketchStrokeLike[]): SketchSolid
   const maxDeg = Math.max(...deg);
   const deg3Plus = deg.filter((d) => d >= 3).length;
   const pGroups = directionGroups(g);
-  const mk = (kind: SolidKind, confidence: number, note: string, dims: SketchSolid['dims'] = {}): SketchSolid => ({kind, dims, confidence, vertices: V, edges: E, note});
+  const mk = (kind: SolidKind, confidence: number, note: string, dims: SketchSolid['dims'] = {}): SketchSolid => ({
+    kind,
+    dims,
+    confidence,
+    vertices: V,
+    edges: E,
+    note,
+    wire: {verts: g.verts.map((p) => ({x: p.x, y: p.y})), edges: g.edges.map(([a, b]) => [a, b] as [number, number])},
+  });
 
   // 1. Hình hộp / lập phương:
   // - Chuẩn: 8 đỉnh, 10–14 cạnh (đủ nét khuất), hoặc 7 đỉnh, 8–10 cạnh (chỉ vẽ 3 mặt nhìn thấy: 6 đỉnh bao lồi + 1 đỉnh trong nối 3 cạnh)

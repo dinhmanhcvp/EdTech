@@ -118,16 +118,16 @@ export const SOLID_TITLES: Record<SolidKind, string> = {
   dodecahedronLite: 'Khối đa diện',
 };
 
-import type {SketchPlaneShape} from './sketchSolid';
+import type {SketchPlaneShape, SketchWireGraph} from './sketchSolid';
 
-export function makeSolidBlueprint(kind: SolidKind, dims?: {a?: number; b?: number; c?: number; h?: number}): SimulationBlueprint {
+export function makeSolidBlueprint(kind: SolidKind, dims?: {a?: number; b?: number; c?: number; h?: number}, sketch?: SketchWireGraph): SimulationBlueprint {
   return {
     engine: 'GEOMETRY',
     templateId: 'GEO_SOLID',
     recognizedLatex: `\\text{${SOLID_TITLES[kind]}}`,
     ocrAlternatives: [],
     parameters: [],
-    meta: {solid: kind, dims: dims ?? {}},
+    meta: {solid: kind, dims: dims ?? {}, ...(sketch ? {sketch} : {})},
     socraticQuestion:
       kind === 'cube'
         ? 'Hình lập phương có bao nhiêu mặt, cạnh, đỉnh? Có bao nhiêu cách khai triển khác nhau thành hình phẳng và vì sao hai mặt đối diện không bao giờ nằm cạnh nhau trong mạng khai triển?'

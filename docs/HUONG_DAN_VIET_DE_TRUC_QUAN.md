@@ -19,10 +19,11 @@ Các điểm cần nhớ:
 
 ## 2. Hình học: vẽ nháp, bảng thay bằng hình chuẩn tại chỗ
 
-Không qua hologram: nét tay được thay bằng hình sạch ngay vị trí vẽ.
+Không qua hologram: các nét tay thô được **nắn thẳng và nối lại tại đúng các đỉnh bạn vẽ**, ngay vị trí vẽ. Hình giữ nguyên dáng và tỉ lệ của bạn (hộp dẹt vẫn dẹt, tam giác lệch vẫn lệch); bảng **không** thay bằng một hình mẫu có sẵn.
 
 - **Hình phẳng:** vẽ tam giác (thường, vuông, cân, đều), hình vuông, chữ nhật, bình hành bằng 1 đến 4 nét khép kín. Khoanh rồi bấm nút xanh **Tương tác tại chỗ**. Kéo từng đỉnh thì độ dài cạnh và số đo góc đổi theo; nút **Euler** hiện O, G, H.
-- **Khối 3D:** vẽ lập phương, hộp chữ nhật, chóp tứ giác, tứ diện, lăng trụ tam giác, lăng trụ lục giác, bát diện bằng từ 4 nét trở lên (mặt trước, mặt sau, các cạnh nối). Nét liền là cạnh thấy, nét đứt là cạnh khuất; kéo vòng ⟳ ở góc để xoay.
+- **Khối 3D:** vẽ lập phương, hộp chữ nhật, chóp tứ giác, tứ diện, lăng trụ tam giác, bát diện bằng từ 4 nét trở lên (mặt trước, mặt sau, các cạnh nối). Các nét được nắn thẳng và nối đỉnh theo đúng hình bạn vẽ. Bảng chỉ dùng khối mẫu để **đặt tên đỉnh** (A, B, C, D, A', B'…) và **đoán cạnh khuất để vẽ nét đứt**; nếu hình vẽ lệch quá xa phép chiếu của khối (hoặc thiếu nhiều nét) thì giữ toàn bộ nét liền và đặt tên theo thứ tự.
+  - Kéo từng đỉnh để chỉnh lại hình; các cạnh đi theo. Muốn **xoay khối** hoặc khai triển thì bấm ⤢ để mở mô hình 3D đầy đủ.
   - Hình lập phương vẽ tay kiểu người thật (hai hình vuông lệch nhau, chiều sâu khoảng 0,4 đến 0,75 cạnh) được nhận đúng từ 95 đến 100% trên mẫu giả lập; chưa đo trên nét tay thật.
 - **Tự động:** Dock → **Hình** → **Trực quan hình học**: vẽ xong chờ khoảng 1 giây, hình tự chuyển, khỏi khoanh.
 - Trên mỗi hình: ⠿ di chuyển, ⤢ mở mô phỏng đầy đủ (khai triển, cắt thiết diện, mặt cầu, đường cao), ✕ xóa.

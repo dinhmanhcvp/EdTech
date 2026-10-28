@@ -513,7 +513,7 @@ ${joinedText}`), [joinedLatex, joinedText]);
               </span>
               <button
                 data-testid="ink-convert-sketch-build"
-                onClick={() => onVisualizeLocal(makeSolidBlueprint(sketch.kind, sketch.dims))}
+                onClick={() => onVisualizeLocal(makeSolidBlueprint(sketch.kind, sketch.dims, sketch.wire))}
                 className="ml-auto px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition"
               >
                 Dựng khối 3D

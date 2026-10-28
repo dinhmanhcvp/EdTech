@@ -9,6 +9,9 @@ from typing import Dict, Any, Optional
 
 from llm.key_pool import global_key_pool, call_openrouter_text
 
+# Giữ cùng thứ tự ưu tiên với routers/recognize_ink.py: model hạn mức cao trước.
+SOCRATIC_GEMINI_MODELS = ["gemini-flash-lite-latest", "gemini-2.5-flash", "gemini-flash-latest"]
+
 SOCRATIC_SYSTEM_PROMPT = """
 Bạn là Trợ lý Gia sư Socratic 1:1 cho học sinh KHTN (Toán, Lý, Hóa, Sinh).
 QUY TẮC BẮT BUỘC (INTENTIONAL COGNITIVE FRICTION):
@@ -31,21 +34,27 @@ def generate_socratic_guidance(student_message: str, current_step: int, subject:
             import google.generativeai as genai
             user_prompt = f"Môn học: {subject}. Bước học sinh đang thực hiện: bước {current_step}. Tin nhắn học sinh: \"{student_message}\". Hãy đưa ra đúng 1 câu hỏi Socratic gợi mở ngắn gọn (<60 từ) giúp học sinh tự tìm ra bước giải tiếp theo mà KHÔNG nói ra đáp án."
             for g_key in gemini_keys:
-                try:
-                    genai.configure(api_key=g_key)
-                    model = genai.GenerativeModel("gemini-2.5-flash", system_instruction=SOCRATIC_SYSTEM_PROMPT)
-                    resp = model.generate_content(user_prompt)
-                    txt = getattr(resp, "text", "") or ""
-                    if txt.strip():
-                        global_key_pool.mark_success("gemini", g_key)
-                        return {
-                            "source": "LLM_GEMINI_POOL",
-                            "socratic_question": txt.strip(),
-                            "step_status": "IN_PROGRESS",
-                            "eureka_points_delta": 5,
-                        }
-                except Exception as me:
-                    global_key_pool.mark_failure("gemini", g_key, me)
+                last_err: Optional[Exception] = None
+                for model_name in SOCRATIC_GEMINI_MODELS:
+                    try:
+                        genai.configure(api_key=g_key)
+                        model = genai.GenerativeModel(model_name, system_instruction=SOCRATIC_SYSTEM_PROMPT)
+                        resp = model.generate_content(user_prompt)
+                        txt = getattr(resp, "text", "") or ""
+                        if txt.strip():
+                            global_key_pool.mark_success("gemini", g_key)
+                            return {
+                                "source": "LLM_GEMINI_POOL",
+                                "socratic_question": txt.strip(),
+                                "step_status": "IN_PROGRESS",
+                                "eureka_points_delta": 5,
+                            }
+                    except Exception as me:
+                        # hạn mức tính riêng từng model: thử model kế tiếp trên cùng khóa
+                        last_err = me
+                # chỉ phạt khóa khi mọi model đều lỗi
+                if last_err is not None:
+                    global_key_pool.mark_failure("gemini", g_key, last_err)
         except Exception:
             pass
 

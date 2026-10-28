@@ -436,6 +436,8 @@ def call_openrouter_vision(
             payload = {
                 "model": model_name,
                 "temperature": 0,
+                # giới hạn đầu ra: không đặt thì OpenRouter giữ chỗ theo trần của model (hàng chục nghìn token) và từ chối 402 khi số dư thấp
+                "max_tokens": int(os.getenv("OPENROUTER_MAX_TOKENS", "1500")),
                 "messages": [
                     {
                         "role": "user",

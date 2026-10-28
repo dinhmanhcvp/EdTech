@@ -39,8 +39,10 @@ describe('dụng cụ vẽ thêm trên hình', () => {
     sc = addMidpoint(sc, 'S', 'D', 0).scene; // N
     sc = addMidpoint(sc, 'C', 'D', 0).scene; // P
     const s = addSection(sc, ['M', 'N', 'P'], 0);
-    expect(s.polys.length).toBe(1);
-    expect(s.polys[0].part).toBe(0);
+    // thiết diện lưu mặt phẳng cắt (tính lại lúc vẽ) nên theo kịp khi kéo điểm
+    expect(s.sections).toHaveLength(1);
+    expect(s.sections![0].part).toBe(0);
+    expect(s.sections![0].plane).toEqual(['M', 'N', 'P']);
     expect(s.parts).toHaveLength(sc.parts.length);
     expect(renderScene(s, 0).polys).toHaveLength(1);
   });
@@ -158,6 +160,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     colors: false,
     toggleColors: vi.fn(),
     measureSolid: vi.fn(),
+    setPointT: vi.fn(),
     canNet: true,
     net: 0,
     setNet: vi.fn(),

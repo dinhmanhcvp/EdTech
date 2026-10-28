@@ -30,19 +30,23 @@ interface Props {
   /** nút a, b, c… của hình dựng từ đề: bật/tắt từng phần ngay trên bảng */
   partChips?: {index: number; label: string; text: string; shown: boolean}[];
   onTogglePart?: (index: number) => void;
+  /** điểm kéo trượt được trên cạnh (hình động): tên điểm và hai đầu cạnh */
+  dragPoints?: {name: string; a: string; b: string}[];
+  onDragPoint?: (name: string, t: number, done: boolean) => void;
 }
 
 const fmt = (v: number) => v.toFixed(1).replace('.', ',');
 const midOf = (a: P2, b: P2): P2 => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
 
 /** Hình học vẽ thẳng lên bảng: không khung, không nền; chỉ có nét hình, nhãn đỉnh và tay cầm nhỏ. */
-export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onOpenTools, onRotate, rotation, partChips, onTogglePart}) => {
+export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onOpenTools, onRotate, rotation, partChips, onTogglePart, dragPoints, onDragPoint}) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const s = stroke.shape!;
   const t = stroke.typeset!;
   const w = t.w;
   const h = t.h;
   const ink = stroke.color;
+  const ptDrag = useRef<{name: string; a: number; b: number; t: number} | null>(null);
   const rotDrag = useRef<{sx: number; sy: number; yaw: number; pitch: number; started: boolean} | null>(null);
   const drag = useRef<{kind: 'vertex' | 'rotate'; i: number; sx: number; sy: number; ox: number; oy: number; started: boolean} | null>(null);
 
@@ -318,6 +322,60 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
               {(sk.polys ?? []).map((poly, i) => (
                 <polygon key={`poly${i}`} data-testid="geo-section" points={poly.map((k) => `${sk.verts[k].x},${sk.verts[k].y}`).join(' ')} fill="#2563EB" fillOpacity={0.14} stroke="#2563EB" strokeWidth={1.5} strokeDasharray="4 3" />
               ))}
+              {pickMode === null || pickMode === undefined
+                ? (dragPoints ?? []).map((dp) => {
+                    const ip = sk.names?.indexOf(dp.name) ?? -1;
+                    const ia = sk.names?.indexOf(dp.a) ?? -1;
+                    const ib = sk.names?.indexOf(dp.b) ?? -1;
+                    if (!onDragPoint || ip < 0 || ia < 0 || ib < 0 || !sk.verts[ip] || !sk.verts[ia] || !sk.verts[ib]) return null;
+                    const P0 = sk.verts[ip];
+                    const tFromPointer = (e: React.PointerEvent<Element>) => {
+                      const r = svgRef.current?.getBoundingClientRect();
+                      if (!r) return null;
+                      const px = (e.clientX - r.left) / boardScale;
+                      const py = (e.clientY - r.top) / boardScale;
+                      const A = sk.verts[ia];
+                      const B = sk.verts[ib];
+                      const dx = B.x - A.x;
+                      const dy = B.y - A.y;
+                      return ((px - A.x) * dx + (py - A.y) * dy) / (dx * dx + dy * dy || 1);
+                    };
+                    return (
+                      <g key={`drag-${dp.name}`}>
+                        <circle cx={P0.x} cy={P0.y} r={9} fill="#2563EB" fillOpacity={0.12} stroke="#2563EB" strokeWidth={1.2} strokeDasharray="2 2" style={{pointerEvents: 'none'}} />
+                        <circle
+                          data-testid="geo-drag-point"
+                          data-name={dp.name}
+                          cx={P0.x}
+                          cy={P0.y}
+                          r={15}
+                          fill="transparent"
+                          style={{pointerEvents: 'auto', cursor: 'grab', touchAction: 'none'}}
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+                            onInteractStart();
+                            ptDrag.current = {name: dp.name, a: ia, b: ib, t: tFromPointer(e) ?? 0.5};
+                          }}
+                          onPointerMove={(e) => {
+                            const d = ptDrag.current;
+                            if (!d) return;
+                            const t = tFromPointer(e);
+                            if (t === null) return;
+                            d.t = t;
+                            onDragPoint(d.name, t, false);
+                          }}
+                          onPointerUp={() => {
+                            const d = ptDrag.current;
+                            ptDrag.current = null;
+                            if (d) onDragPoint(d.name, d.t, true);
+                          }}
+                          onPointerCancel={() => (ptDrag.current = null)}
+                        />
+                      </g>
+                    );
+                  })
+                : null}
               {(sk.curves ?? []).map((c, i) => (
                 <path
                   key={`curve${i}`}

@@ -69,6 +69,13 @@
 - Giữ nguyên: ADN/tim/lá (Bio), phân tử 3D và phản ứng (ChemLab) vì đã đẹp; giao thoa sóng, RLC chỉ nâng nét chung.
 - Lưu ý: file `InlineShape`, `GeometryProblemPanel`, `geoTools`, `geometryProblem`, `SmartboardDock`, `geoTools.test` đang được phiên khác sửa (2 test geoTools đang đỏ không do phần này) — không stage chung.
 
+# 3f. Hỏi đáp AI hiểu ngữ cảnh bảng (29/10/2026)
+- Thay `VoiceAiQaCard` (bộ câu trả lời soạn sẵn, mặc định luôn trả lời lập phương) bằng `BoardAskCard` nối endpoint thật `POST /api/v1/canvas/ask-board`. Hợp đồng ở `.ai/INTERFACES.md`.
+- Frontend: `utils/boardContext.ts` (trích ngữ cảnh: công thức, hình + số đo theo tên, phép dựng, mô phỏng + tham số hiện tại, vùng chọn), `utils/boardQa.ts` (gọi API), `components/canvas/BoardAskCard.tsx`; `SmartboardCanvas` chỉ thêm `getBoardContext`, `simParams`, `voiceQaNonce` (giọng nói tự gửi câu hỏi). Nút "Hỏi đáp AI" và "Giọng nói" trong AI hub giữ nguyên.
+- Backend: `routers/board_qa.py` (Gemini → OpenRouter → trả lời ngoại tuyến chỉ từ số đo). `llm/key_pool.call_openrouter_text` thêm `max_tokens` tùy chọn (không đặt thì OpenRouter đòi 65k token và trả HTTP 402 khi số dư thấp).
+- Đã chạy thật qua OpenRouter (gemini-2.5-flash) với hình tam giác 3-4-5: đúng khi `steps` đứng trước `headline` trong schema (đặt headline trước từng cho kết quả mâu thuẫn). Cuối phiên `.env` chỉ còn khóa giữ chỗ nên chạy thật thấy `offline`; Gemini trong `.env` báo API_KEY_INVALID.
+- Chưa làm: gửi ảnh bảng cho mô hình vision; làm nổi `highlights` trên bảng; hành động ngoài `visualize` (đổi tham số mô phỏng, dựng đường trên hình); video tương tác kiểu video mẫu.
+
 # 4. Chỉ thị cho Agent tiếp theo (Immediate Next Steps)
 1. **Kiểm tra trạng thái ban đầu:**
    - Chạy lệnh `git status -s` để xác nhận nhánh `main` sạch sẽ và đồng bộ với remote.
@@ -501,7 +508,7 @@
 - **Nâng cấp toàn diện đã thực hiện:**
   1. **`services/ai-engine/routers/recognize_ink.py` & `visualize.py`**:
      * Đưa `gemini-2.5-flash` và `gemini-flash-latest` lên vị trí ưu tiên hàng đầu trong `GEMINI_MODELS`.
-     * Tẩy sạch khoảng trắng và dấu ngoặc kép thừa `.strip().strip("'\"")` trong biến môi trường `GEMINI_API_KEY`.
+     * Tẩy sạch khoảng trắng và dấu ngoặc kép thừa `.strip().strip("'"")` trong biến môi trường `GEMINI_API_KEY`.
      * Trả về thông tin lỗi chi tiết trong exception 503 để dễ quan sát chẩn đoán.
   2. **`apps/teacher-board/src/components/canvas/InkConvertPanel.tsx`**:
      * Hỗ trợ nhận diện kết quả quét nền trước `initialAiResult` và cờ `isAiScanning`.
@@ -1281,3 +1288,19 @@ Tham chiếu: hai video `1792910979915_…mp4` (lập phương → tô màu mặ
 - Khung xoay/khai triển chỉ tính các đỉnh của hình gốc, thêm điểm tự vẽ không làm khung nhảy.
 - Hub tầng 3 "Phần k/n": Ẩn phần cuối / Vẽ phần tiếp vẫn có (hiện phần ẩn đầu tiên / ẩn phần hiện cuối). Cảnh lưu kiểu cũ (vẽ đến hết phần k) được đổi sang `hiddenParts`.
 - Test: `geoPartToggle.test.ts`, `geoPartChips.test.tsx`, cập nhật `geoTools.test.tsx`. tsc 0 lỗi (trừ `zz-preview` của phiên khác), vitest 1074.
+
+
+# 2026-10-29 (bổ sung 2) — Hiểu đề thật hơn, đo nâng cao, điểm kéo được (hình động)
+
+**Nhóm 1: hiểu đề** (`geometryProblem.ts`)
+- `expandRespectively`: "Gọi M, N lần lượt là trung điểm của AB và CC'" (cũng "thuộc", "trọng tâm"); số tên khác số đối tượng thì không đoán. `ratioOnSegment`: "M thuộc SA sao cho SM = 2MA / SM = 2/3 SA". Tách câu mới bắt đầu bằng chữ hoa sau dấu chấm ("…CC'.Tìm…") mà không phá "S.ABCD".
+- Tọa độ `A(1;2;3)` / `A(1;2)` (`parseCoords`): đặt đúng chỗ các điểm của hình nhận ra (tam giác, tứ diện…); không nhận ra hình mà có ≥ 2 điểm → vẽ các điểm (nối bằng "đoạn AB").
+- Hình nón, trụ, cầu (`buildFigure`, nhánh `roundKind`): điểm + đường sinh + đường tròn (`GeoCircle.own/hideBack/kind:'sphere'`), nửa sau đường tròn đáy vẽ nét đứt (`DrawnFigure.curves[].dashed`), xoay tự do được. Đề có "tam giác vuông cân" trong thiết diện không bị nhận nhầm.
+- "Tìm giao điểm của MN với mặt phẳng (A'B'C'D')" không cho tên: tự đặt (K, I, J…); đường song song mặt phẳng thì báo. Câu "X là …" mà không dựng được thì vào `scene.ignored` ("Chưa hiểu: …") và hiện báo lỗi trên bảng.
+
+**Nhóm 2: đo và hình động**
+- Đo (tầng Đo): thêm Điểm–mặt, Điểm–đường, Đường–mặt (góc), Nhị diện, và nút Thể tích (V, Sđáy, Sxq, Stp; nón/trụ/cầu theo công thức, hiện dạng p√k/q, π). Hàm: `measureDistPointPlane`, `measureDistPointLine`, `measureAngleLinePlane`, `measureDihedral`, `solidStats`, `fmtQuantity` trong `geoTools.ts`.
+- Điểm kéo được trên cạnh: `GeoScene.defs` (seg: điểm trên cạnh theo t; foot: chân đường vuông góc), `applyDefs`, `setPointT`, `draggablePoints`. Điểm do "trung điểm", "thuộc cạnh" trong đề và do dụng cụ (trung điểm, điểm trên cạnh, chân vuông góc) tạo ra. Kéo vòng tròn xanh nét đứt quanh điểm (`geo-drag-point` trong `InlineShape.tsx`, chỉ khi hình đang chọn và không đang chọn điểm bằng chạm); thả tay ghi một bước hoàn tác.
+- Thiết diện không còn lưu điểm đã tính: `GeoScene.sections` lưu mặt phẳng (3 điểm), tính lại lúc vẽ (`sectionHits`) nên theo kịp khi kéo M. (`scene.polys` không còn chứa thiết diện, dùng `sections`; `renderScene().polys` vẫn có.)
+- Chưa làm: điểm sinh ra từ giao điểm/giao tuyến/tâm… không tự cập nhật khi điểm gốc bị kéo (chỉ điểm trên cạnh, chân vuông góc và thiết diện theo kịp); kéo điểm trên hình 2D dựng từ đề/hình vẽ tay nắn tại chỗ; kéo bằng nhiều ngón; đo FPS thật.
+- Test mới: `geoUnderstand.test.ts`, `geoDynamic.test.ts`, `geoDragPoint.test.tsx`, mở rộng `geoResearchTools.test.ts`; vitest 1127 qua. tsc: các lỗi còn lại ở `boardContext.ts`, `threeUpgrades.test.tsx`, `app/zz-preview` thuộc phiên khác, không thuộc phần này.

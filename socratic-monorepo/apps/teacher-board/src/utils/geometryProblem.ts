@@ -299,6 +299,15 @@ function baseCoords(desc: BaseDesc, names: string[], L: (a: string, b: string) =
 }
 
 // ------------------------------------------------------------------ mô hình hình học
+/** Điểm xác định theo điểm khác (kéo được / tự cập nhật khi điểm gốc đổi). */
+export type GeoDef = {k: 'seg'; a: string; b: string; t: number} | {k: 'foot'; p: string; a: string; b: string};
+
+/** Thiết diện cắt bởi mặt phẳng qua ba điểm: tính lại lúc vẽ nên theo kịp khi kéo điểm. */
+export interface GeoSection {
+  plane: string[];
+  part: number;
+}
+
 export interface GeoCircle {
   center: V3;
   normal: V3;
@@ -330,6 +339,8 @@ interface Model {
   polyPart: number[];
   mergedPart: Map<string, number>;
   circles: GeoCircle[];
+  sections: GeoSection[];
+  defs: Map<string, GeoDef>;
   /** khung chiếu cố định theo hình gốc: thêm phần sau không làm hình dịch chuyển hay đổi tỉ lệ */
   view?: {k: number; bx: number; by: number};
   dim: 2 | 3;
@@ -365,7 +376,7 @@ function lenTable(text: string): {get: (a: string, b: string) => number | undefi
 function buildFigure(text: string, notes: string[]): Model | null {
   const T = lenTable(text);
   const L = (a: string, b: string) => T.get(a, b);
-  const model = (title: string, dim: 2 | 3): Model => ({pts: new Map(), order: [], edges: [], aux: [], faces: [], marks: new Set(), polys: [], merged: new Map(), cur: 0, ptPart: new Map(), auxPart: [], polyPart: [], mergedPart: new Map(), circles: [], dim, title, notes, ignored: []});
+  const model = (title: string, dim: 2 | 3): Model => ({pts: new Map(), order: [], edges: [], aux: [], faces: [], marks: new Set(), polys: [], merged: new Map(), cur: 0, ptPart: new Map(), auxPart: [], polyPart: [], mergedPart: new Map(), circles: [], sections: [], defs: new Map(), dim, title, notes, ignored: []});
   const put = (m: Model, name: string, p: V3) => {
     if (!m.pts.has(name)) m.order.push(name);
     m.pts.set(name, p);
@@ -693,6 +704,33 @@ export function ratioOnSegment(clause: string, X: string, Y: string, M: string):
   return t !== null && t > 0.01 && t < 0.99 ? t : null;
 }
 
+/** Các giao điểm của mặt phẳng qua ba điểm `plane` với các cạnh, đã sắp theo vòng quanh tâm; null nếu không cắt thành đa giác. */
+export function sectionHits(edges: [string, string][], P: (n: string) => V3 | undefined, plane: string[]): V3[] | null {
+  const [a, b, c] = plane.slice(0, 3).map(P);
+  if (!a || !b || !c) return null;
+  const pl = planeOf(a, b, c);
+  if (!pl) return null;
+  const hits: V3[] = [];
+  const push = (p: V3) => {
+    if (!hits.some((q) => near(p, q))) hits.push(p);
+  };
+  for (const [u, v] of edges) {
+    const pu = P(u);
+    const pv2 = P(v);
+    if (!pu || !pv2) continue;
+    const du = dot(pl.n, pu) - pl.d;
+    const dv = dot(pl.n, pv2) - pl.d;
+    if (Math.abs(du) < 1e-7) push(pu);
+    if (Math.abs(dv) < 1e-7) push(pv2);
+    if (du * dv < -1e-12) push(add(pu, mul(sub(pv2, pu), du / (du - dv))));
+  }
+  if (hits.length < 3) return null;
+  const cen = centroid(hits);
+  const e1 = norm(sub(hits[0], cen));
+  const e2 = cross(pl.n, e1);
+  return hits.sort((p, q) => Math.atan2(dot(sub(p, cen), e2), dot(sub(p, cen), e1)) - Math.atan2(dot(sub(q, cen), e2), dot(sub(q, cen), e1)));
+}
+
 function addExtras(m: Model, text0: string): void {
   // câu mới bắt đầu bằng chữ hoa ngay sau dấu chấm ("…CC'.Tìm giao điểm…") phải tách câu; "S.ABCD" (chữ hoa liền chữ hoa) thì giữ nguyên
   const text = expandRespectively(text0.replace(/([A-Za-z0-9')])\.([A-ZĐ][a-zà-ỹ])/g, '$1; $2'));
@@ -730,7 +768,9 @@ function addExtras(m: Model, text0: string): void {
       if ((r = /([A-Z]'?)\s*là\s*trung điểm\s*(?:của\s*|cạnh\s*|đoạn(?: thẳng)?\s*)?([A-Z]'?[A-Z]'?)/.exec(c))) {
         const s = segOf(r[2]);
         if (s && P(s[0]) && P(s[1])) {
+          const fresh = !has(r[1]);
           define(r[1], mul(add(P(s[0])!, P(s[1])!), 0.5), `${r[1]} là trung điểm ${r[2]}`);
+          if (fresh && has(r[1])) m.defs.set(r[1], {k: 'seg', a: s[0], b: s[1], t: 0.5});
           continue;
         }
       }
@@ -758,7 +798,10 @@ function addExtras(m: Model, text0: string): void {
         const s = segOf(r[2]);
         if (s && P(s[0]) && P(s[1])) {
           const tt = ratioOnSegment(c, s[0], s[1], r[1]) ?? 1 / 3;
+          const fresh2 = !has(r[1]);
+          if (fresh2) m.defs.set(r[1], {k: 'seg', a: s[0], b: s[1], t: tt});
           define(r[1], add(P(s[0])!, mul(sub(P(s[1])!, P(s[0])!), tt)), `${r[1]} thuộc ${r[2]}${tt !== 1 / 3 ? ` (tỉ lệ ${+tt.toFixed(3)})` : ''}`);
+          if (!has(r[1])) m.defs.delete(r[1]);
           continue;
         }
       }
@@ -950,50 +993,16 @@ function addExtras(m: Model, text0: string): void {
     }
   }
 
-  // thiết diện
+  // thiết diện: lưu mặt phẳng cắt (tính lại lúc vẽ để theo kịp khi kéo điểm)
   const sec = /(?:thiết diện|mặt phẳng)[^;]*?\(\s*([A-Z]'?[A-Z]'?[A-Z]'?(?:[A-Z]'?)?)\s*\)/.exec(text);
   if (/thiết diện/.test(text) && sec) {
     const ns = pointsIn(sec[1]);
     if (ns.length >= 3 && ns.every(has) && m.faces.length > 0) {
-      const pl = planeOf(P(ns[0])!, P(ns[1])!, P(ns[2])!);
-      if (pl) {
-        const hits: V3[] = [];
-        const push = (p: V3) => {
-          if (!hits.some((q) => near(p, q))) hits.push(p);
-        };
-        for (const [u, v] of m.edges) {
-          const du = dot(pl.n, P(u)!) - pl.d;
-          const dv = dot(pl.n, P(v)!) - pl.d;
-          if (Math.abs(du) < 1e-7) push(P(u)!);
-          if (Math.abs(dv) < 1e-7) push(P(v)!);
-          if (du * dv < -1e-12) push(add(P(u)!, mul(sub(P(v)!, P(u)!), du / (du - dv))));
-        }
-        if (hits.length >= 3) {
-          const c = centroid(hits);
-          const e1 = norm(sub(hits[0], c));
-          const e2 = cross(pl.n, e1);
-          hits.sort((p, q) => Math.atan2(dot(sub(p, c), e2), dot(sub(p, c), e1)) - Math.atan2(dot(sub(q, c), e2), dot(sub(q, c), e1)));
-          const names = hits.map((p, i) => {
-            for (const [n, q] of m.pts) if (!n.startsWith('#') && near(p, q)) return n;
-            const nm = `#s${m.order.length}_${i}`;
-            m.pts.set(nm, p);
-            m.order.push(nm);
-            m.marks.add(nm);
-            m.ptPart.set(nm, m.cur);
-            return nm;
-          });
-          names.forEach((nme, i) => {
-            const nx = names[(i + 1) % names.length];
-            if (!m.aux.some(([x, y]) => key2(x, y) === key2(nme, nx))) {
-              m.aux.push([nme, nx]);
-              m.auxPart.push(m.cur);
-            }
-          });
-          m.polys.push(names);
-          m.polyPart.push(m.cur);
-          m.notes.push(`thiết diện qua (${sec[1]}) là ${names.length}-giác`);
-        } else m.ignored.push(`mặt phẳng (${sec[1]}) không cắt hình thành thiết diện`);
-      }
+      const hits = sectionHits(m.edges, P, ns);
+      if (hits) {
+        if (!m.sections.some((x) => x.part === m.cur && x.plane.join('') === ns.slice(0, 3).join(''))) m.sections.push({plane: ns.slice(0, 3), part: m.cur});
+        m.notes.push(`thiết diện qua (${sec[1]}) là ${hits.length}-giác`);
+      } else m.ignored.push(`mặt phẳng (${sec[1]}) không cắt hình thành thiết diện`);
     }
   }
 
@@ -1167,6 +1176,8 @@ export interface GeoScene {
   notes: string[];
   ignored: string[];
   circles?: GeoCircle[];
+  sections?: GeoSection[];
+  defs?: Record<string, GeoDef>;
   /** xoay tự do (phép chiếu trực giao); không có = góc chuẩn SGK (chiếu xiên cố định) */
   rot?: {yaw: number; pitch: number};
   /** tô màu từng mặt của khối */
@@ -1199,6 +1210,8 @@ const toScene = (m: Model, parts: GeoScene['parts']): GeoScene => ({
   notes: [...m.notes],
   ignored: [...m.ignored],
   circles: m.circles.map((c) => ({...c, center: [...c.center] as V3, normal: [...c.normal] as V3})),
+  sections: m.sections.map((x) => ({plane: [...x.plane], part: x.part})),
+  defs: Object.fromEntries(m.defs),
 });
 
 export const modelFromScene = (sc: GeoScene): Model => ({
@@ -1216,6 +1229,8 @@ export const modelFromScene = (sc: GeoScene): Model => ({
   polyPart: sc.polys.map((p) => p.part),
   mergedPart: new Map(Object.entries(sc.mergedPart)),
   circles: (sc.circles ?? []).map((c) => ({...c, center: [...c.center] as V3, normal: [...c.normal] as V3})),
+  sections: (sc.sections ?? []).map((x) => ({plane: [...x.plane], part: x.part})),
+  defs: new Map(Object.entries(sc.defs ?? {})),
   view: sc.view,
   dim: sc.dim,
   title: sc.title,
@@ -1370,6 +1385,19 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
   });
   // mặt phẳng cắt ngang kéo được: thiết diện song song đáy
   const polysOut = m.polys.map((p, i) => ({p, part: m.polyPart[i] ?? 0})).filter(({p, part}) => partShown(sc, part, upTo) && p.every((n) => idx.has(n))).map(({p}) => p.map((n) => idx.get(n)!));
+  for (const sx of sc.sections ?? []) {
+    if (!partShown(sc, sx.part, upTo) || !sx.plane.every((n) => idx.has(n))) continue;
+    const hits = sectionHits(m.edges, (n) => m.pts.get(n), sx.plane);
+    if (!hits) continue;
+    const ids = hits.map((p) => {
+      for (const [n, q] of m.pts) if (idx.has(n) && !n.startsWith('#') && near(p, q)) return idx.get(n)!;
+      verts.push(pv(p));
+      labels.push('');
+      return verts.length - 1;
+    });
+    ids.forEach((id, k) => edges.push({a: id, b: ids[(k + 1) % ids.length], hidden: false, aux: true}));
+    polysOut.push(ids);
+  }
   if (sc.slice !== undefined && m.dim === 3) {
     const sec = sliceSection(sc, sc.slice);
     if (sec) {
@@ -1525,7 +1553,7 @@ export function buildScene(raw0: string): SceneBuild {
       for (const [n, p] of coords) if (m.pts.has(n)) m.pts.set(n, p);
       m.notes.push(`đặt tọa độ ${[...coords.keys()].filter((n) => m!.pts.has(n)).join(', ')}`);
     } else if (!m && coords.size >= 2) {
-      const bare: Model = {pts: new Map(), order: [], edges: [], aux: [], faces: [], marks: new Set(), polys: [], merged: new Map(), cur: 0, ptPart: new Map(), auxPart: [], polyPart: [], mergedPart: new Map(), circles: [], dim: is3D ? 3 : 2, title: is3D ? 'Hình trong không gian Oxyz' : 'Hình trong mặt phẳng Oxy', notes, ignored: []};
+      const bare: Model = {pts: new Map(), order: [], edges: [], aux: [], faces: [], marks: new Set(), polys: [], merged: new Map(), cur: 0, ptPart: new Map(), auxPart: [], polyPart: [], mergedPart: new Map(), circles: [], sections: [], defs: new Map(), dim: is3D ? 3 : 2, title: is3D ? 'Hình trong không gian Oxyz' : 'Hình trong mặt phẳng Oxy', notes, ignored: []};
       for (const [n, p] of coords) {
         bare.pts.set(n, is3D ? p : [p[0], p[1], 0]);
         bare.order.push(n);
@@ -1553,11 +1581,11 @@ export function appendPart(sc: GeoScene, text: string, label?: string): GeoScene
   const m = modelFromScene(sc);
   const n = sc.parts.length;
   m.cur = n;
-  const before = m.order.length + m.aux.length + m.polys.length + m.merged.size;
+  const before = m.order.length + m.aux.length + m.polys.length + m.merged.size + m.circles.length + m.sections.length;
   m.notes = [];
   m.ignored = [];
   addExtras(m, normalizeProblem(text));
-  const changed = m.order.length + m.aux.length + m.polys.length + m.merged.size > before;
+  const changed = m.order.length + m.aux.length + m.polys.length + m.merged.size + m.circles.length + m.sections.length > before;
   const next = toScene(m, [...sc.parts, {label: label ?? `+${n}`, text}]);
   if (!changed && m.ignored.length === 0) next.ignored = [...sc.ignored, `Chưa hiểu yêu cầu: ${text.trim().slice(0, 60)}`];
   else next.ignored = [...sc.ignored, ...m.ignored];
@@ -1579,7 +1607,7 @@ export function parseGeometryProblem(raw: string): GeometryParse {
   if (!b.scene) return {figure: null, scene: null, isProblem: false, notes: b.notes, ignored: b.ignored};
   const sc = b.scene;
   const text = normalizeProblem(raw);
-  const extra = sc.order.length > Object.values(sc.ptPart).filter((p) => p === 0).length || sc.aux.length > 0 || Object.keys(sc.merged).length > 0 || sc.parts.length > 1;
+  const extra = sc.order.length > Object.values(sc.ptPart).filter((p) => p === 0).length || sc.aux.length > 0 || (sc.sections?.length ?? 0) > 0 || Object.keys(sc.merged).length > 0 || sc.parts.length > 1;
   const detail = extra || text.trim().length > 40 || /đáy|vuông|cân|đều|bằng|=|cạnh/.test(text.replace(/hình vuông|hình chữ nhật/g, ''));
   return {figure: renderScene(sc), scene: sc, isProblem: detail, notes: sc.notes, ignored: sc.ignored};
 }

@@ -14,7 +14,7 @@ import { looksLikeWords, matchViName } from '../../utils/viKeywords';
 import { InlineShape } from './InlineShape';
 import { GeometryProblemPanel, type GeoPickConfig, type GeoController } from './GeometryProblemPanel';
 import { buildScene, parseGeometryProblem, type GeoScene } from '../../utils/geometryProblem';
-import { layoutGeo, partChips, problemTextForPlane, problemTextForSolid, showUpTo, togglePart } from '../../utils/geoTools';
+import { draggablePoints, layoutGeo, partChips, problemTextForPlane, problemTextForSolid, showUpTo, togglePart } from '../../utils/geoTools';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -3345,6 +3345,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   onPickEdge={geoPickCfg?.onPickEdge}
                   onRotate={geoPanel?.mode === 'edit' && geoPanel.id === s.id && s.shape?.geo?.scene.dim === 3 && geoCtl?.figureId === s.id ? (yaw, pitch) => geoCtl.setRot(yaw, pitch) : undefined}
                   rotation={s.shape?.geo?.scene.rot ?? null}
+                  dragPoints={geoPanel?.mode === 'edit' && geoPanel.id === s.id && s.shape?.geo ? draggablePoints(s.shape.geo.scene) : undefined}
+                  onDragPoint={geoPanel?.mode === 'edit' && geoPanel.id === s.id && geoCtl?.figureId === s.id ? (name, t, done) => geoCtl.setPointT(name, t, done) : undefined}
                   partChips={s.shape?.geo ? partChips(s.shape.geo.scene) : undefined}
                   onTogglePart={
                     s.shape?.geo

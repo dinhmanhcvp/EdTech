@@ -75,7 +75,7 @@ describe('dựng hình từ đề', () => {
 
   it('thiết diện qua ba điểm là trung điểm các cạnh', () => {
     const r = parseGeometryProblem('Cho hình chóp S.ABCD có đáy là hình vuông. M là trung điểm SA, N là trung điểm SC, P là trung điểm CD. Tìm thiết diện của hình chóp cắt bởi mặt phẳng (MNP).');
-    expect(r.scene!.polys.length).toBe(1);
+    expect(r.scene!.sections).toHaveLength(1);
     expect(r.figure!.polys.length).toBe(1);
     expect(r.figure!.polys[0].length).toBeGreaterThanOrEqual(4);
   });

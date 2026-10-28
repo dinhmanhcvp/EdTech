@@ -4,7 +4,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Eraser, Redo2, Undo2, X} from 'lucide-react';
 import {buildScene, type GeoScene} from '../../utils/geometryProblem';
 import {canUnfold, polygonStats, sliceSection} from '../../utils/netUnfold';
-import {addFoot, addMidpoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, solidStats, toTikz, togglePart, visibleNames, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane} from '../../utils/geoTools';
+import {addFoot, addMidpoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, setPointT, solidStats, toTikz, togglePart, visibleNames, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane} from '../../utils/geoTools';
 
 export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'dist' | 'angle' | 'dpl' | 'dln' | 'alp' | 'dih';
 
@@ -41,6 +41,8 @@ export interface GeoController {
   toggleColors: () => void;
   /** đo thể tích và diện tích của khối */
   measureSolid: () => void;
+  /** kéo một điểm trượt trên cạnh: t ∈ (0,1) từ đầu a; `done` = thả tay (ghi một bước hoàn tác). Điểm phụ thuộc và thiết diện tự cập nhật */
+  setPointT: (name: string, t: number, done: boolean) => void;
   /** hình khối có thể khai triển thành lưới */
   canNet: boolean;
   /** mức khai triển 0..1 (0 = khối); đặt có hoạt họa gấp/mở mượt */
@@ -259,6 +261,13 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       colors: !!cur.scene.colors,
       toggleColors: () => commit({...cur.scene, colors: !cur.scene.colors}, cur.upTo),
       measureSolid: () => setInfo(solidStats(cur.scene)),
+      setPointT: (name, t, done) => {
+        const c0 = curRef.current ?? cur;
+        const next = setPointT(c0.scene, name, t);
+        setInfo('');
+        if (done) commit(next, c0.upTo);
+        else patchScene({pts: next.pts, defs: next.defs});
+      },
       canNet: canUnfold(cur.scene),
       net: cur.scene.net ?? 0,
       setNet: (t) => tween('net', t, 700),

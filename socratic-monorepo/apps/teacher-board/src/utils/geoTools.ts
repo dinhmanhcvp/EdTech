@@ -4,7 +4,7 @@
  * Điểm/đường mới gắn vào `part` đang hiển thị nên bật/tắt từng phần của đề vẫn đúng.
  */
 import {add, dot, mul, sub, type V3} from './solids';
-import {appendPart, modelFromScene, partShown, renderScene, sceneFromModel, type GeoScene} from './geometryProblem';
+import {appendPart, modelFromScene, partShown, renderScene, sceneFromModel, type GeoDef, type GeoScene} from './geometryProblem';
 import type {ShapeMeta} from './lassoGeometry';
 
 const NAMES = 'MNPQRTUVWXYZHKIJEFGL'.split('');
@@ -39,7 +39,9 @@ export function addSegment(sc: GeoScene, a: string, b: string, part: number): Ge
 export function addPointOnSegment(sc: GeoScene, a: string, b: string, t: number, part: number, name?: string): {scene: GeoScene; name: string} {
   const n = clone(sc);
   const nm = name ?? nextName(n);
-  addPoint(n, nm, add(n.pts[a], mul(sub(n.pts[b], n.pts[a]), Math.min(0.95, Math.max(0.05, t)))) as V3, part);
+  const tt = Math.min(0.95, Math.max(0.05, t));
+  addPoint(n, nm, add(n.pts[a], mul(sub(n.pts[b], n.pts[a]), tt)) as V3, part);
+  n.defs = {...(n.defs ?? {}), [nm]: {k: 'seg', a, b, t: tt}};
   return {scene: n, name: nm};
 }
 
@@ -55,6 +57,7 @@ export function addFoot(sc: GeoScene, p: string, a: string, b: string, part: num
   const t = dot(sub(P, A), d) / dot(d, d);
   addPoint(n, nm, add(A, mul(d, t)) as V3, part);
   n.aux.push([p, nm, part]);
+  n.defs = {...(n.defs ?? {}), [nm]: {k: 'foot', p, a, b}};
   return {scene: n, name: nm};
 }
 
@@ -70,6 +73,7 @@ export function addSection(sc: GeoScene, names: string[], part: number): GeoScen
   for (const k of Object.keys(fixed.ptPart)) fixed.ptPart[k] = shift(fixed.ptPart[k]);
   fixed.aux = fixed.aux.map(([a, b, p]) => [a, b, shift(p)]);
   fixed.polys = fixed.polys.map((p) => ({...p, part: shift(p.part)}));
+  fixed.sections = (fixed.sections ?? []).map((x) => ({...x, part: shift(x.part)}));
   void m;
   return fixed;
 }
@@ -89,6 +93,7 @@ export function partHasContent(sc: GeoScene, i: number): boolean {
     Object.entries(sc.ptPart).some(([n, p]) => p === i && sc.order.includes(n)) ||
     sc.aux.some((a) => a[2] === i) ||
     sc.polys.some((p) => p.part === i) ||
+    (sc.sections ?? []).some((x) => x.part === i) ||
     Object.values(sc.mergedPart).some((p) => p === i) ||
     (sc.circles ?? []).some((c) => c.part === i)
   );
@@ -105,6 +110,9 @@ export function partDeps(sc: GeoScene, i: number): number[] {
   });
   sc.polys.forEach((poly) => {
     if (poly.part === i) poly.names.forEach((n) => used.add(n));
+  });
+  (sc.sections ?? []).forEach((x) => {
+    if (x.part === i) x.plane.forEach((n) => used.add(n));
   });
   Object.entries(sc.merged).forEach(([orig, aliases]) => {
     if (aliases.some((al) => sc.mergedPart[al] === i)) used.add(orig);
@@ -207,9 +215,49 @@ export function layoutGeo(sc: GeoScene, upTo: number, origin: {x: number; y: num
 
 /** Cảnh `b` có thêm điểm/đường/thiết diện/đường tròn/trùng so với `a` không (để biết yêu cầu bằng lời có được hiểu). */
 export const sceneGrew = (a: GeoScene, b: GeoScene) => {
-  const n = (s: GeoScene) => s.order.length + s.aux.length + s.polys.length + Object.keys(s.merged).length + (s.circles?.length ?? 0);
+  const n = (s: GeoScene) => s.order.length + s.aux.length + s.polys.length + Object.keys(s.merged).length + (s.circles?.length ?? 0) + (s.sections?.length ?? 0);
   return n(b) > n(a);
 };
+
+// ------------------------------------------------------------------ điểm kéo được trên cạnh (hình động)
+/** Tính lại mọi điểm xác định theo điểm khác (điểm trên cạnh, chân đường vuông góc), theo thứ tự tạo ra. */
+export function applyDefs(sc: GeoScene): GeoScene {
+  const defs = sc.defs ?? {};
+  if (Object.keys(defs).length === 0) return sc;
+  const pts = {...sc.pts};
+  for (const [name, d] of Object.entries(defs)) {
+    if (d.k === 'seg') {
+      const A = pts[d.a] as V3 | undefined;
+      const B = pts[d.b] as V3 | undefined;
+      if (A && B) pts[name] = add(A, mul(sub(B, A), d.t)) as V3;
+    } else {
+      const P = pts[d.p] as V3 | undefined;
+      const A = pts[d.a] as V3 | undefined;
+      const B = pts[d.b] as V3 | undefined;
+      if (P && A && B) {
+        const dir = sub(B, A);
+        const den = dot(dir, dir);
+        if (den > 1e-12) pts[name] = add(A, mul(dir, dot(sub(P, A), dir) / den)) as V3;
+      }
+    }
+  }
+  return {...sc, pts};
+}
+
+/** Các điểm kéo được trên cạnh: tên, hai đầu cạnh. */
+export function draggablePoints(sc: GeoScene): {name: string; a: string; b: string}[] {
+  return Object.entries(sc.defs ?? {})
+    .filter(([n, d]) => d.k === 'seg' && !!sc.pts[n] && sc.order.includes(n))
+    .map(([n, d]) => ({name: n, a: (d as Extract<GeoDef, {k: 'seg'}>).a, b: (d as Extract<GeoDef, {k: 'seg'}>).b}));
+}
+
+/** Đặt vị trí điểm trên cạnh (t ∈ (0,1)) và tính lại các điểm phụ thuộc (chân đường vuông góc, thiết diện tự theo khi vẽ). */
+export function setPointT(sc: GeoScene, name: string, t: number): GeoScene {
+  const d = sc.defs?.[name];
+  if (!d || d.k !== 'seg') return sc;
+  const tt = Math.min(0.98, Math.max(0.02, t));
+  return applyDefs({...sc, defs: {...sc.defs, [name]: {...d, t: tt}}});
+}
 
 // ------------------------------------------------------------------ đo (đơn vị: cạnh a = 1)
 /** Độ dài dạng a√k/m khi gọn được, ngược lại số thập phân. */

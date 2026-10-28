@@ -127,3 +127,13 @@ def test_model_not_available_for_a_key_is_parked_for_a_day(monkeypatch):
     assert not r.try_reserve("k", "big")
     assert r.try_reserve("other", "big")
     assert r.latency("big") == 3.0  # 404 không phạt độ trễ (không phải lỗi của model với mọi khóa)
+
+
+def test_gemini_25_flash_defaults_to_20_rpd_and_is_used_last(monkeypatch):
+    monkeypatch.delenv("GEMINI_MODEL_LIMITS", raising=False)
+    r = ModelRouter()
+    assert r.limits("gemini-2.5-flash")[1] == 20
+    models = ["gemini-2.5-flash", "gemini-3-flash-preview", "gemini-3.6-flash"]
+    assert r.order("vision", models)[-1] == "gemini-2.5-flash"
+    # 90% của 20 = 18 lượt mỗi khóa rồi nhường
+    assert [r.try_reserve("k", "gemini-2.5-flash", now=1000.0 + 61 * i) for i in range(20)].count(True) == 18

@@ -18,10 +18,10 @@ import time
 from collections import deque
 from typing import Deque, Dict, Iterator, List, Optional, Set, Tuple
 
-# (RPM, RPD). Số của bản 2.5 lấy từ bảng công bố của Google (có thể đã cũ); các model 3.x chưa có số công bố → UNKNOWN_LIMITS.
+# (RPM, RPD). 2.5-flash-lite lấy từ bảng công bố cũ của Google; 2.5-flash do người dùng xác nhận (20 RPD/khóa); model 3.x chưa biết → UNKNOWN_LIMITS.
 DEFAULT_LIMITS: Dict[str, Tuple[int, int]] = {
     "gemini-2.5-flash-lite": (15, 1000),
-    "gemini-2.5-flash": (10, 250),
+    "gemini-2.5-flash": (10, 20),  # người dùng xác nhận 2026-10-29: chỉ 20 RPD mỗi khóa (một số khóa đã hết)
 }
 UNKNOWN_LIMITS: Tuple[int, int] = (10, 250)
 RPD_SAFETY = 0.9  # chạm 90% RPD thì nhường

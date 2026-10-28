@@ -101,10 +101,16 @@ describe('bảng dụng cụ / hộp thoại vẽ từ đề', () => {
     expect(onApply).toHaveBeenLastCalledWith(sc, 1);
     act(() => ctl!.next());
     expect(onApply).toHaveBeenLastCalledWith(sc, 2);
-    // thêm yêu cầu bằng lời qua ô nhỏ
-    act(() => ctl!.openRequirement());
-    fireEvent.change(screen.getByTestId('geo-req-input'), {target: {value: 'Gọi N là trung điểm SC'}});
-    fireEvent.click(screen.getByTestId('geo-req-add'));
+    // thêm yêu cầu bằng lời (từ chữ viết khoanh trên bảng): vào chính hình này
+    let res: ReturnType<GeoController['addRequirementText']> | null = null;
+    act(() => {
+      res = ctl!.addRequirementText('Gọi N là trung điểm SC');
+    });
+    expect(res!.grew).toBe(true);
+    act(() => {
+      res = ctl!.addRequirementText('chữ không liên quan gì');
+    });
+    expect(res!.grew).toBe(false);
     const last = onApply.mock.calls[onApply.mock.calls.length - 1];
     expect(last[0].parts).toHaveLength(4);
     expect(last[1]).toBe(3);
@@ -143,7 +149,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     undo: vi.fn(),
     redo: vi.fn(),
     remove: vi.fn(),
-    openRequirement: vi.fn(),
+    addRequirementText: vi.fn(() => ({grew: false, notes: [], ignored: []})),
     ...over,
   });
   const base = {selectionCount: 0, busy: false, listening: false, onConvert: () => undefined, onVisualize: () => undefined, onLasso: () => undefined, onVoice: () => undefined};
@@ -251,7 +257,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     expect(ids()).toEqual(expect.arrayContaining(['ai-fab-draw-undo', 'ai-fab-draw-redo', 'ai-fab-draw-remove']));
     fireEvent.click(screen.getByTestId('ai-fab-back'));
     fireEvent.click(screen.getByTestId('ai-fab-draw-parts'));
-    expect(ids()).toContain('ai-fab-draw-req');
+    expect(ids()).not.toContain('ai-fab-draw-req'); // yêu cầu không còn là hộp gõ: viết lên bảng rồi khoanh
   });
 
   it('có vùng khoanh chưa thành hình: bấm Vẽ hình chạy ngay rồi mở tầng 2', () => {

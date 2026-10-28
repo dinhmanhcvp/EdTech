@@ -20,6 +20,8 @@ export interface DrawnFigure {
   marks: number[];
   /** đa giác tô nhạt (thiết diện), chỉ số đỉnh theo thứ tự */
   polys: number[][];
+  /** đường cong (đường tròn ngoại/nội tiếp…) đã chiếu xuống bảng, tọa độ cùng hệ với verts */
+  curves: {pts: {x: number; y: number}[]; label: string}[];
 }
 
 export interface GeometryParse {
@@ -36,7 +38,7 @@ const KEYWORDS = [
   'hình thang cân', 'hình thang', 'tứ diện', 'lăng trụ', 'tam giác', 'chóp đều', 'đôi một', 'vuông góc', 'song song', 'trung điểm', 'trọng tâm',
   'đường cao', 'chiều cao', 'giao tuyến', 'giao điểm', 'thiết diện', 'hình chiếu', 'mặt phẳng', 'đường thẳng', 'đường chéo', 'cạnh', 'đáy', 'vuông', 'cân',
   'đều', 'tâm', 'thuộc', 'giao', 'trùng', 'là', 'tại', 'cắt', 'bằng', 'góc', 'giữa', 'qua', 'kẻ', 'nối', 'đoạn', 'lên', 'trên', 'với', 'của', 'và', 'đứng',
-  'tính', 'cho', 'gọi', 'chân',
+  'tính', 'cho', 'gọi', 'chân', 'đường tròn', 'đường kính', 'ngoại tiếp', 'nội tiếp', 'trực tâm', 'trung tuyến', 'phân giác',
 ];
 const KW_RE = new RegExp(`(?<!\\p{L})(?:${KEYWORDS.map((k) => k.replace(/ /g, '\\s+')).join('|')})(?!\\p{L})`, 'giu');
 
@@ -288,6 +290,15 @@ function baseCoords(desc: BaseDesc, names: string[], L: (a: string, b: string) =
 }
 
 // ------------------------------------------------------------------ mô hình hình học
+export interface GeoCircle {
+  center: V3;
+  normal: V3;
+  r: number;
+  /** phần của đề đã thêm đường tròn này */
+  part: number;
+  label: string;
+}
+
 interface Model {
   pts: Map<string, V3>;
   order: string[];
@@ -303,6 +314,7 @@ interface Model {
   auxPart: number[];
   polyPart: number[];
   mergedPart: Map<string, number>;
+  circles: GeoCircle[];
   /** khung chiếu cố định theo hình gốc: thêm phần sau không làm hình dịch chuyển hay đổi tỉ lệ */
   view?: {k: number; bx: number; by: number};
   dim: 2 | 3;
@@ -338,7 +350,7 @@ function lenTable(text: string): {get: (a: string, b: string) => number | undefi
 function buildFigure(text: string, notes: string[]): Model | null {
   const T = lenTable(text);
   const L = (a: string, b: string) => T.get(a, b);
-  const model = (title: string, dim: 2 | 3): Model => ({pts: new Map(), order: [], edges: [], aux: [], faces: [], marks: new Set(), polys: [], merged: new Map(), cur: 0, ptPart: new Map(), auxPart: [], polyPart: [], mergedPart: new Map(), dim, title, notes, ignored: []});
+  const model = (title: string, dim: 2 | 3): Model => ({pts: new Map(), order: [], edges: [], aux: [], faces: [], marks: new Set(), polys: [], merged: new Map(), cur: 0, ptPart: new Map(), auxPart: [], polyPart: [], mergedPart: new Map(), circles: [], dim, title, notes, ignored: []});
   const put = (m: Model, name: string, p: V3) => {
     if (!m.pts.has(name)) m.order.push(name);
     m.pts.set(name, p);
@@ -823,6 +835,114 @@ function addExtras(m: Model, text: string): void {
       }
     }
   }
+
+  // ---- yêu cầu bằng lời trên hình đang có: đường tròn ngoại/nội tiếp, đường tròn đường kính, tâm, trực tâm, trung tuyến, phân giác
+  const basePoly = (): string[] | null => {
+    if (m.faces.length > 0) return m.faces[0].length === 3 || m.faces[0].length === 4 ? m.faces[0] : null;
+    const base = new Set(m.edges.flat());
+    const ns = m.order.filter((n) => base.has(n));
+    return ns.length === 3 || ns.length === 4 ? ns : null;
+  };
+  const polyFor = (c: string): string[] | null => {
+    const tri = /tam giác\s*((?:[A-Z]'?){3})(?![A-Za-z'])/.exec(c);
+    if (tri) return pointsIn(tri[1]);
+    const par = /\(\s*((?:[A-Z]'?){3,4})\s*\)/.exec(c);
+    if (par) return pointsIn(par[1]);
+    const quad = /(?:hình\s*[\p{L}\s]*?|đáy|tứ giác)\s*((?:[A-Z]'?){4})(?![A-Za-z'])/u.exec(c);
+    if (quad) return pointsIn(quad[1]);
+    return basePoly();
+  };
+  const normalOf = (ns: string[]): V3 => {
+    const pl = ns.length >= 3 && ns.every(has) ? planeOf(P(ns[0])!, P(ns[1])!, P(ns[2])!) : null;
+    return pl ? pl.n : ([0, 0, 1] as V3);
+  };
+  const addCircle = (center: V3, normal: V3, r: number, label: string) => {
+    if (!(r > 1e-9)) return;
+    if (m.circles.some((q) => near(q.center, center) && Math.abs(q.r - r) < 1e-6)) return;
+    m.circles.push({center, normal: norm(normal), r, part: m.cur, label});
+    m.notes.push(label);
+  };
+  const circumOf = (ns: string[]): {center: V3; r: number; normal: V3} | null => {
+    if (ns.length < 3 || !ns.every(has)) return null;
+    const [A, B, C] = [P(ns[0])!, P(ns[1])!, P(ns[2])!];
+    const ca = sub(A, C);
+    const cb = sub(B, C);
+    const n0 = cross(ca, cb);
+    const nn = dot(n0, n0);
+    if (nn < 1e-12) return null;
+    const center = add(C, mul(cross(sub(mul(cb, dot(ca, ca)), mul(ca, dot(cb, cb))), n0), 1 / (2 * nn)));
+    const r = len(sub(center, A));
+    if (ns.length === 4 && Math.abs(len(sub(P(ns[3])!, center)) - r) > 1e-5) return null;
+    return {center, r, normal: n0};
+  };
+  for (const c of clauses) {
+    let r: RegExpExecArray | null;
+    // "O là tâm đường tròn ngoại tiếp tam giác ABC" cũng vẽ đường tròn đó
+    const nameCenter = /([A-Z]'?)\s*là\s*tâm\s*đường tròn\s*(?:ngoại|nội)\s*tiếp/u.exec(c);
+    const kind = /đường tròn\s*(ngoại|nội)\s*tiếp|(?<![\p{L}])(ngoại|nội)\s*tiếp/u.exec(c);
+    if (kind) {
+      const inner = /nội/i.test(kind[1] ?? kind[2] ?? '');
+      const ns = polyFor(c);
+      const label = `đường tròn ${inner ? 'nội' : 'ngoại'} tiếp ${ns ? ns.join('') : ''}`.trim();
+      if (!ns || !ns.every(has)) {
+        m.ignored.push(`${label}: chưa xác định được đa giác (ghi rõ "tam giác ABC")`);
+      } else if (inner) {
+        if (ns.length !== 3) m.ignored.push('đường tròn nội tiếp chỉ vẽ được cho tam giác');
+        else {
+          const [A, B, C] = [P(ns[0])!, P(ns[1])!, P(ns[2])!];
+          const a = len(sub(B, C));
+          const b = len(sub(A, C));
+          const cc = len(sub(A, B));
+          const sum = a + b + cc;
+          const n0 = cross(sub(B, A), sub(C, A));
+          const center = mul(add(add(mul(A, a), mul(B, b)), mul(C, cc)), 1 / sum);
+          addCircle(center, n0, len(n0) / sum, label);
+          if (nameCenter && !has(nameCenter[1])) define(nameCenter[1], center, `${nameCenter[1]} là tâm đường tròn nội tiếp ${ns.join('')}`);
+        }
+      } else {
+        const ci = circumOf(ns);
+        if (!ci) m.ignored.push(`${ns.join('')} không có đường tròn ngoại tiếp (không nằm trên một đường tròn)`);
+        else {
+          addCircle(ci.center, ci.normal, ci.r, label);
+          if (nameCenter && !has(nameCenter[1])) define(nameCenter[1], ci.center, `${nameCenter[1]} là tâm đường tròn ngoại tiếp ${ns.join('')}`);
+        }
+      }
+      continue;
+    }
+    // đường tròn đường kính AB
+    if ((r = /đường tròn\s*đường kính\s*([A-Z]'?[A-Z]'?)/u.exec(c))) {
+      const s = segOf(r[1]);
+      if (s && has(s[0]) && has(s[1])) {
+        const bp = basePoly();
+        addCircle(mul(add(P(s[0])!, P(s[1])!), 0.5), bp ? normalOf(bp) : ([0, 0, 1] as V3), len(sub(P(s[0])!, P(s[1])!)) / 2, `đường tròn đường kính ${r[1]}`);
+      }
+      continue;
+    }
+    // H là trực tâm tam giác ABC
+    if ((r = /([A-Z]'?)\s*là\s*trực tâm\s*(?:của\s*)?(?:tam giác\s*)?((?:[A-Z]'?){3})/u.exec(c))) {
+      const ns = pointsIn(r[2]);
+      const ci = circumOf(ns);
+      if (ci && !has(r[1])) define(r[1], sub(add(add(P(ns[0])!, P(ns[1])!), P(ns[2])!), mul(ci.center, 2)), `${r[1]} là trực tâm tam giác ${ns.join('')}`);
+      continue;
+    }
+    // trung tuyến AM / phân giác AD (tam giác cơ sở)
+    if ((r = /(trung tuyến|phân giác)\s*(?:xuất phát từ\s*|kẻ từ\s*)?([A-Z]'?)([A-Z]'?)?/u.exec(c)) && has(r[2])) {
+      const tri = polyFor(c.replace(r[0], ''));
+      const t3 = tri && tri.length === 3 && tri.includes(r[2]) ? tri : basePoly()?.length === 3 && basePoly()!.includes(r[2]) ? basePoly()! : null;
+      if (t3) {
+        const [b, d] = t3.filter((n) => n !== r![2]);
+        const name = r[3] && !has(r[3]) ? r[3] : null;
+        if (name) {
+          const isMedian = /trung tuyến/i.test(r[1]);
+          const ab = len(sub(P(r[2])!, P(b)!));
+          const ad = len(sub(P(r[2])!, P(d)!));
+          const k = isMedian ? 0.5 : ab / (ab + ad);
+          define(name, add(P(b)!, mul(sub(P(d)!, P(b)!), k)), `${isMedian ? 'trung tuyến' : 'phân giác'} ${r[2]}${name}`);
+          addAux(r[2], name);
+        }
+      }
+    }
+  }
 }
 
 // ------------------------------------------------------------------ khung chiếu cố định
@@ -860,6 +980,7 @@ export interface GeoScene {
   view: {k: number; bx: number; by: number};
   notes: string[];
   ignored: string[];
+  circles?: GeoCircle[];
   /** ẩn hẳn nét khuất (mặc định vẽ nét đứt theo chuẩn SGK) */
   hideHidden?: boolean;
 }
@@ -881,6 +1002,7 @@ const toScene = (m: Model, parts: GeoScene['parts']): GeoScene => ({
   view: m.view ?? {k: 1, bx: 0, by: 0},
   notes: [...m.notes],
   ignored: [...m.ignored],
+  circles: m.circles.map((c) => ({...c, center: [...c.center] as V3, normal: [...c.normal] as V3})),
 });
 
 export const modelFromScene = (sc: GeoScene): Model => ({
@@ -897,6 +1019,7 @@ export const modelFromScene = (sc: GeoScene): Model => ({
   auxPart: sc.aux.map((a) => a[2]),
   polyPart: sc.polys.map((p) => p.part),
   mergedPart: new Map(Object.entries(sc.mergedPart)),
+  circles: (sc.circles ?? []).map((c) => ({...c, center: [...c.center] as V3, normal: [...c.normal] as V3})),
   view: sc.view,
   dim: sc.dim,
   title: sc.title,
@@ -978,6 +1101,21 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
     edges,
     marks: [...m.marks].filter((n) => idx.has(n)).map((n) => idx.get(n)!),
     polys: m.polys.map((p, i) => ({p, part: m.polyPart[i] ?? 0})).filter(({p, part}) => part <= upTo && p.every((n) => idx.has(n))).map(({p}) => p.map((n) => idx.get(n)!)),
+    curves: m.circles
+      .filter((c) => c.part <= upTo)
+      .map((c) => {
+        const ref = len(cross(c.normal, [1, 0, 0] as V3)) > 0.1 ? cross(c.normal, [1, 0, 0] as V3) : cross(c.normal, [0, 1, 0] as V3);
+        const u = norm(ref);
+        const w = cross(c.normal, u);
+        const pts: {x: number; y: number}[] = [];
+        for (let i = 0; i <= 96; i++) {
+          const t = (i / 96) * Math.PI * 2;
+          const p = add(c.center, add(mul(u, c.r * Math.cos(t)), mul(w, c.r * Math.sin(t))));
+          const q = rawProject(m, p);
+          pts.push({x: Math.round((q.x - v.bx) * v.k * 10) / 10, y: Math.round((q.y - v.by) * v.k * 10) / 10});
+        }
+        return {pts, label: c.label};
+      }),
   };
 }
 

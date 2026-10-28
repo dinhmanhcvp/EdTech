@@ -99,8 +99,9 @@ const PAD = 30;
  */
 export function layoutGeo(sc: GeoScene, upTo: number, origin: {x: number; y: number}): GeoLayout {
   const fig = renderScene(sc, upTo);
-  const xs = fig.verts.map((v) => origin.x + v.x);
-  const ys = fig.verts.map((v) => origin.y + v.y);
+  const curvePts = fig.curves.flatMap((c) => c.pts);
+  const xs = [...fig.verts, ...curvePts].map((v) => origin.x + v.x);
+  const ys = [...fig.verts, ...curvePts].map((v) => origin.y + v.y);
   const ax = Math.min(...xs) - PAD;
   const ay = Math.min(...ys) - PAD;
   const w = Math.max(...xs) - ax + PAD;
@@ -118,10 +119,17 @@ export function layoutGeo(sc: GeoScene, upTo: number, origin: {x: number; y: num
       names,
       marks: fig.marks,
       polys: fig.polys,
+      curves: fig.curves.map((c) => ({label: c.label, pts: c.pts.map((p) => ({x: origin.x + p.x - ax, y: origin.y + p.y - ay}))})),
       fixed: true,
     },
   };
 }
+
+/** Cảnh `b` có thêm điểm/đường/thiết diện/đường tròn/trùng so với `a` không (để biết yêu cầu bằng lời có được hiểu). */
+export const sceneGrew = (a: GeoScene, b: GeoScene) => {
+  const n = (s: GeoScene) => s.order.length + s.aux.length + s.polys.length + Object.keys(s.merged).length + (s.circles?.length ?? 0);
+  return n(b) > n(a);
+};
 
 // ------------------------------------------------------------------ đo (đơn vị: cạnh a = 1)
 /** Độ dài dạng a√k/m khi gọn được, ngược lại số thập phân. */

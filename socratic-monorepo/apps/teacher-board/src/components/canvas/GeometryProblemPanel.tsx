@@ -3,7 +3,7 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Eraser, Redo2, Undo2, X} from 'lucide-react';
 import {buildScene, type GeoScene} from '../../utils/geometryProblem';
-import {addFoot, addMidpoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, toTikz, visibleNames} from '../../utils/geoTools';
+import {addFoot, addMidpoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, sceneGrew, measureDistance, toTikz, visibleNames} from '../../utils/geoTools';
 
 export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'dist' | 'angle';
 
@@ -35,7 +35,10 @@ export interface GeoController {
   undo: () => void;
   redo: () => void;
   remove: () => void;
-  openRequirement: () => void;
+  /** nhận yêu cầu bằng lời từ vùng khoanh (VD "vẽ đường tròn ngoại tiếp") và thêm vào chính hình này */
+  addRequirementText: (text: string) => {grew: boolean; notes: string[]; ignored: string[]};
+  /** mã của nét hình trên bảng */
+  figureId?: string;
 }
 
 interface Props {
@@ -51,6 +54,7 @@ interface Props {
   onPickConfig?: (cfg: GeoPickConfig | null) => void;
   onController?: (c: GeoController | null) => void;
   onOpen3D?: (scene: GeoScene) => void;
+  figureId?: string;
 }
 
 export const GEO_TOOLS: {id: GeoTool; label: string; need: number; hint: string}[] = [
@@ -70,8 +74,7 @@ const ALL_TOOLS = [...GEO_TOOLS, ...GEO_MEASURE];
 
 const SAMPLE = 'Cho hình chóp S.ABCD có đáy ABCD là hình vuông cạnh a, SA vuông góc với đáy, SA = a√2.\na) Gọi M là trung điểm SB.\nb) Gọi O = AC ∩ BD.\nc) Tìm thiết diện của hình chóp cắt bởi mặt phẳng (MOD).';
 
-export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initialText, onClose, onCreate, onApply, onDeleteFigure, onPickConfig, onController, onOpen3D}) => {
-  const [reqOpen, setReqOpen] = useState(false);
+export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initialText, onClose, onCreate, onApply, onDeleteFigure, onPickConfig, onController, onOpen3D, figureId}) => {
   // ---------------- chế độ MỚI: nhập đề
   const [text, setText] = useState(initialText ?? '');
   const [drawAll, setDrawAll] = useState(false);
@@ -82,7 +85,6 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
   const [at, setAt] = useState(0);
   const [tool, setTool] = useState<GeoTool | null>(null);
   const [picks, setPicks] = useState<string[]>([]);
-  const [req, setReq] = useState('');
   const [info, setInfo] = useState('');
   const cur = hist[at];
   const curRef = useRef(cur);
@@ -184,18 +186,18 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       undo: () => jump(at - 1),
       redo: () => jump(at + 1),
       remove: () => onDeleteFigure?.(),
-      openRequirement: () => setReqOpen(true),
+      figureId,
+      addRequirementText: (text) => {
+        const before = cur.scene;
+        const next = addRequirement(before, text.trim());
+        if (!sceneGrew(before, next)) return {grew: false, notes: [], ignored: next.ignored.slice(before.ignored.length)};
+        commit(next, next.parts.length - 1);
+        return {grew: true, notes: next.notes.slice(before.notes.length), ignored: []};
+      },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, tool, picks, at, hist]);
   useEffect(() => () => onController?.(null), []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const addReq = () => {
-    if (!cur || !req.trim()) return;
-    const next = addRequirement(cur.scene, req.trim());
-    setReq('');
-    commit(next, next.parts.length - 1);
-  };
 
   const box = 'absolute left-3 top-16 z-40 w-[300px] max-h-[78%] overflow-auto rounded-2xl bg-white/97 backdrop-blur border border-[#DCD9D0] shadow-xl p-3 flex flex-col gap-2.5 text-[12px] text-stone-800 pointer-events-auto';
 
@@ -258,47 +260,13 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
   return (
     <>
       {/* chip gợi ý nhỏ khi đang dùng dụng cụ; phần còn lại điều khiển qua AI hub */}
-      {(spec || reqOpen || info) && (
+      {(spec || info) && (
         <div data-testid="geo-chip" className="absolute left-1/2 -translate-x-1/2 top-14 z-40 pointer-events-auto flex items-center gap-2 rounded-full bg-white/97 border border-[#DCD9D0] shadow-md px-3 py-1.5 text-[12px] text-stone-800">
-          {reqOpen ? (
-            <>
-              <input
-                data-testid="geo-req-input"
-                autoFocus
-                value={req}
-                onChange={(e) => setReq(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    addReq();
-                    setReqOpen(false);
-                  } else if (e.key === 'Escape') setReqOpen(false);
-                }}
-                placeholder="Yêu cầu thêm, VD: Gọi N là trung điểm SC"
-                className="w-[300px] rounded-md border border-[#DCD9D0] px-2 py-1 outline-none focus:border-blue-500"
-              />
-              <button
-                data-testid="geo-req-add"
-                onClick={() => {
-                  addReq();
-                  setReqOpen(false);
-                }}
-                className="rounded-md bg-blue-600 text-white px-2.5 py-1"
-              >
-                Vẽ thêm
-              </button>
-              <button onClick={() => setReqOpen(false)} className="text-stone-400 hover:text-stone-700" title="Đóng">
-                <X className="w-4 h-4" />
-              </button>
-            </>
-          ) : (
-            <>
               {info && <b data-testid="geo-measure" className="text-blue-700">{info}</b>}
               {spec && <span data-testid="geo-tool-hint">{`${spec.label}: ${spec.hint}${picks.length ? ` (đã chọn: ${picks.join(', ')})` : ''}`}</span>}
               <button data-testid="geo-tool-off" onClick={() => { setTool(null); setInfo(''); }} className="text-stone-400 hover:text-stone-700" title="Thôi dùng dụng cụ">
                 <X className="w-4 h-4" />
               </button>
-            </>
-          )}
         </div>
       )}
       <span data-testid="geo-toolbox" className="hidden" data-points={names.length} data-part={cur.upTo} data-parts={sc.parts.length} />

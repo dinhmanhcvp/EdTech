@@ -254,6 +254,9 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
               {(sk.polys ?? []).map((poly, i) => (
                 <polygon key={`poly${i}`} data-testid="geo-section" points={poly.map((k) => `${sk.verts[k].x},${sk.verts[k].y}`).join(' ')} fill="#2563EB" fillOpacity={0.14} stroke="#2563EB" strokeWidth={1.5} strokeDasharray="4 3" />
               ))}
+              {(sk.curves ?? []).map((c, i) => (
+                <path key={`curve${i}`} data-testid="geo-circle" data-label={c.label} d={c.pts.map((p, k) => `${k === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')} fill="none" stroke="#7C3AED" strokeWidth={Math.max(1.8, sw * 0.8)} strokeLinejoin="round" />
+              ))}
               {sk.edges.map((e, i) => (
                 <line
                   key={i}

@@ -47,6 +47,8 @@ export interface ShapeMeta {
     marks?: number[];
     /** đa giác tô nhạt (thiết diện) */
     polys?: number[][];
+    /** đường tròn ngoại/nội tiếp… đã chiếu xuống bảng */
+    curves?: {pts: {x: number; y: number}[]; label: string}[];
     /** hình dựng từ đề: đỉnh không kéo được, chạm để chọn điểm */
     fixed?: boolean;
   };

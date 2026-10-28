@@ -423,6 +423,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [geoPickCfg, setGeoPickCfg] = useState<GeoPickConfig | null>(null);
   // AI hub phân tầng: bộ điều khiển hình đang chọn + yêu cầu mở hub tại tầng 'Vẽ hình'
   const [geoCtl, setGeoCtl] = useState<GeoController | null>(null);
+  // yêu cầu bằng lời đang chờ áp lên một hình (hình được bật lên trước, bộ điều khiển đăng ký sau)
+  const pendingReqRef = useRef<{ id: string; sources: string[] } | null>(null);
   const [hubOpenAt, setHubOpenAt] = useState<{ path: string[]; nonce: number } | null>(null);
   // khóa môn học (bộ chọn phân môn nhanh): ép ngữ cảnh nhận diện cho bộ biên dịch AI
   const [subjectLock, setSubjectLock] = useState<Subject | null>(null);
@@ -439,6 +441,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [formulaInput, setFormulaInput] = useState<string>('');
   const [editingText, setEditingText] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   // Tự động phân loại intent: Trực quan hóa công thức hay Chấm bài học sinh
   const detectedLassoIntent: LassoIntentResult | null = useMemo(() => {
@@ -1757,6 +1760,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   };
 
   // ---------- Chữ viết tay → văn bản & công thức chuẩn ----------
+  const flashInfo = (msg: string, ms = 3000) => {
+    setInfoMessage(msg);
+    setTimeout(() => setInfoMessage((cur) => (cur === msg ? null : cur)), ms);
+  };
   const flashError = (msg: string, ms = 3500) => {
     setErrorMessage(msg);
     setTimeout(() => setErrorMessage((cur) => (cur === msg ? null : cur)), ms);
@@ -1852,6 +1859,22 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     );
   };
   const geoStroke = geoPanel?.mode === 'edit' ? strokes.find((q) => q.id === geoPanel.id && q.shape?.geo) : undefined;
+  useEffect(() => {
+    const pend = pendingReqRef.current;
+    if (!pend || !geoCtl || geoCtl.figureId !== pend.id) return;
+    pendingReqRef.current = null;
+    for (const src of pend.sources) {
+      const res = geoCtl.addRequirementText(src);
+      if (res.grew) {
+        setSelectedStrokes([]);
+        setLassoLoop([]);
+        setFormulaInput('');
+        flashInfo(`Đã thêm vào hình: ${res.notes.slice(-3).join('; ')}`);
+        return;
+      }
+    }
+    flashError('Chưa hiểu yêu cầu này. Thử viết rõ hơn, VD: "vẽ đường tròn ngoại tiếp tam giác ABC", "gọi M là trung điểm SC".');
+  }, [geoCtl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const deleteTypeset = (id: string) => {
     saveToUndo();
@@ -2453,6 +2476,55 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       .map((s) => (s.id.startsWith('text-') ? s.typeset!.text : s.typeset!.latex))
       .join('\n');
     const ink = sourceStrokes(selectedStrokes);
+    // Chọn đúng hình đã dựng: chỉ mở dụng cụ của hình đó
+    const pickedFigure = selectedStrokes.length > 0 && selectedStrokes.every((q) => q.shape?.geo);
+    if (pickedFigure) {
+      setGeoPanel({ mode: 'edit', id: selectedStrokes[0].id });
+      setSelectedStrokes([]);
+      setLassoLoop([]);
+      setIsLoading(false);
+      return;
+    }
+    // Trên bảng đã có hình dựng: chữ khoanh là YÊU CẦU thêm vào hình đó (VD "vẽ đường tròn ngoại tiếp"), không vẽ hình mới
+    const figures = strokes.filter((q) => q.shape?.geo);
+    const selBox = bboxOfStrokes(selectedStrokes);
+    const dist2 = (q: Stroke) => {
+      const g = q.points[0];
+      return Math.hypot(g.x - (selBox.x0 + selBox.x1) / 2, g.y - (selBox.y0 + selBox.y1) / 2);
+    };
+    const target = figures.length === 0 ? null : (geoPanel?.mode === 'edit' && figures.find((q) => q.id === geoPanel.id)) || [...figures].sort((a, b) => dist2(a) - dist2(b))[0];
+    const requirementText = () => {
+      const ai = aiVisionResult;
+      return [formulaInput, ai ? ai.lines.map((l) => l.text).join('\n') : '', ai ? ai.lines.map((l) => l.latex).join('\n') : '', typesetHint].filter((x) => x && x.trim());
+    };
+    if (target?.shape?.geo) {
+      const sources = requirementText();
+      const tryApply = (ctl: GeoController) => {
+        for (const src of sources) {
+          const res = ctl.addRequirementText(src);
+          if (res.grew) {
+            setSelectedStrokes([]);
+            setLassoLoop([]);
+            setFormulaInput('');
+            setIsLoading(false);
+            flashInfo(`Đã thêm vào hình: ${res.notes.slice(-3).join('; ')}`);
+            return true;
+          }
+        }
+        return false;
+      };
+      if (sources.length > 0) {
+        if (geoPanel?.mode === 'edit' && geoPanel.id === target.id && geoCtl) {
+          if (tryApply(geoCtl)) return;
+        } else if (geoPanel?.mode !== 'edit' || geoPanel.id !== target.id) {
+          // bật hình đó lên (bộ điều khiển đăng ký xong thì áp yêu cầu)
+          pendingReqRef.current = { id: target.id, sources };
+          setGeoPanel({ mode: 'edit', id: target.id });
+          setIsLoading(false);
+          return;
+        }
+      }
+    }
     const fromText = (ai: ConvertResult | null) => {
       const sources = [formulaInput, ai ? ai.lines.map((l) => l.text).join('\n') : '', ai ? ai.lines.map((l) => l.latex).join('\n') : '', typesetHint, instantResult ? instantResult.lines.map((l) => l.latex).join('\n') : ''].filter((x) => x && x.trim());
       for (const src of sources) {
@@ -3082,6 +3154,12 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         </div>
       )}
 
+      {infoMessage && (
+        <div data-testid="info-toast" className="flex items-center gap-2 px-4 py-2 mt-2 w-full max-w-5xl rounded-xl bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E40AF] text-xs shadow-sm animate-in fade-in">
+          <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
+          <span className="font-medium">{infoMessage}</span>
+        </div>
+      )}
       {/* Visible Error Toast Banner */}
       {errorMessage && (
         <div
@@ -3199,6 +3277,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               }}
               onPickConfig={setGeoPickCfg}
               onController={setGeoCtl}
+              figureId={geoStroke.id}
               onOpen3D={(sc) => {
                 const bp = matchInstantStemBlueprint(`${sc.title} ${sc.parts[0]?.text ?? ''}`) ?? matchInstantStemBlueprint(sc.title);
                 if (bp) setActiveBlueprint(bp);

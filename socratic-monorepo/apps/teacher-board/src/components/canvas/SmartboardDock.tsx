@@ -632,7 +632,7 @@ export const AiFab: React.FC<AiFabProps> = ({
       icon: <PenTool className="w-4 h-4" />,
       // bấm là chạy ngay theo loại vùng khoanh (nét vẽ tay, tên hình, cả đề), rồi mở tầng 2 gồm các công cụ chuyên sâu
       run: () => {
-        if (selectionCount > 0 && !geo) onDrawSelected?.();
+        if (selectionCount > 0) onDrawSelected?.();
         setPath(['draw']);
       },
       keep: true,
@@ -702,7 +702,7 @@ export const AiFab: React.FC<AiFabProps> = ({
         ? [
             sub('tools', 'Dựng', 'Đoạn nối, trung điểm, điểm trên cạnh, chân vuông góc, thiết diện', <Ruler className="w-4 h-4" />, () => setPath(['draw', 'tools']), {keep: true, highlight: GEO_TOOLS.some((t) => t.id === geo.tool)}),
             sub('measure', 'Đo', 'Đo độ dài đoạn thẳng và số đo góc ngay trên hình', <Compass className="w-4 h-4" />, () => setPath(['draw', 'measure']), {keep: true, highlight: GEO_MEASURE.some((t) => t.id === geo.tool)}),
-            sub('parts', `Phần ${geo.upTo + 1}/${geo.parts}`, 'Hiện thêm hoặc ẩn bớt từng phần của đề, thêm yêu cầu', <ChevronRight className="w-4 h-4" />, () => setPath(['draw', 'parts']), {keep: true}),
+            sub('parts', `Phần ${geo.upTo + 1}/${geo.parts}`, 'Hiện thêm hoặc ẩn bớt từng phần. Muốn thêm yêu cầu: viết lên bảng (VD: vẽ đường tròn ngoại tiếp) rồi khoanh và bấm Vẽ hình', <ChevronRight className="w-4 h-4" />, () => setPath(['draw', 'parts']), {keep: true}),
             sub('hidden', geo.hideHidden ? 'Hiện nét đứt' : 'Ẩn nét khuất', 'Đổi giữa nét đứt chuẩn SGK cho cạnh bị che và ẩn hẳn các cạnh đó', geo.hideHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />, () => geo.toggleHidden(), {keep: true, highlight: geo.hideHidden}),
             sub('view3d', 'Xem 3D', 'Mở mô phỏng 3D của khối: xoay, cắt thiết diện, khai triển', <Box className="w-4 h-4" />, () => geo.open3D()),
             sub('export', 'Xuất TikZ', 'Chép mã TikZ của hình (nét đứt đúng chuẩn) để dán vào LaTeX', <Download className="w-4 h-4" />, () => geo.exportTikz(), {keep: true}),
@@ -744,7 +744,6 @@ export const AiFab: React.FC<AiFabProps> = ({
       back,
       sub('prev', 'Ẩn phần cuối', 'Bớt phần vừa vẽ', <ChevronLeft className="w-4 h-4" />, () => geo.prev(), {keep: true, disabled: geo.upTo <= 0}),
       sub('next', 'Vẽ phần tiếp', 'Hiện thêm phần tiếp theo của đề', <ChevronRight className="w-4 h-4" />, () => geo.next(), {keep: true, disabled: geo.upTo >= geo.parts - 1}),
-      sub('req', 'Yêu cầu', 'Thêm yêu cầu bằng lời, VD: Gọi N là trung điểm SC', <Plus className="w-4 h-4" />, () => geo.openRequirement()),
     ];
   } else if (tierKey === 'draw/edit' && geo) {
     items = [

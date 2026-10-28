@@ -21,6 +21,7 @@ import { TapAndSwapOCR } from './TapAndSwapOCR';
 import { MathView } from '../common/MathView';
 import { MathText } from '../ui/MathText';
 import { evaluateDynamicSocraticCue, triggerSocraticAcousticFeedback } from '../../utils/socraticTriggers';
+import { apiBase } from '../../utils/apiBase';
 
 export interface SimulationWidgetProps {
   blueprint: SimulationBlueprint;
@@ -522,7 +523,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
           body: JSON.stringify(payload),
         });
       } catch {
-        res = await fetch('http://127.0.0.1:8000/api/v1/notes/export', {
+        res = await fetch(`${apiBase()}/api/v1/notes/export`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),

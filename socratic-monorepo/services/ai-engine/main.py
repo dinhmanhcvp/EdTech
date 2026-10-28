@@ -12,12 +12,15 @@ if os.path.exists(_env_path):
                 _line = _line.strip()
                 if _line and not _line.startswith("#") and "=" in _line:
                     _k, _v = _line.split("=", 1)
-                    os.environ[_k.strip()] = _v.strip().strip("'\"")
+                    # biến môi trường thật (Render, shell) luôn thắng tệp .env; .env chỉ điền chỗ còn thiếu
+                    os.environ.setdefault(_k.strip(), _v.strip().strip("'\""))
     except Exception as _e:
         print(f"[main] .env load warning: {_e}")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from deploy_guard import RateLimitMiddleware, is_production, warm_up
 from routers.visualize import router as visualize_router
 from routers.companion import router as companion_router
 from routers.classroom import router as classroom_router
@@ -41,13 +44,27 @@ app = FastAPI(
 # browser runs on another device, so origins must be configurable instead of
 # relying on localhost-only defaults.
 _cors_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "*").split(",") if origin.strip()]
+# Thứ tự: thêm sau = bao ngoài. Giới hạn tần suất nằm trong CORS (để 429 vẫn có tiêu đề CORS), nén gzip nằm giữa.
+app.add_middleware(
+    RateLimitMiddleware,
+    prefixes=("/api/v1/canvas/recognize-ink", "/api/v1/canvas/compile-lasso"),
+)
+app.add_middleware(GZipMiddleware, minimum_size=1200)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
+    # Địa chỉ xem trước của Vercel (https://<du-an>-git-<nhanh>-<nhom>.vercel.app) đổi theo từng lần deploy: đặt CORS_ORIGIN_REGEX
+    allow_origin_regex=os.getenv("CORS_ORIGIN_REGEX") or None,
     allow_credentials="*" not in _cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+def _startup_warm() -> None:
+    if is_production():
+        warm_up()
 
 # Mount Domain Routers
 app.include_router(visualize_router)

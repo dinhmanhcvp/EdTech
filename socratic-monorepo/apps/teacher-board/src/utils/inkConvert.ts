@@ -11,6 +11,7 @@ import { routeLocally } from './localRouter';
 import { normalizeMathInput } from './mathExpr';
 import type { Stroke, TypesetMeta } from './lassoGeometry';
 import type { SimulationBlueprint } from '@socratic/types';
+import { apiBase } from './apiBase';
 
 export interface ConvertLine {
   text: string;
@@ -178,7 +179,7 @@ async function recognizeWithAiUncached(strokes: Stroke[], opts: AiOptions = {}):
       if (cleanCustom && targetUrl !== `${cleanCustom}${endpoint}`) {
         resp = await doFetch(`${cleanCustom}${endpoint}`, { method: 'POST', headers, body, signal: ctrl?.signal });
       } else {
-        resp = await doFetch(`http://127.0.0.1:8000${endpoint}`, { method: 'POST', headers, body, signal: ctrl?.signal });
+        resp = await doFetch(`${apiBase()}${endpoint}`, { method: 'POST', headers, body, signal: ctrl?.signal });
       }
     }
     if (!resp.ok && endpoint.startsWith('/') && cleanCustom && targetUrl !== `${cleanCustom}${endpoint}`) {

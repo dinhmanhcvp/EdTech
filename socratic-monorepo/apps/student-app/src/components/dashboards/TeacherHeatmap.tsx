@@ -3,6 +3,7 @@
  * Visualizes 2D matrix of students across STEM concepts with mastery levels and bottleneck alerts.
  */
 import React from 'react';
+import { apiBase } from '../../utils/apiBase';
 
 export interface StudentMastery {
   name: string;
@@ -51,7 +52,7 @@ export const TeacherHeatmap: React.FC<TeacherHeatmapProps> = ({ students }: Teac
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       }).catch(() => {
-        fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+        fetch(`${apiBase()}/api/v1/heatmap/event`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),

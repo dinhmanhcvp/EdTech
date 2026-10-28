@@ -2,7 +2,7 @@ numpy
 matplotlib
 sympy
 fastapi
-uvicorn
+uvicorn[standard]
 python-multipart
 pillow
 google-generativeai

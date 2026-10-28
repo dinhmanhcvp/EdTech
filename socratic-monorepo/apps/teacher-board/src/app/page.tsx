@@ -7,6 +7,7 @@ import { ClassTelemetryMode } from '../components/modes/ClassTelemetryMode';
 import { EngineHealthRail } from '../components/common/EngineHealthRail';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { Download, Share2, Check, Sparkles, QrCode, Copy, ExternalLink, X, FileText, ChevronRight, Maximize2, Minimize2, Monitor, ChevronDown, ChevronUp } from 'lucide-react';
+import { studentAppUrl } from '../utils/apiBase';
 
 export default function UnifiedPlatformPage() {
 
@@ -53,7 +54,8 @@ export default function UnifiedPlatformPage() {
 
   // Read Gemini Vision key from environment if provided, or rely on backend env
   useEffect(() => {
-    if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+    // Chỉ để tiện phát triển cục bộ: biến NEXT_PUBLIC_* bị nhúng vào mã gửi cho mọi người dùng nên KHÔNG dùng ở bản công khai
+    if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
       localStorage.setItem('gemini_api_key', process.env.NEXT_PUBLIC_GEMINI_API_KEY);
     }
   }, []);
@@ -260,7 +262,7 @@ export default function UnifiedPlatformPage() {
               01. Bảng Tương Tác Trên Lớp (Màn hình 86")
             </button>
             <a
-              href="http://localhost:3002?tab=COMPANION"
+              href={studentAppUrl('?tab=COMPANION')}
               target="_blank"
               rel="noreferrer"
               data-testid="mode-tab-socratic"
@@ -272,7 +274,7 @@ export default function UnifiedPlatformPage() {
               <ExternalLink className="w-3 h-3 text-purple-500" />
             </a>
             <a
-              href="http://localhost:3002?tab=HEATMAP"
+              href={studentAppUrl('?tab=HEATMAP')}
               target="_blank"
               rel="noreferrer"
               data-testid="mode-tab-analytics"
@@ -335,7 +337,7 @@ export default function UnifiedPlatformPage() {
               data-testid="btn-open-feature-2-companion"
               onClick={() => {
                 if (typeof window !== 'undefined') {
-                  window.open('http://localhost:3002', '_blank');
+                  window.open(studentAppUrl(), '_blank');
                 }
               }}
               className="text-xs border border-purple-200 bg-purple-50 hover:bg-purple-100 px-2.5 py-1.5 rounded-lg text-purple-800 font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
@@ -415,7 +417,7 @@ export default function UnifiedPlatformPage() {
               Phân hệ Gia Sư Socratic 1:1 đã được quy tụ sang Tính Năng 2 để học sinh và giáo viên sử dụng tự học sau giờ học.
             </span>
             <a
-              href="http://localhost:3002?tab=COMPANION"
+              href={studentAppUrl('?tab=COMPANION')}
               target="_blank"
               rel="noreferrer"
               className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-3 py-1 rounded-lg flex items-center gap-1.5 transition shadow-xs"
@@ -436,7 +438,7 @@ export default function UnifiedPlatformPage() {
               Phân hệ Phân Tích Lớp Học & Smart Notes đã được quy tụ sang Tính Năng 2 để theo dõi ma trận nhận thức sau giờ học.
             </span>
             <a
-              href="http://localhost:3002?tab=HEATMAP"
+              href={studentAppUrl('?tab=HEATMAP')}
               target="_blank"
               rel="noreferrer"
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3 py-1 rounded-lg flex items-center gap-1.5 transition shadow-xs"

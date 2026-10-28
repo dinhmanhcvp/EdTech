@@ -5,6 +5,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { Activity, RefreshCw } from 'lucide-react';
 import { formatCanvasMath } from '../utils/canvasMath';
+import { apiBase } from '../utils/apiBase';
 
 interface Props {
   blueprint: SimulationBlueprint;
@@ -246,7 +247,7 @@ export const MathPlotEngine: React.FC<Props> = ({
         res = await fetch(`/api/v1/plot?equation=${encodeURIComponent(eq)}&a=${a}&b=${b}&c=${c}&d=${d}&format=json`);
       } catch (errProxy) {
         try {
-          res = await fetch(`http://127.0.0.1:8000/api/v1/plot?equation=${encodeURIComponent(eq)}&a=${a}&b=${b}&c=${c}&d=${d}&format=json`);
+          res = await fetch(`${apiBase()}/api/v1/plot?equation=${encodeURIComponent(eq)}&a=${a}&b=${b}&c=${c}&d=${d}&format=json`);
         } catch (errDirect) {
           console.warn('[MathPlotEngine] Fetch error:', errDirect);
         }

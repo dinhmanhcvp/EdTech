@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Activity, AlertTriangle, CheckCircle2, Database, Radio, ScanLine, Sparkles, Settings2 } from 'lucide-react';
 import { AiBackendConfigModal } from './AiBackendConfigModal';
+import { apiBase } from '../../utils/apiBase';
 
 type HealthPayload = {
   status?: string;
@@ -26,14 +27,7 @@ type HealthPayload = {
 
 type RailState = 'checking' | 'online' | 'degraded' | 'offline';
 
-const backendUrl = () => {
-  if (typeof window !== 'undefined') {
-    const saved = window.localStorage.getItem('backend_url');
-    if (saved) return saved.replace(/\/+$/, '');
-  }
-  const configured = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_BACKEND_URL : undefined;
-  return (configured || 'http://127.0.0.1:8000').replace(/\/+$/, '');
-};
+const backendUrl = () => apiBase();
 
 export const EngineHealthRail: React.FC = () => {
   const [health, setHealth] = useState<HealthPayload | null>(null);

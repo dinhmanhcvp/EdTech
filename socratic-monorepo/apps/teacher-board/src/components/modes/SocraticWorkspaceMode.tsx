@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Check, AlertTriangle, Shield, Mic, MicOff, RefreshCw, Volume2, Sparkles, ChevronRight, ArrowRight } from 'lucide-react';
 import { CurriculumLevel } from '@socratic/types';
+import { apiBase } from '../../utils/apiBase';
 
 export interface SocraticWorkspaceModeProps {
   curriculumLevel: CurriculumLevel;
@@ -137,7 +138,7 @@ export const SocraticWorkspaceMode: React.FC<SocraticWorkspaceModeProps> = ({
           }),
         });
       } catch {
-        resp = await fetch('http://127.0.0.1:8000/api/v1/companion/evaluate-step', {
+        resp = await fetch(`${apiBase()}/api/v1/companion/evaluate-step`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

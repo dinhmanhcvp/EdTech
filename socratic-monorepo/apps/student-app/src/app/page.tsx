@@ -7,6 +7,7 @@ import { TeacherHeatmap, StudentMastery } from '../components/dashboards/Teacher
 import { ParentPulse } from '../components/dashboards/ParentPulse';
 import { SmartNotesViewer } from '../components/dashboards/SmartNotesViewer';
 import { GraduationCap, BarChart3, HeartHandshake, Compass, FileText, Sparkles } from 'lucide-react';
+import { apiBase, teacherAppUrl } from '../utils/apiBase';
 
 function getAcademicRank(eureka: number): { title: string; badgeClass: string; dotClass: string } {
   if (eureka >= 1000) return { title: 'Grandmaster / Quốc tế', badgeClass: 'bg-rose-50 text-rose-700 border-rose-200', dotClass: 'bg-rose-600' };
@@ -46,7 +47,7 @@ export default function StudentAppPage() {
         try {
           res = await fetch('/api/v1/heatmap');
         } catch {
-          res = await fetch('http://127.0.0.1:8000/api/v1/heatmap');
+          res = await fetch(`${apiBase()}/api/v1/heatmap`);
         }
         if (res && res.ok) {
           const data = await res.json();
@@ -203,7 +204,7 @@ export default function StudentAppPage() {
             data-testid="btn-open-feature-1-board"
             onClick={() => {
               if (typeof window !== 'undefined') {
-                window.open('http://localhost:3001', '_blank');
+                window.open(teacherAppUrl(), '_blank');
               }
             }}
             className="text-xs border border-blue-200 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg text-blue-800 font-semibold shadow-xs transition cursor-pointer hidden 2xl:flex items-center gap-1"

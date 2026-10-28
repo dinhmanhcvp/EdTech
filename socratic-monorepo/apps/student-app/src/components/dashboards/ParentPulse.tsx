@@ -4,6 +4,7 @@
  * and dinner conversation starter questions.
  */
 import React from 'react';
+import { apiBase } from '../../utils/apiBase';
 
 export interface ParentPulseProps {
   studentName: string;
@@ -41,7 +42,7 @@ export const ParentPulse: React.FC<ParentPulseProps> = ({
           body: JSON.stringify(payload),
         });
       } catch {
-        await fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+        await fetch(`${apiBase()}/api/v1/heatmap/event`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),

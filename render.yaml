@@ -4,15 +4,41 @@ services:
   - type: web
     name: socratic-ai-engine
     runtime: python
+    # Singapore: gần Việt Nam nhất (độ trễ mỗi lời gọi thấp hơn hẳn so với Oregon/Frankfurt).
+    region: singapore
+    # free: ngủ sau 15 phút không có truy cập (xem DEPLOY.md mục "Giữ máy chủ luôn thức"). Muốn mượt như chạy cục bộ khi
+    # trình chiếu/thi thì nâng lên gói trả phí (starter trở lên) để không bị ngủ.
     plan: free
     rootDir: socratic-monorepo/services/ai-engine
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
     healthCheckPath: /health
     autoDeploy: true
+    # Chỉ build lại khi mã máy chủ đổi (không build lại khi sửa tài liệu, video, giao diện).
+    buildFilter:
+      paths:
+        - socratic-monorepo/services/ai-engine/**
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.8
-      # Khóa Gemini (tùy chọn). Không ghi vào tệp: nhập tay trong Dashboard sau khi Blueprint tạo dịch vụ.
-      - key: GEMINI_API_KEY
+      - key: APP_ENV
+        value: production
+      # Địa chỉ giao diện được phép gọi thẳng máy chủ (trình duyệt gọi Render, không qua Vercel). Nhiều địa chỉ ngăn bằng dấu phẩy,
+      # ví dụ: https://socratic-board.vercel.app,https://socratic-student.vercel.app. Không đặt = cho mọi nguồn (chỉ nên dùng khi thử).
+      - key: CORS_ORIGINS
+        sync: false
+      # Địa chỉ xem trước của Vercel đổi theo từng nhánh/lần deploy; cho phép mọi tên miền *.vercel.app của bạn (siết lại nếu cần).
+      - key: CORS_ORIGIN_REGEX
+        value: ^https://.*\.vercel\.app$
+      # Số lời gọi AI tốn khóa máy chủ cho phép mỗi phút trên mỗi địa chỉ IP (lời gọi dùng khóa riêng của người dùng không bị tính).
+      - key: RATE_LIMIT_PER_MIN
+        value: "90"
+      # Khóa quản trị để ghi khóa AI qua API (mặc định tắt trên bản công khai). Render tự sinh giá trị ngẫu nhiên.
+      - key: ADMIN_TOKEN
+        generateValue: true
+      # Khóa AI (tùy chọn). Không ghi vào tệp: nhập tay trong Dashboard sau khi Blueprint tạo dịch vụ.
+      # Nhiều khóa ngăn bằng dấu phẩy để tự xoay vòng khi một khóa hết hạn mức.
+      - key: GEMINI_API_KEYS
+        sync: false
+      - key: OPENROUTER_API_KEYS
         sync: false

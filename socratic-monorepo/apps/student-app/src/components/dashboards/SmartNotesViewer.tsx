@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { FileText, Sparkles, Clock, CheckCircle2, RefreshCw, BookOpen, Atom } from 'lucide-react';
 import { MathView } from '../common/MathView';
 import { MathText, FormulaBlock } from '../ui/MathText';
+import { apiBase } from '../../utils/apiBase';
 
 export interface SmartNoteData {
   id?: string;
@@ -29,7 +30,7 @@ export const SmartNotesViewer: React.FC = () => {
         res = await fetch('/api/v1/notes/latest');
       } catch {
         try {
-          res = await fetch('http://127.0.0.1:8000/api/v1/notes/latest');
+          res = await fetch(`${apiBase()}/api/v1/notes/latest`);
         } catch {}
       }
 

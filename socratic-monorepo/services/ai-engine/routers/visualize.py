@@ -1131,6 +1131,16 @@ def _upsert_env_vars(updates: Dict[str, str]) -> None:
 @router.post("/settings/gemini-key")
 @router.post("/settings/keys")
 async def save_gemini_key(request: Request):
+    from deploy_guard import admin_ok
+
+    if not admin_ok(dict(request.headers)):
+        # Bản công khai: không cho ai cũng ghi đè khóa dùng chung của máy chủ. Khóa của từng người vẫn dùng được
+        # từ trình duyệt (gửi kèm mỗi lời gọi, không lưu ở máy chủ).
+        return {
+            "status": "disabled",
+            "message": "Máy chủ công khai không lưu khóa. Khóa bạn nhập chỉ lưu trong trình duyệt này và được gửi kèm mỗi yêu cầu.",
+            "has_key": global_key_pool.get_status()["any_configured"],
+        }
     data = await request.json()
     if data.get("reset_cooldowns"):
         global_key_pool.reset_cooldowns()

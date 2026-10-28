@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Send, QrCode, Check } from 'lucide-react';
 import { PilotImpactPanel } from '../analytics/PilotImpactPanel';
 import { MathView } from '../common/MathView';
+import { apiBase } from '../../utils/apiBase';
 
 export interface StudentMastery {
   name: string;
@@ -115,7 +116,7 @@ export const ClassTelemetryMode: React.FC<ClassTelemetryModeProps> = ({
       try {
         res = await fetch('/api/v1/heatmap');
       } catch {
-        res = await fetch('http://127.0.0.1:8000/api/v1/heatmap');
+        res = await fetch(`${apiBase()}/api/v1/heatmap`);
       }
 
       if (res && res.ok) {
@@ -164,7 +165,7 @@ export const ClassTelemetryMode: React.FC<ClassTelemetryModeProps> = ({
           body: JSON.stringify(payload),
         });
       } catch {
-        await fetch('http://127.0.0.1:8000/api/v1/heatmap/event', {
+        await fetch(`${apiBase()}/api/v1/heatmap/event`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -216,7 +217,7 @@ export const ClassTelemetryMode: React.FC<ClassTelemetryModeProps> = ({
           body: JSON.stringify(payload),
         });
       } catch {
-        res = await fetch('http://127.0.0.1:8000/api/v1/notes/export', {
+        res = await fetch(`${apiBase()}/api/v1/notes/export`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),

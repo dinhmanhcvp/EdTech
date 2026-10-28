@@ -1,6 +1,7 @@
 // apps/teacher-board/src/utils/classroomState.ts
 /** Trạng thái phía client của phòng học BYOD: bộ rút gọn thuần (không dính WebSocket) để kiểm thử được. */
 import type {SimulationBlueprint} from '@socratic/types';
+import {apiBase} from './apiBase';
 
 export interface PollView {
   question: string;
@@ -130,8 +131,9 @@ export function slimBlueprint(bp: SimulationBlueprint): SimulationBlueprint {
 }
 
 export function backendBase(): string {
-  const env = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_BACKEND_URL : undefined;
-  return (env || 'http://127.0.0.1:8000').replace(/\/+$/, '');
+  const base = apiBase();
+  // WebSocket cần địa chỉ tuyệt đối; trang công khai chưa cấu hình máy chủ thì dùng tên miền hiện tại (kết nối sẽ báo lỗi rõ ràng)
+  return (base || (typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:8000')).replace(/\/+$/, '');
 }
 export const wsUrl = (roomId: string, query: Record<string, string>) => {
   const u = new URL(`${backendBase()}/ws/rooms/${encodeURIComponent(roomId)}`);

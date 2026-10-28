@@ -28,6 +28,7 @@ export const LIVE_CASES: {id: string; input: string}[] = [
   {id: 'PHYS_DOUBLE_PENDULUM', input: 'con lắc kép'},
   {id: 'PHYS_CORIOLIS_FORCE', input: 'lực Coriolis'},
   {id: 'PHYS_FRAUNHOFER_DIFF', input: 'nhiễu xạ 5 khe'},
+  {id: 'PHYS_OPTICS_LENS', input: 'thấu kính hội tụ f = 100'},
   // Hóa học
   {id: 'CHEM_BALANCE_SCALE', input: 'Fe + O2 -> Fe2O3'},
   {id: 'CHEM_EQUILIBRIUM_TITRATION', input: 'chuẩn độ HCl bằng NaOH'},
@@ -38,9 +39,11 @@ export const LIVE_CASES: {id: string; input: string}[] = [
   {id: 'CHEM_CFT_COMPLEX_3D', input: 'CFT d6'},
   {id: 'CHEM_CRYSTAL_LATTICE', input: 'FCC'},
   {id: 'CHEM_ORGANIC_SKELETAL', input: 'cyclohexane ghế'},
+  {id: 'CHEM_REACTION_LAB', input: 'Mg + HCl 40°C'},
   // Sinh học
   {id: 'BIO_PHOTOSYNTHESIS', input: 'quang hợp'},
   {id: 'BIO_DNA_HELIX', input: 'ADN'},
+  {id: 'BIO_HEART_CYCLE', input: 'nhịp tim 120 BPM'},
   {id: 'BIO_PUNNETT_SQUARE', input: 'P: AaBb × AaBb'},
   {id: 'BIO_HARDY_WEINBERG', input: '0,04AA + 0,32Aa + 0,64aa = 1'},
   {id: 'BIO_STOMATA_GAS', input: 'khí khổng'},

@@ -13,6 +13,7 @@ import {matchChemKeywords} from './chemModels';
 import {matchPhysKeywords} from './physicsModels';
 import {matchAdvancedKeywords, ADVANCED_TEMPLATES} from './advancedStemModels';
 import {parseBoxplot, parseVariationTable} from './mathModels';
+import {matchLegacyTemplate} from './legacyTemplates';
 
 /** Tách "y = x^2 - 3; y = A sin x + B" thành từng phương trình. */
 export function splitEquations(text: string): string[] {
@@ -235,6 +236,8 @@ export function matchStemModel(text: string): SimulationBlueprint | null {
       curriculumLevel: 'THPT_STANDARD',
     };
   }
+  const legacy = matchLegacyTemplate(raw);
+  if (legacy) return legacy;
   const bio = matchBioKeywords(raw);
   if (bio) {
     const q: Record<string, string> = {

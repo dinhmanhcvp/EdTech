@@ -13,6 +13,7 @@ export const ClassroomPanel: React.FC<{room: ClassroomApi; templateId?: string |
   const link = typeof window !== 'undefined' && state.roomId ? `${window.location.origin}/join/${state.roomId}` : '';
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [bigQr, setBigQr] = useState(false);
   const [question, setQuestion] = useState('Dự đoán: kết quả sẽ thay đổi thế nào?');
   const [optionsText, setOptionsText] = useState('Tăng\nGiảm\nKhông đổi');
 
@@ -81,9 +82,24 @@ export const ClassroomPanel: React.FC<{room: ClassroomApi; templateId?: string |
             {state.error && <p data-testid="classroom-error" className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 max-w-md">{state.error}</p>}
           </div>
         ) : (
+          <>
+          {bigQr && qr && (
+          <div
+            data-testid="classroom-qr-big"
+            role="button"
+            tabIndex={0}
+            onClick={() => setBigQr(false)}
+            onKeyDown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') setBigQr(false); }}
+            className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center gap-4 cursor-zoom-out"
+          >
+            <img src={qr} alt="QR vào lớp (phóng to)" style={{width: 'min(72vh, 72vw)', height: 'min(72vh, 72vw)'}} className="rounded-2xl border border-[#E6E4DD]" />
+            <div className="text-6xl font-mono font-bold tracking-[0.3em] text-stone-900">{state.roomId}</div>
+            <div className="text-sm text-stone-500">Chạm bất kỳ đâu để thu nhỏ</div>
+          </div>
+        )}
           <div className="p-5 grid md:grid-cols-[220px_1fr] gap-5">
             <div className="flex flex-col items-center gap-2">
-              {qr ? <img src={qr} alt="QR vào lớp" data-testid="classroom-qr" className="w-full max-w-[220px] rounded-xl border border-[#E6E4DD]" /> : <div className="w-[220px] h-[220px] rounded-xl border border-dashed border-[#DCD9D0]" />}
+              {qr ? <img src={qr} alt="QR vào lớp" data-testid="classroom-qr" title="Chạm để phóng to lên bảng" onClick={() => setBigQr(true)} className="w-full max-w-[220px] rounded-xl border border-[#E6E4DD] cursor-zoom-in" /> : <div className="w-[220px] h-[220px] rounded-xl border border-dashed border-[#DCD9D0]" />}
               <div className="text-[10px] font-mono uppercase tracking-wider text-stone-500">Mã phòng</div>
               <div data-testid="classroom-code" className="text-3xl font-mono font-bold tracking-[0.25em] text-stone-900">{state.roomId}</div>
               <button onClick={copy} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#DCD9D0] text-xs text-stone-700 hover:bg-stone-50">
@@ -184,6 +200,7 @@ export const ClassroomPanel: React.FC<{room: ClassroomApi; templateId?: string |
               </button>
             </div>
           </div>
+          </>
         )}
       </div>
     </div>

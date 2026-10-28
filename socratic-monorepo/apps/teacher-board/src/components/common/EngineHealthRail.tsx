@@ -39,6 +39,11 @@ export const EngineHealthRail: React.FC = () => {
   const [health, setHealth] = useState<HealthPayload | null>(null);
   const [state, setState] = useState<RailState>('checking');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // /?clean=1: ẩn thanh chẩn đoán khi quay video/trình chiếu; vẫn mở được hộp cấu hình qua sự kiện
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    setHidden(new URLSearchParams(window.location.search).has('clean'));
+  }, []);
 
   const check = async () => {
     try {
@@ -104,6 +109,7 @@ export const EngineHealthRail: React.FC = () => {
 
   return (
     <>
+      {!hidden && (
       <div
         role="button"
         tabIndex={0}
@@ -142,6 +148,7 @@ export const EngineHealthRail: React.FC = () => {
           <Settings2 className="h-3.5 w-3.5" />
         </div>
       </div>
+      )}
 
       <AiBackendConfigModal
         isOpen={isModalOpen}

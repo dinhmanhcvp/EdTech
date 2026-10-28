@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
-import { routeLocally, makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES, type SolidKind } from '../../utils/localRouter';
+import { routeLocally, matchStemModel, makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES, type SolidKind } from '../../utils/localRouter';
 import { detectSolidFromStrokes, detectPlaneShapeFromStrokes } from '../../utils/sketchSolid';
 import { shapeFromBlueprint, solidWire, planeStats, VERTEX_LABELS } from '../../utils/inlineShape';
 import { type BoardView, FIT_VIEW, clampView, zoomAt, panBy, bufferQuality } from '../../utils/boardView';
@@ -23,6 +23,8 @@ import { ClassroomPanel } from './ClassroomPanel';
 import { useClassroom } from '../../hooks/useClassroom';
 import { slimBlueprint } from '../../utils/classroomState';
 import { OcrReviewModal } from './OcrReviewModal';
+import { looksMathy, typedToLatex } from '../../utils/typedMath';
+import { canonicalFormula } from '../../utils/formulaNormalize';
 import { VectorTimeTravelBar } from './VectorTimeTravelBar';
 import { useBoardJournal } from '../../hooks/useBoardJournal';
 import { findAmbiguousTokens } from '../../utils/ocrConfusions';
@@ -98,7 +100,22 @@ const STROKE_WIDTHS = [
  * Bộ định tuyến công thức STEM tức thì (Instant STEM Blueprint Matcher: 0ms, 0 API).
  * Nhận dạng ngay các phương trình và mẫu STEM viết tay / gõ chuẩn, kích hoạt mô phỏng lập tức.
  */
+/**
+ * Nhận dạng chữ viết tay trả LaTeX có ngoặc nhọn, 	ext{}, dấu chấm cuối… (x^{2}+y^{2}+z^{2}=9.).
+ * Thử dạng chuẩn hóa trước (để mặt cầu không bị đồ thị nuốt thành hình tròn), rồi mới tới nguyên bản.
+ */
 export function matchInstantStemBlueprint(effectiveHint: string): SimulationBlueprint | null {
+  const raw = (effectiveHint || '').trim();
+  if (!raw) return null;
+  const norm = canonicalFormula(raw);
+  if (norm && norm !== raw) {
+    const viaNorm = matchInstantStemBlueprintCore(norm);
+    if (viaNorm) return viaNorm;
+  }
+  return matchInstantStemBlueprintCore(raw);
+}
+
+function matchInstantStemBlueprintCore(effectiveHint: string): SimulationBlueprint | null {
   const raw = (effectiveHint || '').trim();
   if (!raw) return null;
 
@@ -108,8 +125,15 @@ export function matchInstantStemBlueprint(effectiveHint: string): SimulationBlue
     const cft = routeLocally('CFT d6');
     if (cft) return cft;
   }
-  const direct = routeLocally(raw);
-  if (direct) return direct;
+  // x = A cos(ωt + φ), u = U₀ sin(ωt): dao động điều hòa theo thời gian t, không phải đường cong ẩn theo x và y
+  const harmonic = /^[^;=]*=\s*[^;]*(?<!\p{L})(?:sin|cos)\s*\(?[^;]*(?:ω|\\omega|\\pi\s*t|π\s*t|(?<!\p{L})t(?!\p{L}))/u.test(raw) && !/(?<!\p{L})y\s*=/u.test(raw);
+  if (!harmonic) {
+    const direct = routeLocally(raw);
+    if (direct) return direct;
+  } else {
+    const stemOnly = matchStemModel(raw);
+    if (stemOnly) return stemOnly;
+  }
 
   // 1a. Bỏ chữ đệm đầu câu ("phân tử NH3", "hiện tượng thẩm thấu", "mô phỏng …") rồi định tuyến lại phần còn lại
   const stripped = raw.replace(/^\s*(?:(?:hãy|vẽ|dựng|trực quan hóa|trực quan|mô phỏng|khảo sát|xem|hiện tượng|bài toán|quá trình|sự|phân tử|hợp chất|cấu trúc)\s+)+/i, '');
@@ -178,7 +202,7 @@ export function matchInstantStemBlueprint(effectiveHint: string): SimulationBlue
   // 4. Cơ học Mặt phẳng nghiêng & Ma sát trượt (Inclined Plane)
   if (
     h.includes('nghiêng') || h.includes('nghieng') || h.includes('incline') ||
-    h.includes('ma sát') || h.includes('ma sat') || h.includes('\\mu') || h.includes('mu') ||
+    h.includes('ma sát') || h.includes('ma sat') || h.includes('\\mu') || /(?<!\p{L})mu(?!\p{L})/u.test(h) ||
     h.includes('f_{ms}') || h.includes('fms') || h.includes('mg\\sin') || h.includes('mg\\cos')
   ) {
     return {
@@ -198,7 +222,7 @@ export function matchInstantStemBlueprint(effectiveHint: string): SimulationBlue
   }
 
   // 5. Chuyển động ném xiên trong trọng trường (Projectile)
-  if (h.includes('ném') || h.includes('nem') || h.includes('v0') || h.includes('v_0') || h.includes('projectile') || h.includes('parabol')) {
+  if (h.includes('ném') || /(?<!\p{L})nem(?!\p{L})/u.test(h) || h.includes('v0') || h.includes('v_0') || h.includes('projectile') || h.includes('parabol')) {
     return {
       engine: 'PHYSICS',
       templateId: 'PHYS_PROJECTILE',
@@ -237,7 +261,7 @@ export function matchInstantStemBlueprint(effectiveHint: string): SimulationBlue
   }
 
   // 7. Cân bằng phản ứng Oxi hóa - Khử
-  if (h.includes('fe') || h.includes('cân') || h.includes('o2') || h.includes('hno3') || h.includes('redox') || h.includes('oxi')) {
+  if (/(?<!\p{L})fe(?!\p{L})/u.test(h) || h.includes('cân') || /(?<!\p{L})o_?\{?2/u.test(h) || h.includes('hno3') || h.includes('redox') || h.includes('oxi')) {
     return {
       engine: 'CHEMISTRY',
       templateId: 'CHEM_BALANCE_SCALE',
@@ -253,7 +277,7 @@ export function matchInstantStemBlueprint(effectiveHint: string): SimulationBlue
   }
 
   // 8. Chuẩn độ axit - bazơ & Đường cong pH
-  if (h.includes('chuẩn độ') || h.includes('titration') || h.includes('ph') || h.includes('naoh') || h.includes('hcl')) {
+  if (h.includes('chuẩn độ') || h.includes('titration') || /(?<!\p{L})ph(?!\p{L})/u.test(h) || h.includes('naoh') || h.includes('hcl')) {
     return {
       engine: 'CHEMISTRY',
       templateId: 'CHEM_EQUILIBRIUM_TITRATION',
@@ -283,7 +307,7 @@ export function matchInstantStemBlueprint(effectiveHint: string): SimulationBlue
   }
 
   // 10. Quang hợp và trao đổi chất thực vật
-  if (h.includes('quang') || h.includes('25') || h.includes('lá') || h.includes('cây') || h.includes('photo')) {
+  if (/quang hợp|quang hop|photosynth|(?<!\p{L})photo(?!\p{L})|(?<!\p{L})(?:lá|cây)(?!\p{L})/u.test(h)) {
     return {
       engine: 'BIOLOGY',
       templateId: 'BIO_PHOTOSYNTHESIS',
@@ -298,7 +322,7 @@ export function matchInstantStemBlueprint(effectiveHint: string): SimulationBlue
   }
 
   // 11. Hàm số lượng giác & Sóng điều hòa
-  if (h.includes('sin') || h.includes('cos') || h.includes('wave') || h.includes('dao động') || h.includes('harmonic')) {
+  if (/(?<!\p{L})(?:sin|cos)(?!\p{L})/u.test(h) || h.includes('wave') || h.includes('dao động') || h.includes('harmonic')) {
     return {
       engine: 'MATH',
       templateId: 'MATH_TRIG_WAVE',
@@ -315,7 +339,7 @@ export function matchInstantStemBlueprint(effectiveHint: string): SimulationBlue
   }
 
   // 12. Giải tích & Khảo sát hàm số (Math Func 2D)
-  if (h.includes('int') || h.includes('\\int') || h.includes('tích phân') || h.includes('nguyên hàm')) {
+  if (/(?<!\p{L})int(?!\p{L})/u.test(h) || h.includes('\\int') || h.includes('tích phân') || h.includes('nguyên hàm')) {
     return {
       engine: 'MATH',
       templateId: 'MATH_FUNC_2D',
@@ -1922,7 +1946,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       points: [{ x: Math.min(d.x, 1150), y: Math.min(d.y, 640) }],
       color: strokeColor,
       width: 0,
-      typeset: { latex: `\\text{${escapeTex(val)}}`, text: val, size, w, h: size * 1.5 },
+      typeset: { latex: looksMathy(val) ? typedToLatex(val) : `\\text{${escapeTex(val)}}`, text: val, size, w, h: size * 1.5 },
     };
     saveToUndo();
     setStrokes((prev) => [...prev, st]);
@@ -2337,7 +2361,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     // Công thức đã gõ chuẩn (typeset) được chọn → dùng luôn LaTeX của nó làm gợi ý, khỏi phải nhận dạng lại
     const typesetHint = selectedStrokes
       .filter((s) => s.typeset)
-      .map((s) => s.typeset!.latex)
+      .map((s) => (s.id.startsWith('text-') ? s.typeset!.text : s.typeset!.latex))
       .join(' \\\\ ');
     const inkSelected = sourceStrokes(selectedStrokes);
     // Vision đang đọc mà người dùng chưa gõ gì: chờ tối đa 9 s (bản cục bộ yếu, không dùng làm kết quả chính)
@@ -3085,10 +3109,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           {isGeometryLiveMode && (
             <div
               data-testid="geo-live-mode-badge"
-              className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-600/95 backdrop-blur-md text-white text-xs font-semibold shadow-lg border border-blue-400/40 animate-in fade-in"
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-1.5 whitespace-nowrap rounded-full bg-blue-600/95 backdrop-blur-md text-white text-xs font-semibold shadow-lg border border-blue-400/40 animate-in fade-in"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-              <span>Chế độ trực quan hình học: Vẽ xong hình tự động biến thành mô hình tương tác tại chỗ</span>
+              <span>Trực quan hình học: vẽ xong, hình tự thành mô hình</span>
               <button
                 type="button"
                 data-testid="geo-live-mode-close"

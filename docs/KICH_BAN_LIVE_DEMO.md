@@ -1,8 +1,10 @@
 # Kịch bản trình diễn trực tiếp — Socratic Vision Board
 
+> Danh sách đầy đủ kèm nhiều cách viết, thông số chỉnh được và lưu ý cho **từng** mô phỏng nằm ở `docs/HUONG_DAN_VIET_DE_TRUC_QUAN.md`.
+
 Mọi câu bên dưới đã được kiểm chứng ngày 27/10/2026 theo hai lớp:
 
-1. **Định tuyến:** `src/__tests__/liveDemoCases.test.ts` (39 mô phỏng, đạt).
+1. **Định tuyến:** `src/__tests__/liveDemoCases.test.ts` (42 mô phỏng, đạt).
 2. **Trình duyệt thật:** chạy lần lượt cả 39 câu trên bản dev, mỗi câu mở đúng mô phỏng và không có lỗi trang.
 
 Cách làm chung: viết (hoặc gõ vào ô công thức) → **khoanh vùng** bằng công cụ Chọn → **Trực quan**. Câu có chữ tiếng Việt nên **gõ vào ô công thức** trong thanh khoanh vùng: bộ nhận dạng chữ tay offline chỉ đọc ký hiệu toán; chữ tiếng Việt cần Gemini/OpenRouter có khóa và còn hạn mức.
@@ -37,7 +39,7 @@ Gợi ý lời: "Em vẽ nháp, bảng nhận ra đó là hình lập phương v
 | Biểu đồ hộp | `Min=1, Q1=5, Q2=8, Q3=12, Max=20` | Ngoại lai, kéo giá trị lớn nhất |
 | Bảng biến thiên | `x \| -∞ -1 1 +∞ ; y' \| + 0 - 0 + ; y \| -∞ ↗ 3 ↘ -1 ↗ +∞` | Dựng đồ thị qua cực trị, bác bảng sai |
 
-## C. Vật lí (9)
+## C. Vật lí (10)
 
 | Mô phỏng | Viết/gõ | Điểm nhấn |
 |---|---|---|
@@ -50,8 +52,9 @@ Gợi ý lời: "Em vẽ nháp, bảng nhận ra đó là hình lập phương v
 | Con lắc kép | `con lắc kép` | Mặc định 150°/120°: hai con lắc lệch 0,001 rad tách nhau sau khoảng 5 giây |
 | Coriolis | `lực Coriolis` | Chuyển hệ quay / hệ quán tính; đảo dấu ω là Nam bán cầu |
 | Nhiễu xạ N khe | `nhiễu xạ 5 khe` (đổi số khe bằng thanh trượt) | N − 2 cực đại phụ; d = 2b mất bậc 2 |
+| Thấu kính | `thấu kính hội tụ f = 100` | d < f cho ảnh ảo; kéo tiêu cự và khoảng cách vật |
 
-## D. Hóa học (9)
+## D. Hóa học (10)
 
 | Mô phỏng | Viết/gõ | Điểm nhấn |
 |---|---|---|
@@ -64,8 +67,9 @@ Gợi ý lời: "Em vẽ nháp, bảng nhận ra đó là hình lập phương v
 | Trường tinh thể | `CFT d6` | Tách mức t₂g / e_g |
 | Mạng tinh thể | `FCC` (hoặc `BCC`) | Ô mạng, mặt Miller |
 | Cyclohexane | `cyclohexane ghế` (hoặc `thuyền`) | Chuyển cấu dạng |
+| Tốc độ phản ứng | `Mg + HCl 40°C` | Số bọt khí tăng theo hàm mũ khi tăng nhiệt độ |
 
-## E. Sinh học (10)
+## E. Sinh học (11)
 
 | Mô phỏng | Viết/gõ | Điểm nhấn |
 |---|---|---|
@@ -78,6 +82,7 @@ Gợi ý lời: "Em vẽ nháp, bảng nhận ra đó là hình lập phương v
 | Operon Lac | `Operon Lac` | Glucose × lactose, đột biến lacI⁻ |
 | Hô hấp tế bào | `chuỗi truyền electron ATP synthase` | Cyanide chặn chuỗi |
 | Lotka–Volterra | `Lotka-Volterra` | Trễ pha con mồi/thú săn |
+| Nhịp tim, ECG | `nhịp tim 120 BPM` | Trái tim đập và sóng ECG đổi theo BPM |
 | Truyền tin tế bào | `GPCR apoptosis` | cAMP, caspase |
 
 ## F. Thứ tự gợi ý cho một buổi 6–8 phút

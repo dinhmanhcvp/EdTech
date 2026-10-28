@@ -213,7 +213,11 @@ export const OxyzEngine: React.FC<Props> = ({ blueprint }) => {
     }
   });
   const [parseError, setParseError] = useState(initial.error);
-  const [center, setCenter] = useState<Vec3>([0, 0, 0]);
+  const [center, setCenter] = useState<Vec3>(() => {
+    const m = blueprint.meta;
+    const n = (k: string) => (typeof m?.[k] === "number" && Number.isFinite(m[k]) ? (m[k] as number) : 0);
+    return [n("cx"), n("cy"), n("cz")] as Vec3;
+  });
   const [radius, setRadius] = useState<number>(() => {
     if (typeof blueprint.meta?.radius === "number" && blueprint.meta.radius > 0) {
       return Math.round(blueprint.meta.radius * 100) / 100;
@@ -240,6 +244,9 @@ export const OxyzEngine: React.FC<Props> = ({ blueprint }) => {
     tangent: "Tiếp xúc tại một điểm",
     disjoint: "Không giao nhau",
   };
+  // thanh trượt phải chứa được giá trị lấy từ đề (R = 5, tâm (1, -2, 3)…)
+  const rMax = Math.max(4, Math.ceil(radius));
+  const cMax = Math.max(3, Math.ceil(Math.max(...center.map(Math.abs))));
   const setCoord = (i: number, v: number) =>
     setCenter((c) => c.map((x, j) => (j === i ? v : x)) as Vec3);
   return (
@@ -400,7 +407,7 @@ export const OxyzEngine: React.FC<Props> = ({ blueprint }) => {
           label="Bán kính R"
           value={radius}
           min={0.3}
-          max={4}
+          max={rMax}
           set={setRadius}
         />
         <Control
@@ -417,8 +424,8 @@ export const OxyzEngine: React.FC<Props> = ({ blueprint }) => {
             id={`ox-center-${i}`}
             label={`Tâm I: ${"xyz"[i]}`}
             value={v}
-            min={-3}
-            max={3}
+            min={-cMax}
+            max={cMax}
             set={(n) => setCoord(i, n)}
           />
         ))}

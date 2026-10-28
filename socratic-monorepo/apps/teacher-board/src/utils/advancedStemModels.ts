@@ -638,6 +638,25 @@ export const ADVANCED_TEMPLATES = {
 
 export type AdvancedId = keyof typeof ADVANCED_TEMPLATES;
 
+/**
+ * Tâm mặt cầu từ dạng (x - a)^2 + (y - b)^2 + (z - c)^2 = R^2; thành phần viết trần (x^2) có tâm 0.
+ * Trả null khi mọi tọa độ tâm đều 0 để giữ hành vi cũ.
+ */
+export function parseSphereCenter(text: string): [number, number, number] | null {
+  const c: [number, number, number] = [0, 0, 0];
+  let any = false;
+  ["x", "y", "z"].forEach((v, i) => {
+    const re = new RegExp(`\\(\\s*${v}\\s*([+-])\\s*(\\d+(?:[.,]\\d+)?)\\s*\\)\\s*\\^?\\s*\\{?2\\}?`, "i");
+    const m = re.exec(text);
+    if (m) {
+      const val = parseFloat(m[2].replace(",", "."));
+      c[i] = m[1] === "-" ? val : -val;
+      if (c[i] !== 0) any = true;
+    }
+  });
+  return any ? c : null;
+}
+
 export function matchAdvancedKeywords(
   text: string,
 ): { templateId: AdvancedId; meta: Record<string, string | number> } | null {
@@ -686,7 +705,7 @@ export function matchAdvancedKeywords(
   // Nhận diện không gian Oxyz: từ khóa Oxyz, mặt cầu, hoặc trực tiếp phương trình mặt cầu 3D x^2 + y^2 + z^2 = R^2
   // Hỗ trợ xử lý OCR confusion khi ký tự z bị nhận nhầm thành 2 hoặc Z
   const sphereMatch =
-    /(?:(?:\([xX][+-]\d+\)|[xX])\^?2\s*\+\s*(?:\([yY][+-]\d+\)|[yY])\^?2\s*\+\s*(?:\([zZ2][+-]\d+\)|[zZ2])\^?2|[xX]\^?2\s*\+\s*[yY]\^?2\s*\+\s*[zZ2]\^?2)\s*=\s*(\d+(?:[.,]\d+)?)/i.exec(
+    /(?:(?:\(\s*[xX]\s*[+-]\s*\d+(?:[.,]\d+)?\s*\)|[xX])\^?2\s*\+\s*(?:\(\s*[yY]\s*[+-]\s*\d+(?:[.,]\d+)?\s*\)|[yY])\^?2\s*\+\s*(?:\(\s*[zZ2]\s*[+-]\s*\d+(?:[.,]\d+)?\s*\)|[zZ2])\^?2|[xX]\^?2\s*\+\s*[yY]\^?2\s*\+\s*[zZ2]\^?2)\s*=\s*(\d+(?:[.,]\d+)?)/i.exec(
       t,
     );
   if (
@@ -698,10 +717,12 @@ export function matchAdvancedKeywords(
     const radiusVal = sphereMatch
       ? Math.sqrt(parseFloat(sphereMatch[1].replace(",", ".")))
       : 2;
+    const center = parseSphereCenter(t);
     return {
       templateId: "MATH_3D_OXYZ",
       meta: {
         ...(plane ? { plane: plane[1].trim() } : {}),
+        ...(center ? { cx: center[0], cy: center[1], cz: center[2] } : {}),
         ...(sphereMatch
           ? {
               sphereEquation: sphereMatch[0].replace(/[Z2]\^?2(?=\s*=)/i, "z^2"),

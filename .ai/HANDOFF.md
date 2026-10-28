@@ -1066,3 +1066,54 @@ Own Student App tutor evaluation/draft utilities/tests, online_tutor backend/tes
 - `utils/journalRender.ts` (vẽ lớp phủ tua: nét, chữ công thức, cạnh hình phẳng/khối, thẻ tên mô phỏng), `utils/socrFile.ts` (lưu/nạp `.socr`, giới hạn 8 MB, loại sự kiện sai). `VectorTimeTravelBar` thêm nút Lưu/Mở.
 - Giới hạn còn lại: công thức vẽ bằng chữ thường (`typeset.text`), không KaTeX; mô phỏng chỉ là thẻ tên, chưa ghi `PARAM_CHANGE`/`PINCH_TRANSFORM` (state riêng của từng engine); nạp `.socr` chỉ để xem lại, chưa khôi phục lên bảng thật; chưa có lưu tự động xuống đĩa/IndexedDB.
 - Kiểm tra: tsc 0 lỗi; vitest 42 file/515 test đạt; trình duyệt thật: nét + chữ dựng lại ở mốc cuối, lưu → nạp lại `.socr` thành công. Chưa chạy e2e, student-app, pytest sau đợt này.
+
+
+# 2026-10-28 (tối) — Chuẩn bị quay video: nhận diện hình khối + cân hóa học
+
+- Đo hình lập phương vẽ tay giả lập kiểu người thật (2 hình vuông lệch, chiều sâu 0,4–0,75 cạnh, nét rời/vòng kín, có/không nét khuất, nhiễu 2–8 px; 60 mẫu/biến thể): trước 62–93% (nhầm thành `box`), sau 95–100%. Sửa: ngưỡng tỉ lệ cạnh chiếu xiên trong `utils/sketchSolid.ts` `boxDims` từ 1,3 lên 1,55; hộp thật vẫn nhận đúng (11 test cũ đạt). Test mới `__tests__/handDrawnCube.test.ts` (4 test, fail khi hoàn nguyên). Lưu ý: ảnh vẽ tay thật của người chưa được đo; bộ mẫu là giả lập.
+- `student-app` `SocraticCompanionSession`: nút +/− của cân hóa học trước là hàm rỗng, nay đổi số nguyên tử (vế trái ±2, vế phải ±3, không âm, reset khi đổi bài/payload) và hiện "Cân bằng hoàn hảo" khi 6 = 6. Test mới trong `student-companion.test.tsx`. Cảnh UI-17 không còn phải tránh bấm +/−.
+- Chưa kiểm được trong đợt này (cần người/khóa thật): đọc chữ tiếng Việt qua Gemini Vision (khóa trong `.env` là chuỗi giả), nhận giọng nói Chrome, QR lớp học với 4 điện thoại.
+
+
+# 2026-10-28 (đêm) — Chạy thử kịch bản quay UI-06…UI-17 trên trình duyệt thật
+
+Môi trường: backend `python main.py` (Gemini 3 khóa + RapidOCR + ONNX đang bật), teacher-board :3001 ở 1920×1080, student-app :3002. Đã tắt backend sau khi chạy.
+
+- **UI-06/07 đạt**: 12 nét lập phương giả lập → "Hình lập phương ABCD.A'B'C'D'" với nét khuất đứt, vòng xoay hoạt động. Banner chế độ trực quan bị xuống dòng và chồng lên nút góc → rút gọn còn một dòng ("Trực quan hình học: vẽ xong, hình tự thành mô hình"), `whitespace-nowrap`.
+- **UI-08/10 sửa lỗi**: gõ `x^2 + y^2 + z^2 = 9` bằng công cụ Chèn chữ hiện sai (`\text{x\^{}2…}`) và mở nhầm đồ thị đường thẳng. Nay `utils/typedMath.ts` (`looksMathy`, `typedToLatex`) hiển thị công thức đúng; gợi ý trực quan lấy chuỗi gõ nguyên bản (nét `text-*`). Kết quả: mặt cầu + mặt phẳng cắt Oxyz, piston NO₂⇌N₂O₄, Operon Lac, mạch RLC, con lắc đơn đều mở đúng. Test `typedMath.test.ts`.
+- **Thanh chẩn đoán**: `/?clean=1` ẩn `EngineHealthRail` (chồng lên mô phỏng khi quay); hộp cấu hình vẫn mở được qua sự kiện.
+- **UI-12/13**: tạo lớp được (mã phòng, QR, "Đang trực tuyến"); thêm chạm QR để phóng to toàn màn hình (QR ~72% chiều cao + mã phòng cỡ lớn), chạm để thu nhỏ. Chưa thử 4 điện thoại thật.
+- **UI-15/16 đạt**: "cho đáp án" → "Hàng rào Socratic" và công cụ thị giác tự mở. Sửa đề bài hiện LaTeX thô (`\alpha`, `v_{max}`, `m/s^2`) bằng cách bọc `$…$` trong `data/socraticProblems.ts` (5 đề). Sửa "cập nhật 1793165802.45" thành giờ VN (`formatUpdatedAt`). Huy hiệu "Tính năng 2" chuyển sang `xl:` để khỏi chồng thanh tab.
+- **UI-17 đạt** với bản sửa cân (2/3 → 6/6, "Cân bằng hoàn hảo", "Điền vào bài làm"). Lưu ý: tab "Hóa học" của Gia sư Socratic 1:1 hiển thị đề Fe₃O₄ + HNO₃ nhưng cân minh họa Fe + O₂; nếu quay cảnh này nên dùng bài Fe + O₂ trong tab "Gia sư AI 4 chế độ".
+- Chưa kiểm được: viết tay thật + Gemini Vision, UI-11 (tích phân viết tay → công thức), giọng nói Chrome (UI-18), 4 điện thoại quét QR. Font Newsreader/Jakarta nạp từ Google Fonts: máy quay cần có mạng (hoặc tải font về) kẻo chữ Việt hiển thị lệch dấu.
+- Kiểm tra: tsc 2 app 0 lỗi; teacher-board 44 file/524 test; student-app 37 test; pytest 67. Chưa commit.
+
+
+# 2026-10-28 (đêm, bổ sung) — Mặt cầu bị nhận thành hình tròn; rà bộ định tuyến template
+
+**Nguyên nhân gốc:** bộ nhận dạng chữ viết tay trả LaTeX có ngoặc nhọn (`x^{2}+y^{2}+z^{2}=9`). Bộ nhận Oxyz trong `matchAdvancedKeywords` chỉ biết `x^2`, không khớp → rơi xuống `routeLocally` → `matchGraphEquations` coi đây là phương trình ẩn và vẽ hình tròn. Tái hiện đầu-cuối: nét Hershey người hóa → `recognizeInk` → latex đúng dạng trên → trước sửa ra MATH_GRAPH.
+
+**Sửa:**
+- `utils/formulaNormalize.ts` (`canonicalFormula`): ngoặc mũ `^{2}`→`^2`, `\text{}`/`\mathrm{}` bóc vỏ, `\rightarrow`/`\to`→`->`, `\rightleftharpoons`→`⇌`, `\times`→`×`, chỉ số hóa học `O_{2}`→`O2`, `²`→`^2`, bỏ `\left \right \,`, bỏ dấu chấm/phẩy cuối, giữ `\` ngăn hệ nhiều hàm (→ `;`).
+- `SmartboardCanvas.tsx`: `matchInstantStemBlueprint` thử dạng chuẩn hóa trước, sau đó mới tới nguyên bản (`matchInstantStemBlueprintCore`). Phân biệt: `x²+y²=9` vẫn là đồ thị đường tròn; `x²+y²+z²…` (cả `z` bị đọc nhầm thành `2`/`Z`) mở Oxyz.
+- **Từ khóa quá rộng** (lỗi cùng họ, phát hiện khi rà): `includes('25')`→Quang hợp (vd `y = x^2 + 25`!), `includes('ph')`→Chuẩn độ (mọi chữ có "ph": phương trình, phân tích…), `includes('mu')`→Mặt phẳng nghiêng (muối, mutation), `includes('int')`→Nguyên hàm, `includes('sin'/'cos')`→Sóng lượng giác (sinh học), `includes('fe'/'o2')`→Cân bằng phản ứng, `lá`/`cây`/`nem`. Nay dùng lookaround `\p{L}` (cờ `u`; `[a-z]` sai với chữ có dấu).
+- `utils/viKeywords.ts`: khóa `laiphantich` khớp mờ nhầm "phân tích đa thức" thành bảng Punnett → đổi thành `laiphantichkieugen`/`laiphantichdemoi` (mất nhận "lai phân tích" trần; nếu cần thì thêm khóa cụ thể).
+- Test: `keywordRoutingFalsePositives.test.ts` (ca nhầm, ca đúng, mặt cầu dạng ngoặc nhọn, 109 biến thể LaTeX của 41 ca demo). Ghi chú kỹ thuật: tạo file thử có `\` bằng công cụ Write, không dùng heredoc (heredoc làm mất dấu `\`, từng khiến phép thử sai).
+- Kiểm tra giao diện thật (1920×1080, backend + Gemini bật): viết nét `x²+y²+z²=9` → khoanh → Trực quan hóa → "Mặt cầu và mặt phẳng Oxyz", R = 3.
+
+**Chưa sửa / giới hạn:**
+- Oxyz chỉ dùng bán kính, luôn đặt tâm tại gốc: `(x-1)^2+(y+2)^2+(z-3)^2=16` mở đúng loại nhưng tâm sai (hiện ở gốc).
+- Bộ luật từ khóa trong `matchInstantStemBlueprintCore` (các bước 2–12) vẫn là chuỗi `includes`; chưa viết lại thành bảng khai báo. Các template không có ca trong `LIVE_CASES`: BIO_HEART_CYCLE, CHEM_MOLECULE_2D3D, CHEM_REACTION_LAB, MATH_POLYNOMIAL, MATH_SYMBOLS, PHYS_OPTICS_LENS, PHYS_OWN (chỉ mở qua backend/Gemini, chưa có đường định tuyến cục bộ được kiểm).
+- Kiểm tra: tsc 0 lỗi; teacher-board 46 file/575 test; student-app 37 test. Chưa commit.
+
+
+# 2026-10-28 (đêm, bổ sung 2) — Hoàn thiện toàn bộ template + hướng dẫn "viết gì để trực quan"
+
+- **Tài liệu mới `docs/HUONG_DAN_VIET_DE_TRUC_QUAN.md`**: cách dùng chung, hình học vẽ tay, và mục cho **42 mô phỏng** (câu viết mẫu, thông số chỉnh được, lưu ý), cộng mục 7 (mã không có đường mở riêng: MATH_CONIC_2D, MATH_POLYNOMIAL, MATH_SYMBOLS, CHEM_MOLECULE_2D3D, PHYS_OWN) và mục 8 (khi bảng mở sai). Test `guideExamples.test.ts` đọc chính tệp này: mọi câu trong dấu `…` ở dòng `- **Viết:**` phải mở đúng ID; mọi ID trong `LIVE_CASES` phải có mục. Sửa tài liệu → chạy lại test.
+- **3 mô phỏng trước chỉ mở được qua backend nay có đường cục bộ** (`utils/legacyTemplates.ts`, nối trong `matchStemModel`): PHYS_OPTICS_LENS (thấu kính, đọc `f =`, `d =`), BIO_HEART_CYCLE (nhịp tim/ECG, đọc BPM 40–180), CHEM_REACTION_LAB (kim loại + axit, tốc độ phản ứng, bọt khí; đọc `40°C`, `2M`). Cùng bộ thông số như `routers/visualize.py`. Có tên tiếng Việt trong `viKeywords.ts`.
+- **Oxyz có tâm**: `parseSphereCenter` đọc `(x-a)^2+(y-b)^2+(z-c)^2=R^2` → `meta.cx/cy/cz`; `OxyzEngine` đặt sẵn thanh trượt tâm, khoảng trượt R và tâm tự mở rộng theo đề (R = 5 trước đây vượt max 4).
+- **x = A cos(ωt + φ)** (dao động theo thời gian) trước bị coi là đồ thị ẩn → nay mở MATH_TRIG_WAVE.
+- **Chèn chữ**: `utils/typedMath.ts` viết lại: câu lẫn tiếng Việt + công thức ("thấu kính hội tụ f = 100") không còn dính liền (`\text{}` cho từ), `40°C` hiện đúng (trước ra `\circC` đỏ), số mũ không nuốt dấu `+`/`-` viết liền (`(y+2)^2+…`), `sin/cos` thành lệnh, `sqrt(x)` thành `\sqrt{x}`. Test `typedMathRender.test.ts` kiểm KaTeX hợp lệ cho mọi câu trình diễn.
+- **Backend `routers/visualize.py`**: bộ khớp từ khóa dự phòng dùng `k in hint` quá rộng (ph, la, mu, int, sin, tim…; còn coi `x^2+y^2` là Oxyz) → hàm `_has` (từ ngắn ≤ 4 chữ cái không được dính chữ cái khác; chữ số thì được). Test `tests/test_fallback_keywords.py`.
+- Kiểm tra: tsc 0 lỗi; teacher-board 49 file/900 test; pytest 74. Trên trình duyệt thật (1920×1080): nhịp tim, thấu kính, tốc độ phản ứng (bọt khí + đường Arrhenius) và mặt cầu tâm (1,−2,3) R=5 đều mở đúng. Chưa commit.
+- Chưa làm: `PARAM_CHANGE`/engine state vào journal; các engine "tự vẽ điều khiển" chưa có kiểm tra tương tác sâu (chỉ kiểm dựng được, không lỗi React).

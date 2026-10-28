@@ -66,7 +66,7 @@ describe('In-Place Geometry Transformation on Smartboard Canvas', () => {
     // Kiểm tra HUD banner xuất hiện trên bảng
     const hudBadge = screen.getByTestId('geo-live-mode-badge');
     expect(hudBadge).toBeInTheDocument();
-    expect(hudBadge.textContent).toContain('Chế độ trực quan hình học');
+    expect(hudBadge.textContent).toContain('Trực quan hình học');
 
     // Kiểm tra chấm báo hiệu trên nút Hình
     expect(screen.getByTestId('dock-geo-live-indicator')).toBeInTheDocument();

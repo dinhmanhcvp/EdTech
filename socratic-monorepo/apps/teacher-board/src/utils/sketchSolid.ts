@@ -287,7 +287,7 @@ function boxDims(g: Graph): {kind: 'cube' | 'box'; dims: {a?: number; b?: number
   const lens = oblique ? [w, dep, h] : g3.map((x) => x.len);
   const ratio = Math.max(...lens) / Math.max(1e-6, Math.min(...lens));
   // hình chiếu xiên đã hiệu chỉnh độ rút ngắn chiều sâu → so sánh chặt; xoay tùy ý thì ba cạnh vốn rút ngắn khác nhau → chỉ coi là hộp khi chênh rất lớn
-  if (ratio < (oblique ? 1.3 : 2.4)) return {kind: 'cube', dims: {a: 2}};
+  if (ratio < (oblique ? 1.55 : 2.4)) return {kind: 'cube', dims: {a: 2}};
   const s = 3 / Math.max(...lens);
   const dims = oblique
     ? {a: clamp(+(w * s).toFixed(1), 1, 5), b: clamp(+(dep * s).toFixed(1), 1, 5), c: clamp(+(h * s).toFixed(1), 1, 5)}

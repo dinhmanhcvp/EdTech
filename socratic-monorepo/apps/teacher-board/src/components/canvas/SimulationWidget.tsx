@@ -291,6 +291,8 @@ function getTopicDisplayName(blueprint: SimulationBlueprint): string {
   if (t === 'CHEM_LE_CHATELIER_GAS') return 'HÓA HỌC • CHUYỂN DỊCH CÂN BẰNG LE CHATELIER';
   if (t === 'CHEM_GALVANIC_DANIELL') return 'HÓA HỌC • PIN ĐIỆN HÓA GALVANI & PHƯƠNG TRÌNH NERNST';
   if (t === 'MATH_STAT_BOXPLOT') return 'TOÁN HỌC • THỐNG KÊ: BIỂU ĐỒ HỘP – RÂU & NGOẠI LAI';
+  if (t === 'BIO_HEART_CYCLE') return 'SINH HỌC • NHỊP TIM & ĐIỆN TÂM ĐỒ (ECG)';
+  if (t === 'CHEM_REACTION_LAB') return 'HÓA HỌC • TỐC ĐỘ PHẢN ỨNG: NHIỆT ĐỘ, NỒNG ĐỘ, DIỆN TÍCH';
   if (t === 'MATH_VARIATION_TABLE') return 'TOÁN HỌC • BẢNG BIẾN THIÊN → ĐỒ THỊ HÀM SỐ';
   if (t === 'BIO_STOMATA_GAS') return 'SINH HỌC • CƠ CHẾ ĐÓNG MỞ KHÍ KHỔNG';
   if (t === 'BIO_OSMOSIS_CELL') return 'SINH HỌC • THẨM THẤU & CO NGUYÊN SINH';

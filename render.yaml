@@ -36,9 +36,16 @@ services:
       # Khóa quản trị để ghi khóa AI qua API (mặc định tắt trên bản công khai). Render tự sinh giá trị ngẫu nhiên.
       - key: ADMIN_TOKEN
         generateValue: true
-      # Khóa AI (tùy chọn). Không ghi vào tệp: nhập tay trong Dashboard sau khi Blueprint tạo dịch vụ.
+      # AI Vision chỉ đi qua OpenRouter (mặc định). Đặt `auto` nếu muốn dùng thêm khóa Gemini trực tiếp.
+      - key: VISION_PROVIDER
+        value: openrouter
+      # Khóa AI. Không ghi vào tệp: nhập tay trong Dashboard sau khi Blueprint tạo dịch vụ.
       # Nhiều khóa ngăn bằng dấu phẩy để tự xoay vòng khi một khóa hết hạn mức.
-      - key: GEMINI_API_KEYS
-        sync: false
       - key: OPENROUTER_API_KEYS
+        sync: false
+      # Tùy chọn: ghi đè danh sách model Vision (ngăn bằng dấu phẩy, model đầu được thử trước).
+      # Mặc định: google/gemini-2.5-flash, google/gemini-2.5-flash-lite, qwen/qwen3-vl-30b-a3b-instruct, openai/gpt-4o-mini, google/gemma-4-31b-it:free
+      - key: OPENROUTER_VISION_MODELS
+        sync: false
+      - key: GEMINI_API_KEYS
         sync: false

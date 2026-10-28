@@ -42,8 +42,9 @@ Những thay đổi đã làm để bản web không chậm hơn local:
 
    | Biến | Giá trị | Ghi chú |
    |---|---|---|
-   | `GEMINI_API_KEYS` | `AIza…1,AIza…2` | Nhiều khóa ngăn bằng dấu phẩy để tự xoay vòng khi hết hạn mức |
-   | `OPENROUTER_API_KEYS` | `sk-or-v1-…` | Tùy chọn, dự phòng khi Gemini hết hạn mức |
+   | `OPENROUTER_API_KEYS` | `sk-or-v1-…` | **Bắt buộc cho AI Vision**. Nhiều khóa ngăn bằng dấu phẩy để tự xoay vòng |
+   | `VISION_PROVIDER` | `openrouter` (đã đặt sẵn) | Vision chỉ qua OpenRouter; đặt `auto` để dùng thêm khóa Gemini trực tiếp |
+   | `OPENROUTER_VISION_MODELS` | để trống | Tùy chọn. Mặc định thử lần lượt `google/gemini-2.5-flash`, `google/gemini-2.5-flash-lite`, `qwen/qwen3-vl-30b-a3b-instruct`, `openai/gpt-4o-mini`, rồi `google/gemma-4-31b-it:free` |
    | `CORS_ORIGINS` | để trống lúc đầu | Điền sau bước 4 (hai địa chỉ Vercel) |
    | `ADMIN_TOKEN` | Render tự sinh | Chỉ cần khi muốn ghi khóa AI qua API (xem mục 6) |
 
@@ -74,7 +75,7 @@ Lệnh cài đặt/build đã nằm trong `vercel.json`, không cần sửa. Hai
    - [ ] Mở `socratic-board.vercel.app`; góc trên phải **không** hiện lỗi đỏ; thanh trạng thái (nếu bật) báo sẵn sàng.
    - [ ] Viết `y = x^2 - 3` → khoanh → **Trực quan hóa** → đồ thị hiện. (Lần đầu có thể chờ vài giây nếu Render đang ngủ.)
    - [ ] **AI → Vẽ hình → Từ đề bài**: dán Đề 1 trong `docs/HUONG_DAN_VIET_DE_TRUC_QUAN.md` → vẽ được.
-   - [ ] Viết tay một câu tiếng Việt (ví dụ "con lắc đơn") → khoanh → **Trực quan hóa** (cần khóa Gemini trên Render).
+   - [ ] Viết tay một câu tiếng Việt (ví dụ "con lắc đơn") → khoanh → **Trực quan hóa** (cần khóa OpenRouter trên Render).
    - [ ] **Lớp học → Tạo lớp học**: mở `/join/<mã>` trên điện thoại → thấy mô phỏng của bảng, kéo thanh trượt đồng bộ.
    - [ ] Mở `socratic-student.vercel.app` → tab Gia sư AI; thử nhập "cho đáp án" → hàng rào Socratic.
    - [ ] Nhấn F12 → Console/Network: **không** có lời gọi tới `127.0.0.1`, không có lỗi CORS.
@@ -91,9 +92,9 @@ Render gói Free **ngủ sau 15 phút không có truy cập**; lần gọi đầ
 
 Ngoài ra: giao diện tự gọi `/health` ngay khi mở trang (thanh trạng thái), nên mở bảng trước vài phút cũng đánh thức máy chủ.
 
-**OCR thần kinh (RapidOCR/ONNX) và ChromaDB** không cài mặc định vì nặng (gói Free chỉ 512 MB RAM). Hệ quả: nhận dạng ảnh không có khóa Gemini kém hơn máy của bạn (máy bạn đang có RapidOCR). Việc chính (chữ → công thức, vẽ tay → khối, định tuyến mô phỏng, hình học, đề viết tay qua Gemini) chạy trong trình duyệt hoặc qua Gemini nên không bị ảnh hưởng. Nếu cần OCR đầy đủ, dùng gói Render ≥ 2 GB RAM và đổi lệnh build thành `pip install -r requirements-edge.txt`.
+**OCR thần kinh (RapidOCR/ONNX) và ChromaDB** không cài mặc định vì nặng (gói Free chỉ 512 MB RAM). Hệ quả: nhận dạng ảnh không có khóa OpenRouter kém hơn máy của bạn (máy bạn đang có RapidOCR). Việc chính (chữ → công thức, vẽ tay → khối, định tuyến mô phỏng, hình học, đề viết tay qua OpenRouter) chạy trong trình duyệt hoặc qua Gemini nên không bị ảnh hưởng. Nếu cần OCR đầy đủ, dùng gói Render ≥ 2 GB RAM và đổi lệnh build thành `pip install -r requirements-edge.txt`.
 
-**Hạn mức Gemini**: bản công khai nhiều người dùng chung dễ chạm hạn mức miễn phí theo ngày. Đặt **nhiều khóa từ nhiều dự án Google khác nhau** vào `GEMINI_API_KEYS` (hạn mức tính theo dự án, không theo khóa), thêm `OPENROUTER_API_KEYS` làm dự phòng. Người dùng cũng có thể tự nhập khóa riêng trong hộp thoại *Kết nối AI*: khóa đó chỉ lưu trong trình duyệt của họ, gửi kèm mỗi yêu cầu và không bị tính vào giới hạn tần suất.
+**AI Vision qua OpenRouter**: nạp credit theo số tiền nhỏ trên openrouter.ai/credits rồi tạo khóa ở openrouter.ai/keys, đặt vào `OPENROUTER_API_KEYS`. Mã model đã đối chiếu với danh mục công khai của OpenRouter ngày 2026-10-28, nhưng giá và độ trễ có thể đổi: xem trang models của OpenRouter và đặt `OPENROUTER_VISION_MODELS` nếu muốn đổi thứ tự. Model `:free` chỉ là dự phòng cuối vì hay bị giới hạn lượt. Người dùng cũng có thể tự nhập khóa OpenRouter riêng trong hộp thoại *Kết nối AI*: khóa đó chỉ lưu trong trình duyệt của họ và không bị tính vào giới hạn tần suất.
 
 ## 6. Bảo mật bản công khai
 
@@ -130,7 +131,7 @@ Ngoài ra: giao diện tự gọi `/health` ngay khi mở trang (thanh trạng t
 | Console: "blocked by CORS policy" | Địa chỉ Vercel chưa nằm trong `CORS_ORIGINS` và không khớp regex | Thêm đúng địa chỉ (có `https://`, không có `/` cuối) |
 | Lớp học: "Không nối được" | Thiếu `uvicorn[standard]` (đã sửa), hoặc `BACKEND_URL` sai/đổi mà chưa Redeploy | Kiểm tra `…/health`; Redeploy Vercel |
 | Gọi AI trả 429 | Vượt `RATE_LIMIT_PER_MIN` từ một IP | Chờ theo `Retry-After`, hoặc tăng biến; hoặc nhập khóa riêng trong hộp thoại Kết nối AI |
-| "AI Vision chưa dùng được" | Thiếu/sai khóa, hết hạn mức, hoặc Render đang ngủ | Kiểm tra `GEMINI_API_KEYS` trong Render → Environment; xem Logs |
+| "AI Vision chưa dùng được" | Thiếu/sai khóa, hết hạn mức, hoặc Render đang ngủ | Kiểm tra `OPENROUTER_API_KEYS` (và số dư credit) trong Render → Environment; xem Logs |
 | Nút "Mở ứng dụng học sinh" dẫn tới `#` | Chưa đặt `NEXT_PUBLIC_STUDENT_URL` | Đặt biến, Redeploy |
 | Render: "No open ports detected" | Start Command không dùng `$PORT` | Dùng đúng lệnh trong `render.yaml` |
 | Render build: không tìm thấy phiên bản Python | `PYTHON_VERSION` không có | Đặt `3.12.8` hoặc xóa biến |

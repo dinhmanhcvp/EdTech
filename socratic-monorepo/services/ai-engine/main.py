@@ -112,6 +112,7 @@ def health_check():
             "latex_onnx": bool(LOCAL_MATH_ONNX and LOCAL_MATH_ONNX.available),
             "chromadb": CHROMADB_AVAILABLE,
             "gemini_configured": gemini_configured,
+            "vision_provider": (os.getenv("VISION_PROVIDER", "openrouter") or "openrouter").strip().lower(),
             "key_pool": {
                 "gemini_total": pool_status["gemini"]["total"],
                 "gemini_active": pool_status["gemini"]["active"],

@@ -22,24 +22,28 @@ T = TypeVar("T")
 
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
+# Mã model đã đối chiếu với danh mục công khai của OpenRouter (GET /api/v1/models) ngày 2026-10-28.
+# Model trả phí rẻ đứng trước (nhanh, ổn định), model miễn phí chỉ là dự phòng cuối (hay bị giới hạn lượt).
+# Ghi đè bằng biến môi trường OPENROUTER_VISION_MODELS / OPENROUTER_TEXT_MODELS (ngăn bằng dấu phẩy).
 DEFAULT_OPENROUTER_VISION_MODELS = [
-    "openrouter/free",
-    "google/gemini-2.0-flash-001",
-    "google/gemini-2.0-flash-exp:free",
-    "qwen/qwen2.5-vl-72b-instruct:free",
-    "qwen/qwen2.5-vl-32b-instruct:free",
-    "google/gemma-3-27b-it:free",
-    "meta-llama/llama-3.2-11b-vision-instruct:free",
+    "google/gemini-2.5-flash",
+    "google/gemini-2.5-flash-lite",
+    "qwen/qwen3-vl-30b-a3b-instruct",
+    "openai/gpt-4o-mini",
+    "google/gemma-4-31b-it:free",
 ]
 
 DEFAULT_OPENROUTER_TEXT_MODELS = [
-    "openrouter/free",
-    "google/gemini-2.0-flash-001",
-    "google/gemini-2.0-flash-exp:free",
-    "qwen/qwen-2.5-72b-instruct:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "google/gemma-3-27b-it:free",
+    "google/gemini-2.5-flash-lite",
+    "qwen/qwen3.7-flash",
+    "openai/gpt-4o-mini",
+    "google/gemma-4-31b-it:free",
 ]
+
+
+def gemini_vision_enabled() -> bool:
+    """Vision mặc định CHỈ đi qua OpenRouter (VISION_PROVIDER=openrouter). Đặt `auto` hoặc `gemini` để dùng thêm khóa Gemini trực tiếp."""
+    return (os.getenv("VISION_PROVIDER", "openrouter") or "openrouter").strip().lower() in ("auto", "gemini")
 
 # Thời gian cách ly tạm thời (giây) khi một key gặp lỗi
 COOLDOWN_RATE_LIMIT_S = float(os.getenv("KEY_COOLDOWN_RATE_LIMIT_S", "60"))

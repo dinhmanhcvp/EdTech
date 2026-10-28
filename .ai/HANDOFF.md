@@ -1219,3 +1219,11 @@ Yêu cầu: khối 3D vẽ tay phải được nắn thẳng và nối đỉnh t
 - Tầng 2 (khi đã có hình dựng từ đề), theo `docs/tai-lieu-nghien-cuu-stem/NGHIEN_CUU_CHUYEN_SAU_CONG_CU_HINH_HOC_KHONG_GIAN.md`: Dựng (5 dụng cụ), **Đo** (độ dài a√k, góc độ; `measureDistance/measureAngle/fmtLen` trong `geoTools.ts`), Phần đề (+ Yêu cầu), **Ẩn nét khuất/Hiện nét đứt** (`GeoScene.hideHidden`, mặc định nét đứt chuẩn SGK), **Xem 3D** (mở mô phỏng GEO_SOLID qua `matchInstantStemBlueprint`), **Xuất TikZ** (`toTikz`, chép vào bộ nhớ tạm), Chỉnh sửa (hoàn tác/làm lại/xóa). `GeoController` thêm `hideHidden/toggleHidden/exportTikz/open3D`.
 - Mới: `tam giác nhọn/tù ABC` (`tri_obtuse`). Test mới `geoResearchTools.test.ts`; sửa `geoTools.test.tsx`.
 - Chưa làm (có trong nghiên cứu): khai triển lưới đa diện (Net) và thanh trượt thiết diện động trên hình dựng, khóa góc chiếu SGK vs xoay tự do, bắt điểm theo mặt. Hình vẽ tay đã nắn tại chỗ (không phải hình dựng từ đề) chưa có tầng 2 vì chưa có `GeoScene`. Chưa thử đầu-cuối bằng nét viết tay thật.
+
+
+# 2026-10-28 (đêm, bổ sung 11) — AI Vision chỉ qua OpenRouter
+
+- Lý do: người dùng không đăng ký được billing Google AI Studio. `llm/key_pool.py`: `gemini_vision_enabled()` (biến `VISION_PROVIDER`, mặc định `openrouter`; `auto|gemini` bật lại Gemini/OpenAI trực tiếp). `routers/visualize.py` (`classify_with_vision_llm`) và `routers/recognize_ink.py` bỏ qua khóa Gemini/OpenAI khi mặc định.
+- Danh sách model mặc định cũ phần lớn không còn trên OpenRouter (đã đối chiếu `GET /api/v1/models` 2026-10-28). Mới: Vision `google/gemini-2.5-flash` → `gemini-2.5-flash-lite` → `qwen/qwen3-vl-30b-a3b-instruct` → `openai/gpt-4o-mini` → `google/gemma-4-31b-it:free`; Text `gemini-2.5-flash-lite`, `qwen/qwen3.7-flash`, `gpt-4o-mini`, gemma free. Ghi đè bằng `OPENROUTER_VISION_MODELS` / `OPENROUTER_TEXT_MODELS`.
+- `/health` thêm `runtime.vision_provider`. `render.yaml`, `.env.production.example`, `DEPLOY.md`, thông báo `AiBackendConfigModal` cập nhật. Test: `test_recognize_ink.py` (2 test đặt `VISION_PROVIDER=auto`, thêm 2 test mới); pytest 84, vitest 959.
+- CHƯA đo độ chính xác/độ trễ thật của từng model (cần khóa OpenRouter có credit). Gia sư Socratic (text, `provider_adapter.py`) vẫn thử Gemini trước nếu có khóa Gemini; không có thì rơi xuống OpenRouter.

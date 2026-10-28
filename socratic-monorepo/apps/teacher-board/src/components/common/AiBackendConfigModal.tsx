@@ -129,7 +129,7 @@ export const AiBackendConfigModal: React.FC<AiBackendConfigModalProps> = ({
         const gActive = runtimePool?.gemini_active ?? (apiKey ? 1 : 0);
         const orActive = runtimePool?.openrouter_active ?? (openrouterKey ? 1 : 0);
         setPingMessage(
-          `Kết nối thành công (${latency}ms). Bể khóa AI: ${gActive} Gemini sẵn sàng, ${orActive} OpenRouter dự phòng!`,
+          `Kết nối thành công (${latency}ms). Bể khóa AI: ${orActive} OpenRouter sẵn sàng (Vision chạy qua OpenRouter)${gActive ? `, ${gActive} Gemini (chỉ dùng khi bật VISION_PROVIDER=auto)` : ''}.`,
         );
       } else {
         setPingState('degraded');

@@ -80,6 +80,7 @@ def test_endpoint_rejects_missing_image(client):
 
 
 def test_endpoint_returns_normalized_result_with_mock_model(client, monkeypatch):
+    monkeypatch.setenv("VISION_PROVIDER", "auto")  # đường Gemini trực tiếp chỉ bật khi yêu cầu
     seen = {}
 
     def fake(image_bytes, hint, api_key):
@@ -108,6 +109,7 @@ def test_endpoint_model_failure_is_503(client, monkeypatch):
 
 def test_vision_runs_before_local_even_with_allow_local_onnx(client, monkeypatch):
     """Phân tầng: có khóa Cloud thì Vision trả lời trước; mô hình cục bộ chỉ là dự phòng."""
+    monkeypatch.setenv("VISION_PROVIDER", "auto")
     order = []
 
     def fake_vision(image_bytes, hint, api_key):
@@ -220,3 +222,26 @@ def test_local_math_onnx_cleaner_and_offline_recognition(client, monkeypatch):
         assert data["confidence"] >= 0.75
         assert len(data["lines"]) >= 1
 
+
+def test_default_vision_goes_through_openrouter_only(client, monkeypatch):
+    """Mặc định (VISION_PROVIDER=openrouter): khóa Gemini bị bỏ qua, Vision chỉ đi qua OpenRouter."""
+    monkeypatch.delenv("VISION_PROVIDER", raising=False)
+    called = []
+    monkeypatch.setattr(ri, "recognize_with_gemini", lambda *a, **k: called.append("gemini"))
+    monkeypatch.setattr(
+        ri, "recognize_with_openrouter",
+        lambda image_bytes, hint, key="": called.append(("openrouter", key)) or ri.parse_recognition('{"lines":[{"text":"x^2","latex":"x^{2}","confidence":0.9}]}'),
+    )
+    r = client.post(
+        "/api/v1/canvas/recognize-ink",
+        json={"image_base64": _png_b64()},
+        headers={"x-gemini-api-key": "g-key", "x-openrouter-api-key": "or-key"},
+    )
+    assert r.status_code == 200 and r.json()["engine"] == "openrouter"
+    assert called == [("openrouter", "or-key")]
+
+
+def test_openrouter_default_models_are_current():
+    from llm.key_pool import DEFAULT_OPENROUTER_VISION_MODELS as M
+    assert M[0] == "google/gemini-2.5-flash" and "openrouter/free" not in M
+    assert any(m.endswith(":free") for m in M[-1:])  # miễn phí chỉ là dự phòng cuối

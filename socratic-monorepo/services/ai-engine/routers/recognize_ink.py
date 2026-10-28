@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
-from llm.key_pool import call_openrouter_vision, classify_error_cooldown, global_key_pool, mask_api_key
+from llm.key_pool import call_openrouter_vision, classify_error_cooldown, gemini_vision_enabled, global_key_pool, mask_api_key
 
 try:
     from PIL import Image
@@ -444,7 +444,9 @@ async def recognize_ink(request: Request):
     req_gemini_key = (request.headers.get("x-gemini-api-key") or body.get("gemini_api_key") or "").strip().strip("'\"")
     req_openrouter_key = (request.headers.get("x-openrouter-api-key") or body.get("openrouter_api_key") or "").strip().strip("'\"")
 
-    ordered_gemini_keys = global_key_pool.get_ordered_keys("gemini", extra_key=req_gemini_key or None)
+    if not gemini_vision_enabled():
+        req_gemini_key = ""  # Vision chỉ qua OpenRouter (mặc định); VISION_PROVIDER=auto|gemini để bật lại Gemini
+    ordered_gemini_keys = global_key_pool.get_ordered_keys("gemini", extra_key=req_gemini_key or None) if gemini_vision_enabled() else []
     ordered_openrouter_keys = global_key_pool.get_ordered_keys("openrouter", extra_key=req_openrouter_key or None)
 
     api_key = req_gemini_key or (ordered_gemini_keys[0] if ordered_gemini_keys else "")

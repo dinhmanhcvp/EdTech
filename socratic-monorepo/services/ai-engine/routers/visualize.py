@@ -29,7 +29,7 @@ except ImportError:
     CV2_AVAILABLE = False
 
 from ocr_engine import global_ocr_engine, RAPIDOCR_ENGINE, LOCAL_MATH_ONNX, ENABLE_HEAVY_MODELS
-from llm.key_pool import global_key_pool, call_openrouter_vision, mask_api_key, _split_keys, classify_error_cooldown
+from llm.key_pool import global_key_pool, call_openrouter_vision, mask_api_key, _split_keys, classify_error_cooldown, gemini_vision_enabled
 
 router = APIRouter(prefix="/api/v1/canvas", tags=["Canvas & Magic Lasso"])
 
@@ -604,9 +604,11 @@ def classify_with_vision_llm(
     openrouter_key: Optional[str] = None,
     subject_lock: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
-    gemini_keys = global_key_pool.get_ordered_keys("gemini", extra_key=api_key)
+    # Vision chỉ qua OpenRouter (mặc định); Gemini/OpenAI trực tiếp chỉ khi VISION_PROVIDER=auto|gemini
+    use_direct = gemini_vision_enabled()
+    gemini_keys = global_key_pool.get_ordered_keys("gemini", extra_key=api_key) if use_direct else []
     openrouter_keys = global_key_pool.get_ordered_keys("openrouter", extra_key=openrouter_key)
-    openai_key = os.getenv("OPENAI_API_KEY")
+    openai_key = os.getenv("OPENAI_API_KEY") if use_direct else None
 
     if not gemini_keys and not openrouter_keys and not openai_key:
         return None

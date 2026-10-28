@@ -2,6 +2,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { setupHiDpiCanvas } from './visualKit';
+import { hudCard, roundRectPath } from '../utils/canvasKit';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { Sparkles, Layers, RotateCw, Eye } from 'lucide-react';
 import { formatCanvasMath } from '../utils/canvasMath';
@@ -92,6 +94,9 @@ export const ChemistryLabEngine: React.FC<Props> = ({
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    const LW = 620; // kích thước logic của canvas; nền được nâng độ phân giải trong setupHiDpiCanvas
+    const LH = 340;
+    setupHiDpiCanvas(canvas, ctx, LW, LH);
 
     let animId: number;
 
@@ -99,25 +104,25 @@ export const ChemistryLabEngine: React.FC<Props> = ({
       timeRef.current += 0.025;
       const t = timeRef.current;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, LW, LH);
 
       // Warm Daylight Technical Graph Paper Background
       ctx.fillStyle = '#FCFBF9';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, LW, LH);
 
       // Precise architectural millimeter grid
       ctx.strokeStyle = '#EFECE6';
       ctx.lineWidth = 1;
-      for (let x = 0; x < canvas.width; x += 20) {
+      for (let x = 0; x < LW; x += 20) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
+        ctx.lineTo(x, LH);
         ctx.stroke();
       }
-      for (let y = 0; y < canvas.height; y += 20) {
+      for (let y = 0; y < LH; y += 20) {
         ctx.beginPath();
         ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
+        ctx.lineTo(LW, y);
         ctx.stroke();
       }
 
@@ -130,8 +135,8 @@ export const ChemistryLabEngine: React.FC<Props> = ({
       // 1. MODE A: 3D MOLECULAR STUDIO (PBR Ball-and-Stick + Pi-Cloud)
       // ==============================================================
       if (isMolecularMode) {
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2 + 10;
+        const cx = LW / 2;
+        const cy = LH / 2 + 10;
 
         // Auto slow rotation if not dragging
         const effectiveRotY = isDraggingRef.current ? rotY : rotY + t * 0.3;
@@ -547,7 +552,7 @@ export const ChemistryLabEngine: React.FC<Props> = ({
         const eLeft = 270;
         const eRight = 595;
         const eTop = 45;
-        const eBottom = canvas.height - 35;
+        const eBottom = LH - 35;
         const eW = eRight - eLeft;
         const eH = eBottom - eTop;
 
@@ -614,7 +619,7 @@ export const ChemistryLabEngine: React.FC<Props> = ({
         // Exothermic ΔH readout
         ctx.fillStyle = '#059669';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText(formatCanvasMath('Tỏa nhiệt: ΔH = -824.2 kJ/mol'), eLeft + 30, canvas.height - 12);
+        ctx.fillText(formatCanvasMath('Tỏa nhiệt: ΔH = -824.2 kJ/mol'), eLeft + 30, LH - 12);
 
       // ==============================================================
       // 3. MODE C: ACID-BASE TITRATION & PH CURVE
@@ -656,13 +661,53 @@ export const ChemistryLabEngine: React.FC<Props> = ({
         const bW = 18;
         const bH = 140;
 
-        ctx.strokeStyle = '#78716C';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(bX, bY, bW, bH);
+        // Burette thủy tinh: thân trong, chất lỏng có bóng và mặt khum, vạch chia mỗi 5 mL
+        const bGlass = ctx.createLinearGradient(bX, 0, bX + bW, 0);
+        bGlass.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        bGlass.addColorStop(0.35, 'rgba(226, 232, 240, 0.35)');
+        bGlass.addColorStop(1, 'rgba(148, 163, 184, 0.45)');
+        roundRectPath(ctx, bX, bY, bW, bH, 4);
+        ctx.fillStyle = bGlass;
+        ctx.fill();
 
         const liquidH = Math.max(5, (1 - Vb / 50) * bH);
-        ctx.fillStyle = 'rgba(37, 99, 235, 0.3)';
-        ctx.fillRect(bX + 2, bY + (bH - liquidH), bW - 4, liquidH);
+        const liqTop = bY + (bH - liquidH);
+        const bLiquid = ctx.createLinearGradient(bX, 0, bX + bW, 0);
+        bLiquid.addColorStop(0, 'rgba(147, 197, 253, 0.9)');
+        bLiquid.addColorStop(0.5, 'rgba(59, 130, 246, 0.6)');
+        bLiquid.addColorStop(1, 'rgba(30, 64, 175, 0.55)');
+        ctx.fillStyle = bLiquid;
+        ctx.fillRect(bX + 2, liqTop, bW - 4, liquidH);
+        ctx.strokeStyle = 'rgba(30, 64, 175, 0.7)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(bX + 2, liqTop);
+        ctx.quadraticCurveTo(bX + bW / 2, liqTop + 3.5, bX + bW - 2, liqTop);
+        ctx.stroke();
+
+        ctx.strokeStyle = '#78716C';
+        ctx.fillStyle = '#57534E';
+        ctx.lineWidth = 1;
+        ctx.font = '9px ui-monospace, monospace';
+        ctx.textAlign = 'right';
+        for (let v = 0; v <= 50; v += 5) {
+          const ty = bY + (v / 50) * bH;
+          const long = v % 10 === 0;
+          ctx.beginPath();
+          ctx.moveTo(bX, ty);
+          ctx.lineTo(bX + (long ? 8 : 5), ty);
+          ctx.stroke();
+          if (long) ctx.fillText(String(v), bX - 4, ty + 3);
+        }
+        ctx.textAlign = 'start';
+        ctx.strokeStyle = '#78716C';
+        ctx.lineWidth = 2;
+        roundRectPath(ctx, bX, bY, bW, bH, 4);
+        ctx.stroke();
+        // Khóa burette
+        ctx.fillStyle = '#A8A29E';
+        ctx.fillRect(bX + bW / 2 - 9, bY + bH + 2, 18, 5);
+        ctx.fillRect(bX + bW / 2 + 5, bY + bH - 1, 10, 3);
 
         // Burette tip
         ctx.beginPath();
@@ -682,6 +727,11 @@ export const ChemistryLabEngine: React.FC<Props> = ({
         const flaskTopY = bY + bH + 55;
         const flaskW = 110;
         const flaskH = 80;
+
+        ctx.fillStyle = 'rgba(20, 20, 19, 0.1)';
+        ctx.beginPath();
+        ctx.ellipse(flaskTopX, flaskTopY + flaskH + 3, flaskW / 2 + 6, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
 
         ctx.beginPath();
         ctx.moveTo(flaskTopX - 16, flaskTopY);
@@ -703,12 +753,26 @@ export const ChemistryLabEngine: React.FC<Props> = ({
         ctx.lineTo(flaskTopX + 25, flaskTopY + 30);
         ctx.closePath();
         ctx.fill();
+        const flaskShade = ctx.createLinearGradient(flaskTopX - flaskW / 2, 0, flaskTopX + flaskW / 2, 0);
+        flaskShade.addColorStop(0.12, 'rgba(255, 255, 255, 0.45)');
+        flaskShade.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+        flaskShade.addColorStop(1, 'rgba(15, 23, 42, 0.14)');
+        ctx.fillStyle = flaskShade;
+        ctx.fill();
+        // vệt sáng trên thành bình
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(flaskTopX - 12, flaskTopY + 6);
+        ctx.lineTo(flaskTopX - 12, flaskTopY + 16);
+        ctx.lineTo(flaskTopX - flaskW / 2 + 12, flaskTopY + flaskH - 12);
+        ctx.stroke();
 
         // Right Panel: Analytical Titration Curve
         const pLeft = 285;
         const pRight = 595;
         const pTop = 45;
-        const pBottom = canvas.height - 35;
+        const pBottom = LH - 35;
         const pW = pRight - pLeft;
         const pH_H = pBottom - pTop;
 
@@ -724,6 +788,34 @@ export const ChemistryLabEngine: React.FC<Props> = ({
         ctx.moveTo(pLeft, pTop);
         ctx.lineTo(pLeft, pBottom);
         ctx.stroke();
+
+        // Dải đổi màu của chỉ thị (pH 8,2–10) và điểm tương đương
+        const yBandTop = pBottom - (10 / 14) * pH_H;
+        const yBandBot = pBottom - (8.2 / 14) * pH_H;
+        ctx.fillStyle = 'rgba(244, 63, 94, 0.1)';
+        ctx.fillRect(pLeft, yBandTop, pW, yBandBot - yBandTop);
+        ctx.font = '9px ui-monospace, monospace';
+        ctx.fillStyle = '#E11D48';
+        ctx.fillText('chỉ thị đổi màu', pRight - 80, yBandTop - 3);
+        const eqX = pLeft + (Veq / 50) * pW;
+        ctx.save();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = 'rgba(217, 119, 6, 0.7)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(eqX, pTop);
+        ctx.lineTo(eqX, pBottom);
+        ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = '#B45309';
+        ctx.fillText(`V tương đương = ${Veq.toFixed(0)} mL`, eqX + 4, pTop + 10);
+        ctx.fillStyle = '#78716C';
+        ctx.textAlign = 'center';
+        for (const xv of [0, 25, 50]) ctx.fillText(`${xv}`, pLeft + (xv / 50) * pW, pBottom + 12);
+        ctx.fillText('V bazơ (mL)', pLeft + pW / 2, pBottom + 24);
+        ctx.textAlign = 'right';
+        for (const yv of [0, 7, 14]) ctx.fillText(`${yv}`, pLeft - 4, pBottom - (yv / 14) * pH_H + 3);
+        ctx.textAlign = 'start';
 
         // Sigmoidal Curve
         ctx.strokeStyle = '#2563EB';
@@ -757,9 +849,15 @@ export const ChemistryLabEngine: React.FC<Props> = ({
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = '#18181B';
-        ctx.font = 'bold 11px monospace';
-        ctx.fillText(formatCanvasMath(`pH hiện tại: ${pH.toFixed(2)} (${indicatorName})`), pLeft + 15, canvas.height - 15);
+        hudCard(
+          ctx,
+          [
+            { text: formatCanvasMath(`pH hiện tại: ${pH.toFixed(2)}`), bold: true, color: pH >= 8.2 ? '#BE123C' : '#1D4ED8' },
+            { text: formatCanvasMath(indicatorName), color: '#57534E' },
+          ],
+          pRight - 176,
+          pBottom - 54,
+        );
 
       // ==============================================================
       // 4. MODE D: CHEMICAL BALANCE SCALE (Bảo toàn khối lượng)
@@ -773,7 +871,7 @@ export const ChemistryLabEngine: React.FC<Props> = ({
         const diff = rightMass - leftMass;
         const tiltAngle = Math.max(-0.25, Math.min(0.25, diff * 0.06));
 
-        const cx = canvas.width / 2;
+        const cx = LW / 2;
         const cy = 175;
 
         // Beam
@@ -819,7 +917,7 @@ export const ChemistryLabEngine: React.FC<Props> = ({
             ? 'Cân bằng hoàn hảo! Định luật Bảo toàn Khối lượng Lomonosov được thỏa mãn'
             : 'Hai vế chưa thăng bằng số nguyên tử Oxi! Đĩa cân đang bị lệch',
           cx,
-          canvas.height - 25
+          LH - 25
         );
         ctx.textAlign = 'start';
       }

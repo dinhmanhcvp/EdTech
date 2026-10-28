@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { setupHiDpiCanvas } from './visualKit';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { Activity, RefreshCw } from 'lucide-react';
 import { formatCanvasMath } from '../utils/canvasMath';
@@ -307,8 +308,9 @@ export const MathPlotEngine: React.FC<Props> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
+    const width = 620; // kích thước logic; nền được nâng độ phân giải trong setupHiDpiCanvas
+    const height = 340;
+    setupHiDpiCanvas(canvas, ctx, width, height);
     const originX = width / 2;
     const originY = height / 2;
     const scale = 36; // 36px = 1 unit

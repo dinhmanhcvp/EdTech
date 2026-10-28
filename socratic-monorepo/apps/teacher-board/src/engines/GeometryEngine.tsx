@@ -4,6 +4,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {SimulationBlueprint, CurriculumLevel} from '@socratic/types';
 import {fmtNum} from '../utils/mathExpr';
 import type {SolidKind} from '../utils/localRouter';
+import {RANGE_CLASS, rangeFill} from './visualKit';
 import {
   Cam,
   FACE_PALETTE,
@@ -1744,7 +1745,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
             {Math.round(uUi * 100)}%
           </span>
         </div>
-        <input data-testid="geo-unfold-slider" type="range" min={0} max={1} step={0.005} value={uUi} onChange={(e) => setUManual(parseFloat(e.target.value))} className="w-full h-1.5 accent-blue-600 cursor-pointer" />
+        <input data-testid="geo-unfold-slider" type="range" min={0} max={1} step={0.005} value={uUi} onChange={(e) => setUManual(parseFloat(e.target.value))} className={`w-full ${RANGE_CLASS}`} style={rangeFill(uUi, 0, 1)} />
       </div>
 
       {/* hàng 4: kích thước + số liệu */}
@@ -1757,7 +1758,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
                 {fmtNum(d.value, 2)}
               </span>
             </span>
-            <input data-testid={`geo-dim-${d.key}`} type="range" min={d.min} max={d.max} step={d.step} value={d.value} onChange={(e) => setDims((p) => ({...p, [d.key]: parseFloat(e.target.value)}))} className="w-full h-1.5 accent-blue-600 cursor-pointer" />
+            <input data-testid={`geo-dim-${d.key}`} type="range" min={d.min} max={d.max} step={d.step} value={d.value} onChange={(e) => setDims((p) => ({...p, [d.key]: parseFloat(e.target.value)}))} className={`w-full ${RANGE_CLASS}`} style={rangeFill(d.value, d.min, d.max)} />
           </label>
         ))}
         {solid.formulas.map((f) => (

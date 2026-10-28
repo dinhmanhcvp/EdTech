@@ -4,7 +4,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {SimulationBlueprint, CurriculumLevel} from '@socratic/types';
 import {fmtNum} from '../utils/mathExpr';
 import {Slider} from './StemModelEngines';
-import {GroundShadow, SphereGrad, VisualDefs, useEased, usePrefersReducedMotion, useUid} from './visualKit';
+import {CHART_BG, GroundShadow, SphereGrad, VisualDefs, useEased, usePrefersReducedMotion, useUid} from './visualKit';
 import {
   along,
   carnotCycle,
@@ -101,7 +101,7 @@ export const GasEngine: React.FC<Props> = ({blueprint}) => {
     <div className="p-4 flex flex-col gap-3" data-testid="gas-engine" data-eta={stats.eta.toFixed(4)} data-wnet={stats.Wnet.toFixed(2)} data-cycle={mode} data-closure={stats.closureError.toExponential(1)}>
       <div className="flex flex-wrap items-center gap-2">
         {([['carnot', 'Carnot'], ['otto', 'Otto'], ['triangle', 'Tam giác (động cơ)'], ['triangleRev', 'Tam giác (ngược)']] as [CycleMode, string][]).map(([k, l]) => (
-          <button key={k} data-testid={`gas-cycle-${k}`} onClick={() => setMode(k)} className={`px-3 py-1.5 rounded-lg border text-xs font-semibold ${mode === k ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-[#DCD9D0]'}`}>{l}</button>
+          <button key={k} data-testid={`gas-cycle-${k}`} onClick={() => setMode(k)} className={`px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border text-xs font-semibold ${mode === k ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-[#DCD9D0]'}`}>{l}</button>
         ))}
         <label className="flex items-center gap-1.5 text-xs ml-auto">Khí
           <select data-testid="gas-type" value={diatomic ? 'di' : 'mono'} onChange={(e) => setDiatomic(e.target.value === 'di')} className="border border-[#DCD9D0] rounded px-1.5 py-1 bg-white">
@@ -109,10 +109,10 @@ export const GasEngine: React.FC<Props> = ({blueprint}) => {
             <option value="di">lưỡng nguyên tử (γ = 7/5)</option>
           </select>
         </label>
-        <button data-testid="gas-play" onClick={() => setPlay((p) => !p)} className="px-3 py-1.5 rounded-lg border border-[#DCD9D0] bg-white text-xs">{play ? '⏸ Dừng' : '▶ Chạy'}</button>
+        <button data-testid="gas-play" onClick={() => setPlay((p) => !p)} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">{play ? '⏸ Dừng' : '▶ Chạy'}</button>
       </div>
       <div className="grid md:grid-cols-[2fr_3fr] gap-3">
-        <svg viewBox="0 0 220 230" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="gas-cylinder">
+        <svg viewBox="0 0 220 230" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="gas-cylinder">
           <defs>
             <VisualDefs id={uid} />
             <SphereGrad id={`${uid}-cold`} light="#BFDBFE" base="#2563EB" dark="#1E3A8A" />
@@ -135,7 +135,7 @@ export const GasEngine: React.FC<Props> = ({blueprint}) => {
           <rect x="44" y={205 - gasH - 10} width="132" height="2.5" rx="1.2" fill="#fff" opacity="0.5" pointerEvents="none" />
           <text x="6" y="226" fontSize="10" fill="#57534E">T = {fmtNum(cur.T, 4)} K · V = {fmtNum(cur.V, 3)} L</text>
         </svg>
-        <svg viewBox="0 0 370 232" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="gas-pv">
+        <svg viewBox="0 0 370 232" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="gas-pv">
           <line x1="44" y1="200" x2="350" y2="200" stroke="#57534E" />
           <line x1="44" y1="200" x2="44" y2="12" stroke="#57534E" />
           <text x="340" y="216" fontSize="10" fill="#57534E">V (L)</text>
@@ -290,7 +290,7 @@ export const DoublePendulumEngine: React.FC<Props> = () => {
           {rod(pa, '#38BDF8', 0.95, 'bobA')}
           <circle cx={X(0)} cy={Y(0)} r="5" fill="#E2E8F0" stroke="#64748B" strokeWidth="1.5" />
         </svg>
-        <svg viewBox="0 0 280 160" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="dp-chart">
+        <svg viewBox="0 0 280 160" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="dp-chart">
           <text x="8" y="12" fontSize="10" fill="#78716C">Khoảng cách giữa hai quả nặng cuối (m)</text>
           <line x1="14" y1="140" x2="270" y2="140" stroke="#57534E" />
           <polyline points={S.sep.map(([t, d]) => `${(14 + (t / tMax) * 256).toFixed(1)},${(140 - (d / sepMax) * 110).toFixed(1)}`).join(' ')} fill="none" stroke="#E11D48" strokeWidth="2" />
@@ -299,10 +299,10 @@ export const DoublePendulumEngine: React.FC<Props> = () => {
       </div>
       <div className={`${card} flex flex-col gap-2`}>
         <div className="flex gap-2 flex-wrap">
-          <button data-testid="dp-run" onClick={() => setRunning((r) => !r)} className="px-3 py-1.5 rounded-lg border border-[#DCD9D0] bg-white text-xs">{running ? '⏸ Dừng' : '▶ Chạy'}</button>
-          <button data-testid="dp-reset" onClick={reset} className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold">Thả lại</button>
-          <button data-testid="dp-small" onClick={() => { setA1(10); setA2(8); }} className="px-3 py-1.5 rounded-lg border border-[#DCD9D0] bg-white text-xs">Biên độ nhỏ (10°, 8°)</button>
-          <button data-testid="dp-large" onClick={() => { setA1(150); setA2(120); }} className="px-3 py-1.5 rounded-lg border border-[#DCD9D0] bg-white text-xs">Biên độ lớn (150°, 120°)</button>
+          <button data-testid="dp-run" onClick={() => setRunning((r) => !r)} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">{running ? '⏸ Dừng' : '▶ Chạy'}</button>
+          <button data-testid="dp-reset" onClick={reset} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-blue-600 text-white text-xs font-semibold">Thả lại</button>
+          <button data-testid="dp-small" onClick={() => { setA1(10); setA2(8); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">Biên độ nhỏ (10°, 8°)</button>
+          <button data-testid="dp-large" onClick={() => { setA1(150); setA2(120); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">Biên độ lớn (150°, 120°)</button>
         </div>
         <Slider testid="dp-a1" label="Góc thả θ₁" value={a1} min={0} max={180} step={1} onChange={setA1} fmt={(v) => `${v}°`} />
         <Slider testid="dp-a2" label="Góc thả θ₂" value={a2} min={0} max={180} step={1} onChange={setA2} fmt={(v) => `${v}°`} />
@@ -365,13 +365,13 @@ export const CoriolisEngine: React.FC<Props> = () => {
     <div className="p-4 flex flex-col gap-3" data-testid="coriolis-engine" data-frame={frame} data-deflection={dev.toFixed(2)} data-acor={path.aCor.toFixed(3)}>
       <div className="flex flex-wrap items-center gap-2">
         {([['rot', 'Hệ quy chiếu quay (trên đĩa)'], ['in', 'Hệ quán tính (bên ngoài)']] as ['rot' | 'in', string][]).map(([k, l]) => (
-          <button key={k} data-testid={`cor-frame-${k}`} onClick={() => setFrame(k)} className={`px-3 py-1.5 rounded-lg border text-xs font-semibold ${frame === k ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-[#DCD9D0]'}`}>{l}</button>
+          <button key={k} data-testid={`cor-frame-${k}`} onClick={() => setFrame(k)} className={`px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border text-xs font-semibold ${frame === k ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-[#DCD9D0]'}`}>{l}</button>
         ))}
         <span data-testid="cor-text" className="ml-auto text-xs font-semibold text-stone-800">
           {frame === 'rot' ? `Quỹ đạo cong: lệch ${fmtNum(Math.abs(dev), 3)}° ${omega > 0 ? 'sang phải' : omega < 0 ? 'sang trái' : '(không lệch)'}` : 'Vật chuyển động thẳng đều; chỉ có đĩa quay bên dưới'}
         </span>
       </div>
-      <svg viewBox="0 0 400 300" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="cor-svg">
+      <svg viewBox="0 0 400 300" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="cor-svg">
         <g transform={`rotate(${(-diskAngle * 180) / Math.PI} ${cx} ${cy})`}>
           <circle cx={cx} cy={cy} r={R * sc} fill={`url(#${uid}-disk)`} stroke="#0369A1" strokeWidth="3" />
           {Array.from({length: 12}, (_, i) => {
@@ -450,7 +450,7 @@ export const FraunhoferEngine: React.FC<Props> = ({blueprint}) => {
         <span className="font-mono text-sm font-bold text-stone-900">I(θ) = I₀ (sin β / β)² (sin Nγ / N sin γ)²</span>
         <span className="ml-auto text-xs text-stone-600">β = πb sinθ/λ · γ = πd sinθ/λ</span>
       </div>
-      <svg viewBox={`0 0 ${W} 240`} className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="fraunhofer-chart">
+      <svg viewBox={`0 0 ${W} 240`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="fraunhofer-chart">
         <defs>
           <linearGradient id={`${uid}-area`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor={color === '#000000' ? '#2563EB' : color} stopOpacity="0.35" />

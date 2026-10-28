@@ -2,7 +2,7 @@ import React from 'react';
 import {afterEach, describe, expect, it, vi} from 'vitest';
 import {act, render, screen} from '@testing-library/react';
 import type {SimulationBlueprint} from '@socratic/types';
-import {useEased} from '../engines/visualKit';
+import {rangeFill, setupHiDpiCanvas, useEased} from '../engines/visualKit';
 import {LeChatelierEngine, DaniellEngine} from '../engines/ChemEngines';
 import {GasEngine, DoublePendulumEngine, CoriolisEngine, FraunhoferEngine} from '../engines/PhysEngines';
 import {StomataEngine, OsmosisEngine, OperonLacEngine, BoxplotEngine} from '../engines/MoreStemEngines';
@@ -103,5 +103,35 @@ describe('mọi engine lý/hóa/sinh đã nâng cấp tôn trọng giảm chuy�
     dp.unmount();
     const gas = render(<GasEngine blueprint={bp} />);
     expect(gas.getByTestId('gas-play').textContent).toContain('Chạy');
+  });
+});
+
+describe('thanh trượt và canvas sắc nét dùng chung', () => {
+  it('rangeFill: tô rãnh đến đúng phần trăm, kẹp trong 0–100', () => {
+    expect(rangeFill(5, 0, 10).background).toContain('50%');
+    expect(rangeFill(-3, 0, 10).background).toContain('0%');
+    expect(rangeFill(99, 0, 10).background).toContain('100%');
+    expect(rangeFill(1, 5, 5).background).toContain('0%'); // min = max không chia cho 0
+  });
+
+  it('setupHiDpiCanvas: nâng độ phân giải nền theo kích thước hiển thị × DPR (tối đa ×3), giữ tọa độ logic', () => {
+    const setTransform = vi.fn();
+    const canvas = {width: 620, height: 340, clientWidth: 1240} as unknown as HTMLCanvasElement;
+    const prev = window.devicePixelRatio;
+    Object.defineProperty(window, 'devicePixelRatio', {value: 2, configurable: true});
+    setupHiDpiCanvas(canvas, {setTransform} as unknown as CanvasRenderingContext2D, 620, 340);
+    expect(canvas.width).toBe(1860); // 2 × 2 = ×4 bị chặn ở ×3
+    expect(canvas.height).toBe(1020);
+    expect(setTransform).toHaveBeenCalledWith(3, 0, 0, 3, 0, 0);
+    Object.defineProperty(window, 'devicePixelRatio', {value: prev, configurable: true});
+  });
+
+  it('setupHiDpiCanvas: màn nhỏ DPR 1 giữ nguyên 620×340 (không tốn bộ nhớ vô ích)', () => {
+    const canvas = {width: 620, height: 340, clientWidth: 620} as unknown as HTMLCanvasElement;
+    const prev = window.devicePixelRatio;
+    Object.defineProperty(window, 'devicePixelRatio', {value: 1, configurable: true});
+    setupHiDpiCanvas(canvas, {setTransform: vi.fn()} as unknown as CanvasRenderingContext2D, 620, 340);
+    expect(canvas.width).toBe(620);
+    Object.defineProperty(window, 'devicePixelRatio', {value: prev, configurable: true});
   });
 });

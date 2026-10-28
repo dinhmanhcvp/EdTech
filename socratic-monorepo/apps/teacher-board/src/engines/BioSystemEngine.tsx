@@ -2,6 +2,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { setupHiDpiCanvas } from './visualKit';
+import { hudCard } from '../utils/canvasKit';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { Dna, Leaf, Heart, GitBranch, Rotate3d } from 'lucide-react';
 import { formatCanvasMath } from '../utils/canvasMath';
@@ -103,6 +105,9 @@ export const BioSystemEngine: React.FC<Props> = ({
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    const LW = 620; // kích thước logic của canvas; nền được nâng độ phân giải trong setupHiDpiCanvas
+    const LH = 340;
+    setupHiDpiCanvas(canvas, ctx, LW, LH);
 
     let animId: number;
 
@@ -110,25 +115,25 @@ export const BioSystemEngine: React.FC<Props> = ({
       tickRef.current += 0.025;
       const t = tickRef.current;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, LW, LH);
 
       // Editorial Warm Paper Background
       ctx.fillStyle = '#FCFBF9';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, LW, LH);
 
       // Fine architectural millimeter grid
       ctx.strokeStyle = '#EFECE6';
       ctx.lineWidth = 1;
-      for (let x = 0; x < canvas.width; x += 20) {
+      for (let x = 0; x < LW; x += 20) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
+        ctx.lineTo(x, LH);
         ctx.stroke();
       }
-      for (let y = 0; y < canvas.height; y += 20) {
+      for (let y = 0; y < LH; y += 20) {
         ctx.beginPath();
         ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
+        ctx.lineTo(LW, y);
         ctx.stroke();
       }
 
@@ -411,7 +416,7 @@ export const BioSystemEngine: React.FC<Props> = ({
         ctx.fillText('Kéo chuột để xoay 360° | Thanh trượt tháo xoắn Helicase', 18, 40);
 
         // Nucleotide Legend (Top-right chips)
-        const legX = canvas.width - 205;
+        const legX = LW - 205;
         ctx.fillStyle = '#FFFFFF';
         ctx.strokeStyle = '#E6E4DD';
         ctx.lineWidth = 1;
@@ -446,13 +451,13 @@ export const BioSystemEngine: React.FC<Props> = ({
         ctx.fillStyle = '#FFFFFF';
         ctx.strokeStyle = '#E6E4DD';
         ctx.beginPath();
-        ctx.roundRect(18, canvas.height - 48, 270, 36, 8);
+        ctx.roundRect(18, LH - 48, 270, 36, 8);
         ctx.fill();
         ctx.stroke();
 
         ctx.fillStyle = '#0F172A';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText(`TIẾN ĐỘ THÁO XOẮN: ${(unzipProgress * 100).toFixed(0)}%`, 26, canvas.height - 32);
+        ctx.fillText(`TIẾN ĐỘ THÁO XOẮN: ${(unzipProgress * 100).toFixed(0)}%`, 26, LH - 32);
         ctx.fillStyle = unzipProgress > 0 ? '#059669' : '#57534E';
         ctx.font = '9px sans-serif';
         ctx.fillText(
@@ -460,7 +465,7 @@ export const BioSystemEngine: React.FC<Props> = ({
             ? 'Đang tổng hợp mạch sớm (Leading) & đoạn Okazaki (Lagging)'
             : 'Enzyme Helicase chưa tách mạch kép',
           26,
-          canvas.height - 18
+          LH - 18
         );
 
       // =========================================================================
@@ -484,7 +489,7 @@ export const BioSystemEngine: React.FC<Props> = ({
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(splitX, 10);
-        ctx.lineTo(splitX, canvas.height - 10);
+        ctx.lineTo(splitX, LH - 10);
         ctx.stroke();
 
         // ----------------- LEFT PANEL: LEAF CROSS SECTION -----------------
@@ -691,7 +696,7 @@ export const BioSystemEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#57534E';
         ctx.font = '10px monospace';
-        ctx.fillText('Nhiệt độ T (°C)', gRight - 75, gBottom + 16);
+        ctx.fillText('Nhiệt độ T (°C)', gRight - 75, gBottom + 27); // dưới hàng số 0°/15°/30° để không đè lên
         ctx.fillText('Hiệu suất (%)', gLeft + 6, gTop - 6);
 
         // Temperature tick marks: 0, 15, 30 (peak), 45, 60
@@ -753,12 +758,15 @@ export const BioSystemEngine: React.FC<Props> = ({
         ctx.stroke();
 
         // Rate Badge
-        ctx.fillStyle = '#18181B';
-        ctx.font = 'bold 12px monospace';
-        ctx.fillText(`CƯỜNG ĐỘ QUANG HỢP: ${photosynthesisRate}%`, 16, canvas.height - 22);
-        ctx.fillStyle = '#57534E';
-        ctx.font = '10px monospace';
-        ctx.fillText(`T = ${temp}°C (Tối ưu: 30°C) | Ánh sáng = ${light}%`, 16, canvas.height - 8);
+        hudCard(
+          ctx,
+          [
+            { text: `CƯỜNG ĐỘ QUANG HỢP: ${photosynthesisRate}%`, bold: true, color: '#0F172A' },
+            { text: `T = ${temp}°C (Tối ưu: 30°C) | Ánh sáng = ${light}%`, color: '#57534E' },
+          ],
+          12,
+          LH - 52,
+        );
 
       // =========================================================================
       // MODE 3: CARDIAC WIGGERS CYCLE & 3D PULSE
@@ -781,7 +789,7 @@ export const BioSystemEngine: React.FC<Props> = ({
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(280, 10);
-        ctx.lineTo(280, canvas.height - 10);
+        ctx.lineTo(280, LH - 10);
         ctx.stroke();
 
         ctx.fillStyle = '#E11D48';
@@ -826,10 +834,10 @@ export const BioSystemEngine: React.FC<Props> = ({
         // Cardiac state readout
         ctx.fillStyle = '#0F172A';
         ctx.font = 'bold 11px monospace';
-        ctx.fillText(isSystole ? 'PHA TÂM THU (SYSTOLE)' : 'PHA TÂM TRƯƠNG (DIASTOLE)', 16, canvas.height - 35);
+        ctx.fillText(isSystole ? 'PHA TÂM THU (SYSTOLE)' : 'PHA TÂM TRƯƠNG (DIASTOLE)', 16, LH - 35);
         ctx.fillStyle = '#57534E';
         ctx.font = '10px monospace';
-        ctx.fillText(`Nhịp tim: ${bpm} BPM (T = ${period.toFixed(2)}s)`, 16, canvas.height - 20);
+        ctx.fillText(`Nhịp tim: ${bpm} BPM (T = ${period.toFixed(2)}s)`, 16, LH - 20);
 
         // Right Panel: Live Wiggers Pressure Graph & ECG
         const wLeft = 300;
@@ -910,7 +918,7 @@ export const BioSystemEngine: React.FC<Props> = ({
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(divX, 10);
-        ctx.lineTo(divX, canvas.height - 10);
+        ctx.lineTo(divX, LH - 10);
         ctx.stroke();
 
         ctx.fillStyle = '#059669';
@@ -937,15 +945,15 @@ export const BioSystemEngine: React.FC<Props> = ({
 
         ctx.fillStyle = '#18181B';
         ctx.font = '10px monospace';
-        ctx.fillText(formatCanvasMath(`Alen A (p): ${pAllel.toFixed(2)} | Alen a (q): ${qAllel.toFixed(2)}`), 16, canvas.height - 40);
+        ctx.fillText(formatCanvasMath(`Alen A (p): ${pAllel.toFixed(2)} | Alen a (q): ${qAllel.toFixed(2)}`), 16, LH - 40);
         ctx.fillStyle = '#57534E';
-        ctx.fillText(formatCanvasMath(`AA: ${p2.toFixed(2)} | Aa: ${twoPq.toFixed(2)} | aa: ${q2.toFixed(2)}`), 16, canvas.height - 22);
+        ctx.fillText(formatCanvasMath(`AA: ${p2.toFixed(2)} | Aa: ${twoPq.toFixed(2)} | aa: ${q2.toFixed(2)}`), 16, LH - 22);
 
         // Right Panel: 50 Generations Analytical Trajectory Graph
         const gLeft = 285;
         const gRight = 595;
         const gTop = 45;
-        const gBottom = canvas.height - 35;
+        const gBottom = LH - 35;
         const gW = gRight - gLeft;
         const gH = gBottom - gTop;
 
@@ -1027,7 +1035,7 @@ export const BioSystemEngine: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => setActiveMode('DNA_HELIX')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+            className={`flex items-center gap-1 px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-medium transition active:scale-[0.97] cursor-pointer ${
               currentMode === 'DNA_HELIX'
                 ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm font-semibold'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
@@ -1040,7 +1048,7 @@ export const BioSystemEngine: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => setActiveMode('LEAF_ANATOMY')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+            className={`flex items-center gap-1 px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-medium transition active:scale-[0.97] cursor-pointer ${
               currentMode === 'LEAF_ANATOMY'
                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm font-semibold'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
@@ -1053,7 +1061,7 @@ export const BioSystemEngine: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => setActiveMode('HEART_WIGGERS')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+            className={`flex items-center gap-1 px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-medium transition active:scale-[0.97] cursor-pointer ${
               currentMode === 'HEART_WIGGERS'
                 ? 'bg-rose-50 text-rose-700 border border-rose-200 shadow-sm font-semibold'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
@@ -1066,7 +1074,7 @@ export const BioSystemEngine: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => setActiveMode('POPULATION_GENETICS')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+            className={`flex items-center gap-1 px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-medium transition active:scale-[0.97] cursor-pointer ${
               currentMode === 'POPULATION_GENETICS'
                 ? 'bg-purple-50 text-purple-700 border border-purple-200 shadow-sm font-semibold'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'

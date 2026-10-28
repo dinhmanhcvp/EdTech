@@ -4,7 +4,7 @@ import React, {useMemo, useState} from 'react';
 import {SimulationBlueprint, CurriculumLevel} from '@socratic/types';
 import {fmtNum} from '../utils/mathExpr';
 import {Slider} from './StemModelEngines';
-import {SphereGrad, VisualDefs, useEased, usePrefersReducedMotion, useUid} from './visualKit';
+import {CHART_BG, CurvePath, SphereGrad, VisualDefs, useEased, usePrefersReducedMotion, useUid} from './visualKit';
 import {stomata, osmosis, operonLac, type CellType, type LacMutant} from '../utils/bioModels';
 import {
   boxStatsFromData,
@@ -24,7 +24,7 @@ interface Props {
 }
 
 const card = 'rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3';
-const chip = (on: boolean, color = '#2563EB') => `px-3 py-1.5 rounded-lg border text-xs font-semibold transition cursor-pointer ${on ? 'text-white' : 'bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50'}` + (on ? '' : '') ;
+const chip = (on: boolean, color = '#2563EB') => `px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border text-xs font-semibold transition cursor-pointer ${on ? 'text-white' : 'bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50'}` + (on ? '' : '') ;
 void chip;
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
@@ -224,7 +224,7 @@ export const OsmosisEngine: React.FC<Props> = ({blueprint}) => {
           })}
           <text x="10" y="252" fontSize="11" fill={flowCol} fontWeight="700">{r.waterFlow === 'in' ? 'Nước đi vào tế bào' : r.waterFlow === 'out' ? 'Nước đi ra khỏi tế bào' : 'Không có dòng nước thực'}</text>
         </svg>
-        <svg viewBox="0 0 290 160" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="osmosis-chart">
+        <svg viewBox="0 0 290 160" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="osmosis-chart">
           <text x="8" y="12" fontSize="10" fill="#78716C">Thể tích tương đối theo nồng độ NaCl ngoài (%)</text>
           <line x1="28" y1="130" x2="270" y2="130" stroke="#57534E" />
           <line x1="28" y1="14" x2="28" y2="130" stroke="#57534E" />
@@ -236,7 +236,7 @@ export const OsmosisEngine: React.FC<Props> = ({blueprint}) => {
           ))}
           <line x1={gx(0.9)} y1="14" x2={gx(0.9)} y2="130" stroke="#10B981" strokeDasharray="3 3" />
           <text x={gx(0.9) + 3} y="26" fontSize="9" fill="#047857">đẳng trương</text>
-          <path d={curve.map((p, i) => `${i ? 'L' : 'M'}${gx(p.c).toFixed(1)},${gy(Math.min(p.v, vmax)).toFixed(1)}`).join(' ')} fill="none" stroke="#2563EB" strokeWidth="2.2" />
+          <CurvePath d={curve.map((p, i) => `${i ? 'L' : 'M'}${gx(p.c).toFixed(1)},${gy(Math.min(p.v, vmax)).toFixed(1)}`).join(' ')} color="#2563EB" />
           <circle cx={gx(Math.min(c, 6))} cy={gy(Math.min(r.volume, vmax))} r="5" fill="#E11D48" />
         </svg>
       </div>
@@ -244,7 +244,7 @@ export const OsmosisEngine: React.FC<Props> = ({blueprint}) => {
         <div className="flex items-center gap-2 text-xs">
           <span className="w-28 shrink-0 font-medium text-stone-700">Loại tế bào</span>
           {(['plant', 'rbc'] as CellType[]).map((t) => (
-            <button key={t} data-testid={`osmosis-type-${t}`} onClick={() => setType(t)} className={`px-3 py-1.5 rounded-lg border text-xs font-semibold ${type === t ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50'}`}>
+            <button key={t} data-testid={`osmosis-type-${t}`} onClick={() => setType(t)} className={`px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border text-xs font-semibold ${type === t ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50'}`}>
               {t === 'plant' ? 'Thực vật' : 'Hồng cầu'}
             </button>
           ))}
@@ -305,7 +305,7 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
           </select>
         </label>
       </div>
-      <svg viewBox="0 0 600 300" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="lac-svg">
+      <svg viewBox="0 0 600 300" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="lac-svg">
         <defs>
           <VisualDefs id={uid} />
           <SphereGrad id={`${uid}-pol`} light="#BFDBFE" base="#2563EB" dark="#1E3A8A" />
@@ -454,7 +454,7 @@ export const BoxplotEngine: React.FC<Props> = ({blueprint}) => {
           {stats.outliers.length ? `Có ${stats.outliers.length} giá trị ngoại lai` : 'Không có giá trị ngoại lai'}
         </span>
       </div>
-      <svg viewBox={`0 0 ${W} 190`} className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="boxplot-svg">
+      <svg viewBox={`0 0 ${W} 190`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="boxplot-svg">
         {ticks(x0, x1).map((t) => (
           <g key={t}>
             <line x1={sx(t)} y1="20" x2={sx(t)} y2="150" stroke="#EFECE6" />
@@ -492,7 +492,7 @@ export const BoxplotEngine: React.FC<Props> = ({blueprint}) => {
           {!summary && (
             <div className="flex items-center gap-2">
               <input data-testid="boxplot-input" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addValue()} placeholder="Thêm giá trị" className="flex-1 px-2.5 py-1.5 rounded-lg border border-[#DCD9D0] text-xs bg-white" />
-              <button data-testid="boxplot-add" onClick={addValue} className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold">Thêm</button>
+              <button data-testid="boxplot-add" onClick={addValue} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-blue-600 text-white text-xs font-semibold">Thêm</button>
             </div>
           )}
           {!summary && (
@@ -600,13 +600,13 @@ export const VariationTableEngine: React.FC<Props> = ({blueprint}) => {
         </table>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <button data-testid="vt-add" onClick={addPoint} className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold">+ Thêm cực trị</button>
-        <button data-testid="vt-remove" onClick={() => table.points.length > 1 && setTable({...table, points: table.points.slice(0, -1)})} disabled={table.points.length <= 1} className="px-3 py-1.5 rounded-lg border border-[#DCD9D0] bg-white text-xs disabled:opacity-40">− Bớt điểm cuối</button>
-        <button data-testid="vt-flip" onClick={() => setTable({...table, leftDir: table.leftDir === 'up' ? 'down' : 'up'})} className="px-3 py-1.5 rounded-lg border border-[#DCD9D0] bg-white text-xs">Đổi chiều biến thiên đầu: {table.leftDir === 'up' ? '↗ đồng biến' : '↘ nghịch biến'}</button>
+        <button data-testid="vt-add" onClick={addPoint} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-blue-600 text-white text-xs font-semibold">+ Thêm cực trị</button>
+        <button data-testid="vt-remove" onClick={() => table.points.length > 1 && setTable({...table, points: table.points.slice(0, -1)})} disabled={table.points.length <= 1} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs disabled:opacity-40">− Bớt điểm cuối</button>
+        <button data-testid="vt-flip" onClick={() => setTable({...table, leftDir: table.leftDir === 'up' ? 'down' : 'up'})} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">Đổi chiều biến thiên đầu: {table.leftDir === 'up' ? '↗ đồng biến' : '↘ nghịch biến'}</button>
         {err && <span data-testid="vt-error" className="text-xs text-rose-700">{err}</span>}
       </div>
       {f && (
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="variation-graph">
+        <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="variation-graph">
           {ticks(xMin, xMax, 10).map((t) => (
             <g key={`x${t}`}>
               <line x1={sx(t)} y1="8" x2={sx(t)} y2={H - 24} stroke={t === 0 ? '#57534E' : '#EFECE6'} strokeWidth={t === 0 ? 1.5 : 1} />

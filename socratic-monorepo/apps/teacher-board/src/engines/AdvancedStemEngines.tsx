@@ -3,7 +3,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { SimulationBlueprint } from "@socratic/types";
 import { fmtNum } from "../utils/mathExpr";
-import { usePrefersReducedMotion } from "./visualKit";
+import { CurvePath, RANGE_CLASS, rangeFill, usePrefersReducedMotion } from "./visualKit";
 import {
   add3,
   mul3,
@@ -36,7 +36,7 @@ interface Props {
   blueprint: SimulationBlueprint;
 }
 const button =
-  "min-h-[44px] px-3 py-2 rounded-lg border border-stone-300 bg-white text-sm text-stone-800 hover:bg-blue-50";
+  "min-h-[44px] px-3 py-2 rounded-lg border border-stone-300 bg-white text-sm text-stone-800 shadow-sm transition-colors hover:bg-blue-50 aria-pressed:border-blue-600 aria-pressed:bg-blue-600 aria-pressed:text-white aria-pressed:shadow-md";
 const panel = "rounded-xl border border-stone-200 bg-stone-50 p-3";
 const num = (value: unknown, fallback: number, min: number, max: number) =>
   typeof value === "number" && Number.isFinite(value)
@@ -63,7 +63,8 @@ const Control: React.FC<{
       step={step}
       value={value}
       onChange={(e) => set(Number(e.target.value))}
-      className="flex-1 min-w-20 h-8 accent-blue-600"
+      className={`flex-1 min-w-20 ${RANGE_CLASS}`}
+      style={rangeFill(value, min, max)}
     />
     <output className="w-16 text-right font-mono text-blue-700">
       {F(value)}
@@ -118,7 +119,7 @@ const Scene: React.FC<{
         role="img"
         aria-label={label}
         viewBox="0 0 520 300"
-        className="w-full rounded-xl border border-stone-200/50 bg-white/95 dark:bg-stone-900/90 shadow-sm"
+        className="w-full rounded-xl border border-stone-200/60 bg-[radial-gradient(ellipse_at_50%_35%,#ffffff_0%,#f5f5f4_62%,#e7e5e4_100%)] shadow-sm"
         style={{ touchAction: "none" }}
         onPointerDown={(e) => {
           if (drag.current || e.button !== 0) return;
@@ -151,6 +152,7 @@ const Scene: React.FC<{
             <stop offset="1" stopColor="#172554" />
           </radialGradient>
         </defs>
+        <ellipse cx="260" cy="278" rx="150" ry="11" fill="#292524" opacity="0.07" />
         {children(project, id)}
       </svg>
       <div className="flex items-center justify-between gap-2 text-xs text-stone-500">
@@ -180,7 +182,8 @@ const line3 = (
       x2={v[0]}
       y2={v[1]}
       stroke={color}
-      strokeWidth="2"
+      strokeWidth="2.2"
+      strokeLinecap="round"
       strokeDasharray={dash}
     />
   );
@@ -784,7 +787,7 @@ export const DynamicGeometryEngine: React.FC<Props> = ({ blueprint }) => {
         role="img"
         aria-label="Tam giác kéo đỉnh, đường Euler, đối cực và nghịch đảo"
         viewBox="0 0 520 320"
-        className="w-full rounded-xl border border-stone-200/50 bg-white/95 dark:bg-stone-900/90 shadow-sm"
+        className="w-full rounded-xl border border-stone-200/60 bg-[radial-gradient(ellipse_at_50%_35%,#ffffff_0%,#f5f5f4_62%,#e7e5e4_100%)] shadow-sm"
         style={{ touchAction: "none" }}
         onPointerMove={(e) => {
           const d = drag.current;
@@ -1659,7 +1662,7 @@ export const Sn2Engine: React.FC<Props> = () => {
         role="img"
         aria-label="Giản đồ năng lượng phản ứng một trạng thái chuyển tiếp"
         viewBox="0 0 520 155"
-        className="w-full rounded-xl border border-stone-200/50 bg-white/95 dark:bg-stone-900/90 shadow-sm"
+        className="w-full rounded-xl border border-stone-200/60 bg-[radial-gradient(ellipse_at_50%_35%,#ffffff_0%,#f5f5f4_62%,#e7e5e4_100%)] shadow-sm"
       >
         <line x1="35" y1="125" x2="490" y2="125" stroke="#78716C" />
         <path
@@ -1813,7 +1816,7 @@ export const CyclohexaneEngine: React.FC<Props> = ({ blueprint }) => {
         role="img"
         aria-label="Mô hình cấu dạng cyclohexane với liên kết trục và xích đạo"
         viewBox="0 0 520 280"
-        className="w-full rounded-xl border border-stone-200 bg-white select-none"
+        className="w-full rounded-xl border border-stone-200 bg-gradient-to-b from-white to-[#FAF9F6] select-none"
       >
         <defs>
           <radialGradient id="carbonGrad" cx="35%" cy="35%" r="65%">
@@ -2135,7 +2138,7 @@ export const CellRespirationEngine: React.FC<Props> = ({ blueprint }) => {
         role="img"
         aria-label="Sơ đồ chuỗi truyền electron ti thể, gradient proton H+ và ATP Synthase"
         viewBox="0 0 520 280"
-        className="w-full rounded-xl border border-stone-200 bg-white select-none"
+        className="w-full rounded-xl border border-stone-200 bg-gradient-to-b from-white to-[#FAF9F6] select-none"
       >
         <defs>
           <linearGradient id="imsGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2613,7 +2616,7 @@ export const LotkaVolterraEngine: React.FC<Props> = ({ blueprint }) => {
         role="img"
         aria-label="Đồ thị thời gian và chân dung mặt phẳng pha Lotka-Volterra"
         viewBox="0 0 520 280"
-        className="w-full rounded-xl border border-stone-200 bg-white select-none"
+        className="w-full rounded-xl border border-stone-200 bg-gradient-to-b from-white to-[#FAF9F6] select-none"
       >
         {viewMode !== "phase" && (
           <g>
@@ -2639,23 +2642,21 @@ export const LotkaVolterraEngine: React.FC<Props> = ({ blueprint }) => {
             </text>
 
             {/* Đường con mồi (Màu xanh lục) */}
-            <polyline
-              points={res.timeline
+            <CurvePath
+              d={"M" + res.timeline
                 .map((d) => `${tToX(d.t)},${valToY(d.prey)}`)
-                .join(" ")}
-              fill="none"
-              stroke="#10B981"
-              strokeWidth="2.5"
+                .join(" L")}
+              color="#10B981"
+              width={2.5}
             />
 
             {/* Đường thú săn (Màu đỏ cam) */}
-            <polyline
-              points={res.timeline
+            <CurvePath
+              d={"M" + res.timeline
                 .map((d) => `${tToX(d.t)},${valToY(d.predator)}`)
-                .join(" ")}
-              fill="none"
-              stroke="#EF4444"
-              strokeWidth="2.5"
+                .join(" L")}
+              color="#EF4444"
+              width={2.5}
             />
 
             <g transform="translate(45, 30)">
@@ -2945,7 +2946,7 @@ export const CellSignalingEngine: React.FC<Props> = ({ blueprint }) => {
         role="img"
         aria-label="Sơ đồ con đường truyền tin qua thụ thể GPCR, G-protein, cAMP và thụ thể chết Fas"
         viewBox="0 0 520 280"
-        className="w-full rounded-xl border border-stone-200 bg-white select-none"
+        className="w-full rounded-xl border border-stone-200 bg-gradient-to-b from-white to-[#FAF9F6] select-none"
       >
         <defs>
           <linearGradient id="cytoGrad" x1="0" y1="0" x2="0" y2="1">

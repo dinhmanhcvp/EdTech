@@ -116,3 +116,49 @@ export const VisualDefs: React.FC<{id: string}> = ({id}) => (
 export const GroundShadow: React.FC<{id: string; cx: number; cy: number; rx: number; ry?: number; opacity?: number}> = ({id, cx, cy, rx, ry = 6, opacity = 0.16}) => (
   <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="#292524" opacity={opacity} filter={`url(#${id}-soft)`} pointerEvents="none" />
 );
+
+// ------------------------------------------------------------------ thanh trượt dùng chung
+/** Lớp Tailwind cho thanh trượt: rãnh đậm dần theo giá trị (dùng kèm `rangeFill`), núm tròn lớn dễ chạm trên bảng. */
+export const RANGE_CLASS =
+  'appearance-none h-2 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ' +
+  '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:rounded-full ' +
+  '[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:shadow-md ' +
+  '[&::-webkit-slider-thumb]:transition-transform active:[&::-webkit-slider-thumb]:scale-110 ' +
+  '[&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white ' +
+  '[&::-moz-range-thumb]:border-[3px] [&::-moz-range-thumb]:border-solid [&::-moz-range-thumb]:border-blue-600 [&::-moz-range-thumb]:shadow-md';
+
+export const rangeFill = (value: number, min: number, max: number, color = '#2563EB'): React.CSSProperties => {
+  const p = max > min ? Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100)) : 0;
+  return {background: `linear-gradient(to right, ${color} ${p}%, #E7E5E4 ${p}%)`};
+};
+
+// ------------------------------------------------------------------ đường cong biểu đồ
+/** Đường cong có quầng mờ phía dưới và đầu nét tròn: nhìn "mềm" hơn nét đơn 2 px, vẫn đọc được số liệu. */
+export const CurvePath: React.FC<{d: string; color: string; width?: number; dashed?: string; testid?: string}> = ({d, color, width = 2.2, dashed, testid}) => (
+  <g>
+    <path d={d} fill="none" stroke={color} strokeWidth={width + 4.5} opacity="0.12" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />
+    <path d={d} fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={dashed} data-testid={testid} />
+  </g>
+);
+
+/** Nền biểu đồ: trắng dịu chuyển nhẹ sang kem, thay cho nền trắng phẳng. */
+export const CHART_BG = 'bg-gradient-to-b from-white to-[#FAF9F6]';
+
+// ------------------------------------------------------------------ canvas sắc nét
+/**
+ * Canvas có kích thước logic cố định (vd. 620×340) nhưng bị CSS kéo giãn theo bảng: trên màn hình lớn hoặc DPR cao
+ * hình bị mờ. Hàm này tăng độ phân giải nền (tối đa ×3) và đặt phép biến đổi để mã vẽ vẫn dùng tọa độ logic.
+ * Gọi ngay sau khi lấy ctx; mã vẽ phải dùng lw/lh thay cho canvas.width/height.
+ */
+export function setupHiDpiCanvas(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, lw: number, lh: number): void {
+  const shown = canvas.clientWidth || lw;
+  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+  const k = Math.min(3, Math.max(1, dpr * (shown / lw)));
+  const bw = Math.round(lw * k);
+  const bh = Math.round(lh * k);
+  if (canvas.width !== bw || canvas.height !== bh) {
+    canvas.width = bw;
+    canvas.height = bh;
+  }
+  ctx.setTransform(bw / lw, 0, 0, bh / lh, 0, 0);
+}

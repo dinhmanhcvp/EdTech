@@ -5,7 +5,6 @@ import {render, screen, fireEvent} from '@testing-library/react';
 import {makeSolid, computeCrossSection, planeFromThreePoints} from '../utils/solids';
 import {GeometryEngine} from '../engines/GeometryEngine';
 import {GraphEngine, functionsFromBlueprint} from '../engines/GraphEngine';
-import {VoiceAiQaCard, resolveVoiceQaQuery} from '../components/canvas/VoiceAiQaCard';
 import {SmartboardCanvas, matchInstantStemBlueprint} from '../components/canvas/SmartboardCanvas';
 import type {SimulationBlueprint} from '@socratic/types';
 
@@ -146,55 +145,14 @@ describe('Nâng cấp 2 — Nhận Diện Đa Hàm Số Tương Giao + HUD Thanh
   });
 });
 
-describe('Nâng cấp 3 — Hỏi Đáp AI Giọng Nói Kèm Mô Hình Minh Họa Động Ngay Trên Bảng (Voice AI Q&A Card)', () => {
-  it('resolveVoiceQaQuery trả lời chính xác câu hỏi thiết diện hình lập phương kèm các mô hình minh họa động', () => {
-    const ans = resolveVoiceQaQuery('Trong hình lập phương, thiết diện nào có diện tích lớn nhất?');
-    expect(ans.headline).toContain('Lục giác đều');
-    expect(ans.actions.length).toBeGreaterThanOrEqual(2);
-    expect(ans.actions[0].blueprint.templateId).toBe('GEO_SOLID');
-    expect(ans.actions[0].blueprint.meta?.initialMode).toBe('section');
-  });
-
-  it('VoiceAiQaCard mở từ nút AI trên bảng và cho phép bấm 1 chạm để bung mô hình minh họa động lên bảng', () => {
-    const onSpawn = vi.fn();
-    const onClose = vi.fn();
-    render(
-      <VoiceAiQaCard
-        isOpen={true}
-        initialQuery="Trong hình lập phương, thiết diện nào có diện tích lớn nhất?"
-        onClose={onClose}
-        onSpawnBlueprint={onSpawn}
-      />,
-    );
-
-    expect(screen.getByTestId('voice-ai-qa-card')).toBeInTheDocument();
-    expect(screen.getByTestId('voice-qa-headline').textContent).toContain('Lục giác đều');
-
-    // Bấm vào nút minh họa Thiết diện Lục giác đều -> gọi onSpawnBlueprint với blueprint chế độ section
-    const hexBtn = screen.getByTestId('voice-qa-spawn-act-hexagon');
-    fireEvent.click(hexBtn);
-    expect(onSpawn).toHaveBeenCalledTimes(1);
-    const spawnedBp = onSpawn.mock.calls[0][0] as SimulationBlueprint;
-    expect(spawnedBp.templateId).toBe('GEO_SOLID');
-    expect(spawnedBp.meta?.initialMode).toBe('section');
-  });
-
-  it('Tích hợp trực tiếp trên SmartboardCanvas thông qua menu tròn của nút AI', () => {
+describe('Nâng cấp 3 — Hỏi đáp AI hiểu ngữ cảnh bảng (thay cho bộ câu trả lời soạn sẵn)', () => {
+  it('AI hub mở thẻ hỏi đáp; thẻ nói rõ AI sẽ dựa vào gì và gợi ý theo bảng (không phải câu cố định)', () => {
     render(<SmartboardCanvas />);
-    // Mở menu tròn từ nút AI
     fireEvent.click(screen.getByTestId('ai-fab'));
-    // Bấm nút Thẻ Hỏi Đáp
-    const qaBtn = screen.getByTestId('ai-fab-qa');
-    fireEvent.click(qaBtn);
-
-    // Thẻ Voice AI Q&A hiện ngay trên bảng
-    expect(screen.getByTestId('voice-ai-qa-card')).toBeInTheDocument();
-
-    // Bấm nút nạp mô hình Thiết diện Lục giác đều lên bảng
-    fireEvent.click(screen.getByTestId('voice-qa-spawn-act-hexagon'));
-
-    // Mô hình 3D + mặt cắt 2D hiện trực tiếp trên bảng
-    expect(screen.getByTestId('geo-engine')).toBeInTheDocument();
-    expect(screen.getByTestId('geo-canvas')).toHaveAttribute('data-section-mode', 'true');
+    fireEvent.click(screen.getByTestId('ai-fab-qa'));
+    expect(screen.getByTestId('board-ask-card')).toBeInTheDocument();
+    // bảng trống: không giả vờ có hình lập phương như bản cũ
+    expect(screen.getByTestId('board-ask-read').textContent).toContain('Bảng đang trống');
+    expect(screen.queryByText(/Lục giác đều/)).toBeNull();
   });
 });

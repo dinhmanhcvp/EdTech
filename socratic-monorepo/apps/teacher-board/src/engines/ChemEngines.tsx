@@ -4,7 +4,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {SimulationBlueprint, CurriculumLevel} from '@socratic/types';
 import {fmtNum} from '../utils/mathExpr';
 import {Slider} from './StemModelEngines';
-import {GroundShadow, SphereGrad, VisualDefs, useEased, usePrefersReducedMotion, useUid} from './visualKit';
+import {CHART_BG, GroundShadow, SphereGrad, VisualDefs, useEased, usePrefersReducedMotion, useUid} from './visualKit';
 import {M3, mulMM, mulMV, orthonormalize, rotAxis, type V3 as SV3} from '../utils/solids';
 import {
   ATOM_R,
@@ -144,9 +144,9 @@ export const VseprEngine: React.FC<Props> = ({blueprint}) => {
             {!VSEPR_LIBRARY.some((m) => m.formula === mol.formula) && <option value={mol.formula}>{mol.formula}</option>}
           </select>
         </label>
-        <button data-testid="vsepr-auto" onClick={() => setAuto((a) => !a)} className={`px-3 py-1.5 rounded-lg border text-xs font-semibold ${auto ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-[#DCD9D0]'}`}>Tự xoay</button>
-        <button data-testid="vsepr-lone" onClick={() => setShowLone((a) => !a)} className={`px-3 py-1.5 rounded-lg border text-xs font-semibold ${showLone ? 'bg-sky-600 text-white border-sky-600' : 'bg-white text-stone-700 border-[#DCD9D0]'}`}>Cặp e riêng</button>
-        <button data-testid="vsepr-dipole" onClick={() => setShowDipole((a) => !a)} className={`px-3 py-1.5 rounded-lg border text-xs font-semibold ${showDipole ? 'bg-fuchsia-600 text-white border-fuchsia-600' : 'bg-white text-stone-700 border-[#DCD9D0]'}`}>Lưỡng cực</button>
+        <button data-testid="vsepr-auto" onClick={() => setAuto((a) => !a)} className={`px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border text-xs font-semibold ${auto ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-[#DCD9D0]'}`}>Tự xoay</button>
+        <button data-testid="vsepr-lone" onClick={() => setShowLone((a) => !a)} className={`px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border text-xs font-semibold ${showLone ? 'bg-sky-600 text-white border-sky-600' : 'bg-white text-stone-700 border-[#DCD9D0]'}`}>Cặp e riêng</button>
+        <button data-testid="vsepr-dipole" onClick={() => setShowDipole((a) => !a)} className={`px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border text-xs font-semibold ${showDipole ? 'bg-fuchsia-600 text-white border-fuchsia-600' : 'bg-white text-stone-700 border-[#DCD9D0]'}`}>Lưỡng cực</button>
         <span className="ml-auto font-mono text-sm font-bold text-stone-900">AX{X > 1 ? sub(X) : ''}{E ? `E${E > 1 ? sub(E) : ''}` : ''}</span>
       </div>
       <svg
@@ -271,7 +271,7 @@ export const LeChatelierEngine: React.FC<Props> = () => {
         <span data-testid="lc-shift" className={`ml-auto px-2.5 py-1 rounded-lg text-xs font-semibold border ${view.shift === 'none' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>{shiftText}</span>
       </div>
       <div className="grid md:grid-cols-[3fr_2fr] gap-3">
-        <svg viewBox="0 0 400 300" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="lc-svg">
+        <svg viewBox="0 0 400 300" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="lc-svg">
           <defs>
             <VisualDefs id={uid} />
             <SphereGrad id={`${uid}-no2a`} light="#FDBA74" base="#C2410C" dark="#7C2D12" />
@@ -329,7 +329,7 @@ export const LeChatelierEngine: React.FC<Props> = () => {
           <text x="14" y="292" fontSize="11" fill="#57534E">T = {Tc} °C</text>
         </svg>
         <div className="flex flex-col gap-2">
-          <svg viewBox="0 0 290 130" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="lc-chart">
+          <svg viewBox="0 0 290 130" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="lc-chart">
             <text x="8" y="12" fontSize="10" fill="#78716C">[NO₂] theo thời gian (độ đậm màu nâu)</text>
             <line x1="14" y1="112" x2="278" y2="112" stroke="#57534E" />
             {hist.length > 1 && <polyline points={hist.map((h) => `${hx(h.t).toFixed(1)},${hy(h.c).toFixed(1)}`).join(' ')} fill="none" stroke="#9A3412" strokeWidth="2.2" />}
@@ -354,10 +354,10 @@ export const LeChatelierEngine: React.FC<Props> = () => {
         <Slider testid="lc-v" label="Thể tích (piston)" value={V} min={0.4} max={3} step={0.05} onChange={(v) => { mark(v < V ? 'nén' : 'giãn'); setV(v); }} fmt={(v) => `${fmtNum(v, 3)} L`} />
         <Slider testid="lc-t" label="Nhiệt độ" value={Tc} min={-20} max={120} step={1} onChange={(v) => { mark(v > Tc ? 'đun' : 'làm lạnh'); setTc(v); }} fmt={(v) => `${v} °C`} />
         <div className="flex flex-wrap gap-2">
-          <button data-testid="lc-compress" onClick={() => { mark('nén ×2'); setV((v) => Math.max(0.4, v / 2)); }} className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold">Nén piston ×2</button>
-          <button data-testid="lc-heat" onClick={() => { mark('đun nóng'); setTc((t) => Math.min(120, t + 40)); }} className="px-3 py-1.5 rounded-lg bg-orange-600 text-white text-xs font-semibold">Đun nóng +40 °C</button>
-          <button data-testid="lc-cool" onClick={() => { mark('làm lạnh'); setTc((t) => Math.max(-20, t - 40)); }} className="px-3 py-1.5 rounded-lg bg-sky-600 text-white text-xs font-semibold">Làm lạnh −40 °C</button>
-          <button data-testid="lc-reset" onClick={() => { setVal(1.5, 25); ref.current.xi = lcEquilibrium(N0, 1.5, 298.15); setXi(ref.current.xi); setHist([]); }} className="px-3 py-1.5 rounded-lg border border-[#DCD9D0] bg-white text-xs">Đặt lại</button>
+          <button data-testid="lc-compress" onClick={() => { mark('nén ×2'); setV((v) => Math.max(0.4, v / 2)); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-blue-600 text-white text-xs font-semibold">Nén piston ×2</button>
+          <button data-testid="lc-heat" onClick={() => { mark('đun nóng'); setTc((t) => Math.min(120, t + 40)); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-orange-600 text-white text-xs font-semibold">Đun nóng +40 °C</button>
+          <button data-testid="lc-cool" onClick={() => { mark('làm lạnh'); setTc((t) => Math.max(-20, t - 40)); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-sky-600 text-white text-xs font-semibold">Làm lạnh −40 °C</button>
+          <button data-testid="lc-reset" onClick={() => { setVal(1.5, 25); ref.current.xi = lcEquilibrium(N0, 1.5, 298.15); setXi(ref.current.xi); setHist([]); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">Đặt lại</button>
         </div>
         <p className="text-[11px] text-stone-500">Nén piston: màu đậm lên NGAY (nồng độ tăng), rồi nhạt dần khi cân bằng chuyển về N₂O₄ — nhưng vẫn đậm hơn lúc đầu. Đun nóng: cân bằng chuyển về NO₂ (chiều thu nhiệt). Kp(298 K) = {LC.Kp298} atm⁻¹.</p>
       </div>
@@ -433,7 +433,7 @@ export const DaniellEngine: React.FC<Props> = ({blueprint}) => {
           {cell.anode.metal} + {cell.cathode.metal}²⁺ → {cell.anode.metal}²⁺ + {cell.cathode.metal}
         </span>
       </div>
-      <svg viewBox="0 0 560 330" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="daniell-svg">
+      <svg viewBox="0 0 560 330" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="daniell-svg">
         <defs>
           <VisualDefs id={uid} />
           <marker id="earr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto">
@@ -509,8 +509,8 @@ export const DaniellEngine: React.FC<Props> = ({blueprint}) => {
               {ELECTRODES.map((m) => <option key={m.metal} value={m.metal}>{m.metal}</option>)}
             </select>
           </label>
-          <button data-testid="daniell-toggle" onClick={() => setClosed((c) => !c)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${closed ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`}>{closed ? 'Ngắt mạch' : 'Đóng mạch'}</button>
-          <button data-testid="daniell-reset" onClick={reset} className="px-3 py-1.5 rounded-lg border border-[#DCD9D0] bg-white text-xs">Đặt lại nồng độ</button>
+          <button data-testid="daniell-toggle" onClick={() => setClosed((c) => !c)} className={`px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] text-xs font-semibold ${closed ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`}>{closed ? 'Ngắt mạch' : 'Đóng mạch'}</button>
+          <button data-testid="daniell-reset" onClick={reset} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">Đặt lại nồng độ</button>
         </div>
         <Slider testid="daniell-can" label={`[${cell.anode.metal}²⁺]`} value={lg(st.cAnode)} min={-3} max={0.4} step={0.05} onChange={(v) => setConc('cAnode', v)} fmt={(v) => `${fmtNum(Math.pow(10, v), 3)} M`} />
         <Slider testid="daniell-ccat" label={`[${cell.cathode.metal}²⁺]`} value={lg(st.cCathode)} min={-3} max={0.4} step={0.05} onChange={(v) => setConc('cCathode', v)} fmt={(v) => `${fmtNum(Math.pow(10, v), 3)} M`} />

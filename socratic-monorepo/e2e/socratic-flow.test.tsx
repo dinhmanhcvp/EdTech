@@ -100,8 +100,8 @@ describe('Socratic Vision Board v2.0 - End-to-End User Scenarios', () => {
     fireEvent.pointerMove(canvas, { clientX: 80, clientY: 100 });
     fireEvent.pointerUp(canvas);
 
-    // 4. Floating [Trực quan hóa] button appears
-    const visualizeBtn = await screen.findByTestId('btn-visualize');
+    // 4. Khoanh xong, AI hub bay tới vùng khoanh và tự mở; nút [Trực quan] nằm trong đĩa AI
+    const visualizeBtn = await screen.findByTestId('top-toolbar-btn-visualize');
     expect(visualizeBtn).toBeTruthy();
 
     // Click [Trực quan hóa]
@@ -144,6 +144,13 @@ describe('Socratic Vision Board v2.0 - End-to-End User Scenarios', () => {
     // Mock companion evaluate-step API
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, options) => {
       const body = JSON.parse((options?.body as string) || '{}');
+      if (String(_url).endsWith('/verify-voice-gate')) {
+        const passed = typeof body.transcript === 'string' && body.transcript.includes('bảo toàn');
+        return {
+          ok: true, status: 200,
+          json: async () => ({passed, eureka_points_awarded: passed ? 50 : 0, feedback: passed ? 'Đã xác thực giải thích.' : 'Hãy giải thích thêm.'}),
+        } as Response;
+      }
       const ans = (body.student_answer || '').toUpperCase();
 
       if (ans.includes('4FE') && ans.includes('3O2') && ans.includes('2FE2O3')) {

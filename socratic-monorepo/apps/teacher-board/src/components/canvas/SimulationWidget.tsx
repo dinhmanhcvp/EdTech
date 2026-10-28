@@ -22,6 +22,7 @@ import { MathView } from '../common/MathView';
 import { MathText } from '../ui/MathText';
 import { evaluateDynamicSocraticCue, triggerSocraticAcousticFeedback } from '../../utils/socraticTriggers';
 import { apiBase } from '../../utils/apiBase';
+import { RANGE_CLASS, rangeFill } from '../../engines/visualKit';
 
 export interface SimulationWidgetProps {
   blueprint: SimulationBlueprint;
@@ -971,7 +972,8 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
                   step={p.step}
                   value={currentVal}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => { if (autoPlayKey === p.key) setAutoPlayKey(null); handleParamChange(p.key, parseFloat(e.target.value)); }}
-                  className="flex-1 min-w-[56px] h-1 bg-stone-300/80 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  className={`flex-1 min-w-[56px] ${RANGE_CLASS}`}
+                  style={rangeFill(Number(currentVal), p.min, p.max)}
                 />
                 <button data-testid={`slider-plus-${p.key}`} type="button" onClick={() => { if (autoPlayKey === p.key) setAutoPlayKey(null); handleParamChange(p.key, Math.min(p.max, Number((currentVal + p.step).toFixed(2)))); }} className="w-5 h-5 rounded-full text-stone-600 hover:bg-stone-200/70 text-xs font-bold flex items-center justify-center cursor-pointer shrink-0">+</button>
                 <span data-testid={`param-val-${p.key}`} className="font-mono tabular-nums text-[11px] text-blue-700 font-bold shrink-0 min-w-[44px] text-right">{currentVal}{p.unit ? ` ${p.unit}` : ''}</span>
@@ -1043,7 +1045,8 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
                     if (autoPlayKey === p.key) setAutoPlayKey(null);
                     handleParamChange(p.key, parseFloat(e.target.value));
                   }}
-                  className="flex-1 h-1.5 bg-stone-300/70 dark:bg-stone-700 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400"
+                  className={`flex-1 ${RANGE_CLASS}`}
+                  style={rangeFill(Number(currentVal), p.min, p.max)}
                 />
 
                 <button

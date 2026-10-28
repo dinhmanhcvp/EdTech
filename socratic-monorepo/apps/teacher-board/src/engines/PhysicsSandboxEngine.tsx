@@ -2,6 +2,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { setupHiDpiCanvas } from './visualKit';
+import { angleArc, glowPath, hatch, hudCard, lensBody, shadedBlock } from '../utils/canvasKit';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { computeProjectile } from '../utils/physics';
 import { Waves, Zap, Compass, ArrowUpRight, Scale } from 'lucide-react';
@@ -409,48 +411,51 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    const LW = 620; // kích thước logic của canvas; nền được nâng độ phân giải trong setupHiDpiCanvas
+    const LH = 340;
+    setupHiDpiCanvas(canvas, ctx, LW, LH);
 
     let animId: number;
 
     const renderLoop = () => {
       timeRef.current += 0.02;
       const t = timeRef.current;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, LW, LH);
 
       if (!isHologram) {
         // Warm Alabaster Technical Graph Paper
         ctx.fillStyle = '#FCFBF9';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, LW, LH);
 
         // Millimeter grid
         ctx.strokeStyle = '#EFECE6';
         ctx.lineWidth = 1;
-        for (let x = 0; x < canvas.width; x += 20) {
+        for (let x = 0; x < LW; x += 20) {
           ctx.beginPath();
           ctx.moveTo(x, 0);
-          ctx.lineTo(x, canvas.height);
+          ctx.lineTo(x, LH);
           ctx.stroke();
         }
-        for (let y = 0; y < canvas.height; y += 20) {
+        for (let y = 0; y < LH; y += 20) {
           ctx.beginPath();
           ctx.moveTo(0, y);
-          ctx.lineTo(canvas.width, y);
+          ctx.lineTo(LW, y);
           ctx.stroke();
         }
       } else {
         // Zero-background chalk grid directly on board
         ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
         ctx.lineWidth = 1;
-        for (let x = 0; x < canvas.width; x += 20) {
+        for (let x = 0; x < LW; x += 20) {
           ctx.beginPath();
           ctx.moveTo(x, 0);
-          ctx.lineTo(x, canvas.height);
+          ctx.lineTo(x, LH);
           ctx.stroke();
         }
-        for (let y = 0; y < canvas.height; y += 20) {
+        for (let y = 0; y < LH; y += 20) {
           ctx.beginPath();
           ctx.moveTo(0, y);
-          ctx.lineTo(canvas.width, y);
+          ctx.lineTo(LW, y);
           ctx.stroke();
         }
       }
@@ -474,7 +479,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(370, 10);
-        ctx.lineTo(370, canvas.height - 10);
+        ctx.lineTo(370, LH - 10);
         ctx.stroke();
 
         // Left Header
@@ -607,8 +612,8 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         // Telemetry badges
         ctx.fillStyle = '#0F172A';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText(formatCanvasMath(`Bước sóng λ: ${lambda}px | f: ${freq}Hz`), 16, canvas.height - 18);
-        ctx.fillText(formatCanvasMath(`Khoảng cách 2 nguồn d: ${sourceDist}px (${(sourceDist / lambda).toFixed(1)}λ)`), 16, canvas.height - 6);
+        ctx.fillText(formatCanvasMath(`Bước sóng λ: ${lambda}px | f: ${freq}Hz`), 16, LH - 18);
+        ctx.fillText(formatCanvasMath(`Khoảng cách 2 nguồn d: ${sourceDist}px (${(sourceDist / lambda).toFixed(1)}λ)`), 16, LH - 6);
 
       // ==============================================================
       // 2. PHYS_RLC_PHASOR: Fresnel Vector Phasor Studio (Điện xoay chiều)
@@ -643,7 +648,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(305, 10);
-        ctx.lineTo(305, canvas.height - 10);
+        ctx.lineTo(305, LH - 10);
         ctx.stroke();
 
         ctx.fillStyle = '#2563EB';
@@ -773,7 +778,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         phaseTrailRef.current.push({ theta, omega });
         if (phaseTrailRef.current.length > 250) phaseTrailRef.current.shift();
 
-        const pivotX = isOlympiad ? 145 : canvas.width / 2;
+        const pivotX = isOlympiad ? 145 : LW / 2;
         const pivotY = 40;
         const pixelL = L * (isOlympiad ? 75 : 95);
         const bobX = pivotX + pixelL * Math.sin(theta);
@@ -788,7 +793,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(295, 10);
-          ctx.lineTo(295, canvas.height - 10);
+          ctx.lineTo(295, LH - 10);
           ctx.stroke();
 
           ctx.fillStyle = '#2563EB';
@@ -843,13 +848,33 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           ctx.stroke();
         }
 
+        // Trần treo (gạch chéo) + vạch thẳng đứng tham chiếu
+        hatch(ctx, pivotX - 34, pivotX + 34, pivotY - 8, -1);
+        ctx.fillStyle = '#57534E';
+        ctx.fillRect(pivotX - 36, pivotY - 10, 72, 4);
+        ctx.save();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = 'rgba(120, 113, 108, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pivotX, pivotY);
+        ctx.lineTo(pivotX, pivotY + pixelL + 12);
+        ctx.stroke();
+        ctx.restore();
+
         // String
         ctx.strokeStyle = '#78716C';
         ctx.lineWidth = 2.2;
+        ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(pivotX, pivotY);
         ctx.lineTo(bobX, bobY);
         ctx.stroke();
+        if (Math.abs(theta) > 0.03) angleArc(ctx, pivotX, pivotY, 34, Math.PI / 2, Math.PI / 2 - theta, '#D97706', `${Math.abs((theta * 180) / Math.PI).toFixed(0)}°`);
+        ctx.fillStyle = '#44403C';
+        ctx.beginPath();
+        ctx.arc(pivotX, pivotY, 4, 0, Math.PI * 2);
+        ctx.fill();
 
         // 3D PBR Bob with specular glint
         drawPbrSphere(ctx, bobX, bobY, 16, '#2563EB', '#FFFFFF');
@@ -864,11 +889,15 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         const wPot = m * g * L * (1 - Math.cos(theta));
         const wTotal = wKin + wPot;
 
-        ctx.fillStyle = '#0F172A';
-        ctx.font = 'bold 10px monospace';
-        ctx.fillText(formatCanvasMath(`θ: ${((theta * 180) / Math.PI).toFixed(1)}° | ω: ${omega.toFixed(2)} rad/s`), 16, canvas.height - 25);
-        ctx.fillStyle = '#57534E';
-        ctx.fillText(formatCanvasMath(`W_đ: ${wKin.toFixed(2)}J | W_t: ${wPot.toFixed(2)}J | Cơ năng: ${wTotal.toFixed(2)}J`), 16, canvas.height - 10);
+        hudCard(
+          ctx,
+          [
+            { text: formatCanvasMath(`θ: ${((theta * 180) / Math.PI).toFixed(1)}° | ω: ${omega.toFixed(2)} rad/s`), bold: true, color: '#0F172A' },
+            { text: formatCanvasMath(`W_đ: ${wKin.toFixed(2)}J | W_t: ${wPot.toFixed(2)}J | Cơ năng: ${wTotal.toFixed(2)}J`), color: '#57534E' },
+          ],
+          12,
+          LH - 58,
+        );
 
       // ==============================================================
       // 4. PHYS_OPTICS_LENS: Optical Bench & Real/Virtual Rays
@@ -878,23 +907,18 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         const d = params.d ?? 220;
         const h = params.h ?? 50;
 
-        const lensX = canvas.width / 2;
-        const axisY = canvas.height / 2;
+        const lensX = LW / 2;
+        const axisY = LH / 2;
 
         ctx.strokeStyle = '#94A3B8';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(20, axisY);
-        ctx.lineTo(canvas.width - 20, axisY);
+        ctx.lineTo(LW - 20, axisY);
         ctx.stroke();
 
-        // Lens body
-        ctx.strokeStyle = '#2563EB';
-        ctx.lineWidth = 3.5;
-        ctx.beginPath();
-        ctx.moveTo(lensX, axisY - 120);
-        ctx.lineTo(lensX, axisY + 120);
-        ctx.stroke();
+        // Lens body: thấu kính lồi trong suốt
+        lensBody(ctx, lensX, axisY, 120, 14);
 
         // Focal Points F and F'
         drawPbrSphere(ctx, lensX - f, axisY, 4.5, '#D97706', '#FFFFFF');
@@ -912,26 +936,22 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           const imgY = axisY - hPrime;
 
           // Ray 1: Parallel to principal axis then passes through F'
-          ctx.strokeStyle = '#D97706';
-          ctx.lineWidth = 1.8;
-          ctx.beginPath();
-          ctx.moveTo(objX, axisY - h);
-          ctx.lineTo(lensX, axisY - h);
-          ctx.lineTo(imgX, imgY);
-          ctx.stroke();
+          glowPath(ctx, [[objX, axisY - h], [lensX, axisY - h], [imgX, imgY]], '#D97706');
 
           // Ray 2: Passes through optical center O undeflected
-          ctx.beginPath();
-          ctx.moveTo(objX, axisY - h);
-          ctx.lineTo(lensX, axisY);
-          ctx.lineTo(imgX, imgY);
-          ctx.stroke();
+          glowPath(ctx, [[objX, axisY - h], [lensX, axisY], [imgX, imgY]], '#EA580C');
 
           drawVector(ctx, imgX, axisY, imgX, imgY, '#E11D48', "A'B'");
 
-          ctx.fillStyle = '#0F172A';
-          ctx.font = 'bold 10px monospace';
-          ctx.fillText(formatCanvasMath(`d' = ${dPrime.toFixed(1)}px (${dPrime > 0 ? 'Ảnh thật' : 'Ảnh ảo'}) | Độ phóng đại k = ${(-dPrime / d).toFixed(2)}`), 20, 30);
+          hudCard(
+            ctx,
+            [
+              { text: formatCanvasMath(`d' = ${dPrime.toFixed(1)}px (${dPrime > 0 ? 'Ảnh thật' : 'Ảnh ảo'})`), bold: true, color: dPrime > 0 ? '#047857' : '#7C3AED' },
+              { text: formatCanvasMath(`Độ phóng đại k = ${(-dPrime / d).toFixed(2)}`), color: '#57534E' },
+            ],
+            12,
+            12,
+          );
         }
 
       // ==============================================================
@@ -951,7 +971,10 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
         // Ramp Wedge
         ctx.strokeStyle = '#94A3B8';
-        ctx.fillStyle = '#F2F0EA';
+        const rampGrad = ctx.createLinearGradient(0, topY, 0, originY);
+        rampGrad.addColorStop(0, '#FAF8F3');
+        rampGrad.addColorStop(1, '#E7E3D8');
+        ctx.fillStyle = rampGrad;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(originX, originY);
@@ -960,6 +983,9 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ctx.closePath();
         ctx.stroke();
         ctx.fill();
+
+        hatch(ctx, originX, topX, originY, 1);
+        angleArc(ctx, originX, originY, 46, -alpha, 0, '#D97706', `${((alpha * 180) / Math.PI).toFixed(0)}°`);
 
         const a = Math.max(0, g * (Math.sin(alpha) - mu * Math.cos(alpha)));
         const sDist = (0.5 * a * Math.pow(t % 4, 2) * 16) % rampLen;
@@ -974,20 +1000,22 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ctx.rotate(-alpha);
 
         // Block with 3D shadow
-        ctx.fillStyle = '#2563EB';
-        ctx.strokeStyle = '#1D4ED8';
-        ctx.lineWidth = 1.5;
-        ctx.fillRect(-22, -26, 44, 26);
-        ctx.strokeRect(-22, -26, 44, 26);
+        shadedBlock(ctx, -22, -26, 44, 26, '#2563EB', '#1D4ED8');
 
         drawVector(ctx, 0, 0, 0, 50, '#E11D48', 'P');
         drawVector(ctx, 0, 0, 0, -42, '#059669', 'N');
         drawVector(ctx, 0, 0, 35, 0, '#D97706', 'F_ms');
         ctx.restore();
 
-        ctx.fillStyle = '#0F172A';
-        ctx.font = 'bold 11px monospace';
-        ctx.fillText(formatCanvasMath(`Gia tốc trượt: a = ${a.toFixed(2)} m/s² | Góc nghiêng α: ${((alpha * 180) / Math.PI).toFixed(0)}°`), 20, 30);
+        hudCard(
+          ctx,
+          [
+            { text: formatCanvasMath(`Gia tốc trượt: a = ${a.toFixed(2)} m/s²`), bold: true, color: '#0F172A' },
+            { text: formatCanvasMath(`Góc nghiêng α: ${((alpha * 180) / Math.PI).toFixed(0)}° | μ = ${mu.toFixed(2)}`), color: '#57534E' },
+          ],
+          12,
+          12,
+        );
 
       // ==============================================================
       // 6. PHYS_PROJECTILE: Projectile with Air Drag & Glowing Comet Trail
@@ -1001,9 +1029,9 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         const metrics = computeProjectile(v0, alpha, g);
         const { tFlight, tApex, hMax, lMax, vx } = metrics;
 
-        const groundY = canvas.height - 35;
+        const groundY = LH - 35;
         const startX = 45;
-        const availW = canvas.width - startX - 35;
+        const availW = LW - startX - 35;
         const availH = groundY - 45;
 
         const scaleX = availW / Math.max(lMax, 15);
@@ -1015,8 +1043,33 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(20, groundY);
-        ctx.lineTo(canvas.width - 20, groundY);
+        ctx.lineTo(LW - 20, groundY);
         ctx.stroke();
+
+        hatch(ctx, 20, LW - 20, groundY, 1);
+        angleArc(ctx, startX, groundY, 30, -(alpha * Math.PI) / 180, 0, '#D97706', `${alpha.toFixed(0)}°`);
+
+        // Đỉnh quỹ đạo: vạch đứt xuống mặt đất + độ cao cực đại
+        {
+          const apexX = startX + vx * tApex * scale;
+          const apexY = groundY - hMax * scale;
+          ctx.save();
+          ctx.setLineDash([3, 4]);
+          ctx.strokeStyle = 'rgba(217, 119, 6, 0.55)';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(apexX, apexY);
+          ctx.lineTo(apexX, groundY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#D97706';
+          ctx.beginPath();
+          ctx.arc(apexX, apexY, 3.4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = '700 10px ui-monospace, monospace';
+          ctx.fillText(formatCanvasMath(`H = ${hMax.toFixed(1)}m`), apexX + 7, apexY - 6);
+          ctx.restore();
+        }
 
         // Parabola Trajectory Guide
         ctx.save();
@@ -1122,7 +1175,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
             type="button"
             data-testid="mode-btn-projectile"
             onClick={() => setActiveMode('PROJECTILE')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+            className={`flex items-center gap-1 px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-medium transition active:scale-[0.97] cursor-pointer ${
               currentMode === 'PROJECTILE'
                 ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm font-semibold'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
@@ -1136,7 +1189,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
             type="button"
             data-testid="mode-btn-ripple"
             onClick={() => setActiveMode('RIPPLE_TANK')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+            className={`flex items-center gap-1 px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-medium transition active:scale-[0.97] cursor-pointer ${
               currentMode === 'RIPPLE_TANK'
                 ? 'bg-sky-50 text-sky-700 border border-sky-200 shadow-sm font-semibold'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
@@ -1150,7 +1203,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
             type="button"
             data-testid="mode-btn-pendulum"
             onClick={() => setActiveMode('PENDULUM')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+            className={`flex items-center gap-1 px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-medium transition active:scale-[0.97] cursor-pointer ${
               currentMode === 'PENDULUM'
                 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm font-semibold'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
@@ -1164,7 +1217,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
             type="button"
             data-testid="mode-btn-rlc"
             onClick={() => setActiveMode('RLC_PHASOR')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+            className={`flex items-center gap-1 px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-medium transition active:scale-[0.97] cursor-pointer ${
               currentMode === 'RLC_PHASOR'
                 ? 'bg-amber-50 text-amber-700 border border-amber-200 shadow-sm font-semibold'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
@@ -1178,7 +1231,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
             type="button"
             data-testid="mode-btn-inclined"
             onClick={() => setActiveMode('INCLINED')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+            className={`flex items-center gap-1 px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-medium transition active:scale-[0.97] cursor-pointer ${
               currentMode === 'INCLINED'
                 ? 'bg-purple-50 text-purple-700 border border-purple-200 shadow-sm font-semibold'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'

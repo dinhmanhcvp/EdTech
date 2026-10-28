@@ -4,6 +4,7 @@ import React, {useMemo, useState} from 'react';
 import {SimulationBlueprint, CurriculumLevel} from '@socratic/types';
 import {fmtNum, compileExpr} from '../utils/mathExpr';
 import {defaultParam} from '../utils/graphModel';
+import {CHART_BG, CurvePath, RANGE_CLASS, rangeFill} from './visualKit';
 import {punnett, hardyWeinberg, parseLP, solveLP, cobweb, parseRecurrence, type GenotypeFreqs} from '../utils/stemModels';
 
 interface Props {
@@ -18,7 +19,7 @@ const pct = (v: number) => `${fmtNum(v * 100, 3)}%`;
 export const Slider: React.FC<{label: React.ReactNode; value: number; min: number; max: number; step: number; onChange: (v: number) => void; testid: string; fmt?: (v: number) => string}> = ({label, value, min, max, step, onChange, testid, fmt}) => (
   <label className="flex items-center gap-3 text-xs text-stone-700">
     <span className="w-28 shrink-0 font-medium">{label}</span>
-    <input data-testid={testid} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className="flex-1 h-3 accent-blue-600 cursor-pointer" />
+    <input data-testid={testid} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className={`flex-1 ${RANGE_CLASS}`} style={rangeFill(value, min, max)} />
     <span className="w-16 text-right font-mono tabular-nums text-blue-600 font-bold">{fmt ? fmt(value) : fmtNum(value, 3)}</span>
   </label>
 );
@@ -136,7 +137,7 @@ export const HardyWeinbergEngine: React.FC<Props> = ({blueprint}) => {
           {hw.equilibrium ? 'Quần thể đang cân bằng Hardy–Weinberg' : `Chưa cân bằng (lệch tối đa ${pct(hw.maxDev)}) — sau 1 thế hệ ngẫu phối sẽ về p², 2pq, q²`}
         </span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="hw-chart">
+      <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="hw-chart">
         {[0, 0.25, 0.5, 0.75, 1].map((t) => (
           <g key={t}>
             <line x1={sx(t)} y1={sy(0)} x2={sx(t)} y2={sy(1)} stroke="#EFECE6" />
@@ -146,9 +147,9 @@ export const HardyWeinbergEngine: React.FC<Props> = ({blueprint}) => {
           </g>
         ))}
         <text x={sx(0.5)} y={H - 2} fontSize="11" textAnchor="middle" fill="#57534E">tần số alen p(A)</text>
-        <path d={curve((x) => x * x)} fill="none" stroke={cols.AA} strokeWidth="2.2" />
-        <path d={curve((x) => 2 * x * (1 - x))} fill="none" stroke={cols.Aa} strokeWidth="2.2" />
-        <path d={curve((x) => (1 - x) * (1 - x))} fill="none" stroke={cols.aa} strokeWidth="2.2" />
+        <CurvePath d={curve((x) => x * x)} color={cols.AA} />
+        <CurvePath d={curve((x) => 2 * x * (1 - x))} color={cols.Aa} />
+        <CurvePath d={curve((x) => (1 - x) * (1 - x))} color={cols.aa} />
         <text x={sx(0.9)} y={sy(0.82) - 6} fontSize="11" fill={cols.AA} fontWeight="700">AA = p²</text>
         <text x={sx(0.5) + 6} y={sy(0.5) - 8} fontSize="11" fill={cols.Aa} fontWeight="700">Aa = 2pq</text>
         <text x={sx(0.02)} y={sy(0.97)} fontSize="11" fill={cols.aa} fontWeight="700">aa = q²</text>
@@ -264,7 +265,7 @@ export const LinearProgrammingEngine: React.FC<Props> = ({blueprint}) => {
                   : 'Miền nghiệm là đa giác lồi'}
         </span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="lp-chart">
+      <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="lp-chart">
         {tick(xMin, xMax).map((v) => (
           <g key={`x${v}`}>
             <line x1={sx(v)} y1={0} x2={sx(v)} y2={H} stroke={v === 0 ? '#57534E' : '#EFECE6'} strokeWidth={v === 0 ? 1.5 : 1} />
@@ -277,7 +278,7 @@ export const LinearProgrammingEngine: React.FC<Props> = ({blueprint}) => {
             <text x={Math.min(W - 24, Math.max(2, sx(0) + 3))} y={sy(v) - 2} fontSize="10" fill="#78716C">{v}</text>
           </g>
         ))}
-        {polyPts.length >= 3 && <polygon data-testid="lp-region" points={polyPts.map((v) => `${sx(v.x)},${sy(v.y)}`).join(' ')} fill="#2563EB" fillOpacity="0.14" stroke="#2563EB" strokeWidth="1.5" />}
+        {polyPts.length >= 3 && <polygon data-testid="lp-region" points={polyPts.map((v) => `${sx(v.x)},${sy(v.y)}`).join(' ')} fill="#2563EB" fillOpacity="0.16" stroke="#2563EB" strokeWidth="1.8" strokeLinejoin="round" />}
         {pb.constraints.map((k, i) => {
           const s = segment(k.a, k.b, k.c);
           return s ? <line key={i} x1={sx(s[0][0])} y1={sy(s[0][1])} x2={sx(s[1][0])} y2={sy(s[1][1])} stroke={PALETTE[i % PALETTE.length]} strokeWidth="1.8" opacity="0.8" /> : null;
@@ -369,7 +370,7 @@ export const CobwebEngine: React.FC<Props> = ({blueprint}) => {
         <span data-testid="cobweb-verdict" className={`ml-auto px-2.5 py-1 rounded-lg text-xs font-semibold border ${tone}`}>{label[res.behavior]}</span>
       </div>
       <div className="grid md:grid-cols-[3fr_2fr] gap-3">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="cobweb-chart">
+        <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="cobweb-chart">
           <line x1={sx(lo)} y1={sy(lo)} x2={sx(hi)} y2={sy(hi)} stroke="#A8A29E" strokeDasharray="5 4" />
           <line x1={sx(lo)} y1={sy(lo)} x2={sx(hi)} y2={sy(lo)} stroke="#57534E" />
           <line x1={sx(lo)} y1={sy(lo)} x2={sx(lo)} y2={sy(hi)} stroke="#57534E" />
@@ -383,7 +384,7 @@ export const CobwebEngine: React.FC<Props> = ({blueprint}) => {
           ))}
           <circle cx={sx(x0)} cy={sy(lo)} r="4" fill="#18181B" />
         </svg>
-        <svg viewBox="0 0 300 240" className="w-full rounded-xl border border-[#E6E4DD] bg-white" data-testid="cobweb-series">
+        <svg viewBox="0 0 300 240" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="cobweb-series">
           <text x="8" y="14" fontSize="10" fill="#78716C">xₙ theo n</text>
           {tail.map((v, i) => {
             const y = 220 - ((Math.max(tmin, Math.min(tmax, v)) - tmin) / Math.max(tmax - tmin, 1e-9)) * 190;

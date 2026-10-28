@@ -1,0 +1,127 @@
+/**
+ * Dụng cụ vẽ thêm trên hình dựng từ đề (kiểu các nền tảng vẽ hình): đoạn nối, trung điểm, điểm trên cạnh,
+ * chân đường vuông góc, thiết diện, và "thêm yêu cầu" bằng lời. Mọi hàm trả CẢNH MỚI (không sửa cảnh cũ) để hoàn tác được.
+ * Điểm/đường mới gắn vào `part` đang hiển thị nên bật/tắt từng phần của đề vẫn đúng.
+ */
+import {add, dot, mul, sub, type V3} from './solids';
+import {appendPart, modelFromScene, renderScene, sceneFromModel, type GeoScene} from './geometryProblem';
+import type {ShapeMeta} from './lassoGeometry';
+
+const NAMES = 'MNPQRTUVWXYZHKIJEFGL'.split('');
+
+const clone = (sc: GeoScene): GeoScene => JSON.parse(JSON.stringify(sc));
+const key2 = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
+/** Tên điểm tiếp theo chưa dùng (M, N, P, Q, …, rồi M1, N1…). */
+export function nextName(sc: GeoScene): string {
+  const used = new Set(Object.keys(sc.pts));
+  for (const n of NAMES) if (!used.has(n)) return n;
+  for (let i = 1; i < 100; i++) for (const n of NAMES) if (!used.has(`${n}${i}`)) return `${n}${i}`;
+  return 'Z9';
+}
+
+const addPoint = (sc: GeoScene, name: string, p: V3, part: number) => {
+  sc.pts[name] = p;
+  sc.order.push(name);
+  sc.marks.push(name);
+  sc.ptPart[name] = part;
+};
+
+export function addSegment(sc: GeoScene, a: string, b: string, part: number): GeoScene {
+  if (a === b || !sc.pts[a] || !sc.pts[b]) return sc;
+  const k = key2(a, b);
+  if (sc.edges.some(([p, q]) => key2(p, q) === k) || sc.aux.some(([p, q]) => key2(p, q) === k)) return sc;
+  const n = clone(sc);
+  n.aux.push([a, b, part]);
+  return n;
+}
+
+export function addPointOnSegment(sc: GeoScene, a: string, b: string, t: number, part: number, name?: string): {scene: GeoScene; name: string} {
+  const n = clone(sc);
+  const nm = name ?? nextName(n);
+  addPoint(n, nm, add(n.pts[a], mul(sub(n.pts[b], n.pts[a]), Math.min(0.95, Math.max(0.05, t)))) as V3, part);
+  return {scene: n, name: nm};
+}
+
+export const addMidpoint = (sc: GeoScene, a: string, b: string, part: number) => addPointOnSegment(sc, a, b, 0.5, part);
+
+/** Chân đường vuông góc hạ từ `p` xuống đường thẳng ab, kèm đoạn nối. */
+export function addFoot(sc: GeoScene, p: string, a: string, b: string, part: number): {scene: GeoScene; name: string} {
+  const n = clone(sc);
+  const nm = nextName(n);
+  const P = n.pts[p];
+  const A = n.pts[a];
+  const d = sub(n.pts[b], A);
+  const t = dot(sub(P, A), d) / dot(d, d);
+  addPoint(n, nm, add(A, mul(d, t)) as V3, part);
+  n.aux.push([p, nm, part]);
+  return {scene: n, name: nm};
+}
+
+/** Thiết diện qua ba điểm: dùng lại bộ phân tích đề ("thiết diện (MNP)"). */
+export function addSection(sc: GeoScene, names: string[], part: number): GeoScene {
+  const m = modelFromScene(sc);
+  m.cur = part;
+  // dùng appendPart rồi gộp về phần hiện tại: đơn giản và nhất quán với câu chữ
+  const next = appendPart(sc, `thiết diện của hình cắt bởi mặt phẳng (${names.join('')})`, '·');
+  const fixed = clone(next);
+  fixed.parts = sc.parts;
+  const shift = (x: number) => (x > sc.parts.length - 1 ? part : x);
+  for (const k of Object.keys(fixed.ptPart)) fixed.ptPart[k] = shift(fixed.ptPart[k]);
+  fixed.aux = fixed.aux.map(([a, b, p]) => [a, b, shift(p)]);
+  fixed.polys = fixed.polys.map((p) => ({...p, part: shift(p.part)}));
+  void m;
+  return fixed;
+}
+
+/** Thêm yêu cầu bằng lời thành MỘT PHẦN MỚI của đề. */
+export const addRequirement = (sc: GeoScene, text: string) => appendPart(sc, text);
+
+/** Tên đỉnh theo chỉ số hiển thị (phục vụ chọn điểm bằng chạm). */
+export function visibleNames(sc: GeoScene, upTo: number): string[] {
+  return sc.order.filter((n) => (sc.ptPart[n] ?? 0) <= upTo);
+}
+
+// ------------------------------------------------------------------ bố trí hình trên bảng
+export interface GeoLayout {
+  sketch: NonNullable<ShapeMeta['sketch']>;
+  ax: number;
+  ay: number;
+  w: number;
+  h: number;
+}
+
+const PAD = 30;
+
+/**
+ * Chiếu cảnh đến phần `upTo` và đặt lên bảng với góc gốc của hình gốc tại `origin` (tọa độ bảng).
+ * Vị trí tuyệt đối của mọi điểm KHÔNG đổi khi thêm/bớt phần; chỉ khung bao (neo, w, h) co giãn.
+ */
+export function layoutGeo(sc: GeoScene, upTo: number, origin: {x: number; y: number}): GeoLayout {
+  const fig = renderScene(sc, upTo);
+  const xs = fig.verts.map((v) => origin.x + v.x);
+  const ys = fig.verts.map((v) => origin.y + v.y);
+  const ax = Math.min(...xs) - PAD;
+  const ay = Math.min(...ys) - PAD;
+  const w = Math.max(...xs) - ax + PAD;
+  const h = Math.max(...ys) - ay + PAD;
+  const names = visibleNames(sc, upTo);
+  return {
+    ax,
+    ay,
+    w,
+    h,
+    sketch: {
+      verts: fig.verts.map((v) => ({x: origin.x + v.x - ax, y: origin.y + v.y - ay})),
+      edges: fig.edges,
+      labels: fig.labels,
+      names,
+      marks: fig.marks,
+      polys: fig.polys,
+      fixed: true,
+    },
+  };
+}
+
+export const geoTitle = (sc: GeoScene) => sc.title;
+export {sceneFromModel};

@@ -16,13 +16,20 @@ interface Props {
   onMove: (e: React.PointerEvent<HTMLElement>) => void;
   onMoveEnd: () => void;
   onInteractStart: () => void;
+  /** hình dựng từ đề: đang chọn điểm ('point') hoặc cạnh ('edge') bằng chạm */
+  pickMode?: 'point' | 'edge' | null;
+  pickedNames?: string[];
+  onPickPoint?: (name: string) => void;
+  onPickEdge?: (a: string, b: string, t: number) => void;
+  onOpenTools?: () => void;
 }
 
 const fmt = (v: number) => v.toFixed(1).replace('.', ',');
 const midOf = (a: P2, b: P2): P2 => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
 
 /** Hình học vẽ thẳng lên bảng: không khung, không nền; chỉ có nét hình, nhãn đỉnh và tay cầm nhỏ. */
-export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart}) => {
+export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onOpenTools}) => {
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const s = stroke.shape!;
   const t = stroke.typeset!;
   const w = t.w;
@@ -81,7 +88,7 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
     >
       <div className="absolute" style={{left: `${(stroke.points[0].x / 1200) * 100}%`, top: `${(stroke.points[0].y / 675) * 100}%`, width: w * boardScale, height: h * boardScale}}>
         {picked && <div className="absolute -inset-1.5 rounded-md border-2 border-blue-500/80 pointer-events-none" />}
-        <svg viewBox={`0 0 ${w} ${h}`} width={w * boardScale} height={h * boardScale} style={{overflow: 'visible'}}>
+        <svg ref={svgRef} viewBox={`0 0 ${w} ${h}`} width={w * boardScale} height={h * boardScale} style={{overflow: 'visible'}}>
           {s.kind === 'plane' && stats && (
             <g>
               <polygon points={verts.map((p) => `${p.x},${p.y}`).join(' ')} fill={ink} fillOpacity={0.06} stroke={ink} strokeWidth={sw} strokeLinejoin="round" />
@@ -151,42 +158,97 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
             </g>
           )}
           {s.kind === 'solid' && sk && (
-            <g data-testid="sketch-wire" data-fitted={sk.labels.length > 0 ? 'true' : 'false'}>
+            <g data-testid="sketch-wire" data-fitted={sk.labels.length > 0 ? 'true' : 'false'} data-geo={sk.fixed ? 'true' : 'false'}>
+              {(sk.polys ?? []).map((poly, i) => (
+                <polygon key={`poly${i}`} data-testid="geo-section" points={poly.map((k) => `${sk.verts[k].x},${sk.verts[k].y}`).join(' ')} fill="#2563EB" fillOpacity={0.14} stroke="#2563EB" strokeWidth={1.5} strokeDasharray="4 3" />
+              ))}
               {sk.edges.map((e, i) => (
                 <line
                   key={i}
                   data-testid={e.hidden ? 'edge-hidden' : 'edge-visible'}
+                  data-aux={e.aux ? 'true' : undefined}
                   x1={sk.verts[e.a].x}
                   y1={sk.verts[e.a].y}
                   x2={sk.verts[e.b].x}
                   y2={sk.verts[e.b].y}
-                  stroke={ink}
-                  strokeWidth={e.hidden ? sw * 0.7 : sw}
+                  stroke={e.aux ? '#2563EB' : ink}
+                  strokeWidth={e.aux ? Math.max(1.8, sw * 0.8) : e.hidden ? sw * 0.7 : sw}
                   strokeDasharray={e.hidden ? '7 6' : undefined}
                   strokeLinecap="round"
-                  opacity={e.hidden ? 0.75 : 1}
+                  opacity={e.hidden ? 0.8 : 1}
                 />
+              ))}
+              {pickMode === 'edge' &&
+                sk.edges.map((e, i) => (
+                  <line
+                    key={`pk${i}`}
+                    data-testid="geo-edge-pick"
+                    x1={sk.verts[e.a].x}
+                    y1={sk.verts[e.a].y}
+                    x2={sk.verts[e.b].x}
+                    y2={sk.verts[e.b].y}
+                    stroke="transparent"
+                    strokeWidth={18}
+                    style={{pointerEvents: 'auto', cursor: 'crosshair'}}
+                    onPointerDown={(ev) => {
+                      ev.stopPropagation();
+                      const r = svgRef.current?.getBoundingClientRect();
+                      if (!r || !sk.names) return;
+                      const px = (ev.clientX - r.left) / boardScale;
+                      const py = (ev.clientY - r.top) / boardScale;
+                      const A = sk.verts[e.a];
+                      const B = sk.verts[e.b];
+                      const dx = B.x - A.x;
+                      const dy = B.y - A.y;
+                      const t = ((px - A.x) * dx + (py - A.y) * dy) / (dx * dx + dy * dy || 1);
+                      onPickEdge?.(sk.names[e.a], sk.names[e.b], Math.min(0.95, Math.max(0.05, t)));
+                    }}
+                  />
+                ))}
+              {(sk.marks ?? []).map((k) => (
+                <circle key={`mk${k}`} cx={sk.verts[k].x} cy={sk.verts[k].y} r={3.6} fill="#2563EB" />
               ))}
               {sk.verts.map((p, i) => (
                 <g key={i}>
-                  <text x={p.x + 7} y={p.y - 6} fontSize={15} fontWeight={700} fill={ink} fontFamily="'Times New Roman', serif" fontStyle="italic">
+                  <text x={p.x + 7} y={p.y - 6} fontSize={15} fontWeight={700} fill={(sk.marks ?? []).includes(i) ? '#1D4ED8' : ink} fontFamily="'Times New Roman', serif" fontStyle="italic">
                     {sk.labels[i] ?? ''}
                   </text>
-                  <circle
-                    data-testid="shape-vertex-handle"
-                    cx={p.x}
-                    cy={p.y}
-                    r={10}
-                    fill={ink}
-                    fillOpacity={0.1}
-                    stroke={ink}
-                    strokeWidth={1.2}
-                    style={{pointerEvents: 'auto', cursor: 'grab', touchAction: 'none'}}
-                    onPointerDown={(e) => down('vertex', i, e)}
-                    onPointerMove={move}
-                    onPointerUp={up}
-                    onPointerCancel={up}
-                  />
+                  {sk.fixed ? (
+                    pickMode === 'point' && (
+                      <circle
+                        data-testid="geo-point-pick"
+                        data-name={sk.names?.[i]}
+                        cx={p.x}
+                        cy={p.y}
+                        r={12}
+                        fill={pickedNames?.includes(sk.names?.[i] ?? '') ? '#2563EB' : 'transparent'}
+                        fillOpacity={0.35}
+                        stroke="#2563EB"
+                        strokeWidth={1.4}
+                        style={{pointerEvents: 'auto', cursor: 'pointer', touchAction: 'none'}}
+                        onPointerDown={(ev) => {
+                          ev.stopPropagation();
+                          if (sk.names?.[i]) onPickPoint?.(sk.names[i]);
+                        }}
+                      />
+                    )
+                  ) : (
+                    <circle
+                      data-testid="shape-vertex-handle"
+                      cx={p.x}
+                      cy={p.y}
+                      r={10}
+                      fill={ink}
+                      fillOpacity={0.1}
+                      stroke={ink}
+                      strokeWidth={1.2}
+                      style={{pointerEvents: 'auto', cursor: 'grab', touchAction: 'none'}}
+                      onPointerDown={(e) => down('vertex', i, e)}
+                      onPointerMove={move}
+                      onPointerUp={up}
+                      onPointerCancel={up}
+                    />
+                  )}
                 </g>
               ))}
             </g>
@@ -257,6 +319,11 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
               Euler
             </button>
           )}
+          {s.geo && onOpenTools && (
+            <button data-testid="shape-geo-tools" title="Mở dụng cụ vẽ thêm trên hình" onClick={onOpenTools} className="px-1.5 py-0.5 hover:bg-blue-50 text-blue-700 font-semibold">
+              ✎ Dụng cụ
+            </button>
+          )}
           <button data-testid="shape-open-full" title="Mở mô phỏng đầy đủ (khai triển, thông số)" onClick={onOpenFull} className="px-1.5 py-0.5 hover:bg-stone-100 text-stone-600">
             ⤢
           </button>
@@ -271,7 +338,7 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
         )}
         {s.kind === 'solid' && (
           <div className="absolute left-0 text-[10px] font-mono text-stone-500 pointer-events-none" style={{top: h * boardScale + 26, whiteSpace: 'nowrap'}}>
-            {sk ? 'Hình giữ đúng nét bạn vẽ · nét đứt: cạnh khuất · kéo đỉnh để chỉnh · ⤢ mở mô hình 3D để xoay' : 'Nét liền: cạnh thấy · nét đứt: cạnh khuất · kéo vòng xoay để xoay khối'}
+            {sk?.fixed ? (pickMode ? (pickMode === 'edge' ? 'Chạm vào cạnh để đặt điểm' : 'Chạm vào điểm để chọn') : 'Hình dựng từ đề · mở dụng cụ vẽ để thêm điểm, đoạn, thiết diện') : sk ? 'Hình giữ đúng nét bạn vẽ · nét đứt: cạnh khuất · kéo đỉnh để chỉnh · ⤢ mở mô hình 3D để xoay' : 'Nét liền: cạnh thấy · nét đứt: cạnh khuất · kéo vòng xoay để xoay khối'}
           </div>
         )}
       </div>

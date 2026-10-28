@@ -235,3 +235,25 @@ Các mã dưới đây có trong kiểu dữ liệu (`packages/types`) hoặc ba
 - Thử **gõ** câu thay vì viết tay, nhất là chữ tiếng Việt.
 - Nhớ thêm từ khóa tên mô phỏng vào câu: "thấu kính f = 100" tốt hơn "f = 100".
 - Câu gồm nhiều ý khác nhau thì tách thành từng lần khoanh.
+
+## 9. Vẽ hình từ đề bài hình học
+
+Mở bằng: Dock → **Hình** → **Vẽ từ đề bài**, hoặc khoanh đề (viết tay đã được đọc hoặc gõ bằng Chèn chữ) rồi bấm **Vẽ hình từ đề bài** trong thẻ hành động của AI hub. Bấm **Trực quan hóa** trên một đoạn đề cũng dựng hình nếu đề có điều kiện cụ thể (tên hình trần như `hình chóp S.ABCD` vẫn mở mô hình 3D có sẵn).
+
+**Đề viết đầy đủ hoặc tóm tắt đều được.** Ví dụ:
+
+- `Cho hình chóp S.ABCD có đáy ABCD là hình vuông cạnh a, SA ⊥ (ABCD), SA = a√2. Gọi M là trung điểm SB.`
+- `GT: S.ABCD, ABCD là hình chữ nhật, AB = 2a, AD = a, SA ⊥ (ABCD), SA = 3a` / `KL: tính góc giữa SC và đáy`
+- `Cho △ABC vuông tại A, AB = 3, AC = 4. Kẻ AH ⊥ BC (H ∈ BC).`
+
+**Ký hiệu hiểu được:** ⊥ vuông góc, ∥ song song, ∩ giao, ≡ trùng, ∈ thuộc, ∠ góc, △ tam giác; độ dài `a√2`, `2a`, `a/2`, số thập phân.
+
+**Hình hỗ trợ:** tam giác (thường, vuông, cân, đều), hình vuông, chữ nhật, bình hành, thoi, thang; hình chóp, tứ diện (kể cả đôi một vuông góc), lăng trụ, hình hộp, lập phương.
+
+**Điểm và đường phụ:** trung điểm, điểm thuộc cạnh, trọng tâm, tâm đáy, hình chiếu (chân đường vuông góc, đường cao), giao của hai đường (`O = AC ∩ BD`), giao của đường với mặt phẳng, giao tuyến hai mặt phẳng (`d = (SAB) ∩ (SCD)`), thiết diện (`thiết diện cắt bởi (MNP)`), điểm trùng nhau (`I ≡ O`), đoạn nối hai điểm.
+
+**Vẽ từng phần:** đề có các phần `a)`, `b)`, `c)` (hoặc `KL:`) được tách riêng. Mặc định chỉ vẽ **hình gốc**; trong bảng dụng cụ bấm **Vẽ phần tiếp** để hiện thêm từng phần, hoặc **Ẩn phần cuối** để bớt đi. Hình gốc không dịch chuyển hay đổi tỉ lệ khi thêm phần. Tích **Vẽ đủ mọi phần ngay** nếu muốn vẽ hết một lần.
+
+**Vẽ thêm trực tiếp trên hình (bảng dụng cụ, nút ✎ Dụng cụ trên hình):** Đoạn nối (chạm 2 điểm), Trung điểm (2 điểm), Điểm trên cạnh (chạm vào cạnh), Chân vuông góc (điểm rồi 2 điểm của đường thẳng), Thiết diện (3 điểm); ô **Thêm yêu cầu bằng lời** (ví dụ `Gọi N là trung điểm SC`); Hoàn tác / Làm lại.
+
+**Giới hạn:** chỉ chiếu xiên kiểu sách giáo khoa (chưa xoay 3D tự do); không có đường tròn, mặt cầu, mặt nón, mặt trụ; đề nhiều bước tính toán chỉ được dựng phần hình, không giải bài; câu không hiểu được hiện trong danh sách ⚠ của bảng dụng cụ thay vì bị bỏ qua lặng lẽ.

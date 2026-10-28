@@ -1130,3 +1130,38 @@ Yêu cầu: khối 3D vẽ tay phải được nắn thẳng và nối đỉnh t
 - Test: `sketchWire.test.ts` (7), cập nhật `inPlaceGeometryTransformation.test.tsx`. tsc 0 lỗi; teacher-board 50 file/906 test.
 - Trên trình duyệt thật: hộp dẹt nét run (không phải lập phương) → hình thẳng cùng vị trí, tỉ lệ dẹt giữ nguyên, 9 nét liền + 3 nét đứt, nhãn A…D', 8 đỉnh kéo được và cạnh đi theo.
 - Giới hạn: hình không còn xoay tại chỗ (xoay bằng ⤢); lăng trụ lục giác không có mẫu phát hiện từ nét; hình vẽ phối cảnh mạnh có thể không khớp → toàn nét liền.
+
+
+# 2026-10-28 (đêm, bổ sung 4) — Chọn vùng bằng khung chữ nhật; ràng buộc hình cứng dở dang
+
+- **Xong, đã kiểm (tsc 0 lỗi; teacher-board 51 file/909 test; trình duyệt thật):** công cụ Chọn nay là kéo khung chữ nhật (hộp bao của đường kéo, nên khoanh vòng cũ vẫn ra khung bao quanh); chạm chỗ trống để bỏ chọn; nhãn dock "Chọn vùng". Sửa trong `SmartboardCanvas.tsx` (vẽ khung khi kéo, `commitPointer` nhánh LASSO) và `SmartboardDock.tsx`. Test mới `marqueeSelect.test.tsx`. Chưa commit.
+- **Dở dang, CHƯA nối vào đâu:** `utils/planeConstraints.ts` (đã viết, chưa có test, chưa gọi): `snapPlane(kind, verts)` khớp hình chữ nhật/vuông/bình hành/thoi/tam giác đều/cân/vuông/vuông cân đúng ràng buộc; `dragPlane(state, i, p)` kéo đỉnh vẫn giữ ràng buộc. Việc còn lại: (1) thêm kind `rhombus`/`quadrilateral` vào `detectPlaneShapeFromStrokes` rồi gọi `snapPlane` trước khi tính góc/cạnh; (2) lưu `kind/apex/right/legsEqual` vào `ShapeMeta.plane` và dùng `dragPlane` trong `InlineShape.move`; (3) khối hộp/lập phương: khớp đỉnh vào ảnh affine của khối mẫu (cạnh song song, mặt trước vuông) và kéo đỉnh theo hình hộp xiên; (4) test cho các việc trên.
+- **Chưa làm:** tính năng vẽ hình từ đề bài hình học (phân tích đề tiếng Việt → dựng hình phẳng/khối, trung điểm, đường cao; hộp thoại "Vẽ từ đề bài"). Thiết kế đã nghĩ: dựng tọa độ 3D rồi chiếu xiên (cabinet), cạnh khuất theo mặt thấy được, dùng lại `ShapeMeta.sketch` để vẽ.
+
+
+# 2026-10-28 — Cài đặt Claude Code Global & Bộ chuyển đổi Đa tài khoản (c1, c2, c3)
+
+- **Môi trường & Hệ thống:**
+  - OS: Windows 10/11 x64, PowerShell 5.1 & Core, Node.js v24.20.0, npm v11.19.0.
+  - Khắc phục lỗi `PSSecurityException` trên PowerShell bằng cách gán `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force`.
+  - Cài đặt `@anthropic-ai/claude-code@2.1.312` vào global npm (`C:\Users\Admin\AppData\Roaming\npm`). Kích hoạt binary native Bun `bin\claude.exe`.
+  - Kiểm tra lệnh `claude --version` hoạt động thành công (output `2.1.312 (Claude Code)`).
+- **Bộ chuyển đổi Đa tài khoản `c1`, `c2`, `c3` (Multi-Account Switcher):**
+  - Cấu trúc thư mục độc lập: `C:\Users\Admin\.claude-profiles\{c1, c2, c3}`.
+  - **Bảo toàn 100% lịch sử Workspace & Ký ức (Projects Memory & File History):** Dùng NTFS Junctions (`mklink /J`) liên kết trực tiếp `projects`, `file-history`, `skills`, `plugins` từ từng profile về kho dữ liệu gốc `C:\Users\Admin\.claude\{projects, file-history, skills, plugins}`.
+  - Tài khoản 1 (`c1`): Giữ nguyên cấu hình và phiên đăng nhập hiện tại (`truonggiangcvp@gmail.com`).
+  - Tài khoản 2 & 3 (`c2`, `c3`): Cấu hình sẵn template projects và session độc lập, sẵn sàng đăng nhập qua `c2 login` và `c3 login`.
+  - Bộ lệnh CLI toàn cục (trong `C:\Users\Admin\AppData\Roaming\npm`):
+    * `c1`, `c2`, `c3`: Gọi Claude Code trực tiếp với profile tương ứng từ bất kỳ terminal nào (PowerShell, CMD, Git Bash). Hỗ trợ alias lệnh nhanh: `c1 login`, `c2 login`, `c3 login`, `c1 status`, `c1 logout`.
+    * `cswitch <1|2|3>`: Đổi tài khoản mặc định được gọi bởi lệnh `claude` trần.
+    * `cstatus`: Bảng điều khiển kiểm tra tài khoản nào đang hoạt động, email đã đăng nhập và trạng thái kết nối.
+
+
+# 2026-10-28 (đêm, bổ sung 5) — Vẽ hình từ đề bài hình học, từng phần, có dụng cụ vẽ thêm
+
+- `utils/geometryProblem.ts` (mới): `normalizeProblem` (⊥ ∥ ∩ ≡ ∈ ∠ △ → chữ; GT/KL), `evalLength` (a√2, 2a, a/2), `splitParts` (a) b) c) hoặc KL:), `buildScene` → `GeoScene` (cảnh lưu được: điểm 3D, cạnh, mặt, mỗi điểm/đường/thiết diện mang số phần), `renderScene(scene, upTo)` (chiếu xiên kiểu sách giáo khoa, cạnh khuất theo mặt nhìn thấy, khung chiếu CỐ ĐỊNH theo hình gốc nên thêm phần không làm hình dịch), `appendPart`, `parseGeometryProblem` (`isProblem` để tên hình trần vẫn mở GEO_SOLID).
+- `utils/geoTools.ts`: `addSegment/addMidpoint/addPointOnSegment/addFoot/addSection/addRequirement`, `layoutGeo` (đặt lên bảng, vị trí tuyệt đối của hình gốc bất biến). Trả cảnh mới nên hoàn tác được.
+- `GeometryProblemPanel.tsx`: hộp thoại nhập đề (xem trước: phần/hiểu/không hiểu, tùy chọn vẽ đủ) và bảng dụng cụ (bước từng phần, 5 dụng cụ chạm chọn điểm/cạnh, thêm yêu cầu bằng lời, hoàn tác/làm lại, xóa hình).
+- Nối vào: Dock → Hình → "Vẽ từ đề bài"; thẻ hành động của AI hub (`sel-btn-geo-problem`: "Vẽ hình từ đề bài" / "Dụng cụ vẽ hình" khi chọn hình đã dựng); `handleVisualize` (đề có điều kiện cụ thể → dựng hình; đề nhiều phần chỉ vẽ phần gốc); nút ✎ Dụng cụ trên hình (`InlineShape`). `ShapeMeta.geo` giữ cảnh; `ShapeMeta.sketch` thêm `aux/marks/polys/names/fixed` (đường phụ màu xanh, chấm điểm phụ, thiết diện tô nhạt, chạm chọn điểm).
+- Kiểm tra: tsc 0 lỗi; teacher-board 53 file/931 test (mới: `geometryProblem.test.ts`, `geoTools.test.tsx`); trình duyệt thật: dán đề chóp S.ABCD 3 phần → chỉ hình gốc; "Vẽ phần tiếp" ×3 hiện M, O, hai đường chéo, thiết diện (MOD) tô xanh, hình gốc không dịch; dụng cụ trung điểm chạm A, C ra điểm mới.
+- Chưa làm: xoay 3D tự do/kéo điểm tự do trên hình dựng (chiếu xiên cố định); đường tròn/mặt cầu/mặt nón; khớp ràng buộc hình phẳng (`planeConstraints.ts` đã viết nhưng chưa nối); đọc đề dài nhiều bước phức tạp qua Gemini. Chưa commit.

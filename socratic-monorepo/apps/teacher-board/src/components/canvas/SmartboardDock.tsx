@@ -72,6 +72,7 @@ export interface SmartboardDockProps {
   customSlotCount: number;
   isGeometryLiveMode?: boolean;
   onToggleGeometryLiveMode?: () => void;
+  onOpenGeometryProblem?: () => void;
   scenes: DockScene[];
   onScene: (id: string) => void;
   busyLabel: string | null;
@@ -175,6 +176,19 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
             <span>Trực quan hình học {p.isGeometryLiveMode ? '(BẬT)' : ''}</span>
           </button>
         )}
+        {p.onOpenGeometryProblem && (
+          <button
+            data-testid="geo-problem-open"
+            onClick={() => {
+              p.onOpenGeometryProblem?.();
+              setPop(null);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ml-1 bg-white border-[#DCD9D0] text-emerald-700 hover:bg-emerald-50"
+            title="Dán đề bài hình học (đủ hoặc tóm tắt, có ký hiệu ⊥ ∥ ∩ ≡): vẽ từng phần, vẽ thêm trực tiếp trên hình"
+          >
+            <span>Vẽ từ đề bài</span>
+          </button>
+        )}
       </div>
 
       {/* Bảng nhỏ: thêm */}
@@ -227,7 +241,7 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
 
       {/* THANH TÁC VỤ */}
       <div className="flex items-center gap-0.5 px-2 py-1.5 rounded-[22px] bg-white/95 backdrop-blur-md border border-[#E6E4DD] shadow-[0_8px_32px_-6px_rgba(20,20,19,0.22)]">
-        <button data-testid="tool-lasso" onClick={() => p.onTool('LASSO')} className={`${base} ${p.tool === 'LASSO' ? on : idle}`} title="Chọn / khoanh vùng để di chuyển hoặc dùng AI">
+        <button data-testid="tool-lasso" onClick={() => p.onTool('LASSO')} className={`${base} ${p.tool === 'LASSO' ? on : idle}`} title="Chọn / khoanh vùng: kéo khung chữ nhật quanh nét viết để di chuyển hoặc dùng AI">
           <MousePointer2 className="w-5 h-5" />
           Chọn
         </button>
@@ -508,8 +522,8 @@ export const AiFab: React.FC<AiFabProps> = ({
       id: 'lasso',
       testid: 'ai-fab-lasso',
       aliasTestId: 'radial-action-close',
-      label: 'Khoanh chọn',
-      hint: 'Khoanh nét viết hoặc hình vẽ trên bảng',
+      label: 'Chọn vùng',
+      hint: 'Kéo khung chữ nhật quanh nét viết hoặc hình vẽ',
       icon: <Lasso className="w-4 h-4" />,
       run: onLasso,
       tone: 'text-sky-600',

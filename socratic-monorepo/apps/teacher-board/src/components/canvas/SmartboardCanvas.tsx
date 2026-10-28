@@ -11,6 +11,9 @@ import { type BoardView, FIT_VIEW, clampView, zoomAt, panBy, bufferQuality } fro
 import { BoardViewControls } from './BoardViewControls';
 import { looksLikeWords, matchViName } from '../../utils/viKeywords';
 import { InlineShape } from './InlineShape';
+import { GeometryProblemPanel, type GeoPickConfig } from './GeometryProblemPanel';
+import { parseGeometryProblem, type GeoScene } from '../../utils/geometryProblem';
+import { layoutGeo } from '../../utils/geoTools';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -412,6 +415,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   // lớp học BYOD
   const room = useClassroom();
   const [isClassroomOpen, setIsClassroomOpen] = useState(false);
+  // hình dựng từ đề bài: hộp thoại nhập đề / bảng dụng cụ vẽ thêm
+  const [geoPanel, setGeoPanel] = useState<{ mode: 'new'; text?: string } | { mode: 'edit'; id: string } | null>(null);
+  const [geoPickCfg, setGeoPickCfg] = useState<GeoPickConfig | null>(null);
   // khóa môn học (bộ chọn phân môn nhanh): ép ngữ cảnh nhận diện cho bộ biên dịch AI
   const [subjectLock, setSubjectLock] = useState<Subject | null>(null);
   // phương án thay thế khi hình phác thảo mơ hồ (Tap & Swap)
@@ -971,14 +977,17 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     if (currentStroke.length > 1) {
       ctx.save();
       if (tool === 'LASSO') {
-        ctx.setLineDash([6, 6]);
+        // Chọn bằng khung chữ nhật: hộp bao của đường kéo (kéo chéo ra đúng khung; khoanh vòng cũng ra khung bao quanh)
+        const xs = currentStroke.map((q) => q.x);
+        const ys = currentStroke.map((q) => q.y);
+        const rx = Math.min(...xs);
+        const ry = Math.min(...ys);
+        ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
         ctx.strokeStyle = '#2563EB';
-        ctx.lineWidth = 2.5;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(currentStroke[0].x, currentStroke[0].y);
-        for (let i = 1; i < currentStroke.length; i++) ctx.lineTo(currentStroke[i].x, currentStroke[i].y);
-        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 5]);
+        ctx.fillRect(rx, ry, Math.max(...xs) - rx, Math.max(...ys) - ry);
+        ctx.strokeRect(rx, ry, Math.max(...xs) - rx, Math.max(...ys) - ry);
       } else if (tool === 'HIGHLIGHTER') {
         ctx.strokeStyle = 'rgba(254, 240, 138, 0.5)';
         ctx.lineWidth = 18;
@@ -1527,6 +1536,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     }
     if (cancelled || pts.length < 2) {
       setCurrentStroke([]);
+      // chạm một điểm vào chỗ trống với công cụ Chọn: bỏ chọn
+      if (!cancelled && tool === 'LASSO') {
+        setLassoLoop([]);
+        setSelectedStrokes([]);
+      }
       return;
     }
 
@@ -1565,10 +1579,19 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       }
     } else if (tool === 'LASSO') {
       // Magic Lasso Vector Hit-testing (Forgiving: >=25% points OR >=30% BBox overlap + 24px pad)
-      const loop = pts;
-      setLassoLoop(loop);
-      const enclosed = filterEnclosedStrokes(strokes, loop);
-      setSelectedStrokes(enclosed);
+      const x0 = Math.min(...pts.map((q) => q.x));
+      const x1 = Math.max(...pts.map((q) => q.x));
+      const y0 = Math.min(...pts.map((q) => q.y));
+      const y1 = Math.max(...pts.map((q) => q.y));
+      if (x1 - x0 < 6 && y1 - y0 < 6) {
+        // chạm một điểm: bỏ chọn
+        setLassoLoop([]);
+        setSelectedStrokes([]);
+      } else {
+        const loop: Point[] = [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }, { x: x0, y: y0 }];
+        setLassoLoop(loop);
+        setSelectedStrokes(filterEnclosedStrokes(strokes, loop));
+      }
       setCurrentStroke([]);
     }
   };
@@ -1735,7 +1758,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const openConvert = (initialTab: 'VISUAL' | 'GRADE' = 'VISUAL') => {
     const src = sourceStrokes(selectedStrokes.length > 0 ? selectedStrokes : strokes);
     if (src.length === 0) {
-      flashError('Chưa có nét viết nào để chuyển. Hãy viết công thức lên bảng (hoặc khoanh vùng nét cần chuyển) rồi bấm lại.');
+      flashError('Chưa có nét viết nào để chuyển. Hãy viết công thức lên bảng (hoặc kéo khung chọn quanh nét cần chuyển) rồi bấm lại.');
       return;
     }
     setConvertCtx({ source: src, initialTab });
@@ -1788,6 +1811,41 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const onTypesetGripUp = () => {
     typesetDragRef.current = null;
   };
+  // Đặt hình dựng từ đề lên bảng; `origin` = tọa độ bảng của góc trên-trái của hình gốc
+  const insertGeoFigure = (scene: GeoScene, upTo: number, source: string, at?: { x: number; y: number }) => {
+    const origin = at ?? { x: 450, y: 170 };
+    const L = layoutGeo(scene, upTo, origin);
+    const id = `geo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const made: Stroke = {
+      id,
+      points: [{ x: L.ax, y: L.ay }],
+      color: strokeColor || '#18181B',
+      width: 3,
+      typeset: { latex: '', text: scene.title, size: 20, w: L.w, h: L.h },
+      shape: { kind: 'solid', title: scene.title, sketch: L.sketch, geo: { scene, upTo, origin, source } },
+    };
+    saveToUndo();
+    setStrokes((prev) => [...prev, made]);
+    setGeoPanel({ mode: 'edit', id });
+    setSelectedStrokes([]);
+    setLassoLoop([]);
+  };
+  const applyGeo = (id: string, scene: GeoScene, upTo: number) => {
+    setStrokes((prev) =>
+      prev.map((q) => {
+        if (q.id !== id || !q.shape?.geo) return q;
+        const L = layoutGeo(scene, upTo, q.shape.geo.origin);
+        return {
+          ...q,
+          points: [{ x: L.ax, y: L.ay }],
+          typeset: { ...q.typeset!, w: L.w, h: L.h },
+          shape: { ...q.shape, sketch: L.sketch, geo: { ...q.shape.geo, scene, upTo } },
+        };
+      }),
+    );
+  };
+  const geoStroke = geoPanel?.mode === 'edit' ? strokes.find((q) => q.id === geoPanel.id && q.shape?.geo) : undefined;
+
   const deleteTypeset = (id: string) => {
     saveToUndo();
     setStrokes((prev) => prev.filter((s) => s.id !== id));
@@ -2409,6 +2467,19 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       detectedInstantLatex = viLocal ? viLocal.canon : '';
     }
     const effectiveHint = overrideHint || formulaInput || aiVisionLatex || typesetHint || detectedInstantLatex || '';
+
+    // -1. Đề bài hình học (viết đủ hoặc tóm tắt, có ký hiệu ⊥ ∥ ∩ ≡): dựng hình từng phần ngay trên bảng
+    if (effectiveHint && !overrideHint) {
+      const gp = parseGeometryProblem(effectiveHint);
+      if (gp.scene && gp.isProblem) {
+        const bbSel = selectedStrokes.length > 0 ? bboxOfStrokes(selectedStrokes) : null;
+        const at = bbSel ? { x: Math.min(820, bbSel.x1 + 50), y: Math.max(20, bbSel.y0) } : undefined;
+        insertGeoFigure(gp.scene, gp.scene.parts.length > 1 ? 0 : gp.scene.parts.length - 1, effectiveHint, at);
+        setFormulaInput('');
+        setIsLoading(false);
+        return;
+      }
+    }
 
     // 0. Chữ tiếng Việt gọi tên một mô phỏng: mở thẳng (không cho nét chữ bị nhầm thành khối hình)
     if (!overrideHint && !typesetHint && namedWords && effectiveHint && looksLikeWords(effectiveHint)) {
@@ -3034,6 +3105,34 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
           <VectorTimeTravelBar getJournal={journal.snapshot} eventCount={journal.eventCount} />
 
+          {geoPanel?.mode === 'new' && (
+            <GeometryProblemPanel
+              mode="new"
+              initialText={geoPanel.text}
+              onClose={() => setGeoPanel(null)}
+              onCreate={(sc, upTo, src) => insertGeoFigure(sc, upTo, src)}
+            />
+          )}
+          {geoPanel?.mode === 'edit' && geoStroke?.shape?.geo && (
+            <GeometryProblemPanel
+              key={geoStroke.id}
+              mode="edit"
+              scene={geoStroke.shape.geo.scene}
+              upTo={geoStroke.shape.geo.upTo}
+              onClose={() => {
+                setGeoPanel(null);
+                setGeoPickCfg(null);
+              }}
+              onApply={(sc, upTo) => applyGeo(geoStroke.id, sc, upTo)}
+              onDeleteFigure={() => {
+                deleteTypeset(geoStroke.id);
+                setGeoPanel(null);
+                setGeoPickCfg(null);
+              }}
+              onPickConfig={setGeoPickCfg}
+            />
+          )}
+
           {/* Lớp công thức chuẩn (KaTeX) đặt trên canvas; chỉ phần tay cầm nhận chuột nên bút vẫn viết xuyên qua được */}
           <div className="absolute inset-0 pointer-events-none" data-testid="typeset-layer">
             {textDraft && (
@@ -3067,6 +3166,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   onMove={onTypesetGripMove}
                   onMoveEnd={onTypesetGripUp}
                   onInteractStart={saveToUndo}
+                  onOpenTools={s.shape?.geo ? () => setGeoPanel({ mode: 'edit', id: s.id }) : undefined}
+                  pickMode={geoPanel?.mode === 'edit' && geoPanel.id === s.id ? geoPickCfg?.pickMode ?? null : null}
+                  pickedNames={geoPanel?.mode === 'edit' && geoPanel.id === s.id ? geoPickCfg?.picks : undefined}
+                  onPickPoint={geoPickCfg?.onPickPoint}
+                  onPickEdge={geoPickCfg?.onPickEdge}
                 />
               ))}
             {strokes
@@ -3363,6 +3467,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         onToggleRecorder={() => setIsStudioRecorderOpen((o) => !o)}
         customSlotCount={Object.values(hasCustomSlots).filter(Boolean).length}
         isGeometryLiveMode={isGeometryLiveMode}
+        onOpenGeometryProblem={() => setGeoPanel({ mode: 'new' })}
         onToggleGeometryLiveMode={() => setIsGeometryLiveMode((o) => !o)}
         scenes={AUTO_INK_SCENES.map((sc, i) => ({ id: sc.id, shortLabel: sc.shortLabel, hotkey: i + 1, active: activeAutoScene === sc.id, custom: !!hasCustomSlots[sc.id] }))}
         onScene={triggerAutoInk}
@@ -3402,7 +3507,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           if (selectedStrokes.length > 0) handleVisualize();
           else {
             setTool('LASSO');
-            flashError('Hãy khoanh vùng nét viết hoặc hình vẽ cần trực quan hóa, rồi chạm lại nút này.');
+            flashError('Hãy kéo khung chọn quanh nét viết hoặc hình vẽ cần trực quan hóa, rồi chạm lại nút này.');
           }
         }}
         onLasso={() => setTool('LASSO')}
@@ -3522,6 +3627,19 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                         <span>{geoTitle} (hình tại chỗ)</span>
                       </button>
                     )}
+                    <button
+                      type="button"
+                      data-testid="sel-btn-geo-problem"
+                      onClick={() => {
+                        const g = selectedStrokes.find((q) => q.shape?.geo);
+                        if (g) setGeoPanel({ mode: 'edit', id: g.id });
+                        else setGeoPanel({ mode: 'new', text: formulaInput || selectedStrokes.find((q) => q.typeset)?.typeset?.text });
+                      }}
+                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold border bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-800 cursor-pointer"
+                      title="Vẽ hình từ đề bài hình học, vẽ từng phần, thêm điểm/đoạn/thiết diện trực tiếp trên hình"
+                    >
+                      {selectedStrokes.some((q) => q.shape?.geo) ? 'Dụng cụ vẽ hình' : 'Vẽ hình từ đề bài'}
+                    </button>
                     <div className="grid grid-cols-2 gap-2">
                       <button type="button" data-testid="btn-convert-ink" onClick={() => openConvert('VISUAL')} className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer border bg-violet-50 hover:bg-violet-100 border-violet-200 text-violet-700" title="Chuyển chữ viết tay thành công thức chuẩn">
                         <Wand2 className="w-3.5 h-3.5" /> Chuyển công thức

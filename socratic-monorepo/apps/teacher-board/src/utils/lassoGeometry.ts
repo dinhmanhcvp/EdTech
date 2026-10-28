@@ -37,7 +37,21 @@ export interface ShapeMeta {
    * Hình khối giữ nguyên theo nét người vẽ (đã nắn thẳng, nối đỉnh), tọa độ tương đối với neo.
    * Có `sketch` thì vẽ theo đây, không vẽ lại từ khối mẫu; `solid` còn lại để mở mô hình 3D đầy đủ.
    */
-  sketch?: {verts: {x: number; y: number}[]; edges: {a: number; b: number; hidden: boolean}[]; labels: string[]};
+  sketch?: {
+    verts: {x: number; y: number}[];
+    edges: {a: number; b: number; hidden: boolean; aux?: boolean}[];
+    labels: string[];
+    /** tên điểm (hình dựng từ đề): dùng để chọn điểm bằng chạm */
+    names?: string[];
+    /** chỉ số đỉnh vẽ chấm (điểm phụ) */
+    marks?: number[];
+    /** đa giác tô nhạt (thiết diện) */
+    polys?: number[][];
+    /** hình dựng từ đề: đỉnh không kéo được, chạm để chọn điểm */
+    fixed?: boolean;
+  };
+  /** hình dựng từ đề bài: giữ cả cảnh để thêm/bớt từng phần và vẽ thêm */
+  geo?: {scene: import('./geometryProblem').GeoScene; upTo: number; origin: {x: number; y: number}; source: string};
 }
 
 export interface Stroke {

@@ -576,7 +576,7 @@ function addExtras(m: Model, text: string): void {
         }
       }
       // trọng tâm
-      if ((r = /([A-Z]'?)\s*là\s*trọng tâm\s*(?:của\s*)?(?:tam giác\s*)?([A-Z]{3})/.exec(c))) {
+      if ((r = /([A-Z]'?)\s*là\s*trọng tâm\s*(?:của\s*)?(?:tam giác\s*)?((?:[A-Z]'?){3})/.exec(c))) {
         const ps = pointsIn(r[2]).map((n) => P(n));
         if (ps.every(Boolean)) {
           define(r[1], centroid(ps as V3[]), `${r[1]} là trọng tâm tam giác ${r[2]}`);
@@ -1001,7 +1001,34 @@ export interface SceneBuild {
   ignored: string[];
 }
 
-export function buildScene(raw: string): SceneBuild {
+/**
+ * Đề VIẾT TAY: bộ nhận dạng trả LaTeX lẫn chữ (\text{...}, A^{\prime}, \perp, \widehat{ABC}, dòng ngăn bằng \\, chữ cái đỉnh bị tách cách "A B C D").
+ * Đưa về văn bản thường mà bộ phân tích đề hiểu; đề gõ chữ đi qua đây không đổi gì đáng kể.
+ */
+export function cleanHandwritten(raw: string): string {
+  let t = raw || '';
+  t = t.replace(/\$+/g, ' ');
+  t = t.replace(/\\\\(?![a-zA-Z])/g, '\n').replace(/\\(?:quad|qquad|,|;|:|!)/g, ' ').replace(/\\(?:left|right|displaystyle|big|Big)(?![a-zA-Z])\s*/g, '');
+  t = t.replace(/\\(?:text|textrm|mathrm|mathbf|textbf|operatorname)\s*\{((?:[^{}]|\{[^{}]*\})*)\}/g, '$1');
+  t = t.replace(/\^\s*\{\s*\\prime\s*\}|\^\s*\\prime|\\prime|\^\s*\{\s*'\s*\}/g, "'");
+  t = t.replace(/\\(?:bot|perp)(?![a-zA-Z])/g, ' ⊥ ').replace(/\\(?:parallel|Vert|mid\s*\\mid)(?![a-zA-Z])/g, ' ∥ ').replace(/\\cap(?![a-zA-Z])/g, ' ∩ ');
+  t = t.replace(/\\in(?![a-zA-Z])/g, ' ∈ ').replace(/\\equiv(?![a-zA-Z])/g, ' ≡ ').replace(/\\(?:triangle|bigtriangleup)(?![a-zA-Z])/g, ' △ ');
+  t = t.replace(/\\(?:widehat|hat|angle)\s*\{?\s*([A-Z]'?[A-Z]'?[A-Z]'?)\s*\}?/g, ' góc $1 ');
+  t = t.replace(/\\(?:overline|overrightarrow|vec|overleftrightarrow)\s*\{\s*([A-Z]'?[A-Z]'?)\s*\}/g, '$1');
+  t = t.replace(/\\(?:Rightarrow|Longrightarrow|Leftrightarrow|rightarrow|to)(?![a-zA-Z])/g, ';').replace(/\\sqrt\s*(\d)/g, '√$1').replace(/\\cdot|\\times/g, '*');
+  t = t.replace(/[´‘’′]/g, "'").replace(/⟂|⊥/g, '⊥').replace(/\u2225|\|\|/g, '∥');
+  // chữ cái đỉnh bị đọc tách: "A B C D", "S . A B C D", "A ' B ' C '" → ABCD, S.ABCD, A'B'C'
+  t = t.replace(/(?<![A-Za-z'])([A-Z])\s*['`]\s*(?=[A-Z]\s*'|\s|$|[.,;)])/g, "$1'");
+  t = t.replace(/(?<![\p{L}'])((?:[A-Z]'?)(?:\s+[A-Z]'?){2,})(?![\p{L}'])/gu, (m) => m.replace(/\s+/g, ''));
+  // đoạn hai chữ cái bị tách ("S A ⊥", "trung điểm S B"): chỉ gộp khi đứng trước ký hiệu/từ quan hệ hoặc sau từ chỉ đoạn
+  t = t.replace(/(?<![\p{L}'])([A-Z]'?)\s+([A-Z]'?)(?=\s*(?:⊥|∥|∩|≡|=|vuông|song|trùng|giao|là\s|cắt)(?![\p{L}]))/gu, '$1$2');
+  t = t.replace(/(?<=(?:điểm|nối|đoạn|cạnh|thẳng|đường)\s)([A-Z]'?)\s+([A-Z]'?)(?![\p{L}'])/gu, '$1$2');
+  t = t.replace(/(?<![\p{L}'])([A-Z]'?)\s*\.\s*((?:[A-Z]'?){3,})/gu, '$1.$2');
+  return t.replace(/[ \t]+/g, ' ').trim();
+}
+
+export function buildScene(raw0: string): SceneBuild {
+  const raw = cleanHandwritten(raw0);
   const parts = splitParts(raw);
   const notes: string[] = [];
   const base = normalizeProblem(parts[0]?.text ?? '');

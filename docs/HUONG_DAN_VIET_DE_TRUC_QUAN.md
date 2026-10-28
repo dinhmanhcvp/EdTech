@@ -249,6 +249,8 @@ Cây chức năng của AI hub khi vẽ hình:
 
 Chọn một dụng cụ thì đĩa đóng lại để bạn chạm lên hình; nút AI hiện tên dụng cụ đang dùng. Chạm nút AI lần nữa sẽ mở lại đúng tầng đang dùng. Esc hoặc chạm ra ngoài đưa đĩa về tầng 1. Nút **✎ Dụng cụ** trên hình mở thẳng tầng Vẽ hình.
 
+**Đề viết tay cũng được:** viết đề lên bảng (nhiều dòng cũng được), kéo khung chọn quanh đề rồi bấm **Trực quan hóa**. Bảng dùng kết quả đọc chữ của Vision (cần khóa Gemini/OpenRouter còn hạn mức; bộ đọc offline chỉ đọc ký hiệu toán nên không đọc được đề tiếng Việt). Kết quả đọc có LaTeX (`\text{}`, `\perp`, `\cap`, `A^{\prime}`, `\widehat{ABC}`), dòng ngăn bằng `\\` hoặc đỉnh bị tách cách (`S . A B C D`) đều được làm sạch trước khi hiểu. Viết rõ chữ cái đỉnh viết hoa và dấu phẩy ' để đọc đúng.
+
 **Đề viết đầy đủ hoặc tóm tắt đều được.** Ví dụ:
 
 - `Cho hình chóp S.ABCD có đáy ABCD là hình vuông cạnh a, SA ⊥ (ABCD), SA = a√2. Gọi M là trung điểm SB.`

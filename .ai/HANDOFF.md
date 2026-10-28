@@ -1175,3 +1175,11 @@ Yêu cầu: khối 3D vẽ tay phải được nắn thẳng và nối đỉnh t
 - `SmartboardCanvas.tsx`: `geoCtl`, `hubOpenAt`; ✎ Dụng cụ trên hình mở hub tại tầng `draw`.
 - Test: `geoTools.test.tsx` (bộ điều khiển + 4 test AiFab phân tầng); tsc 0 lỗi; teacher-board 53 file/935 test. Trình duyệt thật (1024×768): AI → Vẽ hình → Từ đề bài → dán đề → vẽ → AI → Dụng cụ cho tầng 3 gồm Quay lại + 5 dụng cụ quanh nút AI. Chưa commit.
 - Lưu ý: đĩa 216 px chứa tối đa 8 ô; tầng 2 khi đã có hình đúng 8 ô (Quay lại + 7). Thêm ô nữa phải sang tầng 3.
+
+
+# 2026-10-28 (đêm, bổ sung 7) — Đề hình học VIẾT TAY
+
+- `geometryProblem.ts`: `cleanHandwritten` chạy đầu `buildScene`: bỏ `$`, `\`→xuống dòng, `\text{}`, `\prime`/`^{\prime}`→', `\perp/\bot/\parallel/\cap/\in/\equiv/\triangle`→ký hiệu, `\widehat{ABC}`→"góc ABC", `\sqrt2`→√2, gộp đỉnh đọc tách cách ("S . A B C D", "S A ⊥", "trung điểm S B"). Đề gõ chữ đi qua không đổi.
+- `SmartboardCanvas.tsx` (`handleVisualize`, bước −1): thử lần lượt các nguồn chữ [ô công thức, Vision `text`, Vision `latex`, chữ gõ, hint] và lấy nguồn đầu tiên dựng được hình; nguồn đó được lưu làm `geo.source`.
+- Test mới `handwrittenProblem.test.ts` (6): mô phỏng đúng kiểu kết quả Vision (LaTeX lẫn chữ, đỉnh tách cách, dấu phẩy). Chưa thử đầu-cuối với nét viết tay thật + Gemini (cần khóa và người viết tay tiếng Việt); chất lượng phụ thuộc Vision đọc đúng chữ cái đỉnh.
+- tsc 0 lỗi; teacher-board 54 file/942 test. Chưa commit (gồm cả sửa trọng tâm tam giác A'B'C' ở bước trước).

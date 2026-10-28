@@ -2472,12 +2472,23 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     const effectiveHint = overrideHint || formulaInput || aiVisionLatex || typesetHint || detectedInstantLatex || '';
 
     // -1. Đề bài hình học (viết đủ hoặc tóm tắt, có ký hiệu ⊥ ∥ ∩ ≡): dựng hình từng phần ngay trên bảng
-    if (effectiveHint && !overrideHint) {
-      const gp = parseGeometryProblem(effectiveHint);
-      if (gp.scene && gp.isProblem) {
+    if (!overrideHint) {
+      // đề gõ chữ hoặc VIẾT TAY (Vision đọc ra chữ và LaTeX): thử lần lượt các nguồn chữ, lấy nguồn đầu tiên dựng được hình
+      const sources = [formulaInput, aiRes ? aiRes.lines.map((l) => l.text).join('\n') : '', aiRes ? aiRes.lines.map((l) => l.latex).join('\n') : '', typesetHint, effectiveHint].filter((x) => x && x.trim());
+      let gp = null as ReturnType<typeof parseGeometryProblem> | null;
+      let gpSource = '';
+      for (const src of sources) {
+        const r = parseGeometryProblem(src);
+        if (r.scene && r.isProblem) {
+          gp = r;
+          gpSource = src;
+          break;
+        }
+      }
+      if (gp && gp.scene) {
         const bbSel = selectedStrokes.length > 0 ? bboxOfStrokes(selectedStrokes) : null;
         const at = bbSel ? { x: Math.min(820, bbSel.x1 + 50), y: Math.max(20, bbSel.y0) } : undefined;
-        insertGeoFigure(gp.scene, gp.scene.parts.length > 1 ? 0 : gp.scene.parts.length - 1, effectiveHint, at);
+        insertGeoFigure(gp.scene, gp.scene.parts.length > 1 ? 0 : gp.scene.parts.length - 1, gpSource, at);
         setFormulaInput('');
         setIsLoading(false);
         return;

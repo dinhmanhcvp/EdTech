@@ -141,3 +141,13 @@ describe('vẽ từng phần của đề', () => {
     expect(appendPart(sc2, 'blah blah').ignored.length).toBeGreaterThan(sc2.ignored.length);
   });
 });
+
+describe('đề lăng trụ có điểm trên mặt đáy trên', () => {
+  it("trọng tâm tam giác A'B'C' được vẽ", () => {
+    const sc = buildScene("Cho lăng trụ đứng ABC.A'B'C' có đáy ABC là tam giác vuông tại A, AB = a, AC = 2a, AA' = 3a. a) Gọi G là trọng tâm tam giác A'B'C'.").scene!;
+    const g = sc.pts.G;
+    expect(g).toBeTruthy();
+    expect(g[1]).toBeCloseTo(sc.pts["A'"][1]);
+    expect(g[0]).toBeCloseTo((sc.pts["A'"][0] + sc.pts["B'"][0] + sc.pts["C'"][0]) / 3);
+  });
+});

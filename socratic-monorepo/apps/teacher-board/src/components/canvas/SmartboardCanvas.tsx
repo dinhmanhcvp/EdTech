@@ -12,8 +12,8 @@ import { BoardViewControls } from './BoardViewControls';
 import { looksLikeWords, matchViName } from '../../utils/viKeywords';
 import { InlineShape } from './InlineShape';
 import { GeometryProblemPanel, type GeoPickConfig, type GeoController } from './GeometryProblemPanel';
-import { parseGeometryProblem, type GeoScene } from '../../utils/geometryProblem';
-import { layoutGeo } from '../../utils/geoTools';
+import { buildScene, parseGeometryProblem, type GeoScene } from '../../utils/geometryProblem';
+import { layoutGeo, problemTextForPlane, problemTextForSolid } from '../../utils/geoTools';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -1818,7 +1818,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     typesetDragRef.current = null;
   };
   // Đặt hình dựng từ đề lên bảng; `origin` = tọa độ bảng của góc trên-trái của hình gốc
-  const insertGeoFigure = (scene: GeoScene, upTo: number, source: string, at?: { x: number; y: number }) => {
+  const insertGeoFigure = (scene: GeoScene, upTo: number, source: string, at?: { x: number; y: number }, replaceIds?: Set<string>) => {
     const origin = at ?? { x: 450, y: 170 };
     const L = layoutGeo(scene, upTo, origin);
     const id = `geo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -1831,7 +1831,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       shape: { kind: 'solid', title: scene.title, sketch: L.sketch, geo: { scene, upTo, origin, source } },
     };
     saveToUndo();
-    setStrokes((prev) => [...prev, made]);
+    setStrokes((prev) => [...(replaceIds ? prev.filter((q) => !replaceIds.has(q.id)) : prev), made]);
     setGeoPanel({ mode: 'edit', id });
     setSelectedStrokes([]);
     setLassoLoop([]);
@@ -2465,12 +2465,22 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       setFormulaInput('');
       setIsLoading(false);
     };
+    // nét vẽ tay đã nhận dạng: thay bằng hình dựng (đủ dụng cụ tầng 2) đặt đúng chỗ các nét
+    const placeSketch = (scene: GeoScene, src: string) => {
+      const bb = bboxOfStrokes(selectedStrokes);
+      insertGeoFigure(scene, scene.parts.length > 1 ? 0 : scene.parts.length - 1, src, { x: Math.max(10, bb.x0), y: Math.max(10, bb.y0) }, new Set(selectedStrokes.map((q) => q.id)));
+      setFormulaInput('');
+      setIsLoading(false);
+    };
     let hit = fromText(aiVisionResult);
     if (hit) return place(hit);
     // nét vẽ tay: khối trước (phân biệt hộp chữ nhật / lập phương theo tỉ lệ cạnh), rồi đa giác phẳng
     if (!typesetHint && ink.length >= 4) {
       const sk = detectSolidFromStrokes(ink);
       if (sk && sk.confidence >= 0.7) {
+        const t = problemTextForSolid(sk.kind, sk.dims);
+        const built = t ? buildScene(t).scene : null;
+        if (built) return placeSketch(built, t!);
         transformStrokesToGeometryInPlace(ink, makeSolidBlueprint(sk.kind, sk.dims, sk.wire));
         return;
       }
@@ -2478,6 +2488,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     if (!typesetHint && ink.length >= 1 && ink.length <= 4) {
       const pl = detectPlaneShapeFromStrokes(ink);
       if (pl && pl.confidence >= 0.78) {
+        const t = problemTextForPlane(pl.kind);
+        const built = t ? buildScene(t).scene : null;
+        if (built) return placeSketch(built, t!);
         transformStrokesToGeometryInPlace(ink, makePlaneGeometryBlueprint(pl));
         return;
       }
@@ -2531,26 +2544,23 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     }
     const effectiveHint = overrideHint || formulaInput || aiVisionLatex || typesetHint || detectedInstantLatex || '';
 
-    // -1. Đề bài hình học (viết đủ hoặc tóm tắt, có ký hiệu ⊥ ∥ ∩ ≡): dựng hình từng phần ngay trên bảng
+    // Hình học (đề bài, tên hình + đỉnh như S.ABCD, nét vẽ tay hình khối/đa giác) thuộc chức năng VẼ HÌNH của AI hub,
+    // còn Trực quan dành cho hàm số/công thức và các mô phỏng. Gặp hình học thì chỉ đường sang Vẽ hình thay vì làm lẫn hai việc.
     if (!overrideHint) {
-      // đề gõ chữ hoặc VIẾT TAY (Vision đọc ra chữ và LaTeX): thử lần lượt các nguồn chữ, lấy nguồn đầu tiên dựng được hình
-      const sources = [formulaInput, aiRes ? aiRes.lines.map((l) => l.text).join('\n') : '', aiRes ? aiRes.lines.map((l) => l.latex).join('\n') : '', typesetHint, effectiveHint].filter((x) => x && x.trim());
-      let gp = null as ReturnType<typeof parseGeometryProblem> | null;
-      let gpSource = '';
-      for (const src of sources) {
-        const r = parseGeometryProblem(src);
-        if (r.scene && r.isProblem) {
-          gp = r;
-          gpSource = src;
-          break;
-        }
+      const geoSources = [formulaInput, aiRes ? aiRes.lines.map((l) => l.text).join('\n') : '', aiRes ? aiRes.lines.map((l) => l.latex).join('\n') : '', typesetHint, effectiveHint].filter((x) => x && x.trim());
+      let isGeometry = geoSources.some((src) => !!parseGeometryProblem(src).scene);
+      if (!isGeometry && !typesetHint && !namedWords && inkSelected.length >= 4) {
+        const sk = detectSolidFromStrokes(inkSelected);
+        isGeometry = !!sk && sk.confidence >= 0.7;
       }
-      if (gp && gp.scene) {
-        const bbSel = selectedStrokes.length > 0 ? bboxOfStrokes(selectedStrokes) : null;
-        const at = bbSel ? { x: Math.min(820, bbSel.x1 + 50), y: Math.max(20, bbSel.y0) } : undefined;
-        insertGeoFigure(gp.scene, gp.scene.parts.length > 1 ? 0 : gp.scene.parts.length - 1, gpSource, at);
-        setFormulaInput('');
+      if (!isGeometry && !typesetHint && !namedWords && inkSelected.length >= 1 && inkSelected.length <= 4) {
+        const pl = detectPlaneShapeFromStrokes(inkSelected);
+        isGeometry = !!pl && pl.confidence >= 0.78;
+      }
+      if (isGeometry) {
         setIsLoading(false);
+        setHubOpenAt({ path: ['draw'], nonce: Date.now() });
+        flashError('Đây là hình học: dùng Vẽ hình trong AI hub (Trực quan dành cho hàm số và công thức).');
         return;
       }
     }
@@ -2564,24 +2574,6 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         setLassoLoop([]);
         setFormulaInput('');
         setIsLoading(false);
-        return;
-      }
-    }
-
-    // 1. Hình khối 3D vẽ tay (lập phương, hộp, chóp, lăng trụ, tứ diện, bát diện): ưu tiên nhận ngay từ cấu trúc đồ thị nét vẽ
-    if (!overrideHint && !typesetHint && !namedWords && inkSelected.length >= 4) {
-      const sk = detectSolidFromStrokes(inkSelected);
-      if (sk && sk.confidence >= 0.7) {
-        transformStrokesToGeometryInPlace(inkSelected, makeSolidBlueprint(sk.kind, sk.dims, sk.wire));
-        return;
-      }
-    }
-
-    // 2. Đa giác phẳng 2D vẽ tay (tam giác thường/vuông/cân/đều, hình vuông, chữ nhật, bình hành): chuyển ngay sang Hình học động tương tác
-    if (!overrideHint && !typesetHint && !namedWords && inkSelected.length >= 1 && inkSelected.length <= 4) {
-      const planeSk = detectPlaneShapeFromStrokes(inkSelected);
-      if (planeSk && planeSk.confidence >= 0.78) {
-        transformStrokesToGeometryInPlace(inkSelected, makePlaneGeometryBlueprint(planeSk));
         return;
       }
     }

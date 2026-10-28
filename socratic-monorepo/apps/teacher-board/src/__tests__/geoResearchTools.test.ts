@@ -36,3 +36,29 @@ describe('Đo, nét khuất và xuất TikZ trên hình dựng', () => {
     expect(code).toContain('\\end{tikzpicture}');
   });
 });
+
+import {problemTextForPlane, problemTextForSolid} from '../utils/geoTools';
+
+describe('nét vẽ tay đã nhận dạng → hình dựng có đủ dụng cụ', () => {
+  for (const k of ['cube', 'box', 'pyramid4', 'pyramid3', 'prism3']) {
+    it(`khối ${k}`, () => {
+      const t = problemTextForSolid(k, {a: 3, b: 2, c: 1})!;
+      const r = parseGeometryProblem(t);
+      expect(r.scene, t).not.toBeNull();
+      expect(r.scene!.dim).toBe(3);
+    });
+  }
+  for (const k of ['triangle_equilateral', 'triangle_right', 'triangle_isosceles', 'triangle_scalene', 'square', 'rectangle', 'parallelogram']) {
+    it(`hình phẳng ${k}`, () => {
+      const t = problemTextForPlane(k)!;
+      expect(parseGeometryProblem(t).scene, t).not.toBeNull();
+    });
+  }
+  it('hộp chữ nhật khác lập phương theo kích thước', () => {
+    const sc = parseGeometryProblem(problemTextForSolid('box', {a: 3, b: 2, c: 1})!).scene!;
+    const d = (p: string, q: string) => Math.hypot(...(sc.pts[p].map((v, i) => v - sc.pts[q][i]) as [number, number, number]));
+    expect(d('A', 'B')).toBeCloseTo(3, 3);
+    expect(d('A', 'D')).toBeCloseTo(2, 3);
+    expect(d('A', "A'")).toBeCloseTo(1, 3);
+  });
+});

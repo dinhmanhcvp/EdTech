@@ -717,6 +717,12 @@ export const AiFab: React.FC<AiFabProps> = ({
               () => (selectionCount > 0 ? onDrawSelected?.() : onLasso()),
             ),
             sub('typed', 'Gõ đề', 'Dán hoặc gõ đề bài (đủ hoặc tóm tắt) để dựng hình', <FileText className="w-4 h-4" />, () => onGeoNew?.()),
+            // các chức năng chuyên sâu luôn hiện để biết có gì; mờ cho tới khi có hình
+            sub('tools', 'Dựng', 'Cần có hình trước: vẽ từ vùng khoanh hoặc gõ đề', <Ruler className="w-4 h-4" />, () => undefined, {disabled: true}),
+            sub('measure', 'Đo', 'Cần có hình trước: đo độ dài và góc', <Compass className="w-4 h-4" />, () => undefined, {disabled: true}),
+            sub('hidden', 'Nét khuất', 'Cần có hình trước: đổi nét đứt chuẩn SGK / ẩn nét khuất', <EyeOff className="w-4 h-4" />, () => undefined, {disabled: true}),
+            sub('view3d', 'Xem 3D', 'Cần có hình trước: mô phỏng 3D xoay, cắt, khai triển', <Box className="w-4 h-4" />, () => undefined, {disabled: true}),
+            sub('export', 'Xuất TikZ', 'Cần có hình trước: chép mã TikZ để dán vào LaTeX', <Download className="w-4 h-4" />, () => undefined, {disabled: true}),
           ]),
     ];
   } else if (tierKey === 'draw/tools' && geo) {

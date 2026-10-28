@@ -184,5 +184,48 @@ export function toTikz(sc: GeoScene, upTo: number): string {
   return lines.join('\n');
 }
 
+// ------------------------------------------------------------------ nét vẽ tay đã nhận dạng → đề dựng hình (để có đủ dụng cụ của tầng 2)
+const fmtDim = (v: number | undefined, d = 2) => `${+(v && v > 0 ? v : d).toFixed(1)}`;
+
+/** Khối nhận dạng từ nét vẽ tay → câu mô tả mà bộ dựng hình hiểu; null nếu chưa có hình dựng tương ứng (bát diện, lăng trụ lục giác…). */
+export function problemTextForSolid(kind: string, dims: {a?: number; b?: number; c?: number; h?: number} = {}): string | null {
+  switch (kind) {
+    case 'cube':
+      return "hình lập phương ABCD.A'B'C'D' cạnh a";
+    case 'box':
+      return `hình hộp chữ nhật ABCD.A'B'C'D' có AB = ${fmtDim(dims.a)}, AD = ${fmtDim(dims.b)}, AA' = ${fmtDim(dims.c)}`;
+    case 'pyramid4':
+      return 'hình chóp tứ giác đều S.ABCD cạnh đáy a';
+    case 'pyramid3':
+      return 'tứ diện đều ABCD cạnh a';
+    case 'prism3':
+      return "lăng trụ tam giác đều ABC.A'B'C' cạnh đáy a";
+    default:
+      return null;
+  }
+}
+
+/** Hình phẳng nhận dạng từ nét vẽ tay → câu mô tả. */
+export function problemTextForPlane(kind: string): string | null {
+  switch (kind) {
+    case 'triangle_equilateral':
+      return 'tam giác đều ABC';
+    case 'triangle_right':
+      return 'tam giác ABC vuông tại A';
+    case 'triangle_isosceles':
+      return 'tam giác ABC cân tại A';
+    case 'triangle_scalene':
+      return 'tam giác ABC';
+    case 'square':
+      return 'hình vuông ABCD';
+    case 'rectangle':
+      return 'hình chữ nhật ABCD';
+    case 'parallelogram':
+      return 'hình bình hành ABCD';
+    default:
+      return null;
+  }
+}
+
 export const geoTitle = (sc: GeoScene) => sc.title;
 export {sceneFromModel};

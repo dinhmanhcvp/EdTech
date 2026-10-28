@@ -77,65 +77,39 @@ describe('In-Place Geometry Transformation on Smartboard Canvas', () => {
     expect(screen.queryByTestId('geo-live-mode-badge')).not.toBeInTheDocument();
   });
 
-  it('Biến nét vẽ 2D tam giác thành hình học động tương tác tại chỗ trên bảng khi bấm nút nhận diện', async () => {
-    render(
-      <SmartboardCanvas
-        initialStrokes={triangleStrokes}
-        initialSelectedStrokes={triangleStrokes}
-      />
-    );
+  it('Tam giác vẽ tay: Trực quan chỉ đường sang Vẽ hình; Vẽ hình dựng hình có đủ dụng cụ tầng 2', async () => {
+    render(<SmartboardCanvas initialStrokes={triangleStrokes} initialSelectedStrokes={triangleStrokes} />);
 
-    // Nút biến nét vẽ thành hình tương tác xuất hiện trên thanh công cụ vùng chọn
-    const inplaceBtn = await screen.findByTestId('top-toolbar-btn-visualize');
-    expect(inplaceBtn).toBeInTheDocument();
-
-    // Bấm nút chuyển đổi tại chỗ
+    // Trực quan dành cho hàm số/công thức: gặp hình học thì không tự vẽ mà mở tầng Vẽ hình
     await act(async () => {
-      fireEvent.click(inplaceBtn);
+      fireEvent.click(await screen.findByTestId('top-toolbar-btn-visualize'));
     });
+    expect(screen.queryByTestId('inline-shape')).not.toBeInTheDocument();
+    expect(await screen.findByTestId('ai-fab-draw-new')).toBeInTheDocument();
 
-    // Nét vẽ được thay bằng hình sạch ngay trên bảng (như chữ → công thức), KHÔNG nhảy sang hologram
+    // Vẽ hình: nét vẽ tay được nhận dạng và thay bằng hình dựng ngay tại chỗ
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('ai-fab-draw-new'));
+    });
     const shape = await screen.findByTestId('inline-shape');
-    expect(shape.getAttribute('data-kind')).toBe('plane');
-    expect(shape.getAttribute('data-title')).toContain('Tam giác vuông');
+    expect(shape.getAttribute('data-title')).toContain('Tam giác');
     expect(screen.queryByTestId('hologram-simulation-overlay')).not.toBeInTheDocument();
-    expect(screen.getAllByTestId('shape-vertex-handle')).toHaveLength(3);
-    expect(screen.getAllByTestId('side-label')).toHaveLength(3);
-
-    // Mở mô phỏng đầy đủ khi cần (các đỉnh kéo được của DynamicGeometryEngine)
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('shape-open-full'));
-    });
-    expect(await screen.findByTestId('hologram-simulation-overlay')).toBeInTheDocument();
-    expect(await screen.findByTestId('geo-point-0')).toBeInTheDocument();
+    // tầng 2 có đủ chức năng chuyên sâu cho hình vừa dựng
+    for (const id of ['ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-hidden', 'ai-fab-draw-export']) expect(await screen.findByTestId(id)).toBeInTheDocument();
   });
 
-  it('Biến nét vẽ 3D hình lập phương thành hình khối tương tác xoay 3D tại chỗ trên bảng', async () => {
-    render(
-      <SmartboardCanvas
-        initialStrokes={cubeStrokes}
-        initialSelectedStrokes={cubeStrokes}
-      />
-    );
-
-    const inplaceBtn = await screen.findByTestId('top-toolbar-btn-visualize');
-    expect(inplaceBtn).toBeInTheDocument();
+  it('Hình lập phương vẽ tay: Vẽ hình nhận ra lập phương (không phải hộp) và có đủ dụng cụ', async () => {
+    render(<SmartboardCanvas initialStrokes={cubeStrokes} initialSelectedStrokes={cubeStrokes} />);
 
     await act(async () => {
-      fireEvent.click(inplaceBtn);
+      fireEvent.click(await screen.findByTestId('ai-fab-draw'));
     });
-
-    // Hình giữ ĐÚNG nét người vẽ (nắn thẳng, nối đỉnh), không thay bằng khối mẫu: 8 đỉnh kéo được, 12 cạnh,
-    // cạnh khuất (3 cạnh tại một đỉnh) vẽ nét đứt; không có vòng xoay vì hình không còn là mẫu 3D
     const shape = await screen.findByTestId('inline-shape');
-    expect(shape.getAttribute('data-kind')).toBe('solid');
-    expect(shape.getAttribute('data-title')).toContain('Hình lập phương');
+    expect(shape.getAttribute('data-title')).toContain('lập phương');
     expect(screen.queryByTestId('hologram-simulation-overlay')).not.toBeInTheDocument();
-    expect(screen.getByTestId('sketch-wire')).toBeInTheDocument();
-    expect(screen.getAllByTestId('edge-visible')).toHaveLength(9);
-    expect(screen.getAllByTestId('edge-hidden')).toHaveLength(3);
-    expect(screen.getAllByTestId('shape-vertex-handle')).toHaveLength(8);
-    expect(screen.queryByTestId('shape-rotate-handle')).not.toBeInTheDocument();
+    // hình khối có nét đứt cho cạnh khuất
+    expect(screen.getAllByTestId('edge-hidden').length).toBeGreaterThan(0);
+    for (const id of ['ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-view3d']) expect(await screen.findByTestId(id)).toBeInTheDocument();
   });
 
   it('Thanh công cụ nổi dạng viên thuốc (Floating Pill Toolbar) ngay dưới hình 3D cho phép tương tác 1 chạm (Frame 38 Video)', () => {

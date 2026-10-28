@@ -202,7 +202,8 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     fireEvent.click(screen.getByTestId('ai-fab'));
     fireEvent.click(screen.getByTestId('ai-fab-draw'));
     // chưa khoanh gì: gợi ý khoanh đề; vẫn có lối phụ gõ đề
-    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-new', 'ai-fab-draw-typed']);
+    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-new', 'ai-fab-draw-typed', 'ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-hidden', 'ai-fab-draw-view3d', 'ai-fab-draw-export']);
+    expect((screen.getByTestId('ai-fab-draw-tools') as HTMLButtonElement).disabled).toBe(true); // mờ cho tới khi có hình
     fireEvent.click(screen.getByTestId('ai-fab-draw-typed'));
     expect(onGeoNew).toHaveBeenCalled();
     expect(screen.getByTestId('ai-fab-menu').getAttribute('aria-hidden')).toBe('true');

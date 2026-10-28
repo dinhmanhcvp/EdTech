@@ -502,7 +502,7 @@ function buildFigure(text: string, notes: string[]): Model | null {
 
   // ---- tam giác / tứ giác phẳng
   const quad = /(hình vuông|hình chữ nhật|hình bình hành|hình thoi|hình thang(?: vuông| cân)?)\s*([A-Z]{4})/.exec(text);
-  const tri = /tam giác\s*(?:nhọn|tù|thường|bất kỳ)?\s*([A-Z]{3})(?![A-Z])/.exec(text);
+  const tri = /tam giác\s*(?:nhọn|tù|thường|bất kỳ|đều|cân|vuông cân|vuông)?\s*([A-Z]{3})(?![A-Z])/.exec(text);
   if (quad || tri) {
     const names = pointsIn(quad ? quad[2] : tri![1]);
     const desc: BaseDesc = quad

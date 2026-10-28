@@ -46,7 +46,10 @@
 - Thêm `apps/teacher-board/src/engines/visualKit.tsx`: `VisualDefs` (gradient thủy tinh/kim loại/thép, quầng sáng, bóng mềm), `SphereGrad`, `GroundShadow`, `useEased` (làm mượt đại lượng vẽ), `usePrefersReducedMotion`, `useUid`.
 - Áp dụng thử cho `DaniellEngine` và `LeChatelierEngine` (`ChemEngines.tsx`). Chỉ đổi cách vẽ: giữ nguyên mô hình, `data-*`, `data-testid`. Màu khí NO₂ vẫn lấy thẳng từ mô hình (đậm lên ngay khi nén); chỉ piston, độ dày điện cực, độ sáng bóng đèn được làm mượt.
 - `prefers-reduced-motion`: hình đứng yên, bỏ mọi `<animate*>`. Test: `__tests__/visualKit.test.tsx`.
-- Chưa đo fps trên máy yếu. Chưa nhân rộng sang các engine khác; `proRenderer.ts` (canvas) vẫn chưa engine nào dùng.
+- Đã nhân rộng (28/10/2026) sang toàn bộ engine SVG Lý/Hóa/Sinh: `PhysEngines` (khí p–V, con lắc kép, Coriolis, Fraunhofer), `MoreStemEngines` (khí khổng, thẩm thấu, operon lac, hộp tứ phân vị), VSEPR, hô hấp tế bào. Chỉ đổi cách vẽ/chuyển động; số liệu vẫn từ mô hình.
+- Mô phỏng theo thời gian vật lý (con lắc kép, chu trình khí, Coriolis, VSEPR tự xoay): giảm chuyển động → không tự chạy (bấm ▶), Coriolis hiện sẵn quỹ đạo đầy đủ. Rôto ATP synthase đổi từ `setInterval` 20 khung/giây sang rAF (cùng tốc độ).
+- CHƯA làm: 3 engine canvas (`BioSystemEngine`, `ChemistryLabEngine`, `PhysicsSandboxEngine`) — thời gian nằm trong vòng vẽ nên cần tách mô hình thời gian trước khi hỗ trợ giảm chuyển động; `AdvancedStemEngines` (Oxyz, tinh thể, CFT, SN2, cyclohexane, Lotka–Volterra, tín hiệu) đã có gradient sẵn nên giữ nguyên.
+- Chưa đo fps trên máy yếu. `proRenderer.ts` (canvas) vẫn chưa engine nào dùng.
 
 # 4. Chỉ thị cho Agent tiếp theo (Immediate Next Steps)
 1. **Kiểm tra trạng thái ban đầu:**
@@ -1228,3 +1231,11 @@ Yêu cầu: khối 3D vẽ tay phải được nắn thẳng và nối đỉnh t
 - `/health` thêm `runtime.vision_provider`. `render.yaml`, `.env.production.example`, `DEPLOY.md`, thông báo `AiBackendConfigModal` cập nhật. Test: `test_recognize_ink.py` (2 test đặt `VISION_PROVIDER=auto`, thêm 2 test mới); pytest 84, vitest 959.
 - CHƯA đo độ chính xác/độ trễ thật của từng model (cần khóa OpenRouter có credit). Gia sư Socratic (text, `provider_adapter.py`) vẫn thử Gemini trước nếu có khóa Gemini; không có thì rơi xuống OpenRouter.
 - (bổ sung) `call_openrouter_vision` thiếu `max_tokens` khiến Vision rơi xuống ONNX cục bộ dù khóa OpenRouter hợp lệ; đã thêm `max_tokens` (biến `OPENROUTER_MAX_TOKENS`, mặc định 1500). Kiểm thử thật 2026-10-28 với ảnh "y = x^2 - 3x + 2": engine openrouter, model google/gemini-2.5-flash, 3,7 s, đọc đúng (ONNX cục bộ đọc sai thành x^{\Lambda}2). Đây là một mẫu ảnh chữ in, chưa phải chữ viết tay. Nguyên nhân gốc là suy luận (chưa tái hiện lỗi 402 trực tiếp), nhưng hết lỗi sau khi sửa. Model free `google/gemma-4-31b-it:free` bị OpenRouter báo 429 upstream.
+
+
+# 2026-10-28 (đêm, bổ sung 12) — Tách Trực quan (hàm số/công thức) và Vẽ hình (hình học)
+
+- **Trực quan** (`handleVisualize`) chỉ còn cho hàm số, công thức và các mô phỏng. Gặp hình học (đề, tên hình + đỉnh như S.ABCD, nét vẽ tay hình khối/đa giác) thì không tự vẽ mà mở hub ở tầng Vẽ hình kèm thông báo chỉ đường. Đã bỏ các bước dựng hình học trong `handleVisualize`.
+- **Vẽ hình** (`handleDrawSelection`): nét vẽ tay nhận dạng được (lập phương/hộp chữ nhật/chóp tứ giác đều/tứ diện đều/lăng trụ tam giác; tam giác đều/vuông/cân/thường, hình vuông/chữ nhật/bình hành) được thay bằng HÌNH DỰNG (`GeoScene`) tại đúng chỗ nét vẽ (`problemTextForSolid/Plane` trong `geoTools.ts` → `buildScene`), nên có đủ dụng cụ tầng 2. Kích thước hộp lấy theo tỉ lệ nét vẽ; hình phẳng thì dùng hình mẫu của loại đó (không giữ tỉ lệ nét vẽ). Bát diện/lăng trụ lục giác chưa có hình dựng: vẫn nắn tại chỗ như cũ (không có tầng 2).
+- Tầng 2 luôn hiện đủ chức năng chuyên sâu; chưa có hình thì Dựng/Đo/Nét khuất/Xem 3D/Xuất TikZ mờ (`disabled`) kèm gợi ý. `tam giác đều/cân/vuông ABC` thêm vào bộ phân tích đề.
+- Test: `geoResearchTools.test.ts` (+nét vẽ tay→hình dựng), `inPlaceGeometryTransformation.test.tsx` viết lại; tsc 0 lỗi, vitest 989.

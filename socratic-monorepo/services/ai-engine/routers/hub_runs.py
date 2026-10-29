@@ -222,3 +222,90 @@ async def student_photo(run_id: str, request: Request, claims: dict = Depends(st
 def student_confirm(run_id: str, photo_id: str, req: ConfirmRequest, claims: dict = Depends(student)):
     run = _student_run(run_id, claims)
     return _submission_errors(lambda: submissions.confirm(run, photo_id, claims["subject"], req.lines, req.resolved, req.photoOnly))
+
+
+# ------------------------------------------------------------------ duyệt, chọn bài, chiếu, chữa
+class ReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    score: float = Field(ge=0, le=1)
+    lines: Optional[List[str]] = Field(default=None, max_length=60)
+
+
+class ShowRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    submissionId: str = Field(min_length=1, max_length=40)
+
+
+class CorrectionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    strokes: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+def _teacher_submission(claims: dict, submission_id: str):
+    try:
+        sub = submissions.get(submission_id)
+        return sub, runs.owned(claims["subject"], sub["run_id"])
+    except KeyError:
+        raise _not_found()
+
+
+def _board_submission(ctx: dict, submission_id: str):
+    try:
+        sub = submissions.get(submission_id)
+    except KeyError:
+        raise _not_found()
+    return sub, _board_run(ctx, sub["run_id"])
+
+
+@router.get("/runs/{run_id}/submissions")
+def teacher_submissions(run_id: str, claims: dict = Depends(teacher)):
+    _teacher_run(claims, run_id)
+    return {"submissions": submissions.teacher_list(run_id)}
+
+
+@router.post("/submissions/{submission_id}/review")
+def teacher_review(submission_id: str, req: ReviewRequest, claims: dict = Depends(teacher)):
+    _, run = _teacher_submission(claims, submission_id)
+    return _submission_errors(lambda: submissions.review(run, submission_id, req.score, req.lines))
+
+
+@router.post("/runs/{run_id}/show")
+def teacher_show(run_id: str, req: ShowRequest, claims: dict = Depends(teacher)):
+    run = _teacher_run(claims, run_id)
+    return _submission_errors(lambda: submissions.show(run, req.submissionId))
+
+
+@router.get("/board/runs/{run_id}/progress")
+def board_progress(run_id: str, ctx: dict = Depends(bridge.require_board)):
+    return {"questions": submissions.progress(_board_run(ctx, run_id))}
+
+
+@router.get("/board/runs/{run_id}/submissions")
+def board_submissions(run_id: str, questionId: Optional[str] = None, status: Optional[str] = None, ctx: dict = Depends(bridge.require_board)):
+    _board_run(ctx, run_id)
+    return {"submissions": submissions.anonymous_list(run_id, questionId, status)}
+
+
+@router.get("/board/submissions/{submission_id}")
+def board_submission(submission_id: str, ctx: dict = Depends(bridge.require_board)):
+    _board_submission(ctx, submission_id)
+    return _submission_errors(lambda: submissions.board_detail(submission_id))
+
+
+@router.post("/board/runs/{run_id}/show")
+def board_show(run_id: str, req: ShowRequest, ctx: dict = Depends(bridge.require_board)):
+    run = _board_run(ctx, run_id)
+    return _submission_errors(lambda: submissions.show(run, req.submissionId))
+
+
+@router.put("/board/submissions/{submission_id}/correction")
+def board_correction(submission_id: str, req: CorrectionRequest, ctx: dict = Depends(bridge.require_board)):
+    _board_submission(ctx, submission_id)
+    return _submission_errors(lambda: submissions.save_correction(submission_id, req.strokes))
+
+
+@router.get("/board/stream")
+def board_stream(ctx: dict = Depends(bridge.require_board)):
+    from hub.events import sse_response
+
+    return sse_response(f"cboard:{ctx['period']['id']}")

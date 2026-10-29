@@ -221,3 +221,128 @@ def confirm(run: Dict[str, Any], photo_id: str, student_id: str, lines: List[str
     if clean:
         jobs.spawn(lambda: _grade_job(photo_id, run))
     return {"photoId": photo_id, **view(sub)}
+
+
+# ------------------------------------------------------------------ giáo viên duyệt, bảng chọn bài ẩn danh, chiếu, chữa
+MAX_CORRECTION_STROKES = 200
+
+
+def _replay_mastery(student_id: str, kc: str) -> None:
+    """Tính lại mastery của một KC từ sự kiện, cùng quy tắc lúc chạy: lần đúng lặp lại của cùng một câu không cộng thêm."""
+    with LOCK, connect() as conn:
+        rows = conn.execute("SELECT item_id, kind FROM learning_events WHERE student_id=? AND kc_id=? AND kind IN ('correct','incorrect') "
+                            "ORDER BY created_at", (student_id, kc)).fetchall()
+        p, solved = PRIOR, set()
+        for r in rows:
+            if r["kind"] == "correct" and r["item_id"] in solved:
+                continue
+            p = bkt_update(p, r["kind"] == "correct")
+            if r["kind"] == "correct":
+                solved.add(r["item_id"])
+        conn.execute("INSERT INTO mastery VALUES (?,?,?,?) ON CONFLICT(student_id, kc_id) DO UPDATE SET p_known=excluded.p_known, "
+                     "updated_at=excluded.updated_at", (student_id, kc, p, clock.now()))
+
+
+def review(run: Dict[str, Any], submission_id: str, score: float, lines: Optional[List[str]] = None) -> Dict[str, Any]:
+    sub = get(submission_id)
+    if sub["run_id"] != run["id"] or sub["status"] == "draft":
+        raise KeyError(submission_id)
+    fields: Dict[str, Any] = {"status": "teacher_confirmed", "score": float(score), "reviewed_at": clock.now()}
+    if lines is not None:
+        fields["confirmed"] = [l.strip()[:600] for l in lines if l.strip()][:MAX_LINES]
+    with LOCK, connect() as conn:
+        conn.execute("DELETE FROM learning_events WHERE request_id=?", (f"sub:{submission_id}",))
+    sub = update(submission_id, **fields)
+    record_event(sub, run)
+    q = question_of(run, sub["version"], sub["question_id"])
+    for kc in [k["id"] for k in q.get("kcs") or []]:
+        _replay_mastery(sub["student_id"], kc)
+    notify(sub, run)
+    return view(sub)
+
+
+def labels(run_id: str) -> Dict[str, str]:
+    """Nhãn ẩn danh "Bài n" theo thứ tự lần nộp đầu tiên của mỗi học sinh trong lượt giao."""
+    with connect() as conn:
+        rows = conn.execute("SELECT student_id, MIN(created_at) AS t FROM submissions WHERE run_id=? AND status != 'draft' "
+                            "GROUP BY student_id ORDER BY t", (run_id,)).fetchall()
+    return {r["student_id"]: f"Bài {i}" for i, r in enumerate(rows, 1)}
+
+
+def _latest(run_id: str) -> List[Dict[str, Any]]:
+    with connect() as conn:
+        rows = conn.execute("SELECT * FROM submissions WHERE run_id=? AND status != 'draft' ORDER BY created_at", (run_id,)).fetchall()
+    latest: Dict[Any, Dict[str, Any]] = {}
+    for r in rows:
+        latest[(r["student_id"], r["question_id"])] = _row(r)
+    return list(latest.values())
+
+
+def teacher_list(run_id: str) -> List[Dict[str, Any]]:
+    with connect() as conn:
+        names = {r["id"]: r["name"] for r in conn.execute("SELECT id, name FROM students")}
+    return [{"submissionId": s["id"], "studentId": s["student_id"], "name": names.get(s["student_id"], ""), "questionId": s["question_id"],
+             "mode": s["mode"], "status": s["status"], "score": s["score"], "attempt": s["attempt"], "phase": s["phase"],
+             "answer": s["answer"], "confirmed": s["confirmed"], "ocr": s["ocr"], "grade": s["grade"], "hasPhoto": bool(s["photo_path"])}
+            for s in _latest(run_id)]
+
+
+def _label_no(tags: Dict[str, str], student_id: str) -> int:
+    return int(tags.get(student_id, "Bài 0").split()[1])
+
+
+def anonymous_list(run_id: str, question_id: Optional[str] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
+    tags = labels(run_id)
+    out = []
+    for s in sorted(_latest(run_id), key=lambda s: (_label_no(tags, s["student_id"]), s["question_id"])):
+        if (question_id and s["question_id"] != question_id) or (status and s["status"] != status):
+            continue
+        out.append({"submissionId": s["id"], "label": tags.get(s["student_id"], ""), "questionId": s["question_id"], "status": s["status"],
+                    "firstError": (s["grade"] or {}).get("first_error"), "hasPhoto": bool(s["photo_path"])})
+    return out
+
+
+def board_detail(submission_id: str) -> Dict[str, Any]:
+    sub = get(submission_id)
+    if sub["status"] == "draft":
+        raise KeyError(submission_id)
+    return {"submissionId": sub["id"], "label": labels(sub["run_id"]).get(sub["student_id"], ""), "questionId": sub["question_id"],
+            "status": sub["status"], "confirmed": sub["confirmed"], "lines": (sub["ocr"] or {}).get("lines"), "grade": sub["grade"],
+            "correction": sub["correction"], "hasPhoto": bool(sub["photo_path"])}
+
+
+def progress(run: Dict[str, Any]) -> List[Dict[str, Any]]:
+    body = store.get(run["assignmentId"])["body"]
+    latest = _latest(run["id"])
+    out = []
+    for q in body["questions"]:
+        subs = [s for s in latest if s["question_id"] == q["id"]]
+        scored = [s["score"] for s in subs if s["score"] is not None]
+        rate = round(sum(1 for x in scored if x >= 0.5) / len(scored), 3) if scored else None
+        out.append({"questionId": q["id"], "submitted": len(subs), "correctRate": rate})
+    return out
+
+
+def show(run: Dict[str, Any], submission_id: str) -> Dict[str, Any]:
+    if get(submission_id)["run_id"] != run["id"]:
+        raise KeyError(submission_id)
+    detail = board_detail(submission_id)
+    event = {"type": "show_submission", "runId": run["id"], "submissionId": submission_id, "label": detail["label"]}
+    if run["periodId"]:
+        bus.publish(f"cboard:{run['periodId']}", event)
+    return event
+
+
+def _valid_point(p: Any) -> bool:
+    return isinstance(p, list) and len(p) == 2 and all(isinstance(v, (int, float)) and 0 <= v <= 1 for v in p)
+
+
+def save_correction(submission_id: str, strokes: List[Dict[str, Any]]) -> Dict[str, Any]:
+    if len(strokes) > MAX_CORRECTION_STROKES:
+        raise ValueError("too_many_strokes")
+    for s in strokes:
+        pts = s.get("p") if isinstance(s, dict) else None
+        if not isinstance(pts, list) or not pts or len(pts) > 1500 or not all(_valid_point(p) for p in pts):
+            raise ValueError("bad_stroke")
+    sub = update(submission_id, correction={"strokes": strokes, "savedAt": clock.now()})
+    return {"submissionId": sub["id"], "saved": True}

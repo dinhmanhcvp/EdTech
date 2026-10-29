@@ -42,7 +42,7 @@ import { toBoardStrokes, type Submission } from '../../utils/submissionInk';
 import { PairPanel } from './PairPanel';
 import { ResourcePanel } from '../resources/ResourcePanel';
 import { ResourceViewer } from '../resources/ResourceViewer';
-import { insertPageStrokes, type PageRef } from '../../utils/boardImage';
+import { eraserHitsBlock, insertPageStrokes, type PageRef } from '../../utils/boardImage';
 import { createBoardImageLoader } from '../../utils/boardImages';
 import type { InkStroke } from '../../utils/hubBoard';
 import { SessionError, lessonContext, loadSession, pairBoard, resumeBoard, saveLessonToConsole, saveSnapshot, storeSession, type BoardSession, type PairResult } from '../../utils/boardSession';
@@ -1667,9 +1667,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       const next: Stroke[] = [];
       for (const stroke of prev) {
         if (stroke.typeset) {
-          const t = stroke.typeset;
-          const a = stroke.points[0];
-          if (pt.x >= a.x - ERASE_R && pt.x <= a.x + t.w + ERASE_R && pt.y >= a.y - ERASE_R && pt.y <= a.y + t.h + ERASE_R) {
+          if (eraserHitsBlock(stroke, pt, ERASE_R)) {
             changed = true; // chạm vào công thức chuẩn → xóa cả khối
             continue;
           }

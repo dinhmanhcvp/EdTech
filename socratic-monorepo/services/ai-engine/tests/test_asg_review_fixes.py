@@ -81,8 +81,9 @@ def test_parent_report_counts_skipped_runs_and_survives_ai_comment(client, asg_e
     import hub.reports as rp
     from hub.clock import now
     first = open_board_run(client, asg_env)
-    open_board_run(client, asg_env)  # lượt giao em không làm
     _answer(client, asg_env, first, questionId="q1", choice=1)
+    client.post(f"/api/v1/hub/board/runs/{first['runId']}/close", headers=asg_env["board"])  # cùng tiết chỉ có một lượt mở cho mỗi đề
+    open_board_run(client, asg_env)  # lượt giao em không làm
     sid = asg_env["students"][0]["id"]
     report = rp.build_report(sid, rp.week_of(now()), use_ai=False)
     assert report["assignments"]["runs"] == 2 and report["assignments"]["onTime"] == 1
@@ -104,8 +105,9 @@ def test_concurrent_same_request_id_returns_same_result(client, asg_env, fakes, 
 
 def test_request_id_reused_in_another_run_conflicts(client, asg_env, fakes):
     a = open_board_run(client, asg_env)
-    b = open_board_run(client, asg_env)
     assert _answer(client, asg_env, a, questionId="q1", choice=1, requestId="x").status_code == 200
+    client.post(f"/api/v1/hub/board/runs/{a['runId']}/close", headers=asg_env["board"])  # cùng tiết chỉ có một lượt mở cho mỗi đề
+    b = open_board_run(client, asg_env)
     assert _answer(client, asg_env, b, questionId="q1", choice=1, requestId="x").status_code == 409
 
 

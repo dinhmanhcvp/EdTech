@@ -86,7 +86,7 @@ function ConfirmBox({ocr, onSubmit, onCancel}: {ocr: OcrResult; onSubmit: (b: {l
   );
 }
 
-function QuestionCard({run, q, mine, onResult}: {run: RunForStudent; q: QuestionPublic; mine?: Mine; onResult: (r: SubmissionResult) => void}) {
+function QuestionCard({run, q, mine, onResult, onAuthLost}: {run: RunForStudent; q: QuestionPublic; mine?: Mine; onResult: (r: SubmissionResult) => void; onAuthLost: () => void}) {
   const [text, setText] = useState('');
   const [ocr, setOcr] = useState<OcrResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -97,6 +97,7 @@ function QuestionCard({run, q, mine, onResult}: {run: RunForStudent; q: Question
     try {
       await fn();
     } catch (e) {
+      if (e instanceof HubApiError && e.status === 401) return onAuthLost();
       setError(errText(e, 'Chưa gửi được, thử lại.'));
     } finally {
       setBusy(false);
@@ -183,7 +184,7 @@ export function AssignmentPage({code}: {code: string}) {
           {run.phase === 'homework' && run.dueAt ? ` · Hạn nộp ${new Date(run.dueAt * 1000).toLocaleString('vi-VN')}` : ''}</p>
       </header>
       {run.pages.length > 0 && <PageViewer assignmentId={run.id} pages={run.pages} />}
-      {run.body.questions.map((q) => <QuestionCard key={q.id} run={run} q={q} mine={run.mine[q.id]} onResult={setResult(q.id)} />)}
+      {run.body.questions.map((q) => <QuestionCard key={q.id} run={run} q={q} mine={run.mine[q.id]} onResult={setResult(q.id)} onAuthLost={() => { setRun(null); setStudent(null); }} />)}
     </main>
   );
 }

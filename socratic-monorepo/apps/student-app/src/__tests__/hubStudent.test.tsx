@@ -89,6 +89,15 @@ describe('AssignmentPage', () => {
     await waitFor(() => expect(api.confirm).toHaveBeenCalledWith('run-1', 'p1', {lines: ['x + 3 = 5', 'x = Z'], resolved: [0], photoOnly: false}));
   });
 
+  it('goes back to the code form when the session expires mid-assignment', async () => {
+    saveStudent({token: 'tok', student: {id: 's-1', name: 'Lan', classId: 'cc', className: '10A3'}});
+    api.byCode.mockResolvedValue({...run, mine: {}});
+    api.answer.mockRejectedValue(new HubApiError('Phiên đăng nhập đã hết hạn. Nhập lại mã học sinh.', 401));
+    render(<AssignmentPage code="ABCD2345" />);
+    fireEvent.click(within(await screen.findByTestId('q-q1')).getByText('A. 1'));
+    expect(await screen.findByTestId('login-code')).toBeInTheDocument();
+  });
+
   it('explains when the run is closed or for another class', async () => {
     saveStudent({token: 'tok', student: {id: 's-1', name: 'Lan', classId: 'cc', className: '10A3'}});
     api.byCode.mockRejectedValue(new HubApiError('Đã hết hạn nhận bài.', 410));

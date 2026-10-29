@@ -53,3 +53,11 @@ export function insertPageStrokes(ref: PageRef, ink: PageInk[]): Stroke[] {
   const img = imageStroke(ref);
   return [img, ...annotationsToBoard(ink, img)];
 }
+
+/** Tẩy điểm chạm vào khối công thức thì xóa cả khối; trang ảnh phủ gần hết bảng nên tẩy không bao giờ xóa nó (xóa bằng nút × hoặc chọn). */
+export function eraserHitsBlock(stroke: Stroke, pt: {x: number; y: number}, r: number): boolean {
+  const t = stroke.typeset;
+  if (!t || stroke.image) return false;
+  const a = stroke.points[0];
+  return pt.x >= a.x - r && pt.x <= a.x + t.w + r && pt.y >= a.y - r && pt.y <= a.y + t.h + r;
+}

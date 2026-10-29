@@ -68,6 +68,17 @@ describe('AssignmentLive', () => {
     await waitFor(() => expect(hub.periodSummary).toHaveBeenCalledTimes(2));
   });
 
+  it('keeps the grid through one failed refresh and clears the error on the next success', async () => {
+    render(<AssignmentLive periodId="p1" live />);
+    await screen.findByTestId('grid-run-1');
+    hub.periodSummary.mockRejectedValueOnce(new Error('offline'));
+    await act(async () => emit({type: 'submission_update'}));
+    expect(await screen.findByText(/Không tải được bài tập của tiết./)).toBeInTheDocument();
+    expect(screen.getByTestId('grid-run-1')).toBeInTheDocument();
+    await act(async () => emit({type: 'submission_update'}));
+    await waitFor(() => expect(screen.queryByText(/Không tải được bài tập của tiết./)).not.toBeInTheDocument());
+  });
+
   it('closes a run with a due date', async () => {
     hub.closeRun.mockResolvedValue({});
     render(<AssignmentLive periodId="p1" live />);

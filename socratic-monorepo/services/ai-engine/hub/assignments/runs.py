@@ -34,6 +34,13 @@ def open_run(teacher_id: str, assignment_id: str, class_id: str, period_id: Opti
         raise ValueError("assignment_has_no_questions")
     run_id = new_id("run")
     with LOCK, connect() as conn:
+        if period_id:  # bấm "Giao bài" lần nữa trong cùng tiết: trả lại lượt đang mở, không tách lớp ra hai mã
+            same = conn.execute("SELECT id, code FROM assignment_runs WHERE assignment_id=? AND period_id=? AND class_id=? AND status='open'",
+                                (assignment_id, period_id, class_id)).fetchone()
+            if same:
+                run_id, code = same["id"], same["code"]
+                has = conn.execute("SELECT 1 FROM students WHERE class_id=? LIMIT 1", (class_id,)).fetchone() is not None
+                return {"runId": run_id, "code": code, "url": student_url(code), "classHasStudents": has}
         code = _code(conn)
         conn.execute("INSERT INTO assignment_runs VALUES (?,?,?,?,?,?,?,?,?,NULL,NULL,'open')",
                      (run_id, code, assignment_id, a["version"], teacher_id, class_id, period_id, console_teacher_id, clock.now()))

@@ -137,6 +137,7 @@ function cleanStroke(s: any): Stroke | null {
   const out: Stroke = {id: s.id.slice(0, 80), points, color: typeof s.color === 'string' ? s.color.slice(0, 40) : '#18181B', width: num(s.width) ? s.width : 3};
   if (s.typeset && typeof s.typeset === 'object') out.typeset = s.typeset;
   if (s.shape && typeof s.shape === 'object') out.shape = s.shape;
+  if (s.image && typeof s.image.assignmentId === 'string' && num(s.image.page)) out.image = {assignmentId: s.image.assignmentId.slice(0, 80), page: s.image.page};
   if (s.cover && typeof s.cover.hidden === 'boolean' && num(s.cover.order)) out.cover = {hidden: s.cover.hidden, order: s.cover.order};
   return out;
 }

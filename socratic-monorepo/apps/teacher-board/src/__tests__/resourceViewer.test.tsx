@@ -115,6 +115,51 @@ describe('ResourceViewer', () => {
     expect(await screen.findByText('3 bài · đúng 67%')).toBeInTheDocument();
   });
 
+  const draw = (x = 800, togglePen = true) => {
+    if (togglePen) fireEvent.click(screen.getByTestId('viewer-pen'));
+    fireEvent.pointerDown(box(), {pointerId: 1, clientX: x, clientY: 300});
+    fireEvent.pointerMove(box(), {pointerId: 1, clientX: x + 20, clientY: 320});
+    fireEvent.pointerUp(box(), {pointerId: 1, clientX: x + 20, clientY: 320});
+  };
+
+  it('saves the ink of a page at once when leaving the page or closing the viewer', async () => {
+    hb.resource.mockResolvedValue(slides);
+    const {unmount} = render(<ResourceViewer resourceId="asg-s" onClose={vi.fn()} onInsertPage={vi.fn()} size={{w: 1600, h: 900}} />);
+    await screen.findByText('Trang 1/2');
+    await waitFor(() => expect(hb.getInk).toHaveBeenCalledWith('asg-s', 0));
+    draw();
+    fireEvent.click(screen.getByTestId('viewer-next'));
+    await waitFor(() => expect(hb.putInk).toHaveBeenCalledWith('asg-s', 0, expect.any(Array)));
+    await waitFor(() => expect(hb.getInk).toHaveBeenCalledWith('asg-s', 1));
+    draw(700, false);
+    unmount();
+    expect(hb.putInk).toHaveBeenCalledWith('asg-s', 1, expect.any(Array));
+  });
+
+  it('keeps the pen off a page whose saved ink could not be loaded', async () => {
+    hb.resource.mockResolvedValue(slides);
+    hb.getInk.mockRejectedValue(new BoardHubError('x', 500));
+    render(<ResourceViewer resourceId="asg-s" onClose={vi.fn()} onInsertPage={vi.fn()} size={{w: 1600, h: 900}} />);
+    await screen.findByText('Trang 1/2');
+    expect(await screen.findByText(/Chưa tải được nét viết/)).toBeInTheDocument();
+    vi.useFakeTimers({shouldAdvanceTime: true});
+    draw();
+    await act(async () => vi.advanceTimersByTime(1500));
+    expect(hb.putInk).not.toHaveBeenCalled();
+  });
+
+  it('hands out once even when "Giao bài" is tapped twice', async () => {
+    hb.resource.mockResolvedValue(exam);
+    let done: (v: unknown) => void = () => {};
+    hb.openRun.mockReturnValue(new Promise((r) => (done = r)));
+    render(<ResourceViewer resourceId="asg-e" onClose={vi.fn()} onInsertPage={vi.fn()} size={{w: 1600, h: 900}} />);
+    const b = await screen.findByTestId('viewer-handout');
+    fireEvent.click(b);
+    fireEvent.click(b);
+    expect(hb.openRun).toHaveBeenCalledTimes(1);
+    await act(async () => done({runId: 'run-1', code: 'ABCD2345', url: 'http://hs/a/ABCD2345', classHasStudents: true}));
+  });
+
   it('shows a retry when a page fails to load', async () => {
     hb.resource.mockResolvedValue(slides);
     hb.pageUrl.mockRejectedValueOnce(new BoardHubError('x', 404)).mockResolvedValue('blob:page');

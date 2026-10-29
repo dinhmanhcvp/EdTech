@@ -131,6 +131,7 @@ export function AssignmentLive({periodId, live}: {periodId: string; live: boolea
       setSummary(s);
       const all = await Promise.all(s.runs.map((r) => hub.runSubmissions(r.runId)));
       setRows(Object.fromEntries(s.runs.map((r, i) => [r.runId, all[i]])));
+      setError(null);
     } catch (e) {
       setError(e instanceof HubError ? e.message : 'Không tải được bài tập của tiết.');
     }
@@ -154,10 +155,11 @@ export function AssignmentLive({periodId, live}: {periodId: string; live: boolea
     };
   }, [load, live]);
 
-  if (error) return <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>;
+  if (error && !summary) return <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>;
   if (!summary) return <div className="text-sm text-stone-500">Đang tải bài tập…</div>;
   return (
     <div data-testid="assignment-live" className="flex flex-col gap-3">
+      {error && <div className="rounded-lg bg-rose-50 px-3 py-1.5 text-xs text-rose-700">{error} Đang thử lại…</div>}
       <h2 className="text-sm font-semibold text-stone-800">Bài tập trong tiết{summary.pending ? ` · ${summary.pending} bài chờ duyệt` : ''}</h2>
       {summary.runs.length === 0 && <p className="text-xs text-stone-500">Tiết này chưa giao bài tập nào.</p>}
       {summary.needsSupport.length > 0 && (

@@ -38,6 +38,8 @@ export function ResourceViewer({resourceId, onClose, onInsertPage, size}: Props)
   const [saveNote, setSaveNote] = useState<string | null>(null);
   const pointers = useRef(new Map<number, {x: number; y: number}>());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pending = useRef(new Map<number, InkStroke[]>()); // nét chưa gửi, theo trang
+  const [handingOut, setHandingOut] = useState(false);
   const stage = useRef<HTMLDivElement | null>(null);
 
   const page = res?.pages[pageIdx];
@@ -70,7 +72,11 @@ export function ResourceViewer({resourceId, onClose, onInsertPage, size}: Props)
     if (!res || !page) return;
     setView(fitTo({w: page.width, h: page.height}, stageSize));
     if (!(pageIdx in urls)) loadPage(pageIdx);
-    if (!(pageIdx in ink)) hubBoard.getInk(resourceId, pageIdx).then((s) => setInk((m) => ({...m, [pageIdx]: s}))).catch(() => setInk((m) => ({...m, [pageIdx]: []})));
+    if (!(pageIdx in ink)) {
+      // tải lỗi thì không coi là trang trống: lưu đè sẽ xóa nét đã có, nên khóa bút trên trang đó
+      hubBoard.getInk(resourceId, pageIdx).then((s) => setInk((m) => ({...m, [pageIdx]: s})))
+        .catch(() => setSaveNote('Chưa tải được nét viết của trang này nên tạm khóa bút. Mở lại trình xem để thử lại.'));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [res, pageIdx]);
 
@@ -95,15 +101,21 @@ export function ResourceViewer({resourceId, onClose, onInsertPage, size}: Props)
     return () => clearInterval(t);
   }, [run]);
 
-  const scheduleSave = (n: number, strokes: InkStroke[]) => {
+  const flush = useCallback(() => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
+    saveTimer.current = null;
+    for (const [n, strokes] of pending.current) {
       hubBoard.putInk(resourceId, n, strokes).then(() => setSaveNote(null)).catch(() => setSaveNote('Chưa lưu được nét viết, sẽ thử lại lần sau.'));
-    }, SAVE_DELAY_MS);
-  };
-  useEffect(() => () => {
+    }
+    pending.current.clear();
+  }, [resourceId]);
+  const scheduleSave = (n: number, strokes: InkStroke[]) => {
+    pending.current.set(n, strokes);
     if (saveTimer.current) clearTimeout(saveTimer.current);
-  }, []);
+    saveTimer.current = setTimeout(flush, SAVE_DELAY_MS);
+  };
+  // rời trang, đóng trình xem hay đưa trang lên bảng: gửi ngay, không chờ hết 1 giây
+  useEffect(() => flush, [pageIdx, flush]);
 
   const local = (e: React.PointerEvent | React.WheelEvent) => {
     const r = stage.current?.getBoundingClientRect();
@@ -123,7 +135,7 @@ export function ResourceViewer({resourceId, onClose, onInsertPage, size}: Props)
     }
     const p = local(e);
     pointers.current.set(e.pointerId, p);
-    if (pen && pointers.current.size === 1) setDrawing({p: [pagePoint(p)], c: PEN_COLOR, w: 3});
+    if (pen && pageIdx in ink && pointers.current.size === 1) setDrawing({p: [pagePoint(p)], c: PEN_COLOR, w: 3});
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (!view || !pageSize || !pointers.current.has(e.pointerId)) return;
@@ -171,6 +183,8 @@ export function ResourceViewer({resourceId, onClose, onInsertPage, size}: Props)
   };
 
   const handout = async () => {
+    if (handingOut) return;
+    setHandingOut(true);
     setError(null);
     try {
       const r = await hubBoard.openRun(resourceId);
@@ -179,6 +193,8 @@ export function ResourceViewer({resourceId, onClose, onInsertPage, size}: Props)
       if (r.classHasStudents === false) setError('Lớp chưa có học sinh: thêm ở mục Học sinh trên trang quản lý.');
     } catch (e) {
       setError(e instanceof BoardHubError ? e.message : 'Không giao bài được.');
+    } finally {
+      setHandingOut(false);
     }
   };
 
@@ -212,7 +228,7 @@ export function ResourceViewer({resourceId, onClose, onInsertPage, size}: Props)
           <LayoutPanelTop className="h-4 w-4" /> Đưa trang này lên bảng
         </button>
         {res && res.kind !== 'slides' && (
-          <button data-testid="viewer-handout" className={`${btn} bg-blue-600 text-white hover:bg-blue-700`} onClick={handout}><QrCode className="h-4 w-4" /> Giao bài</button>
+          <button data-testid="viewer-handout" className={`${btn} bg-blue-600 text-white hover:bg-blue-700`} onClick={handout} disabled={handingOut}><QrCode className="h-4 w-4" /> Giao bài</button>
         )}
         <button className={`${btn} ml-auto`} aria-label="Đóng" onClick={onClose}><X className="h-4 w-4" /></button>
       </div>

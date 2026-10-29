@@ -43,6 +43,8 @@ def test_board_open_records_use_and_student_sees_pages(client, asg_env):
     st = asg_env["students"][0]["headers"]
     assert client.get(f"/api/v1/hub/files/page/{sid}/1", headers=st).status_code == 404
     assert client.post(f"/api/v1/hub/board/resources/{sid}/open", headers=asg_env["board"]).status_code == 200
+    assert client.get(f"/api/v1/hub/files/page/{sid}/1", headers=st).status_code == 404  # chỉ thấy sau khi hết tiết
+    client.post(f"/api/v1/console/periods/{asg_env['pid']}/end", headers=asg_env["h"])
     assert client.get(f"/api/v1/hub/files/page/{sid}/1", headers=st).status_code == 200
     _, _, outsiders = class_with_students(client, asg_env["h"], "10A4", ("Nam",))
     assert client.get(f"/api/v1/hub/files/page/{sid}/1", headers=outsiders[0]["headers"]).status_code == 404
@@ -72,6 +74,8 @@ def test_other_teachers_board_cannot_touch_resource(client, asg_env):
 def test_me_resources_lists_used_in_my_class(client, asg_env):
     sid = _upload(client, asg_env["h"], title="Hàm số bậc nhất")
     client.post(f"/api/v1/hub/board/resources/{sid}/open", headers=asg_env["board"])
+    assert client.get("/api/v1/hub/me/resources", headers=asg_env["students"][0]["headers"]).json()["resources"] == []
+    client.post(f"/api/v1/console/periods/{asg_env['pid']}/end", headers=asg_env["h"])
     mine = client.get("/api/v1/hub/me/resources", headers=asg_env["students"][0]["headers"]).json()["resources"]
     assert [(r["assignmentId"], r["title"], r["kind"], len(r["pages"])) for r in mine] == [(sid, "Hàm số bậc nhất", "slides", 2)]
     assert mine[0]["periodTitle"] == "Tiết thử"
@@ -104,3 +108,11 @@ def test_console_period_summary(client, asg_env):
     assert [x["runId"] for x in s["runs"]] == [run["runId"]] and s["pending"] == 1
     assert s["runs"][0]["metrics"]["questions"][1]["pending"] == 1
     assert client.get(f"/api/v1/hub/console/periods/{asg_env['pid']}/summary", headers=console_login(client, "gv-khac")).status_code == 404
+
+
+def test_handout_twice_in_a_period_reuses_the_open_run(client, asg_env):
+    first = open_board_run(client, asg_env)
+    again = open_board_run(client, asg_env)
+    assert (again["runId"], again["code"]) == (first["runId"], first["code"])
+    client.post(f"/api/v1/hub/board/runs/{first['runId']}/close", headers=asg_env["board"])
+    assert open_board_run(client, asg_env)["runId"] != first["runId"]

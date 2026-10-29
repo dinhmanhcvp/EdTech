@@ -16,10 +16,12 @@ def record_use(period_id: str, assignment_id: str, class_id: Optional[str]) -> N
 
 
 def student_can_see(student_id: str, assignment_id: str) -> bool:
+    """Tài nguyên đã mở trong một tiết ĐÃ KẾT THÚC của lớp em (giữa tiết giáo viên có thể mở đề của lớp khác để xem trước)."""
     with connect() as conn:
         row = conn.execute("SELECT class_id FROM students WHERE id=?", (student_id,)).fetchone()
-        return bool(row) and conn.execute("SELECT 1 FROM resource_uses WHERE assignment_id=? AND class_id=? LIMIT 1",
-                                          (assignment_id, row["class_id"])).fetchone() is not None
+        uses = conn.execute("SELECT * FROM resource_uses WHERE assignment_id=? AND class_id=?",
+                            (assignment_id, row["class_id"])).fetchall() if row else []
+    return any(_period_ended(u) for u in uses)
 
 
 def _valid_point(p: Any) -> bool:
@@ -73,11 +75,21 @@ def _resource_item(r) -> Dict[str, Any]:
             "periodId": r["period_id"], "periodTitle": info.get("title", "")}
 
 
+def _period_ended(use) -> bool:
+    try:
+        info = _period_title(store.get(use["assignment_id"])["teacherId"], use["period_id"])
+    except KeyError:
+        return False
+    return bool(info) and info["status"] == "ended"
+
+
 def my_resources(student_id: str) -> List[Dict[str, Any]]:
     with connect() as conn:
         rows = conn.execute("SELECT * FROM resource_uses WHERE class_id=? ORDER BY opened_at DESC", (_class_of(student_id) or "",)).fetchall()
     out = []
     for r in rows:
+        if not _period_ended(r):
+            continue
         try:
             out.append(_resource_item(r))
         except KeyError:  # tài nguyên đã bị xóa

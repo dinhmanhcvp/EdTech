@@ -49,20 +49,25 @@ const readKey = (name: string): string => {
   }
 };
 
-export async function askBoard(
-  input: {question: string; context: BoardContext; history?: BoardQaTurn[]; subject?: string | null; signal?: AbortSignal},
-  fetchImpl: typeof fetch = fetch,
-): Promise<BoardQaResponse> {
+/** Tiêu đề kèm khóa AI người dùng đã nhập (nếu có), dùng chung cho các endpoint AI của bảng. */
+export function aiHeaders(): Record<string, string> {
   const headers: Record<string, string> = {'Content-Type': 'application/json'};
   const g = readKey('gemini_api_key').trim();
   const o = readKey('openrouter_api_key').trim();
   if (g) headers['x-gemini-api-key'] = g;
   if (o) headers['x-openrouter-api-key'] = o;
+  return headers;
+}
+
+export async function askBoard(
+  input: {question: string; context: BoardContext; history?: BoardQaTurn[]; subject?: string | null; signal?: AbortSignal},
+  fetchImpl: typeof fetch = fetch,
+): Promise<BoardQaResponse> {
   let res: Response;
   try {
     res = await fetchImpl(`${apiBase()}/api/v1/canvas/ask-board`, {
       method: 'POST',
-      headers,
+      headers: aiHeaders(),
       signal: input.signal,
       body: JSON.stringify({
         question: input.question.trim().slice(0, 600),

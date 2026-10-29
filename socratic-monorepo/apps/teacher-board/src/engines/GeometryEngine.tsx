@@ -4,7 +4,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {SimulationBlueprint, CurriculumLevel} from '@socratic/types';
 import {fmtNum} from '../utils/mathExpr';
 import type {SolidKind} from '../utils/localRouter';
-import {RANGE_CLASS, rangeFill} from './visualKit';
+import {RANGE_CLASS, rangeFill, usePrefersReducedMotion} from './visualKit';
 import {
   Cam,
   FACE_PALETTE,
@@ -39,6 +39,13 @@ interface Props {
   params?: Record<string, number>;
   curriculumLevel?: CurriculumLevel;
   isHologram?: boolean;
+}
+
+/** Vị trí các đỉnh thiết diện trên bảng 2D thật (nửa trái khi cắt thiết diện); dùng chung cho hình 2D và cho "tách ra ngoài". */
+function sectionFlatPts(cs: {vertices: {pos2D: [number, number]}[]}, splitX: number, h: number) {
+  const maxR = Math.max(0.5, ...cs.vertices.map((v) => Math.hypot(v.pos2D[0], v.pos2D[1])));
+  const scale = (Math.min(splitX, h) * 0.31) / maxR;
+  return cs.vertices.map((v) => ({x: splitX * 0.5 + v.pos2D[0] * scale, y: h * 0.52 - v.pos2D[1] * scale}));
 }
 
 type Mode = 'solid' | 'ghost' | 'wire' | 'section';
@@ -217,6 +224,11 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
   };
 
   // unfold: u thật (ref, đọc trong vòng vẽ) + u hiển thị cho thanh trượt
+  const reducedMotion = usePrefersReducedMotion();
+  /** "Tách thiết diện": 0 = nằm trong khối, 1 = bản sao đã bay sang bảng 2D thật */
+  const [extended, setExtended] = useState(false);
+  const extRef = useRef(0);
+  const extAnim = useRef<{from: number; to: number; t0: number; ms: number} | null>(null);
   const uRef = useRef(0);
   const [uUi, setUUi] = useState(0);
   const animRef = useRef<{from: number; to: number; t0: number; ms: number} | null>(null);
@@ -340,18 +352,9 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
 
       if (crossSection.valid && crossSection.vertices.length >= 3) {
         const verts2D = crossSection.vertices;
-        const maxR2D = Math.max(
-          0.5,
-          ...verts2D.map((v) => Math.hypot(v.pos2D[0], v.pos2D[1])),
-        );
-        const scale2D = (Math.min(splitX, h) * 0.31) / maxR2D;
+        const pts2 = sectionFlatPts(crossSection, splitX, h);
         const cx2 = splitX * 0.5;
         const cy2 = h * 0.52;
-
-        const pts2 = verts2D.map((v) => ({
-          x: cx2 + v.pos2D[0] * scale2D,
-          y: cy2 - v.pos2D[1] * scale2D,
-        }));
 
         // Vẽ miền đa giác thiết diện 2D màu xanh ngọc bán trong suốt
         ctx.beginPath();
@@ -596,6 +599,33 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
         ctx.fillText(vLabel, p.x + 10, p.y - 6);
       });
       ctx.restore();
+
+      // Bản sao thiết diện tách khỏi khối, bay sang bảng 2D thật; nét đứt nối từng đỉnh với vị trí gốc
+      const e = extRef.current;
+      if (e > 0.001) {
+        const flat = sectionFlatPts(crossSection, splitX, h);
+        const mid = secPts3D.map((p, i) => ({x: p.x + (flat[i].x - p.x) * e, y: p.y + (flat[i].y - p.y) * e}));
+        ctx.save();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = 'rgba(8, 145, 178, 0.55)';
+        ctx.lineWidth = 1.2;
+        mid.forEach((m, i) => {
+          ctx.beginPath();
+          ctx.moveTo(secPts3D[i].x, secPts3D[i].y);
+          ctx.lineTo(m.x, m.y);
+          ctx.stroke();
+        });
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        mid.forEach((m, i) => (i ? ctx.lineTo(m.x, m.y) : ctx.moveTo(m.x, m.y)));
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(14, 165, 233, 0.38)';
+        ctx.fill();
+        ctx.strokeStyle = '#0284C7';
+        ctx.lineWidth = 2.6;
+        ctx.stroke();
+        ctx.restore();
+      }
     }
 
     // Nếu đang ở chế độ kéo 3 điểm trên cạnh: vẽ 3 nút tròn cam nổi bật để giáo viên chạm kéo trực tiếp
@@ -1008,6 +1038,13 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
       if (t >= 1) animRef.current = null;
       else again = true;
     }
+    const ex = extAnim.current;
+    if (ex) {
+      const t = Math.min(1, (now - ex.t0) / ex.ms);
+      extRef.current = ex.from + (ex.to - ex.from) * ease(t);
+      if (t >= 1) extAnim.current = null;
+      else again = true;
+    }
     const r = rotAnim.current;
     if (r) {
       const t = Math.min(1, (now - r.t0) / r.ms);
@@ -1026,6 +1063,13 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
     needs.current = true;
     if (raf.current == null) raf.current = requestAnimationFrame(loop);
   }, [loop]);
+
+  const toggleExtend = () => {
+    const to = extended ? 0 : 1;
+    setExtended(!extended);
+    extAnim.current = {from: extRef.current, to, t0: performance.now(), ms: reducedMotion ? 1 : 750};
+    kick();
+  };
 
   useEffect(() => {
     kick();
@@ -1697,6 +1741,16 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
               })}
             </div>
           )}
+
+          <button
+            type="button"
+            data-testid="geo-section-extend"
+            aria-pressed={extended}
+            onClick={toggleExtend}
+            className="self-start px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-cyan-300 text-cyan-800 bg-white hover:bg-cyan-100 aria-pressed:bg-cyan-600 aria-pressed:text-white transition"
+          >
+            {extended ? '⇲ Đưa thiết diện về khối' : '⇱ Tách thiết diện ra ngoài'}
+          </button>
 
           {/* Số liệu chi tiết của thiết diện trích xuất */}
           {crossSection.valid && (

@@ -23,12 +23,18 @@ export type ConstructKind =
   | 'circumcenter'
   | 'circumcircle'
   | 'incircle'
-  | 'ninePoint';
+  | 'ninePoint'
+  | 'cut';
 
 export interface PlaneConstruct {
   k: ConstructKind;
   /** chỉ số đỉnh (median, altitude, bisector, midline, parallel) hoặc cạnh i = đỉnh i → i+1 (midpoint, perpBisector) */
   i?: number;
+  /** chỉ cho 'cut' (cắt hình): cạnh i tại tham số ta ∈ (0,1) nối với cạnh j tại tb; sep = tách mảnh thứ nhất ra khỏi hình */
+  j?: number;
+  ta?: number;
+  tb?: number;
+  sep?: boolean;
 }
 
 export const KIND_LABEL: Record<ConstructKind, string> = {
@@ -48,6 +54,7 @@ export const KIND_LABEL: Record<ConstructKind, string> = {
   circumcircle: 'Đường tròn ngoại tiếp',
   incircle: 'Đường tròn nội tiếp',
   ninePoint: 'Đường tròn 9 điểm',
+  cut: 'Cắt hình',
 };
 
 export const KIND_COLOR: Record<ConstructKind, string> = {
@@ -67,6 +74,7 @@ export const KIND_COLOR: Record<ConstructKind, string> = {
   circumcircle: '#7C3AED',
   incircle: '#EA580C',
   ninePoint: '#BE185D',
+  cut: '#DC2626',
 };
 
 /** phép dựng có dùng được với đa giác n đỉnh không */
@@ -77,6 +85,7 @@ export function applicable(k: ConstructKind, n: number): boolean {
     case 'bisector':
     case 'perpBisector':
     case 'midline':
+    case 'cut':
       return true;
     case 'diagonals':
     case 'varignon':
@@ -86,7 +95,7 @@ export function applicable(k: ConstructKind, n: number): boolean {
   }
 }
 
-export const constructKey = (c: PlaneConstruct) => `${c.k}:${c.i ?? 0}`;
+export const constructKey = (c: PlaneConstruct) => (c.k === 'cut' ? `cut:${c.i}-${c.j}-${(c.ta ?? 0).toFixed(2)}-${(c.tb ?? 0).toFixed(2)}` : `${c.k}:${c.i ?? 0}`);
 export const hasConstruct = (list: PlaneConstruct[] | undefined, c: PlaneConstruct) => !!list?.some((x) => constructKey(x) === constructKey(c));
 
 /** bật/tắt một phép dựng (chạm lần nữa để bỏ) */
@@ -166,7 +175,15 @@ export interface DrawTick {
   n: number;
   color: string;
 }
+/** vùng tô màu (mảnh cắt); dashed = chỉ viền nét đứt (vị trí cũ của mảnh đã tách) */
+export interface DrawFill {
+  pts: P2[];
+  color: string;
+  opacity: number;
+  dashed?: boolean;
+}
 export interface PlaneDraw {
+  fills: DrawFill[];
   points: DrawPoint[];
   segs: DrawSeg[];
   circles: DrawCircle[];
@@ -190,6 +207,8 @@ const unit = (a: P2): P2 => {
   return l < 1e-12 ? {x: 0, y: 0} : {x: a.x / l, y: a.y / l};
 };
 const perp = (a: P2): P2 => ({x: -a.y, y: a.x});
+const lerp = (a: P2, b: P2, t: number): P2 => ({x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t});
+const polyArea = (pts: P2[]) => Math.abs(pts.reduce((acc, p, k) => acc + (p.x * pts[(k + 1) % pts.length].y - pts[(k + 1) % pts.length].x * p.y), 0)) / 2;
 const mid = (a: P2, b: P2): P2 => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
 const ang = (v: P2) => Math.atan2(v.y, v.x);
 const fmt = (v: number) => (Math.abs(v) < 5e-3 ? '0' : v.toFixed(2).replace('.', ','));
@@ -299,7 +318,7 @@ class Labels {
 
 // ------------------------------------------------------------------ tính toán chính
 export function evalConstructs(verts: P2[], list: PlaneConstruct[] | undefined): PlaneDraw {
-  const out: PlaneDraw = {points: [], segs: [], circles: [], arcs: [], rights: [], ticks: [], facts: [], degenerate: false};
+  const out: PlaneDraw = {fills: [], points: [], segs: [], circles: [], arcs: [], rights: [], ticks: [], facts: [], degenerate: false};
   const cs = list ?? [];
   const n = verts.length;
   if (n < 3 || cs.length === 0) return out;
@@ -532,6 +551,48 @@ export function evalConstructs(verts: P2[], list: PlaneConstruct[] | undefined):
         }
         break;
       }
+      case 'cut': {
+        const j = c.j ?? -1;
+        const ta = c.ta ?? 0.5;
+        const tb = c.tb ?? 0.5;
+        if (j < 0 || j >= n || i >= n || j === i || ta < 0.02 || ta > 0.98 || tb < 0.02 || tb > 0.98) break;
+        const P = lerp(V(i), V(i + 1), ta);
+        const Q = lerp(V(j), V(j + 1), tb);
+        const walk = (from: number, to: number) => {
+          const ids = [((from % n) + n) % n];
+          while (ids[ids.length - 1] !== ((to % n) + n) % n) ids.push((ids[ids.length - 1] + 1) % n);
+          return ids.map((k) => verts[k]);
+        };
+        const part1 = [P, ...walk(i + 1, j), Q];
+        const part2 = [Q, ...walk(j + 1, i), P];
+        const lp = point(`cutP:${constructKey(c)}`, P, MID_POOL, color);
+        const lq = point(`cutQ:${constructKey(c)}`, Q, MID_POOL, color);
+        out.segs.push({a: P, b: Q, color});
+        const s1 = polyArea(part1) / (PLANE_UNIT_PX * PLANE_UNIT_PX);
+        const s2 = polyArea(part2) / (PLANE_UNIT_PX * PLANE_UNIT_PX);
+        if (c.sep) {
+          // mảnh 1 tách ra phía ngoài, vuông góc với đường cắt; chỗ cũ chỉ còn viền nét đứt
+          const centroid = (pts: P2[]) => mul(pts.reduce((a, b) => add(a, b), {x: 0, y: 0}), 1 / pts.length);
+          const nrm = unit(perp(sub(Q, P)));
+          const off = mul(nrm, (dot(nrm, sub(centroid(part1), centroid(part2))) >= 0 ? 1 : -1) * 16);
+          out.fills.push({pts: part1, color, opacity: 0, dashed: true}, {pts: part1.map((q) => add(q, off)), color, opacity: 0.34});
+        } else {
+          out.fills.push({pts: part1, color, opacity: 0.3});
+        }
+        // góc giữa đường cắt và hai cạnh bị cắt, ở phía mảnh 1
+        const a1 = ang(sub(V(i + 1), P));
+        const a2 = ang(sub(Q, P));
+        const b1 = ang(sub(V(j), Q));
+        const b2 = ang(sub(P, Q));
+        out.arcs.push({at: P, a1, a2, r: 16, n: 1, color}, {at: Q, a1: b1, a2: b2, r: 16, n: 1, color});
+        const degAt = (at: P2, u: P2, v: P2) => (Math.acos(Math.max(-1, Math.min(1, dot(unit(sub(u, at)), unit(sub(v, at)))))) * 180) / Math.PI;
+        const gP = degAt(P, V(i + 1), Q);
+        const gQ = degAt(Q, V(j), P);
+        out.facts.push(
+          `Cắt ${lp}${lq} = ${fmt(unitLen(P, Q))}: S₁ = ${fmt(s1)}, S₂ = ${fmt(s2)} (tổng ${fmt(s1 + s2)}); góc tại ${lp} = ${gP.toFixed(0)}°, tại ${lq} = ${gQ.toFixed(0)}°`,
+        );
+        break;
+      }
       case 'ninePoint': {
         if (!cc || !G || !H || !tri) break;
         const N9 = mid(cc.O, H);
@@ -554,6 +615,23 @@ export function evalConstructs(verts: P2[], list: PlaneConstruct[] | undefined):
 export function drawConstructsOnCtx(ctx: CanvasRenderingContext2D, d: PlaneDraw, ox: number, oy: number): void {
   ctx.save();
   ctx.lineCap = 'round';
+  for (const f of d.fills) {
+    ctx.beginPath();
+    f.pts.forEach((p, k) => (k ? ctx.lineTo(ox + p.x, oy + p.y) : ctx.moveTo(ox + p.x, oy + p.y)));
+    ctx.closePath();
+    if (f.dashed) {
+      ctx.setLineDash([6, 5]);
+      ctx.strokeStyle = f.color;
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else {
+      ctx.globalAlpha = f.opacity;
+      ctx.fillStyle = f.color;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
   for (const c of d.circles) {
     ctx.strokeStyle = c.color;
     ctx.lineWidth = 1.8;
@@ -616,4 +694,20 @@ export function drawConstructsOnCtx(ctx: CanvasRenderingContext2D, d: PlaneDraw,
     if (p.label) ctx.fillText(p.label, ox + p.x + 6, oy + p.y - 6);
   }
   ctx.restore();
+}
+
+/** cạnh gần điểm p nhất (khoảng cách ≤ maxDist), kèm tham số t ∈ [0,1] dọc cạnh i → i+1; bỏ qua cạnh `except` */
+export function nearestSide(verts: P2[], p: P2, maxDist: number, except = -1): {i: number; t: number; d: number} | null {
+  let best: {i: number; t: number; d: number} | null = null;
+  verts.forEach((a, i) => {
+    if (i === except) return;
+    const b = verts[(i + 1) % verts.length];
+    const d2 = sub(b, a);
+    const dd = dot(d2, d2);
+    if (dd < 1e-9) return;
+    const t = Math.max(0, Math.min(1, dot(sub(p, a), d2) / dd));
+    const d = len(sub(p, lerp(a, b, t)));
+    if (d <= maxDist && (!best || d < best.d)) best = {i, t, d};
+  });
+  return best;
 }

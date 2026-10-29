@@ -29,6 +29,7 @@ from routers.classroom import router as classroom_router
 from routers.recognize_ink import router as recognize_ink_router
 from routers.board_qa import router as board_qa_router
 from routers.grade_steps import router as grade_steps_router
+from routers.lesson_notes import router as lesson_notes_router
 from routers.classroom_ws import router as classroom_ws_router
 from routers.classroom_ws import _public_size
 from routers.visualize import RAPIDOCR_ENGINE, LOCAL_MATH_ONNX
@@ -51,7 +52,7 @@ _cors_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "*").spl
 # Thứ tự: thêm sau = bao ngoài. Giới hạn tần suất nằm trong CORS (để 429 vẫn có tiêu đề CORS), nén gzip nằm giữa.
 app.add_middleware(
     RateLimitMiddleware,
-    prefixes=("/api/v1/canvas/recognize-ink", "/api/v1/canvas/compile-lasso", "/api/v1/canvas/ask-board", "/api/v1/canvas/grade-steps"),
+    prefixes=("/api/v1/canvas/recognize-ink", "/api/v1/canvas/compile-lasso", "/api/v1/canvas/ask-board", "/api/v1/canvas/grade-steps", "/api/v1/canvas/lesson-notes"),
 )
 app.add_middleware(GZipMiddleware, minimum_size=1200)
 app.add_middleware(
@@ -77,6 +78,7 @@ app.include_router(classroom_router)
 app.include_router(recognize_ink_router)
 app.include_router(board_qa_router)
 app.include_router(grade_steps_router)
+app.include_router(lesson_notes_router)
 app.include_router(classroom_ws_router)
 app.include_router(student_context_router)
 app.include_router(online_tutor_router)

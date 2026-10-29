@@ -5,7 +5,7 @@ import type {ShapeMeta, Stroke} from '../../utils/lassoGeometry';
 import {VERTEX_LABELS, planeStats, solidWire, triangleCenters, type P2} from '../../utils/inlineShape';
 import type {SolidKind} from '../../utils/localRouter';
 import {DEFAULT_ORBIT} from '../../utils/geometryProblem';
-import {BUNDLES, KIND_COLOR, KIND_LABEL, addConstructs, arcPath, distToPolygon, evalConstructs, hasConstruct, polygonBundles, toggleConstruct, type ConstructKind, type PlaneConstruct} from '../../utils/planeConstruct';
+import {BUNDLES, KIND_COLOR, KIND_LABEL, addConstructs, arcPath, distToPolygon, evalConstructs, hasConstruct, nearestSide, polygonBundles, toggleConstruct, type ConstructKind, type PlaneConstruct} from '../../utils/planeConstruct';
 
 interface Props {
   stroke: Stroke;
@@ -63,6 +63,23 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
   const drawn = useMemo(() => (s.kind === 'plane' ? evalConstructs(verts, constructs) : null), [s.kind, verts, constructs]);
   const [build, setBuild] = useState(false);
   const [menu, setMenu] = useState<{kind: 'v' | 's'; i: number} | null>(null);
+  // kéo từ cạnh này sang cạnh khác (chế độ dựng hình) = cắt hình; cutLine là đường đang kéo
+  const cutDrag = useRef<{i: number; t: number; sx: number; sy: number; moved: boolean; last: P2 | null} | null>(null);
+  const finishCut = (at: P2 | null) => {
+    const c = cutDrag.current;
+    cutDrag.current = null;
+    setCutLine(null);
+    if (!c?.moved || !at) return;
+    const end = nearestSide(verts, at, 24, c.i);
+    if (!end) return;
+    setMenu(null);
+    applyConstructs(toggleConstruct(constructs, {k: 'cut', i: c.i, j: end.i, ta: Math.round(c.t * 100) / 100, tb: Math.round(Math.max(0.05, Math.min(0.95, end.t)) * 100) / 100}));
+  };
+  const [cutLine, setCutLine] = useState<{a: P2; b: P2} | null>(null);
+  const toLocal = (e: React.PointerEvent<Element>): P2 => {
+    const r = svgRef.current?.getBoundingClientRect();
+    return {x: (e.clientX - (r?.left ?? 0)) / boardScale, y: (e.clientY - (r?.top ?? 0)) / boardScale};
+  };
   useEffect(() => {
     if (!build) setMenu(null);
   }, [build]);
@@ -178,6 +195,9 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
               })}
               {drawn && (
                 <g data-testid="construct-draw" data-count={(constructs ?? []).length} style={{pointerEvents: 'none'}}>
+                  {drawn.fills.map((f, k) => (
+                    <polygon key={`cf${k}`} data-testid={f.dashed ? 'cut-ghost' : 'cut-fill'} points={f.pts.map((q) => `${q.x},${q.y}`).join(' ')} fill={f.dashed ? 'none' : f.color} fillOpacity={f.opacity} stroke={f.color} strokeWidth={f.dashed ? 1.4 : 0} strokeDasharray={f.dashed ? '6 5' : undefined} strokeLinejoin="round" />
+                  ))}
                   {drawn.circles.map((c, k) => (
                     <circle key={`cc${k}`} data-testid="construct-circle" cx={c.c.x} cy={c.c.y} r={c.r} fill="none" stroke={c.color} strokeWidth={1.8} strokeDasharray={c.dashed ? '6 5' : undefined} />
                   ))}
@@ -242,12 +262,35 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
                       style={{pointerEvents: 'auto', cursor: 'pointer', touchAction: 'none'}}
                       onPointerDown={(e) => {
                         e.stopPropagation();
+                        try {
+                          (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+                        } catch {}
+                        const a = p;
+                        const d = {x: q.x - a.x, y: q.y - a.y};
+                        const at = toLocal(e);
+                        const t = Math.max(0.05, Math.min(0.95, ((at.x - a.x) * d.x + (at.y - a.y) * d.y) / (d.x * d.x + d.y * d.y || 1)));
+                        cutDrag.current = {i, t, sx: e.clientX, sy: e.clientY, moved: false, last: null};
                         setMenu({kind: 's', i});
                       }}
+                      onPointerMove={(e) => {
+                        const c = cutDrag.current;
+                        if (!c) return;
+                        if (!c.moved && Math.hypot(e.clientX - c.sx, e.clientY - c.sy) < 10) return;
+                        c.moved = true;
+                        const a = verts[c.i];
+                        const b = verts[(c.i + 1) % verts.length];
+                        c.last = toLocal(e);
+                        setCutLine({a: {x: a.x + (b.x - a.x) * c.t, y: a.y + (b.y - a.y) * c.t}, b: c.last});
+                      }}
+                      onDragStart={(e) => e.preventDefault()}
+                      onPointerUp={(e) => finishCut(toLocal(e))}
+                      // trình duyệt có thể hủy con trỏ giữa chừng (nhận là kéo-thả): dùng điểm cuối đã biết
+                      onPointerCancel={() => finishCut(cutDrag.current?.last ?? null)}
                     />
                   </g>
                 );
               })}
+              {cutLine && <line data-testid="cut-preview" x1={cutLine.a.x} y1={cutLine.a.y} x2={cutLine.b.x} y2={cutLine.b.y} stroke="#DC2626" strokeWidth={2.2} strokeDasharray="5 4" strokeLinecap="round" style={{pointerEvents: 'none'}} />}
               {build && menu?.kind === 'v' && verts[menu.i] && <circle cx={verts[menu.i].x} cy={verts[menu.i].y} r={17} fill="none" stroke="#2563EB" strokeWidth={2.4} opacity={0.6} />}
               {centers && (
                 <g data-testid="euler-overlay">
@@ -618,12 +661,25 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
                     {b.label}
                   </button>
                 ))}
+                {(constructs ?? []).some((c) => c.k === 'cut') && (
+                  <button
+                    data-testid="cut-separate"
+                    aria-pressed={(constructs ?? []).some((c) => c.k === 'cut' && c.sep)}
+                    onClick={() => {
+                      const on = !(constructs ?? []).some((c) => c.k === 'cut' && c.sep);
+                      applyConstructs((constructs ?? []).map((c) => (c.k === 'cut' ? {...c, sep: on} : c)));
+                    }}
+                    className="rounded-lg border border-rose-300 bg-white/95 px-2.5 py-1.5 text-[12px] font-semibold text-rose-700 shadow-sm hover:bg-rose-50 aria-pressed:bg-rose-600 aria-pressed:text-white"
+                  >
+                    ⇱ Tách mảnh
+                  </button>
+                )}
                 <button data-testid="construct-clear" onClick={() => applyConstructs([])} className="rounded-lg border border-rose-200 bg-white/95 px-2.5 py-1.5 text-[12px] font-semibold text-rose-600 shadow-sm hover:bg-rose-50">
                   Xóa dựng
                 </button>
               </div>
             )}
-            {build && !menu && <div className="pointer-events-none text-[11px] text-stone-500">Chạm vào một đỉnh hoặc một cạnh để dựng; kéo đỉnh để xem các đường dựng thay đổi.</div>}
+            {build && !menu && <div className="pointer-events-none text-[11px] text-stone-500">Chạm vào một đỉnh hoặc một cạnh để dựng; kéo từ cạnh này sang cạnh khác để cắt hình; kéo đỉnh để xem các đường dựng thay đổi.</div>}
             {drawn && drawn.facts.length > 0 && (
               <div data-testid="construct-facts" className="pointer-events-none rounded-md bg-white/85 px-2 py-1 font-mono text-[11px] leading-snug text-slate-700">
                 {drawn.facts.slice(-6).map((f, k) => (

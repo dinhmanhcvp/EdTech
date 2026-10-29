@@ -34,6 +34,7 @@ import { OcrReviewModal } from './OcrReviewModal';
 import { looksMathy, typedToLatex } from '../../utils/typedMath';
 import { canonicalFormula } from '../../utils/formulaNormalize';
 import { VectorTimeTravelBar } from './VectorTimeTravelBar';
+import { MicroLessonPanel } from './MicroLessonPanel';
 import { useBoardJournal } from '../../hooks/useBoardJournal';
 import { findAmbiguousTokens } from '../../utils/ocrConfusions';
 import { MathView } from '../common/MathView';
@@ -450,6 +451,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [editingText, setEditingText] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  /** nhãn "AI đã nhận ra …" nổi trên hình vừa chuyển từ nét vẽ, tự tắt sau ~2,6 s */
+  const [recogChip, setRecogChip] = useState<{ key: string; text: string; x: number; y: number } | null>(null);
 
   // Tự động phân loại intent: Trực quan hóa công thức hay Chấm bài học sinh
   const detectedLassoIntent: LassoIntentResult | null = useMemo(() => {
@@ -1831,6 +1834,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     setInfoMessage(msg);
     setTimeout(() => setInfoMessage((cur) => (cur === msg ? null : cur)), ms);
   };
+  const announceRecognized = (text: string, x: number, y: number) => {
+    const key = `${Date.now()}-${text}`;
+    setRecogChip({ key, text, x, y: Math.max(y, 30) });
+    setTimeout(() => setRecogChip((c) => (c?.key === key ? null : c)), 2600);
+  };
   const flashError = (msg: string, ms = 3500) => {
     setErrorMessage(msg);
     setTimeout(() => setErrorMessage((cur) => (cur === msg ? null : cur)), ms);
@@ -1913,6 +1921,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     setGeoPanel({ mode: 'edit', id });
     setSelectedStrokes([]);
     setLassoLoop([]);
+    announceRecognized(`${scene.dim === 3 ? '3D' : 'Hình phẳng'} · ${scene.title}`, L.ax + L.w / 2, L.ay);
   };
   const applyGeo = (id: string, scene: GeoScene, upTo: number) => {
     setStrokes((prev) =>
@@ -2506,6 +2515,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         };
         saveToUndo();
         setStrokes((prev) => [...prev.filter((s) => !ids.has(s.id)), made]);
+        announceRecognized(`${isSolid ? '3D' : 'Hình phẳng'} · ${shape.title}`, ax + sw / 2, ay);
         setSelectedStrokes([]);
         setLassoLoop([]);
         setFormulaInput('');
@@ -3331,6 +3341,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           )}
 
           <VectorTimeTravelBar getJournal={journal.snapshot} eventCount={journal.eventCount} />
+          <MicroLessonPanel getJournal={journal.snapshot} />
 
           {geoPanel?.mode === 'new' && (
             <GeometryProblemPanel
@@ -3383,6 +3394,17 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               );
             })()}
             {gradeResult && explainIdx !== null && <StepExplainWindow result={gradeResult} index={explainIdx} onIndex={setExplainIdx} onClose={() => setExplainIdx(null)} />}
+            {recogChip && (
+              <div
+                key={recogChip.key}
+                data-testid="recognition-chip"
+                role="status"
+                className="absolute -translate-x-1/2 -translate-y-full -mt-1 px-3 py-1 rounded-full text-white text-xs font-semibold whitespace-nowrap shadow-lg bg-gradient-to-r from-blue-600 to-sky-500 animate-in fade-in zoom-in-95"
+                style={{ left: `${(recogChip.x / 1200) * 100}%`, top: `${(recogChip.y / 675) * 100}%` }}
+              >
+                ✦ AI đã nhận ra: {recogChip.text}
+              </div>
+            )}
             {textDraft && (
               <input
                 data-testid="text-draft-input"

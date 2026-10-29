@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from typing import Any, Dict, List, Optional
 
 from hub import clock
@@ -15,6 +16,14 @@ CERTAIN = ("graded", "teacher_confirmed")
 
 class RequestConflict(Exception):
     pass
+
+
+class _Duplicate(Exception):
+    """Hai yêu cầu cùng requestId cùng qua bước kiểm tra (vd điện thoại gửi lại khi OCR còn đang chạy): giữ bản đã ghi."""
+
+    def __init__(self, existing: Dict[str, Any]) -> None:
+        super().__init__(existing["id"])
+        self.existing = existing
 
 
 def question_of(run: Dict[str, Any], version: int, question_id: str) -> Dict[str, Any]:
@@ -59,13 +68,25 @@ def insert(run: Dict[str, Any], student_id: str, question_id: str, version: int,
     with LOCK, connect() as conn:
         attempt = 1 + conn.execute("SELECT COUNT(*) FROM submissions WHERE run_id=? AND student_id=? AND question_id=? AND status != 'draft'",
                                    (run["id"], student_id, question_id)).fetchone()[0]
-        conn.execute("INSERT INTO submissions (id, run_id, student_id, question_id, version, attempt, request_id, fingerprint, mode, answer, "
-                     "photo_path, ocr, confirmed, grade, status, score, phase, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                     (sid, run["id"], student_id, question_id, version, attempt, request_id, fingerprint, mode, fields.get("answer"),
-                      fields.get("photo_path"), dumps(fields["ocr"]) if fields.get("ocr") is not None else None,
-                      dumps(fields["confirmed"]) if fields.get("confirmed") is not None else None, None, status, score,
-                      "homework" if run["phase"] == "homework" else "in_class", now))
+        try:
+            conn.execute("INSERT INTO submissions (id, run_id, student_id, question_id, version, attempt, request_id, fingerprint, mode, answer, "
+                         "photo_path, ocr, confirmed, grade, status, score, phase, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                         (sid, run["id"], student_id, question_id, version, attempt, request_id, fingerprint, mode, fields.get("answer"),
+                          fields.get("photo_path"), dumps(fields["ocr"]) if fields.get("ocr") is not None else None,
+                          dumps(fields["confirmed"]) if fields.get("confirmed") is not None else None, None, status, score,
+                          "homework" if run["phase"] == "homework" else "in_class", now))
+        except sqlite3.IntegrityError:
+            row = conn.execute("SELECT * FROM submissions WHERE student_id=? AND request_id=?", (student_id, request_id)).fetchone()
+            if not row:
+                raise
+            raise _Duplicate(_row(row))
     return get(sid)
+
+
+def _replay(existing: Dict[str, Any], fingerprint: str) -> Dict[str, Any]:
+    if existing["fingerprint"] != fingerprint:
+        raise RequestConflict(existing["request_id"])
+    return existing
 
 
 def update(submission_id: str, **fields: Any) -> Dict[str, Any]:
@@ -127,12 +148,10 @@ def _guard(run: Dict[str, Any]) -> None:
 def answer(run: Dict[str, Any], student_id: str, question_id: str, version: int, request_id: str,
            choice: Optional[int] = None, text: Optional[str] = None) -> Dict[str, Any]:
     _guard(run)
-    fingerprint = json.dumps([question_id, version, choice, text], ensure_ascii=False)
+    fingerprint = json.dumps([run["id"], question_id, version, choice, text], ensure_ascii=False)
     existing = _by_request(student_id, request_id)
     if existing:
-        if existing["fingerprint"] != fingerprint:
-            raise RequestConflict(request_id)
-        return view(existing)
+        return view(_replay(existing, fingerprint))
     q = question_of(run, version, question_id)
     if q["type"] == "choice" and choice is not None:
         correct: Optional[bool] = grader.grade_choice(choice, q["answer"])
@@ -144,8 +163,11 @@ def answer(run: Dict[str, Any], student_id: str, question_id: str, version: int,
         raise ValueError("wrong_mode")
     status = "pending_teacher" if correct is None else "graded"
     score = None if correct is None else (1.0 if correct else 0.0)
-    sub = insert(run, student_id, question_id, version, request_id, fingerprint, "choice" if q["type"] == "choice" else "typed",
-                 status, score, answer=given)
+    try:
+        sub = insert(run, student_id, question_id, version, request_id, fingerprint, "choice" if q["type"] == "choice" else "typed",
+                     status, score, answer=given)
+    except _Duplicate as dup:
+        return view(_replay(dup.existing, fingerprint))
     finish(sub, run)
     return view(sub)
 
@@ -167,11 +189,10 @@ def upload_photo(run: Dict[str, Any], student_id: str, question_id: str, version
     from hub.assignments import files, ocr, pages
 
     _guard(run)
-    fingerprint = json.dumps([question_id, version, "photo"])
+    fingerprint = json.dumps([run["id"], question_id, version, "photo"])
     existing = _by_request(student_id, request_id)
     if existing:
-        if existing["fingerprint"] != fingerprint:
-            raise RequestConflict(request_id)
+        existing = _replay(existing, fingerprint)
         return {"photoId": existing["id"], **(existing["ocr"] or {"lines": [], "uncertain": []})}
     q = question_of(run, version, question_id)
     if q["type"] not in ("essay", "open"):
@@ -180,7 +201,11 @@ def upload_photo(run: Dict[str, Any], student_id: str, question_id: str, version
         raise ValueError("too_large")
     jpeg = pages.shrink_photo(data)
     read = ocr.recognize_image(jpeg) or {"lines": [], "uncertain": []}
-    sub = insert(run, student_id, question_id, version, request_id, fingerprint, "photo", "draft", None, ocr=read)
+    try:
+        sub = insert(run, student_id, question_id, version, request_id, fingerprint, "photo", "draft", None, ocr=read)
+    except _Duplicate as dup:
+        existing = _replay(dup.existing, fingerprint)
+        return {"photoId": existing["id"], **(existing["ocr"] or {"lines": [], "uncertain": []})}
     update(sub["id"], photo_path=files.save_photo(sub["id"], jpeg))
     return {"photoId": sub["id"], **read}
 

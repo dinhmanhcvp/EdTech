@@ -110,7 +110,7 @@ async def upload_assignment(request: Request, claims: dict = Depends(teacher)):
     try:
         rendered = await run_in_threadpool(lambda: [p for data, ctype in blobs for p in pages.render(data, ctype)])
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
+        raise HTTPException(status_code=413 if str(exc) == "image_too_large" else 422, detail=str(exc))
     if len(rendered) > pages.MAX_PAGES:
         raise HTTPException(status_code=422, detail="too_many_pages")
     draft = store.create_draft(claims["subject"], title, subject, kind, "file" if is_pdf else "photos")

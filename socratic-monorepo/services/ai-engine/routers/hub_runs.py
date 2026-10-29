@@ -184,7 +184,7 @@ def _submission_errors(fn):
     except KeyError:
         raise _not_found()
     except ValueError as exc:
-        raise HTTPException(status_code=413 if str(exc) == "too_large" else 422, detail=str(exc))
+        raise HTTPException(status_code=413 if str(exc) in ("too_large", "image_too_large") else 422, detail=str(exc))
 
 
 @router.post("/runs/{run_id}/answers")
@@ -323,6 +323,15 @@ def _photo_url(submission_id: str, has_photo: bool) -> Optional[str]:
     return f"/api/v1/hub/files/submission/{submission_id}" if has_photo else None
 
 
+def _student_grade(grade: Optional[Dict[str, Any]], run_id: str) -> Optional[Dict[str, Any]]:
+    """Lời chấm AI được sinh khi biết đáp án (sửa, dòng đúng, tóm tắt): học sinh chỉ thấy đủ khi lượt giao đã hết hạn.
+    Khi còn mở chỉ thấy vị trí bước sai đầu tiên và trạng thái từng bước — đủ để tự sửa mà không lộ đáp án."""
+    if not grade or runs.get(run_id)["phase"] == "closed":
+        return grade
+    return {"status": grade.get("status"), "first_error": grade.get("first_error"),
+            "steps": [{"index": s.get("index"), "status": s.get("status")} for s in grade.get("steps") or []]}
+
+
 @router.get("/me/submissions/{submission_id}")
 def my_submission(submission_id: str, claims: dict = Depends(student)):
     try:
@@ -332,7 +341,8 @@ def my_submission(submission_id: str, claims: dict = Depends(student)):
     if sub["student_id"] != claims["subject"] or sub["status"] == "draft":
         raise _not_found()
     return {"submissionId": sub["id"], "questionId": sub["question_id"], "status": sub["status"], "score": sub["score"],
-            "confirmed": sub["confirmed"], "lines": (sub["ocr"] or {}).get("lines"), "grade": sub["grade"], "correction": sub["correction"],
+            "confirmed": sub["confirmed"], "lines": (sub["ocr"] or {}).get("lines"), "grade": _student_grade(sub["grade"], sub["run_id"]),
+            "correction": sub["correction"],
             "photo": _photo_url(sub["id"], bool(sub["photo_path"]))}
 
 
@@ -346,7 +356,8 @@ def class_example(submission_id: str, claims: dict = Depends(student)):
         detail = submissions.board_detail(submission_id)
     except KeyError:
         raise _not_found()
-    return {**detail, "photo": _photo_url(submission_id, detail["hasPhoto"])}
+    run_id = submissions.get(submission_id)["run_id"]
+    return {**detail, "grade": _student_grade(detail["grade"], run_id), "photo": _photo_url(submission_id, detail["hasPhoto"])}
 
 
 @router.get("/runs/{run_id}/metrics")

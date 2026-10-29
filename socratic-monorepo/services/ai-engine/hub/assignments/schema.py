@@ -84,7 +84,11 @@ _OPEN_WORDS = {"tự luận", "tu luan", "?", "mở", "mo"}
 def quick_key(text: str) -> List[Dict[str, Any]]:
     """Mỗi mục: `<n><chữ>` trắc nghiệm, `<n>: <biểu thức>` tự luận có đáp số, `<n>: tự luận` (hoặc `?`) tự luận không đáp án,
     `<n>= <biểu thức>` đáp số gõ. Mục không đọc được bị bỏ qua."""
-    matches = list(_ITEM.finditer(text or ""))
+    # chỉ nhận số thứ tự câu tăng dần 1-1: số "1" trong "3: x + 1 = 5" là một phần đáp án, không phải câu mới
+    matches = []
+    for m in _ITEM.finditer(text or ""):
+        if not matches or int(m.group(1)) == int(matches[-1].group(1)) + 1:
+            matches.append(m)
     items: List[Dict[str, Any]] = []
     for i, m in enumerate(matches):
         tail = text[m.end(): matches[i + 1].start() if i + 1 < len(matches) else len(text)].strip(" ,;\n\t")

@@ -71,6 +71,10 @@ def get_lesson(student_id: str, class_id: str = "12A1", session_id: Optional[str
             plan, keys = asg_metrics.run_lesson(student_id, run)
         except (KeyError, PermissionError):
             raise HTTPException(404, "not_found")
+        if run["phase"] == "in_class":  # đang làm bài trong tiết: gia sư không được thành nơi dò đáp án
+            raise HTTPException(409, "run_in_class")
+        # bài về nhà còn hạn: gia sư vẫn gợi ý nhưng không xác nhận đúng/sai (đáp án vẫn giữ để lọc lộ đáp án)
+        plan["verify"] = run["phase"] == "closed"
     elif session_id:
         _check_hub_student(student_id, authorization)
         try:
@@ -127,7 +131,10 @@ def lesson_turn(student_id: str, req: TurnRequest, authorization: Optional[str] 
             llm_message = ""  # an expression answer is graded by the server, never forwarded to the model
             keep_message = False
             if message:
-                correct = grade_choice(message, expected) if expected.startswith("choice:") else check_formula(message, expected)
+                if plan.get("verify", True):
+                    correct = grade_choice(message, expected) if expected.startswith("choice:") else check_formula(message, expected)
+                else:
+                    correct = None
                 if correct is None:
                     status = "UNVERIFIED"
                 elif correct:

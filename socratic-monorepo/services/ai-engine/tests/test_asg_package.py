@@ -18,6 +18,15 @@ def _answer(client, env, run, student=0, **body):
     return client.post(f"/api/v1/hub/runs/{run['runId']}/answers", json=payload, headers=env["students"][student]["headers"]).json()
 
 
+def _past_due(client, env, run, monkeypatch):
+    """Đóng lượt giao và đưa đồng hồ qua hạn nộp: bài học Socratic theo lượt giao chỉ chấm đúng/sai sau hạn."""
+    import time
+    from hub import clock
+    client.post(f"/api/v1/hub/board/runs/{run['runId']}/close", headers=env["board"])
+    base = time.time()
+    monkeypatch.setattr(clock, "now", lambda: base + 259201)
+
+
 def _corrected_essay(client, env, run):
     pid = _upload(client, env, run).json()["photoId"]
     _confirm(client, env, run, pid, ["x + 3 = 5", "x = 8"])
@@ -74,11 +83,12 @@ def test_run_metrics_rates_and_wrong_answers(client, asg_env, fakes):
     assert lan["pending"] == 1 and lan["score10"] == 10.0
 
 
-def test_run_lesson_has_wrong_questions_without_keys(client, asg_env, fakes):
+def test_run_lesson_has_wrong_questions_without_keys(client, asg_env, fakes, monkeypatch):
     run = open_board_run(client, asg_env)
     st = asg_env["students"][0]
     _answer(client, asg_env, run, questionId="q1", choice=0)
     _answer(client, asg_env, run, questionId="q2", text="12", requestId="r2")
+    _past_due(client, asg_env, run, monkeypatch)
     r = client.get(f"/api/v1/student/lesson/{st['id']}?run_id={run['runId']}", headers=st["headers"])
     assert r.status_code == 200, r.text
     lesson = r.json()
@@ -89,10 +99,11 @@ def test_run_lesson_has_wrong_questions_without_keys(client, asg_env, fakes):
     assert client.get(f"/api/v1/student/lesson/{st['id']}?run_id={run['runId']}").status_code == 401
 
 
-def test_run_lesson_turn_records_event(client, asg_env, fakes):
+def test_run_lesson_turn_records_event(client, asg_env, fakes, monkeypatch):
     from hub.db import connect
     run = open_board_run(client, asg_env)
     st = asg_env["students"][0]
+    _past_due(client, asg_env, run, monkeypatch)
     lesson = client.get(f"/api/v1/student/lesson/{st['id']}?run_id={run['runId']}", headers=st["headers"]).json()
     q3 = next(s for s in lesson["scenes"] if s["id"] == "q3")["questions"][0]
     body = {"lesson_id": lesson["lesson_id"], "scene_id": "q3", "question_id": q3["id"], "kind": "ANSWER", "message": "x = 2", "request_id": "t1"}

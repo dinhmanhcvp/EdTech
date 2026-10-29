@@ -22,7 +22,7 @@ def page_file(aid: str, n: int, authorization: Optional[str] = Header(default=No
         raise HTTPException(status_code=404, detail="not_found")
     allowed = (who["kind"] == "board" and a["teacherId"] == who["hubTeacherId"]) \
         or (who["kind"] == "teacher" and a["teacherId"] == who["subject"]) \
-        or (who["kind"] == "student" and runs.student_can_see_assignment(who["subject"], aid))
+        or (who["kind"] == "student" and (runs.student_can_see_assignment(who["subject"], aid) or _resource_used_in_class(who["subject"], aid)))
     if not allowed:
         raise HTTPException(status_code=404, detail="not_found")
     return _jpeg(files.read("assignments", path))
@@ -52,3 +52,10 @@ def _class_example(student_id: str, submission_id: str) -> bool:
     from hub.assignments import metrics as asg_metrics
 
     return asg_metrics.is_class_example(student_id, submission_id)
+
+
+def _resource_used_in_class(student_id: str, aid: str) -> bool:
+    """Tài nguyên giáo viên đã mở trên bảng trong một tiết của lớp em: em xem lại được."""
+    from hub.assignments import resources
+
+    return resources.student_can_see(student_id, aid)

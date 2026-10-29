@@ -19,7 +19,7 @@ class NewAssignment(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=160)
     subject: Subject
-    kind: Literal["exercise", "exam"] = "exercise"
+    kind: Literal["exercise", "exam", "slides"] = "exercise"
     source: Literal["bank", "ai"] = "bank"
 
 
@@ -93,7 +93,7 @@ async def upload_assignment(request: Request, claims: dict = Depends(teacher)):
     if not uploads:
         raise HTTPException(status_code=422, detail="file_required")
     title, subject, kind = str(form.get("title") or "Bài tập")[:160], str(form.get("subject") or "MATH"), str(form.get("kind") or "exercise")
-    if subject not in ("MATH", "PHYSICS", "CHEMISTRY", "BIOLOGY") or kind not in ("exercise", "exam"):
+    if subject not in ("MATH", "PHYSICS", "CHEMISTRY", "BIOLOGY") or kind not in ("exercise", "exam", "slides"):
         raise HTTPException(status_code=422, detail="bad_subject_or_kind")
     blobs = []
     for f in uploads:
@@ -116,7 +116,20 @@ async def upload_assignment(request: Request, claims: dict = Depends(teacher)):
     draft = store.create_draft(claims["subject"], title, subject, kind, "file" if is_pdf else "photos")
     for n, jpeg in enumerate(rendered):
         files.save_page(draft["id"], n, jpeg)
+    if kind == "slides":  # slide không cần duyệt câu: dùng được ngay (version 1, không có câu)
+        store.save(claims["subject"], draft["id"], {"title": title, "subject": subject, "kind": "slides", "questions": []}, 0)
     return {"id": draft["id"], "pages": len(rendered)}
+
+
+@router.delete("/assignments/{aid}")
+def delete_assignment(aid: str, claims: dict = Depends(teacher)):
+    try:
+        store.delete(claims["subject"], aid)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="not_found")
+    except store.InUse:
+        raise HTTPException(status_code=409, detail="in_use")
+    return {"ok": True}
 
 
 @router.post("/assignments/{aid}/extract")

@@ -365,3 +365,71 @@ def run_metrics(run_id: str, claims: dict = Depends(teacher)):
     from hub.assignments import metrics as asg_metrics
 
     return asg_metrics.run_metrics(_teacher_run(claims, run_id))
+
+
+# ------------------------------------------------------------------ tài nguyên trên bảng (slide/bài tập/đề) và gói theo tiết console
+class AnnotationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    strokes: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+def _board_resource(ctx: dict, aid: str) -> Dict[str, Any]:
+    try:
+        return store.owned(ctx["hubTeacherId"], aid)
+    except KeyError:
+        raise _not_found()
+
+
+@router.post("/board/resources/{aid}/open")
+def board_open_resource(aid: str, ctx: dict = Depends(bridge.require_board)):
+    from hub.assignments import resources
+
+    _board_resource(ctx, aid)
+    resources.record_use(ctx["period"]["id"], aid, ctx["hubClassId"])
+    return {"ok": True}
+
+
+@router.get("/board/resources/{aid}/pages/{page}/annotations")
+def board_get_annotations(aid: str, page: int, ctx: dict = Depends(bridge.require_board)):
+    from hub.assignments import resources
+
+    _board_resource(ctx, aid)
+    return {"strokes": resources.get_annotations(ctx["period"]["id"], aid, page)}
+
+
+@router.put("/board/resources/{aid}/pages/{page}/annotations")
+def board_put_annotations(aid: str, page: int, req: AnnotationRequest, ctx: dict = Depends(bridge.require_board)):
+    from hub.assignments import resources
+
+    a = _board_resource(ctx, aid)
+    if not 0 <= page < max(1, len(a["pages"])):
+        raise _not_found()
+    try:
+        resources.save_annotations(ctx["period"]["id"], aid, page, req.strokes)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return {"ok": True}
+
+
+@router.get("/me/resources")
+def my_resources(claims: dict = Depends(student)):
+    from hub.assignments import resources
+
+    return {"resources": resources.my_resources(claims["subject"])}
+
+
+@router.get("/me/periods")
+def my_periods(claims: dict = Depends(student)):
+    from hub.assignments import resources
+
+    return {"periods": resources.my_periods(claims["subject"])}
+
+
+@router.get("/console/periods/{period_id}/summary")
+def console_period_summary(period_id: str, claims: dict = Depends(teacher)):
+    from hub.assignments import resources
+
+    console_tid = claims.get("console") or bridge.console_teacher_for_hub(claims["subject"])
+    if not console_tid or not bridge.period_info(console_tid, period_id):
+        raise _not_found()
+    return resources.period_summary(claims["subject"], period_id)

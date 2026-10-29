@@ -14,6 +14,25 @@ class VersionConflict(Exception):
     pass
 
 
+class InUse(Exception):
+    pass
+
+
+def delete(teacher_id: str, aid: str) -> None:
+    """Xóa tài nguyên chưa từng được giao (bài nộp và chỉ số không được mồ côi)."""
+    from hub.assignments import files
+
+    owned(teacher_id, aid)
+    with LOCK, connect() as conn:
+        if conn.execute("SELECT 1 FROM assignment_runs WHERE assignment_id=? LIMIT 1", (aid,)).fetchone():
+            raise InUse(aid)
+        paths = [r["path"] for r in conn.execute("SELECT path FROM assignment_pages WHERE assignment_id=?", (aid,))]
+        for table in ("assignment_pages", "assignment_versions", "resource_uses", "resource_annotations"):
+            conn.execute(f"DELETE FROM {table} WHERE assignment_id=?", (aid,))
+        conn.execute("DELETE FROM assignments WHERE id=?", (aid,))
+    files.remove("assignments", paths)
+
+
 def _fold(text: str) -> str:
     text = unicodedata.normalize("NFD", (text or "").replace("đ", "d").replace("Đ", "D"))
     return "".join(ch for ch in text if unicodedata.category(ch) != "Mn").lower()

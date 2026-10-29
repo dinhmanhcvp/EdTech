@@ -31,6 +31,14 @@ def save_photo(submission_id: str, jpeg: bytes) -> str:
     return path.name
 
 
+def remove(kind: str, names) -> None:
+    for name in names:
+        try:
+            (_root(kind) / Path(name).name).unlink()
+        except OSError:
+            pass
+
+
 def read(kind: str, name: str) -> bytes:
     return (_root(kind) / Path(name).name).read_bytes()
 

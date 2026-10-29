@@ -68,6 +68,11 @@ def board_context(board_token: str) -> Dict[str, Any]:
     return {"period": period, "consoleTeacherId": console_tid, "hubTeacherId": hub_tid, "hubClassId": hub_class}
 
 
+def period_info(console_teacher_id: str, period_id: str) -> Optional[Dict[str, Any]]:
+    p = console_db().get_period(console_teacher_id, period_id)
+    return {"id": p["id"], "title": p.get("title") or "", "status": p["status"], "ended_at": p.get("ended_at")} if p else None
+
+
 def period_status(console_teacher_id: str, period_id: str) -> Optional[Dict[str, Any]]:
     p = console_db().get_period(console_teacher_id, period_id)
     return {"status": p["status"], "ended_at": p.get("ended_at")} if p else None

@@ -53,11 +53,13 @@ class AssignmentBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=160)
     subject: Subject
-    kind: Literal["exercise", "exam"]
-    questions: List[Question] = Field(min_length=1, max_length=MAX_QUESTIONS)
+    kind: Literal["exercise", "exam", "slides"]
+    questions: List[Question] = Field(default_factory=list, max_length=MAX_QUESTIONS)
 
     @model_validator(mode="after")
     def _unique_ids(self):
+        if self.kind != "slides" and not self.questions:
+            raise ValueError("questions_required")  # slide chỉ có trang; bài tập/đề phải có ít nhất một câu
         ids = [q.id for q in self.questions]
         if len(ids) != len(set(ids)):
             raise ValueError("duplicate_ids")

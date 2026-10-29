@@ -23,6 +23,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!socratic-monorepo/apps/*/src/lib/
 # lib/ ở trên là mẫu của Python; mã nguồn TypeScript của các app (vd apps/teacher-console/src/lib) phải được commit
 !socratic-monorepo/apps/*/src/lib/
 lib64/

@@ -62,7 +62,7 @@ def test_thinking_config_by_model_family():
 def test_default_models_avoid_the_slow_ones(monkeypatch):
     monkeypatch.delenv("GEMINI_VISION_MODELS", raising=False)
     models = gemini_rest.vision_models()
-    assert models[0] == "gemini-3-flash-preview"
+    assert "gemini-3-flash-preview" in models[:2]
     assert not any("lite-latest" in m for m in models)
     monkeypatch.setenv("GEMINI_VISION_MODELS", "a, b")
     assert gemini_rest.vision_models() == ["a", "b"]
@@ -89,3 +89,13 @@ def test_tests_never_touch_the_real_env_file(client):
     client.post("/api/v1/canvas/settings/keys", json={"gemini_api_keys": "AIzaFakeOne, AIzaFakeTwo", "replace": True})
     after = open(real, "rb").read() if os.path.exists(real) else None
     assert before == after
+
+
+def test_vision_defaults_put_the_measured_fast_lite_first_with_budget_zero(monkeypatch):
+    monkeypatch.delenv("GEMINI_VISION_MODELS", raising=False)
+    monkeypatch.delenv("GEMINI_MODEL_LIMITS", raising=False)
+    from llm.model_router import ModelRouter
+    assert gemini_rest.vision_models()[0] == "gemini-3.1-flash-lite"
+    assert gemini_rest.thinking_config("gemini-3.1-flash-lite") == {"thinkingBudget": 0}
+    assert gemini_rest.thinking_config("gemini-3.5-flash-lite") == {"thinkingLevel": "minimal"}
+    assert ModelRouter().order("vision", gemini_rest.vision_models())[0] == "gemini-3.1-flash-lite"

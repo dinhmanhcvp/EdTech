@@ -21,6 +21,9 @@ from typing import Deque, Dict, Iterator, List, Optional, Set, Tuple
 # (RPM, RPD). 2.5-flash-lite lấy từ bảng công bố cũ của Google; 2.5-flash do người dùng xác nhận (20 RPD/khóa); model 3.x chưa biết → UNKNOWN_LIMITS.
 DEFAULT_LIMITS: Dict[str, Tuple[int, int]] = {
     "gemini-2.5-flash-lite": (15, 1000),
+    # người dùng báo hai model lite này có RPD lớn; con số 1000 là GIẢ ĐỊNH (chưa biết số thật), đặt lại bằng GEMINI_MODEL_LIMITS
+    "gemini-3.1-flash-lite": (15, 1000),
+    "gemini-3.5-flash-lite": (15, 1000),
     "gemini-2.5-flash": (10, 20),  # người dùng xác nhận 2026-10-29: chỉ 20 RPD mỗi khóa (một số khóa đã hết)
 }
 UNKNOWN_LIMITS: Tuple[int, int] = (10, 250)

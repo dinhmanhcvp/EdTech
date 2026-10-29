@@ -20,9 +20,13 @@ from typing import Any, Dict, List, Optional
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
+# 3.1-flash-lite: đo 2026-10-29 trên 10 ảnh (sạch + chữ tay/nhiễu, 5 môn) với thinkingBudget=0: đọc đúng 10/10, TB 2,7 s, tối đa 3,4 s,
+# ngang gemini-3-flash-preview (TB 2,8 s) mà RPD lớn hơn. Với thinkingLevel=minimal thì chậm thất thường (tối đa 23 s).
 DEFAULT_VISION_MODELS = [
+    "gemini-3.1-flash-lite",
     "gemini-3-flash-preview",
     "gemini-3.6-flash",
+    "gemini-3.5-flash-lite",
     "gemini-3.5-flash",
     "gemini-2.5-flash",
 ]
@@ -52,6 +56,8 @@ def text_models() -> List[str]:
 def thinking_config(model: str) -> Optional[Dict[str, Any]]:
     """Đọc chữ/sinh câu hỏi ngắn không cần suy nghĩ dài: tắt hoặc tối thiểu để nhanh và không làm cụt JSON."""
     m = model.lower()
+    if m.startswith("gemini-3.1-flash-lite"):
+        return {"thinkingBudget": 0}  # nhận budget 0 và ổn định hơn "minimal"
     if m.startswith("gemini-3"):
         return {"thinkingLevel": "minimal"}
     if m.startswith("gemini-2.5-flash") and "lite" not in m:

@@ -1,10 +1,11 @@
 'use client';
 
 import React, {useCallback, useEffect, useState} from 'react';
-import {Pencil, Trash2} from 'lucide-react';
+import {Pencil, Trash2, Users} from 'lucide-react';
 import {ApiError, api} from '../../lib/api';
 import type {ClassInfo} from '../../lib/types';
 import {ErrorNote, Shell} from '../../components/Shell';
+import {StudentsPanel} from '../../components/StudentsPanel';
 
 const EMPTY: Omit<ClassInfo, 'id'> = {name: '', grade: '', subject: '', size: 0, notes: ''};
 
@@ -14,6 +15,7 @@ function Classes() {
   const [editing, setEditing] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rosterOf, setRosterOf] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -97,6 +99,9 @@ function Classes() {
               </div>
             ) : (
               <div className="flex gap-1">
+                <button data-testid="class-students" aria-label="Học sinh của lớp" aria-pressed={rosterOf === c.id} onClick={() => setRosterOf(rosterOf === c.id ? null : c.id)} className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100 aria-[pressed=true]:bg-blue-50 aria-[pressed=true]:text-blue-700">
+                  <Users className="h-4 w-4" />
+                </button>
                 <button data-testid="class-edit" aria-label="Sửa lớp" onClick={() => (setEditing(c.id), setForm({name: c.name, grade: c.grade, subject: c.subject, size: c.size, notes: c.notes}))} className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100">
                   <Pencil className="h-4 w-4" />
                 </button>
@@ -105,6 +110,7 @@ function Classes() {
                 </button>
               </div>
             )}
+            {rosterOf === c.id && <StudentsPanel consoleClassId={c.id} />}
           </li>
         ))}
       </ul>

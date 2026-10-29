@@ -94,7 +94,12 @@ app.include_router(online_tutor_router)
 app.include_router(lesson_router)
 
 # Trục tam giác (portal giáo viên · bảng · Socratic app): xem docs/superpowers/specs/2026-10-29-tam-giac-he-thong-design.md
-init_hub_db()
+@app.on_event("startup")
+def _startup_hub() -> None:
+    # khi khởi động, không phải lúc import: pytest import main mà không được seed vào DB thật (bảng hub vẫn tự tạo khi cần)
+    init_hub_db()
+
+
 app.include_router(hub_auth_router)
 app.include_router(hub_roster_router)
 app.include_router(hub_plans_router)

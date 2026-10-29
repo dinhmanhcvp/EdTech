@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import os
 import secrets
+import threading
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from fastapi import Header, HTTPException
@@ -24,7 +25,9 @@ BOARD_TTL_S = 43200
 LOCK_AFTER_FAILS = 5
 LOCK_WINDOW_S = 60.0
 
-_FAILS: Dict[str, List[float]] = {}
+# teacher_id → {"fails": [mốc sai], "pending": số lượt đang băm, "locked_until": mốc}
+_FAILS: Dict[str, dict] = {}
+_FAILS_LOCK = threading.Lock()
 
 
 class LockedOut(Exception):
@@ -44,23 +47,42 @@ def hash_pin(pin: str, salt_hex: Optional[str] = None) -> Tuple[str, str]:
     return digest.hex(), salt.hex()
 
 
-def _recent_fails(teacher_id: str) -> List[float]:
-    now = clock.now()
-    fails = [t for t in _FAILS.get(teacher_id, []) if now - t < LOCK_WINDOW_S]
-    _FAILS[teacher_id] = fails
-    return fails
+def _reserve_attempt(teacher_id: str) -> dict:
+    """Giữ chỗ cho một lượt thử TRƯỚC khi băm PIN (băm mất ~0,1 s): nhiều yêu cầu đồng thời không vượt quá 5 lượt."""
+    with _FAILS_LOCK:
+        now = clock.now()
+        state = _FAILS.setdefault(teacher_id, {"fails": [], "pending": 0, "locked_until": 0.0})
+        state["fails"] = [t for t in state["fails"] if now - t < LOCK_WINDOW_S]
+        if state["locked_until"] > now or len(state["fails"]) + state["pending"] >= LOCK_AFTER_FAILS:
+            raise LockedOut()
+        state["pending"] += 1
+        return state
+
+
+def _finish_attempt(teacher_id: str, state: dict, ok: bool) -> None:
+    with _FAILS_LOCK:
+        state["pending"] -= 1
+        if ok:
+            _FAILS.pop(teacher_id, None)
+            return
+        now = clock.now()
+        state["fails"].append(now)
+        if len(state["fails"]) >= LOCK_AFTER_FAILS:
+            state["locked_until"] = now + LOCK_WINDOW_S  # khóa 60 s tính từ lần sai thứ năm
 
 
 def login_teacher(teacher_id: str, pin: str) -> Optional[dict]:
     require_secret()
-    if len(_recent_fails(teacher_id)) >= LOCK_AFTER_FAILS:
-        raise LockedOut()
-    with connect() as conn:
-        row = conn.execute("SELECT id, name, pin_hash, pin_salt FROM teachers WHERE id=?", (teacher_id,)).fetchone()
-    if not row or not hmac.compare_digest(hash_pin(pin, row["pin_salt"])[0], row["pin_hash"]):
-        _FAILS.setdefault(teacher_id, []).append(clock.now())
+    state = _reserve_attempt(teacher_id)
+    ok = False
+    try:
+        with connect() as conn:
+            row = conn.execute("SELECT id, name, pin_hash, pin_salt FROM teachers WHERE id=?", (teacher_id,)).fetchone()
+        ok = bool(row) and hmac.compare_digest(hash_pin(pin, row["pin_salt"])[0], row["pin_hash"])
+    finally:
+        _finish_attempt(teacher_id, state, ok)
+    if not ok:
         return None
-    _FAILS.pop(teacher_id, None)
     return {"token": issue_token("teacher", row["id"], USER_TTL_S), "teacher": {"id": row["id"], "name": row["name"]}}
 
 

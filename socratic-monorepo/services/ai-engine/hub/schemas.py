@@ -34,6 +34,16 @@ class ProblemItem(_Strict):
     answer: Optional[str] = Field(default=None, min_length=1, max_length=200)
     figure: bool = False
 
+    @field_validator("answer")
+    @classmethod
+    def _gradable(cls, answer: Optional[str]) -> Optional[str]:
+        """Đáp án máy chấm không đọc được thì học sinh không bao giờ giải được câu đó: từ chối ngay khi lưu (cả đề xuất AI)."""
+        from formula_check import check_formula
+
+        if answer is not None and check_formula(answer, answer) is not True:
+            raise ValueError("answer_not_gradable")
+        return answer
+
 
 class SimItem(_Strict):
     id: str = Field(pattern=ID)

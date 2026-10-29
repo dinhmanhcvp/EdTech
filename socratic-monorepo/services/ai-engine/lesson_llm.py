@@ -10,7 +10,7 @@ import re
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator, List, Optional, Tuple, Union
 
 from llm import gemini_rest
 from llm.key_pool import classify_error_cooldown, global_key_pool
@@ -177,12 +177,14 @@ def _with_timeout(system: str, user: str) -> str:
     return str(value)
 
 
-def generate_reply(ctx: TutorContext, expected: Optional[str]) -> Tuple[str, str]:
-    """Return (text, 'LLM'|'FALLBACK'). Never raises, never returns a leaking or empty reply."""
+def generate_reply(ctx: TutorContext, expected: Union[Optional[str], List[str]]) -> Tuple[str, str]:
+    """Return (text, 'LLM'|'FALLBACK'). Never raises, never returns a leaking or empty reply.
+    `expected` is one answer or several (a hub scene's formula plus the current question's own key)."""
+    answers = expected if isinstance(expected, list) else [expected]
     try:
         system, user = build_prompts(ctx)
         text = _with_timeout(system, user).strip()
-        if text and not leaks_answer(text, expected):
+        if text and not any(leaks_answer(text, a) for a in answers):
             return text, "LLM"
     except Exception:
         pass

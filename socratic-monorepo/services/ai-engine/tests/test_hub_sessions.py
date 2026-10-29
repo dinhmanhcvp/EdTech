@@ -137,7 +137,8 @@ def test_package_saves_closes_and_publishes_snapshot(client, teacher_headers):
         assert conn.execute("SELECT status FROM class_sessions WHERE id=?", (sid,)).fetchone()[0] == "closed"
     assert q.get_nowait() == {"type": "session_closed"}
     ctx = client.get("/api/v1/student/context/x?class_id=12A1").json()
-    assert ctx["snapshot"]["sessionId"] == sid and len(ctx["snapshot"]["boardSnapshots"]) == 2
+    # snapshot của lớp giữ sessionId của bảng (bài học Mode 2 cũ không bị coi là bài học hub)
+    assert ctx["snapshot"]["sessionId"] == "lesson-board-local" and len(ctx["snapshot"]["boardSnapshots"]) == 2
 
 
 def test_package_retry_same_request_id_is_idempotent(client, teacher_headers):

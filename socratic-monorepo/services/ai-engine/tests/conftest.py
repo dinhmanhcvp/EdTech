@@ -85,7 +85,7 @@ SNAPSHOT_V1 = {
     "sessionId": "lesson-board-local", "className": "12A1", "lessonTitle": "RLC và ma sát", "updatedAt": "2026-10-29T10:00:00Z",
     "boardSnapshots": [
         {"id": "b-rlc", "kind": "BOARD", "title": "Cộng vector RLC", "subject": "PHYSICS",
-         "latex": "\vec{U} = \vec{U}_R + \vec{U}_L + \vec{U}_C", "templateId": "PHYS_RLC_PHASOR",
+         "latex": r"\vec{U} = \vec{U}_R + \vec{U}_L + \vec{U}_C", "templateId": "PHYS_RLC_PHASOR",
          "note": "Cộng theo pha, không cộng độ lớn.", "parameters": {"omega": 200}},
         {"id": "b-fr", "kind": "BOARD", "title": "Công của lực ma sát", "subject": "PHYSICS", "latex": "",
          "templateId": "PHYS_INCLINED", "note": "Dấu âm của công ma sát.", "parameters": {}},

@@ -74,7 +74,9 @@ class RateLimitMiddleware:
     async def __call__(self, scope, receive, send):
         if self.enabled and scope["type"] == "http" and scope.get("method") == "POST" and scope.get("path", "").startswith(self.prefixes):
             hdrs = {k.decode("latin-1").lower() for k, _ in scope.get("headers", [])}
-            if "x-gemini-api-key" not in hdrs and "x-openrouter-api-key" not in hdrs:
+            # mang khóa AI riêng chỉ miễn giới hạn cho điểm cuối AI; đăng nhập hub luôn bị giới hạn (chống dò PIN)
+            byok = not scope.get("path", "").startswith("/api/v1/hub/") and ("x-gemini-api-key" in hdrs or "x-openrouter-api-key" in hdrs)
+            if not byok:
                 retry = self._allow(self._client_ip(scope))
                 if retry is not None:
                     body = json.dumps({"detail": f"Quá nhiều yêu cầu AI từ địa chỉ này. Thử lại sau {retry} giây."}).encode()

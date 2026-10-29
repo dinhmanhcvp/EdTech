@@ -13,8 +13,22 @@ from lesson_builder import add_plan_questions, build_lesson
 _EVENT_KIND = {"VERIFIED_CORRECT": "correct", "VERIFIED_INCORRECT": "incorrect"}
 
 
+HUB_LESSON_PREFIX = "hub:"
+
+
 def is_hub_session(session_id: Optional[str]) -> bool:
     return bool(session_id) and get_package(session_id) is not None
+
+
+def is_hub_lesson(plan: Dict) -> bool:
+    """Bài học dựng từ tiết hub (id riêng `hub:<tiết>:<học sinh>`), không phải bài học Mode 2 cũ của lớp."""
+    return str(plan.get("lesson_id", "")).startswith(HUB_LESSON_PREFIX) and is_hub_session(plan.get("session_id"))
+
+
+def _in_session_class(student_id: str, session_id: str) -> bool:
+    with connect() as conn:
+        row = conn.execute("SELECT class_id FROM students WHERE id=?", (student_id,)).fetchone()
+    return bool(row) and row["class_id"] == session_class(session_id)["id"]
 
 
 def _build(student_id: str, session_id: str, package: Dict) -> Tuple[Dict, Dict]:
@@ -29,11 +43,11 @@ def session_lesson(student_id: str, session_id: str) -> Tuple[Dict, Dict]:
     package = get_package(session_id)
     if not package:
         raise KeyError(session_id)
-    with connect() as conn:
-        row = conn.execute("SELECT class_id FROM students WHERE id=?", (student_id,)).fetchone()
-    if not row or row["class_id"] != session_class(session_id)["id"]:
+    if not _in_session_class(student_id, session_id):
         raise KeyError(student_id)
-    return _build(student_id, session_id, package)
+    plan, keys = _build(student_id, session_id, package)
+    plan["lesson_id"] = f"{HUB_LESSON_PREFIX}{session_id}:{student_id}"  # không trùng (và không bị ghi đè bởi) bài học cũ của lớp
+    return plan, keys
 
 
 def _section_map(package: Dict) -> Dict[str, Dict]:
@@ -51,9 +65,10 @@ def session_questions(session_id: str) -> List[Dict]:
 
 
 def record_turn(student_id: str, session_id: str, scene_id: str, question_id: str, kind: str, status: str,
-                message: str, request_id: str) -> None:
+                message: str, request_id: str, update_mastery: bool = True) -> None:
+    """update_mastery=False khi trả lời đúng lại một câu đã giải: vẫn ghi sự kiện nhưng không cộng thêm bằng chứng BKT."""
     package = get_package(session_id)
-    if not package or kind == "CHAT":
+    if not package or kind == "CHAT" or not _in_session_class(student_id, session_id):
         return
     if kind == "HINT":
         event_kind = "hint"
@@ -72,7 +87,7 @@ def record_turn(student_id: str, session_id: str, scene_id: str, question_id: st
                                (new_id("ev"), student_id, session_id, section_id, kc, question_id, event_kind,
                                 message.strip()[:200] or None, request_id, now))
             inserted += cur.rowcount
-            if cur.rowcount and kc and event_kind in ("correct", "incorrect"):
+            if cur.rowcount and kc and update_mastery and event_kind in ("correct", "incorrect"):
                 row = conn.execute("SELECT p_known FROM mastery WHERE student_id=? AND kc_id=?", (student_id, kc)).fetchone()
                 p = bkt_update(row["p_known"] if row else PRIOR, event_kind == "correct")
                 conn.execute("INSERT INTO mastery VALUES (?,?,?,?) ON CONFLICT(student_id, kc_id) DO UPDATE SET p_known=excluded.p_known, "

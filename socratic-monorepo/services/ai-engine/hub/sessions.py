@@ -131,10 +131,28 @@ def get_package(session_id: str) -> Optional[Dict]:
     return loads(row["payload"]) if row else None
 
 
+def _check_plan_match(info: Dict, package: Dict) -> None:
+    """Gói phải nói về đúng giáo án của tiết (version đã có, phần và KC có thật); nếu không, mọi lần dựng bài học sau đó đều lỗi."""
+    if package["planId"] != info["plan_id"]:
+        raise ValueError("package_plan_mismatch")
+    if not 1 <= package["planVersion"] <= plans.get_plan(info["plan_id"])["version"]:
+        raise ValueError("package_plan_version_unknown")
+    body = plans.get_plan(info["plan_id"], package["planVersion"])["body"]
+    kcs = {s["id"]: {k["id"] for k in s.get("kcs", [])} for s in body["sections"]}
+    for section in package.get("sections", []):
+        plan_section = section.get("planSectionId")
+        if plan_section is not None and plan_section not in kcs:
+            raise ValueError("package_section_unknown")
+        allowed = kcs[plan_section] if plan_section else set().union(*kcs.values())
+        if not set(section.get("kcIds") or []) <= allowed:
+            raise ValueError("package_kc_unknown")
+
+
 def save_package(session_id: str, request_id: str, package: Dict) -> Dict:
     if package.get("sessionId") != session_id:
         raise ValueError("session_mismatch")
     info = session_class(session_id)
+    _check_plan_match(info, package)
     with LOCK:
         with connect() as conn:
             row = conn.execute("SELECT id, request_id FROM knowledge_packages WHERE session_id=?", (session_id,)).fetchone()
@@ -147,7 +165,8 @@ def save_package(session_id: str, request_id: str, package: Dict) -> Dict:
             package_id = new_id("kp")
             conn.execute("INSERT INTO knowledge_packages VALUES (?,?,?,?,?)", (package_id, session_id, request_id, dumps(package), clock.now()))
             conn.execute("UPDATE class_sessions SET status='closed', ended_at=? WHERE id=?", (clock.now(), session_id))
-        # luồng bài học cũ (lấy snapshot mới nhất của lớp theo tên, vd "12A1") cũng thấy tiết vừa dạy
-        student_context.save_snapshot(info["name"], {**package["snapshot"], "sessionId": session_id})
+        # luồng bài học cũ (snapshot mới nhất của lớp theo tên, vd "12A1") cũng thấy tiết vừa dạy. Giữ sessionId của bảng:
+        # bài học cũ không được mang id tiết hub (nếu không nó bị coi là bài học hub và đòi token hub).
+        student_context.save_snapshot(info["name"], package["snapshot"])
     bus.publish(f"board:{session_id}", {"type": "session_closed"})
     return {"status": "saved", "packageId": package_id}

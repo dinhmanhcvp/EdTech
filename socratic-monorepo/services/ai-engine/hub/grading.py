@@ -25,17 +25,29 @@ def _norm(text: str) -> str:
 
 
 def grade_choice(answer: str, key: str) -> Optional[bool]:
-    """Nhận chữ cái (B), số thứ tự 1-based (2) hoặc đúng chữ của một lựa chọn; không nhận ra → None (chưa chấm được)."""
+    """Nhận đúng chữ của một lựa chọn, chữ cái (B) hoặc số thứ tự 1-based (2); không nhận ra → None (chưa chấm được).
+
+    Chữ của lựa chọn được so trước: với lựa chọn là số ("2", "4"…), "4" nghĩa là lựa chọn "4", không phải lựa chọn thứ tư."""
     spec = json.loads(key[len("choice:"):])
     correct, options = spec["c"], spec["o"]
     a = answer.strip().rstrip(".)")
-    if re.fullmatch(r"[A-Za-z]", a):
+    matches = [i for i, o in enumerate(options) if _norm(o) == _norm(a)]
+    if matches:
+        index = matches[0]
+    elif re.fullmatch(r"[A-Za-z]", a):
         index = ord(a.upper()) - ord("A")
     elif re.fullmatch(r"\d{1,2}", a):
         index = int(a) - 1
     else:
-        matches = [i for i, o in enumerate(options) if _norm(o) == _norm(a)]
-        index = matches[0] if matches else -1
+        index = -1
     if not 0 <= index < len(options):
         return None
     return index == correct
+
+
+def answer_text(key: str) -> str:
+    """Chữ của đáp án để lọc lộ đáp án trong lời gia sư: câu trắc nghiệm → chữ của lựa chọn đúng, câu biểu thức → chính đáp án."""
+    if not key.startswith("choice:"):
+        return key
+    spec = json.loads(key[len("choice:"):])
+    return spec["o"][spec["c"]]

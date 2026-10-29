@@ -12,8 +12,8 @@ import lesson_store as ls
 import student_context as store
 from hub import learning as hub_learning
 from hub.auth import claims_from_header
-from hub.grading import grade_choice
-from lesson_builder import build_lesson, public_view, title_for_student
+from hub.grading import answer_text, grade_choice
+from lesson_builder import build_lesson, lock_question_ids, public_view, title_for_student
 from formula_check import check_formula
 from security import require_roles
 from symbolic.socratic_guard import evaluate_student_message
@@ -83,7 +83,7 @@ def lesson_turn(student_id: str, req: TurnRequest, authorization: Optional[str] 
         ls.init_lesson_tables(conn)
         # đọc trước BEGIN IMMEDIATE: hub mở kết nối riêng (có thể tạo schema) nên không được chờ khóa ghi của kết nối này
         loaded = ls.load_lesson(conn, student_id, req.lesson_id)
-        hub_session = hub_learning.is_hub_session(loaded[0].get("session_id")) if loaded else False
+        hub_session = hub_learning.is_hub_lesson(loaded[0]) if loaded else False
         if hub_session:
             _check_hub_student(student_id, authorization)
         conn.execute("BEGIN IMMEDIATE")
@@ -143,14 +143,16 @@ def lesson_turn(student_id: str, req: TurnRequest, authorization: Optional[str] 
                        message if keep_message and req.kind != "HINT" else "", result)
         solved = ls.solved_questions(conn, student_id, req.lesson_id)
         order_of_scene = next(i for i, s in enumerate(plan["scenes"]) if s["id"] == scene["id"])
-        scene_solved = all(q["id"] in solved for q in scene["questions"] if q["id"] in keys)
+        scene_solved = all(qid in solved for qid in lock_question_ids(scene) if qid in keys)
         profile = store.get_profile(student_id)
         # only mistakes from the scene's own subject: a physics slip must not steer a maths lesson
         errors = [e["diagnosis"] for e in store.list_errors(student_id, 12) if str(e.get("subject", "")).upper() == scene["subject"]][:3]
         history = ls.recent_turns(conn, student_id, req.lesson_id, 2)
         conn.commit()
     if hub_session:  # tiết có giáo án: lượt này thành sự kiện học tập → mastery → chỉ số realtime cho giáo viên
-        hub_learning.record_turn(student_id, plan["session_id"], scene["id"], question["id"], req.kind, status, message, req.request_id)
+        repeat_correct = status == "VERIFIED_CORRECT" and points == 0  # câu đã giải từ trước: không cộng thêm bằng chứng BKT
+        hub_learning.record_turn(student_id, plan["session_id"], scene["id"], question["id"], req.kind, status, message,
+                                 req.request_id, update_mastery=not repeat_correct)
 
     if blocked_text is not None:
         text, source = blocked_text, "FALLBACK"
@@ -161,8 +163,11 @@ def lesson_turn(student_id: str, req: TurnRequest, authorization: Optional[str] 
             recent_turns=history[:-1] if history and history[-1][0] == "student" else history, hint_level=hint_level)
         # The formula hidden by public_view must not leak through any question of its scene;
         # once the scene is solved it is on the student's screen, so the tutor may refer to it.
-        scene_key = None if scene_solved else next((keys[q["id"]] for q in scene["questions"] if q["id"] in keys), None)
-        text, source = lesson_llm.generate_reply(ctx, scene_key)
+        # A plan exercise or poll of a hub lesson has its own key: it must not leak while that question is unsolved.
+        leak_keys = [] if scene_solved else [keys[qid] for qid in lock_question_ids(scene) if qid in keys]
+        if expected is not None and question["id"] not in solved:
+            leak_keys.append(answer_text(expected))
+        text, source = lesson_llm.generate_reply(ctx, leak_keys)
     result = {**result, "tutor_text": text, "source": source}
     with store._LOCK, store._connect() as conn:
         ls.update_turn_result(conn, student_id, req.request_id, result)

@@ -4,6 +4,13 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 
 SUBJECTS = {"MATH", "PHYSICS", "CHEMISTRY", "BIOLOGY"}
+FORMULA_PROMPT = "Viết lại công thức then chốt của cảnh này theo cách của em."
+
+
+def lock_question_ids(scene: Dict[str, Any]) -> List[str]:
+    """The question(s) that unlock a scene's formula, note and title: only the scene's own formula question.
+    Plan exercises added for a hub lesson (also COMPUTE) never keep the reference formula hidden."""
+    return [q["id"] for q in scene["questions"] if q["kind"] == "COMPUTE" and q["prompt"] == FORMULA_PROMPT]
 
 
 def _question(scene_id: str, n: int, kind: str, prompt: str) -> Dict[str, Any]:
@@ -22,7 +29,7 @@ def build_lesson(snapshot: Dict[str, Any], student_id: str) -> Tuple[Dict[str, A
         latex = str(board.get("latex") or "")
         questions = []
         if latex:
-            q = _question(scene_id, 1, "COMPUTE", "Viết lại công thức then chốt của cảnh này theo cách của em.")
+            q = _question(scene_id, 1, "COMPUTE", FORMULA_PROMPT)
             questions.append(q)
             keys[q["id"]] = latex
         questions.append(_question(scene_id, len(questions) + 1, "EXPLAIN_BACK", "Em thử giải thích lại ý chính của cảnh này như đang kể cho một bạn chưa nghe thầy cô giảng nhé?"))
@@ -73,7 +80,7 @@ def title_for_student(scene: Dict[str, Any], index: int, keys: Dict[str, str], s
     while the scene is locked such a title is replaced by a neutral one."""
     from lesson_llm import leaks_answer  # local import: lesson_llm pulls in the Gemini client
 
-    computes = [q["id"] for q in scene["questions"] if q["id"] in keys]
+    computes = [qid for qid in lock_question_ids(scene) if qid in keys]
     if computes and not all(qid in solved for qid in computes) and any(leaks_answer(scene["title"], keys[qid]) for qid in computes):
         return f"Phần {index + 1}"
     return scene["title"]
@@ -86,7 +93,7 @@ def public_view(plan: Dict[str, Any], solved: set, keys: Optional[Dict[str, str]
 
     view = copy.deepcopy(plan)
     for i, scene in enumerate(view["scenes"]):
-        computes = [q["id"] for q in scene["questions"] if q["kind"] == "COMPUTE"]
+        computes = lock_question_ids(scene)
         if computes and not all(qid in solved for qid in computes):
             scene["latex"] = ""
             scene["concept"] = ""

@@ -6,7 +6,7 @@
       "device": "board",
       "file": "/demo/06-07.mp4",
       "poster": "/demo/06-07.jpg",
-      "duration": 46.2,
+      "duration": 39.3,
       "width": 1920,
       "height": 1080
     },
@@ -16,7 +16,7 @@
       "device": "board",
       "file": "/demo/08.mp4",
       "poster": "/demo/08.jpg",
-      "duration": 33.7,
+      "duration": 28.8,
       "width": 1920,
       "height": 1080
     },
@@ -26,7 +26,7 @@
       "device": "board",
       "file": "/demo/10a.mp4",
       "poster": "/demo/10a.jpg",
-      "duration": 24.0,
+      "duration": 22.8,
       "width": 1920,
       "height": 1080
     },
@@ -36,7 +36,7 @@
       "device": "board",
       "file": "/demo/10b.mp4",
       "poster": "/demo/10b.jpg",
-      "duration": 21.9,
+      "duration": 21.2,
       "width": 1920,
       "height": 1080
     },
@@ -46,7 +46,7 @@
       "device": "board",
       "file": "/demo/10c.mp4",
       "poster": "/demo/10c.jpg",
-      "duration": 23.9,
+      "duration": 23.0,
       "width": 1920,
       "height": 1080
     },
@@ -56,7 +56,7 @@
       "device": "board",
       "file": "/demo/10d.mp4",
       "poster": "/demo/10d.jpg",
-      "duration": 42.6,
+      "duration": 37.7,
       "width": 1920,
       "height": 1080
     },
@@ -66,7 +66,7 @@
       "device": "board",
       "file": "/demo/11.mp4",
       "poster": "/demo/11.jpg",
-      "duration": 23.5,
+      "duration": 21.9,
       "width": 1920,
       "height": 1080
     },
@@ -76,7 +76,7 @@
       "device": "laptop",
       "file": "/demo/12a.mp4",
       "poster": "/demo/12a.jpg",
-      "duration": 9.0,
+      "duration": 9.5,
       "width": 1600,
       "height": 1000
     },
@@ -86,7 +86,7 @@
       "device": "board",
       "file": "/demo/12b.mp4",
       "poster": "/demo/12b.jpg",
-      "duration": 26.0,
+      "duration": 24.9,
       "width": 1920,
       "height": 1080
     },
@@ -96,7 +96,7 @@
       "device": "board",
       "file": "/demo/13.mp4",
       "poster": "/demo/13.jpg",
-      "duration": 56.5,
+      "duration": 56.8,
       "width": 1920,
       "height": 1080
     },
@@ -106,7 +106,7 @@
       "device": "phone",
       "file": "/demo/13-phone.mp4",
       "poster": "/demo/13-phone.jpg",
-      "duration": 45.3,
+      "duration": 45.4,
       "width": 390,
       "height": 844
     },
@@ -116,7 +116,7 @@
       "device": "board",
       "file": "/demo/13A.mp4",
       "poster": "/demo/13A.jpg",
-      "duration": 7.1,
+      "duration": 6.6,
       "width": 1920,
       "height": 1080
     },
@@ -126,7 +126,7 @@
       "device": "board",
       "file": "/demo/13B.mp4",
       "poster": "/demo/13B.jpg",
-      "duration": 17.6,
+      "duration": 12.8,
       "width": 1920,
       "height": 1080
     },
@@ -136,7 +136,7 @@
       "device": "tablet",
       "file": "/demo/14a.mp4",
       "poster": "/demo/14a.jpg",
-      "duration": 11.1,
+      "duration": 10.8,
       "width": 1180,
       "height": 820
     },
@@ -146,7 +146,7 @@
       "device": "tablet",
       "file": "/demo/14b.mp4",
       "poster": "/demo/14b.jpg",
-      "duration": 7.8,
+      "duration": 7.7,
       "width": 1180,
       "height": 820
     },
@@ -156,7 +156,7 @@
       "device": "phone",
       "file": "/demo/15.mp4",
       "poster": "/demo/15.jpg",
-      "duration": 9.8,
+      "duration": 9.5,
       "width": 390,
       "height": 844
     },
@@ -166,7 +166,7 @@
       "device": "phone",
       "file": "/demo/16.mp4",
       "poster": "/demo/16.jpg",
-      "duration": 9.1,
+      "duration": 9.0,
       "width": 390,
       "height": 844
     },
@@ -176,7 +176,7 @@
       "device": "phone",
       "file": "/demo/17.mp4",
       "poster": "/demo/17.jpg",
-      "duration": 10.4,
+      "duration": 10.2,
       "width": 390,
       "height": 844
     },
@@ -186,7 +186,7 @@
       "device": "phone",
       "file": "/demo/18.mp4",
       "poster": "/demo/18.jpg",
-      "duration": 8.8,
+      "duration": 8.2,
       "width": 390,
       "height": 844
     },
@@ -196,7 +196,7 @@
       "device": "phone",
       "file": "/demo/26.mp4",
       "poster": "/demo/26.jpg",
-      "duration": 7.4,
+      "duration": 7.1,
       "width": 390,
       "height": 844
     },
@@ -206,7 +206,7 @@
       "device": "laptop",
       "file": "/demo/B3.mp4",
       "poster": "/demo/B3.jpg",
-      "duration": 32.9,
+      "duration": 32.6,
       "width": 1600,
       "height": 1000
     }

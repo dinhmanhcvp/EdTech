@@ -54,3 +54,17 @@ Any contract change must update its source type, runtime schema (when applicable
 - Currently consumed by Student App AfterSchoolTutor; legacy companion uses its existing evaluation contract.
 
 - GET /api/v1/student/tutor/{student_id}/progress returns OnlineTutorProgress (packages/types/src/index.ts): catalog_version, total_points for catalog steps, problems with problem_id/kc_id/step_count/completed_step/mastery; no answer keys. Same student subject guard as attempts.
+
+## Lesson from board v1 (Mode 2)
+- Contract: `packages/types/src/lesson.ts` (`LessonPlan`, `LessonScene`, `LessonQuestion`, `LessonTurnRequest`, `LessonTurnResult`), re-exported through `onlineTutor.ts` so `index.ts` is untouched. Questions are `.strict()` and never carry an answer key.
+- Server owner: `services/ai-engine/routers/lesson.py` (+ `lesson_builder.py`, `lesson_store.py`, `lesson_llm.py`).
+- `GET /api/v1/student/lesson/{student_id}?class_id=` builds the lesson from the class snapshot (`context_snapshot`) and returns the public plan. A scene's `latex` is empty until its COMPUTE question is solved.
+- `POST /api/v1/student/lesson/{student_id}/turn` takes `lesson_id, scene_id, question_id, kind (ANSWER|HINT|CHAT), message (<=400), request_id`; extra fields -> 422. Returns `text/event-stream`: `event: token` chunks then one `event: done` with `LessonTurnResult`. Same `request_id` + same body replays; changed body -> 409. Unknown lesson/question -> 404. Student role is bound to its own `student_id` (403).
+- Grading is server-side (`online_tutor.verdict`): 20 points once per COMPUTE question; unparseable -> `UNVERIFIED`, 0 points. The LLM (Gemini via `llm.key_pool`) only words the reply; leaks are filtered and a canned reply covers every failure (`source: FALLBACK`).
+
+## Classroom snapshot v1 (Mode 1 -> Mode 2)
+- Contract: `ClassroomSnapshotSchema` / `ClassroomBoardSnapshotSchema` in `packages/types/src/lesson.ts` (re-exported through `onlineTutor.ts`). Producer: Teacher Board `utils/classroomSnapshot.ts` (`buildClassroomSnapshot`, `publishClassroomSnapshot`), triggered by the "Gửi cho học sinh" button of `MicroLessonPanel`. Consumer: `services/ai-engine/lesson_builder.py` (and the Student App workbench, which reads the same shape).
+- `PUT /api/v1/student/snapshot` body `{class_id, snapshot}` (teacher/admin role; max 40 `boardSnapshots`, else 422). Teacher Board sends `Authorization: Bearer $NEXT_PUBLIC_TEACHER_CONTEXT_TOKEN` when that variable is set; with `STUDENT_CONTEXT_REQUIRE_AUTH=true` the token is required.
+- Mapping: one micro-lesson section -> one `boardSnapshot` (`id` `sec-N`, `latex` = first formula of the section or empty, `note` = AI narration if the teacher pressed "AI viết lời giảng", else a plain list of the figures/simulations shown, `subject` inferred per section because the journal header only says `STEM`). `summary`, `keyPoints`, `reviewQuestions` are present only when the teacher generated AI notes.
+- Mode 2 turns a section with a `latex` into a COMPUTE question (key kept server-side); each `reviewQuestions` entry becomes a free-form EXPLAIN_BACK question spread round-robin over the scenes. `sessionId` is `lesson-<yyyymmdd>-<hash of title>`, so republishing the same lesson the same day keeps the same lesson id (and its solved questions); a different title or day starts a new lesson.
+- Student App reads class `12A1` (the `class_id` default); Teacher Board publishes to `12A1`. There is no class selection yet.

@@ -16,6 +16,12 @@ def _isolate_env_file_and_environ(tmp_path, monkeypatch):
 
     model_router.__init__()  # bộ đếm hạn mức theo (khóa, model) không rò sang bài sau
     monkeypatch.setenv("SOCRATIC_ENV_FILE", str(tmp_path / "test.env"))
+    # Cơ sở dữ liệu chạy thật (.data/student_context.sqlite3) không bị kiểm thử ghi đè: trước đây một bài kiểm thử ghi snapshot
+    # rỗng cho lớp 12A1 và xóa bài giáo viên vừa gửi từ bảng.
+    import student_context as store
+
+    monkeypatch.setattr(store, "DB_PATH", tmp_path / "runtime.sqlite3")
+    store.init_store()
     yield
     for k in list(os.environ):
         if k not in saved:

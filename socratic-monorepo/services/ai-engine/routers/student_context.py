@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from student_context import context_snapshot, get_profile, list_errors, roadmap, record_error, record_event, save_profile, save_snapshot
 from security import require_roles
 
+MAX_BOARD_SNAPSHOTS = 40
 router = APIRouter(prefix="/api/v1/student", tags=["Student Board Context"])
 
 def _assert_subject(student_id: str, claims: dict) -> None:
@@ -66,4 +67,6 @@ def prepare_teacher_roadmap(student_id: str, _claims: dict = Depends(require_rol
 def update_classroom_snapshot(req: SnapshotUpdate, _claims: dict = Depends(require_roles({"teacher", "admin"}))) -> Dict[str, Any]:
     if not isinstance(req.snapshot.get("boardSnapshots"), list) or not isinstance(req.snapshot.get("studentWork"), list):
         raise HTTPException(status_code=422, detail="snapshot_requires_boardSnapshots_and_studentWork")
+    if len(req.snapshot["boardSnapshots"]) > MAX_BOARD_SNAPSHOTS:
+        raise HTTPException(status_code=422, detail="snapshot_too_many_boardSnapshots")
     return {"status": "saved", "snapshot": save_snapshot(req.class_id, req.snapshot)}

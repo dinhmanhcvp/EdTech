@@ -102,3 +102,54 @@ describe('MicroLessonPanel · AI viết lời giảng', () => {
     expect(screen.queryByTestId('micro-lesson-summary')).toBeNull();
   });
 });
+
+describe('MicroLessonPanel · gửi cho học sinh', () => {
+  const NOTES = {summary: 'Tóm tắt.', narrations: ['Ta mở đầu bằng hàm số bậc hai.', ''], key_points: ['Ý chính'], review_questions: ['Đỉnh nằm ở đâu?']};
+
+  it('bảng trống: không có nút gửi', () => {
+    render(<MicroLessonPanel getJournal={() => journal([])} />);
+    fireEvent.click(screen.getByTestId('micro-lesson-open'));
+    expect(screen.queryByTestId('micro-lesson-publish')).toBeNull();
+  });
+
+  it('gửi đúng tên bài đã sửa, các phần và lời giảng AI nếu có; báo số phần đã gửi', async () => {
+    const publishFn = vi.fn().mockResolvedValue({sections: 2});
+    const askFn = vi.fn().mockResolvedValue({notes: NOTES, source: 'gemini'});
+    render(<MicroLessonPanel getJournal={() => journal(EVENTS)} askFn={askFn} publishFn={publishFn} />);
+    fireEvent.click(screen.getByTestId('micro-lesson-open'));
+    fireEvent.change(screen.getByTestId('micro-lesson-title'), {target: {value: 'Bài 5'}});
+    fireEvent.click(screen.getByTestId('micro-lesson-ai'));
+    await screen.findByTestId('micro-lesson-summary');
+    fireEvent.click(screen.getByTestId('micro-lesson-publish'));
+    expect(screen.getByTestId('micro-lesson-publish')).toBeDisabled();
+    expect((await screen.findByTestId('micro-lesson-published')).textContent).toMatch(/2 phần/);
+    const snapshot = publishFn.mock.calls[0][0];
+    expect(snapshot.lessonTitle).toBe('Bài 5');
+    expect(snapshot.boardSnapshots).toHaveLength(2);
+    expect(snapshot.boardSnapshots[0].latex).toBe('y = x^2 - 3');
+    expect(snapshot.boardSnapshots[0].note).toBe('Ta mở đầu bằng hàm số bậc hai.');
+    expect(snapshot.reviewQuestions).toEqual(['Đỉnh nằm ở đâu?']);
+  });
+
+  it('chưa bấm AI: vẫn gửi được, không có lời giảng bịa', async () => {
+    const publishFn = vi.fn().mockResolvedValue({sections: 2});
+    render(<MicroLessonPanel getJournal={() => journal(EVENTS)} publishFn={publishFn} />);
+    fireEvent.click(screen.getByTestId('micro-lesson-open'));
+    fireEvent.click(screen.getByTestId('micro-lesson-publish'));
+    await screen.findByTestId('micro-lesson-published');
+    expect(publishFn.mock.calls[0][0].summary).toBeUndefined();
+    expect(publishFn.mock.calls[0][0].reviewQuestions).toBeUndefined();
+  });
+
+  it('lỗi khi gửi: hiện lý do, nút bấm lại được', async () => {
+    const publishFn = vi.fn().mockRejectedValueOnce(new Error('Tài khoản này không có quyền gửi bài cho lớp.')).mockResolvedValueOnce({sections: 2});
+    render(<MicroLessonPanel getJournal={() => journal(EVENTS)} publishFn={publishFn} />);
+    fireEvent.click(screen.getByTestId('micro-lesson-open'));
+    fireEvent.click(screen.getByTestId('micro-lesson-publish'));
+    expect((await screen.findByTestId('micro-lesson-publish-error')).textContent).toContain('không có quyền');
+    expect(screen.getByTestId('micro-lesson-publish')).not.toBeDisabled();
+    fireEvent.click(screen.getByTestId('micro-lesson-publish'));
+    await screen.findByTestId('micro-lesson-published');
+    expect(screen.queryByTestId('micro-lesson-publish-error')).toBeNull();
+  });
+});

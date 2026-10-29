@@ -395,7 +395,77 @@ def scene_13(page, rec, ctx):
     return True
 
 
+LAPTOP = {"width": 1600, "height": 1000}
+
+
+def scene_12(page, rec, ctx):
+    """(a) Trang quản lý: tiết mới, chọn lớp, nạp bài soạn, Bắt đầu → mã ghép. (b) Bảng: Ghép tiết, nhập mã → nhận bài, tên lớp → Lớp học: QR to, đếm học sinh."""
+    import demo_data
+
+    st = demo_data.ensure()
+    lap_ctx = ctx["browser"].new_context(viewport=LAPTOP)
+    lap_ctx.add_init_script(f"localStorage.setItem('console_token', {json.dumps(st['token'])}); localStorage.setItem('board_url', '{BOARD}');")
+    lap = lap_ctx.new_page()
+    lap.goto(CONSOLE, wait_until="networkidle")
+    lap.add_style_tag(content=HIDE_DEV)
+    lap.wait_for_timeout(800)
+    rec_a = Recorder(lap)
+    rec_a.start()
+    rec_a.hold(1.0)
+    lap.get_by_test_id("period-title").press_sequentially("Phương trình bậc nhất – tiết 3", delay=55)
+    lap.wait_for_timeout(400)
+    lap.get_by_test_id("period-class").select_option(label=lap.locator("[data-testid=period-class] option", has_text=demo_data.CLASS_NAME).first.inner_text())
+    lap.wait_for_timeout(500)
+    lap.get_by_test_id("period-create").click()
+    lap.wait_for_url("**/periods/**", timeout=15000)
+    lap.wait_for_load_state("networkidle")
+    lap.add_style_tag(content=HIDE_DEV)
+    lap.wait_for_timeout(900)
+    lap.get_by_test_id("prep-lesson").select_option(st["lessonId"])
+    lap.wait_for_timeout(700)
+    lap.get_by_test_id("prep-start").click()
+    wait_until(lap, "() => /[A-Z0-9]{6}/.test(document.querySelector('[data-testid=pair-code]')?.innerText || '')", 15)
+    code = lap.get_by_test_id("pair-code").inner_text().strip().replace(" ", "")
+    rec_a.hold(2.5)
+    probe(lap, ctx, "12a")
+    rec_a.stop()
+    ctx["finish"](rec_a, "12a", "Trang quản lý: tiết mới, chọn lớp, nạp bài, Bắt đầu → mã ghép", "laptop", LAPTOP)
+
+    open_board(page)
+    rec.start()
+    rec.hold(1.0)
+    tap(page, "pair-open", 0.8)
+    page.get_by_test_id("pair-code-input").press_sequentially(code, delay=220)
+    page.wait_for_timeout(500)
+    tap(page, "pair-submit", 2.5)
+    probe(page, ctx, "12b-paired")
+    rec.hold(1.5)
+    tap(page, "btn-classroom", 1.0)
+    probe(page, ctx, "12b-class")
+    page.get_by_test_id("classroom-qr").first.click()
+    rec.hold(1.5)
+    room = page.get_by_test_id("classroom-code").first.inner_text().strip()
+    phones = []
+    for name in ("Lan Anh", "Minh", "An", "Bảo"):
+        ph, _ = phone_join(ctx["browser"], room, name)
+        phones.append(ph)
+        page.wait_for_timeout(900)
+    rec.hold(1.0)
+    page.get_by_test_id("classroom-qr-big").first.click()
+    rec.hold(2.5)
+    probe(page, ctx, "12b-qr")
+    rec.stop()
+    ctx["finish"](rec, "12b", "Bảng: Ghép tiết bằng mã → nhận bài và lớp → mã QR vào lớp", "board", page.viewport_size)
+    for p_ in phones:
+        p_.close()
+        p_.context.close()
+    lap.close()
+    lap_ctx.close()
+    return True
+
+
 SCENES: Dict[str, dict] = {
+    "12": {"title": "Trang quản lý mở tiết, bảng ghép tiết, QR vào lớp", "device": "board", "run": scene_12},
     "13": {"title": "Lớp học: quét mã, kéo thanh trượt đồng bộ, nộp bài vẽ tay, chiếu ẩn danh", "device": "board", "run": scene_13},
     "13B": {"title": "Vi bài giảng: AI viết lời giảng → Gửi cho học sinh", "device": "board", "run": scene_13b},
     "13A-bang": {"title": "Bài làm viết trên bảng → khoanh → Chấm bài (bản dự phòng của 13A)", "device": "board", "run": scene_13a},

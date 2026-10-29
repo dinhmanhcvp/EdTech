@@ -72,3 +72,4 @@ socratic-monorepo/services/ai-engine/.data/
 socratic-monorepo/apps/teacher-board/public/demo/
 socratic-monorepo/tools/demo-video/ai-cache/
 socratic-monorepo/tools/demo-video/__pycache__/
+socratic-monorepo/tools/demo-video/demo-state.json

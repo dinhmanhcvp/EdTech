@@ -1,0 +1,39 @@
+{
+  "token": "MVTDVON3Jsgc6xt68NGA-tUVy68UXMffaSfzf27RnjM",
+  "classId": "6589137d6548a1fc",
+  "hubClassId": "cc-6589137d6548a1fc",
+  "lessonId": "f5418f4b435d544b",
+  "students": [
+    {
+      "id": "s-4ff15631",
+      "name": "Hoàng Lan Anh",
+      "loginCode": "AK84FV"
+    },
+    {
+      "id": "s-b7d1b170",
+      "name": "Nguyễn Minh",
+      "loginCode": "EXMHCH"
+    },
+    {
+      "id": "s-e94e6e19",
+      "name": "Lê An",
+      "loginCode": "6PMVK9"
+    },
+    {
+      "id": "s-ee4e39e2",
+      "name": "Trần Bảo",
+      "loginCode": "ZE39S9"
+    },
+    {
+      "id": "s-8680fff6",
+      "name": "Phạm Hà",
+      "loginCode": "9QSXZF"
+    },
+    {
+      "id": "s-e6fc7b04",
+      "name": "Đỗ Kha",
+      "loginCode": "QCNJCW"
+    }
+  ],
+  "parentToken": "_ihH1_bwNDJm1wy6q7HAOg-dyNtC4Qs0OTtFiWeU7lQ"
+}

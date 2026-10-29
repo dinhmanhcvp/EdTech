@@ -156,3 +156,68 @@ def mine(run: Dict[str, Any], student_id: str) -> Dict[str, Dict[str, Any]]:
         rows = conn.execute("SELECT question_id, status, score, attempt FROM submissions WHERE run_id=? AND student_id=? AND status != 'draft' "
                             "ORDER BY created_at", (run["id"], student_id)).fetchall()
     return {r["question_id"]: {"status": r["status"], "score": r["score"], "attempt": r["attempt"]} for r in rows}
+
+
+# ------------------------------------------------------------------ ảnh vở: đọc → học sinh xác nhận → chấm
+MAX_PHOTO_BYTES = 2 * 1024 * 1024
+MAX_LINES = 40
+
+
+def upload_photo(run: Dict[str, Any], student_id: str, question_id: str, version: int, request_id: str, data: bytes) -> Dict[str, Any]:
+    from hub.assignments import files, ocr, pages
+
+    _guard(run)
+    fingerprint = json.dumps([question_id, version, "photo"])
+    existing = _by_request(student_id, request_id)
+    if existing:
+        if existing["fingerprint"] != fingerprint:
+            raise RequestConflict(request_id)
+        return {"photoId": existing["id"], **(existing["ocr"] or {"lines": [], "uncertain": []})}
+    q = question_of(run, version, question_id)
+    if q["type"] not in ("essay", "open"):
+        raise ValueError("wrong_mode")
+    if len(data) > MAX_PHOTO_BYTES:
+        raise ValueError("too_large")
+    jpeg = pages.shrink_photo(data)
+    read = ocr.recognize_image(jpeg) or {"lines": [], "uncertain": []}
+    sub = insert(run, student_id, question_id, version, request_id, fingerprint, "photo", "draft", None, ocr=read)
+    update(sub["id"], photo_path=files.save_photo(sub["id"], jpeg))
+    return {"photoId": sub["id"], **read}
+
+
+def _grade_job(submission_id: str, run: Dict[str, Any]) -> None:
+    sub = get(submission_id)
+    q = question_of(run, sub["version"], sub["question_id"])
+    subject = store.get(run["assignmentId"])["subject"]
+    try:
+        result = grader.grade_lines(q, sub["confirmed"] or [], subject)
+    except Exception:
+        return
+    notify(update(submission_id, grade=result), run)
+
+
+def confirm(run: Dict[str, Any], photo_id: str, student_id: str, lines: List[str], resolved: List[int], photo_only: bool = False) -> Dict[str, Any]:
+    from hub.assignments import jobs
+
+    _guard(run)
+    sub = get(photo_id)
+    if sub["student_id"] != student_id or sub["run_id"] != run["id"] or sub["mode"] != "photo":
+        raise KeyError(photo_id)
+    if sub["status"] != "draft":
+        return {"photoId": photo_id, **view(sub)}
+    uncertain = (sub["ocr"] or {}).get("uncertain") or []
+    if not photo_only and set(resolved) != set(range(len(uncertain))):
+        raise ValueError("uncertain_unresolved")
+    clean = [l.strip()[:600] for l in lines if l and l.strip()][:MAX_LINES]
+    q = question_of(run, sub["version"], sub["question_id"])
+    verdict = None if photo_only or not clean or q["type"] == "open" else grader.grade_final(clean, q["answer"])
+    status = "pending_teacher" if verdict is None else "graded"
+    with LOCK, connect() as conn:  # lần thử tính khi bài thật sự được nộp (ảnh nháp không tính)
+        attempt = 1 + conn.execute("SELECT COUNT(*) FROM submissions WHERE run_id=? AND student_id=? AND question_id=? AND status != 'draft'",
+                                   (run["id"], student_id, sub["question_id"])).fetchone()[0]
+    sub = update(photo_id, status=status, score=None if verdict is None else (1.0 if verdict else 0.0), confirmed=clean,
+                 answer=clean[-1][:200] if clean else None, attempt=attempt, created_at=clock.now())
+    finish(sub, run)
+    if clean:
+        jobs.spawn(lambda: _grade_job(photo_id, run))
+    return {"photoId": photo_id, **view(sub)}

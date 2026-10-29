@@ -232,6 +232,18 @@ def merge(req: GradeStepsRequest, machine: Dict[int, Dict[str, Any]], ai: Option
     }
 
 
+def grade_lines(req: GradeStepsRequest, gemini_key: str = "", openrouter_key: str = "") -> Dict[str, Any]:
+    """Bản đồng bộ cho hub (chấm ảnh vở học sinh ở luồng nền). Cùng các bước với route /grade-steps; route giữ nguyên."""
+    req.lines = [ln for ln in req.lines if (ln.latex or ln.text).strip()][:MAX_LINES]
+    machine = machine_check_guarded(req.lines)
+    try:
+        llm = _llm_json(SYSTEM, build_user(req, machine), gemini_key, openrouter_key, 3500, 40.0, "grade")
+        ai = _extract(llm[0]) if llm else None
+    except Exception:
+        ai = None
+    return merge(req, machine, ai)
+
+
 @router.post("/grade-steps")
 async def grade_steps(request: Request):
     try:

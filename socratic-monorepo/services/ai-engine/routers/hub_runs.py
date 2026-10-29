@@ -1,7 +1,8 @@
 """Lượt giao bài: bảng (X-Board-Token của tiết console), giáo viên (phiên console / token hub), học sinh (token hub)."""
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from hub import roster
@@ -190,3 +191,34 @@ def _submission_errors(fn):
 def student_answer(run_id: str, req: AnswerRequest, claims: dict = Depends(student)):
     run = _student_run(run_id, claims)
     return _submission_errors(lambda: submissions.answer(run, claims["subject"], req.questionId, req.version, req.requestId, req.choice, req.text))
+
+
+class ConfirmRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    lines: List[str] = Field(default_factory=list, max_length=60)
+    resolved: List[int] = Field(default_factory=list, max_length=60)
+    photoOnly: bool = False
+
+
+@router.post("/runs/{run_id}/photos")
+async def student_photo(run_id: str, request: Request, claims: dict = Depends(student)):
+    run = _student_run(run_id, claims)
+    form = await request.form()
+    photo = form.get("photo")
+    if not hasattr(photo, "read"):
+        raise HTTPException(status_code=422, detail="photo_required")
+    data = await photo.read()
+    try:
+        version = int(form.get("version") or 0)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="bad_version")
+    qid, rid = str(form.get("questionId") or ""), str(form.get("requestId") or "")
+    if not qid or not rid or len(rid) > 80:
+        raise HTTPException(status_code=422, detail="question_and_request_required")
+    return await run_in_threadpool(_submission_errors, lambda: submissions.upload_photo(run, claims["subject"], qid, version, rid, data))
+
+
+@router.post("/runs/{run_id}/photos/{photo_id}/confirm")
+def student_confirm(run_id: str, photo_id: str, req: ConfirmRequest, claims: dict = Depends(student)):
+    run = _student_run(run_id, claims)
+    return _submission_errors(lambda: submissions.confirm(run, photo_id, claims["subject"], req.lines, req.resolved, req.photoOnly))

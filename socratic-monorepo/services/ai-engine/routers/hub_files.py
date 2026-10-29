@@ -26,3 +26,22 @@ def page_file(aid: str, n: int, authorization: Optional[str] = Header(default=No
     if not allowed:
         raise HTTPException(status_code=404, detail="not_found")
     return _jpeg(files.read("assignments", path))
+
+
+@router.get("/submission/{submission_id}")
+def submission_file(submission_id: str, authorization: Optional[str] = Header(default=None), x_board_token: Optional[str] = Header(default=None)):
+    from hub.assignments import submissions
+
+    who = bridge.viewer(authorization, x_board_token)
+    try:
+        sub = submissions.get(submission_id)
+        run = runs.get(sub["run_id"])
+    except KeyError:
+        raise HTTPException(status_code=404, detail="not_found")
+    allowed = sub.get("photo_path") and (
+        (who["kind"] == "board" and run["periodId"] == who["period"]["id"])
+        or (who["kind"] == "teacher" and run["teacherId"] == who["subject"])
+        or (who["kind"] == "student" and sub["student_id"] == who["subject"]))
+    if not allowed:
+        raise HTTPException(status_code=404, detail="not_found")
+    return _jpeg(files.read("submissions", sub["photo_path"]))

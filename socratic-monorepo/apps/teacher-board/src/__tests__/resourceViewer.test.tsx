@@ -42,6 +42,11 @@ describe('hub client for the board', () => {
 });
 
 describe('ResourcePanel', () => {
+  it('sits in its own slot of the left column, above Ghép tiết (bottom 11.25rem)', () => {
+    render(<ResourcePanel paired onOpen={vi.fn()} />);
+    expect(screen.getByTestId('resources-toggle').className).toMatch(/absolute left-3 bottom-\[13\.75rem\]/);
+  });
+
   it('asks to pair first when the board is not paired', () => {
     render(<ResourcePanel paired={false} onOpen={vi.fn()} />);
     fireEvent.click(screen.getByTestId('resources-toggle'));

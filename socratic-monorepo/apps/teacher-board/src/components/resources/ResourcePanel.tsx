@@ -20,12 +20,14 @@ export function ResourcePanel({paired, onOpen}: {paired: boolean; onOpen: (id: s
   }, [open, paired]);
 
   return (
-    <div className="pointer-events-auto">
-      <button data-testid="resources-toggle" onClick={() => setOpen((v) => !v)} className="flex items-center gap-1.5 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-semibold text-stone-700 shadow hover:bg-white">
-        <FolderOpen className="h-4 w-4" /> Tài nguyên
+    <>
+      {/* cột nút bên trái cách nhau 2,5rem: dòng thời gian 3 · vi bài giảng 14 · thư viện 6,25 · sinh đề 8,75 · ghép tiết 11,25 · tài nguyên 13,75 */}
+      <button data-testid="resources-toggle" onClick={() => setOpen((v) => !v)}
+        className="absolute left-3 bottom-[13.75rem] z-30 pointer-events-auto flex items-center gap-1.5 rounded-full border border-[#DCD9D0] bg-white/95 px-3 py-1.5 text-[11px] font-medium text-stone-700 shadow-md hover:bg-stone-50">
+        <FolderOpen className="h-3.5 w-3.5" /> Tài nguyên
       </button>
       {open && (
-        <div data-testid="resources-panel" className="mt-2 w-72 rounded-xl border border-stone-200 bg-white p-3 shadow-xl">
+        <div data-testid="resources-panel" className="absolute left-3 bottom-[16.25rem] z-40 pointer-events-auto w-72 rounded-xl border border-stone-200 bg-white p-3 shadow-xl">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-semibold text-stone-800">Tài nguyên của tiết</span>
             <button aria-label="Đóng" onClick={() => setOpen(false)} className="rounded p-1 text-stone-500 hover:bg-stone-100"><X className="h-4 w-4" /></button>
@@ -58,6 +60,6 @@ export function ResourcePanel({paired, onOpen}: {paired: boolean; onOpen: (id: s
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }

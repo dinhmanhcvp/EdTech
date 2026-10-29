@@ -128,3 +128,28 @@ def closed_session(client, teacher_headers):
     r = client.post(f"/api/v1/hub/sessions/{sid}/package", json={"requestId": "req-1", "package": make_package(sid)}, headers=board)
     assert r.status_code == 200, r.text
     return {"sessionId": sid, "board": board, "teacherHeaders": teacher_headers(client)}
+
+
+# ------------------------------------------------------------------ console (trang quản lý của teammate) cho test bài tập
+def console_login(client, username="cohanh"):
+    """Đăng ký (nếu chưa) và đăng nhập một giáo viên console; trả header Bearer phiên console."""
+    client.post("/api/v1/console/register", json={"username": username, "password": "matkhau-123", "display_name": "Cô Hạnh"})
+    r = client.post("/api/v1/console/login", json={"username": username, "password": "matkhau-123"})
+    assert r.status_code == 200, r.text
+    return {"Authorization": f"Bearer {r.json()['token']}"}
+
+
+def console_class(client, h, name="10A3", subject="Toán"):
+    r = client.post("/api/v1/console/classes", json={"name": name, "subject": subject, "size": 30}, headers=h)
+    assert r.status_code == 200, r.text
+    return r.json()["id"]
+
+
+def live_board(client, h, class_id=None):
+    """Tạo tiết (có hoặc không có lớp), bắt đầu, ghép bảng. Trả (period_id, header X-Board-Token)."""
+    p = client.post("/api/v1/console/periods", json={"title": "Tiết thử", "class_id": class_id}, headers=h).json()
+    start = client.post(f"/api/v1/console/periods/{p['id']}/start", headers=h)
+    assert start.status_code == 200, start.text
+    pair = client.post("/api/v1/board/pair", json={"code": start.json()["pairCode"]})
+    assert pair.status_code == 200, pair.text
+    return p["id"], {"X-Board-Token": pair.json()["boardToken"]}

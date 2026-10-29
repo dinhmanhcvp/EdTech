@@ -47,6 +47,7 @@ from routers.hub_sessions import router as hub_sessions_router
 from routers.hub_student import router as hub_student_router
 from routers.hub_metrics import router as hub_metrics_router
 from routers.hub_parent import router as hub_parent_router
+from routers.hub_assignments import router as hub_assignments_router
 from routers.lesson import router as lesson_router
 from llm.key_pool import global_key_pool
 
@@ -111,6 +112,7 @@ app.include_router(hub_sessions_router)
 app.include_router(hub_student_router)
 app.include_router(hub_metrics_router)
 app.include_router(hub_parent_router)
+app.include_router(hub_assignments_router)
 
 from fastapi.responses import Response, JSONResponse
 from graph_engine import generate_neon_graph

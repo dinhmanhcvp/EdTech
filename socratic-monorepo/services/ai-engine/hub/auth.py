@@ -119,8 +119,19 @@ def claims_from_header(authorization: Optional[str], roles: Iterable[str], allow
     require_secret()
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="bearer_token_required")
-    claims = verify_token(authorization.split(" ", 1)[1].strip())
+    token = authorization.split(" ", 1)[1].strip()
     allowed: Set[str] = set(roles)
+    try:
+        claims = verify_token(token)
+    except HTTPException:
+        # không phải token hub: có thể là phiên đăng nhập của trang quản lý (console) — chỉ cho vai trò giáo viên
+        if "teacher" in allowed:
+            from hub.assignments import bridge
+
+            console_teacher = bridge.console_session(token)
+            if console_teacher:
+                return {"role": "teacher", "subject": bridge.hub_teacher_for_console(console_teacher), "console": console_teacher["id"]}
+        raise
     if claims["role"] not in allowed:
         raise HTTPException(status_code=403, detail="insufficient_role")
     if not _subject_exists(claims["role"], claims["subject"], allow_closed):

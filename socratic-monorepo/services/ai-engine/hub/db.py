@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS mastery (student_id TEXT NOT NULL, kc_id TEXT NOT NUL
 CREATE TABLE IF NOT EXISTS parent_reports (student_id TEXT NOT NULL, week TEXT NOT NULL, payload TEXT NOT NULL, created_at REAL NOT NULL, PRIMARY KEY (student_id, week));
 CREATE INDEX IF NOT EXISTS idx_events_student ON learning_events (student_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_events_session ON learning_events (session_id, section_id);
+CREATE TABLE IF NOT EXISTS console_links (console_teacher_id TEXT PRIMARY KEY, hub_teacher_id TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS class_links (console_class_id TEXT PRIMARY KEY, hub_class_id TEXT NOT NULL);
 """
 
 

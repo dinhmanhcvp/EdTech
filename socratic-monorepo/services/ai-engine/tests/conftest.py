@@ -153,3 +153,57 @@ def live_board(client, h, class_id=None):
     pair = client.post("/api/v1/board/pair", json={"code": start.json()["pairCode"]})
     assert pair.status_code == 200, pair.text
     return p["id"], {"X-Board-Token": pair.json()["boardToken"]}
+
+
+ASG_SAMPLE = {
+    "title": "Phương trình bậc nhất", "subject": "MATH", "kind": "exercise",
+    "questions": [
+        {"id": "q1", "type": "choice", "label": "Câu 1", "text": "Nghiệm của $2x=4$ là", "options": ["1", "2", "3", "4"], "answer": "1", "kcs": []},
+        {"id": "q2", "type": "short", "label": "Câu 2", "text": "Tính $3 \cdot 4$", "answer": "12", "kcs": []},
+        {"id": "q3", "type": "essay", "label": "Câu 3", "text": "Giải $x + 3 = 5$", "answer": "x = 2",
+         "kcs": [{"id": "math-phuong-trinh", "label": "Phương trình"}]},
+        {"id": "q4", "type": "open", "label": "Câu 4", "text": "Giải thích vì sao chuyển vế phải đổi dấu", "kcs": []},
+    ],
+}
+
+
+def tiny_pdf(pages=1):
+    import io
+
+    from PIL import Image
+
+    imgs = [Image.new("RGB", (300, 400), (255, 255, 255)) for _ in range(pages)]
+    buf = io.BytesIO()
+    imgs[0].save(buf, "PDF", save_all=True, append_images=imgs[1:])
+    return buf.getvalue()
+
+
+def class_with_students(client, h, name="10A3", students=("Lan", "Minh")):
+    """Lớp console đã nối với lớp hub, có học sinh. Trả (console_class_id, hub_class_id, [{id, code, headers}])."""
+    cid = console_class(client, h, name)
+    hub_class = client.post(f"/api/v1/hub/console/classes/{cid}/link", headers=h).json()["hubClassId"]
+    created = client.post(f"/api/v1/hub/classes/{hub_class}/students", json={"names": list(students)}, headers=h).json()["students"]
+    out = []
+    for s in created:
+        token = client.post("/api/v1/hub/auth/student", json={"loginCode": s["loginCode"]}).json()["token"]
+        out.append({"id": s["id"], "code": s["loginCode"], "headers": {"Authorization": f"Bearer {token}"}})
+    return cid, hub_class, out
+
+
+@pytest.fixture
+def asg_env(client):
+    """Giáo viên console + lớp có 2 học sinh + bảng đã ghép tiết của lớp + bài tập mẫu (có 1 trang PDF), version 1."""
+    h = console_login(client)
+    cid, hub_class, students = class_with_students(client, h)
+    pid, board = live_board(client, h, cid)
+    up = client.post("/api/v1/hub/assignments/upload", data={"title": "Phương trình", "subject": "MATH", "kind": "exercise"},
+                     files={"file": ("de.pdf", tiny_pdf(), "application/pdf")}, headers=h)
+    aid = up.json()["id"]
+    assert client.put(f"/api/v1/hub/assignments/{aid}", json={"body": ASG_SAMPLE, "baseVersion": 0}, headers=h).status_code == 200
+    return {"h": h, "cid": cid, "hubClass": hub_class, "pid": pid, "board": board, "aid": aid, "students": students}
+
+
+def open_board_run(client, env):
+    r = client.post("/api/v1/hub/board/runs", json={"assignmentId": env["aid"]}, headers=env["board"])
+    assert r.status_code == 200, r.text
+    return r.json()

@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS class_links (console_class_id TEXT PRIMARY KEY, hub_c
 CREATE TABLE IF NOT EXISTS assignments (id TEXT PRIMARY KEY, teacher_id TEXT NOT NULL, title TEXT NOT NULL, subject TEXT NOT NULL, kind TEXT NOT NULL, source TEXT NOT NULL, current_version INTEGER NOT NULL, created_at REAL NOT NULL, updated_at REAL NOT NULL);
 CREATE TABLE IF NOT EXISTS assignment_versions (assignment_id TEXT NOT NULL, version INTEGER NOT NULL, payload TEXT NOT NULL, created_at REAL NOT NULL, PRIMARY KEY (assignment_id, version));
 CREATE TABLE IF NOT EXISTS assignment_pages (assignment_id TEXT NOT NULL, page INTEGER NOT NULL, path TEXT NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, PRIMARY KEY (assignment_id, page));
+CREATE TABLE IF NOT EXISTS assignment_runs (id TEXT PRIMARY KEY, code TEXT NOT NULL UNIQUE, assignment_id TEXT NOT NULL, version INTEGER NOT NULL, teacher_id TEXT NOT NULL, class_id TEXT NOT NULL, period_id TEXT, console_teacher_id TEXT, opened_at REAL NOT NULL, closed_at REAL, due_at REAL, status TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_runs_class ON assignment_runs (class_id, opened_at);
 """
 
 

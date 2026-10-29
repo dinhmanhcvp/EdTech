@@ -73,6 +73,19 @@ def period_status(console_teacher_id: str, period_id: str) -> Optional[Dict[str,
     return {"status": p["status"], "ended_at": p.get("ended_at")} if p else None
 
 
+def viewer(authorization: Optional[str], x_board_token: Optional[str]) -> Dict[str, Any]:
+    """Ai đang xem tệp: bảng (X-Board-Token) hoặc giáo viên / học sinh (Bearer). Không xác định được → HTTPException 401."""
+    if x_board_token:
+        try:
+            return {"kind": "board", **board_context(x_board_token)}
+        except KeyError:
+            raise HTTPException(status_code=401, detail="board_not_paired")
+    from hub.auth import claims_from_header
+
+    claims = claims_from_header(authorization, {"teacher", "student"})
+    return {"kind": claims["role"], "subject": claims["subject"]}
+
+
 def require_board(x_board_token: Optional[str] = Header(default=None)) -> Dict[str, Any]:
     try:
         return board_context(x_board_token or "")

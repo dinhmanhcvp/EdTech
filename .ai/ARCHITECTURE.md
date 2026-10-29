@@ -68,6 +68,12 @@ To ensure architectural clarity, the entire system is strictly partitioned into 
   - **Smart Notes & Classroom Recap:** Replaying teacher's lecture scenes, formulas, and lightweight vector journals (< 60 KB).
   - **Dashboards:** TeacherHeatmap (teacher class analytics) and ParentPulse (parental engagement).
 
+### Tam giác 3 đỉnh (hub)
+- **Đỉnh 1 — portal giáo viên** = `apps/teacher-console` (tài khoản, lớp, tiết, tài nguyên, lưới bài làm, duyệt, tổng kết tiết) + hub `services/ai-engine/hub/*` (học sinh/mã đăng nhập, gói kiến thức, chỉ số BKT, báo cáo phụ huynh). Hub nhận phiên console như giáo viên.
+- **Đỉnh 2 — bảng lớp** = `apps/teacher-board`, ghép với tiết console (`X-Board-Token`): mở tài nguyên (slide/bài tập/đề) thu phóng + viết đè, giao bài bằng QR, chọn bài ẩn danh để chữa.
+- **Đỉnh 3 — app học sinh** = `apps/student-app`: làm bài `/a/<mã>`, tab "Lớp của em" (gói cuối tiết, phần chữa, học lại Socratic), `/parent/<token>`.
+- **Cạnh**: chỉ qua `ai-engine` (`/api/v1/hub/*`, `/api/v1/console/*`, `/api/v1/board/*`); bài nộp/điểm → `learning_events` → BKT → chỉ số đỉnh 1 và báo cáo phụ huynh. Hợp đồng: `.ai/INTERFACES.md` mục "Hub v1" và "Assignments v1".
+
 ## Dependency rules
 
 1. `packages/types` is the only canonical location for cross-app contracts. Apps and services may import it through `@socratic/types`; types must not import from apps or services.

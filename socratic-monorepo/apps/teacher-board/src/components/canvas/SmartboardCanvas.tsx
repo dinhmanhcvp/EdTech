@@ -19,7 +19,7 @@ import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
 import { AUTO_INK_SCENES, AutoInkScene } from '../../utils/autoInkPresets';
-import { layoutTypeset, typesetStroke, sourceStrokes, bboxOfStrokes, latexToPlain, type ConvertLine, recognizeLocal, recognizeWithAi, type ConvertResult } from '../../utils/inkConvert';
+import { layoutTypeset, typesetStroke, sourceStrokes, bboxOfStrokes, latexToPlain, type ConvertLine, recognizeLocal, recognizeWithAi, lastAiFailure, type ConvertResult } from '../../utils/inkConvert';
 import { SimulationWidget } from './SimulationWidget';
 import { InkConvertPanel } from './InkConvertPanel';
 import { SmartboardDock, AiFab } from './SmartboardDock';
@@ -35,6 +35,13 @@ import { looksMathy, typedToLatex } from '../../utils/typedMath';
 import { canonicalFormula } from '../../utils/formulaNormalize';
 import { VectorTimeTravelBar } from './VectorTimeTravelBar';
 import { MicroLessonPanel } from './MicroLessonPanel';
+import { LessonLibraryPanel } from './LessonLibraryPanel';
+import { SimilarProblemsPanel } from './SimilarProblemsPanel';
+import { sourceFromContext } from '../../utils/similarProblems';
+import { toBoardStrokes, type Submission } from '../../utils/submissionInk';
+import { PairPanel } from './PairPanel';
+import { SessionError, lessonContext, loadSession, pairBoard, resumeBoard, saveLessonToConsole, saveSnapshot, storeSession, type BoardSession, type PairResult } from '../../utils/boardSession';
+import { coverCount, coverLines, hiddenCovers, hideAllCovers, makeCovers, revealNext, setCoverHidden } from '../../utils/answerCover';
 import { useBoardJournal } from '../../hooks/useBoardJournal';
 import { findAmbiguousTokens } from '../../utils/ocrConfusions';
 import { MathView } from '../common/MathView';
@@ -426,6 +433,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [boardScale, setBoardScale] = useState(1);
   // lớp học BYOD
   const room = useClassroom();
+  /** bảng đang ghép với một tiết của trang quản lý (null = bảng độc lập như trước) */
+  const [session, setSession] = useState<BoardSession | null>(null);
   const [isClassroomOpen, setIsClassroomOpen] = useState(false);
   // hình dựng từ đề bài: hộp thoại nhập đề / bảng dụng cụ vẽ thêm
   const [geoPanel, setGeoPanel] = useState<{ mode: 'new'; text?: string } | { mode: 'edit'; id: string } | null>(null);
@@ -816,7 +825,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             (src.length >= 4 && (detectSolidFromStrokes(src)?.confidence ?? 0) >= 0.72) ||
             (src.length >= 1 && src.length <= 4 && (detectPlaneShapeFromStrokes(src)?.confidence ?? 0) >= 0.78);
           if (!aiRes || aiRes.lines.length === 0) {
-            // Vision không dùng được (không khóa, hết hạn mức, lỗi mạng): dùng bản đọc cục bộ
+            // Vision không dùng được (không khóa, hết hạn mức, lỗi mạng): dùng bản đọc cục bộ và nói rõ lý do
+            if (lastAiFailure) flashError(`Đang dùng nhận diện cục bộ. ${lastAiFailure}`, 7000);
             if (!isGeo && fallbackFormula && !formulaTouchedRef.current) setFormulaInput((prev) => (prev.trim() ? prev : fallbackFormula));
           }
           if (aiRes && aiRes.lines.length > 0) {
@@ -2074,6 +2084,16 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     setSelectedStrokes(clones);
   };
 
+  /** Che phần lời giải đang chọn: mỗi dòng một tấm, xếp theo thứ tự lộ (utils/answerCover.ts). */
+  const coverSelection = () => {
+    const covers = makeCovers(coverLines(selectedStrokes), strokes);
+    if (covers.length === 0) return;
+    saveToUndo();
+    setStrokes((prev) => [...prev, ...covers]);
+    setSelectedStrokes([]);
+    setLassoLoop([]);
+    flashInfo(covers.length > 1 ? `Đã che ${covers.length} dòng; bấm "Lộ bước kế" để lộ lần lượt.` : 'Đã che; chạm vào tấm che hoặc bấm "Lộ bước kế" để lộ.');
+  };
   const resetPageState = () => {
     setSelectedStrokes([]);
     setLassoLoop([]);
@@ -2087,6 +2107,113 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     n[pageIdx] = strokes;
     return n;
   };
+  /** Thư viện bài: thay cả bảng bằng các trang đã lưu, về trang đầu. */
+  const loadLessonPages = (next: Stroke[][]) => {
+    const n = next.length ? next : [[]];
+    setPages(n);
+    setPageIdx(0);
+    setStrokes(n[0]);
+    resetPageState();
+  };
+  /** Chiếu bài làm của học sinh (ẩn danh) lên một trang mới sau trang hiện tại và chọn sẵn để chấm từng bước. */
+  const showSubmission = (sub: Submission, label: string) => {
+    const strokes = toBoardStrokes(sub);
+    const n = withCurrentPage();
+    n.splice(pageIdx + 1, 0, strokes);
+    setPages(n);
+    setPageIdx(pageIdx + 1);
+    setStrokes(strokes);
+    resetPageState();
+    setSelectedStrokes(strokes);
+    setIsClassroomOpen(false);
+    flashInfo(`Đang chiếu ${label} (ẩn danh). Bài đã được chọn sẵn: bấm Chấm để chấm từng bước.`, 5000);
+  };
+  // ---------- Ghép bảng với tiết học của trang quản lý ----------
+  // Ghép: bài/ảnh chụp bảng lưu LÊN MÁY CHỦ theo tiết, thư viện và bản nháp cục bộ tắt; hết tiết bảng tự dọn sạch.
+  const pagesRef = useRef<() => Stroke[][]>(() => []);
+  pagesRef.current = withCurrentPage;
+  const lastSnap = useRef('');
+  const endSession = (message: string) => {
+    storeSession(null);
+    setSession(null);
+    room.leave();
+    loadLessonPages([[]]);
+    setActiveBlueprint(null);
+    setIsVoiceQaOpen(false);
+    setIsClassroomOpen(false);
+    flashInfo(message, 9000);
+  };
+  const endSessionRef = useRef(endSession);
+  endSessionRef.current = endSession;
+  const applyPair = (r: PairResult) => {
+    storeSession(r.session);
+    setSession(r.session);
+    lastSnap.current = '';
+    loadLessonPages(r.pages);
+    setActiveBlueprint(null);
+    room.attachTeacher(r.session.roomId, r.session.roomToken);
+    flashInfo(r.resumed ? `Đã ghép lại với tiết "${r.session.title}".` : `Đã ghép với tiết "${r.session.title}" của ${r.session.teacherName}.`, 5000);
+  };
+  const pairWithCode = async (code: string): Promise<string | null> => {
+    try {
+      const r = await pairBoard(code, session?.boardToken ?? loadSession()?.boardToken ?? null);
+      room.leave(); // rời phòng của tiết trước (nếu có) trước khi nối phòng mới
+      applyPair(r);
+      return null;
+    } catch (e) {
+      return e instanceof SessionError ? e.message : 'Không ghép được bảng.';
+    }
+  };
+  const saveLessonToServer = async (title: string): Promise<{ ok: boolean; text: string }> => {
+    if (!session) return { ok: false, text: 'Bảng chưa ghép với tiết nào.' };
+    try {
+      const r = await saveLessonToConsole(session.boardToken, title.trim() || session.title || 'Bài từ bảng', session.classInfo?.name ?? '', withCurrentPage());
+      return { ok: true, text: `Đã lưu “${r.title}” (${r.page_count} trang) vào bài soạn của bạn.` };
+    } catch (e) {
+      return { ok: false, text: e instanceof SessionError ? e.message : 'Không lưu được.' };
+    }
+  };
+  // làm mới trang giữa tiết: nhận lại tiết bằng mã bảng đã lưu trong thẻ trình duyệt
+  useEffect(() => {
+    const saved = loadSession();
+    if (!saved) return;
+    let alive = true;
+    void resumeBoard(saved.boardToken).then((r) => {
+      if (!alive) return;
+      if (r === 'gone') {
+        storeSession(null);
+        flashInfo('Tiết trước đã kết thúc. Hãy ghép bảng với tiết mới.', 6000);
+      } else if (r !== 'unavailable') applyPair(r);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // tự lưu ảnh chụp bảng theo tiết; máy chủ báo tiết đã hết (410) thì bảng tự dọn
+  useEffect(() => {
+    if (!session) return;
+    const id = window.setInterval(async () => {
+      const pages = pagesRef.current();
+      const sig = JSON.stringify(pages);
+      if (sig === lastSnap.current) return;
+      const r = await saveSnapshot(session.boardToken, pages);
+      if (r === 'ok') lastSnap.current = sig;
+      else if (r === 'gone') endSessionRef.current('Tiết đã kết thúc hoặc bảng đã được ghép sang tiết khác; bảng đã được dọn.');
+    }, 10_000);
+    return () => window.clearInterval(id);
+  }, [session]);
+  // phòng bị đóng (giáo viên kết thúc tiết ở trang quản lý) → dọn bảng cho giáo viên sau
+  useEffect(() => {
+    if (session && room.state.status === 'closed') endSessionRef.current('Tiết đã kết thúc; bảng đã được dọn sạch cho giáo viên sau.');
+    if (session && room.state.status === 'error') flashInfo(room.state.error ?? 'Mất kết nối phòng học; lấy mã ghép mới ở trang quản lý.', 8000);
+  }, [session, room.state.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  // giáo viên chọn chiếu một bài từ trang quản lý: bảng chỉ nhận nhãn ẩn danh và nét vẽ
+  useEffect(() => {
+    const sh = room.state.shown;
+    if (!sh || !session) return;
+    showSubmission({ studentId: sh.studentId, name: '', rev: sh.rev, at: 0, strokes: sh.strokes }, sh.label);
+  }, [room.state.shown?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const goPage = (to: number) => {
     if (to < 0 || to >= pages.length || to === pageIdx) return;
     const n = withCurrentPage();
@@ -2667,8 +2794,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   // Ảnh chụp trạng thái bảng gửi kèm câu hỏi AI: lấy lúc hỏi (không dùng bản cũ) nên luôn khớp với những gì đang hiện.
   useEffect(() => setSimParams({}), [activeBlueprint?.templateId]);
   const getBoardContext = useCallback(
-    () => buildBoardContext({ strokes, selected: selectedStrokes, blueprint: activeBlueprint, params: simParams, subject: subjectLock }),
-    [strokes, selectedStrokes, activeBlueprint, simParams, subjectLock],
+    () => buildBoardContext({ strokes, selected: selectedStrokes, blueprint: activeBlueprint, params: simParams, subject: subjectLock, lesson: lessonContext(session) }),
+    [strokes, selectedStrokes, activeBlueprint, simParams, subjectLock, session],
   );
 
   const handleVisualize = async (overrideHint?: string) => {
@@ -3342,6 +3469,24 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
           <VectorTimeTravelBar getJournal={journal.snapshot} eventCount={journal.eventCount} />
           <MicroLessonPanel getJournal={journal.snapshot} />
+          <LessonLibraryPanel getPages={withCurrentPage} loadPages={loadLessonPages} enabled={!session} />
+          <PairPanel session={session} boardHasContent={pages.some((p, i) => (i === pageIdx ? strokes.length : p.length) > 0)} onPair={pairWithCode} onSaveLesson={saveLessonToServer} onUnpair={() => endSession('Đã ngắt ghép; bảng đã được dọn. Tiết vẫn tiếp tục ở trang quản lý.')} />
+          <SimilarProblemsPanel getSource={() => sourceFromContext(getBoardContext())} subject={subjectLock} />
+          {coverCount(strokes) > 0 && (
+            <div data-testid="cover-bar" className="absolute left-1/2 -translate-x-1/2 bottom-3 z-30 pointer-events-auto flex items-center gap-1.5 rounded-full border border-amber-300 bg-white/95 px-2 py-1 shadow-md">
+              <button
+                data-testid="cover-reveal-next"
+                disabled={hiddenCovers(strokes).length === 0}
+                onClick={() => setStrokes((prev) => revealNext(prev))}
+                className="rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-600 disabled:bg-stone-300"
+              >
+                Lộ bước kế ({hiddenCovers(strokes).length})
+              </button>
+              <button data-testid="cover-hide-all" onClick={() => setStrokes((prev) => hideAllCovers(prev))} className="rounded-full px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-100">
+                Che lại tất cả
+              </button>
+            </div>
+          )}
 
           {geoPanel?.mode === 'new' && (
             <GeometryProblemPanel
@@ -3457,7 +3602,41 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 />
               ))}
             {strokes
-              .filter((s) => s.typeset && !s.shape)
+              .filter((s) => s.cover)
+              .map((s) => {
+                const t = s.typeset!;
+                const hidden = s.cover!.hidden;
+                return (
+                  <div
+                    key={s.id}
+                    data-testid="answer-cover"
+                    data-hidden={hidden}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={hidden ? 'Tấm che đáp án, chạm để lộ' : 'Tấm che đã lộ, chạm để che lại'}
+                    className={`absolute rounded-md select-none flex items-center justify-center text-xs font-semibold transition-opacity ${
+                      hidden ? 'bg-stone-100 text-stone-500 border-2 border-dashed border-stone-400 shadow-sm cursor-pointer' : 'border border-dashed border-amber-400/70 text-amber-600/0 hover:text-amber-700 hover:bg-amber-50/40 cursor-pointer'
+                    }`}
+                    style={{
+                      left: `${(s.points[0].x / 1200) * 100}%`,
+                      top: `${(s.points[0].y / 675) * 100}%`,
+                      width: t.w * boardScale,
+                      height: t.h * boardScale,
+                      pointerEvents: hidden ? 'auto' : 'none',
+                      zIndex: 5,
+                      opacity: hidden ? 1 : 0.9,
+                    }}
+                    onClick={() => setStrokes((prev) => setCoverHidden(prev, s.id, false))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') setStrokes((prev) => setCoverHidden(prev, s.id, false));
+                    }}
+                  >
+                    {hidden ? 'Chạm để lộ' : ''}
+                  </div>
+                );
+              })}
+            {strokes
+              .filter((s) => s.typeset && !s.shape && !s.cover)
               .map((s) => {
                 const t = s.typeset!;
                 const picked = selectedStrokes.some((q) => q.id === s.id);
@@ -3802,6 +3981,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         openAtPath={hubOpenAt}
         onDrawSelected={() => void handleDrawSelection()}
         onDuplicate={duplicateSelection}
+        onCover={coverSelection}
         onDelete={handleDeleteSelection}
         onDeselect={() => {
           setSelectedStrokes([]);
@@ -3907,7 +4087,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           void handleVisualize(text);
         }}
       />
-      {isClassroomOpen && <ClassroomPanel room={room} templateId={activeBlueprint?.templateId ?? null} onClose={() => setIsClassroomOpen(false)} />}
+      {isClassroomOpen && <ClassroomPanel room={room} templateId={activeBlueprint?.templateId ?? null} onClose={() => setIsClassroomOpen(false)} onShowSubmission={showSubmission} managed={session ? { title: session.title, teacherName: session.teacherName } : null} />}
 
       {/* 1-Tap QR Smart Notes Modal */}
       {isQrModalOpen && (

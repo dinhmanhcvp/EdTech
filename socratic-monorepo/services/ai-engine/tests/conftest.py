@@ -16,6 +16,11 @@ def _isolate_env_file_and_environ(tmp_path, monkeypatch):
 
     model_router.__init__()  # bộ đếm hạn mức theo (khóa, model) không rò sang bài sau
     monkeypatch.setenv("SOCRATIC_ENV_FILE", str(tmp_path / "test.env"))
+    # kho tài khoản/tiết học của trang quản lý: mỗi bài kiểm thử một cơ sở dữ liệu tạm riêng, không đụng .data/console.db thật
+    from store import console_db
+
+    monkeypatch.setenv("SOCRATIC_DB_PATH", str(tmp_path / "console.db"))
+    console_db.reset_for_tests()
     yield
     for k in list(os.environ):
         if k not in saved:

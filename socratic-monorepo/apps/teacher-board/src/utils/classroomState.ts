@@ -2,6 +2,7 @@
 /** Trạng thái phía client của phòng học BYOD: bộ rút gọn thuần (không dính WebSocket) để kiểm thử được. */
 import type {SimulationBlueprint} from '@socratic/types';
 import {apiBase} from './apiBase';
+import type {Submission} from './submissionInk';
 
 export interface PollView {
   question: string;
@@ -18,6 +19,18 @@ export interface PollResult {
 export interface RosterEntry {
   id: string;
   name: string;
+}
+export interface CollectView {
+  prompt: string;
+  open: boolean;
+}
+/** Bài làm giáo viên chọn chiếu từ trang quản lý: chỉ có nhãn ẩn danh và nét vẽ, KHÔNG có tên học sinh. */
+export interface ShownSubmission {
+  studentId: string;
+  rev: number;
+  label: string;
+  strokes: Submission['strokes'];
+  nonce: number;
 }
 export interface SyncEvent {
   key: string;
@@ -40,6 +53,14 @@ export interface ClassroomState {
   result: PollResult | null;
   myVote: string | null;
   roster: RosterEntry[];
+  /** đợt thu bài làm đang mở/đã đóng (học sinh vẽ và nộp) */
+  collect: CollectView | null;
+  /** giáo viên: các bài đã nhận, theo thứ tự nộp đầu tiên; học sinh: luôn rỗng */
+  submissions: Submission[];
+  /** học sinh: số lần nộp đã được máy chủ xác nhận (0 = chưa nộp) */
+  mySubmitRev: number;
+  /** bảng ghép với tiết học: bài vừa được giáo viên chọn chiếu (đổi `nonce` = có bài mới) */
+  shown: ShownSubmission | null;
   studentCount: number;
   teacherOnline: boolean;
   lastSync: SyncEvent | null;
@@ -59,6 +80,10 @@ export const initialClassroom: ClassroomState = {
   result: null,
   myVote: null,
   roster: [],
+  collect: null,
+  submissions: [],
+  mySubmitRev: 0,
+  shown: null,
   studentCount: 0,
   teacherOnline: false,
   lastSync: null,
@@ -74,9 +99,15 @@ export const ERROR_TEXT: Record<string, string> = {
   bad_poll: 'Câu hỏi cần nội dung và ít nhất 2 lựa chọn.',
   bad_blueprint: 'Mô phỏng quá lớn hoặc không hợp lệ để gửi cho lớp.',
   unknown_student: 'Học sinh này đã rời phòng.',
+  no_open_collect: 'Giáo viên chưa mở (hoặc đã đóng) việc nộp bài.',
+  use_console: 'Phòng này do trang quản lý điều khiển: hãy kết thúc tiết ở đó.',
+  unknown_submission: 'Bài này không còn trong đợt thu.',
+  bad_submission: 'Bài làm không hợp lệ hoặc quá lớn; hãy xóa bớt nét rồi nộp lại.',
 };
 
 export type ServerMsg = {type: string; [k: string]: any};
+
+const toSubmission = (m: ServerMsg): Submission => ({studentId: String(m.studentId), name: String(m.name ?? ''), rev: Number(m.rev) || 1, at: Number(m.at) || 0, strokes: Array.isArray(m.strokes) ? m.strokes : []});
 
 export function classroomReducer(s: ClassroomState, m: ServerMsg): ClassroomState {
   switch (m.type) {
@@ -95,6 +126,8 @@ export function classroomReducer(s: ClassroomState, m: ServerMsg): ClassroomStat
         result: m.poll ? s.result : null,
         myVote: m.poll ? s.myVote : null,
         teacherOnline: !!m.teacherOnline,
+        collect: m.collect ?? null,
+        submissions: Array.isArray(m.submissions) ? m.submissions.map(toSubmission) : [],
         error: null,
       };
     case 'SYNC':
@@ -109,10 +142,22 @@ export function classroomReducer(s: ClassroomState, m: ServerMsg): ClassroomStat
       return {...s, result: {counts: m.counts, percents: m.percents, total: m.total, students: m.students ?? 0, final: !!m.final}};
     case 'VOTE_ACK':
       return {...s, myVote: m.choice};
+    case 'COLLECT':
+      // đợt mới (đang mở) xóa bài cũ và dấu "đã nộp"; đóng đợt thì giữ nguyên để xem lại
+      return m.open && !(s.collect?.open) ? {...s, collect: {prompt: m.prompt ?? '', open: true}, submissions: [], mySubmitRev: 0} : {...s, collect: {prompt: m.prompt ?? '', open: !!m.open}};
+    case 'SUBMISSION': {
+      const sub = toSubmission(m);
+      const i = s.submissions.findIndex((x) => x.studentId === sub.studentId);
+      return {...s, submissions: i < 0 ? [...s.submissions, sub] : s.submissions.map((x, k) => (k === i ? sub : x))};
+    }
+    case 'SHOW_SUBMISSION':
+      return {...s, shown: {studentId: String(m.studentId), rev: Number(m.rev) || 1, label: String(m.label || 'Bài làm').slice(0, 30), strokes: Array.isArray(m.strokes) ? m.strokes : [], nonce: (s.shown?.nonce ?? 0) + 1}};
+    case 'SUBMIT_ACK':
+      return {...s, mySubmitRev: m.rev ?? s.mySubmitRev, error: null};
     case 'TEACHER_STATUS':
       return {...s, teacherOnline: !!m.online};
     case 'CLOSED':
-      return {...s, status: 'closed', blueprint: null, poll: null, control: null};
+      return {...s, status: 'closed', blueprint: null, poll: null, control: null, collect: null};
     case 'ERROR':
       return {...s, error: ERROR_TEXT[m.code] ?? `Lỗi: ${m.code}`};
     default:

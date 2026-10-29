@@ -369,6 +369,8 @@ export interface AiFabProps {
   /** vẽ hình từ nét đã khoanh (đề bài viết tay hoặc gõ chữ trong vùng khoanh) */
   onDrawSelected?: () => void;
   onDuplicate?: () => void;
+  /** che phần lời giải đang chọn (mỗi dòng một tấm), lộ dần bằng "Lộ bước kế" */
+  onCover?: () => void;
   onDelete?: () => void;
   onDeselect?: () => void;
   /** yêu cầu mở hub tại một tầng (vd ['draw','tools']); đổi `nonce` để kích hoạt lại */
@@ -431,6 +433,7 @@ export const AiFab: React.FC<AiFabProps> = ({
   onGeoNew,
   onDrawSelected,
   onDuplicate,
+  onCover,
   onDelete,
   onDeselect,
   openAtPath,
@@ -670,6 +673,7 @@ export const AiFab: React.FC<AiFabProps> = ({
       pick('draw'),
       pick('subject'),
       selItem('duplicate', 'Nhân đôi', 'Nhân đôi vùng chọn (Ctrl+D)', <Copy className="w-4 h-4" />, () => onDuplicate?.(), 'text-stone-600'),
+      selItem('cover', 'Che', 'Che phần đang chọn để cả lớp tự làm trước; mỗi dòng một tấm, lộ từng bước', <EyeOff className="w-4 h-4" />, () => onCover?.(), 'text-amber-600'),
       selItem('delete', 'Xóa', 'Xóa vùng chọn (Delete)', <Trash2 className="w-4 h-4" />, () => onDelete?.(), 'text-rose-600'),
       selItem('deselect', 'Bỏ chọn', 'Bỏ chọn vùng', <X className="w-4 h-4" />, () => onDeselect?.(), 'text-stone-500'),
     ];

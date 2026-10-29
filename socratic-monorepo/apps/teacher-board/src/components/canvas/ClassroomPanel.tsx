@@ -4,10 +4,12 @@ import React, {useEffect, useState} from 'react';
 import QRCode from 'qrcode';
 import {X, Users, Copy, Check, Hand, BarChart3, Power, Loader2, Wifi, WifiOff} from 'lucide-react';
 import type {ClassroomApi} from '../../hooks/useClassroom';
+import {SubmissionsSection} from '../classroom/SubmissionsSection';
+import type {Submission} from '../../utils/submissionInk';
 
 const SELF_CONTROLLED_NOTE = ['MATH_GRAPH', 'GEO_SOLID', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG'];
 
-export const ClassroomPanel: React.FC<{room: ClassroomApi; templateId?: string | null; onClose: () => void}> = ({room, templateId, onClose}) => {
+export const ClassroomPanel: React.FC<{room: ClassroomApi; templateId?: string | null; onClose: () => void; onShowSubmission?: (sub: Submission, label: string) => void; managed?: {title: string; teacherName: string} | null}> = ({room, templateId, onClose, onShowSubmission, managed}) => {
   const {state} = room;
   const live = state.role === 'teacher' && state.roomId && (state.status === 'open' || state.status === 'reconnecting');
   const link = typeof window !== 'undefined' && state.roomId ? `${window.location.origin}/join/${state.roomId}` : '';
@@ -67,7 +69,29 @@ export const ClassroomPanel: React.FC<{room: ClassroomApi; templateId?: string |
           </button>
         </div>
 
-        {!live ? (
+        {managed ? (
+          <div data-testid="classroom-managed" className="p-6 flex flex-col items-center gap-3 text-center">
+            <p className="text-sm text-stone-600 max-w-md">
+              Lớp này do <b>{managed.teacherName || 'giáo viên'}</b> điều khiển từ trang quản lý (tiết “{managed.title}”). Học sinh quét mã dưới đây để vào lớp; thu bài, chiếu bài và bình chọn làm ở trang quản lý, không làm trên màn hình chiếu.
+            </p>
+            {live && qr ? (
+              <>
+                <img src={qr} alt="QR vào lớp" data-testid="classroom-qr" onClick={() => setBigQr(true)} title="Chạm để phóng to" className="w-full max-w-[240px] rounded-xl border border-[#E6E4DD] cursor-zoom-in" />
+                <div data-testid="classroom-code" className="text-4xl font-mono font-bold tracking-[0.25em] text-stone-900">{state.roomId}</div>
+                <div data-testid="classroom-count" className="text-sm text-stone-600">{state.studentCount} học sinh đã vào</div>
+              </>
+            ) : (
+              <p className="text-xs text-stone-500">Đang kết nối phòng học…</p>
+            )}
+            {bigQr && qr && (
+              <div data-testid="classroom-qr-big" role="button" tabIndex={0} onClick={() => setBigQr(false)} onKeyDown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') setBigQr(false); }} className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center gap-4 cursor-zoom-out">
+                <img src={qr} alt="QR vào lớp (phóng to)" style={{width: 'min(72vh, 72vw)', height: 'min(72vh, 72vw)'}} className="rounded-2xl border border-[#E6E4DD]" />
+                <div className="text-6xl font-mono font-bold tracking-[0.3em] text-stone-900">{state.roomId}</div>
+                <div className="text-sm text-stone-500">Chạm bất kỳ đâu để thu nhỏ</div>
+              </div>
+            )}
+          </div>
+        ) : !live ? (
           <div className="p-8 flex flex-col items-center gap-4 text-center">
             <p className="text-sm text-stone-600 max-w-md">Tạo một phòng học để học sinh vào bằng mã hoặc quét QR. Mô phỏng và thanh trượt trên bảng sẽ đồng bộ tới mọi thiết bị.</p>
             <button
@@ -187,6 +211,8 @@ export const ClassroomPanel: React.FC<{room: ClassroomApi; templateId?: string |
                 )}
                 {state.error && <p className="text-xs text-rose-700">{state.error}</p>}
               </section>
+
+              <SubmissionsSection state={state} send={room.send} onShow={onShowSubmission} />
 
               <button
                 data-testid="classroom-end"

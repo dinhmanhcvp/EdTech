@@ -11,6 +11,8 @@ export interface ClassroomApi {
   teacherToken: string | null;
   createRoom: () => Promise<string | null>;
   joinRoom: (roomId: string, name: string) => void;
+  /** bảng ghép với tiết do trang quản lý mở: nối vào phòng có sẵn bằng mã phòng (vai trò giáo viên) */
+  attachTeacher: (roomId: string, roomToken: string) => void;
   send: (msg: Record<string, unknown>) => boolean;
   leave: () => void;
 }
@@ -100,6 +102,17 @@ export function useClassroom(): ClassroomApi {
     [connect],
   );
 
+  const attachTeacher = useCallback(
+    (roomId: string, roomToken: string) => {
+      tokenRef.current = roomToken;
+      target.current = {roomId, query: {role: 'teacher', token: roomToken}};
+      wantOpen.current = true;
+      tries.current = 0;
+      connect();
+    },
+    [connect],
+  );
+
   const send = useCallback((msg: Record<string, unknown>) => {
     const s = ws.current;
     if (!s || s.readyState !== WebSocket.OPEN) return false;
@@ -113,5 +126,5 @@ export function useClassroom(): ClassroomApi {
     ws.current?.close();
   }, []);
 
-  return {state, teacherToken: tokenRef.current, createRoom, joinRoom, send, leave};
+  return {state, teacherToken: tokenRef.current, createRoom, joinRoom, attachTeacher, send, leave};
 }

@@ -5,6 +5,7 @@ import {Hand, Wifi, WifiOff, LogOut} from 'lucide-react';
 import {SimulationWidget} from '../../../components/canvas/SimulationWidget';
 import {useClassroom} from '../../../hooks/useClassroom';
 import {inControl} from '../../../utils/classroomState';
+import {SubmitPad} from '../../../components/classroom/SubmitPad';
 
 /** Màn hình học sinh: vào bằng mã/QR, xem mô phỏng của giáo viên, bình chọn, và điều khiển khi được giao quyền. */
 export default function JoinPage({params}: {params: {roomId: string}}) {
@@ -108,6 +109,9 @@ export default function JoinPage({params}: {params: {roomId: string}}) {
       {state.error && <div className="mx-3 mt-3 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs" data-testid="join-error">{state.error}</div>}
 
       <section className="p-3 flex flex-col gap-3">
+        {state.collect && (
+          <SubmitPad prompt={state.collect.prompt} open={state.collect.open} submittedRev={state.mySubmitRev} onSubmit={(strokes) => room.send({type: 'SUBMIT', strokes})} />
+        )}
         {state.blueprint ? (
           <SimulationWidget
             key={`${state.blueprint.templateId}|${state.blueprint.recognizedLatex}|${(state.blueprint.expressions || []).join('|')}`}

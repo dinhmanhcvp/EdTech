@@ -66,6 +66,8 @@ export interface Stroke {
   typeset?: TypesetMeta;
   /** có `shape` thì `typeset` chỉ giữ w/h để chọn, tẩy, di chuyển như công thức chuẩn */
   shape?: ShapeMeta;
+  /** tấm che đáp án (utils/answerCover.ts): hidden = đang che; order = thứ tự lộ từng bước */
+  cover?: {hidden: boolean; order: number};
 }
 
 export interface BoundingBox {

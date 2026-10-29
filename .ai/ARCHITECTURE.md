@@ -23,6 +23,7 @@ This repository is a workspace containing several bounded contexts. The executab
 ├── socratic-monorepo/           # executable product bounded context
 │   ├── apps/
 │   │   ├── teacher-board/       # teacher-facing composition and feature UI
+│   │   ├── teacher-console/     # teacher management app (accounts, classes, lesson prep, live period control); port 3003
 │   │   └── student-app/         # student-facing companion UI
 │   ├── packages/
 │   │   ├── types/               # canonical contracts, models, Zod schemas
@@ -71,7 +72,7 @@ To ensure architectural clarity, the entire system is strictly partitioned into 
 
 1. `packages/types` is the only canonical location for cross-app contracts. Apps and services may import it through `@socratic/types`; types must not import from apps or services.
 2. `packages/ui` may depend on React and stable contracts, but must not import app pages, engines, or service code.
-3. `apps/teacher-board` and `apps/student-app` may depend on `packages/types` and `packages/ui`, and on their own local feature modules. They must not import one another.
+3. `apps/teacher-board`, `apps/teacher-console` and `apps/student-app` may depend on `packages/types` and `packages/ui`, and on their own local feature modules. They must not import one another. `teacher-console` treats lessons as opaque JSON and talks to the board only through the ai-engine (pairing codes, `/api/v1/board/*`, WebSocket role `console`).
 4. `services/api-gateway` may depend on `@socratic/types`; it owns transport wiring and must not import React UI code.
 5. `services/ai-engine` is isolated Python code. Changes to its response shape require a corresponding contract update in `packages/types` and documentation in `INTERFACES.md`.
 6. `socratic-video`, slide scripts, documents, and media are consumers/artifacts, not runtime dependencies of the monorepo.

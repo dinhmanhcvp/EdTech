@@ -40,6 +40,8 @@ export interface BoardItem {
 
 export interface BoardContext {
   subject?: string;
+  /** tiết học đang dạy (trang quản lý): tên, mục tiêu, lớp, để AI chọn mức giải thích phù hợp */
+  lesson?: {title: string; goals?: string; class?: {name: string; grade?: string; subject?: string; size?: number; notes?: string}};
   selection?: {item_ids: string[]};
   items: BoardItem[];
   simulation?: {
@@ -128,6 +130,7 @@ export function buildBoardContext(input: {
   blueprint?: SimulationBlueprint | null;
   params?: Record<string, number>;
   subject?: string | null;
+  lesson?: BoardContext['lesson'];
 }): BoardContext {
   const items: BoardItem[] = [];
   let ink = 0;
@@ -149,6 +152,7 @@ export function buildBoardContext(input: {
   const sim = simulationOf(input.blueprint, input.params);
   if (sim) ctx.simulation = sim;
   if (input.subject) ctx.subject = input.subject;
+  if (input.lesson) ctx.lesson = input.lesson;
   return ctx;
 }
 

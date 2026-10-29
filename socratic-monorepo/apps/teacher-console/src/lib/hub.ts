@@ -89,9 +89,77 @@ export interface Resource {
   body: {title: string; subject: string; kind: ResourceKind; questions: Question[]} | null;
   pages: {page: number; width: number; height: number}[];
 }
+export interface RunMetrics {
+  runId: string;
+  questions: {questionId: string; label: string; submittedRate: number; correctRate: number | null; firstTryRate: number | null; wrongAnswers: {answer: string; count: number}[]; pending: number}[];
+  students: {studentId: string; name: string; score10: number | null; pending: number; done: number}[];
+}
+export interface PeriodRun {runId: string; code: string; url: string; assignmentId: string; classId: string; periodId: string | null; openedAt: number; closedAt: number | null; dueAt: number | null; phase: 'in_class' | 'homework' | 'closed'; title: string; metrics: RunMetrics}
+export interface PeriodSummary {periodId: string; runs: PeriodRun[]; resources: unknown[]; pending: number; needsSupport: {studentId: string; name: string; reasons: string[]}[]}
+export interface GridRow {
+  submissionId: string; studentId: string; name: string; questionId: string; mode: 'choice' | 'typed' | 'photo';
+  status: 'graded' | 'pending_teacher' | 'teacher_confirmed'; score: number | null; attempt: number; phase: 'in_class' | 'homework';
+  answer: string | null; confirmed: string[] | null; ocr: unknown; grade: {summary?: string; first_error?: number | null} | null; hasPhoto: boolean;
+}
 export interface HubStudent {id: string; name: string; loginCode: string; parentToken: string | null}
 
 const blobCache = new Map<string, string>();
+
+async function blob(path: string): Promise<string> {
+  const hit = blobCache.get(path);
+  if (hit) return hit;
+  const res = await fetch(`${backendBase()}/api/v1/hub${path}`, {headers: {Authorization: `Bearer ${getToken()}`}});
+  if (!res.ok) throw new HubError('Không tải được ảnh.', res.status);
+  const url = URL.createObjectURL(await res.blob());
+  blobCache.set(path, url);
+  return url;
+}
+
+function stream(path: string, onEvent: (e: {type: string; [k: string]: unknown}) => void): () => void {
+  let stopped = false;
+  let ctrl: AbortController | null = null;
+  let delay = 1000;
+  const run = async () => {
+    while (!stopped) {
+      ctrl = new AbortController();
+      try {
+        const res = await fetch(`${backendBase()}/api/v1/hub${path}`, {headers: {Authorization: `Bearer ${getToken()}`}, signal: ctrl.signal});
+        if (!res.ok || !res.body) throw new Error('stream');
+        delay = 1000;
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        for (;;) {
+          const {value, done} = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, {stream: true});
+          const blocks = buf.split('\n\n');
+          buf = blocks.pop() || '';
+          for (const b of blocks) {
+            const line = b.split('\n').find((l) => l.startsWith('data: '));
+            if (line) {
+              try {
+                onEvent(JSON.parse(line.slice(6)));
+              } catch {
+                /* bỏ qua sự kiện hỏng */
+              }
+            }
+          }
+        }
+      } catch {
+        /* mất kết nối: thử lại */
+      }
+      if (stopped) return;
+      await new Promise((r) => setTimeout(r, delay));
+      delay = Math.min(delay * 2, 15000);
+    }
+  };
+  void run();
+  return () => {
+    stopped = true;
+    ctrl?.abort();
+  };
+}
 
 export const hub = {
   linkClass: (consoleClassId: string) => hubFetch<{hubClassId: string}>('POST', `/console/classes/${consoleClassId}/link`),
@@ -114,6 +182,16 @@ export const hub = {
   extract: (id: string) => hubFetch<{questions: Question[]; source: string}>('POST', `/assignments/${id}/extract`),
   quickKey: (text: string) => hubFetch<{questions: Question[]}>('POST', '/assignments/quick-key', {text}).then((r) => r.questions),
   save: (id: string, body: NonNullable<Resource['body']>, baseVersion: number) => hubFetch<{id: string; version: number}>('PUT', `/assignments/${id}`, {body, baseVersion}),
+
+  periodSummary: (periodId: string) => hubFetch<PeriodSummary>('GET', `/console/periods/${periodId}/summary`),
+  runSubmissions: (runId: string) => hubFetch<{submissions: GridRow[]}>('GET', `/runs/${runId}/submissions`).then((r) => r.submissions),
+  review: (submissionId: string, score: number) => hubFetch<{status: string}>('POST', `/submissions/${submissionId}/review`, {score}),
+  show: (runId: string, submissionId: string) => hubFetch<unknown>('POST', `/runs/${runId}/show`, {submissionId}),
+  closeRun: (runId: string) => hubFetch<unknown>('POST', `/runs/${runId}/close`),
+  setDue: (runId: string, dueAt: number) => hubFetch<unknown>('PUT', `/runs/${runId}`, {dueAt}),
+  submissionBlobUrl: (submissionId: string) => blob(`/files/submission/${submissionId}`),
+  /** Luồng sự kiện giáo viên (submission_update, metric_delta…): fetch có header, tự nối lại; trả hàm hủy. */
+  streamTeacher: (onEvent: (e: {type: string; [k: string]: unknown}) => void) => stream('/stream/teacher', onEvent),
 
   /** Ảnh trang (có kiểm quyền): tải bằng fetch có token rồi giữ object URL trong bộ nhớ đệm. */
   pageBlobUrl: async (id: string, page: number): Promise<string> => {

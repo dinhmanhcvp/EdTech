@@ -11,6 +11,7 @@ import {ErrorNote, Shell} from '../../../components/Shell';
 import {PeriodPrep} from '../../../components/PeriodPrep';
 import {LiveControl} from '../../../components/LiveControl';
 import {Thumb} from '../../../components/Thumb';
+import {AssignmentLive} from '../../../components/AssignmentLive';
 
 const when = (t: number | null) => (t ? new Date(t * 1000).toLocaleString('vi-VN', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'}) : '');
 
@@ -163,6 +164,7 @@ function PeriodPage({id}: {id: string}) {
               </div>
             </div>
           )}
+          <AssignmentLive periodId={period.id} live />
         </>
       )}
 
@@ -189,6 +191,7 @@ function PeriodPage({id}: {id: string}) {
           ) : (
             <p className="text-xs text-stone-400">Không có bài nộp trong tiết này.</p>
           )}
+          <AssignmentLive periodId={period.id} live={false} />
         </section>
       )}
     </div>

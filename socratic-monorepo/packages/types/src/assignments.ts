@@ -40,11 +40,15 @@ export const QuestionSchema = z.object({...questionShape, answer: z.string().min
 /** Câu gửi cho bảng / học sinh: không bao giờ có đáp án. */
 export const QuestionPublicSchema = z.object(questionShape).strict();
 
+export const ResourceKindSchema = z.enum(['exercise', 'exam', 'slides']);
+
 function bodySchema<T extends z.ZodTypeAny>(question: T) {
   return z.object({
-    title: z.string().min(1).max(160), subject: SubjectSchema, kind: z.enum(['exercise', 'exam']),
-    questions: z.array(question).min(1).max(ASSIGNMENT_LIMITS.questions),
-  }).strict().refine((b) => new Set((b.questions as {id: string}[]).map((q) => q.id)).size === b.questions.length, {message: 'duplicate_ids'});
+    title: z.string().min(1).max(160), subject: SubjectSchema, kind: ResourceKindSchema,
+    questions: z.array(question).max(ASSIGNMENT_LIMITS.questions),
+  }).strict()
+    .refine((b) => b.kind === 'slides' || b.questions.length > 0, {message: 'questions_required'})
+    .refine((b) => new Set((b.questions as {id: string}[]).map((q) => q.id)).size === b.questions.length, {message: 'duplicate_ids'});
 }
 
 export const AssignmentBodySchema = bodySchema(QuestionSchema);
@@ -61,7 +65,7 @@ export const RunSchema = z.object({
 
 export const RunForStudentSchema = z.object({
   runId: z.string(), phase: RunPhaseSchema, dueAt: z.number().nullable(),
-  id: z.string(), version: z.number(), title: z.string(), subject: SubjectSchema, kind: z.enum(['exercise', 'exam']),
+  id: z.string(), version: z.number(), title: z.string(), subject: SubjectSchema, kind: ResourceKindSchema,
   pages: z.array(PageInfoSchema), body: AssignmentBodyPublicSchema,
   mine: z.record(z.string(), z.object({status: SubmissionStatusSchema, score: z.number().nullable(), attempt: z.number()})),
 });
@@ -95,7 +99,7 @@ export const RunMetricsSchema = z.object({
 });
 
 export const MyAssignmentSchema = z.object({
-  runId: z.string(), code: z.string(), title: z.string(), kind: z.enum(['exercise', 'exam']), phase: RunPhaseSchema, dueAt: z.number().nullable(),
+  runId: z.string(), code: z.string(), title: z.string(), kind: ResourceKindSchema, phase: RunPhaseSchema, dueAt: z.number().nullable(),
   score10: z.number().nullable(),
   questions: z.array(z.object({questionId: z.string(), label: z.string(), status: SubmissionStatusSchema.nullable(), score: z.number().nullable()})),
   corrections: z.array(z.object({submissionId: z.string(), questionId: z.string()})),
@@ -108,6 +112,65 @@ export const AssignmentStreamEventSchema = z.discriminatedUnion('type', [
   z.object({type: z.literal('show_submission'), runId: z.string(), submissionId: z.string(), label: z.string()}),
 ]);
 
+/** Danh sách tài nguyên (GET /hub/assignments, /hub/board/assignments). */
+export const ResourceListItemSchema = z.object({
+  id: z.string(), title: z.string(), subject: SubjectSchema, kind: ResourceKindSchema, source: z.enum(['file', 'photos', 'bank', 'ai']),
+  currentVersion: z.number(), pageCount: z.number(), updatedAt: z.number(),
+});
+
+/** Nét viết đè trên trang tài nguyên / nét chữa trên ảnh bài: tọa độ 0–1 theo ảnh. */
+export const AnnotationStrokeSchema = z.object({
+  p: z.array(z.tuple([z.number().min(0).max(1), z.number().min(0).max(1)])).min(1).max(1500), c: z.string().max(16), w: z.number(),
+});
+
+export const MyResourceSchema = z.object({
+  assignmentId: z.string(), title: z.string(), kind: ResourceKindSchema, pages: z.array(PageInfoSchema), openedAt: z.number(),
+  periodId: z.string(), periodTitle: z.string(),
+});
+
+/** Gói cuối tiết cho học sinh (GET /hub/me/periods). */
+export const PeriodPackageSchema = z.object({
+  periodId: z.string(), title: z.string(), endedAt: z.number().nullable(),
+  runs: z.array(MyAssignmentSchema.extend({lessonAvailable: z.boolean()})), resources: z.array(MyResourceSchema),
+});
+
+/** Tổng kết tiết cho giáo viên (GET /hub/console/periods/{id}/summary). */
+export const PeriodSummarySchema = z.object({
+  periodId: z.string(),
+  runs: z.array(RunSchema.extend({title: z.string(), metrics: RunMetricsSchema})),
+  resources: z.array(MyResourceSchema), pending: z.number(),
+  needsSupport: z.array(z.object({studentId: z.string(), name: z.string(), reasons: z.array(z.string())})),
+});
+
+export const ProgressSchema = z.object({
+  questions: z.array(z.object({questionId: z.string(), submitted: z.number(), correctRate: z.number().nullable()})),
+});
+
+/** Một mục trong "Chọn bài để chữa" trên bảng: ẩn danh tuyệt đối. */
+export const BoardListItemSchema = z.object({
+  submissionId: z.string(), label: z.string(), questionId: z.string(), status: SubmissionStatusSchema,
+  firstError: z.number().nullable(), hasPhoto: z.boolean(),
+}).strict();
+
+/** Một ô của lưới giáo viên (GET /hub/runs/{id}/submissions): có tên học sinh. */
+export const TeacherGridRowSchema = z.object({
+  submissionId: z.string(), studentId: z.string(), name: z.string(), questionId: z.string(), mode: z.enum(['choice', 'typed', 'photo']),
+  status: SubmissionStatusSchema, score: z.number().nullable(), attempt: z.number(), phase: z.enum(['in_class', 'homework']),
+  answer: z.string().nullable(), confirmed: z.array(z.string()).nullable(), ocr: z.unknown(), grade: z.unknown(), hasPhoto: z.boolean(),
+});
+
+/** Bài chữa mẫu / bài của em xem trên app học sinh. */
+export const StudentSubmissionViewSchema = BoardSubmissionSchema.extend({photo: z.string().nullable()});
+
+export type ResourceKind = z.infer<typeof ResourceKindSchema>;
+export type ResourceListItem = z.infer<typeof ResourceListItemSchema>;
+export type AnnotationStroke = z.infer<typeof AnnotationStrokeSchema>;
+export type MyResource = z.infer<typeof MyResourceSchema>;
+export type PeriodPackage = z.infer<typeof PeriodPackageSchema>;
+export type PeriodSummary = z.infer<typeof PeriodSummarySchema>;
+export type Progress = z.infer<typeof ProgressSchema>;
+export type BoardListItem = z.infer<typeof BoardListItemSchema>;
+export type TeacherGridRow = z.infer<typeof TeacherGridRowSchema>;
 export type QuestionType = z.infer<typeof QuestionTypeSchema>;
 export type Question = z.infer<typeof QuestionSchema>;
 export type QuestionPublic = z.infer<typeof QuestionPublicSchema>;

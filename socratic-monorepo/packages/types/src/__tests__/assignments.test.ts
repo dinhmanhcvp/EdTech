@@ -54,3 +54,29 @@ describe('assignments contracts', () => {
     }
   });
 });
+
+describe('resources and per-period package contracts', () => {
+  it('slides need no questions, exercises do', async () => {
+    const {AssignmentBodySchema} = await import('../assignments');
+    expect(AssignmentBodySchema.safeParse({title: 'Bài giảng', subject: 'MATH', kind: 'slides', questions: []}).success).toBe(true);
+    expect(AssignmentBodySchema.safeParse({title: 'BT', subject: 'MATH', kind: 'exercise', questions: []}).success).toBe(false);
+  });
+
+  it('parses resource list, annotations, period package and summary', async () => {
+    const m = await import('../assignments');
+    expect(m.ResourceListItemSchema.parse({id: 'asg-1', title: 'T', subject: 'MATH', kind: 'slides', source: 'file', currentVersion: 1, pageCount: 3, updatedAt: 1}).kind).toBe('slides');
+    expect(m.AnnotationStrokeSchema.safeParse({p: [[0.1, 0.2]], c: '#000000', w: 3}).success).toBe(true);
+    expect(m.AnnotationStrokeSchema.safeParse({p: [[1.2, 0.2]], c: '#000000', w: 3}).success).toBe(false);
+    const resource = {assignmentId: 'asg-1', title: 'T', kind: 'slides', pages: [{page: 0, width: 1131, height: 1600}], openedAt: 1, periodId: 'p', periodTitle: 'Tiết 1'};
+    expect(m.MyResourceSchema.parse(resource).periodTitle).toBe('Tiết 1');
+    expect(m.PeriodPackageSchema.parse({periodId: 'p', title: 'Tiết 1', endedAt: 2, runs: [], resources: [resource]}).resources).toHaveLength(1);
+    expect(m.PeriodSummarySchema.parse({periodId: 'p', runs: [], resources: [], pending: 0, needsSupport: []}).pending).toBe(0);
+    expect(m.ProgressSchema.parse({questions: [{questionId: 'q1', submitted: 2, correctRate: 0.5}]}).questions).toHaveLength(1);
+    expect(m.BoardListItemSchema.safeParse({submissionId: 's', label: 'Bài 1', questionId: 'q1', status: 'graded', firstError: null, hasPhoto: true, studentId: 'x'}).success).toBe(false);
+  });
+
+  it('teacher stream carries submission updates', async () => {
+    const {HubStreamEventSchema} = await import('../hub');
+    expect(HubStreamEventSchema.parse({type: 'submission_update', runId: 'r', studentId: 's', questionId: 'q1', status: 'graded'}).type).toBe('submission_update');
+  });
+});

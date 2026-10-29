@@ -124,6 +124,8 @@ export const HubStreamEventSchema = z.discriminatedUnion('type', [
   z.object({type: z.literal('plan_updated'), version: z.number()}),
   z.object({type: z.literal('session_closed')}),
   z.object({type: z.literal('metric_delta'), classId: z.string(), studentId: z.string(), sectionId: z.string().nullable()}),
+  // bài tập trong tiết (kênh teacher:): một bài nộp vừa đổi trạng thái
+  z.object({type: z.literal('submission_update'), runId: z.string(), studentId: z.string(), questionId: z.string(), status: z.string()}),
 ]);
 
 export type PlanItem = z.infer<typeof PlanItemSchema>;

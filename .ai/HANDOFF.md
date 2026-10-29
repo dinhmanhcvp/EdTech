@@ -1422,3 +1422,11 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 - Spec `docs/superpowers/specs/2026-10-29-bai-tap-trong-tiet-design.md`, plan `docs/superpowers/plans/2026-10-29-assignments-backend.md`, nhánh `feat/in-class-assignments`.
 - ĐANG SỬA: `services/ai-engine/hub/assignments/**`, `routers/hub_assignments.py`, `routers/hub_runs.py`, `routers/hub_files.py`, `hub/auth.py`, `hub/db.py`, `hub/metrics.py`, `hub/reports.py`, `routers/grade_steps.py` (tách `grade_lines`, route giữ nguyên), `routers/lesson.py`, `lesson_builder.py`, `main.py`, `requirements.txt`, `tests/test_asg_*.py`, `packages/types/src/assignments.ts`.
 - KHÔNG sửa `routers/console.py`, `store/console_db.py` (chỉ gọi hàm đọc), `apps/**` (bước 2–4 sẽ thêm màn/ngăn mới, ghi lại ở đây trước khi làm).
+
+
+# 2026-10-29 (đêm) — Kịch bản video theo kiến trúc tam giác
+- Phạm vi: chỉ `docs/`. Mới `docs/KICH_BAN_VIDEO_TAM_GIAC.md` (15 cảnh, 165 giây, bảng tổng + lời thoại theo từng nhân vật + checklist).
+- `STARTUP_VIDEO_SCRIPT_FINAL.md` và `STARTUP_VIDEO_SKELETON.md` mà các mục cũ nhắc tới KHÔNG còn trong repo hay git; bản mới dựng lại từ mô tả trong HANDOFF và spec tam giác, chưa đối chiếu với bản gốc.
+- Cảnh 10 đến 12 (dashboard realtime, AI đề xuất, báo cáo phụ huynh) chưa có giao diện: không app nào gọi `/api/v1/hub`.
+- (cập nhật) **Backend bài tập trong tiết xong** (plan bước 1, 10 task) trên `feat/in-class-assignments`: `hub/assignments/{bridge,schema,store,pages,files,vision,extract,runs,jobs,grader,ocr,submissions,metrics}.py`, `routers/hub_{assignments,runs,files}.py`, `packages/types/src/assignments.ts`. Endpoint: `.ai/INTERFACES.md` mục "Assignments v1". Thêm `pypdfium2` vào `requirements.txt`. `routers/grade_steps.py` thêm hàm `grade_lines()` (route giữ nguyên); `routers/lesson.py` nhận `?run_id=`.
+- Còn lại: bước 2 student-app (`/a/[code]`, màn xác nhận OCR, mục Bài tập, phần chữa), bước 3 console (soạn/duyệt, lưới, hàng chờ, chiếu), bước 4 bảng (trình xem thu phóng, QR, chọn bài, chữa), bước 5 e2e. Ghi phạm vi app sẽ sửa vào đây trước khi làm.

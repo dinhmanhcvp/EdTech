@@ -6,4 +6,4 @@ uvicorn[standard]
 python-multipart
 pillow
 google-generativeai
-
+pypdfium2>=4.30

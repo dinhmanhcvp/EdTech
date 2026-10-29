@@ -39,7 +39,9 @@ class Recorder:
 
     def start(self):
         vp = self.page.viewport_size
-        self.cdp.send("Page.startScreencast", {"format": "jpeg", "quality": self.quality, "maxWidth": vp["width"], "maxHeight": vp["height"], "everyNthFrame": 1})
+        dpr = float(self.page.evaluate("window.devicePixelRatio") or 1)
+        self.cdp.send("Page.startScreencast", {"format": "jpeg", "quality": self.quality, "maxWidth": int(vp["width"] * dpr),
+                                               "maxHeight": int(vp["height"] * dpr), "everyNthFrame": 1})
         self.t0 = time.monotonic()
 
     def stop(self):

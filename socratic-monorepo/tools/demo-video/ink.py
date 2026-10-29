@@ -242,6 +242,23 @@ def hand_like(pts: List[Point], wobble: float = 0.7) -> List[Point]:
     return out
 
 
+def integral(x: float, y: float, h: float, lower: str = "0", upper: str = "1", body: str = "x", power: str = "2", tail: str = "dx") -> List[List[Point]]:
+    """Tích phân viết tay ∫_{lower}^{upper} body^{power} tail: dấu ∫ vẽ một nét cong, cận viết nhỏ, rồi biểu thức."""
+    w = h * 0.3
+    sign = [(x + w * 1.35, y + h * 0.1), (x + w * 1.2, y + h * 0.01), (x + w * 0.95, y + h * 0.02), (x + w * 0.78, y + h * 0.2),
+            (x + w * 0.66, y + h * 0.5), (x + w * 0.55, y + h * 0.8), (x + w * 0.38, y + h * 0.98), (x + w * 0.12, y + h * 0.99), (x, y + h * 0.9)]
+    strokes = [hand_like(_chaikin(_resample(sign, 6.0), 3), wobble=0.6)]
+    small = h * 0.2
+    strokes += text(upper, x + w * 1.55, y - small * 0.15, small)
+    strokes += text(lower, x + w * 0.95, y + h * 0.86, small)
+    bx = x + w * 2.3
+    body_h = h * 0.36
+    strokes += text(body, bx, y + h * 0.36, body_h)
+    strokes += text(power, bx + body_h * 0.62, y + h * 0.2, small)
+    strokes += text(tail, bx + body_h * 1.2, y + h * 0.36, body_h)
+    return strokes
+
+
 def _min_jerk(t: float) -> float:
     return 10 * t ** 3 - 15 * t ** 4 + 6 * t ** 5
 

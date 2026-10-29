@@ -5,6 +5,8 @@ import json
 import os
 from typing import Callable, Dict
 
+from recorder import Recorder
+
 import ink
 
 BOARD = "http://localhost:3001"
@@ -49,6 +51,18 @@ def ai_cache(page, scene_id: str):
         route.fulfill(response=resp, body=body)
 
     page.route("**/api/v1/**", handle)
+
+
+def seed_cache(scene_id: str, items):
+    """Dùng lại câu trả lời AI đã lưu của cảnh khác cho phần chuẩn bị: [(cảnh nguồn, tệp nguồn, tên đích)]."""
+    import shutil
+
+    folder = os.path.join(CACHE_DIR, scene_id)
+    os.makedirs(folder, exist_ok=True)
+    for src_scene, src, dst in items:
+        s, d = os.path.join(CACHE_DIR, src_scene, src + ".json"), os.path.join(folder, dst + ".json")
+        if os.path.exists(s) and not os.path.exists(d):
+            shutil.copyfile(s, d)
 
 
 def tap(page, test_id: str, settle: float = 0.6):
@@ -164,7 +178,228 @@ def scene_08(page, rec, ctx):
     rec.stop()
 
 
+def scene_11(page, rec, ctx):
+    """Thầy viết vội một tích phân → khoanh → Chuyển LaTeX: nét tay thành công thức in ngay tại chỗ."""
+    ai_cache(page, "11")
+    open_board(page)
+    rec.start()
+    rec.hold(1.0)
+    ink.draw(page, ink.integral(760, 330, 230), speed=1100, pause=0.1)
+    rec.hold(0.7)
+    tap(page, "tool-lasso", 0.4)
+    ink.draw(page, [ink.ellipse(950, 445, 300, 175)], speed=1200)
+    rec.hold(0.8)
+    page.get_by_test_id("tool-convert-ink").click()
+    rec.cut_begin()
+    ok = wait_until(page, "() => [...document.querySelectorAll('input, textarea')].some(e => /\\\\int/.test(e.value))", 45)
+    page.wait_for_timeout(500)
+    rec.cut_end(keep=0.6)
+    print("formula:", ok)
+    probe(page, ctx, "11-read")
+    rec.hold(1.2)
+    page.get_by_role("button", name="Thay nét viết bằng công thức").click()
+    rec.hold(3.0)
+    probe(page, ctx, "11-done")
+    rec.stop()
+
+
+def student_work(x: float, y: float, h: float = 62, gap: float = 1.75):
+    """Ba dòng bài làm có lỗi chuyển vế sai dấu ở dòng 2 (kịch bản UI-13A)."""
+    lines = ["2x - 4 = 6", "2x = 6 - 4", "x = 1"]
+    out = []
+    for i, ln in enumerate(lines):
+        out += ink.text(ln, x, y + i * h * gap, h)
+    return out
+
+
+def scene_13a(page, rec, ctx):
+    """Bài làm ẩn danh trên bảng → khoanh → Chấm bài: dòng sai đầu tiên bôi đỏ, cửa sổ giải thích."""
+    ai_cache(page, "13A-bang")
+    open_board(page)
+    rec.start()
+    rec.hold(1.0)
+    ink.draw(page, student_work(760, 300), speed=900, pause=0.1)
+    rec.hold(0.7)
+    tap(page, "tool-lasso", 0.4)
+    ink.draw(page, [ink.ellipse(905, 420, 260, 210)], speed=1200)
+    rec.hold(0.8)
+    page.get_by_test_id("ai-fab-grade").click()
+    rec.cut_begin()
+    ok = wait_until(page, "() => document.body.innerText.includes('VI\\u1ebeT L\\u1ea0I CHO \\u0110\\u00daNG') || document.body.innerText.includes('Vi\\u1ebft l\\u1ea1i cho \\u0111\\u00fang')", 70)
+    page.wait_for_timeout(600)
+    rec.cut_end(keep=0.6)
+    print("graded:", ok)
+    rec.hold(3.5)
+    probe(page, ctx, "13A-graded")
+    rec.stop()
+
+
+def scene_13b(page, rec, ctx):
+    """Hết tiết: Vi bài giảng → AI viết lời giảng → Gửi cho học sinh → Đã gửi."""
+    seed_cache("13B", [("11", "recognize-ink-0", "recognize-ink-0"), ("08", "recognize-ink-0", "recognize-ink-1")])
+    ai_cache(page, "13B")
+    open_board(page)
+    # nội dung của tiết (không ghi): tích phân thành công thức, lập phương thành hình, con lắc đơn
+    ink.draw(page, ink.integral(330, 150, 170), speed=1800, pause=0.01)
+    tap(page, "tool-lasso", 0.2)
+    ink.draw(page, [ink.ellipse(470, 240, 230, 140)], speed=1800)
+    page.get_by_test_id("tool-convert-ink").click()
+    wait_until(page, "() => [...document.querySelectorAll('input, textarea')].some(e => /\\\\int/.test(e.value))", 30)
+    page.get_by_role("button", name="Thay nét viết bằng công thức").click()
+    page.wait_for_timeout(500)
+    tap(page, "tool-pen", 0.2)
+    ink.draw(page, ink.cube(380, 470, 170), speed=1800, pause=0.01)
+    tap(page, "tool-lasso", 0.2)
+    ink.draw(page, [ink.ellipse(505, 520, 200, 175)], speed=1800)
+    tap(page, "ai-fab-draw", 1.0)
+    page.keyboard.press("Escape")
+    tap(page, "tool-pen", 0.2)
+    ink.draw(page, ink.text("con lắc đơn", 1000, 700, 60), speed=1800, pause=0.01)
+    tap(page, "tool-lasso", 0.2)
+    ink.draw(page, [ink.ellipse(1170, 730, 230, 90)], speed=1800)
+    page.get_by_test_id("top-toolbar-btn-visualize").click()
+    wait_until(page, "() => !!document.querySelector('[data-testid=slider-theta0]')", 30)
+    page.get_by_test_id("holo-ctx-close-btn").click()
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(1000)
+    rec.start()
+    rec.hold(1.0)
+    tap(page, "micro-lesson-open", 1.2)
+    probe(page, ctx, "13B-open")
+    rec.hold(1.2)
+    page.get_by_role("button", name="AI viết lời giảng").click()
+    rec.cut_begin()
+    wait_until(page, "() => document.body.innerText.includes('Ý cần nhớ')", 90)
+    page.wait_for_timeout(500)
+    rec.cut_end(keep=0.8)
+    probe(page, ctx, "13B-notes")
+    rec.hold(2.5)
+    page.get_by_role("button", name="Gửi cho học sinh").click()
+    page.wait_for_timeout(2500)
+    probe(page, ctx, "13B-sent")
+    rec.hold(1.5)
+    rec.stop()
+
+
+PHONE = {"viewport": {"width": 390, "height": 844}, "device_scale_factor": 2, "is_mobile": True, "has_touch": True}
+
+
+def open_pendulum(page, cache_scene: str):
+    """Chuẩn bị (không ghi): viết "con lắc đơn", khoanh, Trực quan; câu trả lời AI lấy từ cảnh 08."""
+    seed_cache(cache_scene, [("08", "recognize-ink-0", "recognize-ink-0")])
+    ai_cache(page, cache_scene)
+    open_board(page)
+    ink.draw(page, ink.text("con lắc đơn", 420, 640, 78), speed=1800, pause=0.02)
+    tap(page, "tool-lasso", 0.2)
+    ink.draw(page, [ink.ellipse(645, 680, 290, 110)], speed=1800)
+    page.get_by_test_id("top-toolbar-btn-visualize").click()
+    wait_until(page, "() => !!document.querySelector('[data-testid=slider-theta0]')", 30)
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(800)
+
+
+def phone_join(browser, room: str, name: str, rec_start=None):
+    ctx = browser.new_context(**PHONE)
+    ph = ctx.new_page()
+    ph.goto(f"{BOARD}/join/{room}", wait_until="networkidle")
+    ph.add_style_tag(content=HIDE_DEV)
+    r = None
+    if rec_start:
+        r = Recorder(ph)
+        r.start()
+        r.hold(1.0)
+        ph.get_by_test_id("join-name").press_sequentially(name, delay=160)
+        r.hold(0.4)
+    else:
+        ph.get_by_test_id("join-name").fill(name)
+    ph.get_by_test_id("join-submit").click()
+    return ph, r
+
+
+def scene_13(page, rec, ctx):
+    """Lớp học: học sinh quét mã vào lớp, kéo thanh trượt (bảng đổi theo), nộp bài vẽ tay, thầy chiếu ẩn danh."""
+    open_pendulum(page, "13")
+    rec.start()
+    rec.hold(0.8)
+    tap(page, "btn-classroom", 0.8)
+    tap(page, "classroom-create", 0.3)
+    wait_until(page, "() => /\\w{4,}/.test(document.querySelector('[data-testid=classroom-code]')?.innerText || '')", 15)
+    room = page.get_by_test_id("classroom-code").inner_text().strip()
+    rec.hold(1.0)
+    phones, phone_rec = [], None
+    for i, name in enumerate(("Lan", "Minh", "An")):
+        ph, r = phone_join(ctx["browser"], room, name, rec_start=(i == 0))
+        phones.append(ph)
+        phone_rec = phone_rec or r
+        page.wait_for_timeout(700)
+    rec.hold(1.0)
+    # giao quyền cho Lan, em kéo θ₀ trên điện thoại → mô phỏng trên bảng đổi theo
+    page.locator("[data-testid^=classroom-delegate-]").first.click()
+    page.wait_for_timeout(700)
+    tap(page, "classroom-close", 0.8)
+    ph = phones[0]
+    sl = ph.get_by_test_id("slider-theta0")
+    sl.scroll_into_view_if_needed()
+    ph.wait_for_timeout(600)
+    bb = sl.bounding_box()
+    y = bb["y"] + bb["height"] / 2
+    lo, hi, val = sl.evaluate("e => [Number(e.min), Number(e.max), Number(e.value)]")
+    x = bb["x"] + bb["width"] * (val - lo) / (hi - lo)
+    ph.mouse.move(x, y)
+    ph.mouse.down()
+    for i in range(1, 31):
+        ph.mouse.move(x + 1.6 * i, y)
+        ph.wait_for_timeout(35)
+    ph.mouse.up()
+    rec.hold(2.5)
+    # thu bài vẽ tay → Lan nộp → Bài 1 → Chiếu
+    page.get_by_test_id("holo-ctx-close-btn").click()
+    page.wait_for_timeout(400)
+    tap(page, "btn-classroom", 0.8)
+    page.get_by_test_id("submissions-prompt").press_sequentially("Giải phương trình 2x − 4 = 6", delay=45)
+    page.wait_for_timeout(400)
+    tap(page, "submissions-start", 1.0)
+    pad = ph.get_by_test_id("submit-canvas")
+    pad.scroll_into_view_if_needed()
+    ph.wait_for_timeout(600)
+    cb = pad.bounding_box()
+    ink.draw(ph, student_work(cb["x"] + 24, cb["y"] + 22, h=min(30, cb["height"] / 7), gap=1.7), speed=500, pause=0.08)
+    ph.wait_for_timeout(500)
+    ph.get_by_test_id("submit-send").click()
+    wait_until(page, "() => !!document.querySelector('[data-testid=submission-card]')", 15)
+    phone_rec.hold(2.0)
+    phone_rec.stop()
+    rec.hold(1.5)
+    tap(page, "submission-show", 1.5)
+    rec.hold(2.5)
+    rec.stop()
+    ctx["finish"](rec, "13", SCENES["13"]["title"], "board", page.viewport_size)
+    ctx["finish"](phone_rec, "13-phone", "Điện thoại học sinh: vào lớp, kéo thanh trượt, vẽ bài, Nộp", "phone", PHONE["viewport"])
+    # 13A nối tiếp: bài vừa chiếu đã được chọn sẵn → Chấm bài → bôi đỏ dòng sai, giải thích
+    rec2 = Recorder(page)
+    rec2.start()
+    rec2.hold(1.2)
+    page.get_by_test_id("ai-fab-grade").click()
+    rec2.cut_begin()
+    ok = wait_until(page, "() => document.body.innerText.includes('VIẾT LẠI CHO ĐÚNG') || document.body.innerText.includes('Viết lại cho đúng')", 70)
+    page.wait_for_timeout(600)
+    rec2.cut_end(keep=0.6)
+    print("graded:", ok)
+    rec2.hold(4.0)
+    probe(page, ctx, "13A-cont")
+    rec2.stop()
+    ctx["finish"](rec2, "13A", "Bài 1 chiếu trên bảng → Chấm bài: bôi đỏ dòng sai, giải thích", "board", page.viewport_size)
+    for p_ in phones:
+        p_.close()
+        p_.context.close()
+    return True
+
+
 SCENES: Dict[str, dict] = {
+    "13": {"title": "Lớp học: quét mã, kéo thanh trượt đồng bộ, nộp bài vẽ tay, chiếu ẩn danh", "device": "board", "run": scene_13},
+    "13B": {"title": "Vi bài giảng: AI viết lời giảng → Gửi cho học sinh", "device": "board", "run": scene_13b},
+    "13A-bang": {"title": "Bài làm viết trên bảng → khoanh → Chấm bài (bản dự phòng của 13A)", "device": "board", "run": scene_13a},
+    "11": {"title": "Tích phân viết vội → khoanh → Chuyển công thức", "device": "board", "run": scene_11},
     "08": {"title": "Viết “con lắc đơn” → khoanh → Trực quan → kéo góc lệch", "device": "board", "run": scene_08},
     "06-07": {"title": "Vẽ lập phương → hình chuẩn → xoay, khai triển, cắt ngang", "device": "board", "run": scene_06_07},
 }

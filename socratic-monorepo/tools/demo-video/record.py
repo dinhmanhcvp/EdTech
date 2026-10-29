@@ -52,14 +52,19 @@ def main(ids):
             page = context.new_page()
             rec = Recorder(page)
             print(f"[{sid}] {sc['title']}", flush=True)
-            sc["run"](page, rec, {**ctx, "browser": browser})
-            out = os.path.join(OUT, f"{sid}.webm")
-            dur = rec.save(out)
-            print(f"[{sid}] {dur:.1f}s -> {out}", flush=True)
-            manifest["scenes"] = [s for s in manifest["scenes"] if s["id"] != sid] + [
-                {"id": sid, "title": sc["title"], "device": sc["device"], "file": f"/demo/{sid}.webm", "poster": f"/demo/{sid}.jpg", "duration": round(dur, 1),
-                 "width": vp["width"], "height": vp["height"]}]
-            save_manifest(manifest)
+
+            def finish(r, out_id, title, device, size):
+                out = os.path.join(OUT, f"{out_id}.webm")
+                dur = r.save(out)
+                print(f"[{out_id}] {dur:.1f}s -> {out}", flush=True)
+                manifest["scenes"] = [s for s in manifest["scenes"] if s["id"] != out_id] + [
+                    {"id": out_id, "title": title, "device": device, "file": f"/demo/{out_id}.webm", "poster": f"/demo/{out_id}.jpg",
+                     "duration": round(dur, 1), "width": size["width"], "height": size["height"]}]
+                save_manifest(manifest)
+
+            handled = sc["run"](page, rec, {**ctx, "browser": browser, "finish": finish})
+            if not handled:
+                finish(rec, sid, sc["title"], sc["device"], vp)
             page.close()
             context.close()
         browser.close()

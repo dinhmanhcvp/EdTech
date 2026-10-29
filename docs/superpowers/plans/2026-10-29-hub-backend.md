@@ -43,7 +43,7 @@
 1. **Bảng mở luồng chờ SAU khi giáo viên đã claim** (bảng chậm, mạng chập chờn) → bảng vẫn phải nhận `paired`. Test: `test_pairing_stream_after_claim_replays_paired` (Task 5).
 2. **Hai điện thoại cùng quét một QR** → chỉ lần claim đầu tạo tiết, lần sau 410. Test: `test_second_claim_is_gone` (Task 5).
 3. **Dò PIN** → sau 5 lần sai liên tiếp của một giáo viên, khóa 60 s kể cả khi đúng PIN. Test: `test_teacher_pin_lockout` (Task 2).
-4. **Đáp án dạng `x = 2`** (ký hiệu `verdict()` không biết) → vẫn chấm đúng/sai được khi vế trái trùng nhau, thay vì luôn `unverified`. Test: `test_grade_answer_same_lhs` (Task 7).
+4. **Câu trắc nghiệm trả lời bằng nhiều kiểu** (`B`, `b`, `2`, chữ của lựa chọn) → đều chấm được; ký tự lạ → chưa chấm được, không phải sai. Test: `test_grade_choice` (Task 7).
 5. **Luồng sự kiện bị nén/đệm** (GZip) khiến bảng không nhận gì cho tới khi đóng → phản hồi stream phải có `content-type: text/event-stream` (Starlette 0.49 bỏ qua nén cho loại này) và `Cache-Control: no-cache`. Test: `test_sse_response_headers` (Task 4).
 
 ---
@@ -65,8 +65,8 @@ services/ai-engine/
     plans.py                     # giáo án + version
     events.py                    # Bus, sse_response()
     sessions.py                  # mã ghép, tiết học, gói tri thức, snapshot tương thích
-    grading.py                   # grade_answer(), bkt_update()
-    lessons.py                   # dựng bài học, ghi lượt làm bài
+    grading.py                   # bkt_update(), choice_key(), grade_choice()
+    learning.py                  # bài học Mode 2 theo tiết, ghi sự kiện học tập + mastery
     metrics.py                   # chỉ số học sinh / phần / lớp, replay mastery
     suggest.py                   # AI đề xuất + áp dụng
     reports.py                   # báo cáo tuần
@@ -333,63 +333,66 @@ def test_board_role_is_valid_token_role():
 
 ---
 
-### Task 6: Gói tri thức cuối tiết
+### Task 6: Gói tri thức cuối tiết (bọc snapshot v1 của Mode 2)
+
+> Sửa sau khi gộp nhánh `feat/mode2-board-lesson` (xem ledger): bảng đã có `classroomSnapshot.ts` tạo `ClassroomSnapshot` v1 (`packages/types/src/lesson.ts`) và `PUT /api/v1/student/snapshot`. Gói `kp/2` **bọc** snapshot đó và thêm phần nối với giáo án; hub không tự dựng snapshot tương thích nữa.
 
 **Files:**
-- Modify: `hub/schemas.py` (thêm model gói), `hub/sessions.py`, `routers/hub_sessions.py`
-- Test: thêm vào `tests/test_hub_sessions.py`
+- Modify: `hub/schemas.py`, `hub/sessions.py`, `routers/hub_sessions.py`
+- Test: thêm vào `tests/test_hub_sessions.py`; fixture `closed_session` trong `tests/conftest.py`
 
 **Interfaces:**
-- Consumes: `student_context.save_snapshot(class_id, payload)`.
+- Consumes: `student_context.save_snapshot(class_id, payload)`; dạng `ClassroomSnapshot` v1.
 - Produces:
-  - `hub.schemas.LessonMoment{t: float ≥0, kind ∈ formula|plane|solid|sim, label ≤200, detail? ≤400}`, `PackageSection{planSectionId: Optional[str], title ≤200, kcIds ≤8, moments ≤40, narration? ≤700}`, `PackagePoll{itemId: Optional[str], question ≤300, options 2..6, counts (cùng độ dài options, ≥0), total ≥0}`, `PackageNotes{summary ≤500, keyPoints ≤5, reviewQuestions ≤4}`, `KnowledgePackage{schema: Literal["kp/2"], sessionId, planId, planVersion ≥1, title ≤160, subject, startedAt, endedAt, sections 1..24, polls ≤24, usedItemIds ≤200, notes?}` (`extra="ignore"`).
-  - `hub.sessions.save_package(session_id: str, request_id: str, package: dict) -> dict` → `{"status": "saved", "packageId"}`. Cùng `request_id` đã lưu → trả lại đúng kết quả cũ. Tiết đã đóng (hoặc đã có gói) với `request_id` khác → raise `SessionClosed`. `package.sessionId != session_id` → `ValueError`. Lưu gói, đặt `status="closed"`, `ended_at=now`, ghi snapshot tương thích, publish `{"type": "session_closed"}` lên `board:{sid}`.
-  - `hub.sessions.compat_snapshot(package: dict, class_name: str) -> dict` — `ClassroomSessionSnapshot`: `sessionId`, `className`, `lessonTitle=title`, `updatedAt` (chuỗi giờ VN `"HH:MM dd/mm"`), `boardSnapshots`: mỗi phần một mục `{id: f"{sessionId}-{i}", kind: "BOARD", title, subject, latex: detail của moment `formula` đầu tiên hoặc "", templateId: "", note: narration hoặc các label nối bằng " · " (≤300), parameters: {}}`, `studentWork: []`. Lưu bằng `save_snapshot(class_name, ...)` (`class_name` như `"12A1"`, khớp mặc định cũ của student-app).
-  - Route `POST /sessions/{sid}/package {requestId 1..80, package}` (`board`, `sid` = subject): đọc `await request.body()`; > 262144 byte → 413 `package_too_large`; sai schema → 422; `SessionClosed` → 409 `session_closed`. Route này dùng `require_hub("board", allow_closed=True)` để lần gửi lại cùng `requestId` sau khi tiết đã đóng vẫn nhận được kết quả cũ.
+  - `hub.schemas.PackageSection{boardSnapshotId 1..80, planSectionId: Optional[str], kcIds ≤8}`, `PackagePoll{itemId: Optional[str], question ≤300, options 2..6, counts (cùng độ dài, ≥0), total ≥0}`, `KnowledgePackage{schema: Literal["kp/2"], sessionId, planId, planVersion ≥1, snapshot: Dict[str, Any], sections ≤40, polls ≤24, usedItemIds ≤200}` (`extra="ignore"`). Validator: `snapshot.boardSnapshots` là list ≤40 và `snapshot.studentWork` là list (cùng điều kiện với `PUT /snapshot`).
+  - `hub.sessions.save_package(session_id, request_id, package) -> {"status": "saved", "packageId"}`: cùng `request_id` → trả kết quả cũ; tiết đã đóng/đã có gói với `request_id` khác → `SessionClosed`; `package.sessionId != session_id` → `ValueError`. Lưu gói, ghi `save_snapshot(<tên lớp, vd "12A1">, {**snapshot, "sessionId": session_id})` để luồng bài học cũ (lớp mới nhất) cũng thấy, đóng tiết, publish `{"type": "session_closed"}` lên `board:{sid}`.
+  - `hub.sessions.get_package(session_id) -> Optional[dict]`, `hub.sessions.session_class(session_id) -> dict` (`id, name, teacher_id`).
+  - Route `POST /sessions/{sid}/package {requestId 1..80, package}` (`require_hub("board", allow_closed=True)`, `sid` = subject): body > 262144 byte → 413 `package_too_large`; sai schema → 422; `SessionClosed` → 409 `session_closed`.
+  - Fixture `closed_session(client) -> dict` (`{"sessionId", "teacherHeaders"}`): ghép + claim `12a1`/`plan-demo-rlc`, gửi gói có 2 `boardSnapshots` (`b-rlc` latex `\vec{U} = \vec{U}_R + \vec{U}_L + \vec{U}_C`, `b-fr` latex rỗng), `reviewQuestions` 1 câu, `sections` nối `b-rlc → sec-rlc` (`physics-cong-vector-rlc`) và `b-fr → sec-friction`.
 
-- [ ] **Step 1: Viết test thất bại**:
-  - `test_package_saves_closes_and_writes_compat_snapshot`: ghép + claim, gửi gói hợp lệ 2 phần (`planSectionId` `sec-rlc` và `null`) → 200; DB tiết `closed`; `GET /api/v1/student/context/x?class_id=12A1` trả `snapshot.sessionId == sid` và 2 `boardSnapshots`.
-  - `test_package_retry_same_request_id_is_idempotent`: gửi lại cùng `requestId` → 200 cùng `packageId`; `knowledge_packages` có 1 dòng.
-  - `test_package_different_request_after_close_409`.
-  - `test_package_too_large_413`: `moments` có `label` dài làm body > 262144 byte → 413.
-  - `test_package_wrong_schema_422`: `schema: "kp/1"` → 422.
-  - `test_board_token_rejected_after_close_for_plan`: sau khi đóng, `/sessions/{sid}/plan` → 401.
+- [ ] **Step 1: Viết test thất bại**: `test_package_saves_closes_and_publishes_snapshot` (tiết `closed`; `GET /api/v1/student/context/x?class_id=12A1` có `snapshot.sessionId == sid`), `test_package_retry_same_request_id_is_idempotent`, `test_package_different_request_after_close_409`, `test_package_too_large_413`, `test_package_wrong_schema_422` (`schema: "kp/1"`, và `snapshot` thiếu `studentWork`), `test_board_token_rejected_after_close_for_plan`.
 - [ ] **Step 2: Chạy, xác nhận thất bại.**
 - [ ] **Step 3: Cài đặt.**
 - [ ] **Step 4: Chạy lại** `python -m pytest tests/test_hub_sessions.py tests/test_student_context.py -q` — Expected: pass.
-- [ ] **Step 5: Commit** `feat(hub): end-of-lesson knowledge package with idempotent retry and legacy snapshot`
+- [ ] **Step 5: Commit** `feat(hub): end-of-lesson knowledge package wrapping the v1 classroom snapshot`
 
 ---
 
-### Task 7: Bài học cho học sinh, chấm, sự kiện học tập, mastery
+### Task 7: Bài học Mode 2 theo tiết, câu hỏi từ giáo án, sự kiện học tập và mastery
+
+> Sửa sau khi gộp: đỉnh 3 dùng luồng bài học hội thoại có sẵn (`lesson_builder.py`, `routers/lesson.py`, `LessonChat`), chấm bằng `formula_check.check_formula`. Hub chỉ thêm: bài học theo tiết, câu hỏi lấy từ giáo án, ghi sự kiện học tập.
 
 **Files:**
-- Create: `hub/grading.py`, `hub/lessons.py`, `routers/hub_student.py`
-- Test: `tests/test_hub_lessons.py`
+- Create: `hub/grading.py`, `hub/learning.py`, `routers/hub_student.py`
+- Modify: `lesson_builder.py` (thêm `add_plan_questions`), `routers/lesson.py` (tham số `session_id`, chấm `choice:`, gọi `record_turn`), `hub/auth.py` (tách `claims_from_header`)
+- Test: `tests/test_hub_lessons.py`; `tests/test_lesson_router.py` và `tests/test_lesson_builder.py` cũ phải xanh
 
 **Interfaces:**
-- Consumes: `routers.online_tutor.verdict(answer, expected) -> Optional[bool]` (import, không sửa), gói và version giáo án, `bus`.
+- Consumes: `lesson_builder.build_lesson(snapshot, student_id) -> (plan, keys)`, `formula_check.check_formula`, `hub.sessions.get_package/session_class`, `hub.plans.get_plan`, `bus`.
 - Produces:
-  - `hub.grading.grade_answer(answer: str, expected: str) -> Optional[bool]` — `verdict(a, e)`; nếu `None` và cả hai có đúng một dấu `=` với vế trái chuẩn hóa (`online_tutor.normalize`) bằng nhau → `verdict(vế phải a, vế phải e)`; ngược lại `None`.
-  - `hub.grading.bkt_update(p: float, correct: bool) -> float` — hệ số ở Global Constraints (cùng công thức `online_tutor.py:105-110`).
-  - `hub.lessons.build_lesson(session_id: str, with_keys: bool = False) -> dict` → `{sessionId, title, subject, endedAt, keyPoints, scenes: [{sectionId, title, kcIds, recap: {moments, narration?}, practice: [Practice]}]}`. `Practice = {itemId, kind: "expression"|"choice"|"open", prompt, options?, sectionId, kcIds}`; khi `with_keys` thêm `answer`/`correct`. Nguồn câu luyện tập cho phần có `planSectionId`: mọi mục `problem` (có `answer` → `expression`, không → `open`) và `poll` có `correct` (→ `choice`) của phần đó trong đúng `planVersion` của gói. `reviewQuestions` của `notes` thành câu `open` id `rq-{i}` gắn vào cảnh cuối, `kcIds` = hợp các KC của gói.
-  - `hub.lessons.list_lessons(student_id) -> List[dict]` → `{sessionId, title, subject, endedAt, total, done}` các gói của lớp học sinh, `endedAt` giảm dần; `done` = số `itemId` khác nhau đã có sự kiện không phải `hint`.
-  - `hub.lessons.record_attempt(student_id, session_id, item_id, request_id, answer: Optional[str], hint: bool) -> dict` → `{kind, mastery: Dict[kcId, float], feedback}`. Kiểm gói thuộc lớp học sinh (khác → `KeyError`). `hint` → kind `hint`; `expression` → `grade_answer` (None → `unverified`); `choice` → so `int(answer) == correct`; `open` → `unverified`. Ghi một dòng `learning_events` mỗi KC của câu (câu không KC → một dòng `kc_id=""`), `answer` cắt 200. Cập nhật `mastery` chỉ khi `correct`/`incorrect` (prior 0,3). Cùng `request_id`: cùng `item_id`+`answer`+`hint` → trả kết quả đã lưu (dựng lại từ dòng event và mastery hiện tại); khác → `RequestConflict`. Sau khi ghi: publish `{"type": "metric_delta", "classId", "studentId", "sectionId"}` lên `teacher:{teacher_id}` của lớp.
-  - Feedback: `correct` → `"Chính xác."`, `incorrect` → `"Chưa đúng, xem lại phần ôn tập rồi thử lại."`, `unverified` → `"Đã ghi nhận câu trả lời; giáo viên sẽ xem."`, `hint` → gợi ý = `objective` của phần (hoặc `"Xem lại phần ôn tập."`).
-  - Routes (`student`): `GET /me/lessons`, `GET /me/lessons/{sid}` (404 nếu không thuộc lớp; không bao giờ `with_keys`), `POST /me/attempts {requestId, sessionId, itemId, answer?: str 1..200, hint: bool=False}` → 200 | 404 `not_found` | 409 `request_conflict` | 422 khi không có `answer` mà `hint` false.
+  - `hub.grading.bkt_update(p: float, correct: bool) -> float` (hệ số ở Global Constraints, cùng công thức `online_tutor.py`).
+  - `hub.grading.choice_key(index: int, option: str) -> str` → `f"choice:{index}:{option}"`; `hub.grading.grade_choice(answer: str, key: str) -> Optional[bool]` — nhận chữ cái (`"B"`, `"b"`), số thứ tự 1-based (`"2"`), hoặc đúng chữ của lựa chọn (bỏ khoảng trắng, không phân biệt hoa thường); không đọc được → `None`.
+  - `lesson_builder.add_plan_questions(plan, keys, sections: List[dict], plan_body: dict) -> None` — với mỗi cảnh có `id` nằm trong `sections` (`boardSnapshotId`) và `planSectionId` khác `None`: thêm câu `COMPUTE` cho mỗi `problem` có `answer` (prompt = `text`, key = `answer`) và câu `PREDICT` cho mỗi `poll` có `correct` (prompt = câu hỏi + các dòng `"A. …"`, key = `choice_key`). Id tiếp nối `{scene}:q{n}`. `problem` không có đáp án thành `EXPLAIN_BACK` không key.
+  - `hub.learning.session_lesson(student_id, session_id) -> Tuple[dict, dict]` — học sinh phải thuộc lớp của tiết (khác → `KeyError`), tiết phải có gói; dựng bằng `build_lesson({**snapshot, "sessionId": session_id}, student_id)` + `add_plan_questions(...)` theo đúng `planVersion` của gói.
+  - `hub.learning.record_turn(student_id, session_id, scene_id, question_id, kind, status, message, request_id) -> None` — tiết không có gói → không làm gì. Ánh xạ: `HINT` → `hint`; `ANSWER` + `VERIFIED_CORRECT` → `correct`; `ANSWER` + `VERIFIED_INCORRECT` → `incorrect`; `ANSWER` khác có nội dung → `unverified`; `CHAT` → bỏ qua. Mỗi KC của phần (từ `sections`) một dòng `learning_events` (không có KC → `kc_id=""`), `section_id` = `planSectionId`, `item_id` = `question_id`, `answer` cắt 200. Cập nhật `mastery` chỉ với `correct`/`incorrect` (prior 0,3). Trùng `(student_id, request_id, kc_id)` → bỏ qua. Xong publish `{"type": "metric_delta", "classId", "studentId", "sectionId"}` lên `teacher:{teacher_id}`.
+  - `hub.learning.session_questions(session_id) -> List[dict]` (`{questionId, sceneId, sectionId}`, dựng một lần bằng id học sinh giả, không key).
+  - `routers/lesson.py`: `GET /api/v1/student/lesson/{student_id}?session_id=` — có `session_id` thì **bắt buộc** token hub `student` (`hub.auth.claims_from_header(authorization, {"student"})`, kể cả chế độ local), `subject == student_id`, và dùng `session_lesson`; không có `session_id` giữ nguyên hành vi cũ. `POST .../turn`: key bắt đầu bằng `choice:` chấm bằng `grade_choice` thay cho `check_formula`; sau khi ghi lượt mới (không phải lượt lấy từ cache) gọi `record_turn` với `session_id = plan["session_id"]`.
+  - `hub.auth.claims_from_header(authorization: Optional[str], roles: Set[str]) -> dict` — phần lõi của `require_hub`, tách ra để `routers/lesson.py` dùng.
+  - Route `GET /api/v1/hub/me/lessons` (`student`) → `[{sessionId, title, subject, endedAt, total, done}]` các tiết đã có gói của lớp, `endedAt` giảm dần; `total = len(session_questions)`, `done` = số `item_id` khác nhau có sự kiện không phải `hint`.
 
-- [ ] **Step 1: Viết test thất bại** (fixture `closed_session(client)` đặt trong `conftest.py` vì Task 8, 10 dùng lại: ghép, claim `12a1`/`plan-demo-rlc`, gửi gói có phần `sec-rlc` và `notes.reviewQuestions` 1 câu, trả `sid`):
-  - `test_grade_answer_same_lhs`: `grade_answer("x = 2", "x = 2") is True`, `grade_answer("x = 3", "x = 2") is False`, `grade_answer("U = 100", "U = 100") is True`, `grade_answer("hello", "x = 2") is None`.
-  - `test_bkt_update_matches_online_tutor`: `round(bkt_update(0.3, True), 4) == round(<tính tay theo công thức>, 4)`; `bkt_update(0.3, False) < 0.3`.
-  - `test_student_sees_lesson_without_keys`: `/me/lessons` của `AN2345` có 1 bài; `/me/lessons/{sid}` không chứa `"answer"`/`"correct"` trong JSON; cảnh `sec-rlc` có câu `expression` và `choice`; có câu `rq-0`.
-  - `test_student_other_class_404`: `KHA234` (lớp `11a2`) → `/me/lessons/{sid}` 404.
-  - `test_attempt_correct_raises_mastery_and_notifies_teacher`: subscribe `teacher:gv-demo`; trả lời đúng câu `expression` → `kind == "correct"`, `mastery["physics-cong-vector-rlc"] > 0.3`; q nhận `metric_delta` có `sectionId == "sec-rlc"`.
-  - `test_hint_and_open_do_not_change_mastery`.
-  - `test_attempt_retry_idempotent_and_conflict`: cùng `requestId` cùng nội dung → cùng kết quả, 1 dòng event; khác `answer` → 409.
+- [ ] **Step 1: Viết test thất bại** (`tests/test_hub_lessons.py`, dùng `closed_session`):
+  - `test_bkt_update_matches_online_tutor`; `test_grade_choice` (`"B"`, `"2"`, `"50 v"` đúng với `choice:1:50 V`; `"A"` sai; `"?"` → `None`).
+  - `test_session_lesson_has_plan_questions_without_keys`: `GET /api/v1/student/lesson/s-an000001?session_id=<sid>` với token `AN2345` → cảnh `b-rlc` có câu prompt chứa `"U_R = 60 V"` và câu `PREDICT`; JSON không chứa `"U = 100"` và `"choice:"`.
+  - `test_session_lesson_requires_hub_token` (không header → 401) và `test_session_lesson_other_class_404` (`KHA234`).
+  - `test_turn_correct_records_event_mastery_and_notifies`: subscribe `teacher:gv-demo`; `ANSWER` `"U = 100"` → `VERIFIED_CORRECT`; có dòng `learning_events` `kind="correct"`, `section_id="sec-rlc"`, `kc_id="physics-cong-vector-rlc"`; `mastery > 0.3`; q nhận `metric_delta`.
+  - `test_poll_choice_graded` (`"B"` đúng; `"A"` sai).
+  - `test_hint_records_hint_without_mastery_change`.
+  - `test_cached_turn_does_not_double_record` (gửi lại cùng `request_id` → vẫn 1 dòng).
+  - `test_me_lessons_lists_closed_session` (`total >= 3`, `done == 0` rồi `1` sau một câu).
 - [ ] **Step 2: Chạy, xác nhận thất bại.**
 - [ ] **Step 3: Cài đặt.**
-- [ ] **Step 4: Chạy lại** `python -m pytest tests/test_hub_lessons.py tests/test_online_tutor.py -q` — Expected: pass.
-- [ ] **Step 5: Commit** `feat(hub): per-lesson practice for students, grading, learning events and BKT mastery`
+- [ ] **Step 4: Chạy lại** `python -m pytest tests/test_hub_lessons.py tests/test_lesson_router.py tests/test_lesson_builder.py -q` — Expected: pass.
+- [ ] **Step 5: Commit** `feat(hub): per-session Mode 2 lessons with plan questions, learning events and BKT mastery`
 
 ---
 
@@ -400,11 +403,11 @@ def test_board_role_is_valid_token_role():
 - Test: `tests/test_hub_metrics.py`
 
 **Interfaces:**
-- Consumes: bảng `learning_events`, `mastery`, `hub.lessons.build_lesson(..., with_keys=False)` để đếm tổng câu, `hub.roster`.
+- Consumes: bảng `learning_events`, `mastery`, `hub.learning.session_questions` để đếm tổng câu, `hub.grading.bkt_update`, `hub.roster`.
 - Produces:
   - `hub.metrics.mastery_at(student_id: str, kc_id: str, ts: float) -> float` — replay `bkt_update` trên event `correct`/`incorrect` có `created_at <= ts`, bắt đầu từ 0,3.
   - `hub.metrics.student_metrics(student_id: str) -> dict` → `{studentId, name, mastery: Dict[kcId, float], done, total, firstTryRate: Optional[float], hintsPerItem: float, minutes: float, lastActive: Optional[float], needsSupport: bool, supportReasons: List[str]}`. `firstTryRate` = tỉ lệ câu mà sự kiện đã chấm đầu tiên là `correct` (None nếu chưa có câu đã chấm). `supportReasons` ∈ `"low_mastery:<kc>"`, `"three_wrong_in_a_row"`.
-  - `hub.metrics.section_metrics(plan_id: str, section_id: str, class_id: str) -> dict` → `{sectionId, attemptedRate, firstTryRate, avgHints, weakestKc: Optional[str], needsSupport: List[studentId], wrongAnswers: List[{answer, count}]}` (≤5, gộp theo `online_tutor.normalize`, không kèm học sinh).
+  - `hub.metrics.section_metrics(plan_id: str, section_id: str, class_id: str) -> dict` → `{sectionId, attemptedRate, firstTryRate, avgHints, weakestKc: Optional[str], needsSupport: List[studentId], wrongAnswers: List[{answer, count}]}` (≤5, gộp theo `formula_check.latex_to_plain` rồi bỏ khoảng trắng, không kèm học sinh).
   - `hub.metrics.class_metrics(class_id: str) -> dict` → `{classId, kcs: List[{id,label}], students: List[student_metrics], heatmap: Dict[studentId, Dict[kcId, float]], progress: float}` (`progress` = tổng `done`/tổng `total` của lớp, 0 khi `total` 0). Nhãn KC lấy từ các giáo án của giáo viên.
   - Routes (`teacher`, sở hữu sai → 404): `GET /classes/{cid}/metrics`, `GET /classes/{cid}/students/{sid}/metrics`, `GET /plans/{pid}/sections/{secid}/metrics?classId=`, `GET /stream/teacher` (kênh `teacher:{subject}`).
 
@@ -491,13 +494,13 @@ def test_board_role_is_valid_token_role():
 - **Không** sửa `packages/types/src/index.ts` (đang bị cấm trong `HANDOFF.md`); app sẽ import `@socratic/types/src/hub` cho tới khi người dùng cho thêm dòng export vào barrel.
 
 **Interfaces:**
-- Produces (Zod + `z.infer`, tên schema kết thúc `Schema`): `PlanItemSchema` (discriminated union theo `type`), `PlanSectionSchema`, `LessonPlanBodySchema`, `PlanItemPublicSchema`/`LessonPlanBodyPublicSchema` (không có `answer`/`correct`), `LessonMomentSchema`, `KnowledgePackageSchema`, `PracticeSchema`, `StudentLessonSchema`, `AttemptResultSchema`, `StudentMetricsSchema`, `SectionMetricsSchema`, `ClassMetricsSchema`, `ParentReportSchema`, `HubStreamEventSchema` (union `paired` | `plan_updated` | `session_closed` | `metric_delta`), hằng `HUB_LIMITS = {sections: 12, itemsPerSection: 12, boardContext: 1000, pollMin: 2, pollMax: 6, packageBytes: 262144}`. Tên trường camelCase đúng như JSON hub trả về ở Task 3–10.
+- Produces (Zod + `z.infer`, tên schema kết thúc `Schema`): `PlanItemSchema` (discriminated union theo `type`), `PlanSectionSchema`, `LessonPlanBodySchema`, `PlanItemPublicSchema`/`LessonPlanBodyPublicSchema` (không có `answer`/`correct`), `KnowledgePackageSchema` (trường `snapshot` dùng `ClassroomSnapshotSchema` của `lesson.ts`), `StudentMetricsSchema`, `SectionMetricsSchema`, `ClassMetricsSchema`, `ParentReportSchema`, `HubStreamEventSchema` (union `paired` | `plan_updated` | `session_closed` | `metric_delta`), hằng `HUB_LIMITS = {sections: 12, itemsPerSection: 12, boardContext: 1000, pollMin: 2, pollMax: 6, packageBytes: 262144}`. Tên trường camelCase đúng như JSON hub trả về ở Task 3–10.
 
 - [ ] **Step 1: Viết test thất bại** (`hub.test.ts`):
   - parse thành công một giáo án 2 phần như dữ liệu mẫu Task 1;
   - từ chối poll 1 lựa chọn, 13 phần, `boardContext` 1001 ký tự;
   - `LessonPlanBodyPublicSchema.strict()` từ chối mục có `answer`;
-  - parse được một `KnowledgePackage` có `planSectionId: null`;
+  - parse được một `KnowledgePackage` có `planSectionId: null` và `snapshot` hợp lệ theo `ClassroomSnapshotSchema`;
   - `HubStreamEventSchema` parse `{type: 'metric_delta', classId, studentId, sectionId: null}`.
 - [ ] **Step 2: Chạy, xác nhận thất bại** — từ `socratic-monorepo`: `npx.cmd vitest run packages/types` → không tìm thấy module `../hub`.
 - [ ] **Step 3: Viết `hub.ts`**, cập nhật `INTERFACES.md` (bảng endpoint `/api/v1/hub/*` với vai trò và mã lỗi từ Task 2–10), `.env.example`, `HANDOFF.md`.

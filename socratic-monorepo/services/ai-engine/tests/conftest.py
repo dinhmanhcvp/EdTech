@@ -79,3 +79,47 @@ def teacher_headers():
 @pytest.fixture
 def student_headers():
     return lambda client, code="AN2345": _login(client, "/api/v1/hub/auth/student", {"loginCode": code})
+
+
+SNAPSHOT_V1 = {
+    "sessionId": "lesson-board-local", "className": "12A1", "lessonTitle": "RLC và ma sát", "updatedAt": "2026-10-29T10:00:00Z",
+    "boardSnapshots": [
+        {"id": "b-rlc", "kind": "BOARD", "title": "Cộng vector RLC", "subject": "PHYSICS",
+         "latex": "\vec{U} = \vec{U}_R + \vec{U}_L + \vec{U}_C", "templateId": "PHYS_RLC_PHASOR",
+         "note": "Cộng theo pha, không cộng độ lớn.", "parameters": {"omega": 200}},
+        {"id": "b-fr", "kind": "BOARD", "title": "Công của lực ma sát", "subject": "PHYSICS", "latex": "",
+         "templateId": "PHYS_INCLINED", "note": "Dấu âm của công ma sát.", "parameters": {}},
+    ],
+    "studentWork": [],
+    "reviewQuestions": ["Vì sao không cộng đại số độ lớn các điện áp?"],
+}
+
+
+def make_package(session_id, **over):
+    import copy
+    pkg = {"schema": "kp/2", "sessionId": session_id, "planId": "plan-demo-rlc", "planVersion": 1,
+           "snapshot": copy.deepcopy(SNAPSHOT_V1),
+           "sections": [{"boardSnapshotId": "b-rlc", "planSectionId": "sec-rlc", "kcIds": ["physics-cong-vector-rlc"]},
+                        {"boardSnapshotId": "b-fr", "planSectionId": "sec-friction", "kcIds": ["physics-cong-luc-ma-sat"]}],
+           "polls": [{"itemId": "it-rlc-q1", "question": "U bằng bao nhiêu?", "options": ["70 V", "50 V", "10 V"], "counts": [3, 9, 1], "total": 13}],
+           "usedItemIds": ["it-rlc-f1", "it-rlc-q1"]}
+    pkg.update(over)
+    return pkg
+
+
+def open_session(client, teacher_headers, class_id="12a1"):
+    """Ghép + claim; trả (session_id, header token bảng)."""
+    from hub.events import bus
+    p = client.post("/api/v1/hub/pairings", json={}).json()
+    q = bus.subscribe(f"pairing:{p['code']}")
+    r = client.post(f"/api/v1/hub/pairings/{p['code']}/claim", json={"classId": class_id, "planId": "plan-demo-rlc"}, headers=teacher_headers(client))
+    assert r.status_code == 200, r.text
+    return r.json()["sessionId"], {"Authorization": f"Bearer {q.get_nowait()['boardToken']}"}
+
+
+@pytest.fixture
+def closed_session(client, teacher_headers):
+    sid, board = open_session(client, teacher_headers)
+    r = client.post(f"/api/v1/hub/sessions/{sid}/package", json={"requestId": "req-1", "package": make_package(sid)}, headers=board)
+    assert r.status_code == 200, r.text
+    return {"sessionId": sid, "board": board, "teacherHeaders": teacher_headers(client)}

@@ -116,3 +116,63 @@ def test_plan_save_notifies_live_board(client, teacher_headers):
 
 def test_board_stream_requires_board_token(client, teacher_headers):
     assert client.get("/api/v1/hub/stream/board", headers=teacher_headers(client)).status_code == 403
+
+
+# ------------------------------------------------------------------ Task 6: gói tri thức cuối tiết
+from conftest import make_package, open_session  # noqa: E402
+
+
+def _post(client, sid, board, request_id="req-1", package=None):
+    return client.post(f"/api/v1/hub/sessions/{sid}/package", json={"requestId": request_id, "package": package or make_package(sid)}, headers=board)
+
+
+def test_package_saves_closes_and_publishes_snapshot(client, teacher_headers):
+    from hub.db import connect
+    from hub.events import bus
+    sid, board = open_session(client, teacher_headers)
+    q = bus.subscribe(f"board:{sid}")
+    r = _post(client, sid, board)
+    assert r.status_code == 200 and r.json()["packageId"].startswith("kp-")
+    with connect() as conn:
+        assert conn.execute("SELECT status FROM class_sessions WHERE id=?", (sid,)).fetchone()[0] == "closed"
+    assert q.get_nowait() == {"type": "session_closed"}
+    ctx = client.get("/api/v1/student/context/x?class_id=12A1").json()
+    assert ctx["snapshot"]["sessionId"] == sid and len(ctx["snapshot"]["boardSnapshots"]) == 2
+
+
+def test_package_retry_same_request_id_is_idempotent(client, teacher_headers):
+    from hub.db import connect
+    sid, board = open_session(client, teacher_headers)
+    first = _post(client, sid, board).json()
+    again = _post(client, sid, board)
+    assert again.status_code == 200 and again.json() == first
+    with connect() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM knowledge_packages WHERE session_id=?", (sid,)).fetchone()[0] == 1
+
+
+def test_package_different_request_after_close_409(client, teacher_headers):
+    sid, board = open_session(client, teacher_headers)
+    _post(client, sid, board)
+    assert _post(client, sid, board, request_id="req-2").status_code == 409
+
+
+def test_package_too_large_413(client, teacher_headers):
+    sid, board = open_session(client, teacher_headers)
+    pkg = make_package(sid)
+    pkg["snapshot"]["boardSnapshots"][0]["note"] = "x" * 270000
+    assert _post(client, sid, board, package=pkg).status_code == 413
+
+
+def test_package_wrong_schema_422(client, teacher_headers):
+    sid, board = open_session(client, teacher_headers)
+    assert _post(client, sid, board, package=make_package(sid, schema="kp/1")).status_code == 422
+    pkg = make_package(sid)
+    del pkg["snapshot"]["studentWork"]
+    assert _post(client, sid, board, package=pkg).status_code == 422
+    assert _post(client, sid, board, package=make_package("sess-other")).status_code == 422
+
+
+def test_board_token_rejected_after_close_for_plan(client, teacher_headers):
+    sid, board = open_session(client, teacher_headers)
+    _post(client, sid, board)
+    assert client.get(f"/api/v1/hub/sessions/{sid}/plan", headers=board).status_code == 401

@@ -1370,3 +1370,10 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 7. Lời giảng AI và tin nhắn gia sư hiện `$…$` thô → dùng `MathText` (KaTeX).
 - Kiểm tra cuối: backend 248, Teacher Board 1175, Student App 52, e2e 2 đều pass; `tsc` cả hai app exit 0. Đã xem trên trình duyệt: gửi bài, tiêu đề "Phần 1", gợi ý đúng chủ đề (2–2,5 s), sai → 0 điểm, đúng → +20 điểm, công thức/ghi chú/tiêu đề mở khóa, lời giảng có công thức dạng toán.
 - Chưa sửa / cần biết: (a) điểm trên màn hình học sinh về 0 khi tải lại (server vẫn nhớ câu đã giải); (b) một trong hai khóa Gemini đang bị Google từ chối (`auth_error`) và khóa OpenRouter cũng vậy; model `gemini-2.5-flash` trả 404 với khóa mới; (c) **nhiều test có sẵn gọi Gemini Vision thật bằng khóa của người dùng** (mỗi lần chạy toàn bộ pytest tốn hạn mức); (d) thanh ngữ cảnh lớp hiện `updatedAt` dạng ISO thô vì `formatUpdatedAt` chỉ hiểu số giây Unix; (e) Workbench ("Xem phân tích bài chữa") vẫn hiện công thức của bảng nên có thể xem trước đáp án câu "viết lại công thức"; (f) bảng Teacher Board không giữ nội dung khi tải lại trang nên phải gõ lại công thức trước khi gửi.
+
+
+# 2026-10-29 — Nhận phạm vi: các cạnh tam giác (hub) + đỉnh 3
+
+- Spec: `docs/superpowers/specs/2026-10-29-tam-giac-he-thong-design.md`; plan 1: `docs/superpowers/plans/2026-10-29-hub-backend.md`. Nhánh `feat/mode2-board-lesson` (gộp với Mode 2 của teammate: hub dựng trên snapshot v1, `lesson_builder`, `routers/lesson.py`).
+- ĐANG SỬA (phiên này): `services/ai-engine/hub/**`, `services/ai-engine/routers/hub_*.py`, `services/ai-engine/tests/test_hub_*.py`, `tests/conftest.py` (thêm fixture), `security.py` (vai trò `board`), `main.py` (include router hub), `routers/lesson_notes.py` (trường `teacher_context`), `packages/types/src/hub.ts`; sau đó `apps/student-app/**` (plan 2).
+- KHÔNG sửa: `apps/teacher-board/**`, `apps/teacher-portal/**` (teammate đang làm đỉnh 2 và một phần đỉnh 1). Hợp đồng chung: `packages/types/src/hub.ts` + mục "Hub v1" trong `.ai/INTERFACES.md`.

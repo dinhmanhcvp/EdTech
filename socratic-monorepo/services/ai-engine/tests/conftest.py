@@ -28,3 +28,38 @@ def _isolate_env_file_and_environ(tmp_path, monkeypatch):
             del os.environ[k]
     for k, v in saved.items():
         os.environ[k] = v
+
+
+# ------------------------------------------------------------------ hub: DB tạm cho từng bài kiểm thử
+_HUB_RESETS = (("hub.auth", "_FAILS"), ("hub.suggest", "_PENDING"))
+
+
+@pytest.fixture
+def hub_db(tmp_path, monkeypatch):
+    """Hub và student_context cùng ghi vào tệp SQLite tạm của test này (đã cách ly ở fixture autouse), có sẵn dữ liệu mẫu (PIN 2468)."""
+    import importlib
+    import importlib.util
+
+    import student_context
+
+    monkeypatch.setenv("HUB_DEMO_PIN", "2468")
+    path = student_context.DB_PATH
+    from hub import db
+
+    db.init_db()
+    for mod, attr in _HUB_RESETS:
+        if importlib.util.find_spec(mod):
+            state = getattr(importlib.import_module(mod), attr, None)
+            if state is not None:
+                state.clear()
+    if importlib.util.find_spec("hub.events"):
+        importlib.import_module("hub.events").bus.reset()
+    return path
+
+
+@pytest.fixture
+def client(hub_db):
+    from fastapi.testclient import TestClient
+    from main import app
+
+    return TestClient(app)

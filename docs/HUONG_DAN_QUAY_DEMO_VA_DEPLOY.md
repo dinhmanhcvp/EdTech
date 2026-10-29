@@ -4,6 +4,25 @@ Các cảnh dưới đây là **bản ghi thao tác thật trên phần mềm th
 
 Khi quay: mở link của cảnh trên đúng thiết bị → màn hình đứng ở khung đầu (trông như phần mềm đang chờ) → diễn viên vào vị trí → người điều khiển bấm phím ẩn → cảnh chạy, diễn viên cầm bút/ngón tay diễn theo. **Mỗi link chỉ có một cảnh, không tự chạy sang cảnh khác.** Hết cảnh, màn giữ khung cuối; bấm phím lần nữa là quay lại shot từ đầu.
 
+## 0. Ngày quay: chỉ cần mở link
+
+Tất cả cảnh, **kể cả cảnh của trang quản lý (đỉnh 1) và app học sinh, phụ huynh (đỉnh 3)**, đều nằm trên link của bảng: mở `<BANG>/demo?scene=<mã>` trên đúng thiết bị là xong. Hai link Vercel còn lại chỉ cần khi muốn mở phần mềm thật, không cần để phát video.
+
+| Thiết bị | Cảnh |
+|---|---|
+| Bảng | 06-07, 08, 11, 12b, 13, 13A, 13B |
+| Laptop (trang quản lý) | 12a |
+| Máy tính bảng (cầm ngang) | 14a, 14b |
+| Điện thoại (cầm dọc) | 13-phone, 15, 16, 17, 18, 26 |
+
+Việc cần làm trước giờ quay:
+
+- [ ] Thiết bị có mạng (video tải từ Vercel). Mở từng link và phát thử một lần để máy tải sẵn, lúc quay không khựng.
+- [ ] Bảng, laptop: bấm `F` để toàn màn hình (ẩn thanh địa chỉ). Điện thoại, máy tính bảng: chạm góc dưới trái một lần. Dùng Chrome Android; iPhone không vào toàn màn hình được.
+- [ ] Độ sáng màn hình theo kịch bản (bảng 60–65%, điện thoại khoảng 55%).
+- [ ] Mỗi cảnh trước khi hô diễn: màn đang đứng ở khung đầu; bấm phát đúng lúc đạo diễn ra hiệu. Quay lại shot: bấm phát lần nữa sau khi cảnh hết, hoặc `R` để về khung đầu và chờ.
+- [ ] Cảnh 10 không có ở đây: DIT ghi màn hình trực tiếp như cũ.
+
 ## 1. Điều khiển (không có nút nào trên màn hình)
 
 | Thao tác | Bàn phím / bút trình chiếu | Cảm ứng |

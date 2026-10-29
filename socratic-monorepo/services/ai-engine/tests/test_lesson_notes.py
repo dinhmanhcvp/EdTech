@@ -89,3 +89,11 @@ def test_slow_model_times_out_instead_of_hanging(client, monkeypatch):
     monkeypatch.setattr(ln, "_llm_json", lambda *a, **k: (time.sleep(1), None)[1])
     r = client.post("/api/v1/canvas/lesson-notes", json=BODY).json()
     assert r["notes"] is None and "quá lâu" in r["note"]
+
+
+def test_teacher_context_in_prompt():
+    from routers.lesson_notes import LessonNotesRequest, build_user_prompt
+    base = {"title": "T", "sections": [{"title": "Phần 1", "moments": [{"kind": "formula", "label": "y = x"}]}]}
+    with_ctx = build_user_prompt(LessonNotesRequest.model_validate({**base, "teacher_context": "Lớp hay nhầm dấu"}))
+    assert "Lớp hay nhầm dấu" in with_ctx and "GHI_CHÚ_GIÁO_VIÊN" in with_ctx
+    assert "GHI_CHÚ_GIÁO_VIÊN" not in build_user_prompt(LessonNotesRequest.model_validate(base))

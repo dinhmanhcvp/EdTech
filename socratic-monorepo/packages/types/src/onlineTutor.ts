@@ -24,3 +24,5 @@ export const OnlineTutorAttemptResultSchema = z.object({
 
 export type OnlineTutorProgress = z.infer<typeof OnlineTutorProgressSchema>;
 export type OnlineTutorAttemptResult = z.infer<typeof OnlineTutorAttemptResultSchema>;
+
+export * from './lesson';

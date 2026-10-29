@@ -27,6 +27,7 @@ import {
   CellOsmosisPressure,
 } from './VisualDebugWidgets';
 import {StudentBoardWorkbench} from './StudentBoardWorkbench';
+import {LessonChat} from './LessonChat';
 import {evaluateOnline, fetchTutorProgress} from '../../utils/onlineEvaluation';
 import {createTutorDraftStore} from '../../utils/tutorDrafts';
 
@@ -34,7 +35,8 @@ export type TutorInteractionMode =
   | 'SOCRATIC_SOLVER'
   | 'HOME_SANDBOX'
   | 'SPACED_REVIEWS'
-  | 'PARENTPULSE_SYNC';
+  | 'PARENTPULSE_SYNC'
+  | 'BOARD_LESSON';
 
 export interface AfterSchoolTutorProps {
   curriculumLevel?: 'THPT_STANDARD' | 'OLYMPIAD_ADVANCED';
@@ -358,10 +360,26 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
           <ShieldCheck className="w-3.5 h-3.5" />
           <span>4. ParentPulse & Đồng bộ Ma trận</span>
         </button>
+
+        <button
+          type="button"
+          data-testid="mode-board-lesson"
+          onClick={() => setActiveMode('BOARD_LESSON')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
+            activeMode === 'BOARD_LESSON'
+              ? 'bg-white text-amber-700 shadow-xs border border-[#E6E4DD]'
+              : 'text-stone-600 hover:text-stone-900'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>5. Bài học từ bảng hôm nay</span>
+        </button>
       </div>
 
       {/* Main Content Body */}
       <div className="p-6 flex-1 flex flex-col gap-6">
+        {activeMode === 'BOARD_LESSON' && <LessonChat />}
+
         {/* MODE 1: SOCRATIC SOLVER */}
         {activeMode === 'SOCRATIC_SOLVER' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

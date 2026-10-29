@@ -37,7 +37,7 @@ def verify_token(token: str) -> dict[str, str]:
         supplied = base64.urlsafe_b64decode(encoded_sig + "=" * (-len(encoded_sig) % 4))
         if version != "v1" or not hmac.compare_digest(expected, supplied) or int(exp) < int(time.time()):
             raise ValueError
-        if role not in {"student", "teacher", "admin"} or not subject:
+        if role not in {"student", "teacher", "admin", "board"} or not subject:
             raise ValueError
         return {"role": role, "subject": subject, "exp": exp}
     except Exception as exc:

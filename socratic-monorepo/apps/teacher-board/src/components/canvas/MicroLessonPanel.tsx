@@ -1,10 +1,11 @@
 'use client';
 
 import React, {useMemo, useState} from 'react';
-import {BookOpen, Copy, Download, Sparkles, X} from 'lucide-react';
+import {BookOpen, Copy, Download, Send, Sparkles, X} from 'lucide-react';
 import type {BoardJournalData} from '../../utils/vectorJournal';
 import {buildMicroLesson, fmtClock, lessonMindMap, lessonToMarkdown, type LessonNotes, type MomentKind} from '../../utils/microLesson';
 import {askLessonNotes} from '../../utils/lessonNotes';
+import {buildClassroomSnapshot, publishClassroomSnapshot} from '../../utils/classroomSnapshot';
 import {MathView} from '../common/MathView';
 import {MathText} from '../ui/MathText';
 
@@ -13,6 +14,8 @@ interface Props {
   getJournal: () => BoardJournalData;
   /** thay được khi kiểm thử */
   askFn?: typeof askLessonNotes;
+  /** gửi dàn bài sang học sinh (Mode 2); thay được khi kiểm thử */
+  publishFn?: typeof publishClassroomSnapshot;
 }
 
 const ICON: Record<MomentKind, string> = {formula: 'ƒ', plane: '△', solid: '⬡', sim: '▶'};
@@ -23,13 +26,14 @@ const COLOR: Record<MomentKind, string> = {formula: '#2563EB', plane: '#059669',
  * tải về Markdown để gửi học sinh. Dàn bài và sơ đồ chỉ liệt kê đúng những gì có thật trong nhật ký; lời giảng chỉ có khi người dùng
  * bấm "AI viết lời giảng" (AI diễn đạt lại dàn bài, không có AI thì không bịa).
  */
-export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLessonNotes}) => {
+export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLessonNotes, publishFn = publishClassroomSnapshot}) => {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<'outline' | 'map'>('outline');
   const [title, setTitle] = useState('');
   const [note, setNote] = useState<string | null>(null);
   const [notes, setNotes] = useState<LessonNotes | null>(null);
   const [ai, setAi] = useState<{state: 'idle' | 'loading' | 'error'; msg?: string; source?: string}>({state: 'idle'});
+  const [pub, setPub] = useState<{state: 'idle' | 'loading' | 'ok' | 'error'; msg?: string}>({state: 'idle'});
 
   // lấy bản ghi mới mỗi lần mở (bảng vẫn đang ghi tiếp)
   const lesson = useMemo(() => (open ? buildMicroLesson(getJournal()) : null), [open, getJournal]);
@@ -44,6 +48,7 @@ export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLesson
           setNote(null);
           setNotes(null);
           setAi({state: 'idle'});
+          setPub({state: 'idle'});
           setOpen(true);
         }}
         title="Tóm tắt tiết học thành vi bài giảng"
@@ -78,6 +83,16 @@ export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLesson
       }
     } catch (e) {
       setAi({state: 'error', msg: e instanceof Error ? e.message : 'Không gọi được AI.'});
+    }
+  };
+  const publish = async () => {
+    if (!lesson) return;
+    setPub({state: 'loading'});
+    try {
+      const r = await publishFn(buildClassroomSnapshot({...lesson, title: finalTitle}, notes));
+      setPub({state: 'ok', msg: `Đã gửi ${r.sections} phần cho học sinh. Các em mở "Bài học từ bảng hôm nay" trong ứng dụng học sinh.`});
+    } catch (e) {
+      setPub({state: 'error', msg: e instanceof Error ? e.message : 'Không gửi được cho học sinh.'});
     }
   };
   const copy = async () => {
@@ -238,6 +253,16 @@ export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLesson
                 <Download className="h-3.5 w-3.5" />
                 Tải về (Markdown)
               </button>
+              <button
+                data-testid="micro-lesson-publish"
+                disabled={pub.state === 'loading'}
+                onClick={() => void publish()}
+                title="Gửi bài học này sang ứng dụng học sinh (Mode 2)"
+                className="flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
+              >
+                <Send className="h-3.5 w-3.5" />
+                {pub.state === 'loading' ? 'Đang gửi…' : 'Gửi cho học sinh'}
+              </button>
               <button data-testid="micro-lesson-copy" onClick={() => void copy()} className="flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50">
                 <Copy className="h-3.5 w-3.5" />
                 Sao chép
@@ -250,6 +275,16 @@ export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLesson
               {notes && ai.source && (
                 <span data-testid="micro-lesson-ai-source" className="text-[11px] text-stone-500">
                   Lời giảng do AI viết từ dàn bài; hãy đọc lại trước khi dùng.
+                </span>
+              )}
+              {pub.state === 'ok' && (
+                <span data-testid="micro-lesson-published" role="status" className="text-[11px] text-emerald-700">
+                  {pub.msg}
+                </span>
+              )}
+              {pub.state === 'error' && (
+                <span data-testid="micro-lesson-publish-error" role="alert" className="text-[11px] text-rose-600">
+                  {pub.msg}
                 </span>
               )}
               {note && (

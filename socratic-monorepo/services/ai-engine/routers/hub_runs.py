@@ -1,11 +1,11 @@
 """Lượt giao bài: bảng (X-Board-Token của tiết console), giáo viên (phiên console / token hub), học sinh (token hub)."""
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from hub import roster
-from hub.assignments import bridge, runs, store
+from hub.assignments import bridge, runs, store, submissions
 from hub.assignments.schema import public_body
 from hub.auth import require_hub
 
@@ -149,4 +149,44 @@ def student_run(code: str, claims: dict = Depends(student)):
     if run["phase"] == "closed":
         raise HTTPException(status_code=410, detail="run_closed")
     a = store.get(run["assignmentId"])
-    return {"runId": run["id"], "phase": run["phase"], "dueAt": run["dueAt"], **_assignment_public(a), "mine": {}}
+    return {"runId": run["id"], "phase": run["phase"], "dueAt": run["dueAt"], **_assignment_public(a),
+            "mine": submissions.mine(run, claims["subject"])}
+
+
+class AnswerRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    questionId: str = Field(min_length=1, max_length=40)
+    version: int = Field(ge=1)
+    requestId: str = Field(min_length=1, max_length=80)
+    choice: Optional[int] = Field(default=None, ge=0, le=5)
+    text: Optional[str] = Field(default=None, max_length=200)
+
+
+def _student_run(run_id: str, claims: dict) -> Dict[str, Any]:
+    try:
+        run = runs.get(run_id)
+        runs.check_student(run, claims["subject"])
+    except KeyError:
+        raise _not_found()
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="not_in_class")
+    return run
+
+
+def _submission_errors(fn):
+    try:
+        return fn()
+    except PermissionError as exc:
+        raise HTTPException(status_code=410, detail=str(exc))
+    except submissions.RequestConflict:
+        raise HTTPException(status_code=409, detail="request_conflict")
+    except KeyError:
+        raise _not_found()
+    except ValueError as exc:
+        raise HTTPException(status_code=413 if str(exc) == "too_large" else 422, detail=str(exc))
+
+
+@router.post("/runs/{run_id}/answers")
+def student_answer(run_id: str, req: AnswerRequest, claims: dict = Depends(student)):
+    run = _student_run(run_id, claims)
+    return _submission_errors(lambda: submissions.answer(run, claims["subject"], req.questionId, req.version, req.requestId, req.choice, req.text))

@@ -41,7 +41,14 @@ def submission_file(submission_id: str, authorization: Optional[str] = Header(de
     allowed = sub.get("photo_path") and (
         (who["kind"] == "board" and run["periodId"] == who["period"]["id"])
         or (who["kind"] == "teacher" and run["teacherId"] == who["subject"])
-        or (who["kind"] == "student" and sub["student_id"] == who["subject"]))
+        or (who["kind"] == "student" and (sub["student_id"] == who["subject"] or _class_example(who["subject"], submission_id))))
     if not allowed:
         raise HTTPException(status_code=404, detail="not_found")
     return _jpeg(files.read("submissions", sub["photo_path"]))
+
+
+def _class_example(student_id: str, submission_id: str) -> bool:
+    """Bài chữa mẫu (giáo viên đã lưu phần chữa) xem được bởi học sinh cùng lớp."""
+    from hub.assignments import metrics as asg_metrics
+
+    return asg_metrics.is_class_example(student_id, submission_id)

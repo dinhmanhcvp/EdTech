@@ -44,6 +44,12 @@ def _kc_labels(student_id: str) -> Dict[str, str]:
         for section in plans.get_plan(p["id"])["body"]["sections"]:
             for kc in section.get("kcs", []):
                 labels.setdefault(kc["id"], kc["label"])
+    from hub.assignments import store as assignment_store  # KC của bài tập: phụ huynh thấy nhãn, không thấy mã
+
+    for a in assignment_store.list_for(teacher):
+        for q in (assignment_store.get(a["id"])["body"] or {}).get("questions", []):
+            for kc in q.get("kcs", []):
+                labels.setdefault(kc["id"], kc["label"])
     return labels
 
 
@@ -73,6 +79,20 @@ def _tips(days: int, needs: List[str]) -> List[str]:
     return tips[:3]
 
 
+def _assignment_stats(student_id: str, start: float, end: float) -> Dict[str, int]:
+    """Bài tập trong tuần: câu đã chấm (đúng/tổng, theo lần nộp gần nhất mỗi câu) và số lượt giao nộp kịp (trong tiết hoặc trước hạn)."""
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT s.run_id, s.question_id, s.score, s.status, s.created_at, r.due_at, s.phase FROM submissions s "
+            "JOIN assignment_runs r ON r.id = s.run_id WHERE s.student_id=? AND s.status != 'draft' AND s.created_at >= ? AND s.created_at < ? "
+            "ORDER BY s.created_at", (student_id, start, end)).fetchall()
+    latest = {(r["run_id"], r["question_id"]): r for r in rows}
+    scored = [r for r in latest.values() if r["status"] in ("graded", "teacher_confirmed") and r["score"] is not None]
+    run_ids = {r["run_id"] for r in rows}
+    on_time = {r["run_id"] for r in rows if r["phase"] == "in_class" or (r["due_at"] and r["created_at"] <= r["due_at"])}
+    return {"correct": sum(1 for r in scored if r["score"] >= 0.5), "total": len(scored), "runs": len(run_ids), "onTime": len(on_time)}
+
+
 def build_report(student_id: str, week: str, use_ai: bool = True, gemini_key: str = "", openrouter_key: str = "") -> Dict:
     start, end = week_bounds(week)
     turns, days, minutes = _activity(student_id, week)
@@ -89,7 +109,11 @@ def build_report(student_id: str, week: str, use_ai: bool = True, gemini_key: st
     done = len({t["item_id"] for t in turns if t["kind"] != "hint"})
     report = {"week": week, "lessons": lessons, "activeDays": days, "minutes": minutes, "done": done, "improved": improved,
               "needsHelp": needs, "tips": _tips(days, needs), "comment": _template_comment(days, minutes, done, improved, needs),
-              "source": "template", "vsLastWeek": {"minutesDelta": round(minutes - prev_minutes, 1), "activeDaysDelta": days - prev_days}}
+              "source": "template", "vsLastWeek": {"minutesDelta": round(minutes - prev_minutes, 1), "activeDaysDelta": days - prev_days},
+              "assignments": _assignment_stats(student_id, start, end)}
+    if report["assignments"]["total"]:
+        a = report["assignments"]
+        report["comment"] += f" Bài tập: {a['correct']}/{a['total']} câu đúng; nộp đúng hạn {a['onTime']}/{a['runs']} lượt."
     if use_ai and days:
         facts = {k: report[k] for k in ("lessons", "activeDays", "minutes", "done", "improved", "needsHelp", "vsLastWeek")}
         try:

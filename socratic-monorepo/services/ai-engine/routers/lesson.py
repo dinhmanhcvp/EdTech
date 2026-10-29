@@ -11,6 +11,9 @@ import lesson_llm
 import lesson_store as ls
 import student_context as store
 from hub import learning as hub_learning
+from hub.assignments import metrics as asg_metrics
+from hub.assignments import runs as asg_runs
+from hub.assignments import submissions as asg_submissions
 from hub.auth import claims_from_header
 from hub.grading import answer_text, grade_choice
 from lesson_builder import build_lesson, lock_question_ids, public_view, title_for_student
@@ -57,10 +60,18 @@ def _stream(result: Dict[str, Any]) -> StreamingResponse:
 
 
 @router.get("/{student_id}")
-def get_lesson(student_id: str, class_id: str = "12A1", session_id: Optional[str] = None,
+def get_lesson(student_id: str, class_id: str = "12A1", session_id: Optional[str] = None, run_id: Optional[str] = None,
                authorization: Optional[str] = Header(default=None), claims: dict = Depends(require_roles({"student", "admin"}))):
     _check_subject(student_id, claims)
-    if session_id:
+    if run_id:  # câu bài tập giao trong tiết mà em làm sai/chưa làm
+        _check_hub_student(student_id, authorization)
+        try:
+            run = asg_runs.get(run_id)
+            asg_runs.check_student(run, student_id)
+            plan, keys = asg_metrics.run_lesson(student_id, run)
+        except (KeyError, PermissionError):
+            raise HTTPException(404, "not_found")
+    elif session_id:
         _check_hub_student(student_id, authorization)
         try:
             plan, keys = hub_learning.session_lesson(student_id, session_id)
@@ -83,7 +94,8 @@ def lesson_turn(student_id: str, req: TurnRequest, authorization: Optional[str] 
         ls.init_lesson_tables(conn)
         # đọc trước BEGIN IMMEDIATE: hub mở kết nối riêng (có thể tạo schema) nên không được chờ khóa ghi của kết nối này
         loaded = ls.load_lesson(conn, student_id, req.lesson_id)
-        hub_session = hub_learning.is_hub_lesson(loaded[0]) if loaded else False
+        run_lesson = bool(loaded) and str(loaded[0].get("lesson_id", "")).startswith("hub:run:")
+        hub_session = run_lesson or (hub_learning.is_hub_lesson(loaded[0]) if loaded else False)
         if hub_session:
             _check_hub_student(student_id, authorization)
         conn.execute("BEGIN IMMEDIATE")
@@ -149,7 +161,9 @@ def lesson_turn(student_id: str, req: TurnRequest, authorization: Optional[str] 
         errors = [e["diagnosis"] for e in store.list_errors(student_id, 12) if str(e.get("subject", "")).upper() == scene["subject"]][:3]
         history = ls.recent_turns(conn, student_id, req.lesson_id, 2)
         conn.commit()
-    if hub_session:  # tiết có giáo án: lượt này thành sự kiện học tập → mastery → chỉ số realtime cho giáo viên
+    if run_lesson:  # câu bài tập: lượt của gia sư thành sự kiện học tập của lượt giao
+        asg_submissions.record_tutor_turn(student_id, plan["session_id"], scene["id"], req.kind, status, message, req.request_id)
+    elif hub_session:  # tiết có giáo án: lượt này thành sự kiện học tập → mastery → chỉ số realtime cho giáo viên
         repeat_correct = status == "VERIFIED_CORRECT" and points == 0  # câu đã giải từ trước: không cộng thêm bằng chứng BKT
         hub_learning.record_turn(student_id, plan["session_id"], scene["id"], question["id"], req.kind, status, message,
                                  req.request_id, update_mastery=not repeat_correct)

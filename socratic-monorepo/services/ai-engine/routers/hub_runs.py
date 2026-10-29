@@ -309,3 +309,48 @@ def board_stream(ctx: dict = Depends(bridge.require_board)):
     from hub.events import sse_response
 
     return sse_response(f"cboard:{ctx['period']['id']}")
+
+
+# ------------------------------------------------------------------ gói cho học sinh (đỉnh 3) và chỉ số lượt giao (đỉnh 1)
+@router.get("/me/assignments")
+def my_assignments(claims: dict = Depends(student)):
+    from hub.assignments import metrics as asg_metrics
+
+    return {"assignments": asg_metrics.my_assignments(claims["subject"])}
+
+
+def _photo_url(submission_id: str, has_photo: bool) -> Optional[str]:
+    return f"/api/v1/hub/files/submission/{submission_id}" if has_photo else None
+
+
+@router.get("/me/submissions/{submission_id}")
+def my_submission(submission_id: str, claims: dict = Depends(student)):
+    try:
+        sub = submissions.get(submission_id)
+    except KeyError:
+        raise _not_found()
+    if sub["student_id"] != claims["subject"] or sub["status"] == "draft":
+        raise _not_found()
+    return {"submissionId": sub["id"], "questionId": sub["question_id"], "status": sub["status"], "score": sub["score"],
+            "confirmed": sub["confirmed"], "lines": (sub["ocr"] or {}).get("lines"), "grade": sub["grade"], "correction": sub["correction"],
+            "photo": _photo_url(sub["id"], bool(sub["photo_path"]))}
+
+
+@router.get("/me/examples/{submission_id}")
+def class_example(submission_id: str, claims: dict = Depends(student)):
+    from hub.assignments import metrics as asg_metrics
+
+    try:
+        if not asg_metrics.is_class_example(claims["subject"], submission_id):
+            raise KeyError(submission_id)
+        detail = submissions.board_detail(submission_id)
+    except KeyError:
+        raise _not_found()
+    return {**detail, "photo": _photo_url(submission_id, detail["hasPhoto"])}
+
+
+@router.get("/runs/{run_id}/metrics")
+def run_metrics(run_id: str, claims: dict = Depends(teacher)):
+    from hub.assignments import metrics as asg_metrics
+
+    return asg_metrics.run_metrics(_teacher_run(claims, run_id))

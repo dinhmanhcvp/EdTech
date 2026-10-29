@@ -346,3 +346,41 @@ def save_correction(submission_id: str, strokes: List[Dict[str, Any]]) -> Dict[s
             raise ValueError("bad_stroke")
     sub = update(submission_id, correction={"strokes": strokes, "savedAt": clock.now()})
     return {"submissionId": sub["id"], "saved": True}
+
+
+# ------------------------------------------------------------------ gia sư Socratic trên câu bài tập (bài học ?run_id=)
+def record_tutor_turn(student_id: str, run_id: str, question_id: str, kind: str, status: str, message: str, request_id: str) -> None:
+    """Lượt của gia sư trên một câu bài tập → sự kiện học tập (không tạo bài nộp). Cùng ánh xạ với hub.learning.record_turn."""
+    if kind == "CHAT":
+        return
+    if kind == "HINT":
+        event_kind = "hint"
+    elif status == "VERIFIED_CORRECT":
+        event_kind = "correct"
+    elif status == "VERIFIED_INCORRECT":
+        event_kind = "incorrect"
+    elif message.strip():
+        event_kind = "unverified"
+    else:
+        return
+    from hub.assignments import runs
+
+    run = runs.get(run_id)
+    q = next((q for q in store.get(run["assignmentId"])["body"]["questions"] if q["id"] == question_id), None)
+    if q is None:
+        return
+    item, now = f"{run_id}:{question_id}", clock.now()
+    with LOCK, connect() as conn:
+        solved = conn.execute("SELECT 1 FROM learning_events WHERE student_id=? AND item_id=? AND kind='correct' LIMIT 1",
+                              (student_id, item)).fetchone() is not None
+        for kc in [k["id"] for k in q.get("kcs") or []] or [""]:
+            cur = conn.execute("INSERT OR IGNORE INTO learning_events VALUES (?,?,?,?,?,?,?,?,?,?)",
+                               (new_id("ev"), student_id, run_id, f"asg:{run['assignmentId']}", kc, item, event_kind,
+                                message.strip()[:200] or None, f"tutor:{request_id}", now))
+            if cur.rowcount and kc and event_kind in ("correct", "incorrect") and not (event_kind == "correct" and solved):
+                row = conn.execute("SELECT p_known FROM mastery WHERE student_id=? AND kc_id=?", (student_id, kc)).fetchone()
+                p = bkt_update(row["p_known"] if row else PRIOR, event_kind == "correct")
+                conn.execute("INSERT INTO mastery VALUES (?,?,?,?) ON CONFLICT(student_id, kc_id) DO UPDATE SET p_known=excluded.p_known, "
+                             "updated_at=excluded.updated_at", (student_id, kc, p, now))
+    bus.publish(f"teacher:{run['teacherId']}", {"type": "metric_delta", "classId": run["classId"], "studentId": student_id,
+                                                "sectionId": f"asg:{run['assignmentId']}"})

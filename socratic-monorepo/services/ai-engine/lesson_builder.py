@@ -75,6 +75,26 @@ def add_plan_questions(plan: Dict[str, Any], keys: Dict[str, str], sections: Lis
             scene["questions"].append(q)
 
 
+def add_run_questions(plan: Dict[str, Any], keys: Dict[str, str], run_body: Dict[str, Any], question_ids: List[str]) -> None:
+    """Bài tập giao trong tiết (hub): mỗi câu em làm sai/chưa làm thành một cảnh một câu hỏi. Trắc nghiệm → PREDICT (key `choice:`),
+    đáp số gõ / tự luận có đáp số → COMPUTE. Đáp án chỉ vào `keys`."""
+    from hub.grading import choice_key  # local import: lesson_builder stays usable without the hub
+
+    subject = run_body.get("subject") if run_body.get("subject") in SUBJECTS else "MATH"
+    for item in run_body.get("questions", []):
+        if item["id"] not in question_ids or not item.get("answer"):
+            continue
+        if item["type"] == "choice":
+            letters = "\n".join(f"{chr(65 + i)}. {o}" for i, o in enumerate(item.get("options") or []))
+            q = _question(item["id"], 1, "PREDICT", f"{item['text']}\n{letters}")
+            keys[q["id"]] = choice_key(int(item["answer"]), item["options"])
+        else:
+            q = _question(item["id"], 1, "COMPUTE", item["text"])
+            keys[q["id"]] = item["answer"]
+        plan["scenes"].append({"id": item["id"], "title": item.get("label") or item["id"], "subject": subject, "latex": "",
+                               "concept": "", "questions": [q]})
+
+
 def title_for_student(scene: Dict[str, Any], index: int, keys: Dict[str, str], solved: set) -> str:
     """A section title can be the formula itself (Teacher Board names a section after its first moment);
     while the scene is locked such a title is replaced by a neutral one."""

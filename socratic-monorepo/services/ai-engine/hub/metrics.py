@@ -80,7 +80,9 @@ def _class_sessions(class_id: str) -> List[str]:
 
 
 def _class_total(class_id: str) -> int:
-    return sum(len(learning.session_questions(sid)) for sid in _class_sessions(class_id))
+    from hub.assignments.metrics import class_question_total  # câu của các lượt giao bài tập cũng tính vào tổng
+
+    return sum(len(learning.session_questions(sid)) for sid in _class_sessions(class_id)) + class_question_total(class_id)
 
 
 def student_metrics(student_id: str, total: Optional[int] = None) -> Dict:

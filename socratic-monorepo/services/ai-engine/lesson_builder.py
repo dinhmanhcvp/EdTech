@@ -1,7 +1,7 @@
 """Rule-based lesson builder: classroom snapshot -> public lesson plan + server-only answer keys."""
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 SUBJECTS = {"MATH", "PHYSICS", "CHEMISTRY", "BIOLOGY"}
 
@@ -41,6 +41,31 @@ def build_lesson(snapshot: Dict[str, Any], student_id: str) -> Tuple[Dict[str, A
     plan = {"lesson_id": f"{session_id}:{student_id}", "session_id": session_id,
             "title": str((snapshot or {}).get("lessonTitle") or "Bài học từ bảng"), "version": 1, "scenes": scenes}
     return plan, keys
+
+
+def add_plan_questions(plan: Dict[str, Any], keys: Dict[str, str], sections: List[Dict[str, Any]], plan_body: Dict[str, Any]) -> None:
+    """Tiết có giáo án (hub): mỗi cảnh nối với một phần giáo án nhận thêm câu hỏi của phần đó. Đề bài có đáp án → COMPUTE,
+    poll có đáp án đúng → PREDICT (key `choice:`), đề bài không có đáp án → EXPLAIN_BACK. Đáp án chỉ vào `keys`."""
+    from hub.grading import choice_key  # local import: lesson_builder stays usable without the hub
+
+    by_board = {s.get("boardSnapshotId"): s.get("planSectionId") for s in sections}
+    by_id = {s["id"]: s for s in plan_body.get("sections", [])}
+    for scene in plan["scenes"]:
+        section = by_id.get(by_board.get(scene["id"]) or "")
+        for item in (section or {}).get("items", []):
+            n = len(scene["questions"]) + 1
+            if item["type"] == "problem" and item.get("answer"):
+                q = _question(scene["id"], n, "COMPUTE", item["text"])
+                keys[q["id"]] = item["answer"]
+            elif item["type"] == "problem":
+                q = _question(scene["id"], n, "EXPLAIN_BACK", item["text"])
+            elif item["type"] == "poll" and item.get("correct") is not None:
+                letters = "\n".join(f"{chr(65 + i)}. {o}" for i, o in enumerate(item["options"]))
+                q = _question(scene["id"], n, "PREDICT", f"{item['question']}\n{letters}")
+                keys[q["id"]] = choice_key(item["correct"], item["options"])
+            else:
+                continue
+            scene["questions"].append(q)
 
 
 def title_for_student(scene: Dict[str, Any], index: int, keys: Dict[str, str], solved: set) -> str:

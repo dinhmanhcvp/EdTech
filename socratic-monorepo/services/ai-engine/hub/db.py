@@ -36,17 +36,23 @@ def db_path() -> Path:
     return Path(student_context.DB_PATH)
 
 
+_READY: set = set()  # đường dẫn DB đã có schema hub (DB_PATH đổi trong bài kiểm thử, hoặc tệp mới tạo)
+
+
 def connect() -> sqlite3.Connection:
     path = db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, timeout=5)
     conn.row_factory = sqlite3.Row
+    if str(path) not in _READY:
+        with LOCK:
+            conn.executescript(SCHEMA)
+            _READY.add(str(path))
     return conn
 
 
 def init_db(seed: bool = True) -> None:
     with LOCK, connect() as conn:
-        conn.executescript(SCHEMA)
         if seed and os.getenv("HUB_SEED", "true").lower() != "false" and conn.execute("SELECT COUNT(*) FROM teachers").fetchone()[0] == 0:
             from hub.seed import seed as run_seed
 

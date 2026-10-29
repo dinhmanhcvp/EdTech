@@ -29,3 +29,12 @@ def test_no_demo_teacher_in_production_without_pin(tmp_path, monkeypatch):
     db.init_db()
     with db.connect() as conn:
         assert conn.execute("SELECT COUNT(*) FROM teachers").fetchone()[0] == 0
+
+
+def test_connect_creates_schema_on_a_fresh_db_path(tmp_path, monkeypatch):
+    import student_context
+    from hub import db
+    monkeypatch.setattr(student_context, "DB_PATH", tmp_path / "fresh.sqlite3")
+    with db.connect() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM knowledge_packages").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM teachers").fetchone()[0] == 0  # schema only, no seed

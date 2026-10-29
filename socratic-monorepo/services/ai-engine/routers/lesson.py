@@ -3,13 +3,16 @@ import hashlib
 import json
 from typing import Any, Dict, Iterator, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 import lesson_llm
 import lesson_store as ls
 import student_context as store
+from hub import learning as hub_learning
+from hub.auth import claims_from_header
+from hub.grading import grade_choice
 from lesson_builder import build_lesson, public_view, title_for_student
 from formula_check import check_formula
 from security import require_roles
@@ -34,6 +37,12 @@ def _check_subject(student_id: str, claims: dict) -> None:
         raise HTTPException(403, "student_subject_mismatch")
 
 
+def _check_hub_student(student_id: str, authorization: Optional[str]) -> None:
+    """Bài học của một tiết hub ghi vào chỉ số lớp: luôn cần token học sinh của hub, kể cả khi chạy local."""
+    if claims_from_header(authorization, {"student"})["subject"] != student_id:
+        raise HTTPException(403, "student_subject_mismatch")
+
+
 def _sse(event: str, data: Dict[str, Any]) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
@@ -48,9 +57,17 @@ def _stream(result: Dict[str, Any]) -> StreamingResponse:
 
 
 @router.get("/{student_id}")
-def get_lesson(student_id: str, class_id: str = "12A1", claims: dict = Depends(require_roles({"student", "admin"}))):
+def get_lesson(student_id: str, class_id: str = "12A1", session_id: Optional[str] = None,
+               authorization: Optional[str] = Header(default=None), claims: dict = Depends(require_roles({"student", "admin"}))):
     _check_subject(student_id, claims)
-    plan, keys = build_lesson(store.context_snapshot(student_id, class_id), student_id)
+    if session_id:
+        _check_hub_student(student_id, authorization)
+        try:
+            plan, keys = hub_learning.session_lesson(student_id, session_id)
+        except KeyError:
+            raise HTTPException(404, "not_found")
+    else:
+        plan, keys = build_lesson(store.context_snapshot(student_id, class_id), student_id)
     with store._LOCK, store._connect() as conn:
         ls.init_lesson_tables(conn)
         ls.save_lesson(conn, student_id, plan, keys)
@@ -58,11 +75,17 @@ def get_lesson(student_id: str, class_id: str = "12A1", claims: dict = Depends(r
 
 
 @router.post("/{student_id}/turn")
-def lesson_turn(student_id: str, req: TurnRequest, claims: dict = Depends(require_roles({"student", "admin"}))):
+def lesson_turn(student_id: str, req: TurnRequest, authorization: Optional[str] = Header(default=None),
+                claims: dict = Depends(require_roles({"student", "admin"}))):
     _check_subject(student_id, claims)
     fingerprint = hashlib.sha256(req.model_dump_json().encode()).hexdigest()
     with store._LOCK, store._connect() as conn:
         ls.init_lesson_tables(conn)
+        # đọc trước BEGIN IMMEDIATE: hub mở kết nối riêng (có thể tạo schema) nên không được chờ khóa ghi của kết nối này
+        loaded = ls.load_lesson(conn, student_id, req.lesson_id)
+        hub_session = hub_learning.is_hub_session(loaded[0].get("session_id")) if loaded else False
+        if hub_session:
+            _check_hub_student(student_id, authorization)
         conn.execute("BEGIN IMMEDIATE")
         cached = ls.get_turn(conn, student_id, req.request_id)
         if cached:
@@ -74,7 +97,6 @@ def lesson_turn(student_id: str, req: TurnRequest, claims: dict = Depends(requir
                     lesson_llm.TutorContext("", "", "", "EXPLAIN_BACK", result.get("status", "NONE"), ""))}
                 ls.update_turn_result(conn, student_id, req.request_id, result)
             return _stream(result)
-        loaded = ls.load_lesson(conn, student_id, req.lesson_id)
         if not loaded:
             raise HTTPException(404, "unknown_lesson_question")
         plan, keys = loaded
@@ -93,7 +115,7 @@ def lesson_turn(student_id: str, req: TurnRequest, claims: dict = Depends(requir
             llm_message = ""  # an expression answer is graded by the server, never forwarded to the model
             keep_message = False
             if message:
-                correct = check_formula(message, expected)
+                correct = grade_choice(message, expected) if expected.startswith("choice:") else check_formula(message, expected)
                 if correct is None:
                     status = "UNVERIFIED"
                 elif correct:
@@ -127,6 +149,8 @@ def lesson_turn(student_id: str, req: TurnRequest, claims: dict = Depends(requir
         errors = [e["diagnosis"] for e in store.list_errors(student_id, 12) if str(e.get("subject", "")).upper() == scene["subject"]][:3]
         history = ls.recent_turns(conn, student_id, req.lesson_id, 2)
         conn.commit()
+    if hub_session:  # tiết có giáo án: lượt này thành sự kiện học tập → mastery → chỉ số realtime cho giáo viên
+        hub_learning.record_turn(student_id, plan["session_id"], scene["id"], question["id"], req.kind, status, message, req.request_id)
 
     if blocked_text is not None:
         text, source = blocked_text, "FALLBACK"

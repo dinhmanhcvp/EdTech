@@ -20,23 +20,25 @@ from typing import Any, Dict, List, Optional
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
-# 3.1-flash-lite: đo 2026-10-29 trên 10 ảnh (sạch + chữ tay/nhiễu, 5 môn) với thinkingBudget=0: đọc đúng 10/10, TB 2,7 s, tối đa 3,4 s,
-# ngang gemini-3-flash-preview (TB 2,8 s) mà RPD lớn hơn. Với thinkingLevel=minimal thì chậm thất thường (tối đa 23 s).
-DEFAULT_VISION_MODELS = [
-    "gemini-3.1-flash-lite",
-    "gemini-3-flash-preview",
-    "gemini-3.6-flash",
-    "gemini-3.5-flash-lite",
-    "gemini-3.5-flash",
-    "gemini-2.5-flash",
-]
+# Danh sách model theo chức năng (gói free, hạn mức thật xem llm/model_router.py). Thứ tự cuối cùng do ModelRouter quyết định:
+# chức năng chạy nhiều (vision, qa, tutor) → model RPD lớn trước; "grade" (ít lần, cần chất lượng) → model RPD nhỏ (flash mạnh) trước.
+# 3.1-flash-lite đo 2026-10-29 trên 10 ảnh (sạch + chữ tay/nhiễu, 5 môn) với thinkingBudget=0: đọc đúng 10/10, TB 2,7 s.
+_LITE = ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]
+# Đã loại: gemini-3.8-flash (đo 2026-10-29: hay hết giờ/503, không nhận thinkingLevel=minimal), Gemma 4 (vision 500/hết giờ, chấm bài hết giờ 35 s)
+_FLASH = ["gemini-3.6-flash", "gemini-3-flash-preview", "gemini-2.5-flash"]
+FEATURE_MODELS: Dict[str, List[str]] = {
+    "vision": _LITE + _FLASH,
+    "qa": _LITE + _FLASH,
+    "tutor": _LITE + _FLASH,
+    "grade": _FLASH + _LITE,
+}
+DEFAULT_VISION_MODELS = FEATURE_MODELS["vision"]
+DEFAULT_TEXT_MODELS = FEATURE_MODELS["tutor"]
 
-DEFAULT_TEXT_MODELS = [
-    "gemini-3-flash-preview",
-    "gemini-3.6-flash",
-    "gemini-3.5-flash",
-    "gemini-2.5-flash",
-]
+
+def models_for(feature: str) -> List[str]:
+    """Model ứng viên cho một chức năng; ghi đè bằng GEMINI_<CHỨC_NĂNG>_MODELS (VD GEMINI_GRADE_MODELS)."""
+    return _models(f"GEMINI_{feature.upper()}_MODELS", FEATURE_MODELS.get(feature, FEATURE_MODELS["qa"]))
 
 
 def _models(env_name: str, default: List[str]) -> List[str]:
@@ -46,11 +48,11 @@ def _models(env_name: str, default: List[str]) -> List[str]:
 
 
 def vision_models() -> List[str]:
-    return _models("GEMINI_VISION_MODELS", DEFAULT_VISION_MODELS)
+    return models_for("vision")
 
 
 def text_models() -> List[str]:
-    return _models("GEMINI_TEXT_MODELS", DEFAULT_TEXT_MODELS)
+    return _models("GEMINI_TEXT_MODELS", FEATURE_MODELS["tutor"])
 
 
 def thinking_config(model: str) -> Optional[Dict[str, Any]]:
@@ -58,6 +60,8 @@ def thinking_config(model: str) -> Optional[Dict[str, Any]]:
     m = model.lower()
     if m.startswith("gemini-3.1-flash-lite"):
         return {"thinkingBudget": 0}  # nhận budget 0 và ổn định hơn "minimal"
+    if m.startswith("gemini-3.8"):
+        return {"thinkingLevel": "low"}  # không nhận "minimal"
     if m.startswith("gemini-3"):
         return {"thinkingLevel": "minimal"}
     if m.startswith("gemini-2.5-flash") and "lite" not in m:

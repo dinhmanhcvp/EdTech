@@ -20,11 +20,17 @@ from typing import Deque, Dict, Iterator, List, Optional, Set, Tuple
 
 # (RPM, RPD). 2.5-flash-lite lấy từ bảng công bố cũ của Google; 2.5-flash do người dùng xác nhận (20 RPD/khóa); model 3.x chưa biết → UNKNOWN_LIMITS.
 DEFAULT_LIMITS: Dict[str, Tuple[int, int]] = {
-    "gemini-2.5-flash-lite": (15, 1000),
-    # người dùng báo hai model lite này có RPD lớn; con số 1000 là GIẢ ĐỊNH (chưa biết số thật), đặt lại bằng GEMINI_MODEL_LIMITS
-    "gemini-3.1-flash-lite": (15, 1000),
-    "gemini-3.5-flash-lite": (15, 1000),
-    "gemini-2.5-flash": (10, 20),  # người dùng xác nhận 2026-10-29: chỉ 20 RPD mỗi khóa (một số khóa đã hết)
+    # Số THẬT từ trang Rate limit của AI Studio do chủ dự án cung cấp (2026-10-29, gói free, mỗi dự án): model → (RPM, RPD)
+    "gemini-3-flash-preview": (5, 20),
+    "gemini-3.6-flash": (5, 20),
+    "gemini-3.8-flash": (5, 20),
+    "gemini-2.5-flash": (5, 20),
+    "gemini-3.1-flash-lite": (15, 500),
+    "gemini-3.5-flash-lite": (15, 500),
+    "gemini-2.5-flash-lite": (10, 20),
+    # Gemma 4: 30 RPM / 14.4K RPD nhưng chỉ 16K token mỗi phút → giữ ~6 yêu cầu/phút để không chạm trần token
+    "gemma-4-31b-it": (6, 14400),
+    "gemma-4-26b-a4b-it": (6, 14400),
 }
 UNKNOWN_LIMITS: Tuple[int, int] = (10, 250)
 RPD_SAFETY = 0.9  # chạm 90% RPD thì nhường

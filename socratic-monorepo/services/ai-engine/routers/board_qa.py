@@ -27,7 +27,6 @@ from llm.key_pool import call_openrouter_text, classify_error_cooldown, global_k
 router = APIRouter(prefix="/api/v1/canvas", tags=["Board Q&A"])
 
 # Hỏi đáp cần suy luận đúng hơn đọc chữ: model mạnh trước. Đã đo: 3.x-flash trả lời trong ~2 đến 3 s với thinkingLevel=minimal. Ghi đè bằng GEMINI_QA_MODELS.
-GEMINI_MODELS = [m.strip() for m in os.getenv("GEMINI_QA_MODELS", "gemini-3.5-flash,gemini-3.6-flash,gemini-3-flash-preview,gemini-2.5-flash").split(",") if m.strip()]
 # Hỏi đáp cần suy luận đúng hơn nhận dạng chữ: ưu tiên mô hình mạnh hơn, mô hình nhỏ chỉ là dự phòng.
 OPENROUTER_QA_MODELS = ["google/gemini-2.5-flash", "openai/gpt-4o-mini", "google/gemini-2.5-flash-lite"]
 _GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
@@ -119,14 +118,14 @@ def _gemini_text(model: str, key: str, system: str, user: str, timeout: float, m
     return gemini_rest.generate(model, key, [{"text": user}], timeout, max_tokens=max_tokens, json_mode=True, system=system)
 
 
-def _llm_json(system: str, user: str, gemini_key: str = "", openrouter_key: str = "", max_tokens: int = 1100, timeout: float = _CALL_TIMEOUT_S) -> Optional[Tuple[str, str, str]]:
+def _llm_json(system: str, user: str, gemini_key: str = "", openrouter_key: str = "", max_tokens: int = 1100, timeout: float = _CALL_TIMEOUT_S, feature: str = "qa") -> Optional[Tuple[str, str, str]]:
     """(văn bản, nhà cung cấp, mô hình) hoặc None nếu không có khóa/mọi khóa đều lỗi."""
     keys = global_key_pool.get_ordered_keys("gemini", extra_key=gemini_key or None)
     bad: set = set()
-    for key, model in model_router.plan("qa", keys, GEMINI_MODELS, skip=bad):
+    for key, model in model_router.plan(feature, keys, gemini_rest.models_for(feature), skip=bad):
         t_call = time.time()
         try:
-            text = _gemini_text(model, key, system, user, timeout, max_tokens)
+            text = _gemini_text(model, key, system, user, min(timeout, 18.0), max_tokens)  # một model nghẽn không được giữ cả yêu cầu quá 18 s
             model_router.note_latency(model, time.time() - t_call)
             if text.strip():
                 global_key_pool.mark_success("gemini", key)

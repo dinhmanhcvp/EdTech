@@ -74,7 +74,8 @@ def test_merge_without_ai_is_offline_but_keeps_machine_findings():
 def test_endpoint_with_fake_llm(client, monkeypatch):
     seen = {}
 
-    def fake(system, user, g="", o="", max_tokens=0, timeout=0):
+    def fake(system, user, g="", o="", max_tokens=0, timeout=0, feature="qa"):
+        seen["feature"] = feature
         seen.update(user=user, tokens=max_tokens)
         return json.dumps({"subject": "MATH_ALGEBRA", "final_correct": False, "summary": "ok", "steps": [
             {"index": 0, "status": "ok"}, {"index": 1, "status": "error", "title": "Sai dấu", "explain": "Chuyển vế phải đổi dấu.", "fix": "2x = 7 - 3", "corrected": "2x=4"}]}), "gemini", "m"
@@ -86,6 +87,7 @@ def test_endpoint_with_fake_llm(client, monkeypatch):
     assert j["steps"][1]["fix"] == "2x = 7 - 3" and j["steps"][1]["corrected"] == "2x=4"
     assert "Máy đã kiểm" in seen["user"] and "Dòng [1]" in seen["user"]  # kết quả của máy được đưa vào cho AI
     assert seen["tokens"] >= 3000
+    assert seen["feature"] == "grade"  # chấm bài dùng hồ sơ model riêng (flash mạnh, ít lượt)
 
 
 def test_endpoint_rejects_empty_and_survives_llm_failure(client, monkeypatch):
@@ -97,3 +99,11 @@ def test_endpoint_rejects_empty_and_survives_llm_failure(client, monkeypatch):
     monkeypatch.setattr(gs, "_llm_json", boom)
     r = client.post("/api/v1/canvas/grade-steps", json={"lines": [{"latex": "2 + 3 = 6"}]})
     assert r.status_code == 200 and r.json()["status"] == "OFFLINE" and r.json()["first_error"] == 0
+
+
+def test_slow_ai_times_out_and_returns_machine_result(client, monkeypatch):
+    import time
+    monkeypatch.setattr(gs, "TOTAL_TIMEOUT_S", 0.2)
+    monkeypatch.setattr(gs, "_llm_json", lambda *a, **k: (time.sleep(1), None)[1])
+    r = client.post("/api/v1/canvas/grade-steps", json={"lines": [{"latex": "x^2 - 5x + 6 = 0"}, {"latex": "x^2 - 5x = 6"}]}).json()
+    assert r["status"] == "OFFLINE" and r["first_error"] == 1  # máy vẫn bắt được lỗi chuyển vế

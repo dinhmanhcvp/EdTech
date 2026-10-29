@@ -62,7 +62,7 @@ def test_thinking_config_by_model_family():
 def test_default_models_avoid_the_slow_ones(monkeypatch):
     monkeypatch.delenv("GEMINI_VISION_MODELS", raising=False)
     models = gemini_rest.vision_models()
-    assert "gemini-3-flash-preview" in models[:2]
+    assert "gemini-3-flash-preview" in models
     assert not any("lite-latest" in m for m in models)
     monkeypatch.setenv("GEMINI_VISION_MODELS", "a, b")
     assert gemini_rest.vision_models() == ["a", "b"]
@@ -99,3 +99,21 @@ def test_vision_defaults_put_the_measured_fast_lite_first_with_budget_zero(monke
     assert gemini_rest.thinking_config("gemini-3.1-flash-lite") == {"thinkingBudget": 0}
     assert gemini_rest.thinking_config("gemini-3.5-flash-lite") == {"thinkingLevel": "minimal"}
     assert ModelRouter().order("vision", gemini_rest.vision_models())[0] == "gemini-3.1-flash-lite"
+
+
+def test_real_free_limits_route_features_sensibly(monkeypatch):
+    """Bảng hạn mức thật của gói free: chạy nhiều → lite 500 RPD; chấm bài (ít, cần chất lượng) → flash 20 RPD trước."""
+    for k in ("GEMINI_MODEL_LIMITS", "GEMINI_VISION_MODELS", "GEMINI_GRADE_MODELS", "GEMINI_QA_MODELS"):
+        monkeypatch.delenv(k, raising=False)
+    from llm.model_router import ModelRouter
+    r = ModelRouter()
+    assert r.limits("gemini-3.1-flash-lite") == (15, 500) and r.limits("gemini-3.6-flash") == (5, 20)
+    for f in ("vision", "qa", "tutor"):
+        assert r.order(f, gemini_rest.models_for(f))[0] in ("gemini-3.1-flash-lite", "gemini-3.5-flash-lite")
+    assert r.order("grade", gemini_rest.models_for("grade"))[0] in ("gemini-3.6-flash", "gemini-3-flash-preview", "gemini-2.5-flash")
+    assert r.order("grade", gemini_rest.models_for("grade"))[-1] in ("gemini-3.1-flash-lite", "gemini-3.5-flash-lite")
+
+
+def test_models_for_env_override(monkeypatch):
+    monkeypatch.setenv("GEMINI_GRADE_MODELS", "x, y")
+    assert gemini_rest.models_for("grade") == ["x", "y"]

@@ -7,6 +7,7 @@ Chấm CÁCH LÀM theo từng bước (Toán đại số, Toán hình, Vật lí
    giải thích kĩ vì sao sai và cách sửa. Không có AI thì vẫn trả phần máy đã kiểm (status OFFLINE).
 """
 
+import asyncio
 import json
 import re
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
@@ -31,6 +32,8 @@ except ImportError:  # pragma: no cover
 router = APIRouter(prefix="/api/v1/canvas", tags=["Grade steps"])
 _POOL = ThreadPoolExecutor(max_workers=2, thread_name_prefix="grade-sympy")
 MAX_LINES = 40
+# Tổng thời gian chờ AI qua mọi cặp (khóa, model); quá hạn thì trả phần máy đã kiểm thay vì để giáo viên chờ mãi
+TOTAL_TIMEOUT_S = 60.0
 
 
 class GradeLine(BaseModel):
@@ -243,8 +246,8 @@ async def grade_steps(request: Request):
     machine = await run_in_threadpool(machine_check_guarded, req.lines)
     ai: Optional[Dict[str, Any]] = None
     try:
-        llm = await run_in_threadpool(_llm_json, SYSTEM, build_user(req, machine), g, o, 3500, 40.0)
+        llm = await asyncio.wait_for(run_in_threadpool(_llm_json, SYSTEM, build_user(req, machine), g, o, 3500, 40.0, "grade"), TOTAL_TIMEOUT_S)
         ai = _extract(llm[0]) if llm else None
-    except Exception:
+    except Exception:  # gồm cả asyncio.TimeoutError
         ai = None
     return merge(req, machine, ai)

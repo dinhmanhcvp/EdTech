@@ -60,6 +60,7 @@ debug_last_request.json
 # Large media & videos (>100MB blocked by GitHub)
 *.mov
 *.mp4
+!socratic-monorepo/apps/teacher-board/public/demo/*.mp4
 socratic-video/
 tmp/
 .antigravity/

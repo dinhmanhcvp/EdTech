@@ -34,3 +34,15 @@ def test_student_token_cannot_use_teacher_route(client, student_headers):
 def test_board_role_is_valid_token_role():
     from security import issue_token, verify_token
     assert verify_token(issue_token("board", "sess-abc"))["role"] == "board"
+
+
+def test_production_refuses_default_token_secret(client, monkeypatch):
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.delenv("STUDENT_CONTEXT_SECRET", raising=False)
+    r = client.post("/api/v1/hub/auth/teacher", json={"teacherId": "gv-demo", "pin": "2468"})
+    assert r.status_code == 503 and r.json()["detail"] == "hub_secret_not_configured"
+    from security import issue_token
+    forged = issue_token("teacher", "gv-demo")  # ký bằng secret mặc định công khai
+    assert client.get("/api/v1/hub/me/teacher", headers={"Authorization": f"Bearer {forged}"}).status_code == 503
+    monkeypatch.setenv("STUDENT_CONTEXT_SECRET", "x" * 40)
+    assert client.post("/api/v1/hub/auth/teacher", json={"teacherId": "gv-demo", "pin": "2468"}).status_code == 200

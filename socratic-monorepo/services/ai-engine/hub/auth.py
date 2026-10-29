@@ -7,11 +7,13 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import os
 import secrets
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from fastapi import Header, HTTPException
 
+from deploy_guard import is_production
 from hub import clock
 from hub.db import connect
 from security import issue_token, verify_token
@@ -29,6 +31,13 @@ class LockedOut(Exception):
     pass
 
 
+def require_secret() -> None:
+    """Ở production, hub không cấp hay nhận token khi secret còn là mặc định công khai hoặc quá ngắn (ai cũng ký được)."""
+    secret = os.getenv("STUDENT_CONTEXT_SECRET", "")
+    if is_production() and (len(secret) < 32 or secret == "local-development-secret"):
+        raise HTTPException(status_code=503, detail="hub_secret_not_configured")
+
+
 def hash_pin(pin: str, salt_hex: Optional[str] = None) -> Tuple[str, str]:
     salt = bytes.fromhex(salt_hex) if salt_hex else secrets.token_bytes(16)
     digest = hashlib.pbkdf2_hmac("sha256", pin.encode("utf-8"), salt, PIN_ITERATIONS)
@@ -43,6 +52,7 @@ def _recent_fails(teacher_id: str) -> List[float]:
 
 
 def login_teacher(teacher_id: str, pin: str) -> Optional[dict]:
+    require_secret()
     if len(_recent_fails(teacher_id)) >= LOCK_AFTER_FAILS:
         raise LockedOut()
     with connect() as conn:
@@ -55,6 +65,7 @@ def login_teacher(teacher_id: str, pin: str) -> Optional[dict]:
 
 
 def login_student(login_code: str) -> Optional[dict]:
+    require_secret()
     with connect() as conn:
         row = conn.execute(
             "SELECT s.id, s.name, s.class_id, c.name AS class_name FROM students s JOIN classes c ON c.id = s.class_id WHERE s.login_code=?",
@@ -83,6 +94,7 @@ def _subject_exists(role: str, subject: str, allow_closed: bool) -> bool:
 
 
 def claims_from_header(authorization: Optional[str], roles: Iterable[str], allow_closed: bool = False) -> dict:
+    require_secret()
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="bearer_token_required")
     claims = verify_token(authorization.split(" ", 1)[1].strip())

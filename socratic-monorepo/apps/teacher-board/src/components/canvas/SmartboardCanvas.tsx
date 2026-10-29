@@ -24,6 +24,8 @@ import { SimulationWidget } from './SimulationWidget';
 import { InkConvertPanel } from './InkConvertPanel';
 import { SmartboardDock, AiFab } from './SmartboardDock';
 import { BoardAskCard } from './BoardAskCard';
+import { GradeMarks, StepExplainWindow, UncertainBars } from './GradeOverlay';
+import { applyPick, gradeSteps, lineBox, type GradeResult } from '../../utils/gradeUi';
 import { buildBoardContext } from '../../utils/boardContext';
 import { ClassroomPanel } from './ClassroomPanel';
 import { useClassroom } from '../../hooks/useClassroom';
@@ -398,6 +400,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [instantResult, setInstantResult] = useState<ConvertResult | null>(null);
   const [aiVisionResult, setAiVisionResult] = useState<ConvertResult | null>(null);
   const [isAiVisionScanning, setIsAiVisionScanning] = useState<boolean>(false);
+  // chấm bài theo từng bước: kết quả, cửa sổ giải thích, đang chờ người dùng xác nhận ký tự phân vân rồi mới chấm
+  const [gradeResult, setGradeResult] = useState<GradeResult | null>(null);
+  const [explainIdx, setExplainIdx] = useState<number | null>(null);
+  const [gradePending, setGradePending] = useState(false);
+  const [isGrading, setIsGrading] = useState(false);
   // Phân tầng nhận dạng: Vision trước, bản cục bộ chỉ khi Vision hỏng/không có khóa
   const visionPromiseRef = useRef<Promise<ConvertResult | null> | null>(null);
   const visionPendingRef = useRef(false);
@@ -1765,6 +1772,61 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   };
 
   // ---------- Chữ viết tay → văn bản & công thức chuẩn ----------
+  // ---- ký tự AI phân vân: chọn ngay dưới ký tự (mọi chức năng nhận diện); chấm bài
+  const pickUncertain = (i: number, choice: string) => {
+    const u = aiVisionResult?.uncertain?.[i];
+    setAiVisionResult((r) => (r ? applyPick(r, i, choice) : r));
+    if (u && choice !== u.token) setFormulaInput((prev) => (prev.includes(u.token) ? prev.replace(u.token, choice) : prev));
+  };
+  const keepAllUncertain = () => setAiVisionResult((r) => (r ? { ...r, uncertain: [] } : r));
+  const runGrade = async (r: ConvertResult) => {
+    setIsGrading(true);
+    const out = await gradeSteps(r.lines.map((l) => l.latex || l.text), subjectLock ?? undefined);
+    setIsGrading(false);
+    if (!out) return flashError('Chưa chấm được: máy chủ AI không phản hồi. Kiểm tra kết nối rồi thử lại.');
+    setGradeResult(out);
+    setExplainIdx(out.first_error ?? null);
+    if (out.first_error === null) flashInfo(out.final_correct === false ? 'Các bước hợp lý nhưng đáp án cuối chưa đúng, xem nhận xét.' : 'Bài làm hợp lý, chưa thấy bước sai.');
+  };
+  const startGrading = async () => {
+    if (selectedStrokes.length === 0) {
+      setTool('LASSO');
+      return flashError('Hãy khoanh bài làm của học sinh rồi chọn Chấm bài.');
+    }
+    setGradeResult(null);
+    setExplainIdx(null);
+    let r = aiVisionResult;
+    if (!r && visionPromiseRef.current) {
+      setIsGrading(true);
+      r = await Promise.race([visionPromiseRef.current, new Promise<null>((res) => setTimeout(() => res(null), 20000))]);
+      setIsGrading(false);
+      if (r) setAiVisionResult(r);
+    }
+    if (!r || r.lines.length === 0) {
+      const loc = instantResult;
+      if (!loc || loc.lines.length === 0) return flashError('Chưa đọc được bài làm. Khoanh gọn các dòng chữ rồi thử lại.');
+      r = { engine: 'local', lines: loc.lines.map((l) => ({ ...l, alternatives: l.alternatives ?? [] })), confidence: loc.confidence, ms: 0 } as ConvertResult;
+    }
+    if ((r.uncertain?.length ?? 0) > 0) {
+      setGradePending(true);
+      return;
+    }
+    await runGrade(r);
+  };
+  useEffect(() => {
+    if (gradePending && aiVisionResult && (aiVisionResult.uncertain?.length ?? 0) === 0) {
+      setGradePending(false);
+      void runGrade(aiVisionResult);
+    }
+  }, [gradePending, aiVisionResult]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (selectedStrokes.length === 0) {
+      setGradeResult(null);
+      setExplainIdx(null);
+      setGradePending(false);
+    }
+  }, [selectedStrokes.length]);
+
   const flashInfo = (msg: string, ms = 3000) => {
     setInfoMessage(msg);
     setTimeout(() => setInfoMessage((cur) => (cur === msg ? null : cur)), ms);
@@ -3307,6 +3369,20 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
           {/* Lớp công thức chuẩn (KaTeX) đặt trên canvas; chỉ phần tay cầm nhận chuột nên bút vẫn viết xuyên qua được */}
           <div className="absolute inset-0 pointer-events-none" data-testid="typeset-layer">
+            {selectedStrokes.length > 0 && (() => {
+              const ink = sourceStrokes(selectedStrokes);
+              if (ink.length === 0) return null;
+              const bb = bboxOfStrokes(ink);
+              return (
+                <>
+                  {(aiVisionResult?.uncertain?.length ?? 0) > 0 && (
+                    <UncertainBars items={aiVisionResult!.uncertain!} bbox={bb} gradePending={gradePending} onPick={pickUncertain} onKeepAll={keepAllUncertain} />
+                  )}
+                  {gradeResult && aiVisionResult && <GradeMarks result={gradeResult} boxes={aiVisionResult.lines.map((_, i) => lineBox(bb, aiVisionResult, i))} onOpen={setExplainIdx} />}
+                </>
+              );
+            })()}
+            {gradeResult && explainIdx !== null && <StepExplainWindow result={gradeResult} index={explainIdx} onIndex={setExplainIdx} onClose={() => setExplainIdx(null)} />}
             {textDraft && (
               <input
                 data-testid="text-draft-input"
@@ -3677,10 +3753,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       />
       <AiFab
         selectionCount={selectedStrokes.length}
-        busy={isLoading}
+        busy={isLoading || isGrading}
         listening={isVoiceListening}
         onConvert={() => openConvert('VISUAL')}
-        onGrade={() => openConvert('GRADE')}
+        onGrade={() => void startGrading()}
         subjectLock={subjectLock}
         onCycleSubject={() => {
           const subjects: (Subject | null)[] = [null, 'MATH', 'PHYSICS', 'CHEMISTRY', 'BIOLOGY'];

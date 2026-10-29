@@ -133,3 +133,19 @@ export async function exportIsolatedWebp(
   };
 }
 
+
+/**
+ * Đổi tọa độ chuẩn hóa (u, v ∈ [0,1] theo ảnh do exportIsolatedWebp tạo) về tọa độ bảng.
+ * Dùng cùng phép tính với exportIsolatedWebp (nội dung nằm giữa ảnh, tỉ lệ `scale`).
+ */
+export function imagePointToBoard(bbox: { x0: number; y0: number; x1: number; y1: number }, u: number, v: number, padding = 40) {
+  const rawW = Math.max(bbox.x1 - bbox.x0, 40);
+  const rawH = Math.max(bbox.y1 - bbox.y0, 25);
+  const scale = Math.max(1.8, Math.max(512 / (rawW + padding * 2), 256 / (rawH + padding * 2)));
+  const W = Math.max(512, Math.round((rawW + padding * 2) * scale));
+  const H = Math.max(256, Math.round((rawH + padding * 2) * scale));
+  return {
+    x: bbox.x0 + (u * W - (W - rawW * scale) / 2) / scale,
+    y: bbox.y0 + (v * H - (H - rawH * scale) / 2) / scale,
+  };
+}

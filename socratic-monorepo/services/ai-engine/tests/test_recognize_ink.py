@@ -264,3 +264,16 @@ def test_gemini_failure_falls_back_to_openrouter(client, monkeypatch):
     monkeypatch.setattr(ri, "recognize_with_openrouter", lambda *a, **k: ri.parse_recognition('{"lines":[{"text":"y","latex":"y","confidence":0.9}]}'))
     r = client.post("/api/v1/canvas/recognize-ink", json={"image_base64": _png_b64()}, headers={"x-gemini-api-key": "g", "x-openrouter-api-key": "o"})
     assert r.status_code == 200 and r.json()["engine"] == "openrouter"
+
+
+def test_parse_keeps_line_positions_and_uncertain_characters():
+    raw = '{"lines":[{"text":"x+5=7","latex":"x+5=7","confidence":0.9,"y0":0.1,"y1":0.4}],"uncertain":[{"line":0,"token":"5","alternatives":["S","5","s"],"x":0.6,"y":0.3},{"line":9,"token":"x","alternatives":["x"],"x":0.1,"y":0.2},{"token":"","alternatives":["a"],"x":0.1,"y":0.1}]}'
+    r = ri.parse_recognition(raw)
+    assert r["lines"][0]["y0"] == 0.1 and r["lines"][0]["y1"] == 0.4
+    # mục có phương án trùng ký tự đã chọn hoặc thiếu token bị bỏ; số phương án không gồm chính token
+    assert r["uncertain"] == [{"line": 0, "token": "5", "alternatives": ["S", "s"], "x": 0.6, "y": 0.3}]
+
+
+def test_parse_without_uncertain_is_an_empty_list():
+    r = ri.parse_recognition('{"lines":[{"text":"y=x","latex":"y=x","confidence":0.9}]}')
+    assert r["uncertain"] == [] and "y0" not in r["lines"][0]

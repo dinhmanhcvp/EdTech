@@ -93,8 +93,14 @@ PROMPT = (
     "Với mỗi dòng trả về:\n"
     '- "text": văn bản thuần dễ gõ (dùng x^2, sqrt(x), a/b; giữ nguyên chữ tiếng Việt có dấu);\n'
     '- "latex": LaTeX chuẩn hiển thị được bằng KaTeX (\\frac, \\sqrt, ^, _, \\alpha, \\cdot, \\le ...). Phần chữ thường đặt trong \\text{...};\n'
-    '- "confidence": số từ 0 đến 1.\n'
-    'Trả về DUY NHẤT một JSON: {"lines":[{"text":"...","latex":"...","confidence":0.9}],"alternatives":["latex khác nếu mơ hồ"]}\n'
+    '- "confidence": số từ 0 đến 1;\n'
+    '- "y0","y1": vị trí trên-dưới của dòng, là tỉ lệ 0 đến 1 theo CHIỀU CAO ảnh.\n'
+    'Ký tự bạn PHÂN VÂN thật sự (VD "5" hay "S", "x" hay "×", "1" hay "l", "0" hay "O", dấu + hay t, số mũ hay chỉ số dưới) '
+    'thì đưa vào "uncertain": {"line":chỉ số dòng bắt đầu từ 0,"token":"ký tự bạn đã chọn trong latex",'
+    '"alternatives":["1 đến 3 khả năng khác"],"x":tỉ lệ 0 đến 1 theo CHIỀU RỘNG ảnh,"y":tỉ lệ 0 đến 1 theo chiều cao ảnh}. '
+    'Chỉ liệt kê ký tự thật sự mơ hồ (tối đa 6), không liệt kê ký tự rõ ràng.\n'
+    'Trả về DUY NHẤT một JSON: {"lines":[{"text":"...","latex":"...","confidence":0.9,"y0":0.1,"y1":0.4}],'
+    '"alternatives":["latex khác nếu mơ hồ"],"uncertain":[{"line":0,"token":"5","alternatives":["S"],"x":0.42,"y":0.3}]}\n'
     "Nếu ảnh không có chữ viết, trả về {\"lines\":[],\"alternatives\":[]}."
 )
 
@@ -159,8 +165,29 @@ def parse_recognition(raw: str) -> Optional[Dict[str, Any]]:
         # bỏ rào $...$ / \[...\] mà mô hình hay thêm
         latex = re.sub(r"^\$+|\$+$", "", latex).strip()
         latex = re.sub(r"^\\\[|\\\]$", "", latex).strip()
-        lines.append({"text": text or latex, "latex": latex or text, "confidence": _clamp01(item.get("confidence"))})
+        line: Dict[str, Any] = {"text": text or latex, "latex": latex or text, "confidence": _clamp01(item.get("confidence"))}
+        if item.get("y0") is not None and item.get("y1") is not None:
+            y0, y1 = _clamp01(item.get("y0"), 0.0), _clamp01(item.get("y1"), 1.0)
+            if y1 > y0:
+                line["y0"], line["y1"] = round(y0, 3), round(y1, 3)
+        lines.append(line)
     alts = [str(a).strip() for a in (data.get("alternatives") or []) if str(a).strip()][:4]
+    # ký tự phân vân: người dùng chọn ngay dưới ký tự đó (tối đa 6; chỉ nhận mục có vị trí và có phương án khác ký tự đã chọn)
+    uncertain: List[Dict[str, Any]] = []
+    for u in data.get("uncertain") or []:
+        if not isinstance(u, dict):
+            continue
+        token = str(u.get("token", "")).strip()
+        opts = [str(a).strip() for a in (u.get("alternatives") or []) if str(a).strip() and str(a).strip() != token][:3]
+        if not token or not opts or u.get("x") is None or u.get("y") is None:
+            continue
+        try:
+            li = int(u.get("line", 0))
+        except (TypeError, ValueError):
+            li = 0
+        uncertain.append({"line": max(0, min(li, max(0, len(lines) - 1))), "token": token, "alternatives": opts, "x": round(_clamp01(u.get("x"), 0.5), 3), "y": round(_clamp01(u.get("y"), 0.5), 3)})
+        if len(uncertain) >= 6:
+            break
     if not lines and not alts:
         return {
             "lines": [],
@@ -181,6 +208,7 @@ def parse_recognition(raw: str) -> Optional[Dict[str, Any]]:
         "latex": " \\\\ ".join(l["latex"] for l in lines) if len(lines) > 1 else (lines[0]["latex"] if lines else ""),
         "confidence": round(conf, 3),
         "alternatives": alts,
+        "uncertain": uncertain,
         "detected_intent": intent_data["detected_intent"],
         "intent_confidence": intent_data["intent_confidence"],
         "intent_reason": intent_data["intent_reason"],

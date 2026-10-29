@@ -12,6 +12,7 @@ import { normalizeMathInput } from './mathExpr';
 import type { Stroke, TypesetMeta } from './lassoGeometry';
 import type { SimulationBlueprint } from '@socratic/types';
 import { apiBase } from './apiBase';
+import type { Uncertain } from './gradeUi';
 
 export interface ConvertLine {
   text: string;
@@ -21,6 +22,9 @@ export interface ConvertLine {
   /** vùng nét viết gốc (đơn vị canvas); chỉ có với bộ nhận dạng cục bộ */
   bbox?: { x0: number; y0: number; x1: number; y1: number };
   alternatives: { latex: string; text: string; confidence: number }[];
+  /** vị trí trên-dưới của dòng trong ảnh gửi AI (tỉ lệ 0..1), nếu AI trả */
+  y0?: number;
+  y1?: number;
 }
 
 export interface ConvertResult {
@@ -29,6 +33,8 @@ export interface ConvertResult {
   confidence: number;
   ms: number;
   model?: string;
+  /** ký tự AI phân vân: người dùng chọn ngay dưới ký tự đó */
+  uncertain?: Uncertain[];
 }
 
 export const sourceStrokes = (strokes: Stroke[]) => strokes.filter((s) => !s.typeset && s.points.length > 0);
@@ -191,7 +197,9 @@ async function recognizeWithAiUncached(strokes: Stroke[], opts: AiOptions = {}):
     if (!resp.ok) return null; // 503 = chưa có khóa / mô hình không phản hồi
 
     const j = await resp.json();
-    const lines: ConvertLine[] = (j.lines || []).map((l: { text?: string; latex?: string; confidence?: number }) => ({
+    const lines: ConvertLine[] = (j.lines || []).map((l: { text?: string; latex?: string; confidence?: number; y0?: number; y1?: number }) => ({
+      y0: typeof l.y0 === 'number' ? l.y0 : undefined,
+      y1: typeof l.y1 === 'number' ? l.y1 : undefined,
       text: String(l.text ?? l.latex ?? ''),
       latex: String(l.latex ?? l.text ?? ''),
       confidence: typeof l.confidence === 'number' ? l.confidence : 0.8,
@@ -200,7 +208,8 @@ async function recognizeWithAiUncached(strokes: Stroke[], opts: AiOptions = {}):
     if (!lines.length) return null;
     const alts = ((j.alternatives || []) as string[]).map((a) => ({ latex: a, text: a, confidence: 0.5 }));
     if (alts.length) lines[0].alternatives = alts;
-    return { engine: 'gemini', lines, confidence: typeof j.confidence === 'number' ? j.confidence : 0.8, ms: Date.now() - t0, model: j.model };
+    const uncertain: Uncertain[] = Array.isArray(j.uncertain) ? j.uncertain : [];
+    return { engine: 'gemini', lines, confidence: typeof j.confidence === 'number' ? j.confidence : 0.8, ms: Date.now() - t0, model: j.model, uncertain };
   } catch {
     return null;
   } finally {

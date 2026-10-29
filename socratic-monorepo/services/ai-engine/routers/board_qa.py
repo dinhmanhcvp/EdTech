@@ -114,19 +114,19 @@ def build_user_prompt(req: AskBoardRequest) -> str:
 
 
 # ------------------------------------------------------------------ gọi mô hình
-def _gemini_text(model: str, key: str, system: str, user: str, timeout: float) -> str:
+def _gemini_text(model: str, key: str, system: str, user: str, timeout: float, max_tokens: int = 1100) -> str:
     """Một lần gọi qua llm/gemini_rest.py (cùng cách tắt suy nghĩ và xử lý lỗi với Vision)."""
-    return gemini_rest.generate(model, key, [{"text": user}], timeout, max_tokens=1100, json_mode=True, system=system)
+    return gemini_rest.generate(model, key, [{"text": user}], timeout, max_tokens=max_tokens, json_mode=True, system=system)
 
 
-def _llm_json(system: str, user: str, gemini_key: str = "", openrouter_key: str = "") -> Optional[Tuple[str, str, str]]:
+def _llm_json(system: str, user: str, gemini_key: str = "", openrouter_key: str = "", max_tokens: int = 1100, timeout: float = _CALL_TIMEOUT_S) -> Optional[Tuple[str, str, str]]:
     """(văn bản, nhà cung cấp, mô hình) hoặc None nếu không có khóa/mọi khóa đều lỗi."""
     keys = global_key_pool.get_ordered_keys("gemini", extra_key=gemini_key or None)
     bad: set = set()
     for key, model in model_router.plan("qa", keys, GEMINI_MODELS, skip=bad):
         t_call = time.time()
         try:
-            text = _gemini_text(model, key, system, user, _CALL_TIMEOUT_S)
+            text = _gemini_text(model, key, system, user, timeout, max_tokens)
             model_router.note_latency(model, time.time() - t_call)
             if text.strip():
                 global_key_pool.mark_success("gemini", key)
@@ -136,7 +136,7 @@ def _llm_json(system: str, user: str, gemini_key: str = "", openrouter_key: str 
             if classify_error_cooldown(e)[0] == "auth_error":
                 global_key_pool.mark_failure("gemini", key, e)
                 bad.add(key)
-    res = call_openrouter_text(system, user, pool=global_key_pool, extra_key=openrouter_key or None, timeout_s=_CALL_TIMEOUT_S, max_tokens=1100, models=OPENROUTER_QA_MODELS)
+    res = call_openrouter_text(system, user, pool=global_key_pool, extra_key=openrouter_key or None, timeout_s=timeout, max_tokens=max_tokens, models=OPENROUTER_QA_MODELS)
     if res and res[0].strip():
         return res[0], "openrouter", res[1]
     return None

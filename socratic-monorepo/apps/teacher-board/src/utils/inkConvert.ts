@@ -137,6 +137,9 @@ export async function recognizeWithAi(strokes: Stroke[], opts: AiOptions = {}): 
   return recognizeWithAiUncached(strokes, opts);
 }
 
+/** Lý do lần gọi Vision gần nhất thất bại ('' nếu thành công) — để giao diện nói rõ vì sao đang dùng bản đọc cục bộ. */
+export let lastAiFailure = '';
+
 async function recognizeWithAiUncached(strokes: Stroke[], opts: AiOptions = {}): Promise<ConvertResult | null> {
   const src = sourceStrokes(strokes);
   if (!src.length) return null;
@@ -194,7 +197,14 @@ async function recognizeWithAiUncached(strokes: Stroke[], opts: AiOptions = {}):
         if (directResp.ok) resp = directResp;
       } catch { }
     }
-    if (!resp.ok) return null; // 503 = chưa có khóa / mô hình không phản hồi
+    if (!resp.ok) {
+      // 503 = chưa có khóa / mô hình không phản hồi: ghi lý do để giao diện báo thay vì im lặng dùng bản cục bộ
+      let detail = '';
+      try { const e = await resp.json(); detail = String(e?.detail ?? ''); } catch { /* không có thân JSON */ }
+      lastAiFailure = detail === 'no_key' ? 'Máy chủ AI chưa có khóa Gemini/OpenRouter (đặt GEMINI_API_KEYS trong services/ai-engine/.env rồi chạy lại máy chủ).' : `Máy chủ AI trả lỗi ${resp.status}${detail ? ': ' + detail.slice(0, 160) : ''}.`;
+      return null;
+    }
+    lastAiFailure = '';
 
     const j = await resp.json();
     const lines: ConvertLine[] = (j.lines || []).map((l: { text?: string; latex?: string; confidence?: number; y0?: number; y1?: number }) => ({
@@ -211,6 +221,7 @@ async function recognizeWithAiUncached(strokes: Stroke[], opts: AiOptions = {}):
     const uncertain: Uncertain[] = Array.isArray(j.uncertain) ? j.uncertain : [];
     return { engine: 'gemini', lines, confidence: typeof j.confidence === 'number' ? j.confidence : 0.8, ms: Date.now() - t0, model: j.model, uncertain };
   } catch {
+    lastAiFailure = `Không kết nối được máy chủ AI (${apiBase() || 'cùng tên miền'}). Hãy chạy máy chủ AI cổng 8000 hoặc đặt địa chỉ trong hộp thoại Kết nối AI.`;
     return null;
   } finally {
     if (timer) clearTimeout(timer);

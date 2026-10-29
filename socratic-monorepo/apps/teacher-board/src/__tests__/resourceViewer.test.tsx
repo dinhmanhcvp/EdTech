@@ -5,7 +5,7 @@ import {act, fireEvent, render, screen, waitFor, within} from '@testing-library/
 
 const hb = vi.hoisted(() => ({
   resources: vi.fn(), resource: vi.fn(), open: vi.fn(), getInk: vi.fn(), putInk: vi.fn(), pageUrl: vi.fn(),
-  openRun: vi.fn(), closeRun: vi.fn(), progress: vi.fn(),
+  openRun: vi.fn(), closeRun: vi.fn(), progress: vi.fn(), submissions: vi.fn(), stream: vi.fn(),
 }));
 vi.mock('../utils/hubBoard', async () => ({...(await vi.importActual<typeof import('../utils/hubBoard')>('../utils/hubBoard')), hubBoard: hb}));
 vi.mock('qrcode', () => ({default: {toDataURL: vi.fn().mockResolvedValue('data:image/png;base64,QR')}}));
@@ -26,6 +26,8 @@ beforeEach(() => {
   hb.getInk.mockResolvedValue([]);
   hb.putInk.mockResolvedValue(undefined);
   hb.open.mockResolvedValue(undefined);
+  hb.stream.mockReturnValue(() => {});
+  hb.submissions.mockResolvedValue([]);
   hb.progress.mockResolvedValue({questions: [{questionId: 'q1', submitted: 3, correctRate: 0.67}]});
 });
 afterEach(() => vi.useRealTimers());

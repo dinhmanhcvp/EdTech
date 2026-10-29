@@ -6,6 +6,7 @@ import {ChevronLeft, ChevronRight, LayoutPanelTop, Maximize2, Minus, PenLine, Pl
 import {fitTo, focusBox, panBy, toPage, zoomAt, type Size, type View} from '../../utils/viewport';
 import {BoardHubError, hubBoard, type InkStroke, type Progress, type ResourceDetail, type RunInfo} from '../../utils/hubBoard';
 import type {PageRef} from '../../utils/boardImage';
+import {CorrectionPanel} from './CorrectionPanel';
 
 interface Props {
   resourceId: string;
@@ -14,8 +15,6 @@ interface Props {
   onInsertPage: (ref: PageRef, ink: InkStroke[]) => void;
   /** kích thước vùng xem (mặc định: cửa sổ) — truyền khi kiểm thử */
   size?: Size;
-  /** phần thêm ở cột bên (vd "Chọn bài để chữa" khi bài tập/đề đang được giao) */
-  children?: (ctx: {run: RunInfo | null; resource: ResourceDetail}) => React.ReactNode;
 }
 
 const PEN_COLOR = '#e11d48';
@@ -23,7 +22,7 @@ const SAVE_DELAY_MS = 1000;
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
 /** Trình xem tài nguyên toàn màn hình trên bảng: slide, bài tập, đề. */
-export function ResourceViewer({resourceId, onClose, onInsertPage, size, children}: Props) {
+export function ResourceViewer({resourceId, onClose, onInsertPage, size}: Props) {
   const stageSize = size ?? {w: typeof window !== 'undefined' ? window.innerWidth : 1600, h: typeof window !== 'undefined' ? window.innerHeight - 56 : 900};
   const [res, setRes] = useState<ResourceDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -273,7 +272,7 @@ export function ResourceViewer({resourceId, onClose, onInsertPage, size, childre
                 </button>
               );
             })}
-            {res && children?.({run, resource: res})}
+            {run && <CorrectionPanel runId={run.runId} questions={questions} />}
           </aside>
         )}
       </div>

@@ -2,7 +2,8 @@
  * Trang /demo phát lại các cảnh quay đã ghi sẵn từ phần mềm thật (tools/demo-video). Không có nút nào hiện trên màn hình:
  * điều khiển bằng phím (bàn phím hoặc bút trình chiếu gửi PageDown/PageUp/B) và một vùng chạm vô hình ở góc dưới trái.
  */
-export type DemoPhase = 'ready' | 'playing' | 'ended' | 'black';
+/** replay: tua về đầu rồi phát lại ngay (bấm phát khi cảnh cuối / link một cảnh đã hết: quay lại shot không cần thao tác thêm). */
+export type DemoPhase = 'ready' | 'playing' | 'replay' | 'ended' | 'black';
 
 export interface DemoState {
   index: number;
@@ -32,7 +33,7 @@ export function demoKey(s: DemoState, key: string): DemoState {
   if (BLANK.has(key)) return {...s, phase: 'black'};
   if (PLAY.has(key)) {
     if (s.phase === 'ready') return {...s, phase: 'playing'};
-    if (s.phase === 'ended' && s.index < s.count - 1) return at(s.index + 1);
+    if (s.phase === 'ended') return s.index < s.count - 1 ? at(s.index + 1) : {...s, phase: 'replay'};
     return s;
   }
   if (BACK.has(key)) return at(s.index - 1);

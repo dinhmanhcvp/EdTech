@@ -5,10 +5,10 @@ import {demoKey, type DemoScene, type DemoState} from '../../utils/demoPlayer';
 
 /**
  * Phát cảnh quay dựng sẵn toàn màn hình, không có nút nào hiện ra.
- * Phím: Space/Enter/PageDown/→ phát (hết cảnh thì sang cảnh sau, dừng ở khung đầu) · PageUp/← cảnh trước · R về đầu cảnh ·
- * 1–9 chọn cảnh · B hoặc . màn đen · F toàn màn hình · H hiện/ẩn tên cảnh (chỉ người điều khiển cần).
- * Chạm: vùng vô hình 110 px ở góc dưới trái = phím phát.
- * URL: /demo?scenes=08,11 (thứ tự riêng) hoặc ?device=phone, ?scene=13 (cảnh bắt đầu).
+ * Mỗi cảnh một link: /demo?scene=08 chỉ có đúng cảnh 08 (dừng ở khung đầu; phát; hết thì giữ khung cuối; bấm phát lần nữa = quay lại từ đầu).
+ * Phím: Space/Enter/PageDown/→ phát · R về khung đầu (chờ) · B hoặc . màn đen · F toàn màn hình · H hiện/ẩn tên cảnh (chỉ người điều khiển).
+ * Chạm: vùng vô hình 110 px ở góc dưới trái = phím phát (lần chạm đầu bật toàn màn hình).
+ * Không có ?scene: phát lần lượt mọi cảnh (PageUp/← cảnh trước, 1–9 chọn cảnh); ?scenes=08,11 hoặc ?device=phone để lọc.
  */
 export default function DemoPage() {
   const [scenes, setScenes] = useState<DemoScene[] | null>(null);
@@ -24,9 +24,10 @@ export default function DemoPage() {
       if (pick) list = pick.split(',').map((id) => list.find((s) => s.id === id.trim())).filter((s): s is DemoScene => !!s);
       const device = q.get('device');
       if (device) list = list.filter((s) => s.device === device);
-      const start = Math.max(0, list.findIndex((s) => s.id === q.get('scene')));
+      const one = q.get('scene');
+      if (one) list = list.filter((s) => s.id === one);
       setScenes(list);
-      setState({index: start, count: list.length, phase: 'ready'});
+      setState({index: 0, count: list.length, phase: 'ready'});
     }).catch(() => setScenes([]));
   }, []);
 
@@ -61,6 +62,9 @@ export default function DemoPage() {
       v.currentTime = 0;
     } else if (state.phase === 'playing') {
       void v.play().catch(() => undefined);
+    } else if (state.phase === 'replay') {
+      v.currentTime = 0;
+      void v.play().catch(() => undefined);
     } else if (state.phase === 'black') {
       v.pause();
     }
@@ -84,7 +88,14 @@ export default function DemoPage() {
       )}
       {scenes?.length === 0 && <p className="p-6 text-sm text-stone-500">Chưa có cảnh nào: chạy tools/demo-video/record.py để ghi.</p>}
       {/* vùng chạm vô hình cho bảng cảm ứng / điện thoại */}
-      <div aria-hidden onPointerDown={() => press(' ')} className="absolute bottom-0 left-0 h-[110px] w-[110px]" />
+      <div
+        aria-hidden
+        onPointerDown={() => {
+          if (!document.fullscreenElement) void document.documentElement.requestFullscreen?.().catch(() => undefined);
+          press(' ');
+        }}
+        className="absolute bottom-0 left-0 h-[110px] w-[110px]"
+      />
       {help && scene && (
         <div className="absolute right-3 top-3 rounded bg-black/70 px-2 py-1 font-mono text-xs text-white">
           {state.index + 1}/{state.count} · {scene.id} · {scene.title} · {state.phase}

@@ -64,6 +64,46 @@ def ensure() -> dict:
     return state
 
 
+QUIZ = {
+    "title": "Luyện tập phương trình bậc nhất", "subject": "MATH", "kind": "exercise",
+    "questions": [
+        {"id": "q1", "type": "choice", "label": "Câu 1", "text": "Nghiệm của $2x - 4 = 6$ là", "options": ["1", "5", "-5", "10"], "answer": "1",
+         "kcs": [{"id": "math-phuong-trinh", "label": "Phương trình bậc nhất"}]},
+        {"id": "q2", "type": "short", "label": "Câu 2", "text": "Giải $3x + 2 = 11$, $x = ?$", "answer": "3",
+         "kcs": [{"id": "math-phuong-trinh", "label": "Phương trình bậc nhất"}]},
+        {"id": "q3", "type": "choice", "label": "Câu 3", "text": "Chuyển vế $-4$ sang vế phải thành", "options": ["-4", "+4"], "answer": "1",
+         "kcs": [{"id": "math-chuyen-ve", "label": "Quy tắc chuyển vế"}]},
+        {"id": "q4", "type": "short", "label": "Câu 4", "text": "Giải $5x - 5 = 0$, $x = ?$", "answer": "1",
+         "kcs": [{"id": "math-phuong-trinh", "label": "Phương trình bậc nhất"}]},
+    ],
+}
+
+
+def ensure_activity(state: dict) -> None:
+    """Một tiết đã dạy xong có bài tập để báo cáo phụ huynh và mục Lớp của em có số liệu thật (bỏ qua nếu đã có)."""
+    report = call("GET", f"/api/v1/hub/parent/{state['parentToken']}/report")
+    if report and report["thisWeek"].get("assignments", {}).get("total"):
+        return
+    token = state["token"]
+    period = call("POST", "/api/v1/console/periods", {"title": "Phương trình bậc nhất – tiết 2", "class_id": state["classId"]}, token=token)
+    code = call("POST", f"/api/v1/console/periods/{period['id']}/start", token=token)["pairCode"]
+    board = call("POST", "/api/v1/board/pair", {"code": code})["boardToken"]
+    asg = call("POST", "/api/v1/hub/assignments", {"title": QUIZ["title"], "subject": "MATH", "kind": "exercise", "source": "bank"}, token=token)
+    call("PUT", f"/api/v1/hub/assignments/{asg['id']}", {"body": QUIZ, "baseVersion": 0}, token=token)
+    req = urllib.request.Request(API + "/api/v1/hub/board/runs", method="POST", data=json.dumps({"assignmentId": asg["id"]}).encode(),
+                                 headers={"Content-Type": "application/json", "X-Board-Token": board})
+    run = json.loads(urllib.request.urlopen(req, timeout=30).read())
+    # Lan Anh đúng 3/4; các bạn khác mỗi em một kiểu
+    plans = [{"q1": 1, "q2": "3", "q3": 1, "q4": "5"}, {"q1": 1, "q2": "3", "q3": 0, "q4": "1"}, {"q1": 2, "q2": "4", "q3": 1, "q4": "1"},
+             {"q1": 1, "q2": "3", "q3": 1, "q4": "1"}]
+    for s, plan in zip(state["students"], plans):
+        st_token = call("POST", "/api/v1/hub/auth/student", {"loginCode": s["loginCode"]})["token"]
+        for qid, val in plan.items():
+            body = {"questionId": qid, "version": 1, "requestId": f"demo-{s['id']}-{qid}", **({"choice": val} if isinstance(val, int) else {"text": val})}
+            call("POST", f"/api/v1/hub/runs/{run['runId']}/answers", body, token=st_token)
+    call("POST", f"/api/v1/console/periods/{period['id']}/end", token=token)
+
+
 if __name__ == "__main__":
     import sys
 

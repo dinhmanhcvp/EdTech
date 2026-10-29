@@ -68,8 +68,7 @@ tmp/
 # Student Context runtime database
 socratic-monorepo/services/ai-engine/.data/
 
-# video quay demo dựng sẵn và câu trả lời AI đã lưu (có mảnh mã khóa): ghi lại bằng tools/demo-video/record.py
-socratic-monorepo/apps/teacher-board/public/demo/
+# câu trả lời AI đã lưu khi ghi cảnh demo (có mảnh mã khóa) và dữ liệu đăng nhập demo
 socratic-monorepo/tools/demo-video/ai-cache/
 socratic-monorepo/tools/demo-video/__pycache__/
 socratic-monorepo/tools/demo-video/demo-state.json

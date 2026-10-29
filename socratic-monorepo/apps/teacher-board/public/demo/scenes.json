@@ -1,0 +1,164 @@
+{
+  "scenes": [
+    {
+      "id": "06-07",
+      "title": "Vẽ lập phương → hình chuẩn → xoay, khai triển, cắt ngang",
+      "device": "board",
+      "file": "/demo/06-07.mp4",
+      "poster": "/demo/06-07.jpg",
+      "duration": 46.2,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "08",
+      "title": "Viết “con lắc đơn” → khoanh → Trực quan → kéo góc lệch",
+      "device": "board",
+      "file": "/demo/08.mp4",
+      "poster": "/demo/08.jpg",
+      "duration": 33.7,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "11",
+      "title": "Tích phân viết vội → khoanh → Chuyển công thức",
+      "device": "board",
+      "file": "/demo/11.mp4",
+      "poster": "/demo/11.jpg",
+      "duration": 23.5,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "12a",
+      "title": "Trang quản lý: tiết mới, chọn lớp, nạp bài, Bắt đầu → mã ghép",
+      "device": "laptop",
+      "file": "/demo/12a.mp4",
+      "poster": "/demo/12a.jpg",
+      "duration": 9.0,
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "id": "12b",
+      "title": "Bảng: Ghép tiết bằng mã → nhận bài và lớp → mã QR vào lớp",
+      "device": "board",
+      "file": "/demo/12b.mp4",
+      "poster": "/demo/12b.jpg",
+      "duration": 26.0,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "13",
+      "title": "Lớp học: quét mã, kéo thanh trượt đồng bộ, nộp bài vẽ tay, chiếu ẩn danh",
+      "device": "board",
+      "file": "/demo/13.mp4",
+      "poster": "/demo/13.jpg",
+      "duration": 56.5,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "13-phone",
+      "title": "Điện thoại học sinh: vào lớp, kéo thanh trượt, vẽ bài, Nộp",
+      "device": "phone",
+      "file": "/demo/13-phone.mp4",
+      "poster": "/demo/13-phone.jpg",
+      "duration": 45.3,
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "13A",
+      "title": "Bài 1 chiếu trên bảng → Chấm bài: bôi đỏ dòng sai, giải thích",
+      "device": "board",
+      "file": "/demo/13A.mp4",
+      "poster": "/demo/13A.jpg",
+      "duration": 7.1,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "13B",
+      "title": "Vi bài giảng: AI viết lời giảng → Gửi cho học sinh",
+      "device": "board",
+      "file": "/demo/13B.mp4",
+      "poster": "/demo/13B.jpg",
+      "duration": 17.6,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "14a",
+      "title": "Máy tính bảng: Mã học sinh → Vào lớp → Lớp của em → tiết vừa học",
+      "device": "tablet",
+      "file": "/demo/14a.mp4",
+      "poster": "/demo/14a.jpg",
+      "duration": 11.1,
+      "width": 1180,
+      "height": 820
+    },
+    {
+      "id": "14b",
+      "title": "Máy tính bảng: bài thầy gửi từ bảng → chạm sang Gia sư sau giờ học",
+      "device": "tablet",
+      "file": "/demo/14b.mp4",
+      "poster": "/demo/14b.jpg",
+      "duration": 7.8,
+      "width": 1180,
+      "height": 820
+    },
+    {
+      "id": "15",
+      "title": "Điện thoại: bước sai → gia sư hỏi lại",
+      "device": "phone",
+      "file": "/demo/15.mp4",
+      "poster": "/demo/15.jpg",
+      "duration": 9.8,
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "16",
+      "title": "Điện thoại: xin đáp án → Hàng rào Socratic, mở công cụ trực quan",
+      "device": "phone",
+      "file": "/demo/16.mp4",
+      "poster": "/demo/16.jpg",
+      "duration": 9.1,
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "17",
+      "title": "Điện thoại: cân đĩa lệch → tự cân bằng Fe + O2",
+      "device": "phone",
+      "file": "/demo/17.mp4",
+      "poster": "/demo/17.jpg",
+      "duration": 10.4,
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "18",
+      "title": "Điện thoại: bảo vệ bằng giọng nói (Concept Check Gate)",
+      "device": "phone",
+      "file": "/demo/18.mp4",
+      "poster": "/demo/18.jpg",
+      "duration": 8.8,
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "26",
+      "title": "Điện thoại phụ huynh: báo cáo tuần của con",
+      "device": "phone",
+      "file": "/demo/26.mp4",
+      "poster": "/demo/26.jpg",
+      "duration": 7.1,
+      "width": 390,
+      "height": 844
+    }
+  ]
+}

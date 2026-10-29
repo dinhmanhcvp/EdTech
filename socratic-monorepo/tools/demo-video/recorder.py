@@ -13,6 +13,13 @@ import time
 from typing import List, Optional, Tuple
 
 
+def h264_ffmpeg() -> str:
+    """ffmpeg có libx264 (gói imageio-ffmpeg): mp4 H.264 phát được trên mọi trình duyệt, kể cả iPhone."""
+    import imageio_ffmpeg
+
+    return imageio_ffmpeg.get_ffmpeg_exe()
+
+
 def ffmpeg_path() -> str:
     hits = glob.glob(os.path.join(os.environ.get("LOCALAPPDATA", ""), "ms-playwright", "ffmpeg-*", "ffmpeg-win64.exe"))
     if not hits:
@@ -95,9 +102,9 @@ class Recorder:
                 tmp.write(current)
         try:
             res = subprocess.run(
-                [ffmpeg_path(), "-loglevel", "error", "-y", "-f", "image2pipe", "-c:v", "mjpeg", "-framerate", str(fps), "-i", tmp.name,
-                 "-c:v", "libvpx", "-b:v", bitrate, "-qmin", "0", "-qmax", "20", "-crf", "6", "-deadline", "good", "-cpu-used", "1",
-                 "-auto-alt-ref", "0", "-pix_fmt", "yuv420p", out_path], capture_output=True, text=True)
+                [h264_ffmpeg(), "-loglevel", "error", "-y", "-f", "image2pipe", "-c:v", "mjpeg", "-framerate", str(fps), "-i", tmp.name,
+                 "-c:v", "libx264", "-preset", "slow", "-crf", "16", "-pix_fmt", "yuv420p", "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2",
+                 "-movflags", "+faststart", out_path], capture_output=True, text=True)
         finally:
             os.unlink(tmp.name)
         if res.returncode != 0:

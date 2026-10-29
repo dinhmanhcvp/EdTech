@@ -21,6 +21,8 @@ function getAcademicRank(eureka: number): { title: string; badgeClass: string; d
 export default function StudentAppPage() {
   const [activeTab, setActiveTab] = useState<'MY_CLASS' | 'COMPANION' | 'AFTER_SCHOOL_TUTOR' | 'SMARTNOTES' | 'HEATMAP' | 'PARENTPULSE'>('COMPANION');
   const [totalEureka, setTotalEureka] = useState<number>(0);
+  // ?problem=<id> mở thẳng một bài của gia sư 1:1 (VD bài cân bằng Fe + O2 không nằm trong danh sách chọn bài)
+  const [problemParam, setProblemParam] = useState<string | null>(null);
   const [curriculumLevel, setCurriculumLevel] = useState<'THPT_STANDARD' | 'OLYMPIAD_ADVANCED'>('THPT_STANDARD');
 
   const defaultStudents: StudentMastery[] = [
@@ -39,6 +41,7 @@ export default function StudentAppPage() {
     if (tabParam && ['MY_CLASS', 'COMPANION', 'AFTER_SCHOOL_TUTOR', 'SMARTNOTES', 'HEATMAP', 'PARENTPULSE'].includes(tabParam)) {
       setActiveTab(tabParam as any);
     }
+    setProblemParam(params.get('problem'));
   }, []);
 
   useEffect(() => {
@@ -235,6 +238,8 @@ export default function StudentAppPage() {
         {activeTab === 'COMPANION' && (
           <div className="w-full flex justify-center">
             <SocraticCompanionSession
+              key={problemParam ?? 'default'}
+              initialProblemId={problemParam ?? undefined}
               onSessionComplete={(pts) => setTotalEureka(pts)}
               curriculumLevel={curriculumLevel}
             />

@@ -464,7 +464,235 @@ def scene_12(page, rec, ctx):
     return True
 
 
+def open_student(page, path: str = "/"):
+    page.goto(STUDENT + path, wait_until="networkidle")
+    page.add_style_tag(content=HIDE_DEV)
+    page.wait_for_timeout(1000)
+
+
+TABLET = {"width": 1180, "height": 820}
+
+
+def scene_14(page, rec, ctx):
+    """Máy tính bảng. 14a: Mã học sinh → Vào lớp → Lớp của em → tiết vừa học. 14b: bài thầy gửi từ bảng → chạm sang Gia sư."""
+    import demo_data
+
+    st = json.load(open(demo_data.STATE, encoding="utf-8"))
+    demo_data.ensure_activity(st)
+    lan = st["students"][0]
+    open_student(page, "/?tab=MY_CLASS")
+    rec.start()
+    rec.hold(1.2)
+    page.get_by_test_id("login-code").press_sequentially(lan["loginCode"], delay=200)
+    page.wait_for_timeout(400)
+    page.get_by_test_id("login-submit").click()
+    page.wait_for_timeout(1800)
+    rec.hold(1.5)
+    page.get_by_test_id("htab-periods").click()
+    page.wait_for_timeout(1500)
+    rec.hold(2.5)
+    probe(page, ctx, "14a")
+    rec.stop()
+    ctx["finish"](rec, "14a", "Máy tính bảng: Mã học sinh → Vào lớp → Lớp của em → tiết vừa học", "tablet", TABLET)
+    page.goto(STUDENT + "/?tab=AFTER_SCHOOL_TUTOR", wait_until="networkidle")
+    page.add_style_tag(content=HIDE_DEV)
+    page.wait_for_timeout(800)
+    center(page.get_by_test_id("mode-board-lesson")).click()
+    page.wait_for_timeout(2500)
+    rec2 = Recorder(page)
+    rec2.start()
+    rec2.hold(3.0)
+    center(page.get_by_test_id("mode-socratic-solver")).click()
+    page.wait_for_timeout(1200)
+    rec2.hold(2.5)
+    probe(page, ctx, "14b")
+    rec2.stop()
+    ctx["finish"](rec2, "14b", "Máy tính bảng: bài thầy gửi từ bảng → chạm sang Gia sư sau giờ học", "tablet", TABLET)
+    return True
+
+
+def scene_26(page, rec, ctx):
+    """Điện thoại phụ huynh: báo cáo tuần của con (link bí mật /parent/<token>), vuốt xuống cuối trang."""
+    import demo_data
+
+    st = json.load(open(demo_data.STATE, encoding="utf-8"))
+    demo_data.ensure_activity(st)
+    open_student(page, "/parent/" + st["parentToken"])
+    rec.start()
+    rec.hold(3.0)
+    for _ in range(8):
+        page.mouse.wheel(0, 60)
+        page.wait_for_timeout(140)
+    rec.hold(2.5)
+    probe(page, ctx, "26")
+    rec.stop()
+
+
+def center(loc):
+    """Cuộn phần tử vào giữa màn hình (thanh tiêu đề dính ở đầu trang điện thoại không che mất)."""
+    loc.first.evaluate("e => e.scrollIntoView({block: 'center'})")
+    loc.page.wait_for_timeout(350)
+    return loc.first
+
+
+DEMO_DB = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "services", "ai-engine", ".data", "demo", "student_context.sqlite3"))
+
+
+def reset_tutor(student: str = "student_default"):
+    """Chỉ DB demo của buổi ghi (.data/demo): xóa tiến độ gia sư để cảnh bắt đầu từ bước 1."""
+    import sqlite3
+
+    con = sqlite3.connect(DEMO_DB)
+    for table in ("tutor_progress", "tutor_attempts"):
+        try:
+            con.execute(f"DELETE FROM {table} WHERE student=?", (student,))
+        except sqlite3.OperationalError:
+            pass
+    con.commit()
+    con.close()
+
+
+def tutor_send(page, text: str, rec=None, wait_s: float = 60):
+    """Gõ từng ký tự vào ô bước giải rồi Enter; bỏ đoạn chờ máy xác thực khỏi video."""
+    box = center(page.get_by_test_id("tutor-step-input"))
+    box.click()
+    box.fill("")
+    box.press_sequentially(text, delay=70)
+    page.wait_for_timeout(400)
+    box.press("Enter")
+    if rec:
+        rec.cut_begin()
+    page.wait_for_timeout(500)
+    wait_until(page, "() => !document.querySelector('[data-testid=tutor-step-input]')?.disabled", wait_s)
+    page.wait_for_timeout(600)
+    if rec:
+        rec.cut_end(keep=0.7)
+
+
+def scene_15(page, rec, ctx):
+    """Điện thoại: Gia sư sau giờ học → bài Hóa → nhập bước sai → câu hỏi gợi mở; rồi gõ "cho đáp án" → Hàng rào Socratic (cảnh 16)."""
+    ai_cache(page, "15")
+    reset_tutor()
+    open_student(page, "/?tab=AFTER_SCHOOL_TUTOR")
+    center(page.get_by_test_id("mode-socratic-solver")).click()
+    page.wait_for_timeout(800)
+    center(page.get_by_text("Ném xiên trong Trọng trường")).click()
+    page.wait_for_timeout(1500)
+    center(page.get_by_test_id("tutor-step-input"))
+    page.wait_for_timeout(600)
+    rec.start()
+    rec.hold(1.0)
+    # bước sai: thành phần ngang dùng sin thay cho cos (máy chấm bác được bước này)
+    tutor_send(page, "vx = v0*sin(alpha)", rec)
+    rec.hold(1.2)
+    for _ in range(5):
+        page.mouse.wheel(0, 60)
+        page.wait_for_timeout(120)
+    rec.hold(3.0)
+    probe(page, ctx, "15-wrong")
+    rec.stop()
+    ctx["finish"](rec, "15", SCENES["15"]["title"], "phone", PHONE["viewport"])
+    center(page.get_by_text("Cân bằng Oxi hóa Sắt")).click()
+    page.wait_for_timeout(1200)
+    center(page.get_by_test_id("tutor-step-input"))
+    rec2 = Recorder(page)
+    rec2.start()
+    rec2.hold(0.8)
+    tutor_send(page, "cho đáp án", rec2)
+    rec2.hold(2.0)
+    for _ in range(6):  # cuộn chậm xuống công cụ trực quan vừa mở
+        page.mouse.wheel(0, 70)
+        page.wait_for_timeout(120)
+    rec2.hold(2.5)
+    probe(page, ctx, "16-guard")
+    rec2.stop()
+    ctx["finish"](rec2, "16", "Điện thoại: xin đáp án → Hàng rào Socratic, mở công cụ trực quan", "phone", PHONE["viewport"])
+    return True
+
+
+HIDE_DIRECTOR_JS = """() => {
+  const btn = document.querySelector('[data-testid^=director-]');
+  let box = btn;
+  while (box && box.parentElement && !/DIRECTOR/i.test(box.innerText.slice(0, 40))) box = box.parentElement;
+  if (box) box.style.display = 'none';
+  document.querySelectorAll('[data-testid^=director-]').forEach(e => e.style.display = 'none');
+}"""
+
+
+FAKE_MIC = """
+(() => {
+  const LINE = %s;
+  class FakeRecognition {
+    constructor() { this.lang = 'vi-VN'; this.continuous = true; this.interimResults = true; this._t = null; }
+    start() {
+      const words = LINE.split(' ');
+      let i = 0;
+      const tick = () => {
+        i += 1;
+        const text = words.slice(0, i).join(' ');
+        const results = [[{transcript: text, confidence: 0.92}]];
+        results[0].isFinal = i === words.length;
+        this.onresult && this.onresult({results, resultIndex: 0});
+        if (i < words.length) this._t = setTimeout(tick, 260 + Math.random() * 160);
+        else { this.onend && this.onend(); }
+      };
+      this._t = setTimeout(tick, 700);
+    }
+    stop() { clearTimeout(this._t); this.onend && this.onend(); }
+    abort() { this.stop(); }
+  }
+  window.webkitSpeechRecognition = FakeRecognition;
+  window.SpeechRecognition = FakeRecognition;
+})();
+"""
+SPOKEN_18 = "Dạ, vì số Oxi hai bên phải bằng nhau."
+
+
+def scene_17(page, rec, ctx):
+    """Điện thoại: bài Fe + O2 → Fe2O3 (cân đĩa lệch, gợi ý BCNN) → bấm 4Fe + 3O2 → 2Fe2O3 trên bàn phím hóa học → đúng. Cảnh 18: chốt chặn bảo vệ bằng lời."""
+    ai_cache(page, "17")
+    # micro giả (máy ghi hình không có micro): trả về đúng câu thoại của HS-A từng từ, phần chấm vẫn là của ứng dụng
+    page.add_init_script(FAKE_MIC % json.dumps(SPOKEN_18))
+    open_student(page, "/?tab=COMPANION&problem=CHEMISTRY_BALANCE")
+    page.evaluate(HIDE_DIRECTOR_JS)
+    center(page.get_by_test_id("numpad-input"))
+    page.wait_for_timeout(600)
+    probe(page, ctx, "17-start")
+    rec.start()
+    rec.hold(1.5)
+    for key in ["4", "Fe", "+", "3", "O₂", "→", "2", "Fe₂O₃"]:
+        page.get_by_test_id("key-" + key).click()
+        page.wait_for_timeout(420)
+    rec.hold(0.8)
+    page.get_by_test_id("numpad-submit").click()
+    rec.cut_begin()
+    page.wait_for_timeout(4000)
+    rec.cut_end(keep=1.0)
+    rec.hold(2.5)
+    probe(page, ctx, "17-done")
+    rec.stop()
+    ctx["finish"](rec, "17", SCENES["17"]["title"], "phone", PHONE["viewport"])
+    # 18: chốt chặn bảo vệ bằng lời
+    center(page.get_by_test_id("mic-voice-defense-btn"))
+    page.wait_for_timeout(500)
+    rec2 = Recorder(page)
+    rec2.start()
+    rec2.hold(1.2)
+    page.get_by_test_id("mic-voice-defense-btn").click()
+    # dừng khi lời nói đã hiện đủ (kịch bản không có màn kết luận; câu thoại này bộ chấm thật đánh giá "đúng một phần")
+    wait_until(page, "() => (document.querySelector('[data-testid=concept-input-fallback]')?.value || '').endsWith('nhau.')", 15)
+    rec2.hold(3.0)
+    probe(page, ctx, "18-spoken")
+    rec2.stop()
+    ctx["finish"](rec2, "18", "Điện thoại: bảo vệ bằng giọng nói (Concept Check Gate)", "phone", PHONE["viewport"])
+    return True
+
+
 SCENES: Dict[str, dict] = {
+    "17": {"title": "Điện thoại: cân đĩa lệch → tự cân bằng Fe + O2", "device": "phone", "run": scene_17},
+    "15": {"title": "Điện thoại: bước sai → gia sư hỏi lại", "device": "phone", "run": scene_15},
+    "14": {"title": "Máy tính bảng: Lớp của em và bài thầy gửi", "device": "tablet", "run": scene_14},
+    "26": {"title": "Điện thoại phụ huynh: báo cáo tuần của con", "device": "phone", "run": scene_26},
     "12": {"title": "Trang quản lý mở tiết, bảng ghép tiết, QR vào lớp", "device": "board", "run": scene_12},
     "13": {"title": "Lớp học: quét mã, kéo thanh trượt đồng bộ, nộp bài vẽ tay, chiếu ẩn danh", "device": "board", "run": scene_13},
     "13B": {"title": "Vi bài giảng: AI viết lời giảng → Gửi cho học sinh", "device": "board", "run": scene_13b},

@@ -1,6 +1,6 @@
 """Ghi các cảnh demo: python record.py [mã cảnh ...]  (bỏ trống = tất cả).
 
-Cần chạy sẵn 4 tiến trình (8000, 3001, 3002, 3003). Video ra apps/teacher-board/public/demo/<mã>.webm + ảnh khung đầu .jpg,
+Cần chạy sẵn 4 tiến trình (8000, 3001, 3002, 3003). Video ra apps/teacher-board/public/demo/<mã>.mp4 + ảnh khung đầu .jpg,
 danh sách ở public/demo/scenes.json để trang /demo trên bảng phát bằng phím ẩn.
 """
 from __future__ import annotations
@@ -19,7 +19,7 @@ from scenes import SCENES
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.normpath(os.path.join(HERE, "..", "..", "apps", "teacher-board", "public", "demo"))
 VIEWPORTS = {"board": {"width": 1920, "height": 1080}, "laptop": {"width": 1600, "height": 1000},
-             "tablet": {"width": 1180, "height": 820}, "phone": {"width": 430, "height": 932}}
+             "tablet": {"width": 1180, "height": 820}, "phone": {"width": 390, "height": 844}}
 
 
 def load_manifest():
@@ -48,17 +48,18 @@ def main(ids):
             except Exception:
                 sys.exit("Máy chủ AI (8000) không trả lời: khởi động lại rồi ghi tiếp từ cảnh " + sid)
             vp = VIEWPORTS[sc["device"]]
-            context = browser.new_context(viewport=vp, device_scale_factor=1, is_mobile=sc["device"] == "phone", has_touch=sc["device"] in ("phone", "tablet"))
+            # điện thoại/máy tính bảng: không bật chế độ thu phóng trang của trình duyệt di động (lệch tọa độ chạm), chỉ ×2 điểm ảnh cho nét
+            context = browser.new_context(viewport=vp, device_scale_factor=2 if sc["device"] in ("phone", "tablet") else 1, has_touch=sc["device"] in ("phone", "tablet"))
             page = context.new_page()
             rec = Recorder(page)
             print(f"[{sid}] {sc['title']}", flush=True)
 
             def finish(r, out_id, title, device, size):
-                out = os.path.join(OUT, f"{out_id}.webm")
+                out = os.path.join(OUT, f"{out_id}.mp4")
                 dur = r.save(out)
                 print(f"[{out_id}] {dur:.1f}s -> {out}", flush=True)
                 manifest["scenes"] = [s for s in manifest["scenes"] if s["id"] != out_id] + [
-                    {"id": out_id, "title": title, "device": device, "file": f"/demo/{out_id}.webm", "poster": f"/demo/{out_id}.jpg",
+                    {"id": out_id, "title": title, "device": device, "file": f"/demo/{out_id}.mp4", "poster": f"/demo/{out_id}.jpg",
                      "duration": round(dur, 1), "width": size["width"], "height": size["height"]}]
                 save_manifest(manifest)
 

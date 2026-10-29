@@ -10,7 +10,12 @@ describe('demo player keys (no visible controls)', () => {
 
   it('the same key after a scene ends loads the next scene, paused on its first frame', () => {
     expect(demoKey(s({phase: 'ended'}), 'PageDown')).toEqual(s({index: 1, phase: 'ready'}));
-    expect(demoKey(s({index: 2, phase: 'ended'}), 'PageDown')).toEqual(s({index: 2, phase: 'ended'}));
+    expect(demoKey(s({index: 2, phase: 'ended'}), 'PageDown')).toEqual(s({index: 2, phase: 'replay'}));
+  });
+
+  it('a one-scene link (?scene=08) replays the same scene on every press after it ends, so a shot can be retaken at once', () => {
+    expect(demoKey({index: 0, count: 1, phase: 'ended'}, ' ')).toEqual({index: 0, count: 1, phase: 'replay'});
+    expect(demoKey({index: 0, count: 1, phase: 'replay'}, ' ')).toEqual({index: 0, count: 1, phase: 'replay'});
   });
 
   it('pressing play while playing does nothing (a double click on the remote must not skip)', () => {

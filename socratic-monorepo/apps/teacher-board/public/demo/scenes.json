@@ -21,6 +21,46 @@
       "height": 1080
     },
     {
+      "id": "10a",
+      "title": "Mặt cầu trong Oxyz",
+      "device": "board",
+      "file": "/demo/10a.mp4",
+      "poster": "/demo/10a.jpg",
+      "duration": 24.0,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "10b",
+      "title": "Cân bằng 2NO2 ⇌ N2O4, nén piston",
+      "device": "board",
+      "file": "/demo/10b.mp4",
+      "poster": "/demo/10b.jpg",
+      "duration": 21.9,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "10c",
+      "title": "Đề hình chóp S.ABCD: dựng từ đề, bật tắt a) b) c)",
+      "device": "board",
+      "file": "/demo/10c.mp4",
+      "poster": "/demo/10c.jpg",
+      "duration": 23.9,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "10d",
+      "title": "Mạch RLC cộng hưởng, giản đồ Fresnel",
+      "device": "board",
+      "file": "/demo/10d.mp4",
+      "poster": "/demo/10d.jpg",
+      "duration": 42.6,
+      "width": 1920,
+      "height": 1080
+    },
+    {
       "id": "11",
       "title": "Tích phân viết vội → khoanh → Chuyển công thức",
       "device": "board",
@@ -156,9 +196,19 @@
       "device": "phone",
       "file": "/demo/26.mp4",
       "poster": "/demo/26.jpg",
-      "duration": 7.1,
+      "duration": 7.4,
       "width": 390,
       "height": 844
+    },
+    {
+      "id": "B3",
+      "title": "Trang quản lý: lưới bài làm trong tiết, duyệt và chiếu (số liệu mẫu)",
+      "device": "laptop",
+      "file": "/demo/B3.mp4",
+      "poster": "/demo/B3.jpg",
+      "duration": 32.9,
+      "width": 1600,
+      "height": 1000
     }
   ]
 }

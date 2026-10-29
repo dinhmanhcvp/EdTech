@@ -515,8 +515,10 @@ def scene_26(page, rec, ctx):
     """Điện thoại phụ huynh: báo cáo tuần của con (link bí mật /parent/<token>), vuốt xuống cuối trang."""
     import demo_data
 
+    import sample_data
+
     st = json.load(open(demo_data.STATE, encoding="utf-8"))
-    demo_data.ensure_activity(st)
+    sample_data.use_sample_parent_report(page)  # dữ liệu mẫu cho video (người dùng yêu cầu)
     open_student(page, "/parent/" + st["parentToken"])
     rec.start()
     rec.hold(3.0)
@@ -688,7 +690,183 @@ def scene_17(page, rec, ctx):
     return True
 
 
+def type_on_board(page, x: float, y: float, text: str):
+    """Công cụ Chữ: chạm vào bảng, gõ đề, Enter."""
+    tap(page, "tool-text", 0.4)
+    page.mouse.click(x, y)
+    page.wait_for_timeout(400)
+    page.keyboard.type(text, delay=45)
+    page.wait_for_timeout(300)
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(700)
+
+
+GEO_10C = ["Cho hình chóp S.ABCD, đáy là hình vuông, SA ⊥ (ABCD).",
+           "a) Gọi M là trung điểm SB.",
+           "b) Gọi N là trung điểm SD.",
+           "c) Gọi P là trung điểm SC."]
+SIM_10 = [
+    ("10a", ["x^2 + y^2 + z^2 = 9"], "visualize", "Mặt cầu trong Oxyz"),
+    ("10b", ["2NO2 <=> N2O4"], "visualize", "Cân bằng 2NO2 ⇌ N2O4, nén piston"),
+    ("10c", GEO_10C, "draw", "Đề hình chóp S.ABCD với nút a) b) c)"),
+    ("10d", ["mạch RLC cộng hưởng"], "visualize", "Mạch RLC cộng hưởng, giản đồ Fresnel"),
+]
+
+
+def drag_to_value(page, test_id: str, target: float, step_px: float = 1.2, max_steps: int = 400):
+    """Kéo núm thanh trượt dần như tay, dừng khi giá trị thật của thanh tới mục tiêu."""
+    sl = page.locator(f"[data-testid={test_id}]").first
+    bb = sl.bounding_box()
+    lo, hi, val = sl.evaluate("e => [Number(e.min), Number(e.max), Number(e.value)]")
+    y = bb["y"] + bb["height"] / 2
+    x = bb["x"] + bb["width"] * (val - lo) / ((hi - lo) or 1)
+    direction = 1 if target > val else -1
+    page.mouse.move(x, y)
+    page.mouse.down()
+    for _ in range(max_steps):
+        x += direction * step_px
+        page.mouse.move(x, y)
+        page.wait_for_timeout(18)
+        if (float(sl.evaluate("e => e.value")) - target) * direction >= 0:
+            break
+    page.mouse.up()
+
+
+def park_ai_disc(page):
+    """Chạm giữ đĩa AI rồi kéo xuống góc dưới phải cho khỏi che đề."""
+    fab = page.get_by_test_id("ai-fab").bounding_box()
+    x, y = fab["x"] + fab["width"] / 2, fab["y"] + fab["height"] / 2
+    page.mouse.move(x, y)
+    page.mouse.down()
+    page.wait_for_timeout(650)
+    for i in range(1, 31):
+        page.mouse.move(x + (1820 - x) * i / 30, y + (960 - y) * i / 30)
+        page.wait_for_timeout(16)
+    page.mouse.up()
+    page.wait_for_timeout(300)
+
+
+PYR_10C = ("Cho hình chóp S.ABCD có đáy ABCD là hình vuông cạnh a, SA vuông góc với đáy, SA = a√2. "
+           "a) Gọi M là trung điểm SB. b) Gọi O = AC ∩ BD. c) Tìm thiết diện của hình chóp cắt bởi mặt phẳng (MOD).")
+
+
+def scene_10c(page, ctx):
+    """Đề hình học có a), b), c): AI → Vẽ hình → gõ đề → Vẽ → bật từng phần (đề đã có trong bộ test geoPartChips)."""
+    open_board(page)
+    r = Recorder(page)
+    r.start()
+    r.hold(0.8)
+    tap(page, "ai-fab", 0.6)
+    tap(page, "ai-fab-draw", 0.8)
+    tap(page, "ai-fab-draw-typed", 0.8)
+    page.get_by_test_id("geo-problem-text").press_sequentially(PYR_10C, delay=18)
+    r.hold(1.2)
+    tap(page, "geo-problem-draw", 1.5)
+    page.keyboard.press("Escape")
+    park_ai_disc(page)
+    r.hold(1.2)
+    for k in range(1, 4):
+        chip = page.locator(f"[data-testid=geo-part-{k}]")
+        if chip.count():
+            chip.first.click()
+            r.hold(2.2)
+    r.hold(1.5)
+    probe(page, ctx, "10c-sim")
+    r.stop()
+    ctx["finish"](r, "10c", "Đề hình chóp S.ABCD: dựng từ đề, bật tắt a) b) c)", "board", page.viewport_size)
+
+
+def scene_10(page, rec, ctx):
+    """Bốn đoạn mô phỏng (mỗi đoạn ≥ 8 giây) để ghép lưới 2×2."""
+    for sid, lines, action, title in SIM_10:
+        if sid == "10c":
+            scene_10c(page, ctx)
+            continue
+        ai_cache(page, sid)
+        open_board(page)
+        r = Recorder(page)
+        r.start()
+        r.hold(0.8)
+        x0, y0 = (260, 150) if len(lines) > 1 else (420, 260)
+        for i, ln in enumerate(lines):
+            type_on_board(page, x0, y0 + i * 78, ln)
+        items = page.locator(".typeset-item")
+        boxes = [items.nth(i).bounding_box() for i in range(items.count())] or [{"x": x0, "y": y0 - 30, "width": 700, "height": 80}]
+        left = min(b_["x"] for b_ in boxes); top = min(b_["y"] for b_ in boxes)
+        right = max(b_["x"] + b_["width"] for b_ in boxes); bottom = max(b_["y"] + b_["height"] for b_ in boxes)
+        tap(page, "tool-lasso", 0.3)
+        ink.draw(page, [ink.ellipse((left + right) / 2, (top + bottom) / 2, (right - left) / 2 + 70, (bottom - top) / 2 + 60)], speed=1500)
+        r.hold(0.6)
+        page.get_by_test_id("top-toolbar-btn-visualize" if action == "visualize" else "ai-fab-draw").click()
+        r.cut_begin()
+        wait_until(page, "() => !!document.querySelector('[data-testid=holo-touch-resize-handle], [data-testid=shape-geo-tools]')", 45)
+        page.wait_for_timeout(1500)
+        r.cut_end(keep=0.8)
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(300)
+        park_ai_disc(page)
+        r.hold(1.0)
+        if sid == "10a":  # xoay mặt cầu
+            drag(page, (1080, 190), (1230, 170), ms=1800)
+            r.hold(1.5)
+            drag(page, (1230, 170), (1120, 200), ms=1500)
+        elif sid == "10b":  # nén piston rồi đun nóng: màu và nồng độ đổi theo
+            page.get_by_role("button", name="Nén piston").first.click()
+            r.hold(3.5)
+            page.get_by_role("button", name="Đun nóng").first.click()
+        elif sid == "10c":  # dời hình sang phải rồi bật từng phần a) b) c)
+            grips = [b_ for b_ in (page.get_by_test_id("shape-grip").nth(i).bounding_box() for i in range(page.get_by_test_id("shape-grip").count())) if b_]
+            print("grips:", [(round(b_["x"]), round(b_["y"])) for b_ in grips])
+            g = min(grips, key=lambda b_: b_["y"]) if grips else None
+            if g:
+                gx, gy = g["x"] + g["width"] / 2, g["y"] + g["height"] / 2
+                drag(page, (gx, gy), (gx + 820, gy + 140), ms=1600, steps=260)
+            r.hold(1.0)
+            for k in range(1, 4):
+                chip = page.locator(f"[data-testid=geo-part-{k}]")
+                if chip.count():
+                    chip.first.click()
+                    r.hold(2.0)
+        elif sid == "10d":  # kéo tần số góc tới cộng hưởng ω0 = 1/√(LC)
+            drag_to_value(page, "slider-omega", 200.0, step_px=1.0)
+        r.hold(2.5)
+        probe(page, ctx, sid + "-sim")
+        r.stop()
+        ctx["finish"](r, sid, title, "board", page.viewport_size)
+    return True
+
+
+def scene_b3(page, rec, ctx):
+    """Trang quản lý, tiết đang dạy: lưới học sinh × câu cập nhật dần, tỉ lệ đúng, cần hỗ trợ, duyệt bài chờ, chiếu lên bảng (số liệu MẪU)."""
+    import demo_data
+    import sample_data
+
+    st = json.load(open(demo_data.STATE, encoding="utf-8"))
+    period = demo_data.call("POST", "/api/v1/console/periods", {"title": "Phương trình bậc nhất – tiết 3", "class_id": st["classId"]}, token=st["token"])
+    demo_data.call("POST", f"/api/v1/console/periods/{period['id']}/start", token=st["token"])
+    page.context.add_init_script(f"localStorage.setItem('console_token', {json.dumps(st['token'])}); localStorage.setItem('board_url', '{BOARD}');")
+    sample_data.use_sample_assignment_grid(page, period["id"])
+    page.goto(f"{CONSOLE}/periods/{period['id']}", wait_until="domcontentloaded")
+    page.add_style_tag(content=HIDE_DEV)
+    page.wait_for_selector("[data-testid=assignment-live]", timeout=20000)
+    page.evaluate("document.querySelector('[data-testid=assignment-live]').scrollIntoView({block: 'start'})")
+    page.wait_for_timeout(300)
+    rec.start()
+    rec.hold(26.0)  # bài nộp đến dần: lưới, tỉ lệ đúng, "Cần hỗ trợ" tự cập nhật
+    pend = page.locator("[data-testid^=pending-]").first
+    pend.evaluate("e => e.scrollIntoView({block: 'center'})")
+    rec.hold(1.5)
+    pend.get_by_test_id("show-on-board").click()
+    rec.hold(1.5)
+    pend.get_by_test_id("review-correct").click()
+    rec.hold(3.0)
+    probe(page, ctx, "B3")
+    rec.stop()
+
+
 SCENES: Dict[str, dict] = {
+    "B3": {"title": "Trang quản lý: lưới bài làm trong tiết, duyệt và chiếu (số liệu mẫu)", "device": "laptop", "run": scene_b3},
+    "10": {"title": "Bốn mô phỏng ghép lưới", "device": "board", "run": scene_10},
     "17": {"title": "Điện thoại: cân đĩa lệch → tự cân bằng Fe + O2", "device": "phone", "run": scene_17},
     "15": {"title": "Điện thoại: bước sai → gia sư hỏi lại", "device": "phone", "run": scene_15},
     "14": {"title": "Máy tính bảng: Lớp của em và bài thầy gửi", "device": "tablet", "run": scene_14},

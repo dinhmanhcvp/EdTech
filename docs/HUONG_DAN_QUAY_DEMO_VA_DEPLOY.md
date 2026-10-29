@@ -10,8 +10,8 @@ Tất cả cảnh, **kể cả cảnh của trang quản lý (đỉnh 1) và app
 
 | Thiết bị | Cảnh |
 |---|---|
-| Bảng | 06-07, 08, 11, 12b, 13, 13A, 13B |
-| Laptop (trang quản lý) | 12a |
+| Bảng | 06-07, 08, 10a, 10b, 10c, 10d, 11, 12b, 13, 13A, 13B |
+| Laptop (trang quản lý) | 12a, B3 |
 | Máy tính bảng (cầm ngang) | 14a, 14b |
 | Điện thoại (cầm dọc) | 13-phone, 15, 16, 17, 18, 26 |
 
@@ -21,7 +21,7 @@ Việc cần làm trước giờ quay:
 - [ ] Bảng, laptop: bấm `F` để toàn màn hình (ẩn thanh địa chỉ). Điện thoại, máy tính bảng: chạm góc dưới trái một lần. Dùng Chrome Android; iPhone không vào toàn màn hình được.
 - [ ] Độ sáng màn hình theo kịch bản (bảng 60–65%, điện thoại khoảng 55%).
 - [ ] Mỗi cảnh trước khi hô diễn: màn đang đứng ở khung đầu; bấm phát đúng lúc đạo diễn ra hiệu. Quay lại shot: bấm phát lần nữa sau khi cảnh hết, hoặc `R` để về khung đầu và chờ.
-- [ ] Cảnh 10 không có ở đây: DIT ghi màn hình trực tiếp như cũ.
+- [ ] Cảnh 26 và B3 dùng **số liệu mẫu** (giao diện thật, số liệu dựng sẵn cho đẹp): xem mục 3.
 
 ## 1. Điều khiển (không có nút nào trên màn hình)
 
@@ -44,6 +44,10 @@ Bấm đúp phím phát khi cảnh đang chạy không làm nhảy cảnh. Con t
 |---|---|---|---|---|
 | `<BANG>/demo?scene=06-07` | Bảng | 46 s | 06, 07 (UI-06/07) | Vẽ lập phương 6 nét → Chọn → khoanh → **Vẽ hình** → hình chuẩn có nhãn, nét đứt → Hiển thị → Xoay tự do → Khai triển → Cắt ngang (Lên/Xuống, diện tích, chu vi) |
 | `<BANG>/demo?scene=08` | Bảng | 34 s | 08 (UI-08) | Viết "con lắc đơn" → khoanh → Trực quan → con lắc góc lớn → kéo θ₀ về 0,8 rad (≈ 45°), dao động + đồ thị pha |
+| `<BANG>/demo?scene=10a` | Bảng | 24 s | 10 ô 1 (UI-10) | Gõ x² + y² + z² = 9 → khoanh → Trực quan → mặt cầu cắt mặt phẳng trong Oxyz, kéo xoay |
+| `<BANG>/demo?scene=10b` | Bảng | 22 s | 10 ô 2 | 2NO₂ ⇌ N₂O₄ → piston: Nén piston ×2, Đun nóng +40 °C |
+| `<BANG>/demo?scene=10c` | Bảng | 24 s | 10 ô 3 | AI → Vẽ hình → Gõ đề "Cho hình chóp S.ABCD…" có a), b), c) → hình dựng từ đề → bấm a), b), c) hiện M, O, thiết diện (MOD) |
+| `<BANG>/demo?scene=10d` | Bảng | 43 s | 10 ô 4 | Mạch RLC cộng hưởng: kéo tần số góc ω lên, giản đồ Fresnel và đường cộng hưởng đổi theo |
 | `<BANG>/demo?scene=11` | Bảng | 24 s | 11 (UI-11) | Viết vội ∫₀¹ x² dx → khoanh → Chuyển LaTeX → Thay nét viết bằng công thức |
 | `<BANG>/demo?scene=12a` | Laptop | 9 s | 12a (UI-12) | Trang quản lý: tiết mới → lớp 12A1 → bài soạn → Bắt đầu → mã ghép |
 | `<BANG>/demo?scene=12b` | Bảng | 26 s | 12b (UI-12) | Ghép tiết, nhập mã → bảng nhận bài + "Thầy Kiệm" → Lớp học → QR phóng to → thu nhỏ: "4 học sinh đã vào" |
@@ -57,7 +61,8 @@ Bấm đúp phím phát khi cảnh đang chạy không làm nhảy cảnh. Con t
 | `<BANG>/demo?scene=16` | Điện thoại | 9 s | 16 (UI-16) | Gõ "cho đáp án" → Hàng rào Socratic → công cụ thị giác (cân đĩa) mở |
 | `<BANG>/demo?scene=17` | Điện thoại | 10 s | 17 (UI-17) | Fe + O₂ → Fe₂O₃: bấm 4 Fe + 3 O₂ → 2 Fe₂O₃ → "SYMPY VERIFIED · Chuẩn xác 100%" |
 | `<BANG>/demo?scene=18` | Điện thoại | 9 s | 18 (UI-18) | Chốt chặn bản chất → micro → chữ "Dạ, vì số Oxi hai bên phải bằng nhau." hiện dần |
-| `<BANG>/demo?scene=26` | Điện thoại | 7 s | 26 | Trang phụ huynh: báo cáo tuần của Lan Anh, vuốt xuống |
+| `<BANG>/demo?scene=26` | Điện thoại | 7 s | 26 | Trang phụ huynh: báo cáo tuần của Lan Anh (4 ngày, 95 phút, bài thầy giao 9/11, 3 gợi ý cho gia đình), vuốt xuống. **Số liệu mẫu** |
+| `<BANG>/demo?scene=B3` | Laptop | 33 s | cắt chèn UI-B3 | Trang quản lý, tiết đang dạy: lưới 12 học sinh × 4 câu đầy dần, tỉ lệ đúng, đáp số sai hay gặp, "Cần hỗ trợ", Chiếu lên bảng, duyệt bài chờ. **Số liệu mẫu** |
 
 Không có `?scene` (`<BANG>/demo`) thì chạy lần lượt mọi cảnh, chỉ dùng để xem lại.
 
@@ -69,8 +74,8 @@ Không có `?scene` (`<BANG>/demo`) thì chạy lần lượt mọi cảnh, ch�
 - Cảnh 08: mô phỏng ra là "con lắc góc lớn (RK4)", thanh "Góc lệch lớn θ₀" tính bằng rad, mặc định 1,2 rad (≈ 69°); video kéo **xuống** 0,8 rad (≈ 45°). Khi ghi đã sửa lỗi con lắc đứng yên (θ₀ bị đọc nhầm là độ).
 - Cảnh 15: dùng bài **ném xiên (Vật lý)**, vì máy chấm chỉ bác được bước sai của bài này; bài Hóa có nhiều đại lượng nên máy chỉ báo "chưa phân tích được". Cảnh 16, 17, 18 vẫn là bài Hóa.
 - Cảnh 18: video dừng khi lời nói hiện đủ. Với đúng câu thoại này, chốt chặn thật trả lời "đúng một phần, còn thiếu từ khóa" (cần nói có "bảo toàn khối lượng", "số nguyên tử").
-- Cảnh 26: số liệu thật từ một tiết thử (3/4 câu đúng, nộp đúng hạn 1/1), nhưng dòng thời gian học là "0 phút" vì các câu nộp liền nhau.
-- Cảnh 10 (4 mô phỏng ghép lưới) chưa ghi: đây là cảnh ghi màn hình, không có diễn viên diễn theo, DIT ghi trực tiếp như cũ.
+- **Số liệu mẫu (theo yêu cầu, dùng tạm cho video):** cảnh 26 (báo cáo phụ huynh) và B3 (lưới bài làm) hiển thị trên giao diện thật nhưng số liệu do `tools/demo-video/sample_data.py` dựng sẵn, không phải số đo thật của lớp. Kịch bản (mục 1) quy định "mọi con số trên hình giữ đúng như kịch bản, không thêm số mới": duyệt lại các số này trước khi dựng. Phần mềm thật vẫn tính số liệu từ dữ liệu thật.
+- Cảnh 10: ô 1, 2, 4 gõ đề bằng công cụ Chữ thay vì viết tay (cảnh ghi màn hình, không có diễn viên); ô 3 gõ đề vào AI → Vẽ hình → Gõ đề.
 
 ## 4. Deploy 1 repo thành 3 link Vercel (phần giao diện của 3 đỉnh)
 

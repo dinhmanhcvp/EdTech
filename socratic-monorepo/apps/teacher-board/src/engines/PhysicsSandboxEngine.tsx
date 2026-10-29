@@ -8,6 +8,7 @@ import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { computeProjectile } from '../utils/physics';
 import { Waves, Zap, Compass, ArrowUpRight, Scale } from 'lucide-react';
 import { formatCanvasMath } from '../utils/canvasMath';
+import { pendulumStartAngle } from '../utils/pendulumAngle';
 import { MathText } from '../components/ui/MathText';
 
 interface Props {
@@ -396,15 +397,16 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
     ctx.restore();
   };
 
+  // kéo θ₀ thì con lắc thả lại từ góc mới
   useEffect(() => {
     pendulumStateRef.current = {
-      theta: ((params.theta0 ?? 35) * Math.PI) / 180,
+      theta: pendulumStartAngle(params.theta0),
       omega: 0,
     };
     phaseTrailRef.current = [];
     projectileTrailRef.current = [];
     pendulumTrailRef.current = [];
-  }, [blueprint.templateId, currentMode]);
+  }, [blueprint.templateId, currentMode, params.theta0]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

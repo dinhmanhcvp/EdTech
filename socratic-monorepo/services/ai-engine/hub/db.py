@@ -29,6 +29,9 @@ CREATE INDEX IF NOT EXISTS idx_events_student ON learning_events (student_id, cr
 CREATE INDEX IF NOT EXISTS idx_events_session ON learning_events (session_id, section_id);
 CREATE TABLE IF NOT EXISTS console_links (console_teacher_id TEXT PRIMARY KEY, hub_teacher_id TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS class_links (console_class_id TEXT PRIMARY KEY, hub_class_id TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS assignments (id TEXT PRIMARY KEY, teacher_id TEXT NOT NULL, title TEXT NOT NULL, subject TEXT NOT NULL, kind TEXT NOT NULL, source TEXT NOT NULL, current_version INTEGER NOT NULL, created_at REAL NOT NULL, updated_at REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS assignment_versions (assignment_id TEXT NOT NULL, version INTEGER NOT NULL, payload TEXT NOT NULL, created_at REAL NOT NULL, PRIMARY KEY (assignment_id, version));
+CREATE TABLE IF NOT EXISTS assignment_pages (assignment_id TEXT NOT NULL, page INTEGER NOT NULL, path TEXT NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, PRIMARY KEY (assignment_id, page));
 """
 
 

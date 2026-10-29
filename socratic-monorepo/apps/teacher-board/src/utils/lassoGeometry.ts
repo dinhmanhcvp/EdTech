@@ -68,6 +68,8 @@ export interface Stroke {
   shape?: ShapeMeta;
   /** tấm che đáp án (utils/answerCover.ts): hidden = đang che; order = thứ tự lộ từng bước */
   cover?: {hidden: boolean; order: number};
+  /** trang tài nguyên (slide/đề) đưa lên bảng: ảnh lấy từ hub; khung ở points[0] + typeset.w/h (utils/boardImage.ts) */
+  image?: {assignmentId: string; page: number};
 }
 
 export interface BoundingBox {

@@ -40,6 +40,11 @@ import { SimilarProblemsPanel } from './SimilarProblemsPanel';
 import { sourceFromContext } from '../../utils/similarProblems';
 import { toBoardStrokes, type Submission } from '../../utils/submissionInk';
 import { PairPanel } from './PairPanel';
+import { ResourcePanel } from '../resources/ResourcePanel';
+import { ResourceViewer } from '../resources/ResourceViewer';
+import { insertPageStrokes, type PageRef } from '../../utils/boardImage';
+import { createBoardImageLoader } from '../../utils/boardImages';
+import type { InkStroke } from '../../utils/hubBoard';
 import { SessionError, lessonContext, loadSession, pairBoard, resumeBoard, saveLessonToConsole, saveSnapshot, storeSession, type BoardSession, type PairResult } from '../../utils/boardSession';
 import { coverCount, coverLines, hiddenCovers, hideAllCovers, makeCovers, revealNext, setCoverHidden } from '../../utils/answerCover';
 import { useBoardJournal } from '../../hooks/useBoardJournal';
@@ -514,6 +519,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [pages, setPages] = useState<Stroke[][]>([[]]);
+  // tài nguyên (slide/bài tập/đề) mở trên bảng; ảnh trang đưa lên bảng vẽ lại khi tải xong
+  const [viewerId, setViewerId] = useState<string | null>(null);
+  const [imageTick, setImageTick] = useState(0);
+  const boardImage = useMemo(() => createBoardImageLoader(() => setImageTick((t) => t + 1)), []);
   const [pageIdx, setPageIdx] = useState(0);
   const [textDraft, setTextDraft] = useState<{ x: number; y: number; value: string } | null>(null);
 
@@ -975,8 +984,27 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         ctx.restore();
       }
 
-      // 2. Committed strokes
+      // 2. Committed strokes (trang tài nguyên đưa lên bảng vẽ trước, nét viết nằm trên)
       const selIds = new Set(selectedStrokes.map((s) => s.id));
+      for (const stroke of strokes) {
+        if (!stroke.image || !stroke.typeset) continue;
+        const { x, y } = stroke.points[0];
+        const { w: iw, h: ih } = stroke.typeset;
+        const got = boardImage(stroke.image);
+        if (got.state === 'ready') ctx.drawImage(got.img, x, y, iw, ih);
+        else {
+          ctx.fillStyle = '#E7E5E4';
+          ctx.fillRect(x, y, iw, ih);
+          ctx.fillStyle = '#78716C';
+          ctx.font = '16px sans-serif';
+          ctx.fillText(got.state === 'error' ? `Trang ${stroke.image.page + 1} (chưa tải được ảnh)` : 'Đang tải trang…', x + 16, y + 32);
+        }
+        if (selIds.has(stroke.id)) {
+          ctx.strokeStyle = '#2563EB';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x - 2, y - 2, iw + 4, ih + 4);
+        }
+      }
       for (const stroke of strokes) {
         if (stroke.typeset || stroke.points.length < 2) continue;
         const isSelected = selIds.has(stroke.id);
@@ -984,7 +1012,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       }
       return base;
     },
-    [strokes, selectedStrokes, gridPattern, showWatermarkGuide, selectedRecordSlot],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [strokes, selectedStrokes, gridPattern, showWatermarkGuide, selectedRecordSlot, imageTick],
   );
 
   // Redraw: blit lớp nền rồi vẽ nét đang viết / hình xem trước / vòng lasso / vòng tẩy
@@ -994,7 +1023,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const key = [strokes, selectedStrokes, gridPattern, showWatermarkGuide, selectedRecordSlot, canvas.width, canvas.height];
+    const key = [strokes, selectedStrokes, gridPattern, showWatermarkGuide, selectedRecordSlot, imageTick, canvas.width, canvas.height];
     const prevKey = baseKeyRef.current;
     let base = baseCanvasRef.current;
     if (!base || !prevKey || prevKey.length !== key.length || key.some((k, i) => k !== prevKey[i])) {
@@ -2229,6 +2258,16 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     setPageIdx(pageIdx + 1);
     setStrokes([]);
     resetPageState();
+  };
+  /** "Đưa trang này lên bảng" từ trình xem tài nguyên: trang bảng mới gồm ảnh trang + nét viết đè. */
+  const insertResourcePage = (ref: PageRef, ink: InkStroke[]) => {
+    const n = withCurrentPage();
+    n.splice(pageIdx + 1, 0, insertPageStrokes(ref, ink));
+    setPages(n);
+    setPageIdx(pageIdx + 1);
+    setStrokes(n[pageIdx + 1]);
+    resetPageState();
+    setViewerId(null);
   };
   const deletePage = () => {
     if (pages.length <= 1) return;
@@ -3472,6 +3511,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <LessonLibraryPanel getPages={withCurrentPage} loadPages={loadLessonPages} enabled={!session} />
           <PairPanel session={session} boardHasContent={pages.some((p, i) => (i === pageIdx ? strokes.length : p.length) > 0)} onPair={pairWithCode} onSaveLesson={saveLessonToServer} onUnpair={() => endSession('Đã ngắt ghép; bảng đã được dọn. Tiết vẫn tiếp tục ở trang quản lý.')} />
           <SimilarProblemsPanel getSource={() => sourceFromContext(getBoardContext())} subject={subjectLock} />
+          <ResourcePanel paired={!!session} onOpen={setViewerId} />
+          {viewerId && <ResourceViewer resourceId={viewerId} onClose={() => setViewerId(null)} onInsertPage={insertResourcePage} />}
           {coverCount(strokes) > 0 && (
             <div data-testid="cover-bar" className="absolute left-1/2 -translate-x-1/2 bottom-3 z-30 pointer-events-auto flex items-center gap-1.5 rounded-full border border-amber-300 bg-white/95 px-2 py-1 shadow-md">
               <button
@@ -3636,7 +3677,26 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 );
               })}
             {strokes
-              .filter((s) => s.typeset && !s.shape && !s.cover)
+              .filter((s) => s.image && s.typeset)
+              .map((s) => (
+                <div
+                  key={s.id}
+                  data-testid="board-image"
+                  className="absolute pointer-events-none"
+                  style={{ left: `${(s.points[0].x / 1200) * 100}%`, top: `${(s.points[0].y / 675) * 100}%`, width: s.typeset!.w * boardScale, height: s.typeset!.h * boardScale }}
+                >
+                  <div className="pointer-events-auto absolute left-0 -top-[22px] flex items-center gap-px rounded-md bg-white/90 border border-[#DCD9D0] shadow-sm opacity-40 hover:opacity-100 transition-opacity" style={{ fontSize: 11 }}>
+                    <span data-testid="image-grip" title="Kéo để di chuyển" onPointerDown={(e) => onTypesetGripDown(e, s)} onPointerMove={onTypesetGripMove} onPointerUp={onTypesetGripUp} className="px-1.5 cursor-grab active:cursor-grabbing select-none touch-none text-stone-500">
+                      ⠿
+                    </span>
+                    <button data-testid="image-delete" title="Xóa trang ảnh" onClick={() => deleteTypeset(s.id)} className="px-1 py-0.5 hover:bg-rose-50 text-stone-600 hover:text-rose-600">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            {strokes
+              .filter((s) => s.typeset && !s.shape && !s.cover && !s.image)
               .map((s) => {
                 const t = s.typeset!;
                 const picked = selectedStrokes.some((q) => q.id === s.id);

@@ -49,7 +49,9 @@ const browserStorage = (): Storage | null => {
  * và hỏi khôi phục khi mở lại trang với bảng trống, để mất điện hay lỡ đóng tab không mất bài đang soạn.
  */
 export const LessonLibraryPanel: React.FC<Props> = ({getPages, loadPages, store: storeProp, autosaveMs = AUTOSAVE_MS, enabled = true}) => {
-  const storage = useMemo(browserStorage, []);
+  // localStorage chỉ có ở trình duyệt: gán sau khi gắn vào trang để HTML máy chủ và lần vẽ đầu của trình duyệt giống nhau (không lỗi hydration)
+  const [storage, setStorage] = useState<Storage | null>(null);
+  useEffect(() => setStorage(browserStorage()), []);
   const store = useMemo(() => storeProp ?? (storage ? localLessonStore(storage) : null), [storeProp, storage]);
   const [open, setOpen] = useState(false);
   const [list, setList] = useState<LessonMeta[]>([]);

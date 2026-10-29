@@ -3,6 +3,14 @@ SOCRATIC VISION BOARD AI ENGINE - FastAPI Backend v2.0.0
 Architecture: Hybrid Edge-First & Deterministic Engine Architecture
 """
 import os
+import sys
+
+# Console Windows mặc định cp1252: một dòng log tiếng Việt cũng làm sập cả lời gọi AI (UnicodeEncodeError), nên ép UTF-8 và thay ký tự lạ
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 # Auto-load .env file if present
 _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 if os.path.exists(_env_path):

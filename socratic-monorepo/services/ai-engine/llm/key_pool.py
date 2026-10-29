@@ -390,10 +390,13 @@ class KeyPoolManager:
             st.last_error_reason = f"{reason}: {str(err)[:160]}"
             st.last_error_at = time.time()
             st.cooldown_until = time.time() + cooldown
-            print(
-                f"[KeyPool] {provider.upper()} key {mask_api_key(key)} gặp {reason} -> "
-                f"cách ly {cooldown:.0f}s và tự động chuyển key tiếp theo."
-            )
+            try:
+                print(
+                    f"[KeyPool] {provider.upper()} key {mask_api_key(key)} gặp {reason} -> "
+                    f"cách ly {cooldown:.0f}s và tự động chuyển key tiếp theo."
+                )
+            except Exception:
+                pass  # lỗi ghi log không được làm hỏng việc đánh dấu khóa lỗi
         return (reason, cooldown)
 
     def reset_cooldowns(self) -> None:

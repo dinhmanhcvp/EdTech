@@ -5,12 +5,12 @@ import {Lightbulb, Send} from 'lucide-react';
 import type {LessonPlan, LessonQuestion, LessonScene} from '@socratic/types';
 import {MathView} from '../common/MathView';
 import {MathText} from '../ui/MathText';
-import {fetchLesson, sendLessonTurn} from '../../utils/lessonApi';
+import {fetchLesson, sendLessonTurn, type LessonSource} from '../../utils/lessonApi';
 
 interface ChatMessage {role: 'student' | 'tutor'; text: string}
 type LoadState = 'loading' | 'ready' | 'error';
 
-export function LessonChat() {
+export function LessonChat({source}: {source?: LessonSource} = {}) {
   const [plan, setPlan] = useState<LessonPlan | null>(null);
   const [load, setLoad] = useState<LoadState>('loading');
   const [reload, setReload] = useState(0);
@@ -27,7 +27,7 @@ export function LessonChat() {
 
   const loadPlan = useCallback(async (signal: AbortSignal, keepQuestion: boolean) => {
     try {
-      const next = await fetchLesson(signal);
+      const next = await fetchLesson(signal, source);
       setPlan(next);
       setLoad('ready');
       if (!keepQuestion) setQuestionId(next.scenes[0]?.questions[0]?.id ?? null);
@@ -61,6 +61,7 @@ export function LessonChat() {
       {lesson_id: plan.lesson_id, scene_id: scene.id, question_id: question.id, kind, message, request_id: requestId},
       chunk => setMessages(m => [...m.slice(0, -1), {role: 'tutor', text: m[m.length - 1].text + chunk}]),
       controller.signal,
+      source,
     );
     setMessages(m => [...m.slice(0, -1), {role: 'tutor', text: result.tutor_text}]);
     inFlight.current = false;

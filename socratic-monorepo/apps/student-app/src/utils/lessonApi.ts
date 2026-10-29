@@ -2,13 +2,22 @@ import {LessonPlanSchema, LessonTurnResultSchema, type LessonPlan, type LessonTu
 
 const STUDENT_ID = 'student_default';
 
-function authHeaders(): Record<string, string> {
+/** Bài học của một lượt giao bài tập (hub): học sinh thật + token hub + run_id. Không có → bài học từ bảng của lớp như cũ. */
+export interface LessonSource {
+  studentId: string;
+  token: string;
+  runId: string;
+}
+
+function authHeaders(source?: LessonSource): Record<string, string> {
+  if (source) return {Authorization: `Bearer ${source.token}`};
   const token = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_STUDENT_CONTEXT_TOKEN : undefined;
   return token ? {Authorization: `Bearer ${token}`} : {};
 }
 
-export async function fetchLesson(signal: AbortSignal): Promise<LessonPlan> {
-  const response = await fetch(`/api/v1/student/lesson/${STUDENT_ID}`, {cache: 'no-store', signal, headers: authHeaders()});
+export async function fetchLesson(signal: AbortSignal, source?: LessonSource): Promise<LessonPlan> {
+  const url = source ? `/api/v1/student/lesson/${source.studentId}?run_id=${encodeURIComponent(source.runId)}` : `/api/v1/student/lesson/${STUDENT_ID}`;
+  const response = await fetch(url, {cache: 'no-store', signal, headers: authHeaders(source)});
   if (!response.ok) throw new Error('lesson_unavailable');
   const parsed = LessonPlanSchema.safeParse(await response.json());
   if (!parsed.success) throw new Error('lesson_unavailable');
@@ -35,11 +44,11 @@ function drain(buffer: string, onEvent: (name: string, data: unknown) => void): 
 
 /** Streams the tutor reply. `acknowledged:false` means the result may be lost: retry with the same request_id. */
 export async function sendLessonTurn(
-  req: LessonTurnRequest, onToken: (text: string) => void, signal: AbortSignal,
+  req: LessonTurnRequest, onToken: (text: string) => void, signal: AbortSignal, source?: LessonSource,
 ): Promise<LessonTurnResult & {acknowledged: boolean}> {
   try {
-    const response = await fetch(`/api/v1/student/lesson/${STUDENT_ID}/turn`, {
-      method: 'POST', headers: {'Content-Type': 'application/json', ...authHeaders()}, body: JSON.stringify(req), signal,
+    const response = await fetch(`/api/v1/student/lesson/${source ? source.studentId : STUDENT_ID}/turn`, {
+      method: 'POST', headers: {'Content-Type': 'application/json', ...authHeaders(source)}, body: JSON.stringify(req), signal,
     });
     if (!response.ok) return {...TURN_LOST, acknowledged: false};
     let result: LessonTurnResult | null = null;

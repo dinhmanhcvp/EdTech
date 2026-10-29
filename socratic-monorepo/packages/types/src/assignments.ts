@@ -186,3 +186,4 @@ export type BoardSubmission = z.infer<typeof BoardSubmissionSchema>;
 export type RunMetrics = z.infer<typeof RunMetricsSchema>;
 export type MyAssignment = z.infer<typeof MyAssignmentSchema>;
 export type AssignmentStreamEvent = z.infer<typeof AssignmentStreamEventSchema>;
+export type StudentSubmissionView = z.infer<typeof StudentSubmissionViewSchema>;

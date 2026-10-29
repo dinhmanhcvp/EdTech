@@ -6,7 +6,8 @@ import { AfterSchoolTutor } from '../components/companion/AfterSchoolTutor';
 import { TeacherHeatmap, StudentMastery } from '../components/dashboards/TeacherHeatmap';
 import { ParentPulse } from '../components/dashboards/ParentPulse';
 import { SmartNotesViewer } from '../components/dashboards/SmartNotesViewer';
-import { GraduationCap, BarChart3, HeartHandshake, Compass, FileText, Sparkles } from 'lucide-react';
+import { HubHome } from '../components/hub/HubHome';
+import { GraduationCap, BarChart3, HeartHandshake, Compass, FileText, Sparkles, School } from 'lucide-react';
 import { apiBase, teacherAppUrl } from '../utils/apiBase';
 
 function getAcademicRank(eureka: number): { title: string; badgeClass: string; dotClass: string } {
@@ -18,7 +19,7 @@ function getAcademicRank(eureka: number): { title: string; badgeClass: string; d
 }
 
 export default function StudentAppPage() {
-  const [activeTab, setActiveTab] = useState<'COMPANION' | 'AFTER_SCHOOL_TUTOR' | 'SMARTNOTES' | 'HEATMAP' | 'PARENTPULSE'>('COMPANION');
+  const [activeTab, setActiveTab] = useState<'MY_CLASS' | 'COMPANION' | 'AFTER_SCHOOL_TUTOR' | 'SMARTNOTES' | 'HEATMAP' | 'PARENTPULSE'>('COMPANION');
   const [totalEureka, setTotalEureka] = useState<number>(0);
   const [curriculumLevel, setCurriculumLevel] = useState<'THPT_STANDARD' | 'OLYMPIAD_ADVANCED'>('THPT_STANDARD');
 
@@ -35,7 +36,7 @@ export default function StudentAppPage() {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');
-    if (tabParam && ['COMPANION', 'AFTER_SCHOOL_TUTOR', 'SMARTNOTES', 'HEATMAP', 'PARENTPULSE'].includes(tabParam)) {
+    if (tabParam && ['MY_CLASS', 'COMPANION', 'AFTER_SCHOOL_TUTOR', 'SMARTNOTES', 'HEATMAP', 'PARENTPULSE'].includes(tabParam)) {
       setActiveTab(tabParam as any);
     }
   }, []);
@@ -133,6 +134,18 @@ export default function StudentAppPage() {
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 bg-[#F2F0EA] p-0.5 rounded-lg border border-[#E5E3DC]">
             <button
+              onClick={() => setActiveTab('MY_CLASS')}
+              data-testid="tab-my-class"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
+                activeTab === 'MY_CLASS'
+                  ? 'bg-white text-stone-900 font-medium shadow-xs'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              <School className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Lớp của em</span>
+            </button>
+            <button
               onClick={() => setActiveTab('AFTER_SCHOOL_TUTOR')}
               data-testid="tab-after-school-tutor"
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition cursor-pointer ${
@@ -217,6 +230,8 @@ export default function StudentAppPage() {
 
       {/* Main Content Area */}
       <div className="flex-1 w-full max-w-[1500px] mx-auto p-4 md:p-6 flex flex-col items-center justify-center">
+        {activeTab === 'MY_CLASS' && <HubHome />}
+
         {activeTab === 'COMPANION' && (
           <div className="w-full flex justify-center">
             <SocraticCompanionSession

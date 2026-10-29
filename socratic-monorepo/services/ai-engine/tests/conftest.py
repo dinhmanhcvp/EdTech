@@ -63,3 +63,19 @@ def client(hub_db):
     from main import app
 
     return TestClient(app)
+
+
+def _login(client, path, payload):
+    r = client.post(path, json=payload)
+    assert r.status_code == 200, r.text
+    return {"Authorization": f"Bearer {r.json()['token']}"}
+
+
+@pytest.fixture
+def teacher_headers():
+    return lambda client, teacher_id="gv-demo", pin="2468": _login(client, "/api/v1/hub/auth/teacher", {"teacherId": teacher_id, "pin": pin})
+
+
+@pytest.fixture
+def student_headers():
+    return lambda client, code="AN2345": _login(client, "/api/v1/hub/auth/student", {"loginCode": code})

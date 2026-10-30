@@ -1,6 +1,9 @@
-"""Ghi màn hình trang thật bằng CDP screencast (JPEG chất lượng cao), cắt các đoạn chờ AI, mã hóa VP8/webm bằng ffmpeg của Playwright.
+"""Ghi màn hình trang thật, cắt các đoạn chờ AI, mã hóa mp4 H.264.
 
-Screencast chỉ gửi khung khi màn hình đổi: khi ghép video, khung cuối được giữ nguyên cho tới khung kế tiếp nên thời gian thật được giữ đúng.
+Hai cách lấy khung:
+- screencast CDP theo thời gian thật (mặc định): khung cuối được giữ tới khung kế tiếp nên thời gian thật được giữ đúng;
+- ghi từng khung (begin_manual/add_frame/end_manual) cho nét vẽ tay: mỗi khung là một ảnh chụp sau khi bút đi đúng 1/30 giây,
+  nên nét chảy đều 30 khung/giây trên mọi máy (screencast chỉ được 13–20 khung/giây khi vẽ, nét hiện thành từng cục).
 """
 from __future__ import annotations
 
@@ -11,6 +14,8 @@ import subprocess
 import tempfile
 import time
 from typing import List, Optional, Tuple
+
+Frame = Tuple[float, bytes]
 
 
 def h264_ffmpeg() -> str:
@@ -27,14 +32,47 @@ def ffmpeg_path() -> str:
     return sorted(hits)[-1]
 
 
+def build_timeline(t0: float, t1: float, frames: List[Frame], cuts: List[Tuple[float, float]],
+                   inserts: List[Tuple[float, List[Tuple[float, bytes]]]]):
+    """Thời điểm trong video của từng khung: thời gian thật − các đoạn cắt + các đoạn ghi từng khung chèn vào.
+    inserts: [(thời điểm thật bắt đầu, [(thời lượng khung, ảnh), ...])]; đoạn thật tương ứng phải nằm trong `cuts`."""
+    cuts = sorted(cuts)
+    inserts = sorted(inserts, key=lambda x: x[0])
+
+    def shift(t: float) -> float:
+        removed = sum(max(0.0, min(t, b) - a) for a, b in cuts if a < t)
+        added = sum(sum(d for d, _ in fr) for a, fr in inserts if a < t)
+        return t - t0 - removed + added
+
+    def in_cut(t: float) -> bool:
+        return any(a <= t < b for a, b in cuts)
+
+    timeline = [(shift(t), data) for t, data in frames if not in_cut(t)]
+    # khung cuối của một đoạn cắt: ảnh kết quả xuất hiện ngay sau điểm cắt
+    for a, b in cuts:
+        last_in = [d for t, d in frames if a <= t < b]
+        if last_in and not any(abs(a - ia) < 1e-9 for ia, _ in inserts):
+            timeline.append((shift(a) + 1e-3, last_in[-1]))
+    for a, fr in inserts:
+        at = shift(a)
+        for d, data in fr:
+            timeline.append((at, data))
+            at += d
+    timeline.sort(key=lambda x: x[0])
+    return timeline, shift(t1)
+
+
 class Recorder:
     def __init__(self, page, quality: int = 92):
         self.page = page
         self.cdp = page.context.new_cdp_session(page)
-        self.frames: List[Tuple[float, bytes]] = []
+        self.frames: List[Frame] = []
         self.cuts: List[Tuple[float, float]] = []
+        self.inserts: List[Tuple[float, List[Tuple[float, bytes]]]] = []
         self._cut_from: Optional[float] = None
+        self._manual: Optional[Tuple[float, List[Tuple[float, bytes]]]] = None
         self.quality = quality
+        self.started = False
         self.cdp.on("Page.screencastFrame", self._on_frame)
 
     def _on_frame(self, ev):
@@ -50,11 +88,13 @@ class Recorder:
         self.cdp.send("Page.startScreencast", {"format": "jpeg", "quality": self.quality, "maxWidth": int(vp["width"] * dpr),
                                                "maxHeight": int(vp["height"] * dpr), "everyNthFrame": 1})
         self.t0 = time.monotonic()
+        self.started = True
 
     def stop(self):
         self.page.wait_for_timeout(300)
         self.cdp.send("Page.stopScreencast")
         self.t1 = time.monotonic()
+        self.started = False
 
     def cut_begin(self):
         """Bắt đầu đoạn chờ (AI đang đọc/chấm): đoạn này bị bỏ khỏi video, chỉ giữ lại `keep` giây đầu."""
@@ -65,38 +105,44 @@ class Recorder:
             self.cuts.append((self._cut_from + keep, time.monotonic()))
             self._cut_from = None
 
+    def begin_manual(self):
+        """Bắt đầu ghi từng khung (nét vẽ tay): thời gian thật của đoạn này bị thay bằng các khung chụp tay."""
+        self._manual = (time.monotonic(), [])
+
+    def add_frame(self, duration: float):
+        """Chụp khung hiện tại, hiện trong `duration` giây của video."""
+        self._manual[1].append((duration, self.page.screenshot(type="jpeg", quality=self.quality)))
+
+    def extend_last(self, duration: float):
+        """Giữ khung vừa chụp thêm `duration` giây (nhấc bút, nghỉ giữa các nét) mà không chụp lại."""
+        if self._manual and self._manual[1]:
+            d, data = self._manual[1][-1]
+            self._manual[1][-1] = (d + duration, data)
+
+    def end_manual(self):
+        a, fr = self._manual
+        self._manual = None
+        self.cuts.append((a, time.monotonic()))
+        if fr:
+            self.inserts.append((a, fr))
+
     def hold(self, seconds: float):
         """Giữ khung hình đứng yên (screencast không gửi khung mới khi không đổi)."""
         self.page.wait_for_timeout(int(seconds * 1000))
 
-    def save(self, out_path: str, fps: int = 30, bitrate: str = "12M") -> float:
-        """Ghép khung theo thời gian thật trừ các đoạn cắt, trả về thời lượng video (giây)."""
-        if not self.frames:
+    def save(self, out_path: str, fps: int = 30) -> float:
+        """Ghép khung theo thời gian video, mã hóa mp4; trả về thời lượng (giây)."""
+        if not self.frames and not self.inserts:
             raise RuntimeError("Không có khung hình nào.")
-        cuts = sorted(self.cuts)
-
-        def removed_before(t: float) -> float:
-            return sum(max(0.0, min(t, b) - a) for a, b in cuts if a < t)
-
-        def in_cut(t: float) -> bool:
-            return any(a <= t < b for a, b in cuts)
-
-        timeline = [(t - self.t0 - removed_before(t), data) for t, data in self.frames if not in_cut(t)]
-        # khung cuối của một đoạn cắt: ảnh kết quả xuất hiện ngay sau điểm cắt
-        for a, b in cuts:
-            last_in = [d for t, d in self.frames if a <= t < b]
-            if last_in:
-                timeline.append((a - self.t0 - removed_before(a) + 1e-3, last_in[-1]))
-        timeline.sort(key=lambda x: x[0])
-        duration = self.t1 - self.t0 - removed_before(self.t1)
+        timeline, duration = build_timeline(self.t0, self.t1, self.frames, self.cuts, self.inserts)
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        # ffmpeg của Playwright không có giao thức pipe: ghi chuỗi JPEG (mỗi khung đầu ra một ảnh) ra tệp tạm rồi đọc bằng image2pipe
+        # ghi chuỗi JPEG (mỗi khung đầu ra một ảnh) ra tệp tạm rồi đọc bằng image2pipe
         idx, n = 0, int(duration * fps)
         current = timeline[0][1]
         with tempfile.NamedTemporaryFile(suffix=".mjpeg", delete=False) as tmp:
             for k in range(n):
                 t = k / fps
-                while idx < len(timeline) and timeline[idx][0] <= t:
+                while idx < len(timeline) and timeline[idx][0] <= t + 1e-9:
                     current = timeline[idx][1]
                     idx += 1
                 tmp.write(current)
@@ -116,15 +162,16 @@ class Recorder:
 
 
 def self_check():
-    """Kiểm thời gian ghép: 2 khung, cắt 1 giây ở giữa."""
-    r = Recorder.__new__(Recorder)
-    r.t0, r.t1 = 0.0, 3.0
-    r.cuts = [(1.0, 2.0)]
-    removed = lambda t: sum(max(0.0, min(t, b) - a) for a, b in r.cuts if a < t)
-    assert removed(0.5) == 0 and removed(1.5) == 0.5 and removed(2.5) == 1.0
-    assert r.t1 - r.t0 - removed(r.t1) == 2.0
+    # cắt 1 giây ở giữa
+    tl, dur = build_timeline(0.0, 3.0, [(0.5, b"a"), (1.5, b"x"), (2.5, b"b")], [(1.0, 2.0)], [])
+    assert dur == 2.0 and [d for _, d in tl] == [b"a", b"x", b"b"] and tl[-1][0] == 1.5
+    # đoạn ghi từng khung 1–2 s thật được thay bằng 3 khung × 1/30 s; khung thật sau đó lùi theo
+    tl, dur = build_timeline(0.0, 3.0, [(0.5, b"a"), (1.5, b"x"), (2.5, b"b")], [(1.0, 2.0)],
+                             [(1.0, [(1 / 30, b"m1"), (1 / 30, b"m2"), (1 / 30, b"m3")])])
+    assert [d for _, d in tl] == [b"a", b"m1", b"m2", b"m3", b"b"], tl
+    assert abs(dur - 2.1) < 1e-9 and abs(dict((d, t) for t, d in tl)[b"b"] - 1.6) < 1e-9
 
 
 if __name__ == "__main__":
     self_check()
-    print("ok", ffmpeg_path())
+    print("ok", h264_ffmpeg())

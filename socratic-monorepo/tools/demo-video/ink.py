@@ -180,8 +180,29 @@ def text(s: str, x: float, y: float, height: float, font: str = FONT, slant: flo
         w = next((i for i, (a, b) in enumerate(gaps) if a <= cx <= b), 0)
         small = (max(p[1] for p in st) - min(p[1] for p in st)) < height * 0.35 and min(p[1] for p in st) < y + height * 0.2
         return (w, small, min(p[0] for p in st))
-    ordered = [st for _, st in sorted(words, key=key)]
-    return [hand_like(st) for st in ordered]
+    ordered = [_orient(st) for _, st in sorted(words, key=key)]
+    return [hand_like(st) for st in _join_touching(ordered)]
+
+
+def _orient(st: List[Point]) -> List[Point]:
+    """Tay viết bắt đầu nét từ đầu trên/trái (khung xương có thể dò ngược chiều): nét hở đảo chiều nếu đầu kia cao/trái hơn."""
+    a, b = st[0], st[-1]
+    if math.dist(a, b) > 3 and (b[1] + 0.35 * b[0]) < (a[1] + 0.35 * a[0]):
+        return st[::-1]
+    return st
+
+
+def _join_touching(strokes: List[List[Point]], gap: float = 4.0) -> List[List[Point]]:
+    """Nối các nét liền nhau (đầu nét sau chạm cuối nét trước) thành một nét: bớt các lần nhấc bút giữa chữ mà người không làm."""
+    out: List[List[Point]] = []
+    for st in strokes:
+        if out and math.dist(out[-1][-1], st[0]) <= gap:
+            out[-1] = out[-1] + st[1:]
+        elif out and math.dist(out[-1][-1], st[-1]) <= gap:
+            out[-1] = out[-1] + st[::-1][1:]
+        else:
+            out.append(list(st))
+    return out
 
 
 TONE_MARKS = "̣̀́̃̉"
@@ -263,8 +284,22 @@ def _min_jerk(t: float) -> float:
     return 10 * t ** 3 - 15 * t ** 4 + 6 * t ** 5
 
 
-def draw(page, strokes: Sequence[Sequence[Point]], speed: float = 900.0, pause: float = 0.22, dt_ms: int = 12) -> None:
-    """Vẽ từng nét: tốc độ trung bình `speed` px/giây (±20% mỗi nét), tăng tốc rồi giảm tốc, nghỉ không đều giữa các nét."""
+def _point_at(s: Sequence[Point], cum: List[float], dist: float) -> Point:
+    j = 0
+    while j < len(cum) - 2 and cum[j + 1] < dist:
+        j += 1
+    seg = cum[j + 1] - cum[j] or 1
+    f = min(1.0, max(0.0, (dist - cum[j]) / seg))
+    a, b = s[j], s[j + 1]
+    return a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f
+
+
+def draw(page, strokes: Sequence[Sequence[Point]], speed: float = 900.0, pause: float = 0.22, dt_ms: int = 12, rec=None, fps: int = 30) -> None:
+    """Vẽ từng nét: tốc độ trung bình `speed` px/giây (±20% mỗi nét), tăng tốc rồi giảm tốc, nghỉ không đều giữa các nét.
+    Có `rec` đang ghi: vẽ theo thời gian video, chụp một khung sau mỗi 1/fps giây của bút (nét chảy đều trên mọi máy)."""
+    if rec is not None and rec.started:
+        _draw_framed(page, strokes, speed, pause, rec, fps)
+        return
     for s in strokes:
         cum = [0.0]
         for a, b in zip(s, s[1:]):
@@ -287,3 +322,26 @@ def draw(page, strokes: Sequence[Sequence[Point]], speed: float = 900.0, pause: 
             page.wait_for_timeout(dt_ms)
         page.mouse.up()
         page.wait_for_timeout(int(pause * 1000 * _rng.uniform(0.6, 1.6)))
+
+
+def _draw_framed(page, strokes, speed: float, pause: float, rec, fps: int, sub: int = 4) -> None:
+    rec.begin_manual()
+    rec.add_frame(1 / fps)
+    for s in strokes:
+        cum = [0.0]
+        for a, b in zip(s, s[1:]):
+            cum.append(cum[-1] + math.dist(a, b))
+        total = cum[-1]
+        T = max(0.12, total / (speed * _rng.uniform(0.8, 1.2)))
+        page.mouse.move(*s[0])
+        rec.extend_last(_rng.uniform(0.04, 0.11))  # đặt bút
+        page.mouse.down()
+        n = max(2, math.ceil(T * fps))
+        for k in range(1, n + 1):
+            for q in range(1, sub + 1):  # vài điểm trong mỗi khung để góc và đường cong không bị cắt thẳng
+                page.mouse.move(*_point_at(s, cum, _min_jerk((k - 1 + q / sub) / n) * total))
+            rec.add_frame(1 / fps)
+        page.mouse.up()
+        rec.extend_last(pause * _rng.uniform(0.6, 1.6))
+    rec.add_frame(1 / fps)
+    rec.end_manual()

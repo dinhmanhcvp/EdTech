@@ -61,6 +61,7 @@ Bấm đúp phím phát khi cảnh đang chạy không làm nhảy cảnh. Con t
 | `<BANG>/demo?scene=16` | Điện thoại | 9 s | 16 (UI-16) | Gõ "cho đáp án" → Hàng rào Socratic → công cụ thị giác (cân đĩa) mở |
 | `<BANG>/demo?scene=17` | Điện thoại | 10 s | 17 (UI-17) | Fe + O₂ → Fe₂O₃: bấm 4 Fe + 3 O₂ → 2 Fe₂O₃ → "SYMPY VERIFIED · Chuẩn xác 100%" |
 | `<BANG>/demo?scene=18` | Điện thoại | 9 s | 18 (UI-18) | Chốt chặn bản chất → micro → chữ "Dạ, vì số Oxi hai bên phải bằng nhau." hiện dần |
+| `<BANG>/demo?scene=19` | Bảng | 26 s | cảnh thêm (Hỏi đáp AI) | Viết "con lắc đơn" → Hỏi đáp AI → gõ "Vì sao dây càng dài thì chu kì càng lớn?" → AI đọc bảng, trả lời kèm công thức T = 2π√(l/g) → bấm "Mô phỏng con lắc đơn" mở mô phỏng ngay trên bảng |
 | `<BANG>/demo?scene=26` | Điện thoại | 7 s | 26 | Trang phụ huynh: báo cáo tuần của Lan Anh (4 ngày, 95 phút, bài thầy giao 9/11, 3 gợi ý cho gia đình), vuốt xuống. **Số liệu mẫu** |
 | `<BANG>/demo?scene=B3` | Laptop | 33 s | cắt chèn UI-B3 | Trang quản lý, tiết đang dạy: lưới 12 học sinh × 4 câu đầy dần, tỉ lệ đúng, đáp số sai hay gặp, "Cần hỗ trợ", Chiếu lên bảng, duyệt bài chờ. **Số liệu mẫu** |
 

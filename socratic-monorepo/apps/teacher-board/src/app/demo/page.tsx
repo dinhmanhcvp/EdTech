@@ -25,7 +25,7 @@ export default function DemoPage() {
       const device = q.get('device');
       if (device) list = list.filter((s) => s.device === device);
       const one = q.get('scene');
-      if (one) list = list.filter((s) => s.id === one);
+      if (one) list = list.filter((s) => s.id.toLowerCase() === one.toLowerCase());
       setScenes(list);
       setState({index: 0, count: list.length, phase: 'ready'});
     }).catch(() => setScenes([]));

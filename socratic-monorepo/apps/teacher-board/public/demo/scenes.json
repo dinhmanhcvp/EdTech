@@ -191,6 +191,16 @@
       "height": 844
     },
     {
+      "id": "19",
+      "title": "Hỏi đáp AI trên bảng: AI đọc bảng, trả lời câu hỏi của lớp",
+      "device": "board",
+      "file": "/demo/19.mp4",
+      "poster": "/demo/19.jpg",
+      "duration": 26.3,
+      "width": 1920,
+      "height": 1080
+    },
+    {
       "id": "26",
       "title": "Điện thoại phụ huynh: báo cáo tuần của con",
       "device": "phone",

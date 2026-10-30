@@ -860,7 +860,41 @@ def scene_b3(page, rec, ctx):
     rec.stop()
 
 
+def scene_19(page, rec, ctx):
+    """Thầy viết "con lắc đơn" trên bảng → mở Hỏi đáp AI → gõ câu hỏi của lớp → AI đọc bảng, trả lời kèm gợi ý mở mô phỏng."""
+    ai_cache(page, "19")
+    open_board(page)
+    rec.start()
+    rec.hold(1.0)
+    ink.draw(page, ink.text("con lắc đơn", 420, 330, 78), speed=650, pause=0.12, rec=rec)
+    rec.hold(1.0)
+    tap(page, "ai-fab", 0.7)
+    tap(page, "ai-fab-qa", 1.2)
+    page.get_by_test_id("board-ask-input").click()
+    page.keyboard.type("Vì sao dây càng dài thì chu kì càng lớn?", delay=70)
+    rec.hold(0.8)
+    page.get_by_test_id("board-ask-send").click()
+    rec.cut_begin()
+    ok = wait_until(page, "() => !!document.querySelector('[data-testid=board-ask-answer]')", 60)
+    page.wait_for_timeout(600)
+    rec.cut_end(keep=0.8)
+    print("answer:", ok)
+    probe(page, ctx, "19-answer")
+    rec.hold(4.0)
+    act = page.get_by_test_id("board-ask-action")
+    if act.count():
+        act.first.click()
+        rec.cut_begin()
+        wait_until(page, "() => !!document.querySelector('[data-testid=holo-touch-resize-handle]')", 45)
+        page.wait_for_timeout(1500)
+        rec.cut_end(keep=0.8)
+        probe(page, ctx, "19-sim")
+        rec.hold(3.0)
+    rec.stop()
+
+
 SCENES: Dict[str, dict] = {
+    "19": {"title": "Hỏi đáp AI trên bảng: AI đọc bảng, trả lời câu hỏi của lớp", "device": "board", "run": scene_19},
     "B3": {"title": "Trang quản lý: lưới bài làm trong tiết, duyệt và chiếu (số liệu mẫu)", "device": "laptop", "run": scene_b3},
     "10": {"title": "Bốn mô phỏng ghép lưới", "device": "board", "run": scene_10},
     "17": {"title": "Điện thoại: cân đĩa lệch → tự cân bằng Fe + O2", "device": "phone", "run": scene_17},

@@ -1,7 +1,7 @@
 import {describe, it, expect, vi} from 'vitest';
 import {ClassroomSnapshotSchema} from '@socratic/types';
 import type {LessonNotes, MicroLesson} from '../utils/microLesson';
-import {buildClassroomSnapshot, publishClassroomSnapshot} from '../utils/classroomSnapshot';
+import {buildClassroomSnapshot, publishClassroomSnapshot, publishRecap} from '../utils/classroomSnapshot';
 
 const NOW = new Date('2026-10-29T08:00:00Z');
 const lesson: MicroLesson = {
@@ -100,5 +100,24 @@ describe('publishClassroomSnapshot', () => {
     const fetchImpl = vi.fn();
     await expect(publishClassroomSnapshot({...snap, boardSnapshots: []}, {}, fetchImpl as unknown as typeof fetch)).rejects.toThrow(/chưa có/i);
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe('publishRecap', () => {
+  const snap = buildClassroomSnapshot(lesson, null, {now: NOW});
+
+  it('POSTs the whole lesson to the recap endpoint and returns its code', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({ok: true, status: 200, json: async () => ({status: 'saved', code: 'abc123'})});
+    const r = await publishRecap(snap, fetchImpl as unknown as typeof fetch);
+    expect(r).toEqual({code: 'abc123', sections: 3});
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(String(url)).toMatch(/\/api\/v1\/student\/recap$/);
+    expect(init.method).toBe('POST');
+  });
+
+  it('refuses an empty board and a reply without a code', async () => {
+    await expect(publishRecap({...snap, boardSnapshots: []}, vi.fn() as unknown as typeof fetch)).rejects.toThrow(/chưa có nội dung/i);
+    const noCode = vi.fn().mockResolvedValue({ok: true, status: 200, json: async () => ({})});
+    await expect(publishRecap(snap, noCode as unknown as typeof fetch)).rejects.toThrow(/mã xem lại/i);
   });
 });

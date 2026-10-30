@@ -8,7 +8,7 @@ import threading
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("STUDENT_CONTEXT_DB", str(ROOT / ".data" / "student_context.sqlite3")))
@@ -95,6 +95,12 @@ def save_snapshot(class_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     with _LOCK, _connect() as conn:
         conn.execute("INSERT INTO classroom_snapshots(class_id,payload,updated_at) VALUES(?,?,?) ON CONFLICT(class_id) DO UPDATE SET payload=excluded.payload,updated_at=excluded.updated_at", (class_id, json.dumps(payload, ensure_ascii=False), time.time()))
     return payload
+
+
+def get_snapshot(class_id: str) -> Optional[Dict[str, Any]]:
+    with _LOCK, _connect() as conn:
+        row = conn.execute("SELECT payload FROM classroom_snapshots WHERE class_id=?", (class_id,)).fetchone()
+    return json.loads(row["payload"]) if row else None
 
 
 def context_snapshot(student_id: str, class_id: str = "12A1") -> Dict[str, Any]:

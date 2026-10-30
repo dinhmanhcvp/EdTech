@@ -1,7 +1,8 @@
+import secrets
 from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from student_context import context_snapshot, get_profile, list_errors, roadmap, record_error, record_event, save_profile, save_snapshot
+from student_context import context_snapshot, get_profile, list_errors, roadmap, record_error, record_event, save_profile, save_snapshot, get_snapshot
 from security import require_roles
 
 MAX_BOARD_SNAPSHOTS = 40
@@ -70,3 +71,28 @@ def update_classroom_snapshot(req: SnapshotUpdate, _claims: dict = Depends(requi
     if len(req.snapshot["boardSnapshots"]) > MAX_BOARD_SNAPSHOTS:
         raise HTTPException(status_code=422, detail="snapshot_too_many_boardSnapshots")
     return {"status": "saved", "snapshot": save_snapshot(req.class_id, req.snapshot)}
+
+
+def _checked_snapshot(snapshot: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(snapshot.get("boardSnapshots"), list) or not isinstance(snapshot.get("studentWork"), list):
+        raise HTTPException(status_code=422, detail="snapshot_requires_boardSnapshots_and_studentWork")
+    if len(snapshot["boardSnapshots"]) > MAX_BOARD_SNAPSHOTS:
+        raise HTTPException(status_code=422, detail="snapshot_too_many_boardSnapshots")
+    return snapshot
+
+
+@router.post("/recap")
+def publish_recap(req: SnapshotUpdate, _claims: dict = Depends(require_roles({"teacher", "admin"}))) -> Dict[str, Any]:
+    """Đóng gói cả tiết thành một bản xem lại có mã riêng (không đoán được) để in vào QR; không ghi đè bài đang gửi cho lớp."""
+    code = secrets.token_urlsafe(6)
+    save_snapshot(f"recap-{code}", _checked_snapshot(req.snapshot))
+    return {"status": "saved", "code": code}
+
+
+@router.get("/recap/{code}")
+def read_recap(code: str) -> Dict[str, Any]:
+    """Công khai (học sinh quét QR, không cần đăng nhập): chỉ đọc bản đóng gói đúng mã."""
+    snap = get_snapshot(f"recap-{code}") if 0 < len(code) <= 40 else None
+    if snap is None:
+        raise HTTPException(status_code=404, detail="recap_not_found")
+    return {"snapshot": snap}

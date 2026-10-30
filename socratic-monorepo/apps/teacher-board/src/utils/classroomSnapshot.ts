@@ -92,19 +92,20 @@ export class SnapshotPublishError extends Error {
   }
 }
 
-/** Trả số phần đã gửi; ném SnapshotPublishError với thông báo tiếng Việt khi không gửi được. */
-export async function publishClassroomSnapshot(
+async function sendSnapshot(
+  method: 'PUT' | 'POST',
+  path: string,
   snapshot: ClassroomSnapshot,
-  opts: {classId?: string} = {},
-  fetchImpl: typeof fetch = fetch,
-): Promise<{sections: number}> {
+  classId: string | undefined,
+  fetchImpl: typeof fetch,
+): Promise<Response> {
   if (snapshot.boardSnapshots.length === 0) throw new SnapshotPublishError('Bảng chưa có nội dung nào để gửi cho học sinh.');
   let res: Response;
   try {
-    res = await fetchImpl(`${apiBase()}/api/v1/student/snapshot`, {
-      method: 'PUT',
+    res = await fetchImpl(`${apiBase()}${path}`, {
+      method,
       headers: {'Content-Type': 'application/json', ...authHeaders()},
-      body: JSON.stringify({class_id: opts.classId ?? '12A1', snapshot}),
+      body: JSON.stringify({class_id: classId ?? '12A1', snapshot}),
     });
   } catch {
     throw new SnapshotPublishError('Không kết nối được máy chủ. Kiểm tra mạng hoặc địa chỉ máy chủ trong "Kết nối AI".');
@@ -113,5 +114,23 @@ export async function publishClassroomSnapshot(
   if (res.status === 403) throw new SnapshotPublishError('Tài khoản này không có quyền gửi bài cho lớp.', 403);
   if (res.status === 422) throw new SnapshotPublishError('Máy chủ từ chối nội dung gửi (quá lớn hoặc sai định dạng).', 422);
   if (!res.ok) throw new SnapshotPublishError(`Máy chủ trả lỗi ${res.status}.`, res.status);
+  return res;
+}
+
+/** Trả số phần đã gửi; ném SnapshotPublishError với thông báo tiếng Việt khi không gửi được. */
+export async function publishClassroomSnapshot(
+  snapshot: ClassroomSnapshot,
+  opts: {classId?: string} = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<{sections: number}> {
+  await sendSnapshot('PUT', '/api/v1/student/snapshot', snapshot, opts.classId, fetchImpl);
   return {sections: snapshot.boardSnapshots.length};
+}
+
+/** Đóng gói cả tiết thành bản xem lại có mã riêng; học sinh mở /r/<mã> (qua QR) mà không cần đăng nhập. */
+export async function publishRecap(snapshot: ClassroomSnapshot, fetchImpl: typeof fetch = fetch): Promise<{code: string; sections: number}> {
+  const res = await sendSnapshot('POST', '/api/v1/student/recap', snapshot, undefined, fetchImpl);
+  const {code} = (await res.json()) as {code?: string};
+  if (!code) throw new SnapshotPublishError('Máy chủ không trả mã xem lại.');
+  return {code, sections: snapshot.boardSnapshots.length};
 }

@@ -40,3 +40,13 @@ def test_authenticated_student_cannot_read_another_student(monkeypatch):
     response = client.get("/api/v1/student/context/student-b", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 403
     monkeypatch.setenv("STUDENT_CONTEXT_REQUIRE_AUTH", "false")
+
+
+def test_recap_is_public_by_code_and_does_not_overwrite_class_snapshot():
+    snap = {"sessionId": "r1", "boardSnapshots": [{"id": "sec-1", "title": "Mở bài"}], "studentWork": [], "className": "12A1", "lessonTitle": "Con lắc đơn"}
+    code = client.post("/api/v1/student/recap", json={"snapshot": snap}).json()["code"]
+    got = client.get(f"/api/v1/student/recap/{code}")
+    assert got.status_code == 200 and got.json()["snapshot"]["lessonTitle"] == "Con lắc đơn"
+    assert client.get("/api/v1/student/recap/khong-co-ma").status_code == 404
+    assert client.get("/api/v1/student/recap/" + "x" * 41).status_code == 404
+    assert client.post("/api/v1/student/recap", json={"snapshot": {"boardSnapshots": []}}).status_code == 422

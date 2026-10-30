@@ -1,11 +1,13 @@
 'use client';
 
 import React, {useMemo, useState} from 'react';
-import {BookOpen, Copy, Download, Send, Sparkles, X} from 'lucide-react';
+import QRCode from 'qrcode';
+import {BookOpen, Copy, Download, QrCode, Send, Sparkles, X} from 'lucide-react';
 import type {BoardJournalData} from '../../utils/vectorJournal';
 import {buildMicroLesson, fmtClock, lessonMindMap, lessonToMarkdown, type LessonNotes, type MomentKind} from '../../utils/microLesson';
 import {askLessonNotes} from '../../utils/lessonNotes';
-import {buildClassroomSnapshot, publishClassroomSnapshot} from '../../utils/classroomSnapshot';
+import {buildClassroomSnapshot, publishClassroomSnapshot, publishRecap} from '../../utils/classroomSnapshot';
+import {studentAppUrl} from '../../utils/apiBase';
 import {MathView} from '../common/MathView';
 import {MathText} from '../ui/MathText';
 
@@ -16,6 +18,8 @@ interface Props {
   askFn?: typeof askLessonNotes;
   /** gửi dàn bài sang học sinh (Mode 2); thay được khi kiểm thử */
   publishFn?: typeof publishClassroomSnapshot;
+  /** đóng gói cả tiết để học sinh quét QR xem lại; thay được khi kiểm thử */
+  recapFn?: typeof publishRecap;
 }
 
 const ICON: Record<MomentKind, string> = {formula: 'ƒ', plane: '△', solid: '⬡', sim: '▶'};
@@ -26,7 +30,7 @@ const COLOR: Record<MomentKind, string> = {formula: '#2563EB', plane: '#059669',
  * tải về Markdown để gửi học sinh. Dàn bài và sơ đồ chỉ liệt kê đúng những gì có thật trong nhật ký; lời giảng chỉ có khi người dùng
  * bấm "AI viết lời giảng" (AI diễn đạt lại dàn bài, không có AI thì không bịa).
  */
-export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLessonNotes, publishFn = publishClassroomSnapshot}) => {
+export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLessonNotes, publishFn = publishClassroomSnapshot, recapFn = publishRecap}) => {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<'outline' | 'map'>('outline');
   const [title, setTitle] = useState('');
@@ -34,6 +38,7 @@ export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLesson
   const [notes, setNotes] = useState<LessonNotes | null>(null);
   const [ai, setAi] = useState<{state: 'idle' | 'loading' | 'error'; msg?: string; source?: string}>({state: 'idle'});
   const [pub, setPub] = useState<{state: 'idle' | 'loading' | 'ok' | 'error'; msg?: string}>({state: 'idle'});
+  const [recap, setRecap] = useState<{state: 'idle' | 'loading' | 'ok' | 'error'; msg?: string; link?: string; qr?: string}>({state: 'idle'});
 
   // lấy bản ghi mới mỗi lần mở (bảng vẫn đang ghi tiếp)
   const lesson = useMemo(() => (open ? buildMicroLesson(getJournal()) : null), [open, getJournal]);
@@ -49,6 +54,7 @@ export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLesson
           setNotes(null);
           setAi({state: 'idle'});
           setPub({state: 'idle'});
+          setRecap({state: 'idle'});
           setOpen(true);
         }}
         title="Tóm tắt tiết học thành vi bài giảng"
@@ -93,6 +99,18 @@ export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLesson
       setPub({state: 'ok', msg: `Đã gửi ${r.sections} phần cho học sinh. Các em mở "Bài học từ bảng hôm nay" trong ứng dụng học sinh.`});
     } catch (e) {
       setPub({state: 'error', msg: e instanceof Error ? e.message : 'Không gửi được cho học sinh.'});
+    }
+  };
+  const makeRecap = async () => {
+    if (!lesson) return;
+    setRecap({state: 'loading'});
+    try {
+      const r = await recapFn(buildClassroomSnapshot({...lesson, title: finalTitle}, notes));
+      const link = studentAppUrl(`r/${r.code}`);
+      const qr = await QRCode.toDataURL(link, {margin: 1, width: 320, color: {dark: '#18181B', light: '#FFFFFF'}});
+      setRecap({state: 'ok', link, qr, msg: `Đã đóng gói ${r.sections} phần. Học sinh quét mã để xem lại cả tiết.`});
+    } catch (e) {
+      setRecap({state: 'error', msg: e instanceof Error ? e.message : 'Không đóng gói được tiết học.'});
     }
   };
   const copy = async () => {
@@ -239,7 +257,7 @@ export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLesson
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 data-testid="micro-lesson-ai"
                 disabled={ai.state === 'loading'}
@@ -263,6 +281,16 @@ export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLesson
                 <Send className="h-3.5 w-3.5" />
                 {pub.state === 'loading' ? 'Đang gửi…' : 'Gửi cho học sinh'}
               </button>
+              <button
+                data-testid="micro-lesson-recap"
+                disabled={recap.state === 'loading'}
+                onClick={() => void makeRecap()}
+                title="Đóng gói cả tiết thành một trang xem lại; học sinh quét QR để mở"
+                className="flex items-center gap-1.5 rounded-lg border border-violet-300 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-60"
+              >
+                <QrCode className="h-3.5 w-3.5" />
+                {recap.state === 'loading' ? 'Đang đóng gói…' : 'Đóng gói + QR'}
+              </button>
               <button data-testid="micro-lesson-copy" onClick={() => void copy()} className="flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50">
                 <Copy className="h-3.5 w-3.5" />
                 Sao chép
@@ -276,6 +304,21 @@ export const MicroLessonPanel: React.FC<Props> = ({getJournal, askFn = askLesson
                 <span data-testid="micro-lesson-ai-source" className="text-[11px] text-stone-500">
                   Lời giảng do AI viết từ dàn bài; hãy đọc lại trước khi dùng.
                 </span>
+              )}
+              {recap.state === 'error' && (
+                <span data-testid="micro-lesson-recap-error" role="alert" className="text-[11px] text-rose-600">
+                  {recap.msg}
+                </span>
+              )}
+              {recap.state === 'ok' && recap.qr && (
+                <div data-testid="micro-lesson-recap-qr" role="status" className="flex w-full items-center gap-3 rounded-xl border border-violet-200 bg-violet-50/60 p-2.5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={recap.qr} alt="Mã QR xem lại tiết học" className="h-36 w-36 rounded-lg border border-[#E6E4DD] bg-white" />
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <span className="text-xs font-semibold text-violet-800">{recap.msg}</span>
+                    <span className="break-all font-mono text-[11px] text-stone-600">{recap.link}</span>
+                  </div>
+                </div>
               )}
               {pub.state === 'ok' && (
                 <span data-testid="micro-lesson-published" role="status" className="text-[11px] text-emerald-700">

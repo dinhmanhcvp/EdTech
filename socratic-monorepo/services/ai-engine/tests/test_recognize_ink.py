@@ -53,6 +53,16 @@ def test_parse_multiline_joins_with_newline_marker():
     assert r["confidence"] == pytest.approx(0.8)
 
 
+def test_parse_keeps_latex_commands_the_model_did_not_escape():
+    # Gemini hay viết lệnh LaTeX với một dấu \ trong JSON: \r, \t, \f, \n, \b bị hiểu thành ký tự điều khiển, \s làm hỏng JSON
+    raw = r'{"lines":[{"text":"2NO_2 <=> N_2O_4","latex":"2NO_{2} \rightleftharpoons N_{2}O_{4} \times \frac{1}{2} \neq \sqrt{2}","confidence":0.99}]}'
+    r = ri.parse_recognition(raw)
+    assert r["latex"] == r"2NO_{2} \rightleftharpoons N_{2}O_{4} \times \frac{1}{2} \neq \sqrt{2}"
+    # đã thoát đúng (\) hoặc mã unicode \u00e0 thì giữ nguyên
+    ok = ri.parse_recognition(r'{"lines":[{"text":"l\u00e0","latex":"\frac{a}{b}","confidence":0.9}]}')
+    assert ok["text"] == "l\u00e0" and ok["latex"] == r"\frac{a}{b}"
+
+
 def test_parse_garbage_returns_none():
     assert ri.parse_recognition("") is None
     assert ri.parse_recognition("không có json ở đây") is None

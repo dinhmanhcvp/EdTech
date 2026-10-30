@@ -14,7 +14,7 @@ import {
   type ConvertResult,
 } from '../../utils/inkConvert';
 import {MathView} from '../common/MathView';
-import {detectSolidFromStrokes, detectPlaneShapeFromStrokes} from '../../utils/sketchSolid';
+import {detectSolidSketch, detectPlaneShapeFromStrokes} from '../../utils/sketchSolid';
 import {makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES} from '../../utils/localRouter';
 import {detectSubject, SUBJECT_LABEL, type Subject} from '../../utils/subjectContext';
 import {findAmbiguousTokens, swapTokenInFormula} from '../../utils/ocrConfusions';
@@ -95,7 +95,7 @@ export const InkConvertPanel: React.FC<InkConvertPanelProps> = ({
   const [activeTab, setActiveTab] = useState<'VISUAL' | 'GRADE'>(initialTab);
   const [selectedSubj, setSelectedSubj] = useState<Subject | null>(initialSubject);
   const src = useMemo(() => sourceStrokes(source), [source]);
-  const sketch = useMemo(() => (editing || src.length < 4 ? null : detectSolidFromStrokes(src.map((x) => ({points: x.points})))), [src, editing]);
+  const sketch = useMemo(() => (editing ? null : detectSolidSketch(src.map((x) => ({points: x.points})))), [src, editing]);
   const planeSketch = useMemo(
     () => (editing || sketch || src.length < 1 || src.length > 4 ? null : detectPlaneShapeFromStrokes(src.map((x) => ({points: x.points})))),
     [src, editing, sketch],

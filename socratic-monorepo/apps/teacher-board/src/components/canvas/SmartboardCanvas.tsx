@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
 import { routeLocally, matchStemModel, makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES, type SolidKind } from '../../utils/localRouter';
-import { detectSolidFromStrokes, detectPlaneShapeFromStrokes, type SketchWireGraph } from '../../utils/sketchSolid';
+import { detectSolidSketch, detectPlaneShapeFromStrokes, type SketchWireGraph } from '../../utils/sketchSolid';
 import { buildSketchWire } from '../../utils/sketchWire';
 import { shapeFromBlueprint, solidWire, planeStats, VERTEX_LABELS } from '../../utils/inlineShape';
 import { drawConstructsOnCtx, evalConstructs } from '../../utils/planeConstruct';
@@ -13,7 +13,7 @@ import { BoardViewControls } from './BoardViewControls';
 import { looksLikeWords, matchViName } from '../../utils/viKeywords';
 import { InlineShape } from './InlineShape';
 import { GeometryProblemPanel, type GeoPickConfig, type GeoController } from './GeometryProblemPanel';
-import { buildScene, parseGeometryProblem, type GeoScene } from '../../utils/geometryProblem';
+import { buildScene, parseGeometryProblem, parseRichestGeometry, type GeoScene } from '../../utils/geometryProblem';
 import { draggablePoints, layoutGeo, partChips, problemTextForPlane, problemTextForSolid, showUpTo, togglePart } from '../../utils/geoTools';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
@@ -778,7 +778,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         const localTry = recognizeLocal(src);
         const localLatex = localTry?.lines.map((l) => l.latex).join(' ') ?? '';
         const textHit = looksLikeWords(localLatex) && !!matchViName(localLatex);
-        const solidSk = !textHit && src.length >= 4 ? detectSolidFromStrokes(src) : null;
+        const solidSk = !textHit && detectSolidSketch(src);
         const planeSk = !textHit && !solidSk && src.length >= 1 && src.length <= 4 ? detectPlaneShapeFromStrokes(src) : null;
         if (solidSk && solidSk.confidence >= 0.72) {
           if (alive) {
@@ -831,7 +831,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           if (!alive) return;
           setIsAiVisionScanning(false);
           const isGeo =
-            (src.length >= 4 && (detectSolidFromStrokes(src)?.confidence ?? 0) >= 0.72) ||
+            (detectSolidSketch(src)?.confidence ?? 0) >= 0.72 ||
             (src.length >= 1 && src.length <= 4 && (detectPlaneShapeFromStrokes(src)?.confidence ?? 0) >= 0.78);
           if (!aiRes || aiRes.lines.length === 0) {
             // Vision không dùng được (không khóa, hết hạn mức, lỗi mạng): dùng bản đọc cục bộ và nói rõ lý do
@@ -842,7 +842,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             setAiVisionResult(aiRes);
             const aiLatex = aiRes.lines.map((l) => l.latex).join(' \\\\ ');
             const isGeoSketch =
-              (src.length >= 4 && (detectSolidFromStrokes(src)?.confidence ?? 0) >= 0.72) ||
+              (detectSolidSketch(src)?.confidence ?? 0) >= 0.72 ||
               (src.length >= 1 && src.length <= 4 && (detectPlaneShapeFromStrokes(src)?.confidence ?? 0) >= 0.78);
             if (aiLatex.trim() && !isGeoSketch && !formulaTouchedRef.current) {
               // Vision đọc chữ có thể sai dấu ("con lốc kép"): nếu gần tên một mô phỏng thì dùng tên chuẩn
@@ -1630,7 +1630,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           if (allCur.length >= 1) {
             const recent = allCur.slice(-12).filter((s) => !s.typeset);
             if (recent.length >= 1) {
-              const solidSk = recent.length >= 4 ? detectSolidFromStrokes(recent) : null;
+              const solidSk = detectSolidSketch(recent);
               const planeSk = !solidSk && recent.length >= 1 && recent.length <= 4 ? detectPlaneShapeFromStrokes(recent) : null;
               if (solidSk && solidSk.confidence >= 0.70) {
                 transformStrokesToGeometryInPlace(recent, makeSolidBlueprint(solidSk.kind, solidSk.dims, solidSk.wire));
@@ -2774,11 +2774,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     }
     const fromText = (ai: ConvertResult | null) => {
       const sources = [formulaInput, ai ? ai.lines.map((l) => l.text).join('\n') : '', ai ? ai.lines.map((l) => l.latex).join('\n') : '', typesetHint, instantResult ? instantResult.lines.map((l) => l.latex).join('\n') : ''].filter((x) => x && x.trim());
-      for (const src of sources) {
-        const r = parseGeometryProblem(src);
-        if (r.scene) return { scene: r.scene, src };
-      }
-      return null;
+      return parseRichestGeometry(sources);
     };
     const place = (hit: { scene: GeoScene; src: string }) => {
       const bb = bboxOfStrokes(selectedStrokes);
@@ -2797,8 +2793,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     let hit = fromText(aiVisionResult);
     if (hit) return place(hit);
     // nét vẽ tay: khối trước (phân biệt hộp chữ nhật / lập phương theo tỉ lệ cạnh), rồi đa giác phẳng
-    if (!typesetHint && ink.length >= 4) {
-      const sk = detectSolidFromStrokes(ink);
+    if (!typesetHint && ink.length >= 1) {
+      const sk = detectSolidSketch(ink);
       if (sk && sk.confidence >= 0.7) {
         const t = problemTextForSolid(sk.kind, sk.dims);
         const built = t ? buildScene(t).scene : null;
@@ -2878,8 +2874,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     if (!overrideHint) {
       const geoSources = [formulaInput, aiRes ? aiRes.lines.map((l) => l.text).join('\n') : '', aiRes ? aiRes.lines.map((l) => l.latex).join('\n') : '', typesetHint, effectiveHint].filter((x) => x && x.trim());
       let isGeometry = geoSources.some((src) => !!parseGeometryProblem(src).scene);
-      if (!isGeometry && !typesetHint && !namedWords && inkSelected.length >= 4) {
-        const sk = detectSolidFromStrokes(inkSelected);
+      if (!isGeometry && !typesetHint && !namedWords && inkSelected.length >= 1) {
+        const sk = detectSolidSketch(inkSelected);
         isGeometry = !!sk && sk.confidence >= 0.7;
       }
       if (!isGeometry && !typesetHint && !namedWords && inkSelected.length >= 1 && inkSelected.length <= 4) {

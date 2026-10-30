@@ -404,6 +404,8 @@ def scene_12(page, rec, ctx):
 
     st = demo_data.ensure()
     lap_ctx = ctx["browser"].new_context(viewport=LAPTOP)
+    import record
+    record.zoom_page(lap_ctx, record.DEVICES["laptop"][2])
     lap_ctx.add_init_script(f"localStorage.setItem('console_token', {json.dumps(st['token'])}); localStorage.setItem('board_url', '{BOARD}');")
     lap = lap_ctx.new_page()
     lap.goto(CONSOLE, wait_until="networkidle")
@@ -690,26 +692,26 @@ def scene_17(page, rec, ctx):
     return True
 
 
-def type_on_board(page, x: float, y: float, text: str):
-    """Công cụ Chữ: chạm vào bảng, gõ đề, Enter."""
-    tap(page, "tool-text", 0.4)
-    page.mouse.click(x, y)
-    page.wait_for_timeout(400)
-    page.keyboard.type(text, delay=45)
-    page.wait_for_timeout(300)
-    page.keyboard.press("Enter")
-    page.wait_for_timeout(700)
+def write_lines(lines, x: float, y: float, h: float, gap: float = 1.75):
+    """Nhiều dòng chữ viết tay (đề bài), dòng sau dưới dòng trước."""
+    out = []
+    for i, ln in enumerate(lines):
+        out += ink.text(ln, x, y + i * h * gap, h)
+    return out
 
 
-GEO_10C = ["Cho hình chóp S.ABCD, đáy là hình vuông, SA ⊥ (ABCD).",
+GEO_10C = ["Cho hình chóp S.ABCD, đáy ABCD là hình vuông,",
+           "SA vuông góc với đáy.",
            "a) Gọi M là trung điểm SB.",
            "b) Gọi N là trung điểm SD.",
            "c) Gọi P là trung điểm SC."]
 SIM_10 = [
-    ("10a", ["x^2 + y^2 + z^2 = 9"], "visualize", "Mặt cầu trong Oxyz"),
-    ("10b", ["2NO2 <=> N2O4"], "visualize", "Cân bằng 2NO2 ⇌ N2O4, nén piston"),
-    ("10c", GEO_10C, "draw", "Đề hình chóp S.ABCD với nút a) b) c)"),
-    ("10d", ["mạch RLC cộng hưởng"], "visualize", "Mạch RLC cộng hưởng, giản đồ Fresnel"),
+    ("10a", lambda: ink.formula([("x", ""), ("2", "sup"), ("+", ""), ("y", ""), ("2", "sup"), ("+", ""), ("z", ""), ("2", "sup"), ("=", ""), ("9", "")], 420, 250, 78),
+     "visualize", "Mặt cầu trong Oxyz"),
+    ("10b", lambda: ink.formula([("2NO", ""), ("2", "sub"), ("<=>", ""), ("N", ""), ("2", "sub"), ("O", ""), ("4", "sub")], 420, 250, 78),
+     "visualize", "Cân bằng 2NO2 ⇌ N2O4, nén piston"),
+    ("10c", lambda: write_lines(GEO_10C, 230, 130, 46), "draw", "Đề hình chóp S.ABCD với nút a) b) c)"),
+    ("10d", lambda: ink.text("mạch RLC cộng hưởng", 420, 250, 78), "visualize", "Mạch RLC cộng hưởng, giản đồ Fresnel"),
 ]
 
 
@@ -732,6 +734,30 @@ def drag_to_value(page, test_id: str, target: float, step_px: float = 1.2, max_s
     page.mouse.up()
 
 
+def track_recognize(page):
+    """Đếm lượt gọi đọc chữ viết tay; trả về hàm chờ tới khi mọi lượt đã xong (để kịch bản biết AI đã đọc xong)."""
+    n = {"started": 0, "done": 0}
+
+    def bump(field):
+        def on(req):
+            if "recognize-ink" in req.url:
+                n[field] += 1
+        return on
+
+    page.on("request", bump("started"))
+    page.on("requestfinished", bump("done"))
+    page.on("requestfailed", bump("done"))
+
+    def wait(timeout_s: float = 60) -> bool:
+        for _ in range(int(timeout_s * 5)):
+            if n["started"] > 0 and n["started"] == n["done"]:
+                return True
+            page.wait_for_timeout(200)
+        return False
+
+    return wait
+
+
 def park_ai_disc(page):
     """Chạm giữ đĩa AI rồi kéo xuống góc dưới phải cho khỏi che đề."""
     fab = page.get_by_test_id("ai-fab").bounding_box()
@@ -746,57 +772,32 @@ def park_ai_disc(page):
     page.wait_for_timeout(300)
 
 
-PYR_10C = ("Cho hình chóp S.ABCD có đáy ABCD là hình vuông cạnh a, SA vuông góc với đáy, SA = a√2. "
-           "a) Gọi M là trung điểm SB. b) Gọi O = AC ∩ BD. c) Tìm thiết diện của hình chóp cắt bởi mặt phẳng (MOD).")
-
-
-def scene_10c(page, ctx):
-    """Đề hình học có a), b), c): AI → Vẽ hình → gõ đề → Vẽ → bật từng phần (đề đã có trong bộ test geoPartChips)."""
-    open_board(page)
-    r = Recorder(page)
-    r.start()
-    r.hold(0.8)
-    tap(page, "ai-fab", 0.6)
-    tap(page, "ai-fab-draw", 0.8)
-    tap(page, "ai-fab-draw-typed", 0.8)
-    page.get_by_test_id("geo-problem-text").press_sequentially(PYR_10C, delay=18)
-    r.hold(1.2)
-    tap(page, "geo-problem-draw", 1.5)
-    page.keyboard.press("Escape")
-    park_ai_disc(page)
-    r.hold(1.2)
-    for k in range(1, 4):
-        chip = page.locator(f"[data-testid=geo-part-{k}]")
-        if chip.count():
-            chip.first.click()
-            r.hold(2.2)
-    r.hold(1.5)
-    probe(page, ctx, "10c-sim")
-    r.stop()
-    ctx["finish"](r, "10c", "Đề hình chóp S.ABCD: dựng từ đề, bật tắt a) b) c)", "board", page.viewport_size)
-
-
 def scene_10(page, rec, ctx):
     """Bốn đoạn mô phỏng (mỗi đoạn ≥ 8 giây) để ghép lưới 2×2."""
-    for sid, lines, action, title in SIM_10:
-        if sid == "10c":
-            scene_10c(page, ctx)
+    only = os.environ.get("DEMO_SIM", "")  # VD DEMO_SIM=10b: chỉ ghi lại một ô
+    for sid, write, action, title in SIM_10:
+        if only and sid not in only.split(","):
             continue
         ai_cache(page, sid)
         open_board(page)
+        recognized = track_recognize(page)
         r = Recorder(page)
         r.start()
         r.hold(0.8)
-        x0, y0 = (260, 150) if len(lines) > 1 else (420, 260)
-        for i, ln in enumerate(lines):
-            type_on_board(page, x0, y0 + i * 78, ln)
-        items = page.locator(".typeset-item")
-        boxes = [items.nth(i).bounding_box() for i in range(items.count())] or [{"x": x0, "y": y0 - 30, "width": 700, "height": 80}]
-        left = min(b_["x"] for b_ in boxes); top = min(b_["y"] for b_ in boxes)
-        right = max(b_["x"] + b_["width"] for b_ in boxes); bottom = max(b_["y"] + b_["height"] for b_ in boxes)
+        strokes = write()
+        ink.draw(page, strokes, speed=1250 if sid == "10c" else 950, pause=0.08, rec=r)
+        r.hold(0.6)
+        pts = [p for st in strokes for p in st]
+        left, right = min(p[0] for p in pts), max(p[0] for p in pts)
+        top, bottom = min(p[1] for p in pts), max(p[1] for p in pts)
         tap(page, "tool-lasso", 0.3)
         ink.draw(page, [ink.ellipse((left + right) / 2, (top + bottom) / 2, (right - left) / 2 + 70, (bottom - top) / 2 + 60)], speed=1500, rec=r)
         r.hold(0.6)
+        # chờ AI đọc xong chữ viết tay (app chỉ chờ 9 s rồi đoán bằng bộ đọc trên máy); đoạn chờ bị cắt khỏi video
+        r.cut_begin()
+        print(sid, "recognized:", recognized())
+        page.wait_for_timeout(400)
+        r.cut_end(keep=0.3)
         page.get_by_test_id("top-toolbar-btn-visualize" if action == "visualize" else "ai-fab-draw").click()
         r.cut_begin()
         wait_until(page, "() => !!document.querySelector('[data-testid=holo-touch-resize-handle], [data-testid=shape-geo-tools]')", 45)
@@ -805,6 +806,7 @@ def scene_10(page, rec, ctx):
         page.keyboard.press("Escape")
         page.wait_for_timeout(300)
         park_ai_disc(page)
+        probe(page, ctx, sid + "-opened")
         r.hold(1.0)
         if sid == "10a":  # xoay mặt cầu
             drag(page, (1080, 190), (1230, 170), ms=1800)
@@ -814,13 +816,7 @@ def scene_10(page, rec, ctx):
             page.get_by_role("button", name="Nén piston").first.click()
             r.hold(3.5)
             page.get_by_role("button", name="Đun nóng").first.click()
-        elif sid == "10c":  # dời hình sang phải rồi bật từng phần a) b) c)
-            grips = [b_ for b_ in (page.get_by_test_id("shape-grip").nth(i).bounding_box() for i in range(page.get_by_test_id("shape-grip").count())) if b_]
-            print("grips:", [(round(b_["x"]), round(b_["y"])) for b_ in grips])
-            g = min(grips, key=lambda b_: b_["y"]) if grips else None
-            if g:
-                gx, gy = g["x"] + g["width"] / 2, g["y"] + g["height"] / 2
-                drag(page, (gx, gy), (gx + 820, gy + 140), ms=1600, steps=260)
+        elif sid == "10c":  # hình dựng ngay cạnh đề; bật từng phần a) b) c)
             r.hold(1.0)
             for k in range(1, 4):
                 chip = page.locator(f"[data-testid=geo-part-{k}]")

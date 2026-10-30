@@ -85,6 +85,7 @@ class Recorder:
     def start(self):
         vp = self.page.viewport_size
         dpr = float(self.page.evaluate("window.devicePixelRatio") or 1)
+        self.dpr = dpr
         self.cdp.send("Page.startScreencast", {"format": "jpeg", "quality": self.quality, "maxWidth": int(vp["width"] * dpr),
                                                "maxHeight": int(vp["height"] * dpr), "everyNthFrame": 1})
         self.t0 = time.monotonic()
@@ -111,7 +112,7 @@ class Recorder:
 
     def add_frame(self, duration: float):
         """Chụp khung hiện tại, hiện trong `duration` giây của video."""
-        self._manual[1].append((duration, self.page.screenshot(type="jpeg", quality=self.quality)))
+        self._manual[1].append((duration, self.page.screenshot(type="jpeg", quality=self.quality, scale="css")))  # cùng cỡ với khung screencast
 
     def extend_last(self, duration: float):
         """Giữ khung vừa chụp thêm `duration` giây (nhấc bút, nghỉ giữa các nét) mà không chụp lại."""
@@ -130,8 +131,10 @@ class Recorder:
         """Giữ khung hình đứng yên (screencast không gửi khung mới khi không đổi)."""
         self.page.wait_for_timeout(int(seconds * 1000))
 
-    def save(self, out_path: str, fps: int = 30) -> float:
-        """Ghép khung theo thời gian video, mã hóa mp4; trả về thời lượng (giây)."""
+    def save(self, out_path: str, fps: int = 30, crop=None, out_size=None) -> float:
+        """Ghép khung theo thời gian video, mã hóa mp4; trả về thời lượng (giây).
+        crop = (x, y, w, h) theo px CSS: chỉ giữ vùng đó (VD khung bảng), phóng về out_size = (rộng, cao) px.
+        Cắt theo tỉ lệ khung nhìn nên đúng với mọi cỡ khung đầu vào."""
         if not self.frames and not self.inserts:
             raise RuntimeError("Không có khung hình nào.")
         timeline, duration = build_timeline(self.t0, self.t1, self.frames, self.cuts, self.inserts)
@@ -146,18 +149,24 @@ class Recorder:
                     current = timeline[idx][1]
                     idx += 1
                 tmp.write(current)
+        vf = "pad=ceil(iw/2)*2:ceil(ih/2)*2"
+        if crop:
+            vp = self.page.viewport_size
+            fx, fy, fw, fh = crop[0] / vp["width"], crop[1] / vp["height"], crop[2] / vp["width"], crop[3] / vp["height"]
+            ow, oh = out_size
+            vf = f"crop=iw*{fw:.5f}:ih*{fh:.5f}:iw*{fx:.5f}:ih*{fy:.5f},scale={ow}:{oh}:flags=lanczos"
         try:
             res = subprocess.run(
                 [h264_ffmpeg(), "-loglevel", "error", "-y", "-f", "image2pipe", "-c:v", "mjpeg", "-framerate", str(fps), "-i", tmp.name,
-                 "-c:v", "libx264", "-preset", "slow", "-crf", "16", "-pix_fmt", "yuv420p", "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2",
+                 "-c:v", "libx264", "-preset", "slow", "-crf", "16", "-pix_fmt", "yuv420p", "-vf", vf,
                  "-movflags", "+faststart", out_path], capture_output=True, text=True)
         finally:
             os.unlink(tmp.name)
         if res.returncode != 0:
             raise RuntimeError("ffmpeg lỗi khi ghi " + out_path + ": " + res.stderr[-500:])
+        # ảnh khung đầu lấy từ chính video (đã cắt khung)
         poster = os.path.splitext(out_path)[0] + ".jpg"
-        with open(poster, "wb") as f:
-            f.write(timeline[0][1])
+        subprocess.run([h264_ffmpeg(), "-loglevel", "error", "-y", "-i", out_path, "-frames:v", "1", "-q:v", "3", poster], check=True)
         return n / fps
 
 

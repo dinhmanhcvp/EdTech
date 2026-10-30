@@ -6,7 +6,7 @@
       "device": "board",
       "file": "/demo/06-07.mp4",
       "poster": "/demo/06-07.jpg",
-      "duration": 32.2,
+      "duration": 32.0,
       "width": 1920,
       "height": 1080
     },
@@ -16,7 +16,7 @@
       "device": "board",
       "file": "/demo/08.mp4",
       "poster": "/demo/08.jpg",
-      "duration": 19.8,
+      "duration": 20.9,
       "width": 1920,
       "height": 1080
     },
@@ -26,7 +26,7 @@
       "device": "board",
       "file": "/demo/10a.mp4",
       "poster": "/demo/10a.jpg",
-      "duration": 20.9,
+      "duration": 27.2,
       "width": 1920,
       "height": 1080
     },
@@ -36,17 +36,17 @@
       "device": "board",
       "file": "/demo/10b.mp4",
       "poster": "/demo/10b.jpg",
-      "duration": 18.7,
+      "duration": 24.8,
       "width": 1920,
       "height": 1080
     },
     {
       "id": "10c",
-      "title": "Đề hình chóp S.ABCD: dựng từ đề, bật tắt a) b) c)",
+      "title": "Đề hình chóp S.ABCD với nút a) b) c)",
       "device": "board",
       "file": "/demo/10c.mp4",
       "poster": "/demo/10c.jpg",
-      "duration": 23.2,
+      "duration": 89.1,
       "width": 1920,
       "height": 1080
     },
@@ -56,7 +56,7 @@
       "device": "board",
       "file": "/demo/10d.mp4",
       "poster": "/demo/10d.jpg",
-      "duration": 38.2,
+      "duration": 55.1,
       "width": 1920,
       "height": 1080
     },
@@ -66,7 +66,7 @@
       "device": "board",
       "file": "/demo/11.mp4",
       "poster": "/demo/11.jpg",
-      "duration": 16.6,
+      "duration": 16.8,
       "width": 1920,
       "height": 1080
     },
@@ -76,7 +76,7 @@
       "device": "laptop",
       "file": "/demo/12a.mp4",
       "poster": "/demo/12a.jpg",
-      "duration": 9.5,
+      "duration": 9.8,
       "width": 1600,
       "height": 1000
     },
@@ -86,7 +86,7 @@
       "device": "board",
       "file": "/demo/12b.mp4",
       "poster": "/demo/12b.jpg",
-      "duration": 24.9,
+      "duration": 24.5,
       "width": 1920,
       "height": 1080
     },
@@ -96,7 +96,7 @@
       "device": "board",
       "file": "/demo/13.mp4",
       "poster": "/demo/13.jpg",
-      "duration": 52.3,
+      "duration": 54.2,
       "width": 1920,
       "height": 1080
     },
@@ -106,7 +106,7 @@
       "device": "phone",
       "file": "/demo/13-phone.mp4",
       "poster": "/demo/13-phone.jpg",
-      "duration": 32.5,
+      "duration": 34.3,
       "width": 390,
       "height": 844
     },
@@ -116,7 +116,7 @@
       "device": "board",
       "file": "/demo/13A.mp4",
       "poster": "/demo/13A.jpg",
-      "duration": 7.1,
+      "duration": 6.9,
       "width": 1920,
       "height": 1080
     },
@@ -126,7 +126,7 @@
       "device": "board",
       "file": "/demo/13B.mp4",
       "poster": "/demo/13B.jpg",
-      "duration": 12.8,
+      "duration": 13.4,
       "width": 1920,
       "height": 1080
     },
@@ -136,7 +136,7 @@
       "device": "tablet",
       "file": "/demo/14a.mp4",
       "poster": "/demo/14a.jpg",
-      "duration": 10.8,
+      "duration": 11.1,
       "width": 1180,
       "height": 820
     },
@@ -146,7 +146,7 @@
       "device": "tablet",
       "file": "/demo/14b.mp4",
       "poster": "/demo/14b.jpg",
-      "duration": 7.7,
+      "duration": 7.8,
       "width": 1180,
       "height": 820
     },

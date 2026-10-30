@@ -144,7 +144,9 @@ def parse_recognition(raw: str) -> Optional[Dict[str, Any]]:
     m = re.search(r"\{.*\}", raw, re.DOTALL)
     if not m:
         return None
-    clean_json = m.group(0)
+    # mô hình hay viết lệnh LaTeX với một dấu \ (\rightleftharpoons, \frac, \sqrt): JSON hiểu \r, \f… thành ký tự điều khiển
+    # hoặc báo lỗi; nhân đôi dấu \ lẻ đứng trước ≥ 2 chữ cái (trừ mã unicode à) để giữ nguyên lệnh
+    clean_json = re.sub(r"(?<!\\)((?:\\\\)*)\\(?!u[0-9a-fA-F]{4})(?=[A-Za-z]{2})", r"\1\\\\", m.group(0))
     try:
         data = json.loads(clean_json)
     except json.JSONDecodeError:

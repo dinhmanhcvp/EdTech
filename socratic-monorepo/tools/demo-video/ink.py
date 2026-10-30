@@ -73,8 +73,8 @@ def ellipse(cx: float, cy: float, rx: float, ry: float, start: float = -2.2, tur
 
 
 def cube(x: float, y: float, s: float, depth: float = 0.45) -> List[List[Point]]:
-    """Hình lập phương 6 nét như tay vẽ nhanh trên bảng: cả hình hơi nghiêng, các mặt không vuông đều,
-    mặt trước vẽ từ góc trên trái đi xuống, mặt sau lệch tay, bốn cạnh nối chạm không khít."""
+    """Hình lập phương MỘT nét không nhấc bút (như video demo bảng AI): cả hình hơi nghiêng, các mặt không vuông đều.
+    8 đỉnh đều bậc 3 nên phải đi lại 3 cạnh; mỗi lần đi lại lệch tay vài px như người vẽ nhanh."""
     rot = _rng.uniform(-0.05, 0.05)
     w, h = s * _rng.uniform(0.93, 1.05), s * _rng.uniform(0.93, 1.05)
     dx, dy = s * _rng.uniform(depth - 0.07, depth + 0.05), -s * _rng.uniform(depth - 0.09, depth + 0.03)
@@ -84,12 +84,10 @@ def cube(x: float, y: float, s: float, depth: float = 0.45) -> List[List[Point]]
         px, py = px - cx + _rng.uniform(-j, j), py - cy + _rng.uniform(-j, j)
         return cx + px * math.cos(rot) - py * math.sin(rot), cy + px * math.sin(rot) + py * math.cos(rot)
 
-    A, B, C, D = P(x, y + h), P(x + w, y + h), P(x + w, y), P(x, y)
-    A2, B2, C2, D2 = P(x + dx, y + h + dy, 6), P(x + w + dx, y + h + dy, 6), P(x + w + dx, y + dy, 6), P(x + dx, y + dy, 6)
-    near = lambda p, j=4.0: (p[0] + _rng.uniform(-j, j), p[1] + _rng.uniform(-j, j))  # cạnh nối chạm lệch vài px
-    strokes = [hand_path([D, A, B, C, D], slop=1.5, wobble=1.4, bow=0.018), hand_path([D2, A2, B2, C2, D2], slop=2.0, wobble=1.6, bow=0.02)]
-    strokes += [hand_path([near(p), near(q)], wobble=0.9, bow=0.02, overshoot=_rng.uniform(2, 8)) for p, q in ((D, D2), (C, C2), (B, B2), (A, A2))]
-    return strokes
+    # mặt trước A B C D (trên trái, trên phải, dưới phải, dưới trái), mặt sau E F G H lệch lên phải
+    A, B, C, D = P(x, y), P(x + w, y), P(x + w, y + h), P(x, y + h)
+    E, F, G, H = P(x + dx, y + dy, 6), P(x + w + dx, y + dy, 6), P(x + w + dx, y + h + dy, 6), P(x + dx, y + h + dy, 6)
+    return [hand_path([A, B, F, E, A, D, C, G, H, D, C, B, F, G, H, E], slop=1.8, wobble=1.4, bow=0.016, overshoot=4.0)]
 
 
 FONT = "C:/Windows/Fonts/Inkfree.ttf"
@@ -188,10 +186,49 @@ def text(s: str, x: float, y: float, height: float, font: str = FONT, slant: flo
     def key(item):
         cx, st = item
         w = next((i for i, (a, b) in enumerate(gaps) if a <= cx <= b), 0)
-        small = (max(p[1] for p in st) - min(p[1] for p in st)) < height * 0.35 and min(p[1] for p in st) < y + height * 0.2
+        tiny = (max(p[1] for p in st) - min(p[1] for p in st)) < height * 0.35
+        small = tiny and (min(p[1] for p in st) < y + height * 0.2 or min(p[1] for p in st) > y + height * 0.95)  # dấu, chấm ở trên; dấu nặng dưới
         return (w, small, min(p[0] for p in st))
-    ordered = [_orient(st) for _, st in sorted(words, key=key)]
-    return [hand_like(st) for st in _join_touching(ordered)]
+    out: List[List[Point]] = []
+    groups = {}
+    spans = _letter_spans(s, x, f, k)
+    for item in sorted(words, key=key):
+        w, small, _ = key(item)
+        a, b = spans[w] if w < len(spans) else (x, x)
+        kind = 1 if small else 0 if a <= item[0] <= b else 2  # 2: dấu câu ( ) . , viết rời, không nối vào chữ
+        groups.setdefault(w, ([], [], []))[kind].append(_orient(item[1]))
+    for w in sorted(groups):
+        body, small, punct = groups[w]
+        word = s.split(" ")[w] if w < len(s.split(" ")) else ""
+        joined = _join_touching(body)
+        # chữ in hoa (RLC, SB, S.ABCD) người ta viết rời từng chữ; chữ thường viết liền cả từ
+        letters = (_cursive(joined, height) if any(ch.islower() for ch in word) else joined) + _join_touching(small)
+        # dấu câu đứng trước chữ thì viết trước, đứng sau thì viết sau
+        before = [p for p in punct if p[0][0] < a_of(spans, w, x)]
+        out += before + letters + [p for p in punct if p not in before]
+    return [hand_like(st) for st in out]
+
+
+def _cursive(strokes: List[List[Point]], height: float) -> List[List[Point]]:
+    """Viết liền cả từ: cuối nét trước kéo một nét nối mềm (võng xuống như nét nối chữ) sang đầu nét sau, không nhấc bút.
+    Chỉ nhấc bút khi nét sau ở quá xa hoặc lùi hẳn về trái."""
+    out: List[List[Point]] = []
+    for st in strokes:
+        if out:
+            a = out[-1][-1]
+            if math.dist(a, st[-1]) < 0.6 * math.dist(a, st[0]):
+                st = st[::-1]
+            b = st[0]
+            d = math.dist(a, b)
+            if d <= 1.4 * height and b[0] - a[0] > -0.5 * height:
+                c = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + 0.2 * d)
+                n = max(2, int(d / 3))
+                link = [((1 - t) ** 2 * a[0] + 2 * (1 - t) * t * c[0] + t * t * b[0], (1 - t) ** 2 * a[1] + 2 * (1 - t) * t * c[1] + t * t * b[1])
+                        for t in (i / n for i in range(1, n))]
+                out[-1] = out[-1] + link + list(st)
+                continue
+        out.append(list(st))
+    return [_chaikin(st, 1) for st in out]
 
 
 def _orient(st: List[Point]) -> List[Point]:
@@ -252,6 +289,20 @@ def _mark_strokes(mark: str, cx: float, cy: float, u: float) -> List[List[Point]
     return [[(cx, cy), (cx + 0.08 * u, cy + 0.06 * u)]]  # nặng
 
 
+def _letter_spans(s: str, x: float, f, k: float):
+    """Khoảng x (px bảng) từ chữ cái đầu tới chữ cái cuối của từng từ: phần ngoài khoảng này là dấu câu."""
+    out, pos = [], 0
+    for w in s.split(" "):
+        idx = [i for i, ch in enumerate(w) if ch.isalnum()] or [0, max(0, len(w) - 1)]
+        out.append((x + f.getlength(s[: pos + idx[0]]) * k - 3, x + f.getlength(s[: pos + idx[-1] + 1]) * k + 3))
+        pos += len(w) + 1
+    return out
+
+
+def a_of(spans, w: int, x: float) -> float:
+    return spans[w][0] if w < len(spans) else x
+
+
 def _word_bounds(s: str, x: float, height: float, f, k: float):
     out, pos = [], 0
     for w in s.split(" "):
@@ -288,6 +339,32 @@ def integral(x: float, y: float, h: float, lower: str = "0", upper: str = "1", b
     strokes += text(power, bx + body_h * 0.62, y + h * 0.2, small)
     strokes += text(tail, bx + body_h * 1.2, y + h * 0.36, body_h)
     return strokes
+
+
+def formula(parts: Sequence[Tuple[str, str]], x: float, y: float, h: float) -> List[List[Point]]:
+    """Công thức viết tay trái → phải: parts = [(chuỗi, "" | "sup" | "sub")]; số mũ, chỉ số viết nhỏ sát chữ trước;
+    "<=>" vẽ thành mũi tên hai chiều ⇌ (phông không có)."""
+    out: List[List[Point]] = []
+    cx = x
+    for s, kind in parts:
+        cx += h * (0.04 if kind else 0.3)
+        if s == "<=>":
+            L, yy = h * 1.1, y + h * 0.45
+            top = hand_path([(cx, yy - h * 0.1), (cx + L, yy - h * 0.1), (cx + L - h * 0.25, yy - h * 0.3)], wobble=0.6, slop=1, overshoot=0)
+            bot = hand_path([(cx + L, yy + h * 0.1), (cx, yy + h * 0.1), (cx + h * 0.25, yy + h * 0.3)], wobble=0.6, slop=1, overshoot=0)
+            strokes = [top, bot]
+        elif s == "9":  # số 9 của phông giống chữ a: viết vòng tròn rồi kéo thân thẳng xuống
+            r = h * 0.27
+            loop = ellipse(cx + r * 1.1, y + r * 1.05, r, r * 0.95, start=-0.2, turns=1.0, n=40)
+            stem = [loop[-1], (cx + r * 2.05, y + r * 1.6), (cx + r * 1.85, y + h * 0.98)]
+            strokes = [hand_like(_chaikin(_resample(loop + stem[1:], 3.0), 2), wobble=0.5)]
+        else:
+            hh = h * 0.5 if kind else h
+            yy = y - h * 0.08 if kind == "sup" else y + h * 0.62 if kind == "sub" else y
+            strokes = text(s, cx, yy, hh)
+        out += strokes
+        cx = max(p[0] for st in strokes for p in st)
+    return out
 
 
 def _min_jerk(t: float) -> float:

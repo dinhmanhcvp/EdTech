@@ -1611,3 +1611,15 @@ export function parseGeometryProblem(raw: string): GeometryParse {
   const detail = extra || text.trim().length > 40 || /đáy|vuông|cân|đều|bằng|=|cạnh/.test(text.replace(/hình vuông|hình chữ nhật/g, ''));
   return {figure: renderScene(sc), scene: sc, isProblem: detail, notes: sc.notes, ignored: sc.ignored};
 }
+
+/** Trong các nguồn đề (ô công thức, chữ AI đọc, LaTeX…), lấy nguồn dựng được hình có nhiều phần a), b)… nhất:
+ * tên hình đoán từ nét (VD "Hình chóp S.ABCD") không được giành chỗ của đề đầy đủ vừa đọc từ chữ viết tay. Hòa thì giữ nguồn đứng trước. */
+export function parseRichestGeometry(sources: string[]): {scene: GeoScene; src: string} | null {
+  let best: {scene: GeoScene; src: string} | null = null;
+  for (const src of sources) {
+    if (!src || !src.trim()) continue;
+    const r = parseGeometryProblem(src);
+    if (r.scene && (!best || r.scene.parts.length > best.scene.parts.length)) best = {scene: r.scene, src};
+  }
+  return best;
+}

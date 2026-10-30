@@ -369,6 +369,14 @@ export function detectSolidFromStrokes(strokes: SketchStrokeLike[]): SketchSolid
   return null;
 }
 
+/** Khối vẽ tay trên bảng, kể cả vẽ một nét liền không nhấc bút: từ 4 nét trở lên dùng ngưỡng thường của nơi gọi;
+ * ít hơn 4 nét (một nét liền, hay chữ viết liền) chỉ nhận khi cấu trúc khớp rất rõ, để chữ không bị coi là khối. */
+export function detectSolidSketch(strokes: SketchStrokeLike[]): SketchSolid | null {
+  if (strokes.length === 0) return null;
+  const r = detectSolidFromStrokes(strokes);
+  return r && (strokes.length >= 4 || r.confidence >= 0.9) ? r : null;
+}
+
 export type PlaneShapeKind =
   | 'triangle_equilateral'
   | 'triangle_right'

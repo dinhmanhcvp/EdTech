@@ -44,10 +44,10 @@ Bấm đúp phím phát khi cảnh đang chạy không làm nhảy cảnh. Con t
 |---|---|---|---|---|
 | `<BANG>/demo?scene=06-07` | Bảng | 46 s | 06, 07 (UI-06/07) | Vẽ lập phương 6 nét → Chọn → khoanh → **Vẽ hình** → hình chuẩn có nhãn, nét đứt → Hiển thị → Xoay tự do → Khai triển → Cắt ngang (Lên/Xuống, diện tích, chu vi) |
 | `<BANG>/demo?scene=08` | Bảng | 34 s | 08 (UI-08) | Viết "con lắc đơn" → khoanh → Trực quan → con lắc góc lớn → kéo θ₀ về 0,8 rad (≈ 45°), dao động + đồ thị pha |
-| `<BANG>/demo?scene=10a` | Bảng | 24 s | 10 ô 1 (UI-10) | Gõ x² + y² + z² = 9 → khoanh → Trực quan → mặt cầu cắt mặt phẳng trong Oxyz, kéo xoay |
-| `<BANG>/demo?scene=10b` | Bảng | 22 s | 10 ô 2 | 2NO₂ ⇌ N₂O₄ → piston: Nén piston ×2, Đun nóng +40 °C |
-| `<BANG>/demo?scene=10c` | Bảng | 24 s | 10 ô 3 | AI → Vẽ hình → Gõ đề "Cho hình chóp S.ABCD…" có a), b), c) → hình dựng từ đề → bấm a), b), c) hiện M, O, thiết diện (MOD) |
-| `<BANG>/demo?scene=10d` | Bảng | 43 s | 10 ô 4 | Mạch RLC cộng hưởng: kéo tần số góc ω lên, giản đồ Fresnel và đường cộng hưởng đổi theo |
+| `<BANG>/demo?scene=10a` | Bảng | 27 s | 10 ô 1 (UI-10) | Viết tay x² + y² + z² = 9 → khoanh → Trực quan → mặt cầu cắt mặt phẳng trong Oxyz, kéo xoay |
+| `<BANG>/demo?scene=10b` | Bảng | 25 s | 10 ô 2 | Viết tay 2NO₂ ⇌ N₂O₄ → khoanh → Trực quan → piston: Nén piston ×2, Đun nóng +40 °C |
+| `<BANG>/demo?scene=10c` | Bảng | 89 s | 10 ô 3 | Viết tay đề "Cho hình chóp S.ABCD…" có a), b), c) → khoanh → Vẽ hình → hình dựng cạnh đề → bấm a), b), c) hiện từng phần M, N, P |
+| `<BANG>/demo?scene=10d` | Bảng | 55 s | 10 ô 4 | Viết tay "mạch RLC cộng hưởng" → Trực quan → kéo tần số góc ω lên, giản đồ Fresnel và đường cộng hưởng đổi theo |
 | `<BANG>/demo?scene=11` | Bảng | 24 s | 11 (UI-11) | Viết vội ∫₀¹ x² dx → khoanh → Chuyển LaTeX → Thay nét viết bằng công thức |
 | `<BANG>/demo?scene=12a` | Laptop | 9 s | 12a (UI-12) | Trang quản lý: tiết mới → lớp 12A1 → bài soạn → Bắt đầu → mã ghép |
 | `<BANG>/demo?scene=12b` | Bảng | 26 s | 12b (UI-12) | Ghép tiết, nhập mã → bảng nhận bài + "Thầy Kiệm" → Lớp học → QR phóng to → thu nhỏ: "4 học sinh đã vào" |
@@ -75,7 +75,7 @@ Không có `?scene` (`<BANG>/demo`) thì chạy lần lượt mọi cảnh, ch�
 - Cảnh 15: dùng bài **ném xiên (Vật lý)**, vì máy chấm chỉ bác được bước sai của bài này; bài Hóa có nhiều đại lượng nên máy chỉ báo "chưa phân tích được". Cảnh 16, 17, 18 vẫn là bài Hóa.
 - Cảnh 18: video dừng khi lời nói hiện đủ. Với đúng câu thoại này, chốt chặn thật trả lời "đúng một phần, còn thiếu từ khóa" (cần nói có "bảo toàn khối lượng", "số nguyên tử").
 - **Số liệu mẫu (theo yêu cầu, dùng tạm cho video):** cảnh 26 (báo cáo phụ huynh) và B3 (lưới bài làm) hiển thị trên giao diện thật nhưng số liệu do `tools/demo-video/sample_data.py` dựng sẵn, không phải số đo thật của lớp. Kịch bản (mục 1) quy định "mọi con số trên hình giữ đúng như kịch bản, không thêm số mới": duyệt lại các số này trước khi dựng. Phần mềm thật vẫn tính số liệu từ dữ liệu thật.
-- Cảnh 10: ô 1, 2, 4 gõ đề bằng công cụ Chữ thay vì viết tay (cảnh ghi màn hình, không có diễn viên); ô 3 gõ đề vào AI → Vẽ hình → Gõ đề.
+- Cảnh 10: cả 4 ô viết tay (chữ viết liền từng từ như người viết); đoạn chờ AI đọc chữ bị cắt khỏi video. Cảnh 06: lập phương vẽ một nét liền không nhấc bút.
 
 ## 4. Deploy 1 repo thành 3 link Vercel (phần giao diện của 3 đỉnh)
 

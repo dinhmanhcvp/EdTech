@@ -73,12 +73,22 @@ def ellipse(cx: float, cy: float, rx: float, ry: float, start: float = -2.2, tur
 
 
 def cube(x: float, y: float, s: float, depth: float = 0.45) -> List[List[Point]]:
-    """Hình lập phương 6 nét: mặt trước, mặt sau, bốn cạnh nối."""
-    d = s * depth
-    A, B, C, D = (x, y + s), (x + s, y + s), (x + s, y), (x, y)
-    A2, B2, C2, D2 = [(px + d, py - d) for px, py in (A, B, C, D)]
-    strokes = [hand_path([A, B, C, D, A]), hand_path([A2, B2, C2, D2, A2])]
-    strokes += [hand_path([p, q], wobble=1.0, overshoot=4) for p, q in ((A, A2), (B, B2), (C, C2), (D, D2))]
+    """Hình lập phương 6 nét như tay vẽ nhanh trên bảng: cả hình hơi nghiêng, các mặt không vuông đều,
+    mặt trước vẽ từ góc trên trái đi xuống, mặt sau lệch tay, bốn cạnh nối chạm không khít."""
+    rot = _rng.uniform(-0.05, 0.05)
+    w, h = s * _rng.uniform(0.93, 1.05), s * _rng.uniform(0.93, 1.05)
+    dx, dy = s * _rng.uniform(depth - 0.07, depth + 0.05), -s * _rng.uniform(depth - 0.09, depth + 0.03)
+    cx, cy = x + w / 2, y + h / 2
+
+    def P(px: float, py: float, j: float = 3.5) -> Point:
+        px, py = px - cx + _rng.uniform(-j, j), py - cy + _rng.uniform(-j, j)
+        return cx + px * math.cos(rot) - py * math.sin(rot), cy + px * math.sin(rot) + py * math.cos(rot)
+
+    A, B, C, D = P(x, y + h), P(x + w, y + h), P(x + w, y), P(x, y)
+    A2, B2, C2, D2 = P(x + dx, y + h + dy, 6), P(x + w + dx, y + h + dy, 6), P(x + w + dx, y + dy, 6), P(x + dx, y + dy, 6)
+    near = lambda p, j=4.0: (p[0] + _rng.uniform(-j, j), p[1] + _rng.uniform(-j, j))  # cạnh nối chạm lệch vài px
+    strokes = [hand_path([D, A, B, C, D], slop=1.5, wobble=1.4, bow=0.018), hand_path([D2, A2, B2, C2, D2], slop=2.0, wobble=1.6, bow=0.02)]
+    strokes += [hand_path([near(p), near(q)], wobble=0.9, bow=0.02, overshoot=_rng.uniform(2, 8)) for p, q in ((D, D2), (C, C2), (B, B2), (A, A2))]
     return strokes
 
 
@@ -294,31 +304,70 @@ def _point_at(s: Sequence[Point], cum: List[float], dist: float) -> Point:
     return a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f
 
 
+def _corners(s: Sequence[Point], cum: List[float], reach: float = 7.0, min_turn: float = 0.9) -> List[int]:
+    """Chỉ số các góc gấp của nét (đổi hướng > ~50°): tay người chậm lại và dừng một nhịp ở đó."""
+    out: List[int] = []
+    for i in range(1, len(s) - 1):
+        j = i
+        while j > 0 and cum[i] - cum[j] < reach:
+            j -= 1
+        k = i
+        while k < len(s) - 1 and cum[k] - cum[i] < reach:
+            k += 1
+        if j == i or k == i:
+            continue
+        a1 = math.atan2(s[i][1] - s[j][1], s[i][0] - s[j][0])
+        a2 = math.atan2(s[k][1] - s[i][1], s[k][0] - s[i][0])
+        turn = abs((a2 - a1 + math.pi) % (2 * math.pi) - math.pi)
+        if turn > min_turn:
+            if out and cum[i] - cum[out[-1]] < reach * 1.5:
+                continue  # cùng một góc
+            out.append(i)
+    return out
+
+
+def _pen_motion(s: Sequence[Point], speed: float):
+    """Chuyển động bút của một nét: mỗi đoạn giữa hai góc tăng tốc rồi giảm tốc (min-jerk), dừng 25–70 ms ở góc.
+    Trả về (vị trí theo thời gian, tổng thời gian)."""
+    cum = [0.0]
+    for a, b in zip(s, s[1:]):
+        cum.append(cum[-1] + math.dist(a, b))
+    v = speed * _rng.uniform(0.8, 1.2)
+    marks = [0] + _corners(s, cum) + [len(s) - 1]
+    plan = []  # (thời điểm bắt đầu, thời lượng, quãng đầu, quãng cuối)
+    t = 0.0
+    for i0, i1 in zip(marks, marks[1:]):
+        L = cum[i1] - cum[i0]
+        dur = max(0.06, L / v)
+        plan.append((t, dur, cum[i0], cum[i1]))
+        t += dur
+        if i1 != marks[-1]:
+            t += _rng.uniform(0.025, 0.07)  # dừng ở góc, không nhấc bút
+
+    def pos(tt: float) -> Point:
+        for start, dur, d0, d1 in reversed(plan):
+            if tt >= start:
+                f = min(1.0, (tt - start) / dur)
+                return _point_at(s, cum, d0 + (d1 - d0) * _min_jerk(f))
+        return s[0]
+
+    return pos, t
+
+
 def draw(page, strokes: Sequence[Sequence[Point]], speed: float = 900.0, pause: float = 0.22, dt_ms: int = 12, rec=None, fps: int = 30) -> None:
-    """Vẽ từng nét: tốc độ trung bình `speed` px/giây (±20% mỗi nét), tăng tốc rồi giảm tốc, nghỉ không đều giữa các nét.
-    Có `rec` đang ghi: vẽ theo thời gian video, chụp một khung sau mỗi 1/fps giây của bút (nét chảy đều trên mọi máy)."""
+    """Vẽ từng nét như tay: tốc độ trung bình `speed` px/giây (±20% mỗi nét), chậm lại và dừng một nhịp ở góc,
+    nghỉ không đều giữa các nét. Có `rec` đang ghi: vẽ theo thời gian video, chụp một khung sau mỗi 1/fps giây của bút."""
     if rec is not None and rec.started:
         _draw_framed(page, strokes, speed, pause, rec, fps)
         return
     for s in strokes:
-        cum = [0.0]
-        for a, b in zip(s, s[1:]):
-            cum.append(cum[-1] + math.dist(a, b))
-        total = cum[-1]
-        T = max(0.12, total / (speed * _rng.uniform(0.8, 1.2)))
+        pos, T = _pen_motion(s, speed)
         page.mouse.move(*s[0])
         page.wait_for_timeout(_rng.randint(40, 110))  # đặt bút
         page.mouse.down()
         steps = max(2, int(T * 1000 / dt_ms))
-        j = 0
         for k in range(1, steps + 1):
-            target = _min_jerk(k / steps) * total
-            while j < len(cum) - 2 and cum[j + 1] < target:
-                j += 1
-            seg = cum[j + 1] - cum[j] or 1
-            f = min(1.0, max(0.0, (target - cum[j]) / seg))
-            a, b = s[j], s[j + 1]
-            page.mouse.move(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
+            page.mouse.move(*pos(T * k / steps))
             page.wait_for_timeout(dt_ms)
         page.mouse.up()
         page.wait_for_timeout(int(pause * 1000 * _rng.uniform(0.6, 1.6)))
@@ -328,20 +377,36 @@ def _draw_framed(page, strokes, speed: float, pause: float, rec, fps: int, sub: 
     rec.begin_manual()
     rec.add_frame(1 / fps)
     for s in strokes:
-        cum = [0.0]
-        for a, b in zip(s, s[1:]):
-            cum.append(cum[-1] + math.dist(a, b))
-        total = cum[-1]
-        T = max(0.12, total / (speed * _rng.uniform(0.8, 1.2)))
+        pos, T = _pen_motion(s, speed)
         page.mouse.move(*s[0])
         rec.extend_last(_rng.uniform(0.04, 0.11))  # đặt bút
         page.mouse.down()
         n = max(2, math.ceil(T * fps))
         for k in range(1, n + 1):
             for q in range(1, sub + 1):  # vài điểm trong mỗi khung để góc và đường cong không bị cắt thẳng
-                page.mouse.move(*_point_at(s, cum, _min_jerk((k - 1 + q / sub) / n) * total))
+                page.mouse.move(*pos(T * (k - 1 + q / sub) / n))
             rec.add_frame(1 / fps)
         page.mouse.up()
         rec.extend_last(pause * _rng.uniform(0.6, 1.6))
     rec.add_frame(1 / fps)
     rec.end_manual()
+
+
+def _self_check():
+    sq = hand_path([(0, 0), (0, 100), (100, 100), (100, 0), (0, 0)], wobble=0.5, slop=0, overshoot=0)
+    cum = [0.0]
+    for a, b in zip(sq, sq[1:]):
+        cum.append(cum[-1] + math.dist(a, b))
+    assert len(_corners(sq, cum)) == 3, _corners(sq, cum)  # 3 góc trong (góc cuối là điểm khép)
+    el = ellipse(0, 0, 100, 60)
+    ecum = [0.0]
+    for a, b in zip(el, el[1:]):
+        ecum.append(ecum[-1] + math.dist(a, b))
+    assert _corners(el, ecum) == []  # vòng khoanh tròn đều, không có góc
+    pos, T = _pen_motion(sq, 400)
+    assert math.dist(pos(T), sq[-1]) < 1e-6 and 0.9 < T < 1.6
+
+
+if __name__ == "__main__":
+    _self_check()
+    print("ok")

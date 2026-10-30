@@ -54,6 +54,7 @@ Bấm đúp phím phát khi cảnh đang chạy không làm nhảy cảnh. Con t
 | `<BANG>/demo?scene=13` | Bảng | 57 s | 13 (UI-13) | Lớp học: 3 em vào → giao quyền → em kéo θ₀, bảng đổi theo → Thu bài vẽ tay → em nộp → "Bài 1" → Chiếu |
 | `<BANG>/demo?scene=13-phone` | Điện thoại | 45 s | 13 (cận màn hình) | Điện thoại học sinh: nhập tên vào lớp → mô phỏng → kéo thanh trượt → vẽ 3 dòng → Nộp |
 | `<BANG>/demo?scene=13A` | Bảng | 7 s | 13A (UI-13A) | Bài 1 vừa chiếu → Chấm bài → dòng 2 bôi đỏ "Sai ở bước", dòng 3 "Hệ quả", thẻ "Bước 2 sai · máy kiểm chứng" |
+| `<BANG>/demo?scene=13A-bang` | Bảng | 21 s | 13A (bản dài) | Học sinh viết 3 dòng giải 2x − 4 = 6 trên bảng → khoanh → Chấm bài → dòng 2 đỏ, dòng 3 cam, cửa sổ giải thích |
 | `<BANG>/demo?scene=13B` | Bảng | 18 s | 13B (UI-13B) | Vi bài giảng → AI viết lời giảng (ý cần nhớ, câu hỏi ôn) → Gửi cho học sinh → "Đã gửi 2 phần" |
 | `<BANG>/demo?scene=14a` | Máy tính bảng | 11 s | 14 (UI-14) | Mã học sinh → Vào lớp → Lớp của em → Tiết học: bài 7.5/10 |
 | `<BANG>/demo?scene=14b` | Máy tính bảng | 8 s | 14 | Bài thầy gửi từ bảng → chạm sang Gia sư sau giờ học |

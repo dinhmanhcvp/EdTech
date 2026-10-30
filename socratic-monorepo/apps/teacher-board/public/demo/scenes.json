@@ -121,6 +121,16 @@
       "height": 1080
     },
     {
+      "id": "13A-bang",
+      "title": "Bài làm viết trên bảng → khoanh → Chấm bài (bản dự phòng của 13A)",
+      "device": "board",
+      "file": "/demo/13A-bang.mp4",
+      "poster": "/demo/13A-bang.jpg",
+      "duration": 21.3,
+      "width": 1920,
+      "height": 1080
+    },
+    {
       "id": "13B",
       "title": "Vi bài giảng: AI viết lời giảng → Gửi cho học sinh",
       "device": "board",

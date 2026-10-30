@@ -16,7 +16,7 @@
       "device": "board",
       "file": "/demo/08.mp4",
       "poster": "/demo/08.jpg",
-      "duration": 20.9,
+      "duration": 21.9,
       "width": 1920,
       "height": 1080
     },
@@ -196,9 +196,29 @@
       "device": "board",
       "file": "/demo/19.mp4",
       "poster": "/demo/19.jpg",
-      "duration": 26.3,
+      "duration": 27.3,
       "width": 1920,
       "height": 1080
+    },
+    {
+      "id": "20",
+      "title": "Đóng gói cả tiết: Vi bài giảng → QR → học sinh quét xem lại",
+      "device": "board",
+      "file": "/demo/20.mp4",
+      "poster": "/demo/20.jpg",
+      "duration": 11.7,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "20-phone",
+      "title": "Điện thoại học sinh: quét QR → xem lại cả tiết",
+      "device": "phone",
+      "file": "/demo/20-phone.mp4",
+      "poster": "/demo/20-phone.jpg",
+      "duration": 10.4,
+      "width": 390,
+      "height": 844
     },
     {
       "id": "26",

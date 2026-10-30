@@ -140,10 +140,10 @@ def scene_08(page, rec, ctx):
     open_board(page)
     rec.start()
     rec.hold(1.0)
-    ink.draw(page, ink.text("con lắc đơn", 420, 640, 78), speed=650, pause=0.12, rec=rec)
+    ink.draw(page, ink.text("con lắc đơn", 420, 330, 78), speed=380, pause=0.16, rec=rec)
     rec.hold(0.8)
     tap(page, "tool-lasso", 0.4)
-    ink.draw(page, [ink.ellipse(645, 680, 290, 110)], speed=1100, rec=rec)
+    ink.draw(page, [ink.ellipse(645, 370, 290, 110)], speed=1100, rec=rec)
     rec.hold(0.9)
     page.get_by_test_id("top-toolbar-btn-visualize").click()
     rec.cut_begin()
@@ -234,12 +234,8 @@ def scene_13a(page, rec, ctx):
     rec.stop()
 
 
-def scene_13b(page, rec, ctx):
-    """Hết tiết: Vi bài giảng → AI viết lời giảng → Gửi cho học sinh → Đã gửi."""
-    seed_cache("13B", [("11", "recognize-ink-0", "recognize-ink-0"), ("08", "recognize-ink-0", "recognize-ink-1")])
-    ai_cache(page, "13B")
-    open_board(page)
-    # nội dung của tiết (không ghi): tích phân thành công thức, lập phương thành hình, con lắc đơn
+def lesson_content(page):
+    """Nội dung của tiết (không ghi): tích phân thành công thức, lập phương thành hình, con lắc đơn."""
     ink.draw(page, ink.integral(330, 150, 170), speed=1800, pause=0.01)
     tap(page, "tool-lasso", 0.2)
     ink.draw(page, [ink.ellipse(470, 240, 230, 140)], speed=1800)
@@ -261,6 +257,14 @@ def scene_13b(page, rec, ctx):
     wait_until(page, "() => !!document.querySelector('[data-testid=slider-theta0]')", 30)
     page.get_by_test_id("holo-ctx-close-btn").click()
     page.keyboard.press("Escape")
+
+
+def scene_13b(page, rec, ctx):
+    """Hết tiết: Vi bài giảng → AI viết lời giảng → Gửi cho học sinh → Đã gửi."""
+    seed_cache("13B", [("11", "recognize-ink-0", "recognize-ink-0"), ("08", "recognize-ink-0", "recognize-ink-1")])
+    ai_cache(page, "13B")
+    open_board(page)
+    lesson_content(page)
     page.wait_for_timeout(1000)
     rec.start()
     rec.hold(1.0)
@@ -866,8 +870,10 @@ def scene_19(page, rec, ctx):
     open_board(page)
     rec.start()
     rec.hold(1.0)
-    ink.draw(page, ink.text("con lắc đơn", 420, 330, 78), speed=650, pause=0.12, rec=rec)
+    ink.draw(page, ink.text("con lắc đơn", 240, 330, 78), speed=380, pause=0.16, rec=rec)
     rec.hold(1.0)
+    # chỉ trong video: thẻ hỏi đáp nằm giữa màn hình cho dễ nhìn (ngoài đời thẻ nằm góc dưới phải để không che bảng)
+    page.add_style_tag(content="[data-testid=board-ask-card]{top:50%!important;left:50%!important;bottom:auto!important;right:auto!important;transform:translate(-50%,-50%)!important}")
     tap(page, "ai-fab", 0.7)
     tap(page, "ai-fab-qa", 1.2)
     page.get_by_test_id("board-ask-input").click()
@@ -893,7 +899,55 @@ def scene_19(page, rec, ctx):
     rec.stop()
 
 
+
+def scene_20(page, rec, ctx):
+    """Hết tiết: Vi bài giảng → AI viết lời giảng → Đóng gói + QR → điện thoại học sinh quét QR, xem lại cả tiết."""
+    seed_cache("20", [("11", "recognize-ink-0", "recognize-ink-0"), ("08", "recognize-ink-0", "recognize-ink-1"), ("13B", "lesson-notes-0", "lesson-notes-0")])
+    ai_cache(page, "20")
+    open_board(page)
+    lesson_content(page)
+    page.wait_for_timeout(1000)
+    rec.start()
+    rec.hold(1.0)
+    tap(page, "micro-lesson-open", 1.2)
+    rec.hold(1.0)
+    page.get_by_role("button", name="AI viết lời giảng").click()
+    rec.cut_begin()
+    wait_until(page, "() => document.body.innerText.includes('Ý cần nhớ')", 90)
+    page.wait_for_timeout(500)
+    rec.cut_end(keep=0.8)
+    rec.hold(1.5)
+    page.get_by_test_id("micro-lesson-recap").click()
+    wait_until(page, "() => !!document.querySelector('[data-testid=micro-lesson-recap-qr]')", 30)
+    page.wait_for_timeout(800)
+    probe(page, ctx, "20-qr")
+    link = page.get_by_test_id("micro-lesson-recap-qr").locator("span.font-mono").inner_text().strip()
+    print("recap link:", link)
+    rec.hold(4.0)
+    rec.stop()
+    ctx["finish"](rec, "20", SCENES["20"]["title"], "board", page.viewport_size)
+    phone = ctx["browser"].new_context(**PHONE)
+    ph = phone.new_page()
+    r2 = Recorder(ph)
+    ph.goto("about:blank")
+    r2.start()
+    r2.hold(0.8)
+    ph.goto(link, wait_until="networkidle")
+    ph.add_style_tag(content=HIDE_DEV)
+    wait_until(ph, "() => !!document.querySelector('[data-testid=recap-page]')", 20)
+    probe(ph, ctx, "20-phone")
+    r2.hold(2.0)
+    for _ in range(4):
+        ph.mouse.wheel(0, 330)
+        r2.hold(1.4)
+    r2.stop()
+    ctx["finish"](r2, "20-phone", "Điện thoại học sinh: quét QR → xem lại cả tiết", "phone", PHONE["viewport"])
+    phone.close()
+    return True
+
+
 SCENES: Dict[str, dict] = {
+    "20": {"title": "Đóng gói cả tiết: Vi bài giảng → QR → học sinh quét xem lại", "device": "board", "run": scene_20},
     "19": {"title": "Hỏi đáp AI trên bảng: AI đọc bảng, trả lời câu hỏi của lớp", "device": "board", "run": scene_19},
     "B3": {"title": "Trang quản lý: lưới bài làm trong tiết, duyệt và chiếu (số liệu mẫu)", "device": "laptop", "run": scene_b3},
     "10": {"title": "Bốn mô phỏng ghép lưới", "device": "board", "run": scene_10},

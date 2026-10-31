@@ -61,6 +61,26 @@
       "height": 1080
     },
     {
+      "id": "10e",
+      "title": "Hóa: phân tử NH3 3D",
+      "device": "board",
+      "file": "/demo/10e.mp4",
+      "poster": "/demo/10e.jpg",
+      "duration": 27.5,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "10f",
+      "title": "Sinh: chuỗi xoắn kép ADN 3D",
+      "device": "board",
+      "file": "/demo/10f.mp4",
+      "poster": "/demo/10f.jpg",
+      "duration": 25.1,
+      "width": 1920,
+      "height": 1080
+    },
+    {
       "id": "11",
       "title": "Tích phân viết vội → khoanh → Chuyển công thức",
       "device": "board",

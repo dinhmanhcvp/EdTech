@@ -48,6 +48,8 @@ Bấm đúp phím phát khi cảnh đang chạy không làm nhảy cảnh. Con t
 | `<BANG>/demo?scene=10b` | Bảng | 25 s | 10 ô 2 | Viết tay 2NO₂ ⇌ N₂O₄ → khoanh → Trực quan → piston: Nén piston ×2, Đun nóng +40 °C |
 | `<BANG>/demo?scene=10c` | Bảng | 89 s | 10 ô 3 | Viết tay đề "Cho hình chóp S.ABCD…" có a), b), c) → khoanh → Vẽ hình → hình dựng cạnh đề → bấm a), b), c) hiện từng phần M, N, P |
 | `<BANG>/demo?scene=10d` | Bảng | 55 s | 10 ô 4 | Viết tay "mạch RLC cộng hưởng" → Trực quan → kéo tần số góc ω lên, giản đồ Fresnel và đường cộng hưởng đổi theo |
+| `<BANG>/demo?scene=10e` | Bảng | 27 s | hậu kỳ 4 môn (Hóa) | Viết tay NH₃ → khoanh → Trực quan → phân tử NH₃ 3D (chóp tam giác, cặp e riêng), kéo xoay |
+| `<BANG>/demo?scene=10f` | Bảng | 25 s | hậu kỳ 4 môn (Sinh) | Viết tay ADN → khoanh → Trực quan → chuỗi xoắn kép ADN 3D + helicase, kéo xoay |
 | `<BANG>/demo?scene=11` | Bảng | 24 s | 11 (UI-11) | Viết vội ∫₀¹ x² dx → khoanh → Chuyển LaTeX → Thay nét viết bằng công thức |
 | `<BANG>/demo?scene=12a` | Laptop | 9 s | 12a (UI-12) | Trang quản lý: tiết mới → lớp 12A1 → bài soạn → Bắt đầu → mã ghép |
 | `<BANG>/demo?scene=12b` | Bảng | 26 s | 12b (UI-12) | Ghép tiết, nhập mã → bảng nhận bài + "Thầy Kiệm" → Lớp học → QR phóng to → thu nhỏ: "4 học sinh đã vào" |

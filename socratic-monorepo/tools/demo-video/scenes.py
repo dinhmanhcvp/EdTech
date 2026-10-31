@@ -716,6 +716,9 @@ SIM_10 = [
      "visualize", "Cân bằng 2NO2 ⇌ N2O4, nén piston"),
     ("10c", lambda: write_lines(GEO_10C, 230, 130, 46), "draw", "Đề hình chóp S.ABCD với nút a) b) c)"),
     ("10d", lambda: ink.text("mạch RLC cộng hưởng", 420, 250, 78), "visualize", "Mạch RLC cộng hưởng, giản đồ Fresnel"),
+    # thêm cho hậu kỳ "4 môn": Hóa (phân tử 3D) và Sinh (ADN), không thuộc lưới 2×2 của cảnh 10
+    ("10e", lambda: ink.formula([("NH", ""), ("3", "sub")], 520, 250, 90), "visualize", "Hóa: phân tử NH3 3D"),
+    ("10f", lambda: ink.text("ADN", 520, 250, 90), "visualize", "Sinh: chuỗi xoắn kép ADN 3D"),
 ]
 
 
@@ -812,7 +815,13 @@ def scene_10(page, rec, ctx):
         park_ai_disc(page)
         probe(page, ctx, sid + "-opened")
         r.hold(1.0)
-        if sid == "10a":  # xoay mặt cầu
+        if sid in ("10e", "10f"):  # xoay khối 3D
+            sim = page.locator("canvas").last.bounding_box()
+            cx, cy = sim["x"] + sim["width"] / 2, sim["y"] + sim["height"] / 2
+            drag(page, (cx - 80, cy), (cx + 90, cy - 20), ms=2000)
+            r.hold(1.5)
+            drag(page, (cx + 90, cy - 20), (cx - 40, cy + 15), ms=1600)
+        elif sid == "10a":  # xoay mặt cầu
             drag(page, (1080, 190), (1230, 170), ms=1800)
             r.hold(1.5)
             drag(page, (1230, 170), (1120, 200), ms=1500)

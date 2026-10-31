@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Socratic Vision Board · Brand</title>
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAF7F0; --card: #FFFFFF; --ink: #1B1F27; --crimson: #A32C34; --slate: #4A525C; --stone: #D6D3CD;
+    --muted: #6B7178;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 "Space Grotesk", system-ui, sans-serif; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 48px 24px 96px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+  .eyebrow { font: 500 12px/1 "JetBrains Mono", monospace; letter-spacing: .18em; text-transform: uppercase; color: var(--slate); }
+  h1 { font-size: clamp(30px, 4.4vw, 52px); line-height: 1.04; letter-spacing: -.01em; margin: 14px 0 12px; }
+  h2 { font-size: 26px; margin: 0; letter-spacing: -.005em; }
+  .lead { max-width: 760px; color: var(--slate); margin: 0; }
+  .palette { display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0 8px; }
+  .chip { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--stone); border-radius: 10px; padding: 8px 12px 8px 8px; }
+  .sw { width: 28px; height: 28px; border-radius: 6px; border: 1px solid rgba(0,0,0,.08); }
+  .chip b { display: block; font-size: 13px; } .chip span { font: 12px "JetBrains Mono", monospace; color: var(--muted); }
+  nav.tabs { position: sticky; top: 0; z-index: 5; display: flex; gap: 6px; flex-wrap: wrap; padding: 14px 0; margin-top: 28px; background: linear-gradient(var(--paper) 80%, transparent); }
+  nav.tabs a { text-decoration: none; color: var(--ink); border: 1px solid var(--stone); background: var(--card); padding: 7px 14px; border-radius: 999px; font-weight: 500; font-size: 14px; }
+  nav.tabs a.win { border-color: var(--crimson); color: var(--crimson); }
+  section.concept { border-top: 1px solid var(--stone); padding-top: 40px; margin-top: 36px; }
+  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .badge { font: 500 11px/1 "JetBrains Mono", monospace; letter-spacing: .14em; color: #fff; background: var(--crimson); padding: 6px 9px; border-radius: 5px; }
+  .idea { color: var(--slate); max-width: 820px; margin: 10px 0 24px; }
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--stone); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+  .stage { display: grid; place-items: center; padding: 28px; flex: 1; background: var(--paper); }
+  .stage.white { background: #fff; }
+  .stage img { max-width: 100%; height: auto; display: block; }
+  .meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--stone); flex-wrap: wrap; }
+  .meta .lbl { font-weight: 500; font-size: 13px; }
+  .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  button { font: 500 12px "JetBrains Mono", monospace; border: 1px solid var(--stone); background: #fff; color: var(--ink); border-radius: 7px; padding: 6px 9px; cursor: pointer; }
+  button:hover { border-color: var(--ink); }
+  button.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .c-mark { grid-column: span 4; } .c-mono { grid-column: span 4; } .c-icon { grid-column: span 4; }
+  .c-lock { grid-column: span 6; } .c-lockm { grid-column: span 6; } .c-outro { grid-column: span 12; } .c-outrom { grid-column: span 12; }
+  .c-mark .stage img, .c-mono .stage img { width: 200px; }
+  .sizes { display: flex; align-items: flex-end; gap: 18px; }
+  .sizes figure { margin: 0; text-align: center; } .sizes figcaption { font: 11px "JetBrains Mono", monospace; color: var(--muted); margin-top: 6px; }
+  .outro img { width: 100%; border-radius: 8px; box-shadow: 0 1px 0 var(--stone); }
+  .navbar-test { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--stone); border-radius: 10px; padding: 8px 12px; margin-top: 16px; }
+  .navbar-test img { height: 28px; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 9px 14px; border-radius: 8px; font: 13px "JetBrains Mono", monospace; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.on { opacity: 1; }
+  @media (max-width: 860px) {
+    .c-mark, .c-mono, .c-icon, .c-lock, .c-lockm { grid-column: span 12; }
+    .wrap { padding: 32px 16px 72px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Brand identity · AXIOMA</div>
+  <h1>Socratic Vision Board</h1>
+  <p class="lead">Ba concept logo thuần vector trên bảng màu báo cáo và video. Chữ trong lockup đã chuyển thành đường vector (Space Grotesk, JetBrains Mono), nên tệp SVG và PNG xuất ra giống hệt nhau trên mọi máy. Mỗi ô có nút tải SVG và xuất PNG 4K nền trong suốt hoặc có nền.</p>
+  <div class="palette" id="palette"></div>
+  <nav class="tabs" id="tabs"></nav>
+  <div id="concepts"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const DATA = /*__DATA__*/null;
+const PAPER = '#FAF7F0';
+const $ = (s, el = document) => el.querySelector(s);
+const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 1800); };
+const url = (svg) => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+
+DATA.palette.forEach(([n, hex]) => {
+  $('#palette').insertAdjacentHTML('beforeend', `<div class="chip"><div class="sw" style="background:${hex}"></div><div><b>${n}</b><span>${hex}</span></div></div>`);
+});
+
+function size(svg) {
+  const m = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+  return [parseFloat(m[1]), parseFloat(m[2])];
+}
+function withBackground(svg, mode) {
+  // mode: 'clear' bỏ nền; 'fill' giữ nền sẵn có, chưa có thì thêm #FAF7F0
+  if (mode === 'clear') return svg.replace(/<rect data-bg="1"[^>]*\/>/, '');
+  if (svg.includes('data-bg="1"')) return svg;
+  const [w, h] = size(svg);
+  return svg.replace(/(<svg[^>]*>(?:<title>.*?<\/title>)?)/, `$1<rect width="${w}" height="${h}" fill="${PAPER}"/>`);
+}
+function download(name, blob) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function exportPng(asset, mode) {
+  const svg = withBackground(asset.svg, mode);
+  const [w, h] = size(svg);
+  const k = 3840 / Math.max(w, h);
+  const W = Math.round(w * k), H = Math.round(h * k);
+  const sized = svg.replace(/width="[\d.]+" height="[\d.]+"/, `width="${W}" height="${H}"`);
+  const img = new Image();
+  img.onload = () => {
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    cv.getContext('2d').drawImage(img, 0, 0, W, H);
+    cv.toBlob((b) => { download(asset.file.split('/').pop().replace('.svg', `-${W}x${H}-${mode === 'clear' ? 'trong-suot' : 'nen'}.png`), b); toast(`Đã xuất PNG ${W}×${H}`); }, 'image/png');
+  };
+  img.onerror = () => toast('Không dựng được ảnh');
+  img.src = url(sized);
+}
+function downloadSvg(asset) {
+  download(asset.file.split('/').pop(), new Blob([asset.svg], {type: 'image/svg+xml'}));
+  toast('Đã tải SVG');
+}
+
+function card(asset, cls, inner, stageCls = '') {
+  const id = 'a' + Math.random().toString(36).slice(2);
+  window[id] = asset;
+  return `<div class="card ${cls}">
+    <div class="stage ${stageCls}">${inner}</div>
+    <div class="meta"><span class="lbl">${asset.label}</span>
+      <span class="btns">
+        <button onclick="downloadSvg(window.${id})">SVG</button>
+        <button onclick="exportPng(window.${id}, 'clear')">PNG 4K trong</button>
+        <button class="primary" onclick="exportPng(window.${id}, 'fill')">PNG 4K nền</button>
+      </span></div></div>`;
+}
+
+DATA.concepts.forEach((c) => {
+  const A = (k) => DATA.assets.find((a) => a.concept === c.id && a.kind === k);
+  const win = c.id === DATA.winner;
+  $('#tabs').insertAdjacentHTML('beforeend', `<a href="#${c.id}" class="${win ? 'win' : ''}">${c.name}${win ? ' · đề xuất' : ''}</a>`);
+  const icon = A('icon-512');
+  const sizes = [128, 64, 32, 24, 16].map((s) => `<figure><img src="${url(icon.svg)}" width="${s}" height="${s}" alt=""><figcaption>${s}px</figcaption></figure>`).join('');
+  $('#concepts').insertAdjacentHTML('beforeend', `
+    <section class="concept" id="${c.id}">
+      <div class="head"><h2>${c.name}</h2>${win ? '<span class="badge">ĐỀ XUẤT</span>' : ''}</div>
+      <p class="idea">${c.idea}</p>
+      <div class="grid">
+        ${card(A('mark'), 'c-mark', `<img src="${url(A('mark').svg)}" alt="">`)}
+        ${card(A('mark-mono'), 'c-mono', `<img src="${url(A('mark-mono').svg)}" alt="">`, 'white')}
+        ${card(icon, 'c-icon', `<div class="sizes">${sizes}</div>`)}
+        ${card(A('lockup'), 'c-lock', `<div style="width:100%"><img src="${url(A('lockup').svg)}" alt="" style="width:100%">
+            <div class="navbar-test"><img src="${url(A('lockup').svg)}" alt=""><span class="mono" style="font-size:12px;color:#6B7178">thanh điều hướng · cao 28px</span></div></div>`, 'white')}
+        ${card(A('lockup-mono'), 'c-lockm', `<img src="${url(A('lockup-mono').svg)}" alt="" style="width:100%">`, 'white')}
+        ${card(A('outro-1920x1080'), 'c-outro outro', `<img src="${url(A('outro-1920x1080').svg)}" alt="">`)}
+        ${card(A('outro-mono-1920x1080'), 'c-outrom outro', `<img src="${url(A('outro-mono-1920x1080').svg)}" alt="">`, 'white')}
+      </div>
+    </section>`);
+});
+</script>
+</body>
+</html>

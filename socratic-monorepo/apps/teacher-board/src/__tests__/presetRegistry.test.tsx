@@ -1,7 +1,7 @@
 import React from 'react';
 import {describe, it, expect, vi, afterEach} from 'vitest';
 import {render, cleanup, fireEvent, within, act} from '@testing-library/react';
-import {readFileSync} from 'fs';
+import {readFileSync, writeFileSync} from 'fs';
 import {resolve} from 'path';
 import {SimulationWidget} from '../components/canvas/SimulationWidget';
 import {matchInstantStemBlueprint} from '../components/canvas/SmartboardCanvas';
@@ -260,5 +260,19 @@ describe('FEEDBACK_SYSTEM', () => {
     expect(within(getByTestId('feedback-nodes')).getByText(/INSULIN/)).toBeTruthy();
     fireEvent.change(getByTestId('feedback-cursor'), {target: {value: '5'}});
     expect(getByTestId('feedback-system').getAttribute('data-phase')).toBe('ok');
+  });
+});
+
+describe('danh mục preset cho backend AI (services/ai-engine/data/preset_catalog.json)', () => {
+  const CATALOG = resolve(__dirname, '../../../../services/ai-engine/data/preset_catalog.json');
+  const expected = JSON.stringify(
+    IDS.map((id) => ({id, engine: PRESETS[id].engine, family: PRESETS[id].family, title: PRESETS[id].title, question: PRESETS[id].question})),
+    null,
+    1,
+  ) + '\n';
+
+  it('khớp PRESETS (chạy với UPDATE_PRESET_CATALOG=1 để ghi lại sau khi thêm hoặc sửa preset)', () => {
+    if (process.env.UPDATE_PRESET_CATALOG === '1') writeFileSync(CATALOG, expected, 'utf-8');
+    expect(readFileSync(CATALOG, 'utf-8').replace(/\r\n/g, '\n')).toBe(expected);
   });
 });

@@ -329,6 +329,50 @@ OFFLINE_TEMPLATE_REGISTRY: Dict[str, Dict[str, Any]] = {
 }
 
 
+# =============================================================================
+# PRESET SGK MỚI (127 mô phỏng dữ liệu của teacher-board: utils/presets)
+# Danh mục sinh từ mã TypeScript: apps/teacher-board/src/__tests__/presetRegistry.test.tsx
+# (chạy với UPDATE_PRESET_CATALOG=1 để ghi lại data/preset_catalog.json khi thêm/sửa preset).
+# Các mô phỏng này tự điều khiển trên bảng nên không có tham số trượt ở backend.
+# =============================================================================
+_PRESET_CATALOG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "preset_catalog.json")
+
+
+def _load_preset_catalog() -> List[Dict[str, Any]]:
+    try:
+        with open(_PRESET_CATALOG_PATH, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return [x for x in data if isinstance(x, dict) and x.get("id") and x.get("engine")]
+    except (OSError, ValueError) as exc:
+        print(f"[Visualize] Không đọc được danh mục preset: {exc}")
+        return []
+
+
+PRESET_CATALOG: List[Dict[str, Any]] = _load_preset_catalog()
+for _p in PRESET_CATALOG:
+    OFFLINE_TEMPLATE_REGISTRY.setdefault(_p["id"], {
+        "engine": _p["engine"],
+        "templateId": _p["id"],
+        "recognizedLatex": "\\text{" + _p["title"] + "}",
+        "parameters": [],
+        "socraticQuestion": _p["question"],
+        "targetParam": "",
+        "subject": _p["engine"],
+        "preset": _p.get("family", ""),
+    })
+
+
+def preset_prompt_lines() -> str:
+    """Dòng liệt kê preset cho prompt nhận dạng: mã + tên ngắn, nhóm theo môn."""
+    out = []
+    for subject in ("MATH", "PHYSICS", "CHEMISTRY", "BIOLOGY"):
+        items = [p for p in PRESET_CATALOG if p["engine"] == subject]
+        if items:
+            out.append(f"[{subject}]")
+            out.extend(f"- {p['id']} ({p['title'][:60]})" for p in items)
+    return "\n".join(out)
+
+
 def generate_bespoke_interactive_svg(topic: str, recognized_latex: str = "", parameters: Optional[List[Dict[str, Any]]] = None) -> str:
     """
     Generates rich, publication-grade interactive SVG for any STEM topic,
@@ -579,6 +623,14 @@ def build_vision_prompt(hint_text=None, subject_lock=None):
         "- CHEM_BALANCE_SCALE (Fe + O2 -> Fe2O3, chemical equation balance)\n"
         "- BIO_PHOTOSYNTHESIS (Rate = f(T, I), photosynthesis, quang hợp, 25°C, leaf, cây, stomata)\n"
         "- BIO_HEART_CYCLE (ECG, BPM, tim, heart)\n\n"
+        + (
+            "Curriculum concept templates (use ONLY when the writing or drawing names that concept, e.g. phiên mã, dãy điện hóa, "
+            "tháp tuổi; for a plain formula or graph of a function keep using the core templates above):\n"
+            + preset_prompt_lines()
+            + "\n\n"
+            if PRESET_CATALOG
+            else ""
+        )
         + lock_line
         + f"Teacher Hint / Context: {hint_text or 'None'}\n\n"
         "Mapping rules:\n"

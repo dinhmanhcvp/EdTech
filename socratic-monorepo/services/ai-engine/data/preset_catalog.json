@@ -1,0 +1,891 @@
+[
+ {
+  "id": "BIO_ECOLOGICAL_LIMITS",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Giới hạn sinh thái",
+  "question": "Vì sao ngoài khoảng thuận lợi mức hoạt động sinh lí giảm dần rồi về 0 ở điểm gây chết? Loài có giới hạn sinh thái rộng và loài có giới hạn hẹp khác nhau thế nào về vùng phân bố?"
+ },
+ {
+  "id": "PHYS_RADIOACTIVE_DECAY",
+  "engine": "PHYSICS",
+  "family": "CURVE_LAB",
+  "title": "Phân rã phóng xạ và chu kì bán rã",
+  "question": "Sau mỗi chu kì bán rã lượng chất phóng xạ còn lại giảm một nửa: tại sao đường cong không bao giờ chạm trục thời gian? Muốn tính tuổi mẫu vật bằng C-14 ta cần biết những đại lượng nào?"
+ },
+ {
+  "id": "BIO_DIGESTIVE_SYSTEM",
+  "engine": "BIOLOGY",
+  "family": "ANATOMY_FLOW",
+  "title": "Hệ tiêu hóa ở người",
+  "question": "Thức ăn đi qua những đoạn nào của ống tiêu hóa, và ở mỗi đoạn enzyme nào biến đổi chất nào? Vì sao phần lớn việc hấp thụ diễn ra ở ruột non?"
+ },
+ {
+  "id": "BIO_GENE_ENGINEERING",
+  "engine": "BIOLOGY",
+  "family": "PROCESS_STEPS",
+  "title": "DNA tái tổ hợp và chuyển gene",
+  "question": "Vì sao phải dùng cùng một loại enzyme giới hạn để cắt gene và plasmid? Điều gì cho phép vi khuẩn sản xuất protein của người sau khi nhận plasmid tái tổ hợp?"
+ },
+ {
+  "id": "BIO_FEEDBACK_LOOP",
+  "engine": "BIOLOGY",
+  "family": "FEEDBACK_SYSTEM",
+  "title": "Điều hòa glucose máu bằng liên hệ ngược",
+  "question": "Khi glucose máu tăng sau bữa ăn, bộ phận tiếp nhận, điều khiển và thực hiện nào hoạt động? Điều gì xảy ra với glucose máu nếu tuyến tụy không tiết đủ insulin?"
+ },
+ {
+  "id": "BIO_ENZYME_ACTIVITY",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Hoạt tính enzyme theo nhiệt độ",
+  "question": "Vì sao tốc độ phản ứng do enzyme xúc tác tăng theo nhiệt độ rồi giảm mạnh sau nhiệt độ tối ưu? Vì sao enzyme của vi khuẩn suối nước nóng lại có nhiệt độ tối ưu cao hơn nhiều?"
+ },
+ {
+  "id": "BIO_LIGHT_COMPENSATION",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Điểm bù và điểm bão hòa ánh sáng",
+  "question": "Dưới điểm bù ánh sáng cây quang hợp được bao nhiêu so với hô hấp? Vì sao cây C₄ bão hòa ánh sáng muộn hơn và quang hợp mạnh hơn cây C₃ ở cường độ sáng cao?"
+ },
+ {
+  "id": "BIO_IMMUNE_RESPONSE",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Đáp ứng miễn dịch nguyên phát và thứ phát (vaccine)",
+  "question": "Vì sao lần tiếp xúc kháng nguyên thứ hai tạo kháng thể nhanh hơn và nhiều hơn lần đầu? Điều đó giải thích vai trò của tiêm vaccine (và tiêm nhắc) như thế nào?"
+ },
+ {
+  "id": "BIO_ACTION_POTENTIAL",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Điện thế hoạt động của neuron",
+  "question": "Vì sao kích thích dưới ngưỡng không gây xung thần kinh còn kích thích trên ngưỡng luôn cho xung có biên độ như nhau? Bao myelin giúp xung lan truyền nhanh hơn bằng cách nào?"
+ },
+ {
+  "id": "BIO_POPULATION_GROWTH",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Tăng trưởng của quần thể (chữ J và chữ S)",
+  "question": "Khi nào quần thể tăng trưởng theo đường cong chữ J và vì sao trong thực tế thường chuyển sang chữ S? Sức chứa của môi trường (K) ảnh hưởng thế nào tới kích thước quần thể?"
+ },
+ {
+  "id": "BIO_EUKARYOTE_CELL",
+  "engine": "BIOLOGY",
+  "family": "ANATOMY_FLOW",
+  "title": "Tế bào nhân thực và các bào quan",
+  "question": "Bào quan nào tổng hợp protein, bào quan nào đóng gói và vận chuyển protein, bào quan nào tạo ATP? Vì sao tế bào nhân thực cần hệ thống màng bên trong như vậy?"
+ },
+ {
+  "id": "BIO_HEART_CIRCULATION",
+  "engine": "BIOLOGY",
+  "family": "ANATOMY_FLOW",
+  "title": "Cấu tạo tim và vòng tuần hoàn máu",
+  "question": "Máu đi qua những ngăn tim và mạch nào theo thứ tự trong vòng tuần hoàn phổi và vòng tuần hoàn hệ thống? Van tim có vai trò gì?"
+ },
+ {
+  "id": "BIO_NEPHRON",
+  "engine": "BIOLOGY",
+  "family": "ANATOMY_FLOW",
+  "title": "Nephron và sự tạo thành nước tiểu",
+  "question": "Từ khoảng 180 L dịch lọc mỗi ngày, vì sao chỉ còn 1,5–2 L nước tiểu thải ra ngoài? Ba giai đoạn lọc, tái hấp thu và tiết diễn ra ở đâu?"
+ },
+ {
+  "id": "BIO_FLOWER_STRUCTURE",
+  "engine": "BIOLOGY",
+  "family": "ANATOMY_FLOW",
+  "title": "Cấu tạo hoa và thụ tinh kép",
+  "question": "Bộ phận nào của hoa chứa hạt phấn, bộ phận nào chứa noãn? Vì sao thụ tinh ở thực vật có hoa gọi là thụ tinh kép và sản phẩm của nó là gì?"
+ },
+ {
+  "id": "BIO_MITOSIS",
+  "engine": "BIOLOGY",
+  "family": "PROCESS_STEPS",
+  "title": "Nguyên phân",
+  "question": "Vì sao tế bào con tạo ra từ nguyên phân có bộ NST giống hệt tế bào mẹ? Hoạt động nào của NST ở kì giữa và kì sau bảo đảm điều đó?"
+ },
+ {
+  "id": "BIO_VIRUS_CYCLE",
+  "engine": "BIOLOGY",
+  "family": "PROCESS_STEPS",
+  "title": "Chu kì nhân lên của virus (sinh tan)",
+  "question": "Vì sao virus chỉ nhân lên được trong tế bào chủ? Chu kì sinh tan khác chu kì tiềm tan ở điểm nào?"
+ },
+ {
+  "id": "BIO_DNA_FORK",
+  "engine": "BIOLOGY",
+  "family": "PROCESS_STEPS",
+  "title": "Chạc sao chép DNA: mạch liên tục và đoạn Okazaki",
+  "question": "Vì sao một mạch mới được tổng hợp liên tục còn mạch kia phải tổng hợp thành từng đoạn Okazaki? Vì sao gọi là nguyên tắc bán bảo toàn?"
+ },
+ {
+  "id": "BIO_OSMOREGULATION_ADH",
+  "engine": "BIOLOGY",
+  "family": "FEEDBACK_SYSTEM",
+  "title": "Điều hòa áp suất thẩm thấu của máu (ADH)",
+  "question": "Khi áp suất thẩm thấu máu tăng, vùng dưới đồi, tuyến yên và thận phối hợp thế nào để đưa nó về mức bình thường? Vì sao uống rượu bia làm khát nước và đi tiểu nhiều?"
+ },
+ {
+  "id": "BIO_BLOOD_PRESSURE_REFLEX",
+  "engine": "BIOLOGY",
+  "family": "FEEDBACK_SYSTEM",
+  "title": "Điều hòa huyết áp bằng phản xạ thần kinh",
+  "question": "Khi huyết áp đột ngột giảm, thụ thể áp lực, trung khu điều hòa tim mạch và dây giao cảm phối hợp thế nào để huyết áp trở lại bình thường?"
+ },
+ {
+  "id": "BIO_METABOLISM_PATHWAYS",
+  "engine": "BIOLOGY",
+  "family": "PROCESS_STEPS",
+  "title": "Đường phân và lên men",
+  "question": "Khi không có O₂, tế bào tái tạo NAD⁺ để đường phân tiếp tục bằng cách nào? Vì sao lên men chỉ thu được rất ít ATP so với hô hấp hiếu khí?"
+ },
+ {
+  "id": "BIO_ANIMAL_DEVELOPMENT",
+  "engine": "BIOLOGY",
+  "family": "PROCESS_STEPS",
+  "title": "Biến thái hoàn toàn và không hoàn toàn ở côn trùng",
+  "question": "Biến thái hoàn toàn khác biến thái không hoàn toàn ở điểm nào? Hormone nào điều khiển lột xác và biến thái?"
+ },
+ {
+  "id": "BIO_ORIGIN_OF_LIFE",
+  "engine": "BIOLOGY",
+  "family": "PROCESS_STEPS",
+  "title": "Nguồn gốc sự sống: Miller–Urey, tế bào nguyên thủy và nội cộng sinh",
+  "question": "Thí nghiệm của Miller chứng minh điều gì về sự hình thành chất hữu cơ trên Trái Đất nguyên thủy? Ti thể và lục lạp có nguồn gốc từ đâu theo thuyết nội cộng sinh?"
+ },
+ {
+  "id": "BIO_SUCCESSION_CYCLES",
+  "engine": "BIOLOGY",
+  "family": "PROCESS_STEPS",
+  "title": "Chu trình nitrogen và diễn thế sinh thái",
+  "question": "Nitrogen trong khí quyển được cây hấp thụ nhờ những quá trình nào và trở lại khí quyển ra sao? Vì sao diễn thế nguyên sinh bắt đầu từ môi trường chưa có sinh vật?"
+ },
+ {
+  "id": "BIO_MENDEL_EXTENDED",
+  "engine": "BIOLOGY",
+  "family": "TRIAL_LAB",
+  "title": "Các quy luật di truyền mở rộng: trội không hoàn toàn, đồng trội, liên kết và hoán vị gene",
+  "question": "Tỉ lệ kiểu hình thay đổi thế nào khi trội không hoàn toàn, khi hai gene liên kết, khi có hoán vị gene tần số f? Vì sao con trai mắc bệnh liên kết X lặn nhiều hơn?"
+ },
+ {
+  "id": "BIO_CYTOPLASMIC_INHERITANCE",
+  "engine": "BIOLOGY",
+  "family": "TRIAL_LAB",
+  "title": "Di truyền tế bào chất (thí nghiệm của Correns)",
+  "question": "Vì sao kiểu hình của con luôn giống mẹ khi gene nằm ở lục lạp hay ti thể? Phép lai thuận và lai nghịch cho kết quả khác nhau nói lên điều gì?"
+ },
+ {
+  "id": "BIO_GENETIC_CODE_TABLE",
+  "engine": "BIOLOGY",
+  "family": "TABLE_LAB",
+  "title": "Bảng mã di truyền (64 codon)",
+  "question": "Vì sao nhiều codon cùng mã hóa một amino acid (tính thoái hóa) mà mỗi codon chỉ mã hóa một amino acid (tính đặc hiệu)? Codon nào mở đầu và codon nào kết thúc dịch mã?"
+ },
+ {
+  "id": "BIO_EVIDENCE_PHYLOGENY",
+  "engine": "BIOLOGY",
+  "family": "TABLE_LAB",
+  "title": "Bằng chứng phân tử: cytochrome C và quan hệ họ hàng",
+  "question": "Số amino acid khác nhau trong cytochrome C của hai loài cho biết điều gì về mức độ gần gũi tiến hóa? Vì sao người gần tinh tinh hơn gần nấm men?"
+ },
+ {
+  "id": "BIO_MEIOSIS",
+  "engine": "BIOLOGY",
+  "family": "PROCESS_STEPS",
+  "title": "Giảm phân và trao đổi chéo",
+  "question": "Vì sao giảm phân tạo ra các tế bào con có số NST giảm một nửa còn nguyên phân thì không? Trao đổi chéo ở kì đầu I làm tăng đa dạng di truyền như thế nào?"
+ },
+ {
+  "id": "BIO_REFLEX_ARC",
+  "engine": "BIOLOGY",
+  "family": "PROCESS_STEPS",
+  "title": "Cung phản xạ và dẫn truyền qua synapse",
+  "question": "Một phản xạ đi qua những thành phần nào của cung phản xạ? Xung thần kinh truyền qua synapse hóa học bằng chất trung gian nào và theo mấy chiều?"
+ },
+ {
+  "id": "BIO_EAR_HEARING",
+  "engine": "BIOLOGY",
+  "family": "ANATOMY_FLOW",
+  "title": "Cấu tạo tai và cơ chế nghe",
+  "question": "Sóng âm được chuyển thành xung thần kinh qua những bộ phận nào của tai? Vì sao chuỗi xương con giúp khuếch đại âm thanh?"
+ },
+ {
+  "id": "BIO_POPULATION_ECOLOGY",
+  "engine": "BIOLOGY",
+  "family": "SCENE_LAB",
+  "title": "Tháp tuổi và ước lượng kích thước quần thể (đánh dấu – bắt lại)",
+  "question": "Hình dạng tháp tuổi cho biết quần thể đang tăng, ổn định hay suy giảm thế nào? Làm sao ước lượng số cá thể của quần thể khi không thể đếm hết?"
+ },
+ {
+  "id": "BIO_SCALE_CELL_TYPES",
+  "engine": "BIOLOGY",
+  "family": "SCENE_LAB",
+  "title": "Tế bào nhân sơ, nhân thực và tỉ lệ diện tích trên thể tích",
+  "question": "Vì sao hầu hết tế bào đều rất nhỏ? Tế bào nhân sơ khác tế bào nhân thực ở những điểm nào về kích thước và cấu tạo?"
+ },
+ {
+  "id": "BIO_BIOMOLECULES",
+  "engine": "BIOLOGY",
+  "family": "SCENE_LAB",
+  "title": "Các phân tử sinh học: nước, phospholipid, protein, nucleic acid",
+  "question": "Liên kết hydrogen giữa các phân tử nước tạo nên tính chất nào? Cấu trúc bậc 1, 2, 3, 4 của protein khác nhau thế nào và vì sao các bậc đó quyết định chức năng?"
+ },
+ {
+  "id": "BIO_MEMBRANE_TRANSPORT",
+  "engine": "BIOLOGY",
+  "family": "SCENE_LAB",
+  "title": "Vận chuyển các chất qua màng sinh chất",
+  "question": "Chất nào đi qua màng không tốn năng lượng và chất nào cần ATP? Vì sao vận chuyển chủ động có thể đưa chất đi ngược chiều gradient nồng độ?"
+ },
+ {
+  "id": "BIO_PLANT_TROPISM",
+  "engine": "BIOLOGY",
+  "family": "SCENE_LAB",
+  "title": "Hướng động ở thực vật và vai trò của auxin",
+  "question": "Vì sao ngọn cây uốn cong về phía có ánh sáng? Auxin phân bố thế nào ở hai bên thân và rễ cây khi đặt nằm ngang?"
+ },
+ {
+  "id": "BIO_TRANSCRIPTION_TRANSLATION",
+  "engine": "BIOLOGY",
+  "family": "SCENE_LAB",
+  "title": "Phiên mã, dịch mã và đột biến gene",
+  "question": "Từ trình tự mạch gốc DNA ta suy ra mRNA, anticodon của tRNA và chuỗi amino acid thế nào? Đột biến thay thế, thêm hoặc mất một cặp nucleotide ảnh hưởng ra sao tới protein?"
+ },
+ {
+  "id": "BIO_CHROMOSOME",
+  "engine": "BIOLOGY",
+  "family": "SCENE_LAB",
+  "title": "Đột biến cấu trúc và số lượng nhiễm sắc thể",
+  "question": "Bốn dạng đột biến cấu trúc NST làm thay đổi trình tự các gene như thế nào? Thể lệch bội khác thể đa bội ở điểm nào?"
+ },
+ {
+  "id": "BIO_PEDIGREE",
+  "engine": "BIOLOGY",
+  "family": "SCENE_LAB",
+  "title": "Phả hệ và xác suất con mắc bệnh di truyền",
+  "question": "Từ kiểu gene của bố mẹ, xác suất sinh con mắc bệnh là bao nhiêu khi bệnh do gene lặn, gene trội trên NST thường hay gene lặn liên kết X? Vì sao bệnh liên kết X lặn gặp ở nam nhiều hơn?"
+ },
+ {
+  "id": "BIO_POPULATION_EVOLUTION",
+  "engine": "BIOLOGY",
+  "family": "SCENE_LAB",
+  "title": "Các nhân tố tiến hóa: phiêu bạt di truyền, chọn lọc, di nhập",
+  "question": "Quần thể nhỏ và quần thể lớn khác nhau thế nào về mức dao động ngẫu nhiên của tần số allele? Chọn lọc tự nhiên và dòng gene làm tần số allele thay đổi theo hướng nào?"
+ },
+ {
+  "id": "BIO_FOOD_WEB_ENERGY",
+  "engine": "BIOLOGY",
+  "family": "SCENE_LAB",
+  "title": "Dòng năng lượng qua các bậc dinh dưỡng và phóng đại sinh học",
+  "question": "Vì sao chuỗi thức ăn thường chỉ có 4–5 bậc dinh dưỡng? Chất độc bền như DDT có nồng độ thay đổi thế nào khi đi lên các bậc cao của chuỗi?"
+ },
+ {
+  "id": "BIO_PLANT_GROWTH",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Hormone thực vật: tác dụng của auxin phụ thuộc nồng độ và cơ quan",
+  "question": "Vì sao cùng một nồng độ auxin có thể kích thích rễ nhưng ức chế thân, hoặc ngược lại? Nồng độ nào là cực thuận cho từng cơ quan?"
+ },
+ {
+  "id": "BIO_HUMAN_REPRODUCTION",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Chu kì kinh nguyệt và điều hòa bằng hormone",
+  "question": "Hormone nào tăng vọt gây rụng trứng, và hormone nào duy trì niêm mạc tử cung sau rụng trứng? Vì sao nếu không có thụ tinh thì kinh nguyệt xảy ra?"
+ },
+ {
+  "id": "BIO_MICROBE_LAB",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Sinh trưởng của quần thể vi khuẩn: bốn pha",
+  "question": "Quần thể vi khuẩn trải qua những pha nào trong môi trường nuôi cấy không liên tục và vì sao pha lũy thừa dừng lại? Thời gian thế hệ ngắn có ý nghĩa gì?"
+ },
+ {
+  "id": "BIO_MINERAL_NUTRITION",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Dinh dưỡng khoáng: thiếu, đủ và thừa phân bón",
+  "question": "Vì sao bón quá nhiều phân bón lại làm giảm năng suất, và vì sao cây thiếu khoáng sinh trưởng kém? Vùng nồng độ nào là thích hợp?"
+ },
+ {
+  "id": "BIO_PLANT_RESPIRATION",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Hô hấp ở thực vật và các yếu tố ảnh hưởng",
+  "question": "Vì sao hạt khô hô hấp rất yếu còn hạt đang nảy mầm hô hấp mạnh? Nhiệt độ ảnh hưởng đến cường độ hô hấp thế nào và đến mức nào thì giảm?"
+ },
+ {
+  "id": "BIO_ANIMAL_BEHAVIOR",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Học tập ở động vật: phản xạ có điều kiện của Pavlov",
+  "question": "Làm sao một kích thích trung tính như tiếng chuông trở thành tín hiệu gây tiết nước bọt ở chó? Điều gì xảy ra khi ngừng củng cố bằng thức ăn?"
+ },
+ {
+  "id": "BIO_REACTION_NORM",
+  "engine": "BIOLOGY",
+  "family": "CURVE_LAB",
+  "title": "Mức phản ứng của kiểu gene với nhiệt độ",
+  "question": "Vì sao cùng một kiểu gene nhưng kiểu hình có thể khác nhau ở các môi trường khác nhau? Mức phản ứng rộng và hẹp khác nhau thế nào về khả năng thích nghi?"
+ },
+ {
+  "id": "BIO_RESPIRATORY_SYSTEM",
+  "engine": "BIOLOGY",
+  "family": "ANATOMY_FLOW",
+  "title": "Hệ hô hấp ở người và trao đổi khí ở phế nang",
+  "question": "Không khí đi qua những bộ phận nào trước khi tới phế nang, và vì sao phế nang là nơi trao đổi khí hiệu quả? Cơ hoành và cơ liên sườn giúp thông khí thế nào?"
+ },
+ {
+  "id": "BIO_WATER_TRANSPORT_PLANT",
+  "engine": "BIOLOGY",
+  "family": "ANATOMY_FLOW",
+  "title": "Vận chuyển nước và chất hữu cơ ở thực vật",
+  "question": "Nước đi từ đất lên lá qua những con đường và nhờ những lực nào? Mạch rây vận chuyển chất hữu cơ từ đâu đến đâu?"
+ },
+ {
+  "id": "BIO_SENSE_ORGANS",
+  "engine": "BIOLOGY",
+  "family": "ANATOMY_FLOW",
+  "title": "Cấu tạo mắt và sự tạo ảnh",
+  "question": "Ánh sáng đi qua những cấu trúc nào của mắt trước khi tạo ảnh trên võng mạc? Thể thủy tinh thay đổi thế nào khi nhìn vật gần và vật xa?"
+ },
+ {
+  "id": "PHYS_KINEMATICS_1D",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Chuyển động thẳng: đồ thị độ dịch chuyển–thời gian và vận tốc–thời gian",
+  "question": "Độ dốc của đồ thị độ dịch chuyển–thời gian và diện tích dưới đồ thị vận tốc–thời gian cho biết những đại lượng nào? Vì sao hai vật nặng nhẹ khác nhau rơi tự do chạm đất cùng lúc?"
+ },
+ {
+  "id": "PHYS_RELATIVE_VELOCITY",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Tổng hợp vận tốc: thuyền qua sông",
+  "question": "Muốn thuyền sang đúng điểm đối diện bờ bên kia ta phải hướng mũi thuyền thế nào? Hướng nào qua sông nhanh nhất và khi đó thuyền bị trôi bao xa?"
+ },
+ {
+  "id": "PHYS_MEASUREMENT_ERROR",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Sai số phép đo",
+  "question": "Vì sao đo nhiều lần và lấy trung bình lại làm giảm sai số ngẫu nhiên nhưng không loại bỏ được sai số dụng cụ? Sai số tỉ đối cho ta so sánh điều gì?"
+ },
+ {
+  "id": "PHYS_FORCE_COMPOSITION",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Tổng hợp, phân tích lực và cân bằng của ba lực",
+  "question": "Hợp lực của hai lực phụ thuộc góc giữa chúng thế nào? Vì sao dây treo càng gần nằm ngang thì lực căng càng lớn dù vật nặng không đổi?"
+ },
+ {
+  "id": "PHYS_MOMENT_LEVER",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Moment lực, đòn bẩy và điều kiện cân bằng",
+  "question": "Đòn bẩy cân bằng khi moment của hai lực đối với trục quay có quan hệ gì? Vì sao càng đặt vật nặng gần điểm tựa thì càng dễ nâng bằng lực nhỏ?"
+ },
+ {
+  "id": "PHYS_NEWTON_LAWS",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Định luật II Newton: xe có ma sát và máy Atwood",
+  "question": "Gia tốc phụ thuộc hợp lực và khối lượng như thế nào? Vì sao máy Atwood với hai khối lượng gần bằng nhau chuyển động chậm dù trọng lực lên mỗi vật rất lớn?"
+ },
+ {
+  "id": "PHYS_SPRING_HOOKE",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Lò xo, định luật Hooke và ghép lò xo",
+  "question": "Ghép nối tiếp và ghép song song hai lò xo cho độ cứng tương đương khác nhau ra sao? Độ giãn thay đổi thế nào khi treo cùng một vật?"
+ },
+ {
+  "id": "PHYS_FLUID_PRESSURE",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Áp suất chất lỏng và lực đẩy Archimedes",
+  "question": "Áp suất trong chất lỏng tăng theo độ sâu như thế nào? Vì sao vật có khối lượng riêng nhỏ hơn chất lỏng thì nổi và chìm một phần?"
+ },
+ {
+  "id": "PHYS_WORK_ENERGY",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Công, năng lượng và bảo toàn cơ năng khi trượt xuống dốc",
+  "question": "Khi vật trượt xuống dốc thế năng giảm đi chuyển thành những dạng nào? Có ma sát thì cơ năng còn bảo toàn không và phần mất đi đi đâu?"
+ },
+ {
+  "id": "PHYS_COLLISION_1D",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Va chạm một chiều: bảo toàn động lượng",
+  "question": "Trong va chạm đàn hồi và va chạm mềm, đại lượng nào luôn bảo toàn, đại lượng nào không? Vì sao động năng giảm đi trong va chạm mềm?"
+ },
+ {
+  "id": "PHYS_CIRCULAR_MOTION",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Chuyển động tròn đều, lực hướng tâm và vệ tinh",
+  "question": "Vì sao vật chuyển động tròn đều vẫn có gia tốc? Vệ tinh ở càng cao thì tốc độ dài và chu kì thay đổi ra sao?"
+ },
+ {
+  "id": "PHYS_SHM",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Dao động điều hòa của con lắc lò xo",
+  "question": "Li độ, vận tốc và gia tốc của dao động điều hòa lệch pha nhau thế nào? Cơ năng chuyển hóa giữa động năng và thế năng ra sao, và khi có ma sát biên độ thay đổi thế nào?"
+ },
+ {
+  "id": "PHYS_WAVE_MECH",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Sóng cơ: sóng ngang, sóng dọc và sóng dừng",
+  "question": "Phần tử môi trường có truyền đi theo sóng không? Bước sóng, tần số và tốc độ truyền sóng liên hệ nhau thế nào, và sóng dừng hình thành khi nào?"
+ },
+ {
+  "id": "PHYS_ELECTRIC_FIELD",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Điện trường, đường sức và định luật Coulomb",
+  "question": "Đường sức điện xuất phát từ điện tích nào và kết thúc ở đâu? Lực Coulomb giữa hai điện tích thay đổi thế nào khi khoảng cách tăng gấp đôi?"
+ },
+ {
+  "id": "PHYS_DC_CIRCUIT",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Mạch điện một chiều: định luật Ohm cho toàn mạch",
+  "question": "Hiệu điện thế giữa hai cực nguồn giảm thế nào khi dòng điện tăng? Điện trở ngoài bằng bao nhiêu thì công suất tiêu thụ lớn nhất?"
+ },
+ {
+  "id": "PHYS_OSCILLOSCOPE",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Dao động kí điện tử: đọc chu kì và biên độ",
+  "question": "Làm sao đọc chu kì, tần số và hiệu điện thế từ màn hình dao động kí khi biết thang thời gian và thang điện áp?"
+ },
+ {
+  "id": "PHYS_KINETIC_GAS_PARTICLES",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Mô hình động học phân tử của chất khí",
+  "question": "Áp suất chất khí sinh ra từ đâu theo mô hình hạt? Vì sao tăng nhiệt độ hoặc giảm thể tích đều làm áp suất tăng?"
+ },
+ {
+  "id": "PHYS_STATES_OF_MATTER",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Mô hình phân tử của chất rắn, lỏng, khí và sự chuyển thể",
+  "question": "Khoảng cách và chuyển động của các phân tử khác nhau thế nào ở thể rắn, lỏng, khí? Nhiệt độ tăng qua nhiệt độ nóng chảy và sôi thì mô hình thay đổi ra sao?"
+ },
+ {
+  "id": "PHYS_MAGNETIC_FIELD",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Từ trường: lực Lorentz và từ trường của dòng điện thẳng",
+  "question": "Điện tích chuyển động trong từ trường đều chịu lực như thế nào, và vì sao quỹ đạo là đường tròn? Hai dây dẫn thẳng song song mang dòng điện cùng chiều hút hay đẩy nhau?"
+ },
+ {
+  "id": "PHYS_EM_INDUCTION",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Cảm ứng điện từ: từ thông và suất điện động của khung dây quay",
+  "question": "Suất điện động xuất hiện khi nào, và vì sao khung dây quay đều trong từ trường sinh ra dòng điện xoay chiều? Khi từ thông cực đại thì suất điện động bằng bao nhiêu?"
+ },
+ {
+  "id": "PHYS_ALPHA_SCATTERING",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Thí nghiệm tán xạ hạt α của Rutherford",
+  "question": "Vì sao một số hạt α bị bật ngược trở lại, điều mà mẫu bánh pudding của Thomson không giải thích được? Điều đó nói gì về kích thước và điện tích của hạt nhân?"
+ },
+ {
+  "id": "PHYS_FISSION_REACTOR",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Phân hạch dây chuyền và thanh điều khiển lò phản ứng",
+  "question": "Hệ số nhân neutron k bằng bao nhiêu thì phản ứng dây chuyền tắt dần, ổn định hay tăng nhanh? Thanh điều khiển giúp đưa lò về trạng thái tới hạn như thế nào?"
+ },
+ {
+  "id": "PHYS_YOUNG_INTERFERENCE",
+  "engine": "PHYSICS",
+  "family": "CURVE_LAB",
+  "title": "Giao thoa ánh sáng Young",
+  "question": "Khoảng vân phụ thuộc bước sóng, khoảng cách hai khe và khoảng cách đến màn như thế nào? Vì sao ánh sáng đỏ cho vân thưa hơn ánh sáng tím?"
+ },
+ {
+  "id": "PHYS_CAPACITOR",
+  "engine": "PHYSICS",
+  "family": "CURVE_LAB",
+  "title": "Tụ điện: điện tích, năng lượng và ghép tụ",
+  "question": "Điện tích tụ tích được tăng theo hiệu điện thế thế nào, và năng lượng dự trữ phụ thuộc ra sao? Ghép nối tiếp hay song song làm điện dung tương đương thay đổi thế nào?"
+ },
+ {
+  "id": "PHYS_HEAT_CALORIMETRY",
+  "engine": "PHYSICS",
+  "family": "CURVE_LAB",
+  "title": "Đồ thị đun nóng nước đá: nhiệt dung riêng và nhiệt nóng chảy, hóa hơi",
+  "question": "Vì sao nhiệt độ không đổi trong lúc nước đá đang tan và nước đang sôi dù vẫn cung cấp nhiệt? Nhiệt lượng nào lớn nhất trong toàn bộ quá trình?"
+ },
+ {
+  "id": "PHYS_THERMOMETER",
+  "engine": "PHYSICS",
+  "family": "CURVE_LAB",
+  "title": "Nhiệt độ và các thang đo: Celsius, Kelvin, Fahrenheit",
+  "question": "Vì sao thang Kelvin bắt đầu từ độ không tuyệt đối? Đổi 36,6 °C sang kelvin và Fahrenheit thế nào?"
+ },
+ {
+  "id": "PHYS_TRANSFORMER_GRID",
+  "engine": "PHYSICS",
+  "family": "CURVE_LAB",
+  "title": "Máy biến áp và hao phí khi truyền tải điện",
+  "question": "Vì sao truyền tải điện đi xa phải dùng điện áp rất cao? Máy biến áp thay đổi điện áp và cường độ dòng điện theo tỉ lệ nào?"
+ },
+ {
+  "id": "PHYS_NUCLEAR_BINDING",
+  "engine": "PHYSICS",
+  "family": "CURVE_LAB",
+  "title": "Năng lượng liên kết riêng của hạt nhân",
+  "question": "Vì sao hạt nhân ở gần số khối 56 (sắt) bền nhất? Vì sao phân hạch hạt nhân nặng và nhiệt hạch hạt nhân nhẹ đều giải phóng năng lượng?"
+ },
+ {
+  "id": "PHYS_EM_SPECTRUM",
+  "engine": "PHYSICS",
+  "family": "TABLE_LAB",
+  "title": "Thang sóng điện từ",
+  "question": "Các loại sóng điện từ khác nhau về bước sóng, tần số và năng lượng photon thế nào? Vì sao tia X và gamma nguy hiểm hơn sóng vô tuyến?"
+ },
+ {
+  "id": "CHEM_ATOM_STRUCTURE",
+  "engine": "CHEMISTRY",
+  "family": "SCENE_LAB",
+  "title": "Cấu hình electron: Aufbau, Hund, Pauli",
+  "question": "Electron được điền vào các orbital theo thứ tự năng lượng và quy tắc nào? Vì sao Cr và Cu có cấu hình khác với dự đoán theo Aufbau?"
+ },
+ {
+  "id": "CHEM_BONDING",
+  "engine": "CHEMISTRY",
+  "family": "SCENE_LAB",
+  "title": "Liên kết hóa học: cộng hóa trị và liên kết ion",
+  "question": "Hiệu độ âm điện giữa hai nguyên tử cho biết loại liên kết thế nào? Vì sao CO₂ có liên kết phân cực nhưng phân tử lại không phân cực?"
+ },
+ {
+  "id": "CHEM_REDOX",
+  "engine": "CHEMISTRY",
+  "family": "SCENE_LAB",
+  "title": "Phản ứng oxi hóa – khử: số oxi hóa và chuyển electron",
+  "question": "Chất nào nhường electron, chất nào nhận electron? Vì sao tổng số electron nhường luôn bằng tổng số electron nhận?"
+ },
+ {
+  "id": "CHEM_HALOGEN_LAB",
+  "engine": "CHEMISTRY",
+  "family": "SCENE_LAB",
+  "title": "Ống nghiệm ảo: nhận biết halide và phản ứng đẩy halogen",
+  "question": "Vì sao AgNO₃ tạo kết tủa với Cl⁻, Br⁻, I⁻ nhưng không với F⁻? Halogen nào đẩy được halogen nào ra khỏi muối và điều đó nói gì về tính oxi hóa?"
+ },
+ {
+  "id": "CHEM_VIRTUAL_TESTTUBE",
+  "engine": "CHEMISTRY",
+  "family": "SCENE_LAB",
+  "title": "Ống nghiệm ảo: nhận biết ion bằng kết tủa, màu và chất khí",
+  "question": "Từ hiện tượng (màu kết tủa, tan trong thuốc thử dư, khí thoát ra) ta suy ra ion nào có trong dung dịch như thế nào?"
+ },
+ {
+  "id": "CHEM_SPECTRA",
+  "engine": "CHEMISTRY",
+  "family": "SCENE_LAB",
+  "title": "Phổ hồng ngoại (IR) và phổ khối lượng (MS)",
+  "question": "Các peak hấp thụ ở số sóng đặc trưng cho nhóm chức nào? Peak ion phân tử trong phổ khối cho ta biết điều gì về phân tử khối?"
+ },
+ {
+  "id": "CHEM_ALKALI_EARTH",
+  "engine": "CHEMISTRY",
+  "family": "SCENE_LAB",
+  "title": "Thử màu ngọn lửa của kim loại kiềm, kiềm thổ và đồng",
+  "question": "Vì sao mỗi kim loại cho ngọn lửa một màu đặc trưng? Màu ngọn lửa giúp nhận ra ion kim loại nào và được dùng ở đâu?"
+ },
+ {
+  "id": "CHEM_ORGANIC_STRUCTURE",
+  "engine": "CHEMISTRY",
+  "family": "SCENE_LAB",
+  "title": "Công thức cấu tạo, nhóm chức và đồng phân hợp chất hữu cơ",
+  "question": "Hai chất có cùng công thức phân tử nhưng khác công thức cấu tạo thì khác nhau thế nào? Nhóm chức nào quyết định tính chất đặc trưng của từng loại hợp chất?"
+ },
+ {
+  "id": "CHEM_LIPID_SOAP",
+  "engine": "CHEMISTRY",
+  "family": "SCENE_LAB",
+  "title": "Chất béo, xà phòng và cơ chế tẩy rửa (micelle)",
+  "question": "Phần đầu ưa nước và phần đuôi kị nước của phân tử xà phòng sắp xếp thế nào quanh giọt dầu? Vì sao xà phòng giặt kém trong nước cứng?"
+ },
+ {
+  "id": "CHEM_CARBOHYDRATE",
+  "engine": "CHEMISTRY",
+  "family": "SCENE_LAB",
+  "title": "Glucose: dạng mạch hở và dạng mạch vòng α, β",
+  "question": "Glucose tồn tại chủ yếu ở dạng nào trong dung dịch và vì sao các dạng chuyển hóa qua lại được? Hai dạng α và β khác nhau ở vị trí nào?"
+ },
+ {
+  "id": "CHEM_POLYMER",
+  "engine": "CHEMISTRY",
+  "family": "SCENE_LAB",
+  "title": "Polymer: trùng hợp và trùng ngưng",
+  "question": "Phản ứng trùng hợp khác trùng ngưng ở chỗ nào? Số mắt xích n liên hệ với phân tử khối của polymer như thế nào?"
+ },
+ {
+  "id": "CHEM_ELECTROLYSIS",
+  "engine": "CHEMISTRY",
+  "family": "SCENE_LAB",
+  "title": "Điện phân và định luật Faraday",
+  "question": "Ở catot và anot xảy ra quá trình nào khi điện phân các dung dịch và chất nóng chảy khác nhau? Khối lượng chất sinh ra phụ thuộc cường độ dòng điện và thời gian như thế nào?"
+ },
+ {
+  "id": "CHEM_ENERGETICS",
+  "engine": "CHEMISTRY",
+  "family": "CURVE_LAB",
+  "title": "Giản đồ năng lượng: enthalpy phản ứng và năng lượng hoạt hóa",
+  "question": "Phản ứng tỏa nhiệt và thu nhiệt khác nhau thế nào trên giản đồ năng lượng? Chất xúc tác làm thay đổi đại lượng nào và không làm thay đổi đại lượng nào?"
+ },
+ {
+  "id": "CHEM_KINETICS",
+  "engine": "CHEMISTRY",
+  "family": "CURVE_LAB",
+  "title": "Tốc độ phản ứng: nhiệt độ, xúc tác và phương trình Arrhenius",
+  "question": "Vì sao tăng nhiệt độ hoặc dùng xúc tác làm nồng độ chất đầu giảm nhanh hơn? Tăng 10 °C thì tốc độ thường tăng khoảng mấy lần?"
+ },
+ {
+  "id": "CHEM_EQUILIBRIUM_GENERAL",
+  "engine": "CHEMISTRY",
+  "family": "CURVE_LAB",
+  "title": "Cân bằng hóa học tổng quát: thương số phản ứng Q so với hằng số K",
+  "question": "So sánh Q với K cho ta biết chiều dịch chuyển của phản ứng thế nào? Vì sao Q luôn tiến về K và dừng lại ở đó?"
+ },
+ {
+  "id": "CHEM_ACID_BASE",
+  "engine": "CHEMISTRY",
+  "family": "CURVE_LAB",
+  "title": "pH của acid mạnh, acid yếu và dung dịch đệm",
+  "question": "Vì sao pha loãng acid yếu làm pH tăng chậm hơn acid mạnh? Dung dịch đệm giữ pH ổn định nhờ cặp acid–base liên hợp như thế nào?"
+ },
+ {
+  "id": "CHEM_BOILING_POINTS",
+  "engine": "CHEMISTRY",
+  "family": "CURVE_LAB",
+  "title": "Nhiệt độ sôi của alkane, aldehyde, alcohol và acid carboxylic",
+  "question": "Vì sao alcohol và acid carboxylic sôi cao hơn nhiều so với alkane có số nguyên tử C tương đương? Nhiệt độ sôi biến thiên thế nào khi tăng số nguyên tử carbon?"
+ },
+ {
+  "id": "CHEM_AMINO_PROTEIN",
+  "engine": "CHEMISTRY",
+  "family": "CURVE_LAB",
+  "title": "Amino acid: điện tích theo pH và điểm đẳng điện",
+  "question": "Amino acid mang điện tích gì ở pH thấp, pH cao và tại pH nào nó không di chuyển trong điện trường? Điều đó dùng để tách các amino acid như thế nào?"
+ },
+ {
+  "id": "CHEM_PERIODIC_TABLE",
+  "engine": "CHEMISTRY",
+  "family": "TABLE_LAB",
+  "title": "Bảng tuần hoàn các nguyên tố và xu hướng biến đổi tuần hoàn",
+  "question": "Bán kính nguyên tử, độ âm điện và năng lượng ion hóa biến đổi thế nào theo chu kì và theo nhóm? Vì sao các nguyên tố trong cùng một nhóm có tính chất tương tự nhau?"
+ },
+ {
+  "id": "CHEM_ELECTROCHEM_SERIES",
+  "engine": "CHEMISTRY",
+  "family": "TABLE_LAB",
+  "title": "Dãy điện hóa của kim loại và thế điện cực chuẩn",
+  "question": "Kim loại đứng trước có tính khử mạnh hơn kim loại đứng sau như thế nào, và dựa vào thế điện cực chuẩn ta dự đoán phản ứng và suất điện động của pin ra sao?"
+ },
+ {
+  "id": "CHEM_TRANSITION_COMPLEX",
+  "engine": "CHEMISTRY",
+  "family": "TABLE_LAB",
+  "title": "Cấu hình d, màu của ion kim loại chuyển tiếp và phức chất",
+  "question": "Vì sao nhiều ion kim loại chuyển tiếp có màu còn Zn²⁺ và Sc³⁺ thì không? Số electron d liên quan đến màu và phức chất như thế nào?"
+ },
+ {
+  "id": "CHEM_INDUSTRIAL_PROCESS",
+  "engine": "CHEMISTRY",
+  "family": "PROCESS_STEPS",
+  "title": "Sản xuất sulfuric acid theo phương pháp tiếp xúc",
+  "question": "Vì sao SO₃ không được hấp thụ trực tiếp bằng nước mà bằng H₂SO₄ đặc? Các điều kiện nhiệt độ và xúc tác của giai đoạn oxi hóa SO₂ được chọn để cân bằng yếu tố nào?"
+ },
+ {
+  "id": "CHEM_ORGANIC_REACTIONS",
+  "engine": "CHEMISTRY",
+  "family": "PROCESS_STEPS",
+  "title": "Cộng HBr vào propene theo quy tắc Markovnikov",
+  "question": "Vì sao khi cộng HBr vào propene sản phẩm chính là 2-bromopropane chứ không phải 1-bromopropane? Độ bền của carbocation quyết định điều đó thế nào?"
+ },
+ {
+  "id": "CHEM_SCIENCE_PROCESS",
+  "engine": "CHEMISTRY",
+  "family": "PROCESS_STEPS",
+  "title": "Quy trình nghiên cứu khoa học trong hóa học",
+  "question": "Một nghiên cứu khoa học trải qua những bước nào, và vì sao phải kiểm soát biến số trong thí nghiệm? Hãy áp dụng cho việc tìm hiểu ảnh hưởng của nhiệt độ đến thời gian tan của viên sủi?"
+ },
+ {
+  "id": "CHEM_SEPARATION",
+  "engine": "CHEMISTRY",
+  "family": "ANATOMY_FLOW",
+  "title": "Chưng cất phân đoạn dầu mỏ và các phương pháp tách chất",
+  "question": "Các phân đoạn dầu mỏ được tách theo tiêu chí nào trong tháp chưng cất? Vì sao phân đoạn nhẹ lên đỉnh tháp còn cặn nặng ở đáy?"
+ },
+ {
+  "id": "CHEM_METALLURGY",
+  "engine": "CHEMISTRY",
+  "family": "ANATOMY_FLOW",
+  "title": "Lò cao luyện gang: các vùng phản ứng",
+  "question": "Quặng sắt được khử dần qua những giai đoạn nào khi đi xuống trong lò cao, và vai trò của than cốc, CO và đá vôi là gì?"
+ },
+ {
+  "id": "MATH_UNIT_CIRCLE",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Đường tròn lượng giác",
+  "question": "Khi điểm M chạy trên đường tròn đơn vị, hoành độ và tung độ của M cho ta những giá trị lượng giác nào? Vì sao sin(π − α) = sin α còn cos(π − α) = −cos α?"
+ },
+ {
+  "id": "MATH_TRIANGLE_SOLVER",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Giải tam giác (định lí sin, cos, trường hợp hai nghiệm)",
+  "question": "Biết hai cạnh và một góc, khi nào có đúng một tam giác, khi nào có hai tam giác và khi nào không có tam giác nào? Định lí cosin và định lí sin dùng ở bước nào?"
+ },
+ {
+  "id": "MATH_VECTOR_2D",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Vectơ trong mặt phẳng: tổng, hiệu, tích vô hướng",
+  "question": "Quy tắc hình bình hành và quy tắc ba điểm cho cùng một tổng như thế nào? Tích vô hướng cho biết gì về góc giữa hai vectơ và hình chiếu của vectơ này lên vectơ kia?"
+ },
+ {
+  "id": "MATH_VECTOR_3D",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Vectơ trong không gian Oxyz: tích có hướng",
+  "question": "Tích có hướng của hai vectơ cho vectơ có phương và độ dài như thế nào? Vì sao độ dài của nó bằng diện tích hình bình hành dựng trên hai vectơ?"
+ },
+ {
+  "id": "MATH_ANALYTIC_LINE_CIRCLE",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Đường thẳng và đường tròn trong mặt phẳng Oxy",
+  "question": "Khoảng cách từ tâm đến đường thẳng so với bán kính cho biết đường thẳng cắt, tiếp xúc hay không cắt đường tròn như thế nào? Dây cung có độ dài bao nhiêu?"
+ },
+ {
+  "id": "MATH_CONIC_LAB",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Ba đường conic: elip, hypebol, parabol",
+  "question": "Tổng (hiệu) khoảng cách từ một điểm của elip (hypebol) đến hai tiêu điểm vì sao không đổi? Parabol là tập điểm cách đều tiêu điểm và đường chuẩn nghĩa là gì?"
+ },
+ {
+  "id": "MATH_SET_LOGIC",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Tập hợp, biểu đồ Venn, khoảng trên trục số và bảng chân trị",
+  "question": "Số phần tử của hợp hai tập hợp tính thế nào khi hai tập có phần chung? Hợp, giao của hai khoảng trên trục số và mệnh đề kéo theo P ⇒ Q đúng, sai khi nào?"
+ },
+ {
+  "id": "MATH_COUNTING_TREE",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Quy tắc đếm, hoán vị, chỉnh hợp, tổ hợp và tam giác Pascal",
+  "question": "Vì sao chọn k phần tử không tính thứ tự lại chia cho k! so với chọn có thứ tự? Mỗi số trong tam giác Pascal được tạo từ hai số nào ở hàng trên?"
+ },
+ {
+  "id": "MATH_STAT_DESCRIPTIVE",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Thống kê mô tả: số trung bình, trung vị, tứ phân vị, độ lệch chuẩn",
+  "question": "Khi thêm một giá trị rất lớn vào mẫu số liệu, số trung bình và trung vị thay đổi khác nhau như thế nào? Khoảng tứ phân vị và độ lệch chuẩn phản ánh điều gì?"
+ },
+ {
+  "id": "MATH_APPROX_ERROR",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Số gần đúng và sai số",
+  "question": "Quy tròn đến mấy chữ số thập phân thì sai số tuyệt đối không vượt quá nửa đơn vị hàng quy tròn? Sai số tương đối khác sai số tuyệt đối ở điểm nào khi so sánh độ chính xác?"
+ },
+ {
+  "id": "MATH_SEQUENCE_LAB",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Dãy số: cấp số cộng, cấp số nhân, giới hạn của dãy",
+  "question": "Khi nào cấp số nhân có tổng vô hạn? Với dãy có giới hạn L, cho ε nhỏ bao nhiêu thì từ số hạng nào trở đi mọi số hạng đều nằm trong dải (L − ε, L + ε)?"
+ },
+ {
+  "id": "MATH_LIMIT_CONTINUITY",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Giới hạn hàm số theo ε–δ và tính liên tục",
+  "question": "Với mỗi dải sai lệch ε quanh giới hạn, ta tìm được khoảng δ quanh x₀ để mọi giá trị hàm trong khoảng đó nằm trong dải: hàm nào làm điều này được, hàm nào không?"
+ },
+ {
+  "id": "MATH_SPACE_RELATIONS",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Quan hệ trong không gian: góc và khoảng cách trên hình lập phương",
+  "question": "Góc giữa đường thẳng và mặt phẳng, góc nhị diện và khoảng cách giữa hai đường chéo nhau được xác định bằng hình chiếu hoặc đoạn vuông góc chung như thế nào?"
+ },
+ {
+  "id": "MATH_DERIVATIVE_LAB",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Đạo hàm: từ cát tuyến đến tiếp tuyến",
+  "question": "Khi điểm thứ hai tiến sát điểm đang xét, hệ số góc cát tuyến dần tới giá trị nào? Giá trị đó cho ta biết gì về tốc độ thay đổi của hàm?"
+ },
+ {
+  "id": "MATH_FUNCTION_STUDY",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Khảo sát và vẽ đồ thị hàm số theo từng bước",
+  "question": "Bảng biến thiên được lập từ dấu của y′ như thế nào, và nó cho ta biết gì về cực trị, tiệm cận và hình dạng đồ thị?"
+ },
+ {
+  "id": "MATH_INTEGRAL_AREA",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Tích phân và diện tích: tổng Riemann hội tụ về tích phân",
+  "question": "Khi chia nhỏ khoảng [a, b] thành nhiều phần hơn, tổng diện tích các hình chữ nhật tiến tới đại lượng nào? Cách chọn điểm đại diện (trái, phải, giữa) ảnh hưởng ra sao tới sai số?"
+ },
+ {
+  "id": "MATH_QUADRIC_SURFACES",
+  "engine": "MATH",
+  "family": "SCENE_LAB",
+  "title": "Mặt bậc hai và dải Möbius",
+  "question": "Các mặt cắt song song với mặt phẳng tọa độ của elipxoit, hypeboloit, paraboloit là những đường nào? Vì sao dải Möbius chỉ có một mặt?"
+ },
+ {
+  "id": "MATH_QUADRATIC",
+  "engine": "MATH",
+  "family": "CURVE_LAB",
+  "title": "Hàm số bậc hai, parabol và dấu tam thức",
+  "question": "Hệ số a, b, c quyết định hướng, đỉnh và số giao điểm với trục hoành của parabol như thế nào? Dấu của Δ cho biết gì về số nghiệm và dấu của tam thức?"
+ },
+ {
+  "id": "MATH_EXP_LOG",
+  "engine": "MATH",
+  "family": "CURVE_LAB",
+  "title": "Hàm số mũ và hàm số lôgarit",
+  "question": "Vì sao đồ thị y = aˣ và y = logₐ x đối xứng nhau qua đường thẳng y = x? Cơ số a lớn hơn 1 hay nhỏ hơn 1 thì đồng biến hay nghịch biến?"
+ },
+ {
+  "id": "MATH_OPTIMIZATION",
+  "engine": "MATH",
+  "family": "CURVE_LAB",
+  "title": "Bài toán tối ưu: làm hộp có thể tích lớn nhất",
+  "question": "Vì sao thể tích hộp đạt lớn nhất đúng tại điểm mà đạo hàm V′(x) bằng 0? Cắt góc quá nhỏ hay quá lớn thì thể tích thay đổi ra sao?"
+ },
+ {
+  "id": "MATH_FINANCE_GROWTH",
+  "engine": "MATH",
+  "family": "CURVE_LAB",
+  "title": "Lãi đơn, lãi kép và tăng trưởng",
+  "question": "Vì sao lãi kép tăng nhanh hơn lãi đơn dù cùng lãi suất? Cần bao nhiêu năm để số tiền gấp đôi?"
+ },
+ {
+  "id": "MATH_PROBABILITY_LAB",
+  "engine": "MATH",
+  "family": "TRIAL_LAB",
+  "title": "Phòng thí nghiệm xác suất: tần suất, luật số lớn, Monty Hall, Bayes",
+  "question": "Vì sao tần suất quan sát dao động mạnh khi ít lần thử nhưng tiến gần xác suất lí thuyết khi thử rất nhiều lần? Đổi cửa trong trò Monty Hall có lợi hơn giữ nguyên không?"
+ }
+]

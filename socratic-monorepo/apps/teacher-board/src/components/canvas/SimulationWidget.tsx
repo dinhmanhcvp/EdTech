@@ -12,6 +12,8 @@ import { VseprEngine, LeChatelierEngine, DaniellEngine } from '../../engines/Che
 import { StomataEngine, OsmosisEngine, OperonLacEngine, BoxplotEngine, VariationTableEngine } from '../../engines/MoreStemEngines';
 import { GasEngine, DoublePendulumEngine, CoriolisEngine, FraunhoferEngine } from '../../engines/PhysEngines';
 import { ADVANCED_ENGINES } from '../../engines/AdvancedStemEngines';
+import { PresetEngine } from '../../engines/families';
+import { PRESETS } from '../../utils/presets';
 import { ADVANCED_TEMPLATES, type AdvancedId } from '../../utils/advancedStemModels';
 import { PhysicsSandboxEngine } from '../../engines/PhysicsSandboxEngine';
 import { ChemistryLabEngine } from '../../engines/ChemistryLabEngine';
@@ -280,6 +282,10 @@ export function getCurriculumParameters(
 function getTopicDisplayName(blueprint: SimulationBlueprint): string {
   const t = blueprint.templateId;
   if (Object.prototype.hasOwnProperty.call(ADVANCED_TEMPLATES, t)) return ADVANCED_TEMPLATES[t as AdvancedId].title;
+  if (Object.prototype.hasOwnProperty.call(PRESETS, t)) {
+    const subject = {MATH: 'TOÁN HỌC', PHYSICS: 'VẬT LÝ', CHEMISTRY: 'HÓA HỌC', BIOLOGY: 'SINH HỌC'}[blueprint.engine as string] ?? String(blueprint.engine);
+    return `${subject} • ${PRESETS[t].title.toUpperCase()}`;
+  }
   const f = (blueprint.recognizedLatex || '').toLowerCase();
 
   // Engine mới nhận dạng theo templateId trước, tránh bị các từ khóa (sin, x^2…) kéo sang chủ đề khác.
@@ -347,6 +353,7 @@ function getTopicDisplayName(blueprint: SimulationBlueprint): string {
 const PHYS_OWN = ['PHYS_GAS_STATE_PV', 'PHYS_DOUBLE_PENDULUM', 'PHYS_CORIOLIS_FORCE', 'PHYS_FRAUNHOFER_DIFF'];
 const SELF_CONTROLLED = new Set(['PHYS_GAS_STATE_PV', 'PHYS_DOUBLE_PENDULUM', 'PHYS_CORIOLIS_FORCE', 'PHYS_FRAUNHOFER_DIFF','MATH_GRAPH', 'GEO_SOLID', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE', 'BIO_STOMATA_GAS', 'BIO_OSMOSIS_CELL', 'BIO_OPERON_LAC', 'CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL']);
 Object.keys(ADVANCED_ENGINES).forEach((id) => SELF_CONTROLLED.add(id));
+Object.keys(PRESETS).forEach((id) => SELF_CONTROLLED.add(id));
 
 export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   blueprint,
@@ -367,6 +374,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
 }) => {
   const isHolo = displayMode === 'HOLOGRAM';
   const AdvancedEngine = Object.prototype.hasOwnProperty.call(ADVANCED_ENGINES, blueprint.templateId) ? ADVANCED_ENGINES[blueprint.templateId] : undefined;
+  const isPresetTemplate = Object.prototype.hasOwnProperty.call(PRESETS, blueprint.templateId);
   const [engineRevision, setEngineRevision] = useState(0);
   const [activeFormula, setActiveFormula] = useState<string>(blueprint.recognizedLatex);
   const [renderMode, setRenderMode] = useState<'ENGINE' | 'AI_VISUAL'>(
@@ -918,7 +926,8 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.templateId === 'MATH_STAT_BOXPLOT' && <BoxplotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {blueprint.templateId === 'MATH_VARIATION_TABLE' && <VariationTableEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {AdvancedEngine && <AdvancedEngine key={`${blueprint.templateId}-${engineRevision}`} blueprint={activeBlueprint} />}
-            {blueprint.engine === 'MATH' && !AdvancedEngine && !['MATH_GRAPH', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE'].includes(blueprint.templateId) && (
+            {isPresetTemplate && <PresetEngine key={`${blueprint.templateId}-${engineRevision}`} blueprint={activeBlueprint} />}
+            {blueprint.engine === 'MATH' && !AdvancedEngine && !isPresetTemplate && !['MATH_GRAPH', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE'].includes(blueprint.templateId) && (
               <MathPlotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} isHologram={isHolo} />
             )}
             {blueprint.engine === 'GEOMETRY' && (
@@ -928,13 +937,13 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.templateId === 'PHYS_DOUBLE_PENDULUM' && <DoublePendulumEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {blueprint.templateId === 'PHYS_CORIOLIS_FORCE' && <CoriolisEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {blueprint.templateId === 'PHYS_FRAUNHOFER_DIFF' && <FraunhoferEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
-            {blueprint.engine === 'PHYSICS' && !PHYS_OWN.includes(blueprint.templateId) && (
+            {blueprint.engine === 'PHYSICS' && !isPresetTemplate && !PHYS_OWN.includes(blueprint.templateId) && (
               <PhysicsSandboxEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} isHologram={isHolo} />
             )}
-            {blueprint.engine === 'CHEMISTRY' && !AdvancedEngine && !['CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL'].includes(blueprint.templateId) && (
+            {blueprint.engine === 'CHEMISTRY' && !AdvancedEngine && !isPresetTemplate && !['CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL'].includes(blueprint.templateId) && (
               <ChemistryLabEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
-            {blueprint.engine === 'BIOLOGY' && !['BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG', 'BIO_STOMATA_GAS', 'BIO_OSMOSIS_CELL', 'BIO_OPERON_LAC'].includes(blueprint.templateId) && (
+            {blueprint.engine === 'BIOLOGY' && !isPresetTemplate && !['BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG', 'BIO_STOMATA_GAS', 'BIO_OSMOSIS_CELL', 'BIO_OPERON_LAC'].includes(blueprint.templateId) && (
               <BioSystemEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
           </>

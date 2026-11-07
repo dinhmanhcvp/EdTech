@@ -1,0 +1,39 @@
+'use client';
+
+import React from 'react';
+import type {SimulationBlueprint} from '@socratic/types';
+import {PRESETS} from '../../utils/presets';
+import type {PresetFamily} from '../../utils/presets';
+import {AnatomyFlow} from './AnatomyFlow';
+import {CurveLab} from './CurveLab';
+import {FeedbackSystem} from './FeedbackSystem';
+import {ProcessSteps} from './ProcessSteps';
+import {SceneLab} from './SceneLab';
+import {TableLab} from './TableLab';
+import {TrialLab} from './TrialLab';
+
+/** Dựng engine cho một blueprint preset; trả null nếu templateId không phải preset. */
+export const PresetEngine: React.FC<{blueprint: SimulationBlueprint}> = ({blueprint}) => {
+  const id = blueprint.templateId;
+  const spec = Object.prototype.hasOwnProperty.call(PRESETS, id) ? PRESETS[id] : undefined;
+  if (!spec) return null;
+  switch (spec.family) {
+    case 'CURVE_LAB':
+      return <CurveLab id={id} data={spec.data} />;
+    case 'ANATOMY_FLOW':
+      return <AnatomyFlow id={id} data={spec.data} />;
+    case 'PROCESS_STEPS':
+      return <ProcessSteps id={id} data={spec.data} />;
+    case 'FEEDBACK_SYSTEM':
+      return <FeedbackSystem id={id} data={spec.data} />;
+    case 'SCENE_LAB':
+      return <SceneLab id={id} data={spec.data} />;
+    case 'TRIAL_LAB':
+      return <TrialLab id={id} data={spec.data} />;
+    case 'TABLE_LAB':
+      return <TableLab id={id} data={spec.data} />;
+  }
+};
+
+export const isPreset = (templateId: string): boolean => Object.prototype.hasOwnProperty.call(PRESETS, templateId);
+export type {PresetFamily};

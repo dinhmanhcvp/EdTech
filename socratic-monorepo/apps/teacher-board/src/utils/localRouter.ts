@@ -14,6 +14,7 @@ import {matchPhysKeywords} from './physicsModels';
 import {matchAdvancedKeywords, ADVANCED_TEMPLATES} from './advancedStemModels';
 import {parseBoxplot, parseVariationTable} from './mathModels';
 import {matchLegacyTemplate} from './legacyTemplates';
+import {matchPreset} from './presets';
 
 /** Tách "y = x^2 - 3; y = A sin x + B" thành từng phương trình. */
 export function splitEquations(text: string): string[] {
@@ -286,7 +287,8 @@ export function matchStemModel(text: string): SimulationBlueprint | null {
       curriculumLevel: 'THPT_STANDARD',
     };
   }
-  return null;
+  // Cuối cùng: preset dữ liệu (utils/presets); không cướp câu của các bộ định tuyến ở trên
+  return matchPreset(raw);
 }
 
 /**

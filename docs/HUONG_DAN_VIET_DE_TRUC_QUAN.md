@@ -481,6 +481,142 @@ Không qua hologram: các nét tay thô được **nắn thẳng và nối lại
 - **Viết:** `lò cao luyện gang` · `sản xuất gang` · `luyện thép` · `ăn mòn điện hóa`
 - **Chỉnh:** .
 
+### CHEM_LAB_BENCH — Phòng thí nghiệm Hóa học ảo: giá ống nghiệm, kệ hóa chất và nhật kí hiện tượng
+- **Viết:** `phòng thí nghiệm hóa học ảo` · `thực hành hóa học` · `tiết thực hành hóa`
+- **Chỉnh:** chọn một bài thí nghiệm hoặc để tự do; lấy hóa chất từ kệ vào ống hoặc cốc, đun, chờ, ghi nhật kí hiện tượng.
+
+### CHEM_LAB_NA_MG_WATER — Thực hành: So sánh tính kim loại của natri và magnesium (phản ứng với nước)
+- **Viết:** `thí nghiệm so sánh tính kim loại của natri và magnesium` · `thí nghiệm natri và magnesium tác dụng với nước`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_RATE_TEMP — Thực hành: Ảnh hưởng của nhiệt độ đến tốc độ phản ứng (Mg + nước)
+- **Viết:** `thí nghiệm Mg tác dụng với nước nóng và nước lạnh`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_CL2_I2_STARCH — Thực hành: So sánh tính phi kim của chlorine và iodine; nhận biết iodine bằng hồ tinh bột
+- **Viết:** `thí nghiệm so sánh tính phi kim của chlorine và iodine` · `thí nghiệm nước chlorine tác dụng với muối iodide và hồ tinh bột`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_CARBONATE_ACID — Thực hành: Muối carbonate tác dụng với acid: nhận biết khí CO₂
+- **Viết:** `thí nghiệm muối carbonate tác dụng với acid` · `thí nghiệm Na2CO3 tác dụng với HNO3 loãng`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_CONDUCTIVITY — Thực hành: Thử tính dẫn điện của hợp chất ion
+- **Viết:** `thí nghiệm thử tính dẫn điện của hợp chất ion`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_REDOX_FE — Thực hành: Xác định chất oxi hóa, chất khử: sắt với CuSO₄ và H₂SO₄ loãng
+- **Viết:** `thí nghiệm xác định chất oxi hóa chất khử` · `thí nghiệm đinh sắt tác dụng với dung dịch CuSO4`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_NEUTRAL_TEMP — Thực hành: Theo dõi sự thay đổi nhiệt độ của phản ứng trung hòa
+- **Viết:** `thí nghiệm theo dõi sự thay đổi nhiệt độ của phản ứng trung hòa`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_RATE_CONC — Thực hành: Ảnh hưởng của nồng độ đến tốc độ phản ứng (Na₂S₂O₃ + H₂SO₄)
+- **Viết:** `thí nghiệm Na2S2O3 tác dụng với H2SO4 đo thời gian đục`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_RATE_SURFACE — Thực hành: Ảnh hưởng của diện tích bề mặt đến tốc độ phản ứng (CaCO₃ + HCl)
+- **Viết:** `thí nghiệm đá vôi viên và đá vôi nhỏ tác dụng với HCl`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_RATE_CAT — Thực hành: Ảnh hưởng của chất xúc tác đến tốc độ phản ứng (H₂O₂ + MnO₂)
+- **Viết:** `thí nghiệm H2O2 và MnO2 xúc tác`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_HALIDE_DISPLACE — Thực hành: Phản ứng thế của muối halide với nước chlorine và nước bromine
+- **Viết:** `thí nghiệm phản ứng thế của muối halide` · `thí nghiệm nước chlorine tác dụng với dung dịch NaBr và NaI`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_HCL_METALS — Thực hành: Dung dịch HCl tác dụng với kim loại (Zn, Cu)
+- **Viết:** `thí nghiệm dung dịch HCl tác dụng với kim loại` · `thí nghiệm HCl loãng tác dụng với kẽm và đồng`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_HALIDE_ID — Thực hành: Nhận biết ion halide bằng dung dịch AgNO₃
+- **Viết:** `thí nghiệm nhận biết ion halide` · `thí nghiệm AgNO3 với NaF, NaCl, NaBr, NaI`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_ACID_BASE_INDICATOR — Thực hành: Chất chỉ thị acid – base và pH của dung dịch muối
+- **Viết:** `thí nghiệm chất chỉ thị acid base` · `thí nghiệm thủy phân CH3COONa với phenolphthalein`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_S_FE_HEAT — Thực hành: Sulfur tác dụng với sắt khi đun nóng
+- **Viết:** `thí nghiệm sulfur tác dụng với sắt` · `thí nghiệm đun bột sắt và lưu huỳnh`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_CU_H2SO4_CONC — Thực hành: Đồng tác dụng với dung dịch sulfuric acid đặc, nóng
+- **Viết:** `thí nghiệm đồng tác dụng với sulfuric acid đặc nóng`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_SULFATE_TEST — Thực hành: Nhận biết ion sulfate bằng ion Ba²⁺
+- **Viết:** `thí nghiệm nhận biết ion sulfate bằng ion Ba2+`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_C2H2_PREP — Thực hành: Điều chế acetylene từ đất đèn và thử tính chất
+- **Viết:** `thí nghiệm điều chế acetylene từ đất đèn`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_HEXANE_BR — Thực hành: Hexane: phản ứng bromine hóa và thử với KMnO₄
+- **Viết:** `thí nghiệm bromine hóa hexane` · `thí nghiệm hexane tác dụng với KMnO4`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_CU_OH_GLYCEROL — Thực hành: Cu(OH)₂ tác dụng với alcohol đa chức (glycerol)
+- **Viết:** `thí nghiệm Cu(OH)2 tác dụng với glycerol`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_TOLLENS — Thực hành: Phản ứng tráng bạc của aldehyde
+- **Viết:** `thí nghiệm phản ứng tráng bạc của aldehyde` · `thí nghiệm aldehyde với thuốc thử Tollens`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_ACETIC_ACID — Thực hành: Tính acid của acetic acid
+- **Viết:** `thí nghiệm tính acid của acetic acid`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_GLUCOSE_CU — Thực hành: Glucose tác dụng với Cu(OH)₂: tính polyalcohol và tính aldehyde
+- **Viết:** `thí nghiệm glucose tác dụng với Cu(OH)2`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_STARCH_IODINE — Thực hành: Hồ tinh bột với iodine và thủy phân tinh bột
+- **Viết:** `thí nghiệm hồ tinh bột với iodine` · `thí nghiệm thủy phân tinh bột`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_BIURET — Thực hành: Phản ứng màu biuret của peptide và protein
+- **Viết:** `thí nghiệm phản ứng màu biuret của peptide` · `thí nghiệm protein với Cu(OH)2 màu tím`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_ANILINE_BR — Thực hành: Aniline tác dụng với nước bromine
+- **Viết:** `thí nghiệm aniline tác dụng với nước bromine`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_METAL_SALT — Thực hành: Kim loại tác dụng với dung dịch muối
+- **Viết:** `thí nghiệm kim loại tác dụng với dung dịch muối`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_CATION_NAOH — Thực hành: Nhận biết các cation kim loại bằng dung dịch NaOH
+- **Viết:** `thí nghiệm nhận biết các cation kim loại bằng NaOH`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_CU_NH3_COMPLEX — Thực hành: Sự tạo thành phức chất của Cu²⁺ với NH₃
+- **Viết:** `thí nghiệm Cu2+ tác dụng với NH3 dư tạo dung dịch xanh thẫm`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_KMNO4_FE2 — Thực hành: Chuẩn độ muối Fe(II) bằng dung dịch thuốc tím
+- **Viết:** `thí nghiệm chuẩn độ muối Fe(II) bằng thuốc tím`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_NH4_NAOH — Thực hành: Nhận biết ion ammonium bằng dung dịch kiềm
+- **Viết:** `thí nghiệm nhận biết ion ammonium bằng NaOH`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_CARBONATE_BARIUM — Thực hành: Phân biệt SO₄²⁻ và CO₃²⁻ bằng BaCl₂ rồi acid
+- **Viết:** `thí nghiệm phân biệt ion sulfate và carbonate bằng BaCl2`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
+### CHEM_LAB_FE3_SCN — Thực hành: Nhận biết ion Fe³⁺ bằng KSCN
+- **Viết:** `thí nghiệm nhận biết ion Fe3+ bằng KSCN`
+- **Chỉnh:** chọn ống hoặc cốc, lấy hóa chất từ kệ (chọn lượng), đun nóng, chiếu sáng, chờ, dẫn khí; làm theo các bước và trả lời câu hỏi; bấm "Xem thao tác mẫu" nếu cần.
+
 ## 6. Sinh học
 
 ### BIO_PHOTOSYNTHESIS — Quang hợp

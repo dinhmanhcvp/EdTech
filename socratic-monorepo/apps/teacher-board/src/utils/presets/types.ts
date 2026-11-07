@@ -167,6 +167,12 @@ export interface TableData {
   note?: string;
 }
 
+// ---------------------------------------------------------------- CHEM_BENCH
+export interface BenchData {
+  /** mã bài thí nghiệm mở sẵn; null = tự do */
+  experiment: string | null;
+}
+
 // ---------------------------------------------------------------- khai báo chung
 interface Base {
   engine: SimulationBlueprint['engine'];
@@ -185,5 +191,6 @@ export type PresetSpec =
   | (Base & {family: 'FEEDBACK_SYSTEM'; data: FeedbackData})
   | (Base & {family: 'SCENE_LAB'; data: SceneData})
   | (Base & {family: 'TRIAL_LAB'; data: TrialData})
-  | (Base & {family: 'TABLE_LAB'; data: TableData});
+  | (Base & {family: 'TABLE_LAB'; data: TableData})
+  | (Base & {family: 'CHEM_BENCH'; data: BenchData});
 export type PresetFamily = PresetSpec['family'];

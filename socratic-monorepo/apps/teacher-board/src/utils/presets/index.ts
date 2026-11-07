@@ -4,6 +4,7 @@ import {CURVE_PRESETS} from './curve';
 import {FEEDBACK_PRESETS} from './feedback';
 import {HOA_CURVE_PRESETS} from './hoaCurve';
 import {HOA_FLOW_PRESETS} from './hoaFlow';
+import {HOA_LAB_PRESETS} from './hoaLab';
 import {HOA_SCENE1_PRESETS} from './hoaScene1';
 import {HOA_SCENE2_PRESETS} from './hoaScene2';
 import {HOA_TABLE_PRESETS} from './hoaTable';
@@ -30,6 +31,8 @@ export type {PresetSpec, PresetFamily} from './types';
 
 /** Mọi preset. Thứ tự khai báo = thứ tự thử từ khóa: câu khớp nhiều preset thì lấy preset đứng trước. */
 export const PRESETS: Record<string, PresetSpec> = {
+  // Bài thí nghiệm Hóa đứng đầu: chúng luôn đi kèm "thí nghiệm/thực hành" nên không nuốt câu của mô phỏng khái niệm
+  ...HOA_LAB_PRESETS,
   ...CURVE_PRESETS,
   ...ANATOMY_PRESETS,
   ...PROCESS_PRESETS,

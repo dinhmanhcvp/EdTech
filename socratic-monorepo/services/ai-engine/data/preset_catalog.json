@@ -1,5 +1,243 @@
 [
  {
+  "id": "CHEM_LAB_BENCH",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Phòng thí nghiệm Hóa học ảo: giá ống nghiệm, kệ hóa chất và nhật kí hiện tượng",
+  "question": "Khi trộn các chất với nhau, hiện tượng nào cho biết đã có phản ứng xảy ra, và em viết được phương trình hóa học nào để giải thích?"
+ },
+ {
+  "id": "CHEM_LAB_NA_MG_WATER",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: So sánh tính kim loại của natri và magnesium (phản ứng với nước)",
+  "question": "Quan sát thí nghiệm \"So sánh tính kim loại của natri và magnesium (phản ứng với nước)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_RATE_TEMP",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Ảnh hưởng của nhiệt độ đến tốc độ phản ứng (Mg + nước)",
+  "question": "Quan sát thí nghiệm \"Ảnh hưởng của nhiệt độ đến tốc độ phản ứng (Mg + nước)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_CL2_I2_STARCH",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: So sánh tính phi kim của chlorine và iodine; nhận biết iodine bằng hồ tinh bột",
+  "question": "Quan sát thí nghiệm \"So sánh tính phi kim của chlorine và iodine; nhận biết iodine bằng hồ tinh bột\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_CARBONATE_ACID",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Muối carbonate tác dụng với acid: nhận biết khí CO₂",
+  "question": "Quan sát thí nghiệm \"Muối carbonate tác dụng với acid: nhận biết khí CO₂\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_CONDUCTIVITY",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Thử tính dẫn điện của hợp chất ion",
+  "question": "Quan sát thí nghiệm \"Thử tính dẫn điện của hợp chất ion\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_REDOX_FE",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Xác định chất oxi hóa, chất khử: sắt với CuSO₄ và H₂SO₄ loãng",
+  "question": "Quan sát thí nghiệm \"Xác định chất oxi hóa, chất khử: sắt với CuSO₄ và H₂SO₄ loãng\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_NEUTRAL_TEMP",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Theo dõi sự thay đổi nhiệt độ của phản ứng trung hòa",
+  "question": "Quan sát thí nghiệm \"Theo dõi sự thay đổi nhiệt độ của phản ứng trung hòa\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_RATE_CONC",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Ảnh hưởng của nồng độ đến tốc độ phản ứng (Na₂S₂O₃ + H₂SO₄)",
+  "question": "Quan sát thí nghiệm \"Ảnh hưởng của nồng độ đến tốc độ phản ứng (Na₂S₂O₃ + H₂SO₄)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_RATE_SURFACE",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Ảnh hưởng của diện tích bề mặt đến tốc độ phản ứng (CaCO₃ + HCl)",
+  "question": "Quan sát thí nghiệm \"Ảnh hưởng của diện tích bề mặt đến tốc độ phản ứng (CaCO₃ + HCl)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_RATE_CAT",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Ảnh hưởng của chất xúc tác đến tốc độ phản ứng (H₂O₂ + MnO₂)",
+  "question": "Quan sát thí nghiệm \"Ảnh hưởng của chất xúc tác đến tốc độ phản ứng (H₂O₂ + MnO₂)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_HALIDE_DISPLACE",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Phản ứng thế của muối halide với nước chlorine và nước bromine",
+  "question": "Quan sát thí nghiệm \"Phản ứng thế của muối halide với nước chlorine và nước bromine\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_HCL_METALS",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Dung dịch HCl tác dụng với kim loại (Zn, Cu)",
+  "question": "Quan sát thí nghiệm \"Dung dịch HCl tác dụng với kim loại (Zn, Cu)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_HALIDE_ID",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Nhận biết ion halide bằng dung dịch AgNO₃",
+  "question": "Quan sát thí nghiệm \"Nhận biết ion halide bằng dung dịch AgNO₃\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_ACID_BASE_INDICATOR",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Chất chỉ thị acid – base và pH của dung dịch muối",
+  "question": "Quan sát thí nghiệm \"Chất chỉ thị acid – base và pH của dung dịch muối\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_S_FE_HEAT",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Sulfur tác dụng với sắt khi đun nóng",
+  "question": "Quan sát thí nghiệm \"Sulfur tác dụng với sắt khi đun nóng\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_CU_H2SO4_CONC",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Đồng tác dụng với dung dịch sulfuric acid đặc, nóng",
+  "question": "Quan sát thí nghiệm \"Đồng tác dụng với dung dịch sulfuric acid đặc, nóng\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_SULFATE_TEST",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Nhận biết ion sulfate bằng ion Ba²⁺",
+  "question": "Quan sát thí nghiệm \"Nhận biết ion sulfate bằng ion Ba²⁺\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_C2H2_PREP",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Điều chế acetylene từ đất đèn và thử tính chất",
+  "question": "Quan sát thí nghiệm \"Điều chế acetylene từ đất đèn và thử tính chất\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_HEXANE_BR",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Hexane: phản ứng bromine hóa và thử với KMnO₄",
+  "question": "Quan sát thí nghiệm \"Hexane: phản ứng bromine hóa và thử với KMnO₄\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_CU_OH_GLYCEROL",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Cu(OH)₂ tác dụng với alcohol đa chức (glycerol)",
+  "question": "Quan sát thí nghiệm \"Cu(OH)₂ tác dụng với alcohol đa chức (glycerol)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_TOLLENS",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Phản ứng tráng bạc của aldehyde",
+  "question": "Quan sát thí nghiệm \"Phản ứng tráng bạc của aldehyde\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_ACETIC_ACID",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Tính acid của acetic acid",
+  "question": "Quan sát thí nghiệm \"Tính acid của acetic acid\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_GLUCOSE_CU",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Glucose tác dụng với Cu(OH)₂: tính polyalcohol và tính aldehyde",
+  "question": "Quan sát thí nghiệm \"Glucose tác dụng với Cu(OH)₂: tính polyalcohol và tính aldehyde\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_STARCH_IODINE",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Hồ tinh bột với iodine và thủy phân tinh bột",
+  "question": "Quan sát thí nghiệm \"Hồ tinh bột với iodine và thủy phân tinh bột\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_BIURET",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Phản ứng màu biuret của peptide và protein",
+  "question": "Quan sát thí nghiệm \"Phản ứng màu biuret của peptide và protein\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_ANILINE_BR",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Aniline tác dụng với nước bromine",
+  "question": "Quan sát thí nghiệm \"Aniline tác dụng với nước bromine\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_METAL_SALT",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Kim loại tác dụng với dung dịch muối",
+  "question": "Quan sát thí nghiệm \"Kim loại tác dụng với dung dịch muối\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_CATION_NAOH",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Nhận biết các cation kim loại bằng dung dịch NaOH",
+  "question": "Quan sát thí nghiệm \"Nhận biết các cation kim loại bằng dung dịch NaOH\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_CU_NH3_COMPLEX",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Sự tạo thành phức chất của Cu²⁺ với NH₃",
+  "question": "Quan sát thí nghiệm \"Sự tạo thành phức chất của Cu²⁺ với NH₃\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_KMNO4_FE2",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Chuẩn độ muối Fe(II) bằng dung dịch thuốc tím",
+  "question": "Quan sát thí nghiệm \"Chuẩn độ muối Fe(II) bằng dung dịch thuốc tím\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_NH4_NAOH",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Nhận biết ion ammonium bằng dung dịch kiềm",
+  "question": "Quan sát thí nghiệm \"Nhận biết ion ammonium bằng dung dịch kiềm\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_CARBONATE_BARIUM",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Phân biệt SO₄²⁻ và CO₃²⁻ bằng BaCl₂ rồi acid",
+  "question": "Quan sát thí nghiệm \"Phân biệt SO₄²⁻ và CO₃²⁻ bằng BaCl₂ rồi acid\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
+  "id": "CHEM_LAB_FE3_SCN",
+  "engine": "CHEMISTRY",
+  "family": "CHEM_BENCH",
+  "title": "Thực hành: Nhận biết ion Fe³⁺ bằng KSCN",
+  "question": "Quan sát thí nghiệm \"Nhận biết ion Fe³⁺ bằng KSCN\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+ },
+ {
   "id": "BIO_ECOLOGICAL_LIMITS",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",

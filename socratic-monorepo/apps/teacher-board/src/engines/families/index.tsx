@@ -5,6 +5,7 @@ import type {SimulationBlueprint} from '@socratic/types';
 import {PRESETS} from '../../utils/presets';
 import type {PresetFamily} from '../../utils/presets';
 import {AnatomyFlow} from './AnatomyFlow';
+import {ChemBench} from './ChemBench';
 import {CurveLab} from './CurveLab';
 import {FeedbackSystem} from './FeedbackSystem';
 import {ProcessSteps} from './ProcessSteps';
@@ -32,6 +33,8 @@ export const PresetEngine: React.FC<{blueprint: SimulationBlueprint}> = ({bluepr
       return <TrialLab id={id} data={spec.data} />;
     case 'TABLE_LAB':
       return <TableLab id={id} data={spec.data} />;
+    case 'CHEM_BENCH':
+      return <ChemBench id={id} experiment={spec.data.experiment} />;
   }
 };
 

@@ -173,6 +173,10 @@ export interface BenchData {
   experiment: string | null;
 }
 
+export interface PhysBenchData {
+  experiment: string;
+}
+
 // ---------------------------------------------------------------- khai báo chung
 interface Base {
   engine: SimulationBlueprint['engine'];
@@ -192,5 +196,6 @@ export type PresetSpec =
   | (Base & {family: 'SCENE_LAB'; data: SceneData})
   | (Base & {family: 'TRIAL_LAB'; data: TrialData})
   | (Base & {family: 'TABLE_LAB'; data: TableData})
-  | (Base & {family: 'CHEM_BENCH'; data: BenchData});
+  | (Base & {family: 'CHEM_BENCH'; data: BenchData})
+  | (Base & {family: 'PHYS_BENCH'; data: PhysBenchData});
 export type PresetFamily = PresetSpec['family'];

@@ -8,6 +8,7 @@ import {AnatomyFlow} from './AnatomyFlow';
 import {ChemBench} from './ChemBench';
 import {CurveLab} from './CurveLab';
 import {FeedbackSystem} from './FeedbackSystem';
+import {PhysBench} from './PhysBench';
 import {ProcessSteps} from './ProcessSteps';
 import {SceneLab} from './SceneLab';
 import {TableLab} from './TableLab';
@@ -35,6 +36,8 @@ export const PresetEngine: React.FC<{blueprint: SimulationBlueprint}> = ({bluepr
       return <TableLab id={id} data={spec.data} />;
     case 'CHEM_BENCH':
       return <ChemBench id={id} experiment={spec.data.experiment} />;
+    case 'PHYS_BENCH':
+      return <PhysBench id={id} experiment={spec.data.experiment} />;
   }
 };
 

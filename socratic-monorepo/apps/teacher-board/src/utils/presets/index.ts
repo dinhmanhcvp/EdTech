@@ -9,6 +9,7 @@ import {HOA_SCENE1_PRESETS} from './hoaScene1';
 import {HOA_SCENE2_PRESETS} from './hoaScene2';
 import {HOA_TABLE_PRESETS} from './hoaTable';
 import {LY_CURVE_PRESETS} from './lyCurve';
+import {LY_LAB_PRESETS} from './lyLab';
 import {LY_SCENE1_PRESETS} from './lyScene1';
 import {LY_SCENE2_PRESETS} from './lyScene2';
 import {PROCESS_PRESETS} from './process';
@@ -33,6 +34,7 @@ export type {PresetSpec, PresetFamily} from './types';
 export const PRESETS: Record<string, PresetSpec> = {
   // Bài thí nghiệm Hóa đứng đầu: chúng luôn đi kèm "thí nghiệm/thực hành" nên không nuốt câu của mô phỏng khái niệm
   ...HOA_LAB_PRESETS,
+  ...LY_LAB_PRESETS,
   ...CURVE_PRESETS,
   ...ANATOMY_PRESETS,
   ...PROCESS_PRESETS,

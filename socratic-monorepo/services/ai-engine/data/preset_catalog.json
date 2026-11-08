@@ -238,6 +238,195 @@
   "question": "Quan sát thí nghiệm \"Nhận biết ion Fe³⁺ bằng KSCN\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
  },
  {
+  "id": "PHYS_LAB_SAFETY",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Quy tắc an toàn trong phòng thực hành Vật lí",
+  "question": "Sau khi đo \"Quy tắc an toàn trong phòng thực hành Vật lí\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_ERROR_MEASURE",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành tính sai số trong phép đo, ghi kết quả đo",
+  "question": "Sau khi đo \"Thực hành tính sai số trong phép đo, ghi kết quả đo\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_SPEED",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành đo tốc độ của vật chuyển động",
+  "question": "Sau khi đo \"Thực hành đo tốc độ của vật chuyển động\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_FREE_FALL_G",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành đo gia tốc rơi tự do",
+  "question": "Sau khi đo \"Thực hành đo gia tốc rơi tự do\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_FORCE_COMPOSITION",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành tổng hợp lực",
+  "question": "Sau khi đo \"Thực hành tổng hợp lực\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_COLLISION_MOMENTUM",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành xác định động lượng của vật trước và sau va chạm",
+  "question": "Sau khi đo \"Thực hành xác định động lượng của vật trước và sau va chạm\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_SOUND_FREQUENCY",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành đo tần số của sóng âm",
+  "question": "Sau khi đo \"Thực hành đo tần số của sóng âm\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_SOUND_SPEED",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành đo tốc độ truyền âm",
+  "question": "Sau khi đo \"Thực hành đo tốc độ truyền âm\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_EMF_INTERNAL_R",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành đo suất điện động và điện trở trong của pin điện hóa",
+  "question": "Sau khi đo \"Thực hành đo suất điện động và điện trở trong của pin điện hóa\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_NEWTON2",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm định luật II Newton: gia tốc theo lực",
+  "question": "Sau khi đo \"Thí nghiệm định luật II Newton: gia tốc theo lực\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_FRICTION",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm lực ma sát trượt: xác định hệ số ma sát",
+  "question": "Sau khi đo \"Thí nghiệm lực ma sát trượt: xác định hệ số ma sát\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_HOOKE",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm định luật Hooke: xác định độ cứng lò xo",
+  "question": "Sau khi đo \"Thí nghiệm định luật Hooke: xác định độ cứng lò xo\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_PENDULUM_G",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm con lắc đơn: xác định gia tốc trọng trường",
+  "question": "Sau khi đo \"Thí nghiệm con lắc đơn: xác định gia tốc trọng trường\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_BOYLE",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm định luật Boyle",
+  "question": "Sau khi đo \"Thí nghiệm định luật Boyle\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_OHM_LAW",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm định luật Ohm: đặc tuyến vôn–ampe của điện trở",
+  "question": "Sau khi đo \"Thí nghiệm định luật Ohm: đặc tuyến vôn–ampe của điện trở\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_SPECIFIC_HEAT",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm xác định nhiệt dung riêng của nước",
+  "question": "Sau khi đo \"Thí nghiệm xác định nhiệt dung riêng của nước\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_CHARLES",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm định luật Charles: thể tích khí theo nhiệt độ",
+  "question": "Sau khi đo \"Thí nghiệm định luật Charles: thể tích khí theo nhiệt độ\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_MAGNETIC_FORCE",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm lực từ tác dụng lên dây dẫn mang dòng điện",
+  "question": "Sau khi đo \"Thí nghiệm lực từ tác dụng lên dây dẫn mang dòng điện\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_EM_INDUCTION",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm cảm ứng điện từ: suất điện động khi nam châm chuyển động",
+  "question": "Sau khi đo \"Thí nghiệm cảm ứng điện từ: suất điện động khi nam châm chuyển động\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_WAVE_INTERFERENCE",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm giao thoa sóng mặt nước",
+  "question": "Sau khi đo \"Thí nghiệm giao thoa sóng mặt nước\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_STANDING_WAVE",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm sóng dừng trên sợi dây",
+  "question": "Sau khi đo \"Thí nghiệm sóng dừng trên sợi dây\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_CAPACITOR_RC",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm nạp tụ điện qua điện trở: hằng số thời gian RC",
+  "question": "Sau khi đo \"Thí nghiệm nạp tụ điện qua điện trở: hằng số thời gian RC\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_LATENT_HEAT_FUSION",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm xác định nhiệt nóng chảy riêng của nước đá",
+  "question": "Sau khi đo \"Thí nghiệm xác định nhiệt nóng chảy riêng của nước đá\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_LEVER_MOMENT",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm moment lực: điều kiện cân bằng của đòn bẩy",
+  "question": "Sau khi đo \"Thí nghiệm moment lực: điều kiện cân bằng của đòn bẩy\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_PROJECTILE_HORIZONTAL",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm chuyển động ném ngang",
+  "question": "Sau khi đo \"Thí nghiệm chuyển động ném ngang\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_TRANSFORMER",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thí nghiệm máy biến áp: tỉ số điện áp và số vòng dây",
+  "question": "Sau khi đo \"Thí nghiệm máy biến áp: tỉ số điện áp và số vòng dây\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+ },
+ {
+  "id": "PHYS_LAB_BENCH",
+  "engine": "PHYSICS",
+  "family": "PHYS_BENCH",
+  "title": "Phòng thực hành Vật lí ảo: đo đạc, bảng số liệu, đồ thị và sai số",
+  "question": "Khi đo cùng một đại lượng nhiều lần, vì sao các kết quả không giống nhau, và làm sao em ghi kết quả cùng sai số cho đúng?"
+ },
+ {
   "id": "BIO_ECOLOGICAL_LIMITS",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",

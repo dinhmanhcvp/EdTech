@@ -333,6 +333,114 @@ Không qua hologram: các nét tay thô được **nắn thẳng và nối lại
 - **Viết:** `thang sóng điện từ` · `phổ sóng điện từ` · `tia hồng ngoại và tử ngoại`
 - **Chỉnh:** chạm một ô để xem chi tiết; tô màu theo nhóm hoặc theo bước sóng (thang log).
 
+### PHYS_LAB_BENCH — Phòng thực hành Vật lí ảo: đo đạc, bảng số liệu, đồ thị và sai số
+- **Viết:** `phòng thực hành vật lí ảo` · `tiết thực hành vật lí` · `thực hành vật lí`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_SAFETY — Thực hành: Quy tắc an toàn trong phòng thực hành Vật lí
+- **Viết:** `thực hành quy tắc an toàn trong phòng thực hành vật lí`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_ERROR_MEASURE — Thực hành: Thực hành tính sai số trong phép đo, ghi kết quả đo
+- **Viết:** `thực hành tính sai số trong phép đo` · `thực hành ghi kết quả đo thước kẹp`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_SPEED — Thực hành: Thực hành đo tốc độ của vật chuyển động
+- **Viết:** `thực hành đo tốc độ của vật chuyển động` · `thí nghiệm đo tốc độ xe bằng cổng quang điện`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_FREE_FALL_G — Thực hành: Thực hành đo gia tốc rơi tự do
+- **Viết:** `thực hành đo gia tốc rơi tự do` · `thí nghiệm đo g bằng cổng quang điện`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_FORCE_COMPOSITION — Thực hành: Thực hành tổng hợp lực
+- **Viết:** `thực hành tổng hợp lực` · `thí nghiệm tổng hợp hai lực đồng quy bằng lực kế`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_COLLISION_MOMENTUM — Thực hành: Thực hành xác định động lượng của vật trước và sau va chạm
+- **Viết:** `thực hành xác định động lượng của vật trước và sau va chạm` · `thí nghiệm bảo toàn động lượng bằng đệm khí`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_SOUND_FREQUENCY — Thực hành: Thực hành đo tần số của sóng âm
+- **Viết:** `thực hành đo tần số của sóng âm` · `thí nghiệm đo tần số âm thoa bằng dao động kí`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_SOUND_SPEED — Thực hành: Thực hành đo tốc độ truyền âm
+- **Viết:** `thực hành đo tốc độ truyền âm` · `thí nghiệm đo tốc độ âm bằng ống cộng hưởng`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_EMF_INTERNAL_R — Thực hành: Thực hành đo suất điện động và điện trở trong của pin điện hóa
+- **Viết:** `thực hành đo E và r của pin bằng biến trở` · `thí nghiệm xác định E và r của pin`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_NEWTON2 — Thực hành: Thí nghiệm định luật II Newton: gia tốc theo lực
+- **Viết:** `thí nghiệm định luật II Newton đo gia tốc theo lực` · `thí nghiệm kiểm chứng định luật 2 Newton bằng xe và cổng quang`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_FRICTION — Thực hành: Thí nghiệm lực ma sát trượt: xác định hệ số ma sát
+- **Viết:** `thí nghiệm lực ma sát trượt` · `thí nghiệm xác định hệ số ma sát bằng lực kế`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_HOOKE — Thực hành: Thí nghiệm định luật Hooke: xác định độ cứng lò xo
+- **Viết:** `thí nghiệm định luật Hooke` · `thí nghiệm xác định độ cứng lò xo bằng thí nghiệm`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_PENDULUM_G — Thực hành: Thí nghiệm con lắc đơn: xác định gia tốc trọng trường
+- **Viết:** `thí nghiệm con lắc đơn xác định gia tốc trọng trường` · `thí nghiệm đo g bằng con lắc đơn`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_BOYLE — Thực hành: Thí nghiệm định luật Boyle
+- **Viết:** `thí nghiệm định luật Boyle` · `thí nghiệm kiểm chứng định luật Boyle bằng xi lanh`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_OHM_LAW — Thực hành: Thí nghiệm định luật Ohm: đặc tuyến vôn–ampe của điện trở
+- **Viết:** `thí nghiệm định luật Ohm` · `thí nghiệm đặc tuyến vôn ampe của điện trở`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_SPECIFIC_HEAT — Thực hành: Thí nghiệm xác định nhiệt dung riêng của nước
+- **Viết:** `thí nghiệm xác định nhiệt dung riêng của nước` · `thí nghiệm đo nhiệt dung riêng bằng điện trở nhiệt`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_CHARLES — Thực hành: Thí nghiệm định luật Charles: thể tích khí theo nhiệt độ
+- **Viết:** `thí nghiệm định luật Charles` · `thí nghiệm kiểm chứng định luật Charles`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_MAGNETIC_FORCE — Thực hành: Thí nghiệm lực từ tác dụng lên dây dẫn mang dòng điện
+- **Viết:** `thí nghiệm lực từ tác dụng lên dây dẫn mang dòng điện` · `thí nghiệm đo cảm ứng từ bằng lực từ`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_EM_INDUCTION — Thực hành: Thí nghiệm cảm ứng điện từ: suất điện động khi nam châm chuyển động
+- **Viết:** `thí nghiệm cảm ứng điện từ` · `thí nghiệm nam châm đưa vào cuộn dây`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_WAVE_INTERFERENCE — Thực hành: Thí nghiệm giao thoa sóng mặt nước
+- **Viết:** `thí nghiệm giao thoa sóng mặt nước` · `thí nghiệm đo bước sóng bằng giao thoa sóng nước`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_STANDING_WAVE — Thực hành: Thí nghiệm sóng dừng trên sợi dây
+- **Viết:** `thí nghiệm sóng dừng trên sợi dây` · `thí nghiệm đo tốc độ sóng bằng sóng dừng`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_CAPACITOR_RC — Thực hành: Thí nghiệm nạp tụ điện qua điện trở: hằng số thời gian RC
+- **Viết:** `thí nghiệm nạp tụ điện qua điện trở` · `thí nghiệm hằng số thời gian RC của tụ điện`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_LATENT_HEAT_FUSION — Thực hành: Thí nghiệm xác định nhiệt nóng chảy riêng của nước đá
+- **Viết:** `thí nghiệm xác định nhiệt nóng chảy riêng của nước đá` · `thí nghiệm nước đá thả vào nước ấm cân bằng nhiệt`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_LEVER_MOMENT — Thực hành: Thí nghiệm moment lực: điều kiện cân bằng của đòn bẩy
+- **Viết:** `thí nghiệm moment lực` · `thí nghiệm điều kiện cân bằng của đòn bẩy`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_PROJECTILE_HORIZONTAL — Thực hành: Thí nghiệm chuyển động ném ngang
+- **Viết:** `thí nghiệm chuyển động ném ngang` · `thí nghiệm đo tầm xa của vật ném ngang`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### PHYS_LAB_TRANSFORMER — Thực hành: Thí nghiệm máy biến áp: tỉ số điện áp và số vòng dây
+- **Viết:** `thí nghiệm máy biến áp` · `thí nghiệm tỉ số điện áp và số vòng dây của máy biến áp`
+- **Chỉnh:** chỉnh dụng cụ và đại lượng đặt (thanh trượt, ô chọn); bấm "Đo" nhiều lần, mỗi lần số khác nhau; xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
 ## 5. Hóa học
 
 ### CHEM_BALANCE_SCALE — Cân bằng phương trình bằng cân đĩa

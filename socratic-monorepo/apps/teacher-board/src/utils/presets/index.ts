@@ -18,6 +18,7 @@ import {SINH2_CURVE_PRESETS} from './sinh2Curve';
 import {SINH2_MISC_PRESETS} from './sinh2Misc';
 import {SINH2_SCENE_PRESETS} from './sinh2Scene';
 import {SINH3_PRESETS} from './sinh3';
+import {SINH_LAB_PRESETS} from './sinhLab';
 import {SINH_ANATOMY_PRESETS} from './sinhAnatomy';
 import {SINH_CURVE_PRESETS} from './sinhCurve';
 import {SINH_FEEDBACK_PRESETS} from './sinhFeedback';
@@ -35,6 +36,7 @@ export const PRESETS: Record<string, PresetSpec> = {
   // Bài thí nghiệm Hóa đứng đầu: chúng luôn đi kèm "thí nghiệm/thực hành" nên không nuốt câu của mô phỏng khái niệm
   ...HOA_LAB_PRESETS,
   ...LY_LAB_PRESETS,
+  ...SINH_LAB_PRESETS,
   ...CURVE_PRESETS,
   ...ANATOMY_PRESETS,
   ...PROCESS_PRESETS,

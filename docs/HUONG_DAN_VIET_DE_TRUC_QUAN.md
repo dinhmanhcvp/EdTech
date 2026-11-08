@@ -970,6 +970,102 @@ Không qua hologram: các nét tay thô được **nắn thẳng và nối lại
 - **Viết:** `tháp tuổi` · `nhóm tuổi của quần thể` · `phương pháp đánh dấu bắt lại` · `ước lượng kích thước quần thể`
 - **Chỉnh:** chọn nội dung; dạng tháp tuổi; kéo thanh trượt Số cá thể thực của quần thể; Số cá thể đánh dấu lần 1; Số cá thể bắt lần 2.
 
+### BIO_LAB_BENCH — Phòng thực hành Sinh học ảo: kính hiển vi, nhóm đối chứng, số liệu
+- **Viết:** `phòng thực hành sinh học ảo` · `tiết thực hành sinh học` · `thực hành sinh học`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_BIOMOLECULES — Thực hành: Thực hành nhận biết một số phân tử sinh học
+- **Viết:** `thực hành nhận biết một số phân tử sinh học` · `thực hành thuốc thử Benedict và biuret`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_CELL_OBSERVE — Thực hành: Thực hành quan sát tế bào dưới kính hiển vi
+- **Viết:** `thực hành quan sát tế bào dưới kính hiển vi` · `thực hành quan sát tế bào niêm mạc miệng`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_PLASMOLYSIS — Thực hành: Thực hành thí nghiệm co và phản co nguyên sinh
+- **Viết:** `thực hành tế bào biểu bì hành tím trong dung dịch muối` · `thí nghiệm tế bào hành tím ngâm nước muối` (câu có "co nguyên sinh" mở mô phỏng khái niệm BIO_OSMOSIS_CELL; chọn bài trong danh sách của phòng thực hành Sinh)
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_ENZYME — Thực hành: Thực hành ảnh hưởng của nhiệt độ, pH, chất ức chế đến hoạt tính enzyme amylase
+- **Viết:** `thực hành kiểm tra hoạt tính amylase` · `thực hành ảnh hưởng của nhiệt độ, pH đến hoạt tính enzyme`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_MITOSIS_SLIDE — Thực hành: Thực hành làm và quan sát tiêu bản quá trình nguyên phân và giảm phân
+- **Viết:** `thực hành làm và quan sát tiêu bản quá trình nguyên phân` · `thực hành tiêu bản giảm phân`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_YOGURT — Thực hành: Thực hành làm sữa chua và theo dõi quá trình lên men
+- **Viết:** `thực hành làm sữa chua` · `thực hành làm dưa chua và quan sát sản phẩm lên men`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_VIRUS_SURVEY — Thực hành: Thực hành điều tra một số bệnh do virus và tuyên truyền phòng chống
+- **Viết:** `thực hành điều tra một số bệnh do virus` · `thực hành tuyên truyền phòng chống bệnh do virus`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_TRANSPIRATION — Thực hành: Thực hành thí nghiệm thoát hơi nước ở lá
+- **Viết:** `thực hành thí nghiệm thoát hơi nước ở lá` · `thực hành trao đổi nước và khoáng ở thực vật`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_PIGMENT — Thực hành: Thực hành tách chiết sắc tố quang hợp bằng sắc kí giấy
+- **Viết:** `thực hành tách chiết sắc tố quang hợp` · `thực hành sắc kí giấy sắc tố lá`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_LEAF_STARCH — Thực hành: Thực hành thử tinh bột ở lá (vai trò của ánh sáng trong quang hợp)
+- **Viết:** `thực hành thử tinh bột ở lá` · `thí nghiệm bọc giấy bạc một phần lá`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_SEED_RESPIRATION — Thực hành: Thực hành hô hấp ở hạt nảy mầm
+- **Viết:** `thực hành hô hấp ở thực vật` · `thí nghiệm hạt nảy mầm thải CO2`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_CIRCULATION — Thực hành: Thực hành đo mạch và huyết áp trước và sau vận động
+- **Viết:** `thực hành đo mạch và huyết áp` · `thực hành một số thí nghiệm về hệ tuần hoàn`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_TROPISM — Thực hành: Thực hành cảm ứng ở thực vật: hướng sáng, hướng trọng lực, hướng nước
+- **Viết:** `thực hành cảm ứng ở thực vật` · `thực hành hướng sáng, hướng trọng lực, hướng nước`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_APICAL_DOMINANCE — Thực hành: Thực hành bấm ngọn, tỉa cành (ưu thế ngọn)
+- **Viết:** `thực hành bấm ngọn, tỉa cành` · `thí nghiệm ưu thế ngọn`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_TREE_AGE — Thực hành: Thực hành tính tuổi cây qua vòng gỗ
+- **Viết:** `thực hành tính tuổi cây` · `thực hành đếm vòng gỗ`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_METAMORPHOSIS — Thực hành: Thực hành quan sát quá trình biến thái ở động vật
+- **Viết:** `thực hành quan sát quá trình biến thái ở động vật` · `thực hành biến thái hoàn toàn và không hoàn toàn`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_PROPAGATION — Thực hành: Thực hành nhân giống vô tính và thụ phấn cho cây
+- **Viết:** `thực hành nhân giống vô tính và thụ phấn cho cây` · `thực hành giâm, chiết, ghép cành`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_DNA_EXTRACT — Thực hành: Thực hành tách chiết DNA
+- **Viết:** `thực hành tách chiết DNA` · `thực hành tách chiết ADN từ gan gà`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_CHROMOSOME_MUTATION — Thực hành: Thực hành quan sát đột biến số lượng nhiễm sắc thể trên tiêu bản
+- **Viết:** `thực hành quan sát một số dạng đột biến nhiễm sắc thể` · `thực hành tiêu bản cố định đột biến NST`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_MODIFICATION — Thực hành: Thực hành thí nghiệm về thường biến ở cây trồng
+- **Viết:** `thực hành thí nghiệm về thường biến ở cây trồng`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_QUADRAT — Thực hành: Thực hành xác định kiểu phân bố và ước tính mật độ, kích thước quần thể
+- **Viết:** `thực hành xác định kiểu phân bố cá thể` · `thực hành ước tính mật độ cá thể quần thể`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_COMMUNITY — Thực hành: Thực hành tìm hiểu một số đặc trưng cơ bản của quần xã
+- **Viết:** `thực hành tìm hiểu một số đặc trưng cơ bản của quần xã`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
+### BIO_LAB_MINI_ECOSYSTEM — Thực hành: Thực hành thiết kế một hệ sinh thái nhân tạo (bể cá)
+- **Viết:** `thực hành thiết kế một hệ sinh thái nhân tạo` · `thực hành bể cá cân bằng`
+- **Chỉnh:** chọn mẫu, nhóm thí nghiệm hoặc đối chứng và biến số (ô chọn, thanh trượt); bấm "Đo" để ghi từng lần quan sát (mỗi mẫu cho số hơi khác); xem bảng, đồ thị, kết quả; bấm "Kiểm tra kết quả của em" và trả lời câu hỏi.
+
 ## 7. Mã mô phỏng có trong hệ thống nhưng không có mục riêng
 
 Các mã dưới đây có trong kiểu dữ liệu (`packages/types`) hoặc backend, nhưng không có đường mở riêng từ chữ viết:

@@ -427,6 +427,174 @@
   "question": "Khi đo cùng một đại lượng nhiều lần, vì sao các kết quả không giống nhau, và làm sao em ghi kết quả cùng sai số cho đúng?"
  },
  {
+  "id": "BIO_LAB_BIOMOLECULES",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành nhận biết một số phân tử sinh học",
+  "question": "Sau khi làm \"Thực hành nhận biết một số phân tử sinh học\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_CELL_OBSERVE",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành quan sát tế bào dưới kính hiển vi",
+  "question": "Sau khi làm \"Thực hành quan sát tế bào dưới kính hiển vi\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_PLASMOLYSIS",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành thí nghiệm co và phản co nguyên sinh",
+  "question": "Sau khi làm \"Thực hành thí nghiệm co và phản co nguyên sinh\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_ENZYME",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành ảnh hưởng của nhiệt độ, pH, chất ức chế đến hoạt tính enzyme amylase",
+  "question": "Sau khi làm \"Thực hành ảnh hưởng của nhiệt độ, pH, chất ức chế đến hoạt tính enzyme amylase\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_MITOSIS_SLIDE",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành làm và quan sát tiêu bản quá trình nguyên phân và giảm phân",
+  "question": "Sau khi làm \"Thực hành làm và quan sát tiêu bản quá trình nguyên phân và giảm phân\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_YOGURT",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành làm sữa chua và theo dõi quá trình lên men",
+  "question": "Sau khi làm \"Thực hành làm sữa chua và theo dõi quá trình lên men\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_VIRUS_SURVEY",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành điều tra một số bệnh do virus và tuyên truyền phòng chống",
+  "question": "Sau khi làm \"Thực hành điều tra một số bệnh do virus và tuyên truyền phòng chống\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_TRANSPIRATION",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành thí nghiệm thoát hơi nước ở lá",
+  "question": "Sau khi làm \"Thực hành thí nghiệm thoát hơi nước ở lá\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_PIGMENT",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành tách chiết sắc tố quang hợp bằng sắc kí giấy",
+  "question": "Sau khi làm \"Thực hành tách chiết sắc tố quang hợp bằng sắc kí giấy\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_LEAF_STARCH",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành thử tinh bột ở lá (vai trò của ánh sáng trong quang hợp)",
+  "question": "Sau khi làm \"Thực hành thử tinh bột ở lá (vai trò của ánh sáng trong quang hợp)\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_SEED_RESPIRATION",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành hô hấp ở hạt nảy mầm",
+  "question": "Sau khi làm \"Thực hành hô hấp ở hạt nảy mầm\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_CIRCULATION",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành đo mạch và huyết áp trước và sau vận động",
+  "question": "Sau khi làm \"Thực hành đo mạch và huyết áp trước và sau vận động\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_TROPISM",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành cảm ứng ở thực vật: hướng sáng, hướng trọng lực, hướng nước",
+  "question": "Sau khi làm \"Thực hành cảm ứng ở thực vật: hướng sáng, hướng trọng lực, hướng nước\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_APICAL_DOMINANCE",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành bấm ngọn, tỉa cành (ưu thế ngọn)",
+  "question": "Sau khi làm \"Thực hành bấm ngọn, tỉa cành (ưu thế ngọn)\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_TREE_AGE",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành tính tuổi cây qua vòng gỗ",
+  "question": "Sau khi làm \"Thực hành tính tuổi cây qua vòng gỗ\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_METAMORPHOSIS",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành quan sát quá trình biến thái ở động vật",
+  "question": "Sau khi làm \"Thực hành quan sát quá trình biến thái ở động vật\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_PROPAGATION",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành nhân giống vô tính và thụ phấn cho cây",
+  "question": "Sau khi làm \"Thực hành nhân giống vô tính và thụ phấn cho cây\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_DNA_EXTRACT",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành tách chiết DNA",
+  "question": "Sau khi làm \"Thực hành tách chiết DNA\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_CHROMOSOME_MUTATION",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành quan sát đột biến số lượng nhiễm sắc thể trên tiêu bản",
+  "question": "Sau khi làm \"Thực hành quan sát đột biến số lượng nhiễm sắc thể trên tiêu bản\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_MODIFICATION",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành thí nghiệm về thường biến ở cây trồng",
+  "question": "Sau khi làm \"Thực hành thí nghiệm về thường biến ở cây trồng\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_QUADRAT",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành xác định kiểu phân bố và ước tính mật độ, kích thước quần thể",
+  "question": "Sau khi làm \"Thực hành xác định kiểu phân bố và ước tính mật độ, kích thước quần thể\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_COMMUNITY",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành tìm hiểu một số đặc trưng cơ bản của quần xã",
+  "question": "Sau khi làm \"Thực hành tìm hiểu một số đặc trưng cơ bản của quần xã\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_MINI_ECOSYSTEM",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Thực hành: Thực hành thiết kế một hệ sinh thái nhân tạo (bể cá)",
+  "question": "Sau khi làm \"Thực hành thiết kế một hệ sinh thái nhân tạo (bể cá)\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+ },
+ {
+  "id": "BIO_LAB_BENCH",
+  "engine": "BIOLOGY",
+  "family": "PHYS_BENCH",
+  "title": "Phòng thực hành Sinh học ảo: kính hiển vi, nhóm đối chứng, số liệu",
+  "question": "Vì sao một thí nghiệm sinh học cần nhóm đối chứng và cần lặp lại trên nhiều mẫu?"
+ },
+ {
   "id": "BIO_ECOLOGICAL_LIMITS",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",

@@ -1,6 +1,7 @@
 'use client';
 
 import React, {useMemo, useReducer, useState} from 'react';
+import {BIO_BY_ID, BIO_EXPERIMENTS} from '../../utils/lab/bio/experiments';
 import {PHYS_BY_ID, PHYS_EXPERIMENTS} from '../../utils/lab/phys/experiments';
 import {initialPhys, linearFit, physCtx, physReducer, physStepsDone} from '../../utils/lab/phys/engine';
 import type {PhysAction, PhysExperiment, PhysState} from '../../utils/lab/phys/types';
@@ -44,11 +45,14 @@ const Chart: React.FC<{e: PhysExperiment; st: PhysState}> = ({e, st}) => {
   );
 };
 
-/** Phòng thực hành Vật lí: dụng cụ, số đo có nhiễu và sai số dụng cụ, bảng ghi, đồ thị, kết quả và nhận xét. */
+const BY_ID = {...PHYS_BY_ID, ...BIO_BY_ID};
+
+/** Phòng thực hành Vật lí (và Sinh học, cùng khung đo đạc): dụng cụ, số đo có nhiễu và sai số dụng cụ, bảng ghi, đồ thị, kết quả và nhận xét. */
 export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, experiment}) => {
-  const [exp, setExp] = useState(PHYS_BY_ID[experiment] ? experiment : PHYS_EXPERIMENTS[0].id);
-  const e = PHYS_BY_ID[exp];
-  const [st, dispatch] = useReducer((s: PhysState, a: PhysAction | {type: 'reset'; e: PhysExperiment}) => (a.type === 'reset' ? initialPhys(a.e) : physReducer(e, s, a)), PHYS_BY_ID[PHYS_BY_ID[experiment] ? experiment : PHYS_EXPERIMENTS[0].id], (x) => initialPhys(x));
+  const list = BIO_BY_ID[experiment] ? BIO_EXPERIMENTS : PHYS_EXPERIMENTS;
+  const [exp, setExp] = useState(BY_ID[experiment] ? experiment : list[0].id);
+  const e = BY_ID[exp];
+  const [st, dispatch] = useReducer((s: PhysState, a: PhysAction | {type: 'reset'; e: PhysExperiment}) => (a.type === 'reset' ? initialPhys(a.e) : physReducer(e, s, a)), BY_ID[BY_ID[experiment] ? experiment : list[0].id], (x) => initialPhys(x));
   const [checked, setChecked] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const last = st.rows.length ? st.rows[st.rows.length - 1] : null;
@@ -63,7 +67,7 @@ export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, exper
     setExp(next);
     setChecked(false);
     setAnswers({});
-    dispatch({type: 'reset', e: PHYS_BY_ID[next]});
+    dispatch({type: 'reset', e: BY_ID[next]});
   };
   const sample = () => {
     dispatch({type: 'reset', e});
@@ -75,7 +79,7 @@ export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, exper
     <div className="p-4 flex flex-col gap-3" data-testid="phys-bench" data-preset={id} data-experiment={exp}>
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <select data-testid="phys-experiment" value={exp} onChange={(ev) => switchTo(ev.target.value)} className="rounded-md border border-stone-300 bg-white px-2 py-1 max-w-full">
-          {PHYS_EXPERIMENTS.map((x) => (
+          {list.map((x) => (
             <option key={x.id} value={x.id}>{x.lesson}: {x.title}</option>
           ))}
         </select>

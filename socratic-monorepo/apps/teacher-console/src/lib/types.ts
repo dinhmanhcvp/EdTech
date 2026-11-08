@@ -43,6 +43,17 @@ export interface Period {
   has_snapshot: boolean;
   submission_count: number;
   class?: ClassInfo | null;
+  /** chuẩn bị tiết: tài nguyên hub mở sẵn trên bảng, mã mô phỏng định mở, giáo án hub */
+  resource_ids?: string[];
+  sims?: string[];
+  plan_id?: string | null;
+}
+
+/** Mô phỏng theo chương trình mà bảng mở thẳng bằng mã (GET /api/v1/console/sim-catalog). */
+export interface SimEntry {
+  id: string;
+  engine: string;
+  title: string;
 }
 
 export type Pt = [number, number];

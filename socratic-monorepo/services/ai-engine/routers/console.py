@@ -8,9 +8,12 @@ Cô lập: bảng chỉ làm việc với MỘT tiết đang diễn ra (mã bả
 riêng; mã bảng của tiết trước hết hiệu lực. Mã ghép dùng một lần, sống 10 phút, giữ trong bộ nhớ (không cần lưu bền).
 Nghiệp vụ lưu trữ nằm ở store/console_db.py; đây chỉ là lớp HTTP mỏng.
 """
+import json
 import os
 import secrets
 import time
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -79,6 +82,9 @@ class PeriodBody(BaseModel):
     goals: str = Field(default="", max_length=3000)
     notes: str = Field(default="", max_length=6000)
     prompts: List[str] = Field(default_factory=list, max_length=30)
+    resource_ids: List[str] = Field(default_factory=list, max_length=20)
+    sims: List[str] = Field(default_factory=list, max_length=12)
+    plan_id: Optional[str] = Field(default=None, max_length=80)
 
 
 # ------------------------------------------------------------------ tài khoản
@@ -185,8 +191,50 @@ def periods(t: Dict[str, Any] = Depends(current_teacher)):
     return {"periods": db().list_periods(t["id"])}
 
 
+@lru_cache(maxsize=1)
+def sim_catalog() -> List[Dict[str, str]]:
+    """Mô phỏng theo chương trình (data/preset_catalog.json, sinh từ bảng chiếu): bảng mở thẳng bằng mã, không cần đoán chữ."""
+    path = Path(__file__).resolve().parent.parent / "data" / "preset_catalog.json"
+    return [{"id": x["id"], "engine": x["engine"], "title": x["title"]} for x in json.loads(path.read_text(encoding="utf-8"))]
+
+
+@router.get("/api/v1/console/sim-catalog")
+def sims(t: Dict[str, Any] = Depends(current_teacher)):
+    return {"sims": sim_catalog()}
+
+
+def _hub_teacher(t: Dict[str, Any]) -> str:
+    from hub.assignments import bridge
+
+    return bridge.hub_teacher_for_console(t)
+
+
+def _check_prep(t: Dict[str, Any], body: PeriodBody) -> None:
+    """Tài nguyên và giáo án gắn vào tiết phải là của chính giáo viên (lưu ở hub); mô phỏng phải có trong danh mục."""
+    from hub import plans
+    from hub.assignments import store
+
+    known = {s["id"] for s in sim_catalog()}
+    if any(s not in known for s in body.sims):
+        raise HTTPException(status_code=422, detail="Mô phỏng không có trong danh mục.")
+    if not body.resource_ids and not body.plan_id:
+        return
+    htid = _hub_teacher(t)
+    try:
+        for aid in body.resource_ids:
+            store.owned(htid, aid)
+    except KeyError:
+        raise HTTPException(status_code=422, detail="Tài nguyên không tồn tại hoặc đã bị xóa.")
+    try:
+        if body.plan_id:
+            plans.owned_plan(htid, body.plan_id)
+    except KeyError:
+        raise HTTPException(status_code=422, detail="Giáo án không tồn tại.")
+
+
 @router.post("/api/v1/console/periods")
 def period_create(body: PeriodBody, t: Dict[str, Any] = Depends(current_teacher)):
+    _check_prep(t, body)
     try:
         return db().save_period(t["id"], body.model_dump())
     except StoreError as e:
@@ -204,6 +252,7 @@ def period_get(pid: str, t: Dict[str, Any] = Depends(current_teacher)):
 
 @router.put("/api/v1/console/periods/{pid}")
 def period_update(pid: str, body: PeriodBody, t: Dict[str, Any] = Depends(current_teacher)):
+    _check_prep(t, body)
     try:
         return db().save_period(t["id"], body.model_dump(), pid=pid)
     except StoreError as e:
@@ -344,7 +393,36 @@ def _board_payload(tid: str, pid: str, ctx: Dict[str, Any], room: Any, board_tok
         "teacher": {"display_name": ctx["teacher"]["display_name"]},
         "pages": ctx["pages"],
         "resumed": db().get_snapshot(tid, pid) is not None,
+        "prep": _board_prep(ctx["teacher"], p),
     }
+
+
+def _board_prep(teacher: Dict[str, Any], p: Dict[str, Any]) -> Dict[str, Any]:
+    """Những gì giáo viên chuẩn bị cho tiết, đọc lúc ghép (mục đã bị xóa thì bỏ qua). Giáo án gửi bản đã bỏ đáp án."""
+    from hub import plans
+    from hub.assignments import store
+    from hub.schemas import strip_answers
+
+    titles = {s["id"]: s["title"] for s in sim_catalog()}
+    out: Dict[str, Any] = {"resources": [], "sims": [{"id": s, "title": titles[s]} for s in p.get("sims", []) if s in titles], "plan": None}
+    if not p.get("resource_ids") and not p.get("plan_id"):
+        return out
+    htid = _hub_teacher(teacher)
+    for aid in p.get("resource_ids", []):
+        try:
+            a = store.owned(htid, aid)
+        except KeyError:
+            continue
+        out["resources"].append({"id": aid, "title": a["title"], "kind": a["kind"], "pageCount": len(a["pages"])})
+    if p.get("plan_id"):
+        try:
+            plan = plans.owned_plan(htid, p["plan_id"])
+            out["plan"] = {"id": plan["id"], "version": plan["version"], "body": strip_answers(plan["body"])}
+            out["simTitles"] = {i["templateId"]: titles.get(i["templateId"], i["templateId"])
+                                for s in plan["body"]["sections"] for i in s["items"] if i["type"] == "sim"}
+        except KeyError:
+            pass
+    return out
 
 
 def board_period(x_board_token: Optional[str] = Header(default=None)) -> Dict[str, Any]:

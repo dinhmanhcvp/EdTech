@@ -220,7 +220,7 @@ describe('Soạn tiết', () => {
     fireEvent.change(screen.getByTestId('prep-prompts'), {target: {value: 'Đề 1\n\n  Đề 2  \n'}});
     fireEvent.submit(screen.getByTestId('period-prep'));
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-    expect(onSave.mock.calls[0][0]).toEqual({title: 'Tiết 1', class_id: 'c1', lesson_id: 'l1', goals: 'Hiểu parabol', notes: '', prompts: ['Đề 1', 'Đề 2']});
+    expect(onSave.mock.calls[0][0]).toEqual({title: 'Tiết 1', class_id: 'c1', lesson_id: 'l1', goals: 'Hiểu parabol', notes: '', prompts: ['Đề 1', 'Đề 2'], resource_ids: [], sims: [], plan_id: null});
     expect(await screen.findByTestId('prep-saved')).toBeInTheDocument();
   });
 

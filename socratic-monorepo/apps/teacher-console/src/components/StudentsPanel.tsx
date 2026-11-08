@@ -2,7 +2,7 @@
 
 import React, {useCallback, useEffect, useState} from 'react';
 import {Copy, RefreshCw} from 'lucide-react';
-import {HubError, hub, studentAppBase, studentLink, type HubStudent} from '../lib/hub';
+import {HubError, hub, studentAppBase, studentLink, type HubStudent, type ParentReport} from '../lib/hub';
 
 /** Học sinh thật của một lớp (lưu ở hub): mã đăng nhập app học sinh và link phụ huynh. */
 export function StudentsPanel({consoleClassId}: {consoleClassId: string}) {
@@ -50,6 +50,19 @@ export function StudentsPanel({consoleClassId}: {consoleClassId: string}) {
     }
   };
 
+  const [report, setReport] = useState<{id: string; r: ParentReport} | null>(null);
+  const [reporting, setReporting] = useState<string | null>(null);
+  const makeReport = async (s: HubStudent) => {
+    setReporting(s.id);
+    try {
+      setReport({id: s.id, r: await hub.reportNow(s.id)});
+    } catch (e) {
+      setError(e instanceof HubError ? e.message : 'Không tạo được báo cáo.');
+    } finally {
+      setReporting(null);
+    }
+  };
+
   const rotate = async (s: HubStudent) => {
     try {
       await hub.rotateParentLink(s.id);
@@ -71,16 +84,18 @@ export function StudentsPanel({consoleClassId}: {consoleClassId: string}) {
               <th className="py-1">Học sinh</th>
               <th>Mã vào app</th>
               <th>Link phụ huynh</th>
+              <th>Báo cáo tuần</th>
             </tr>
           </thead>
           <tbody>
             {list.length === 0 && (
               <tr>
-                <td colSpan={3} className="py-2 text-stone-500">Chưa có học sinh. Dán danh sách tên bên dưới (mỗi dòng một em).</td>
+                <td colSpan={4} className="py-2 text-stone-500">Chưa có học sinh. Dán danh sách tên bên dưới (mỗi dòng một em).</td>
               </tr>
             )}
             {list.map((s) => (
-              <tr key={s.id} className="border-t border-[#E6E4DD]">
+              <React.Fragment key={s.id}>
+              <tr className="border-t border-[#E6E4DD]">
                 <td className="py-1.5 font-medium text-stone-800">{s.name}</td>
                 <td className="font-mono text-stone-700">{s.loginCode}</td>
                 <td className="flex items-center gap-1 py-1">
@@ -93,7 +108,27 @@ export function StudentsPanel({consoleClassId}: {consoleClassId: string}) {
                     <RefreshCw className="h-3 w-3" />
                   </button>
                 </td>
+                <td>
+                  <button data-testid="report-now" disabled={reporting === s.id} onClick={() => (report?.id === s.id ? setReport(null) : void makeReport(s))} className="rounded px-1.5 py-0.5 text-blue-700 hover:bg-blue-50 disabled:opacity-40">
+                    {reporting === s.id ? 'Đang chốt…' : report?.id === s.id ? 'Ẩn' : 'Chốt & xem'}
+                  </button>
+                </td>
               </tr>
+              {report?.id === s.id && (
+                <tr>
+                  <td colSpan={4} className="pb-2">
+                    <div data-testid="report-preview" className="rounded-lg border border-[#E6E4DD] bg-white p-2 text-stone-700">
+                      <div className="font-semibold text-stone-900">Tuần {report.r.week} · {report.r.activeDays} ngày học · {report.r.minutes} phút · {report.r.done} câu</div>
+                      <p className="mt-1">{report.r.comment}</p>
+                      {report.r.improved.length > 0 && <p className="mt-1 text-emerald-700">Tiến bộ: {report.r.improved.join(', ')}</p>}
+                      {report.r.needsHelp.length > 0 && <p className="mt-1 text-rose-700">Cần giúp: {report.r.needsHelp.join(', ')}</p>}
+                      {report.r.tips.length > 0 && <ul className="mt-1 list-disc pl-4">{report.r.tips.map((t) => <li key={t}>{t}</li>)}</ul>}
+                      <p className="mt-1 text-stone-400">{report.r.source === 'ai' ? 'Nhận xét do AI viết từ số liệu.' : 'Nhận xét theo mẫu (AI chưa sẵn sàng).'} Phụ huynh xem bản này qua link phụ huynh.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>

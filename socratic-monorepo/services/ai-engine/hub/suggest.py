@@ -18,6 +18,9 @@ from routers.board_qa import _extract_json, _llm_json
 PENDING_TTL_S = 3600
 MAX_SUGGESTIONS = 3
 OFFLINE_NOTE = "AI chưa sẵn sàng."
+# lớp chưa làm bài nào của phần: không để mô hình nói như thể đã thấy lỗi của lớp
+NO_DATA_NOTE = ("LƯU Ý: lớp CHƯA có số liệu làm bài cho phần này. Chỉ đề xuất dựa trên khó khăn thường gặp của nội dung; "
+                "\"rationale\" bắt đầu bằng \"Chưa có số liệu của lớp:\" và không khẳng định gì về học sinh của lớp.\n\n")
 _ITEM = TypeAdapter(PlanItem)
 _ALLOWED = {"add_example": {"formula", "problem"}, "add_question": {"problem", "poll"}}
 
@@ -80,8 +83,11 @@ def suggest(teacher_id: str, plan_id: str, section_id: str, class_id: str, gemin
     section = _section(plan["body"], section_id)
     stats = metrics.section_metrics(plan_id, section_id, class_id)
     stats.pop("needsSupport", None)  # chỉ đưa số liệu tổng hợp cho mô hình, không đưa id học sinh
+    grounded = stats.get("attemptedRate", 0) > 0
     user = (f"PHẦN_JSON:\n{json.dumps(strip_answers({'sections': [section]})['sections'][0], ensure_ascii=False)}\n\n"
-            f"CHỈ_SỐ_JSON:\n{json.dumps(stats, ensure_ascii=False)}\n\nĐề xuất theo đúng định dạng JSON đã nêu.")
+            f"CHỈ_SỐ_JSON:\n{json.dumps(stats, ensure_ascii=False)}\n\n"
+            + ("" if grounded else NO_DATA_NOTE)
+            + "Đề xuất theo đúng định dạng JSON đã nêu.")
     try:
         llm = _llm_json(SYSTEM_PROMPT, user, gemini_key, openrouter_key, 1500, 25.0)
     except Exception:
@@ -95,7 +101,7 @@ def suggest(teacher_id: str, plan_id: str, section_id: str, class_id: str, gemin
     for v in valid:
         v["id"] = new_id("sg")
         _PENDING[v["id"]] = (expires, teacher_id, plan_id, section_id, v)
-    return {"suggestions": valid, "source": llm[1]}
+    return {"suggestions": valid, "source": llm[1], "grounded": grounded}
 
 
 def apply(teacher_id: str, plan_id: str, sg_id: str) -> Dict:

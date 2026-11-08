@@ -6,7 +6,8 @@ import {useRouter} from 'next/navigation';
 import {ArrowLeft, Trash2} from 'lucide-react';
 import {ApiError, api, type PeriodInput} from '../../../lib/api';
 import {useLiveRoom} from '../../../lib/live';
-import type {ClassInfo, LessonMeta, Period, PeriodRecord} from '../../../lib/types';
+import type {ClassInfo, LessonMeta, Period, PeriodRecord, SimEntry} from '../../../lib/types';
+import {hub, type PlanListItem, type ResourceItem} from '../../../lib/hub';
 import {ErrorNote, Shell} from '../../../components/Shell';
 import {PeriodPrep} from '../../../components/PeriodPrep';
 import {LiveControl} from '../../../components/LiveControl';
@@ -20,6 +21,7 @@ function PeriodPage({id}: {id: string}) {
   const [period, setPeriod] = useState<Period | null>(null);
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [lessons, setLessons] = useState<LessonMeta[]>([]);
+  const [extras, setExtras] = useState<{resources: ResourceItem[]; plans: PlanListItem[]; catalog: SimEntry[]}>({resources: [], plans: [], catalog: []});
   const [creds, setCreds] = useState<{roomId: string; token: string} | null>(null);
   const [pairCode, setPairCode] = useState<string | null>(null);
   const [record, setRecord] = useState<PeriodRecord | null>(null);
@@ -51,6 +53,24 @@ function PeriodPage({id}: {id: string}) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // phần chuẩn bị thêm: lỗi ở đây không chặn việc soạn tiết
+  useEffect(() => {
+    let alive = true;
+    const safe = async <T,>(f: () => Promise<T>, fallback: T): Promise<T> => {
+      try {
+        return await f();
+      } catch {
+        return fallback;
+      }
+    };
+    void Promise.all([safe(() => hub.resources(), [] as ResourceItem[]), safe(() => hub.plans(), [] as PlanListItem[]), safe(() => api.simCatalog(), [] as SimEntry[])]).then(
+      ([resources, plans, catalog]) => alive && setExtras({resources, plans, catalog}),
+    );
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const save = async (input: PeriodInput) => {
     setError(null);
@@ -106,7 +126,7 @@ function PeriodPage({id}: {id: string}) {
 
       {period.status === 'planned' && (
         <>
-          <PeriodPrep period={period} classes={classes} lessons={lessons} onSave={save} onStart={start} />
+          <PeriodPrep period={period} classes={classes} lessons={lessons} onSave={save} onStart={start} {...extras} />
           <div className="flex justify-end">
             {confirmDelete ? (
               <span className="flex items-center gap-2 text-sm">
@@ -148,6 +168,17 @@ function PeriodPage({id}: {id: string}) {
             {period.notes && <p className="mt-1 whitespace-pre-wrap text-stone-600"><b>Ghi chú:</b> {period.notes}</p>}
             {cls?.notes && <p className="mt-1 text-stone-600"><b>Về lớp:</b> {cls.notes}</p>}
             {!period.goals && !period.notes && !cls?.notes && <p className="mt-2 text-stone-400">Chưa có ghi chú.</p>}
+            {(period.resource_ids?.length || period.sims?.length || period.plan_id) ? (
+              <p className="mt-1 text-stone-600">
+                <b>Trên bảng:</b>{' '}
+                {[
+                  period.resource_ids?.length ? `${period.resource_ids.length} tài nguyên` : '',
+                  period.sims?.length ? `${period.sims.length} mô phỏng` : '',
+                  period.plan_id ? `giáo án "${extras.plans.find((p) => p.id === period.plan_id)?.title ?? '…'}"` : '',
+                ].filter(Boolean).join(' · ')}{' '}
+                (mở ở nút "Chuẩn bị của tiết" trên bảng)
+              </p>
+            ) : null}
           </details>
           {creds ? (
             <LiveControl roomId={creds.roomId} live={live} send={send} prompts={period.prompts} pairCode={pairCode} onRepair={() => void start()} onEnd={() => void end()} />

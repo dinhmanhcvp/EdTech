@@ -3,7 +3,7 @@
 import React, {createContext, useContext, useEffect, useState} from 'react';
 import Link from 'next/link';
 import {usePathname, useRouter} from 'next/navigation';
-import {BookOpen, CalendarDays, GraduationCap, LogOut, FolderOpen} from 'lucide-react';
+import {BookOpen, CalendarDays, ClipboardList, GraduationCap, LogOut, FolderOpen} from 'lucide-react';
 import {api, clearToken, getToken} from '../lib/api';
 import type {Teacher} from '../lib/types';
 
@@ -13,6 +13,7 @@ export const useTeacher = () => useContext(TeacherCtx);
 const NAV = [
   {href: '/', label: 'Tiết học', icon: CalendarDays},
   {href: '/classes', label: 'Lớp', icon: GraduationCap},
+  {href: '/plans', label: 'Giáo án', icon: ClipboardList},
   {href: '/lessons', label: 'Bài soạn', icon: BookOpen},
   {href: '/resources', label: 'Tài nguyên', icon: FolderOpen},
 ];

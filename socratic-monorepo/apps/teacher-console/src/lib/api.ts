@@ -2,7 +2,7 @@
  * Máy khách REST của trang quản lý. Mã đăng nhập nằm trong localStorage của trình duyệt giáo viên (`console_token`); mọi lời gọi gửi
  * `Authorization: Bearer`. Lỗi máy chủ được đổi thành ApiError có thông báo tiếng Việt để hiện thẳng cho giáo viên.
  */
-import type {ClassInfo, LessonMeta, Period, PeriodRecord, StartResult, Teacher} from './types';
+import type {ClassInfo, LessonMeta, Period, PeriodRecord, SimEntry, StartResult, Teacher} from './types';
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
@@ -119,6 +119,7 @@ export const api = {
   endPeriod: (id: string) => call<Period>('POST', `/api/v1/console/periods/${id}/end`),
   live: (id: string) => call<{roomId: string; token: string}>('GET', `/api/v1/console/periods/${id}/live`),
   record: (id: string) => call<PeriodRecord>('GET', `/api/v1/console/periods/${id}/record`),
+  simCatalog: () => call<{sims: SimEntry[]}>('GET', '/api/v1/console/sim-catalog').then((r) => r.sims),
 };
 
 export interface PeriodInput {
@@ -128,4 +129,7 @@ export interface PeriodInput {
   goals: string;
   notes: string;
   prompts: string[];
+  resource_ids?: string[];
+  sims?: string[];
+  plan_id?: string | null;
 }

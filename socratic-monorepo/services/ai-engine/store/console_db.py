@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS periods (
   title TEXT NOT NULL, goals TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL DEFAULT '', prompts_json TEXT NOT NULL DEFAULT '[]',
   status TEXT NOT NULL DEFAULT 'planned' CHECK (status IN ('planned','live','ended')),
   room_id TEXT, board_token_hash TEXT, board_json TEXT, submissions_json TEXT,
-  created_at REAL NOT NULL, started_at REAL, ended_at REAL);
+  created_at REAL NOT NULL, started_at REAL, ended_at REAL, prep_json TEXT NOT NULL DEFAULT '{}');
 CREATE INDEX IF NOT EXISTS idx_classes_teacher ON classes(teacher_id);
 CREATE INDEX IF NOT EXISTS idx_lessons_teacher ON lessons(teacher_id);
 CREATE INDEX IF NOT EXISTS idx_periods_teacher ON periods(teacher_id, created_at);
@@ -86,6 +86,25 @@ def _new_id() -> str:
     return secrets.token_hex(8)
 
 
+_REF = re.compile(r"^[A-Za-z0-9_-]{1,80}$")
+_SIM = re.compile(r"^[A-Z0-9_]{2,40}$")
+
+
+def _ids(v: Any, pattern: "re.Pattern[str]", limit: int) -> List[str]:
+    out: List[str] = []
+    for x in v if isinstance(v, list) else []:
+        if isinstance(x, str) and pattern.match(x) and x not in out:
+            out.append(x)
+    return out[:limit]
+
+
+def _prep(d: Dict[str, Any]) -> Dict[str, Any]:
+    """Chuẩn bị tiết: id tài nguyên (bài tập/đề/slide của hub), mã mô phỏng định mở, id giáo án hub. Chủ sở hữu do lớp REST kiểm."""
+    plan = d.get("plan_id")
+    return {"resource_ids": _ids(d.get("resource_ids"), _REF, 20), "sims": _ids(d.get("sims"), _SIM, 12),
+            "plan_id": plan if isinstance(plan, str) and _REF.match(plan) else None}
+
+
 class ConsoleDB:
     def __init__(self, path: str) -> None:
         if path != ":memory:":
@@ -97,6 +116,9 @@ class ConsoleDB:
         if path != ":memory:":
             self._db.execute("PRAGMA journal_mode=WAL")
         self._db.executescript(SCHEMA)
+        # CSDL tạo trước khi có cột chuẩn bị tiết (tài nguyên, mô phỏng, giáo án)
+        if 'prep_json' not in {r[1] for r in self._db.execute('PRAGMA table_info(periods)')}:
+            self._db.execute("ALTER TABLE periods ADD COLUMN prep_json TEXT NOT NULL DEFAULT '{}'")
         self._db.commit()
 
     # ------------------------------------------------------------------ tiện ích
@@ -238,6 +260,7 @@ class ConsoleDB:
             "prompts": json.loads(r["prompts_json"] or "[]"), "status": r["status"], "room_id": r["room_id"], "created_at": r["created_at"],
             "started_at": r["started_at"], "ended_at": r["ended_at"], "has_snapshot": r["board_json"] is not None,
             "submission_count": len(json.loads(r["submissions_json"])) if r["submissions_json"] else 0,
+            **_prep(json.loads(r["prep_json"] or "{}")),
         }
 
     def list_periods(self, tid: str) -> List[Dict[str, Any]]:
@@ -257,17 +280,18 @@ class ConsoleDB:
         if lesson_id and not self._one("SELECT 1 FROM lessons WHERE id=? AND teacher_id=?", (lesson_id, tid)):
             raise StoreError("invalid", "Bài soạn không tồn tại.")
         prompts = [_clip(p, 200) for p in (data.get("prompts") or []) if _clip(p, 200)][:20] if isinstance(data.get("prompts"), list) else []
-        vals = (class_id, lesson_id, title, _clip(data.get("goals"), 2000), _clip(data.get("notes"), 4000), json.dumps(prompts, ensure_ascii=False))
+        vals = (class_id, lesson_id, title, _clip(data.get("goals"), 2000), _clip(data.get("notes"), 4000), json.dumps(prompts, ensure_ascii=False),
+                json.dumps(_prep(data), ensure_ascii=False))
         if pid is None:
             pid = _new_id()
-            self._run("INSERT INTO periods(id,teacher_id,class_id,lesson_id,title,goals,notes,prompts_json,created_at) VALUES(?,?,?,?,?,?,?,?,?)", (pid, tid, *vals, time.time()))
+            self._run("INSERT INTO periods(id,teacher_id,class_id,lesson_id,title,goals,notes,prompts_json,prep_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)", (pid, tid, *vals, time.time()))
         else:
             cur = self._one("SELECT status FROM periods WHERE id=? AND teacher_id=?", (pid, tid))
             if not cur:
                 raise StoreError("not_found")
             if cur["status"] == "ended":
                 raise StoreError("invalid", "Tiết đã kết thúc, không sửa được.")
-            self._run("UPDATE periods SET class_id=?,lesson_id=?,title=?,goals=?,notes=?,prompts_json=? WHERE id=? AND teacher_id=?", (*vals, pid, tid))
+            self._run("UPDATE periods SET class_id=?,lesson_id=?,title=?,goals=?,notes=?,prompts_json=?,prep_json=? WHERE id=? AND teacher_id=?", (*vals, pid, tid))
         return self.get_period(tid, pid)  # type: ignore[return-value]
 
     def delete_period(self, tid: str, pid: str) -> bool:

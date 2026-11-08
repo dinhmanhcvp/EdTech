@@ -90,3 +90,14 @@ def test_reorder_suggestion_applies(client, teacher_headers, llm):
     sg = _suggest(client, h)["suggestions"][0]
     body = client.post(f"/api/v1/hub/plans/plan-demo-rlc/suggestions/{sg['id']}/apply", headers=h).json()["body"]
     assert [i["id"] for i in body["sections"][0]["items"]] == order
+
+
+def test_no_class_data_is_flagged_and_model_told_not_to_claim(client, teacher_headers, llm, monkeypatch):
+    import hub.suggest as sg
+
+    real = sg.metrics.section_metrics
+    monkeypatch.setattr(sg.metrics, "section_metrics", lambda *a: {**real(*a), "attemptedRate": 0.0})
+    data = _suggest(client, teacher_headers(client))
+    assert data["grounded"] is False and "Chưa có số liệu của lớp" in llm["user"]
+    monkeypatch.setattr(sg.metrics, "section_metrics", lambda *a: {**real(*a), "attemptedRate": 0.5})
+    assert _suggest(client, teacher_headers(client))["grounded"] is True and "Chưa có số liệu" not in llm["user"]

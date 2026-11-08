@@ -149,6 +149,12 @@ def class_metrics(class_id: str, teacher_id: str) -> Dict:
     total = _class_total(class_id)
     per_student = [student_metrics(s, total) for s in students]
     labels: Dict[str, str] = {}
+    from hub.assignments import store  # KC gắn ở câu bài tập/đề cũng là cột của bản đồ nhiệt
+
+    for a in store.list_for(teacher_id):
+        for q in (store.get(a["id"]).get("body") or {}).get("questions", []):
+            for kc in q.get("kcs", []):
+                labels.setdefault(kc["id"], kc["label"])
     for p in plans.list_plans(teacher_id):
         for section in plans.get_plan(p["id"])["body"]["sections"]:
             for kc in section.get("kcs", []):

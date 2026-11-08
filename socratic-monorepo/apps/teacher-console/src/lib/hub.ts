@@ -22,6 +22,8 @@ const MESSAGES: Record<string, string> = {
   one_pdf_or_images: 'Mỗi lần tải một file PDF, hoặc nhiều ảnh.',
   period_has_no_class: 'Tiết này chưa chọn lớp.',
   answer_not_gradable: 'Có đáp án máy không đọc được. Viết đáp số dạng "x = 2" hoặc "12".',
+  section_full: 'Phần này đã đủ 12 mục, không thêm được.',
+  duplicate_ids: 'Giáo án có mục trùng mã. Tải lại trang rồi thử lại.',
 };
 
 function message(detail: unknown, status: number): string {
@@ -103,6 +105,35 @@ export interface GridRow {
 }
 export interface HubStudent {id: string; name: string; loginCode: string; parentToken: string | null}
 
+export interface StudentMetrics {
+  studentId: string; name: string; mastery: Record<string, number>; done: number; total: number; firstTryRate: number | null;
+  hintsPerItem: number; minutes: number; lastActive: number | null; needsSupport: boolean; supportReasons: string[];
+}
+export interface ClassMetrics {classId: string; kcs: {id: string; label: string}[]; students: StudentMetrics[]; heatmap: Record<string, Record<string, number>>; progress: number}
+export interface ParentReport {
+  week: string; lessons: string[]; activeDays: number; minutes: number; done: number; improved: string[]; needsHelp: string[]; tips: string[];
+  comment: string; source: 'ai' | 'template'; vsLastWeek: {minutesDelta: number; activeDaysDelta: number};
+}
+
+export type Subject = 'MATH' | 'PHYSICS' | 'CHEMISTRY' | 'BIOLOGY';
+export type PlanItem =
+  | {id: string; type: 'formula'; latex: string; caption?: string}
+  | {id: string; type: 'problem'; text: string; latex?: string; answer?: string}
+  | {id: string; type: 'sim'; templateId: string; params: Record<string, number>}
+  | {id: string; type: 'poll'; question: string; options: string[]; correct?: number};
+export interface PlanSection {id: string; title: string; objective: string; kcs: {id: string; label: string}[]; items: PlanItem[]}
+export interface PlanBody {title: string; subject: Subject; boardContext: string; sections: PlanSection[]}
+export interface PlanListItem {id: string; title: string; subject: Subject; currentVersion: number}
+export interface SectionMetrics {sectionId: string; attemptedRate: number; firstTryRate: number | null; avgHints: number; weakestKc: string | null; needsSupport: string[]; wrongAnswers: {answer: string; count: number}[]}
+export interface Suggestion {id: string; type: 'add_example' | 'add_question' | 'reorder' | 'add_note'; rationale: string; item?: PlanItem; order?: string[]; note?: string}
+
+/** Lí do cần hỗ trợ (mã của máy chủ) → câu cho giáo viên. */
+export function supportReason(code: string, kcLabel: (id: string) => string): string {
+  if (code === 'three_wrong_in_a_row') return 'Sai 3 câu liên tiếp';
+  if (code.startsWith('low_mastery:')) return `Chưa vững: ${kcLabel(code.slice('low_mastery:'.length))}`;
+  return code;
+}
+
 const blobCache = new Map<string, string>();
 
 async function blob(path: string): Promise<string> {
@@ -166,6 +197,16 @@ export const hub = {
   students: (hubClassId: string) => hubFetch<{students: HubStudent[]}>('GET', `/classes/${hubClassId}/students`).then((r) => r.students),
   addStudents: (hubClassId: string, names: string[]) => hubFetch<{students: HubStudent[]}>('POST', `/classes/${hubClassId}/students`, {names}).then((r) => r.students),
   rotateParentLink: (studentId: string) => hubFetch<{parentToken: string}>('POST', `/students/${studentId}/parent-link`),
+  reportNow: (studentId: string) => hubFetch<ParentReport>('POST', `/students/${studentId}/reports`),
+  classMetrics: (hubClassId: string) => hubFetch<ClassMetrics>('GET', `/classes/${hubClassId}/metrics`),
+
+  plans: () => hubFetch<{plans: PlanListItem[]}>('GET', '/plans').then((r) => r.plans),
+  plan: (id: string) => hubFetch<{id: string; version: number; body: PlanBody}>('GET', `/plans/${id}`),
+  createPlan: (body: PlanBody) => hubFetch<{id: string; version: number; body: PlanBody}>('POST', '/plans', {body}),
+  savePlan: (id: string, body: PlanBody, baseVersion: number) => hubFetch<{id: string; version: number; body: PlanBody}>('PUT', `/plans/${id}`, {body, baseVersion}),
+  sectionMetrics: (planId: string, sectionId: string, hubClassId: string) => hubFetch<SectionMetrics>('GET', `/plans/${planId}/sections/${sectionId}/metrics?classId=${encodeURIComponent(hubClassId)}`),
+  suggest: (planId: string, sectionId: string, hubClassId: string) => hubFetch<{suggestions: Suggestion[]; source: string; note?: string; grounded?: boolean}>('POST', `/plans/${planId}/sections/${sectionId}/suggestions`, {classId: hubClassId}),
+  applySuggestion: (planId: string, sgId: string) => hubFetch<{version: number; body: PlanBody}>('POST', `/plans/${planId}/suggestions/${sgId}/apply`),
 
   resources: (subject?: string) => hubFetch<{assignments: ResourceItem[]}>('GET', `/assignments${subject ? `?subject=${subject}` : ''}`).then((r) => r.assignments),
   upload: ({title, subject, kind, files}: {title: string; subject: string; kind: ResourceKind; files: File[]}) => {

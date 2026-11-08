@@ -21,7 +21,46 @@ export interface BoardSession {
   teacherName: string;
   /** lớp của tiết (nếu giáo viên đã chọn): ngữ cảnh cho AI hỏi đáp */
   classInfo: {name: string; grade: string; subject: string; size: number; notes: string} | null;
+  /** soạn trước ở trang quản lý; phiên lưu từ bản cũ không có trường này */
+  prep?: BoardPrep;
 }
+
+export type PrepPlanItem =
+  | {id: string; type: 'formula'; latex: string; caption?: string}
+  | {id: string; type: 'problem'; text: string}
+  | {id: string; type: 'sim'; templateId: string}
+  | {id: string; type: 'poll'; question: string; options: string[]};
+export interface BoardPrep {
+  resources: {id: string; title: string; kind: string; pageCount: number}[];
+  sims: {id: string; title: string}[];
+  plan: {id: string; version: number; body: {title: string; boardContext: string; sections: {id: string; title: string; objective: string; items: PrepPlanItem[]}[]}} | null;
+  simTitles: Record<string, string>;
+}
+
+const str = (v: unknown) => (typeof v === 'string' ? v : '');
+const arr = (v: unknown): any[] => (Array.isArray(v) ? v : []);
+
+/** Đọc phần chuẩn bị từ máy chủ, bỏ mục hỏng thay vì làm hỏng cả lần ghép. */
+export function parsePrep(d: any): BoardPrep {
+  const items = (xs: unknown): PrepPlanItem[] =>
+    arr(xs).flatMap((i): PrepPlanItem[] => {
+      const id = str(i?.id);
+      if (i?.type === 'formula') return [{id, type: 'formula', latex: str(i.latex), ...(i.caption ? {caption: str(i.caption)} : {})}];
+      if (i?.type === 'problem') return [{id, type: 'problem', text: str(i.text)}];
+      if (i?.type === 'sim' && str(i.templateId)) return [{id, type: 'sim', templateId: str(i.templateId)}];
+      if (i?.type === 'poll') return [{id, type: 'poll', question: str(i.question), options: arr(i.options).map(str)}];
+      return [];
+    });
+  const p = d?.plan;
+  return {
+    resources: arr(d?.resources).filter((r) => str(r?.id)).map((r) => ({id: str(r.id), title: str(r.title), kind: str(r.kind), pageCount: Number(r.pageCount) || 0})),
+    sims: arr(d?.sims).filter((s) => str(s?.id)).map((s) => ({id: str(s.id), title: str(s.title) || str(s.id)})),
+    plan: p && p.body ? {id: str(p.id), version: Number(p.version) || 1, body: {title: str(p.body.title), boardContext: str(p.body.boardContext), sections: arr(p.body.sections).map((s) => ({id: str(s?.id), title: str(s?.title), objective: str(s?.objective), items: items(s?.items)}))}} : null,
+    simTitles: d?.simTitles && typeof d.simTitles === 'object' ? Object.fromEntries(Object.entries(d.simTitles).map(([k, v]) => [k, str(v)])) : {},
+  };
+}
+
+export const hasPrep = (p: BoardPrep | undefined): p is BoardPrep => !!p && (p.resources.length > 0 || p.sims.length > 0 || !!p.plan);
 
 export interface PairResult {
   session: BoardSession;
@@ -79,6 +118,7 @@ function toPairResult(d: any): PairResult {
       prompts: Array.isArray(d.period.prompts) ? d.period.prompts.map(String) : [],
       teacherName: String(d.teacher?.display_name ?? ''),
       classInfo: d.class ? {name: String(d.class.name ?? ''), grade: String(d.class.grade ?? ''), subject: String(d.class.subject ?? ''), size: Number(d.class.size) || 0, notes: String(d.class.notes ?? '')} : null,
+      prep: parsePrep(d.prep),
     },
     pages: cleanPages(d.pages),
     resumed: !!d.resumed,
@@ -142,9 +182,11 @@ export async function saveLessonToConsole(token: string, title: string, folder: 
 export function lessonContext(s: BoardSession | null): {title: string; goals?: string; class?: {name: string; grade?: string; subject?: string; size?: number; notes?: string}} | undefined {
   if (!s) return undefined;
   const c = s.classInfo;
+  // ghi chú giáo án cho AI (boardContext) đi cùng mục tiêu tiết
+  const goals = [s.goals, s.prep?.plan?.body.boardContext ?? ''].filter(Boolean).join('\n');
   return {
     title: s.title.slice(0, 160),
-    ...(s.goals ? {goals: s.goals.slice(0, 600)} : {}),
+    ...(goals ? {goals: goals.slice(0, 600)} : {}),
     ...(c ? {class: {name: c.name, ...(c.grade ? {grade: c.grade} : {}), ...(c.subject ? {subject: c.subject} : {}), ...(c.size ? {size: c.size} : {}), ...(c.notes ? {notes: c.notes.slice(0, 600)} : {})}} : {}),
   };
 }

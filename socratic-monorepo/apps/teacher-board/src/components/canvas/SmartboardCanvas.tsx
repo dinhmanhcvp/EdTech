@@ -41,11 +41,14 @@ import { sourceFromContext } from '../../utils/similarProblems';
 import { toBoardStrokes, type Submission } from '../../utils/submissionInk';
 import { PairPanel } from './PairPanel';
 import { ResourcePanel } from '../resources/ResourcePanel';
+import { PrepPanel } from './PrepPanel';
+import { isPreset } from '../../engines/families';
+import { makePresetBlueprint } from '../../utils/presets';
 import { ResourceViewer } from '../resources/ResourceViewer';
 import { eraserHitsBlock, insertPageStrokes, type PageRef } from '../../utils/boardImage';
 import { createBoardImageLoader } from '../../utils/boardImages';
 import type { InkStroke } from '../../utils/hubBoard';
-import { SessionError, lessonContext, loadSession, pairBoard, resumeBoard, saveLessonToConsole, saveSnapshot, storeSession, type BoardSession, type PairResult } from '../../utils/boardSession';
+import { SessionError, hasPrep, lessonContext, loadSession, pairBoard, resumeBoard, saveLessonToConsole, saveSnapshot, storeSession, type BoardSession, type PairResult } from '../../utils/boardSession';
 import { coverCount, coverLines, hiddenCovers, hideAllCovers, makeCovers, revealNext, setCoverHidden } from '../../utils/answerCover';
 import { useBoardJournal } from '../../hooks/useBoardJournal';
 import { findAmbiguousTokens } from '../../utils/ocrConfusions';
@@ -3506,6 +3509,16 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           <PairPanel session={session} boardHasContent={pages.some((p, i) => (i === pageIdx ? strokes.length : p.length) > 0)} onPair={pairWithCode} onSaveLesson={saveLessonToServer} onUnpair={() => endSession('Đã ngắt ghép; bảng đã được dọn. Tiết vẫn tiếp tục ở trang quản lý.')} />
           <SimilarProblemsPanel getSource={() => sourceFromContext(getBoardContext())} subject={subjectLock} />
           <ResourcePanel paired={!!session} onOpen={setViewerId} />
+          {hasPrep(session?.prep) && (
+            <PrepPanel
+              prep={session.prep}
+              onOpenResource={setViewerId}
+              onOpenSim={(id) => {
+                if (isPreset(id)) setActiveBlueprint(makePresetBlueprint(id));
+                else flashError('Bảng này chưa có mô phỏng đó; hãy cập nhật bảng.');
+              }}
+            />
+          )}
           {viewerId && <ResourceViewer resourceId={viewerId} onClose={() => setViewerId(null)} onInsertPage={insertResourcePage} />}
           {coverCount(strokes) > 0 && (
             <div data-testid="cover-bar" className="absolute left-1/2 -translate-x-1/2 bottom-3 z-30 pointer-events-auto flex items-center gap-1.5 rounded-full border border-amber-300 bg-white/95 px-2 py-1 shadow-md">

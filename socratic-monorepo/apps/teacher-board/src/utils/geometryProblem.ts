@@ -76,6 +76,10 @@ export function normalizeProblem(raw: string): string {
   t = t.replace(/(?<!\p{L})(?:GT|KL|Giả thiết|Kết luận|Tóm tắt|Đề bài)\s*[:：]/giu, ';');
   t = t.replace(/([A-Z'])\s*\.\s*([A-Z])/g, '$1.$2');
   t = t.replace(KW_RE, (m) => m.toLowerCase().replace(/\s+/g, ' '));
+  // tên điểm gõ chữ thường ("tam giác abc, ab vuông bc, ab = 3") → chữ hoa; chỉ ở chỗ chắc chắn là tên điểm
+  t = t.replace(/(?<=(?:tam giác|tứ giác|hình [\p{L} ]*?)\s)([a-z]{3,4})(?![\p{L}'])/gu, (m) => m.toUpperCase());
+  t = t.replace(/(?<![\p{L}'])([a-z]{2})(\s*(?:vuông(?: góc)?|song song)\s*(?:với\s*)?)([a-z]{2})(?![\p{L}'])/gu, (_m, a: string, mid: string, b: string) => `${a.toUpperCase()}${mid}${b.toUpperCase()}`);
+  t = t.replace(/(?<![\p{L}'])([a-z]{2})(?=\s*=\s*[\d√(])/gu, (m) => m.toUpperCase());
   return t.replace(/[ \t]+/g, ' ');
 }
 
@@ -192,7 +196,11 @@ function describeBase(text: string, names: string[]): BaseDesc {
   }
   if (word === 'tam giác đều' || word === 'đều') return {kind: 'tri_eq'};
   const r = new RegExp(`vuông\\s*(?:cân\\s*)?tại\\s*(${PT})`).exec(text);
-  if (word.startsWith('vuông') || r) return {kind: 'tri_right', at: at ?? r?.[1] ?? names[0]};
+  // "AB vuông BC" / "AB vuông góc BC" (không ghi "tại"): vuông tại đỉnh chung của hai cạnh
+  const pp = new RegExp(`(${PT})(${PT})\\s*vuông(?:\\s*góc)?\\s*(?:với\\s*)?(${PT})(${PT})(?![A-Za-z'])`).exec(text);
+  const common = pp ? [pp[1], pp[2]].filter((x) => x === pp[3] || x === pp[4]) : [];
+  const rightAt = !r && pp && common.length === 1 && [pp[1], pp[2], pp[3], pp[4]].every((x) => names.includes(x)) ? common[0] : undefined;
+  if (word.startsWith('vuông') || r || rightAt) return {kind: 'tri_right', at: at ?? r?.[1] ?? rightAt ?? names[0]};
   if (word === 'cân') return {kind: 'tri_iso', at: at ?? names[0]};
   const c = new RegExp(`cân\\s*tại\\s*(${PT})`).exec(text);
   if (c) return {kind: 'tri_iso', at: c[1]};

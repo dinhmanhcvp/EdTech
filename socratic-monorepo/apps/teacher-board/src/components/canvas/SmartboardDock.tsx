@@ -1,5 +1,6 @@
 'use client';
 
+import {ERASER_KINDS, ERASER_SIZES, type EraserKind} from '../../utils/eraser';
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Pen,
@@ -83,6 +84,10 @@ export interface SmartboardDockProps {
   gridPattern: GridPattern;
   onCycleGrid: () => void;
   onClear: () => void;
+  eraserKind: EraserKind;
+  onEraserKind: (k: EraserKind) => void;
+  eraserR: number;
+  onEraserR: (r: number) => void;
   onExport: () => void;
   isSplitView: boolean;
   onToggleSplit: () => void;
@@ -112,7 +117,7 @@ const ShapeIcon: Record<ShapeType, React.ReactNode> = {
 
 /** Thanh tác vụ duy nhất của bảng thông minh: các chức năng chuẩn, tùy chọn con mở bằng bảng nhỏ phía trên. */
 export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
-  const [pop, setPop] = useState<null | 'pen' | 'shape' | 'more'>(null);
+  const [pop, setPop] = useState<null | 'pen' | 'shape' | 'more' | 'eraser'>(null);
   const root = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -133,6 +138,39 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
 
   return (
     <div ref={root} data-testid="smartboard-toolbar" className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-96px)]">
+      {/* Bảng nhỏ: kiểu & cỡ tẩy */}
+      <div data-testid="eraser-popover" className={`${popCls('eraser')} left-[240px] flex-col gap-2.5`}>
+        <div className="flex items-center gap-1.5">
+          {ERASER_KINDS.map((k) => (
+            <button
+              key={k.id}
+              data-testid={`eraser-kind-${k.id}`}
+              title={k.hint}
+              onClick={() => p.onEraserKind(k.id)}
+              className={`px-2.5 py-1.5 rounded-lg border text-[11px] transition ${p.eraserKind === k.id ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-[#DCD9D0] hover:bg-stone-50'}`}
+            >
+              {k.label}
+            </button>
+          ))}
+        </div>
+        <div className={`flex items-center gap-1.5 ${p.eraserKind === 'area' ? 'opacity-40 pointer-events-none' : ''}`}>
+          {ERASER_SIZES.map((z) => (
+            <button
+              key={z.r}
+              data-testid={`eraser-size-${z.r}`}
+              onClick={() => p.onEraserR(z.r)}
+              className={`flex-1 flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg border text-[10px] transition ${p.eraserR === z.r ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-[#DCD9D0] hover:bg-stone-50'}`}
+            >
+              <span className="rounded-full bg-current opacity-70" style={{width: Math.max(4, z.r / 3), height: Math.max(4, z.r / 3)}} />
+              {z.label}
+            </button>
+          ))}
+        </div>
+        <button data-testid="eraser-clear-all" onClick={() => { p.onClear(); setPop(null); }} className="px-2.5 py-1.5 rounded-lg border border-[#DCD9D0] text-[11px] text-stone-700 hover:bg-stone-50">
+          Xóa cả bảng (hoàn tác được)
+        </button>
+      </div>
+
       {/* Bảng nhỏ: màu & độ dày bút */}
       <div data-testid="pen-popover" className={`${popCls('pen')} left-[88px] flex-col gap-2.5`}>
         <div className="flex items-center gap-2">
@@ -301,7 +339,18 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
           )}
         </button>
 
-        <button data-testid="tool-eraser" onClick={() => p.onTool('ERASER')} className={`${base} ${p.tool === 'ERASER' ? on : idle}`} title="Tẩy từng đoạn nét">
+        <button
+          data-testid="tool-eraser"
+          onClick={() => {
+            if (p.tool === 'ERASER') setPop(pop === 'eraser' ? null : 'eraser');
+            else {
+              p.onTool('ERASER');
+              setPop('eraser');
+            }
+          }}
+          className={`${base} ${p.tool === 'ERASER' ? on : idle}`}
+          title="Tẩy (chạm lần nữa để chọn kiểu và cỡ tẩy)"
+        >
           <Eraser className="w-5 h-5" />
           Tẩy
         </button>

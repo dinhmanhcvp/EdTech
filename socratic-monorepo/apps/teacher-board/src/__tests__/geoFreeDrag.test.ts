@@ -65,3 +65,11 @@ describe('đường trung bình', () => {
     expect(Math.abs(cr)).toBeLessThan(1e-6);
   });
 });
+
+describe('gõ ký hiệu chữ thường', () => {
+  it.each(['tam giác abc ab vuông bc', 'Cho tam giác ABC, AB ⊥ BC', 'tam giac abc, ab vuong goc bc'])('"%s" → vuông tại B', (t) => {
+    const s = sceneOf(t);
+    expect(Object.keys(s.pts).sort()).toEqual(['A', 'B', 'C']);
+    expect(Math.abs(cosAt(s, 'A', 'B', 'C'))).toBeLessThan(1e-6);
+  });
+});

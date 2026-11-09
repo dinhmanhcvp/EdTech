@@ -21,6 +21,10 @@ const dockProps = (over: Partial<SmartboardDockProps> = {}): SmartboardDockProps
   gridPattern: 'DOTS',
   onCycleGrid: vi.fn(),
   onClear: vi.fn(),
+  eraserKind: 'round',
+  onEraserKind: vi.fn(),
+  eraserR: 14,
+  onEraserR: vi.fn(),
   onExport: vi.fn(),
   isSplitView: true,
   onToggleSplit: vi.fn(),
@@ -40,6 +44,18 @@ describe('SmartboardDock: thanh tác vụ duy nhất', () => {
   it('có đủ chức năng của bảng thông minh', () => {
     render(<SmartboardDock {...dockProps()} />);
     for (const id of ['tool-lasso', 'tool-pen', 'tool-shape', 'tool-eraser', 'tool-clear', 'btn-classroom', 'btn-more']) expect(screen.getByTestId(id)).toBeTruthy();
+  });
+
+  it('tẩy: chạm lần nữa mở bảng chọn kiểu, cỡ và xóa cả bảng', () => {
+    const p = dockProps({tool: 'ERASER'});
+    render(<SmartboardDock {...p} />);
+    fireEvent.click(screen.getByTestId('tool-eraser'));
+    fireEvent.click(screen.getByTestId('eraser-kind-wipe'));
+    expect(p.onEraserKind).toHaveBeenCalledWith('wipe');
+    fireEvent.click(screen.getByTestId('eraser-size-52'));
+    expect(p.onEraserR).toHaveBeenCalledWith(52);
+    fireEvent.click(screen.getByTestId('eraser-clear-all'));
+    expect(p.onClear).toHaveBeenCalled();
   });
 
   it('chọn công cụ và hình gọi đúng hàm', () => {

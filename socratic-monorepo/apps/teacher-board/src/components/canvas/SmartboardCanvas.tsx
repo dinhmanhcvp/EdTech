@@ -45,7 +45,8 @@ import { PrepPanel } from './PrepPanel';
 import { isPreset } from '../../engines/families';
 import { makePresetBlueprint } from '../../utils/presets';
 import { ResourceViewer } from '../resources/ResourceViewer';
-import { eraserHitsBlock, insertPageStrokes, type PageRef } from '../../utils/boardImage';
+import { insertPageStrokes, type PageRef } from '../../utils/boardImage';
+import { ERASER_SIZES, eraseInZone, rectOf, zoneAt, type EraserKind } from '../../utils/eraser';
 import { createBoardImageLoader } from '../../utils/boardImages';
 import type { InkStroke } from '../../utils/hubBoard';
 import { SessionError, hasPrep, lessonContext, loadSession, pairBoard, resumeBoard, saveLessonToConsole, saveSnapshot, storeSession, type BoardSession, type PairResult } from '../../utils/boardSession';
@@ -92,7 +93,6 @@ import { classifyLassoIntent, type LassoIntentResult } from '../../utils/lassoIn
 import { apiBase } from '../../utils/apiBase';
 import { studentAppUrl } from '../../utils/apiBase';
 
-const ERASE_R = 14; // bán kính tẩy (đơn vị canvas)
 
 export type CanvasTool = 'PEN' | 'HIGHLIGHTER' | 'SHAPE' | 'LASSO' | 'ERASER' | 'PAN' | 'TEXT';
 export type ShapeType = 'CIRCLE' | 'LINE' | 'ARROW' | 'RECTANGLE';
@@ -408,6 +408,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
   const [eraserHover, setEraserHover] = useState<Point | null>(null);
+  const [eraserKind, setEraserKind] = useState<EraserKind>('round');
+  const [eraserR, setEraserR] = useState<number>(ERASER_SIZES[1].r);
+  // kiểu "kéo vùng": điểm bắt đầu và khung đang kéo
+  const areaStartRef = useRef<Point | null>(null);
+  const [eraserArea, setEraserArea] = useState<ReturnType<typeof rectOf> | null>(null);
   const [shapeStart, setShapeStart] = useState<Point | null>(null);
   const [shapeCurrent, setShapeCurrent] = useState<Point | null>(null);
 
@@ -1130,19 +1135,29 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       ctx.restore();
     }
 
-    // 6. Vòng tẩy
-    if (tool === 'ERASER' && eraserHover) {
+    // 6. Vòng/khăn/khung tẩy
+    if (tool === 'ERASER' && (eraserHover || eraserArea)) {
       ctx.save();
       ctx.strokeStyle = 'rgba(24,24,27,0.55)';
       ctx.fillStyle = 'rgba(255,255,255,0.35)';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.arc(eraserHover.x, eraserHover.y, ERASE_R, 0, Math.PI * 2);
+      if (eraserKind === 'area') {
+        if (eraserArea && 'x0' in eraserArea) {
+          ctx.setLineDash([6, 4]);
+          ctx.fillStyle = 'rgba(220,38,38,0.08)';
+          ctx.rect(eraserArea.x0, eraserArea.y0, eraserArea.x1 - eraserArea.x0, eraserArea.y1 - eraserArea.y0);
+        }
+      } else if (eraserHover) {
+        const z = zoneAt(eraserKind, eraserHover, eraserR);
+        if ('x0' in z) ctx.rect(z.x0, z.y0, z.x1 - z.x0, z.y1 - z.y0);
+        else ctx.arc(z.x, z.y, z.r, 0, Math.PI * 2);
+      }
       ctx.fill();
       ctx.stroke();
       ctx.restore();
     }
-  }, [strokes, currentStroke, selectedStrokes, lassoLoop, tool, strokeColor, strokeWidth, gridPattern, shapeStart, shapeCurrent, selectedShape, showWatermarkGuide, selectedRecordSlot, renderBase, eraserHover, bufQ]);
+  }, [strokes, currentStroke, selectedStrokes, lassoLoop, tool, strokeColor, strokeWidth, gridPattern, shapeStart, shapeCurrent, selectedShape, showWatermarkGuide, selectedRecordSlot, renderBase, eraserHover, eraserKind, eraserR, eraserArea, bufQ]);
 
   useEffect(() => {
     redraw();
@@ -1432,7 +1447,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
     if (eraserGestureRef.current) {
       saveToUndo();
-      eraseAtPoint(pt);
+      if (eraserKind === 'area') {
+        areaStartRef.current = pt;
+        setEraserArea(rectOf(pt, pt));
+      } else eraseAtPoint(pt);
       setEraserHover(pt);
       return;
     }
@@ -1479,7 +1497,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     const pts = events.map((ev) => toBoard(canvas, ev.clientX, ev.clientY, ev.pressure, pen));
 
     if (eraserGestureRef.current) {
-      for (const p of pts) eraseAtPoint(p);
+      if (eraserKind === 'area' && areaStartRef.current) setEraserArea(rectOf(areaStartRef.current, pts[pts.length - 1]));
+      else for (const p of pts) eraseAtPoint(p);
       setEraserHover(pts[pts.length - 1]);
       return;
     }
@@ -1545,6 +1564,12 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
     if (eraserGestureRef.current) {
       eraserGestureRef.current = false;
+      if (areaStartRef.current && eraserArea && !cancelled) {
+        const z = eraserArea;
+        setStrokes((prev) => eraseInZone(prev, z, false));
+      }
+      areaStartRef.current = null;
+      setEraserArea(null);
       return;
     }
     if (moveRef.current) {
@@ -1663,64 +1688,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     }
   };
 
-  // Tẩy từng đoạn: chỉ cắt phần nét nằm trong bán kính tẩy, phần còn lại giữ nguyên (tách thành nét mới)
+  // Tẩy theo kiểu và cỡ đang chọn (utils/eraser.ts); kiểu "kéo vùng" áp dụng khi nhả tay
   const eraseAtPoint = (pt: Point) => {
-    setStrokes((prev) => {
-      let changed = false;
-      const next: Stroke[] = [];
-      for (const stroke of prev) {
-        if (stroke.typeset) {
-          if (eraserHitsBlock(stroke, pt, ERASE_R)) {
-            changed = true; // chạm vào công thức chuẩn → xóa cả khối
-            continue;
-          }
-          next.push(stroke);
-          continue;
-        }
-        // nhanh: bỏ qua nét ở xa
-        let near = false;
-        for (let i = 0; i < stroke.points.length; i++) {
-          const p = stroke.points[i];
-          if (Math.abs(p.x - pt.x) < ERASE_R + 12 && Math.abs(p.y - pt.y) < ERASE_R + 12) {
-            near = true;
-            break;
-          }
-        }
-        if (!near) {
-          next.push(stroke);
-          continue;
-        }
-        // làm dày điểm để không "nhảy" qua bán kính tẩy khi bút di chuyển nhanh
-        const dense: Point[] = [];
-        for (let i = 0; i < stroke.points.length; i++) {
-          const b = stroke.points[i];
-          if (i > 0) {
-            const a = stroke.points[i - 1];
-            const n = Math.floor(Math.hypot(b.x - a.x, b.y - a.y) / 5);
-            for (let k = 1; k <= n; k++) dense.push({ x: a.x + ((b.x - a.x) * k) / (n + 1), y: a.y + ((b.y - a.y) * k) / (n + 1) });
-          }
-          dense.push(b);
-        }
-        const pieces: Point[][] = [];
-        let cur: Point[] = [];
-        let hit = false;
-        for (const p of dense) {
-          if (Math.hypot(p.x - pt.x, p.y - pt.y) < ERASE_R) {
-            hit = true;
-            if (cur.length > 1) pieces.push(cur);
-            cur = [];
-          } else cur.push(p);
-        }
-        if (cur.length > 1) pieces.push(cur);
-        if (!hit) {
-          next.push(stroke);
-          continue;
-        }
-        changed = true;
-        pieces.forEach((pts, k) => next.push({ ...stroke, id: `${stroke.id}~${k}-${Math.random().toString(36).slice(2, 6)}`, points: pts }));
-      }
-      return changed ? next : prev;
-    });
+    const z = zoneAt(eraserKind, pt, eraserR);
+    setStrokes((prev) => eraseInZone(prev, z, eraserKind === 'stroke'));
   };
 
   const saveToUndo = () => {
@@ -3992,6 +3963,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         gridPattern={gridPattern}
         onCycleGrid={() => setGridPattern(gridPattern === 'DOTS' ? 'GRID' : gridPattern === 'GRID' ? 'BLANK' : 'DOTS')}
         onClear={handleClear}
+        eraserKind={eraserKind}
+        onEraserKind={setEraserKind}
+        eraserR={eraserR}
+        onEraserR={setEraserR}
         onExport={handleExportBoard}
         isSplitView={isSplitView}
         onToggleSplit={() => setIsSplitView((v) => !v)}

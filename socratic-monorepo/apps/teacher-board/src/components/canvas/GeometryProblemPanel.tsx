@@ -3,10 +3,11 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Eraser, Redo2, Undo2, X} from 'lucide-react';
 import {buildScene, type GeoScene} from '../../utils/geometryProblem';
+import type {V3} from '../../utils/solids';
 import {canUnfold, polygonStats, sliceSection} from '../../utils/netUnfold';
-import {addFoot, addMidpoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, setPointT, solidStats, toTikz, togglePart, visibleNames, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane} from '../../utils/geoTools';
+import {addFoot, addMidline, addMidpoint, moveFreePoint, removePoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, setPointT, solidStats, toTikz, togglePart, visibleNames, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane} from '../../utils/geoTools';
 
-export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'dist' | 'angle' | 'dpl' | 'dln' | 'alp' | 'dih';
+export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'midline' | 'delete' | 'dist' | 'angle' | 'dpl' | 'dln' | 'alp' | 'dih';
 
 export interface GeoPickConfig {
   pickMode: 'point' | 'edge' | null;
@@ -43,6 +44,8 @@ export interface GeoController {
   measureSolid: () => void;
   /** kéo một điểm trượt trên cạnh: t ∈ (0,1) từ đầu a; `done` = thả tay (ghi một bước hoàn tác). Điểm phụ thuộc và thiết diện tự cập nhật */
   setPointT: (name: string, t: number, done: boolean) => void;
+  /** kéo đỉnh tự do: dx, dy = độ dời con trỏ (px cục bộ) so với lúc bắt đầu kéo */
+  moveFree: (name: string, dx: number, dy: number, done: boolean, start: boolean) => void;
   /** hình khối có thể khai triển thành lưới */
   canNet: boolean;
   /** mức khai triển 0..1 (0 = khối); đặt có hoạt họa gấp/mở mượt */
@@ -88,6 +91,8 @@ export const GEO_TOOLS: {id: GeoTool; label: string; need: number; hint: string}
   {id: 'midpoint', label: 'Trung điểm', need: 2, hint: 'Chạm 2 điểm để lấy trung điểm'},
   {id: 'onEdge', label: 'Điểm trên cạnh', need: 1, hint: 'Chạm vào một cạnh để đặt điểm tại chỗ chạm'},
   {id: 'foot', label: 'Chân vuông góc', need: 3, hint: 'Chạm điểm cần hạ, rồi 2 điểm của đường thẳng'},
+  {id: 'midline', label: 'Đường trung bình', need: 3, hint: 'Chạm đỉnh chung của hai cạnh, rồi 2 đỉnh còn lại: nối trung điểm hai cạnh đó (song song và bằng nửa cạnh thứ ba)'},
+  {id: 'delete', label: 'Xóa điểm', need: 1, hint: 'Chạm một điểm đã thêm để xóa nó cùng các đoạn nối và điểm phụ thuộc'},
   {id: 'section', label: 'Thiết diện', need: 3, hint: 'Chạm 3 điểm xác định mặt phẳng cắt'},
 ];
 
@@ -125,6 +130,7 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
   const [info, setInfo] = useState('');
   const cur = hist[at];
   const curRef = useRef(cur);
+  const freeBase = useRef<{name: string; at: V3; scene: GeoScene} | null>(null);
   curRef.current = cur;
 
   const commit = (next: GeoScene, nextUpTo: number) => {
@@ -217,6 +223,16 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
     else if (t === 'onEdge') next = addPointOnSegment(sc, names[0], names[1], edge?.t ?? 0.5, part).scene;
     else if (t === 'foot') next = addFoot(sc, names[0], names[1], names[2], part).scene;
     else if (t === 'section') next = addSection(sc, names, part);
+    else if (t === 'midline') next = addMidline(sc, names[0], names[1], names[2], part).scene;
+    else if (t === 'delete') {
+      next = removePoint(sc, names[0]);
+      if (next === sc) {
+        setInfo(`Không xóa được ${names[0]}: đó là đỉnh của hình gốc (chỉ xóa được điểm thêm vào)`);
+        setPicks([]);
+        return;
+      }
+      setInfo(`Đã xóa ${names[0]}`);
+    }
     if (next !== sc) commit(next, cur.upTo);
     setPicks([]);
   };
@@ -267,6 +283,23 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
         setInfo('');
         if (done) commit(next, c0.upTo);
         else patchScene({pts: next.pts, defs: next.defs});
+      },
+      moveFree: (name, dx, dy, done, start) => {
+        const c0 = curRef.current ?? cur;
+        if (start) freeBase.current = {name, at: [...c0.scene.pts[name]] as V3, scene: c0.scene};
+        const b = freeBase.current;
+        if (!b || b.name !== name) return;
+        const k = b.scene.view.k || 1;
+        const next = moveFreePoint(c0.scene, name, [b.at[0] + dx / k, b.at[1] - dy / k, b.at[2]]);
+        setInfo('');
+        if (done) {
+          freeBase.current = null;
+          // lịch sử: trạng thái TRƯỚC khi kéo rồi trạng thái sau, để hoàn tác quay về đúng hình cũ
+          const h = [...hist.slice(0, at), {...hist[at], scene: b.scene}, {scene: next, upTo: c0.upTo}].slice(-30);
+          setHist(h);
+          setAt(h.length - 1);
+          onApply?.(next, c0.upTo);
+        } else patchScene({pts: next.pts, circles: next.circles, cons: next.cons});
       },
       canNet: canUnfold(cur.scene),
       net: cur.scene.net ?? 0,

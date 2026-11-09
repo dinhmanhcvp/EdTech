@@ -33,13 +33,16 @@ interface Props {
   /** điểm kéo trượt được trên cạnh (hình động): tên điểm và hai đầu cạnh */
   dragPoints?: {name: string; a: string; b: string}[];
   onDragPoint?: (name: string, t: number, done: boolean) => void;
+  /** đỉnh kéo TỰ DO (hình phẳng, giữ tính chất): dx, dy = độ dời con trỏ so với lúc bắt đầu kéo (px cục bộ) */
+  freePts?: string[];
+  onDragFree?: (name: string, dx: number, dy: number, done: boolean, start: boolean) => void;
 }
 
 const fmt = (v: number) => v.toFixed(1).replace('.', ',');
 const midOf = (a: P2, b: P2): P2 => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
 
 /** Hình học vẽ thẳng lên bảng: không khung, không nền; chỉ có nét hình, nhãn đỉnh và tay cầm nhỏ. */
-export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onOpenTools, onRotate, rotation, partChips, onTogglePart, dragPoints, onDragPoint}) => {
+export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onOpenTools, onRotate, rotation, partChips, onTogglePart, dragPoints, onDragPoint, freePts, onDragFree}) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const s = stroke.shape!;
   const t = stroke.typeset!;
@@ -47,6 +50,7 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
   const h = t.h;
   const ink = stroke.color;
   const ptDrag = useRef<{name: string; a: number; b: number; t: number} | null>(null);
+  const freeDrag = useRef<{name: string; x: number; y: number; dx: number; dy: number} | null>(null);
   const rotDrag = useRef<{sx: number; sy: number; yaw: number; pitch: number; started: boolean} | null>(null);
   const drag = useRef<{kind: 'vertex' | 'rotate'; i: number; sx: number; sy: number; ox: number; oy: number; started: boolean} | null>(null);
 
@@ -414,6 +418,54 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
                             if (d) onDragPoint(d.name, d.t, true);
                           }}
                           onPointerCancel={() => (ptDrag.current = null)}
+                        />
+                      </g>
+                    );
+                  })
+                : null}
+              {pickMode === null || pickMode === undefined
+                ? (freePts ?? []).map((nm) => {
+                    const ip = sk.names?.indexOf(nm) ?? -1;
+                    if (!onDragFree || ip < 0 || !sk.verts[ip]) return null;
+                    const P0 = sk.verts[ip];
+                    const local = (e: React.PointerEvent<Element>) => {
+                      const r = svgRef.current?.getBoundingClientRect();
+                      return r ? {x: (e.clientX - r.left) / boardScale, y: (e.clientY - r.top) / boardScale} : null;
+                    };
+                    return (
+                      <g key={`free-${nm}`}>
+                        <circle cx={P0.x} cy={P0.y} r={9} fill="#16A34A" fillOpacity={0.12} stroke="#16A34A" strokeWidth={1.2} style={{pointerEvents: 'none'}} />
+                        <circle
+                          data-testid="geo-free-point"
+                          data-name={nm}
+                          cx={P0.x}
+                          cy={P0.y}
+                          r={15}
+                          fill="transparent"
+                          style={{pointerEvents: 'auto', cursor: 'grab', touchAction: 'none'}}
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+                            onInteractStart();
+                            const q = local(e);
+                            if (!q) return;
+                            freeDrag.current = {name: nm, x: q.x, y: q.y, dx: 0, dy: 0};
+                            onDragFree(nm, 0, 0, false, true);
+                          }}
+                          onPointerMove={(e) => {
+                            const d = freeDrag.current;
+                            const q = local(e);
+                            if (!d || !q) return;
+                            d.dx = q.x - d.x;
+                            d.dy = q.y - d.y;
+                            onDragFree(d.name, d.dx, d.dy, false, false);
+                          }}
+                          onPointerUp={() => {
+                            const d = freeDrag.current;
+                            freeDrag.current = null;
+                            if (d) onDragFree(d.name, d.dx, d.dy, true, false);
+                          }}
+                          onPointerCancel={() => (freeDrag.current = null)}
                         />
                       </g>
                     );

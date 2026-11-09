@@ -161,6 +161,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     toggleColors: vi.fn(),
     measureSolid: vi.fn(),
     setPointT: vi.fn(),
+    moveFree: vi.fn(),
     canNet: true,
     net: 0,
     setNet: vi.fn(),
@@ -202,7 +203,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     fireEvent.click(screen.getByTestId('ai-fab-draw'));
     fireEvent.click(screen.getByTestId('ai-fab-draw-tools'));
     expect(tier()).toBe('draw/tools');
-    expect(ids().filter((i) => i?.startsWith('ai-fab-draw-'))).toHaveLength(5);
+    expect(ids().filter((i) => i?.startsWith('ai-fab-draw-'))).toHaveLength(7);
     fireEvent.click(screen.getByTestId('ai-fab-draw-midpoint'));
     expect(g.setTool).toHaveBeenCalledWith('midpoint');
     expect(screen.getByTestId('ai-fab-menu').getAttribute('aria-hidden')).toBe('true');

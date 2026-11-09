@@ -49,10 +49,25 @@ const KEYWORDS = [
   'đều', 'tâm', 'thuộc', 'giao', 'trùng', 'là', 'tại', 'cắt', 'bằng', 'góc', 'giữa', 'qua', 'kẻ', 'nối', 'đoạn', 'lên', 'trên', 'với', 'của', 'và', 'đứng',
   'tính', 'cho', 'gọi', 'chân', 'đường tròn', 'đường kính', 'ngoại tiếp', 'nội tiếp', 'trực tâm', 'trung tuyến', 'phân giác', 'lần lượt', 'sao cho', 'hình nón', 'hình trụ', 'hình cầu', 'khối nón', 'khối trụ', 'khối cầu', 'mặt cầu', 'bán kính', 'đường sinh',
 ];
+KEYWORDS.push('đường trung bình');
 const KW_RE = new RegExp(`(?<!\\p{L})(?:${KEYWORDS.map((k) => k.replace(/ /g, '\\s+')).join('|')})(?!\\p{L})`, 'giu');
+
+const stripAccent = (w: string) => w.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+/** Từ khóa gõ không dấu ("tam giac vuong tai A") → có dấu. Dài trước để "tam giac" thắng "tam". */
+const NO_ACCENT = new Map(KEYWORDS.map((k) => [stripAccent(k), k] as const).filter(([a, k]) => a !== k));
+const NO_ACCENT_RE = new RegExp(`(?<!\\p{L})(?:${[...NO_ACCENT.keys()].sort((a, b) => b.length - a.length).map((k) => k.replace(/ /g, '\\s+')).join('|')})(?!\\p{L})`, 'giu');
 
 export function normalizeProblem(raw: string): string {
   let t = raw || '';
+  // chỉ khôi phục dấu ở đoạn KHÔNG thuộc cụm từ khóa đã có dấu ("trung điểm" không được thành "trùng điểm")
+  const restore = (x: string) => x.replace(NO_ACCENT_RE, (m) => NO_ACCENT.get(m.toLowerCase().replace(/\s+/g, ' ')) ?? m);
+  let fixed = '';
+  let last = 0;
+  for (const k of t.matchAll(KW_RE)) {
+    fixed += restore(t.slice(last, k.index)) + k[0];
+    last = (k.index ?? 0) + k[0].length;
+  }
+  t = fixed + restore(t.slice(last));
   t = t.replace(/[’′`´]/g, "'");
   t = t.replace(/\\sqrt\s*\{([^}]*)\}/g, '√($1)').replace(/\\frac\s*\{([^}]*)\}\s*\{([^}]*)\}/g, '(($1)/($2))');
   t = t.replace(/⊥|\\perp/g, ' vuông góc ').replace(/∥|\\parallel|\/\//g, ' song song ').replace(/∩|\\cap/g, ' giao ');
@@ -300,7 +315,12 @@ function baseCoords(desc: BaseDesc, names: string[], L: (a: string, b: string) =
 
 // ------------------------------------------------------------------ mô hình hình học
 /** Điểm xác định theo điểm khác (kéo được / tự cập nhật khi điểm gốc đổi). */
-export type GeoDef = {k: 'seg'; a: string; b: string; t: number} | {k: 'foot'; p: string; a: string; b: string};
+export type GeoDef =
+  | {k: 'seg'; a: string; b: string; t: number}
+  | {k: 'foot'; p: string; a: string; b: string}
+  /** điểm tính từ các điểm gốc: trọng tâm/ngoại tâm/nội tâm/trực tâm của tam giác n, chân phân giác (n = [A,B,D]), trung điểm (n = [B,D]) */
+  | {k: 'calc'; f: 'centroid' | 'circum' | 'in' | 'ortho' | 'bis' | 'mid'; n: string[]}
+  | {k: 'inter'; a: string; b: string; c: string; d: string};
 
 /** Thiết diện cắt bởi mặt phẳng qua ba điểm: tính lại lúc vẽ nên theo kịp khi kéo điểm. */
 export interface GeoSection {
@@ -315,6 +335,8 @@ export interface GeoCircle {
   /** phần của đề đã thêm đường tròn này */
   part: number;
   label: string;
+  /** đường tròn tự tính lại khi kéo điểm gốc (hình phẳng): ngoại/nội tiếp tam giác n, hoặc đường kính n[0]n[1] */
+  of?: {f: 'circum' | 'in' | 'diam'; n: string[]};
   /** 'sphere': đường viền của mặt cầu (hình tròn có tâm và bán kính bằng của cầu, không nằm trong một mặt phẳng cố định) */
   kind?: 'circle' | 'sphere';
   /** thuộc về chính khối (nón, trụ, cầu): vẽ cùng màu nét, không phải đường tròn thêm */
@@ -368,7 +390,7 @@ function lenTable(text: string): {get: (a: string, b: string) => number | undefi
     if (sg && v !== null && !/°/.test(r[2])) m.set(key2(sg[0], sg[1]), v);
   }
   const allM = /cạnh\s*(?:đáy\s*)?(?:bằng|=)?\s*([a0-9√][^;,\s]*(?:\s*[√/*]\s*[0-9a()]+)*)/.exec(text);
-  const all = allM ? evalLength(allM[1]) ?? undefined : undefined;
+  const all = allM ? evalLength(allM[1].replace(/[.,;:]+$/, '')) ?? undefined : undefined;
   const ang = /góc\s*(?:[A-Z]{1,3}\s*)?(?:=|bằng)\s*(\d+(?:[.,]\d+)?)\s*°/.exec(text);
   return {get: (a, b) => m.get(key2(a, b)), all, angle: ang ? parseFloat(ang[1].replace(',', '.')) : undefined};
 }
@@ -633,7 +655,7 @@ function buildFigure(text: string, notes: string[]): Model | null {
 }
 
 // ------------------------------------------------------------------ điểm phụ, đường phụ
-const lineIntersect = (p1: V3, p2: V3, p3: V3, p4: V3): V3 | null => {
+export const lineIntersect = (p1: V3, p2: V3, p3: V3, p4: V3): V3 | null => {
   const d1 = sub(p2, p1);
   const d2 = sub(p4, p3);
   const n = cross(d1, d2);
@@ -663,7 +685,7 @@ const footOnPlane = (p: V3, pl: {n: V3; d: number}): V3 => sub(p, mul(pl.n, dot(
  */
 export function expandRespectively(text: string): string {
   const t = text.replace(/,\s*(?=sao cho)/g, ' ');
-  const re = /((?:[A-Z]'?\s*(?:,|và)\s*)+[A-Z]'?)\s*lần lượt\s*(là|thuộc)\s*(trung điểm|trọng tâm|các cạnh|cạnh|đoạn thẳng|đoạn)?\s*(?:của\s*)?([^;.\n]*)/gu;
+  const re = /(?<![A-Za-z'])((?:[A-Z]'?\s*(?:,|và)\s*)+[A-Z]'?)\s*(?:lần lượt\s*)?(là|thuộc)\s*(trung điểm|trọng tâm|các cạnh|cạnh|đoạn thẳng|đoạn)?\s*(?:của\s*)?([^;.\n]*)/gu;
   return t.replace(re, (whole, namesRaw: string, rel: string, what: string | undefined, rest: string) => {
     const names = namesRaw.match(/[A-Z]'?/g) ?? [];
     const objs = rest.split(/\s*(?:,|và)\s*/).map((s) => s.trim()).filter(Boolean);
@@ -760,6 +782,10 @@ function addExtras(m: Model, text0: string): void {
     m.ptPart.set(name, m.cur);
     m.notes.push(note);
   };
+  /** gắn công thức cho điểm vừa tạo (không gắn nếu điểm bị gộp vào điểm có sẵn) để nó tự theo khi kéo điểm gốc */
+  const setDef = (name: string, d: GeoDef) => {
+    if (m.dim === 2 && m.pts.has(name) && !m.defs.has(name)) m.defs.set(name, d);
+  };
 
   for (let pass = 0; pass < 2; pass++) {
     for (const c of clauses) {
@@ -775,10 +801,13 @@ function addExtras(m: Model, text0: string): void {
         }
       }
       // trọng tâm
-      if ((r = /([A-Z]'?)\s*là\s*trọng tâm\s*(?:của\s*)?(?:tam giác\s*)?((?:[A-Z]'?){3})/.exec(c))) {
-        const ps = pointsIn(r[2]).map((n) => P(n));
-        if (ps.every(Boolean)) {
-          define(r[1], centroid(ps as V3[]), `${r[1]} là trọng tâm tam giác ${r[2]}`);
+      if ((r = /([A-Z]'?)\s*là\s*trọng tâm\s*(?:của\s*)?(?:tam giác\s*)?((?:[A-Z]'?){3})?/.exec(c))) {
+        const baseTri = m.order.filter((n) => m.edges.some((e) => e.includes(n)));
+        const tn = r[2] ? pointsIn(r[2]) : baseTri.length === 3 ? baseTri : [];
+        const ps = tn.map((n) => P(n));
+        if (ps.length === 3 && ps.every(Boolean)) {
+          define(r[1], centroid(ps as V3[]), `${r[1]} là trọng tâm tam giác ${tn.join('')}`);
+          setDef(r[1], {k: 'calc', f: 'centroid', n: tn});
           continue;
         }
       }
@@ -811,6 +840,7 @@ function addExtras(m: Model, text0: string): void {
         const src = P(r[2]);
         if (src && tgt.length === 2 && P(tgt[0]) && P(tgt[1])) {
           define(r[1], footOnLine(src, P(tgt[0])!, P(tgt[1])!), `${r[1]} là hình chiếu của ${r[2]} lên ${tgt.join('')}`);
+          setDef(r[1], {k: 'foot', p: r[2], a: tgt[0], b: tgt[1]});
           addAux(r[2], r[1]);
           continue;
         }
@@ -828,16 +858,19 @@ function addExtras(m: Model, text0: string): void {
         const [a, h, b, d] = [r[1], r[2], r[3], r[4]];
         if (has(a) && !has(h) && P(b) && P(d)) {
           define(h, footOnLine(P(a)!, P(b)!, P(d)!), `${a}${h} vuông góc ${b}${d} tại ${h}`);
+          setDef(h, {k: 'foot', p: a, a: b, b: d});
           addAux(a, h);
           continue;
         }
       }
       // đường cao AH
       if ((r = /đường cao\s*([A-Z]'?)([A-Z]'?)/.exec(c)) && has(r[1]) && !has(r[2])) {
-        const tri = m.faces.length === 0 && m.order.length === 3 ? m.order : null;
+        const baseNs = m.order.filter((n) => m.edges.some((e) => e.includes(n)));
+        const tri = m.faces.length === 0 && baseNs.length === 3 ? baseNs : null;
         if (tri) {
           const opp = tri.filter((n) => n !== r![1]);
           define(r[2], footOnLine(P(r[1])!, P(opp[0])!, P(opp[1])!), `đường cao ${r[1]}${r[2]}`);
+          setDef(r[2], {k: 'foot', p: r[1], a: opp[0], b: opp[1]});
           addAux(r[1], r[2]);
           continue;
         }
@@ -854,6 +887,7 @@ function addExtras(m: Model, text0: string): void {
           const X = lineIntersect(P(s1[0])!, P(s1[1])!, P(s2[0])!, P(s2[1])!);
           if (X) {
             define(gi[3], X, `${gi[3]} là giao điểm ${gi[1]} và ${gi[2]}`);
+            setDef(gi[3], {k: 'inter', a: s1[0], b: s1[1], c: s2[0], d: s2[1]});
             for (const [u, v] of [s1, s2]) {
               const t = dot(sub(X, P(u)!), sub(P(v)!, P(u)!)) / dot(sub(P(v)!, P(u)!), sub(P(v)!, P(u)!));
               if (t >= -1e-6 && t <= 1 + 1e-6) {
@@ -1034,10 +1068,10 @@ function addExtras(m: Model, text0: string): void {
     const pl = ns.length >= 3 && ns.every(has) ? planeOf(P(ns[0])!, P(ns[1])!, P(ns[2])!) : null;
     return pl ? pl.n : ([0, 0, 1] as V3);
   };
-  const addCircle = (center: V3, normal: V3, r: number, label: string) => {
+  const addCircle = (center: V3, normal: V3, r: number, label: string, of?: GeoCircle['of']) => {
     if (!(r > 1e-9)) return;
     if (m.circles.some((q) => near(q.center, center) && Math.abs(q.r - r) < 1e-6)) return;
-    m.circles.push({center, normal: norm(normal), r, part: m.cur, label});
+    m.circles.push({center, normal: norm(normal), r, part: m.cur, label, ...(m.dim === 2 && of ? {of} : {})});
     m.notes.push(label);
   };
   const circumOf = (ns: string[]): {center: V3; r: number; normal: V3} | null => {
@@ -1055,6 +1089,43 @@ function addExtras(m: Model, text0: string): void {
   };
   for (const c of clauses) {
     let r: RegExpExecArray | null;
+    // đường trung bình: "đường trung bình MN", "MN là đường trung bình của tam giác ABC", "(song song BC)"; không có MN thì tự đặt tên
+    if ((r = /(?:([A-Z]'?)([A-Z]'?)\s*là\s*)?đường trung bình(?:\s*([A-Z]'?)([A-Z]'?)(?![A-Za-z']))?/u.exec(c))) {
+      const given = r[1] ? [r[1], r[2]] : r[3] ? [r[3], r[4]] : null;
+      const poly = polyFor(c.replace(/đường trung bình\s*(?:[A-Z]'?){2}(?![A-Za-z'])/u, ''));
+      if (!poly || !poly.every(has) || (poly.length !== 3 && poly.length !== 4)) {
+        m.ignored.push('đường trung bình: chưa xác định được tam giác/hình thang (ghi rõ "tam giác ABC")');
+        continue;
+      }
+      let ends: [string, string][]; // hai cạnh mà MN nối trung điểm
+      let base: string;
+      if (poly.length === 3) {
+        const par = /song song\s*((?:[A-Z]'?){2})(?![A-Za-z'])/u.exec(c);
+        const opp = par ? pointsIn(par[1]) : [];
+        const apex = opp.length === 2 && opp.every((n) => poly.includes(n)) ? poly.find((n) => !opp.includes(n))! : poly[0];
+        const [b, d] = poly.filter((n) => n !== apex);
+        ends = [[apex, b], [apex, d]];
+        base = `${b}${d}`;
+      } else {
+        const [A, B, C, D] = poly;
+        const parallel = (u: string, v: string, x: string, y: string) => Math.abs(cross(sub(P(v)!, P(u)!), sub(P(y)!, P(x)!))[2]) < 1e-6 * len(sub(P(v)!, P(u)!)) * len(sub(P(y)!, P(x)!));
+        const abcd = parallel(A, B, C, D);
+        ends = abcd ? [[B, C], [D, A]] : [[A, B], [C, D]];
+        base = abcd ? `${A}${B} và ${C}${D}` : `${B}${C} và ${D}${A}`;
+      }
+      const free = [...'MNPQRTUVWXYZ'].filter((n) => !has(n));
+      const nm = given ?? [free[0], free[1]];
+      nm.forEach((n, i) => {
+        const [u, v] = ends[i];
+        define(n, mul(add(P(u)!, P(v)!), 0.5), `${n} là trung điểm ${u}${v}`);
+        if (m.pts.has(n) && !m.defs.has(n)) m.defs.set(n, {k: 'seg', a: u, b: v, t: 0.5});
+      });
+      if (has(nm[0]) && has(nm[1])) {
+        addAux(nm[0], nm[1]);
+        m.notes.push(`${nm[0]}${nm[1]} là đường trung bình: song song ${base}, ${poly.length === 3 ? `bằng một nửa ${base}` : 'bằng nửa tổng hai đáy'}`);
+      }
+      continue;
+    }
     // "O là tâm đường tròn ngoại tiếp tam giác ABC" cũng vẽ đường tròn đó
     const nameCenter = /([A-Z]'?)\s*là\s*tâm\s*đường tròn\s*(?:ngoại|nội)\s*tiếp/u.exec(c);
     const kind = /đường tròn\s*(ngoại|nội)\s*tiếp|(?<![\p{L}])(ngoại|nội)\s*tiếp/u.exec(c);
@@ -1074,15 +1145,17 @@ function addExtras(m: Model, text0: string): void {
           const sum = a + b + cc;
           const n0 = cross(sub(B, A), sub(C, A));
           const center = mul(add(add(mul(A, a), mul(B, b)), mul(C, cc)), 1 / sum);
-          addCircle(center, n0, len(n0) / sum, label);
+          addCircle(center, n0, len(n0) / sum, label, {f: 'in', n: ns});
           if (nameCenter && !has(nameCenter[1])) define(nameCenter[1], center, `${nameCenter[1]} là tâm đường tròn nội tiếp ${ns.join('')}`);
+          if (nameCenter) setDef(nameCenter[1], {k: 'calc', f: 'in', n: ns});
         }
       } else {
         const ci = circumOf(ns);
         if (!ci) m.ignored.push(`${ns.join('')} không có đường tròn ngoại tiếp (không nằm trên một đường tròn)`);
         else {
-          addCircle(ci.center, ci.normal, ci.r, label);
+          addCircle(ci.center, ci.normal, ci.r, label, ns.length === 3 ? {f: 'circum', n: ns} : undefined);
           if (nameCenter && !has(nameCenter[1])) define(nameCenter[1], ci.center, `${nameCenter[1]} là tâm đường tròn ngoại tiếp ${ns.join('')}`);
+          if (nameCenter && ns.length === 3) setDef(nameCenter[1], {k: 'calc', f: 'circum', n: ns});
         }
       }
       continue;
@@ -1092,7 +1165,7 @@ function addExtras(m: Model, text0: string): void {
       const s = segOf(r[1]);
       if (s && has(s[0]) && has(s[1])) {
         const bp = basePoly();
-        addCircle(mul(add(P(s[0])!, P(s[1])!), 0.5), bp ? normalOf(bp) : ([0, 0, 1] as V3), len(sub(P(s[0])!, P(s[1])!)) / 2, `đường tròn đường kính ${r[1]}`);
+        addCircle(mul(add(P(s[0])!, P(s[1])!), 0.5), bp ? normalOf(bp) : ([0, 0, 1] as V3), len(sub(P(s[0])!, P(s[1])!)) / 2, `đường tròn đường kính ${r[1]}`, {f: 'diam', n: [s[0], s[1]]});
       }
       continue;
     }
@@ -1100,7 +1173,10 @@ function addExtras(m: Model, text0: string): void {
     if ((r = /([A-Z]'?)\s*là\s*trực tâm\s*(?:của\s*)?(?:tam giác\s*)?((?:[A-Z]'?){3})/u.exec(c))) {
       const ns = pointsIn(r[2]);
       const ci = circumOf(ns);
-      if (ci && !has(r[1])) define(r[1], sub(add(add(P(ns[0])!, P(ns[1])!), P(ns[2])!), mul(ci.center, 2)), `${r[1]} là trực tâm tam giác ${ns.join('')}`);
+      if (ci && !has(r[1])) {
+        define(r[1], sub(add(add(P(ns[0])!, P(ns[1])!), P(ns[2])!), mul(ci.center, 2)), `${r[1]} là trực tâm tam giác ${ns.join('')}`);
+        setDef(r[1], {k: 'calc', f: 'ortho', n: ns});
+      }
       continue;
     }
     // trung tuyến AM / phân giác AD (tam giác cơ sở)
@@ -1116,6 +1192,7 @@ function addExtras(m: Model, text0: string): void {
           const ad = len(sub(P(r[2])!, P(d)!));
           const k = isMedian ? 0.5 : ab / (ab + ad);
           define(name, add(P(b)!, mul(sub(P(d)!, P(b)!), k)), `${isMedian ? 'trung tuyến' : 'phân giác'} ${r[2]}${name}`);
+          setDef(name, isMedian ? {k: 'calc', f: 'mid', n: [b, d]} : {k: 'calc', f: 'bis', n: [r[2], b, d]});
           addAux(r[2], name);
         }
       }
@@ -1178,6 +1255,8 @@ export interface GeoScene {
   circles?: GeoCircle[];
   sections?: GeoSection[];
   defs?: Record<string, GeoDef>;
+  /** ràng buộc hình phẳng (vuông góc/bằng nhau/song song) suy ra lần kéo đầu và giữ nguyên khi kéo đỉnh */
+  cons?: import('./geoConstraints').Cons[];
   /** xoay tự do (phép chiếu trực giao); không có = góc chuẩn SGK (chiếu xiên cố định) */
   rot?: {yaw: number; pitch: number};
   /** tô màu từng mặt của khối */

@@ -3,8 +3,9 @@
  * chân đường vuông góc, thiết diện, và "thêm yêu cầu" bằng lời. Mọi hàm trả CẢNH MỚI (không sửa cảnh cũ) để hoàn tác được.
  * Điểm/đường mới gắn vào `part` đang hiển thị nên bật/tắt từng phần của đề vẫn đúng.
  */
-import {add, dot, mul, sub, type V3} from './solids';
-import {appendPart, modelFromScene, partShown, renderScene, sceneFromModel, type GeoDef, type GeoScene} from './geometryProblem';
+import {add, cross, dot, len, mul, sub, type V3} from './solids';
+import {inferCons, solveDrag, type P2} from './geoConstraints';
+import {appendPart, lineIntersect, modelFromScene, partShown, renderScene, sceneFromModel, type GeoDef, type GeoScene} from './geometryProblem';
 import type {ShapeMeta} from './lassoGeometry';
 
 const NAMES = 'MNPQRTUVWXYZHKIJEFGL'.split('');
@@ -220,28 +221,140 @@ export const sceneGrew = (a: GeoScene, b: GeoScene) => {
 };
 
 // ------------------------------------------------------------------ điểm kéo được trên cạnh (hình động)
-/** Tính lại mọi điểm xác định theo điểm khác (điểm trên cạnh, chân đường vuông góc), theo thứ tự tạo ra. */
+/** Công thức một điểm xác định theo các điểm gốc (null nếu thiếu điểm hoặc suy biến). */
+function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
+  const g = (n: string) => pts[n] as V3 | undefined;
+  if (d.k === 'seg') {
+    const [A, B] = [g(d.a), g(d.b)];
+    return A && B ? (add(A, mul(sub(B, A), d.t)) as V3) : null;
+  }
+  if (d.k === 'foot') {
+    const [P, A, B] = [g(d.p), g(d.a), g(d.b)];
+    if (!P || !A || !B) return null;
+    const dir = sub(B, A);
+    const den = dot(dir, dir);
+    return den > 1e-12 ? (add(A, mul(dir, dot(sub(P, A), dir) / den)) as V3) : null;
+  }
+  if (d.k === 'inter') {
+    const [A, B, C, D] = [g(d.a), g(d.b), g(d.c), g(d.d)];
+    return A && B && C && D ? lineIntersect(A, B, C, D) : null;
+  }
+  const ps = d.n.map(g);
+  if (ps.some((p) => !p)) return null;
+  const [A, B, C] = ps as V3[];
+  if (d.f === 'mid') return mul(add(A, B), 0.5) as V3;
+  if (d.f === 'bis') {
+    const ab = len(sub(A, B));
+    const ad = len(sub(A, C));
+    return ab + ad > 1e-12 ? (add(B, mul(sub(C, B), ab / (ab + ad))) as V3) : null;
+  }
+  if (d.f === 'centroid') return mul(add(add(A, B), C), 1 / 3) as V3;
+  if (d.f === 'in') {
+    const [a, b, c] = [len(sub(B, C)), len(sub(A, C)), len(sub(A, B))];
+    return mul(add(add(mul(A, a), mul(B, b)), mul(C, c)), 1 / (a + b + c)) as V3;
+  }
+  const ca = sub(A, C);
+  const cb = sub(B, C);
+  const n0 = cross(ca, cb);
+  const nn = dot(n0, n0);
+  if (nn < 1e-12) return null;
+  const O = add(C, mul(cross(sub(mul(cb, dot(ca, ca)), mul(ca, dot(cb, cb))), n0), 1 / (2 * nn))) as V3;
+  return d.f === 'circum' ? O : (sub(add(add(A, B), C), mul(O, 2)) as V3);
+}
+
+/** Tính lại mọi điểm xác định theo điểm khác (điểm trên cạnh, chân đường vuông góc, trọng tâm, giao điểm…) và đường tròn gắn với chúng, theo thứ tự tạo ra. */
 export function applyDefs(sc: GeoScene): GeoScene {
   const defs = sc.defs ?? {};
-  if (Object.keys(defs).length === 0) return sc;
+  const hasCircleOf = sc.circles?.some((c) => c.of);
+  if (Object.keys(defs).length === 0 && !hasCircleOf) return sc;
   const pts = {...sc.pts};
   for (const [name, d] of Object.entries(defs)) {
-    if (d.k === 'seg') {
-      const A = pts[d.a] as V3 | undefined;
-      const B = pts[d.b] as V3 | undefined;
-      if (A && B) pts[name] = add(A, mul(sub(B, A), d.t)) as V3;
-    } else {
-      const P = pts[d.p] as V3 | undefined;
-      const A = pts[d.a] as V3 | undefined;
-      const B = pts[d.b] as V3 | undefined;
-      if (P && A && B) {
-        const dir = sub(B, A);
-        const den = dot(dir, dir);
-        if (den > 1e-12) pts[name] = add(A, mul(dir, dot(sub(P, A), dir) / den)) as V3;
+    const p = calcDef(d, pts);
+    if (p) pts[name] = p;
+  }
+  if (!hasCircleOf) return {...sc, pts};
+  const circles = sc.circles!.map((c) => {
+    if (!c.of) return c;
+    const q = c.of.n.map((n) => pts[n] as V3 | undefined);
+    if (q.some((x) => !x)) return c;
+    const [A, B, C] = q as V3[];
+    if (c.of.f === 'diam') return {...c, center: mul(add(A, B), 0.5) as V3, r: len(sub(A, B)) / 2};
+    const center = calcDef({k: 'calc', f: c.of.f, n: c.of.n}, pts);
+    if (!center) return c;
+    const r = c.of.f === 'circum' ? len(sub(center, A)) : len(cross(sub(B, A), sub(C, A))) / (len(sub(B, C)) + len(sub(A, C)) + len(sub(A, B)));
+    return {...c, center, r};
+  });
+  return {...sc, pts, circles};
+}
+
+/** Điểm kéo TỰ DO được (hình phẳng): đỉnh không phụ thuộc điểm nào và nằm trên một cạnh của hình. Kéo đi thì tính chất của hình được giữ. */
+export function freePoints(sc: GeoScene): string[] {
+  if (sc.dim !== 2) return [];
+  const onEdge = new Set(sc.edges.flat());
+  return sc.order.filter((n) => !sc.defs?.[n] && onEdge.has(n));
+}
+
+/** Kéo điểm tự do `name` tới `to`; các điểm khác của hình tự chỉnh để giữ vuông góc / bằng nhau / song song. Không giữ được tính chất thì trả cảnh cũ. */
+export function moveFreePoint(sc: GeoScene, name: string, to: V3): GeoScene {
+  const free = freePoints(sc);
+  if (!free.includes(name)) return sc;
+  const p2: Record<string, P2> = Object.fromEntries(free.map((n) => [n, [sc.pts[n][0], sc.pts[n][1]] as P2]));
+  const live = new Set(free);
+  const cons = (sc.cons ?? inferCons(p2, sc.edges.filter(([a, b]) => live.has(a) && live.has(b)))).filter((c) =>
+    (c.k === 'perp' ? [c.a, c.v, c.c] : [c.a, c.b, c.c, c.d]).every((n) => live.has(n)),
+  );
+  const ring = sc.faces[0] ?? sc.polys[0]?.names ?? [];
+  const out = solveDrag(p2, cons, name, [to[0], to[1]], ring.filter((n) => live.has(n)));
+  if (!out) return sc;
+  const pts = {...sc.pts};
+  for (const n of free) pts[n] = [out[n][0], out[n][1], sc.pts[n][2]];
+  return applyDefs({...sc, pts, cons});
+}
+
+/** Xóa một điểm cùng mọi thứ dựa vào nó: đoạn nối, cạnh, mặt, thiết diện, đường tròn và các điểm xác định theo nó. Điểm gốc của hình (không có công thức) thì giữ nguyên. */
+export function removePoint(sc: GeoScene, name: string): GeoScene {
+  if (!sc.pts[name]) return sc;
+  if (!sc.defs?.[name] && sc.ptPart[name] === undefined) return sc;
+  if (!sc.defs?.[name] && (sc.ptPart[name] ?? 0) === 0 && sc.edges.some((e) => e.includes(name))) return sc;
+  const n = clone(sc);
+  const dead = new Set([name]);
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const [k, d] of Object.entries(n.defs ?? {})) {
+      const deps = d.k === 'seg' ? [d.a, d.b] : d.k === 'foot' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.n;
+      if (!dead.has(k) && deps.some((x) => dead.has(x))) {
+        dead.add(k);
+        grew = true;
       }
     }
   }
-  return {...sc, pts};
+  const alive = (x: string) => !dead.has(x);
+  for (const k of dead) {
+    delete n.pts[k];
+    delete n.ptPart[k];
+    delete n.defs?.[k];
+  }
+  n.order = n.order.filter(alive);
+  n.marks = n.marks.filter(alive);
+  n.aux = n.aux.filter(([a, b]) => alive(a) && alive(b));
+  n.edges = n.edges.filter(([a, b]) => alive(a) && alive(b));
+  n.faces = n.faces.filter((f) => f.every(alive));
+  n.polys = n.polys.filter((p) => p.names.every(alive));
+  n.sections = (n.sections ?? []).filter((x) => x.plane.every(alive));
+  n.circles = (n.circles ?? []).filter((c) => !c.of || c.of.n.every(alive));
+  n.cons = n.cons?.filter((c) => (c.k === 'perp' ? [c.a, c.v, c.c] : [c.a, c.b, c.c, c.d]).every(alive));
+  for (const [orig, al] of Object.entries(n.merged)) {
+    n.merged[orig] = al.filter(alive);
+    if (!alive(orig) || n.merged[orig].length === 0) delete n.merged[orig];
+  }
+  return n;
+}
+
+/** Đường trung bình: M, N là trung điểm hai cạnh kề nhau của tam giác (a-b và a-c, a là đỉnh chung), nối MN. */
+export function addMidline(sc: GeoScene, a: string, b: string, c: string, part: number): {scene: GeoScene; names: [string, string]} {
+  const first = addMidpoint(sc, a, b, part);
+  const second = addMidpoint(first.scene, a, c, part);
+  return {scene: addSegment(second.scene, first.name, second.name, part), names: [first.name, second.name]};
 }
 
 /** Các điểm kéo được trên cạnh: tên, hai đầu cạnh. */

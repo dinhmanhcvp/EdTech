@@ -226,17 +226,20 @@ export function BookShelf({books, testId, tabs, searchTestId, searchPlaceholder 
                       </span>
                       <span className="text-[7px] font-semibold tracking-wider opacity-80">{b.tag.split(' · ')[0]}</span>
                     </div>
-                    {/* bìa */}
+                    {/* bìa: có ảnh trang đầu thì ảnh nằm nửa trên, chữ nằm trên dải màu bên dưới (ảnh sáng làm chữ kem khó đọc) */}
                     <div
-                      className="absolute flex flex-col justify-between overflow-hidden rounded-[6px] p-4 text-[#F7F1E3]"
-                      style={{width: COVER, height: h, left: -COVER / 2, top: -HEIGHT / 2 + (HEIGHT - h), transform: `rotateY(90deg) translateZ(${SPINE / 2}px)`, backfaceVisibility: 'hidden', background: cover ? `linear-gradient(to top, ${shade(b.hue, 14)} 8%, transparent 55%), center / cover url(${cover})` : `radial-gradient(circle at 50% 86%, ${shade(b.hue, 40, 40)} 0 16%, transparent 17%), ${shade(b.hue, 30)}`, boxShadow: open ? '0 40px 60px -28px rgba(20,16,10,.65)' : undefined, outline: picked ? '3px solid #F5C451' : undefined, outlineOffset: -3}}
+                      className="absolute flex flex-col overflow-hidden rounded-[6px] text-[#F7F1E3]"
+                      style={{width: COVER, height: h, left: -COVER / 2, top: -HEIGHT / 2 + (HEIGHT - h), transform: `rotateY(90deg) translateZ(${SPINE / 2}px)`, backfaceVisibility: 'hidden', background: cover ? shade(b.hue, 22) : `radial-gradient(circle at 50% 86%, ${shade(b.hue, 40, 40)} 0 16%, transparent 17%), ${shade(b.hue, 30)}`, boxShadow: open ? '0 40px 60px -28px rgba(20,16,10,.65)' : undefined, outline: picked ? '3px solid #F5C451' : undefined, outlineOffset: -3}}
                     >
-                      <span className="text-[9px] font-semibold uppercase tracking-[.2em] opacity-90">{b.tag}</span>
-                      <strong className="font-serif text-[22px] font-normal leading-tight drop-shadow">{b.title}</strong>
-                      <span className="flex items-end justify-between text-[10px] opacity-90">
-                        <span>{b.meta}</span>
-                        {picked && <span className="rounded border border-current px-1 py-0.5 text-[8px] font-bold tracking-widest">ĐÃ CHỌN</span>}
-                      </span>
+                      {cover && <div aria-hidden className="shrink-0 bg-white" style={{height: '54%', background: `#fff center top / cover url(${cover})`}} />}
+                      <div className={`flex min-h-0 flex-1 flex-col justify-between ${cover ? 'px-3 py-2' : 'p-4'}`}>
+                        <span className="text-[9px] font-semibold uppercase tracking-[.2em] opacity-90">{b.tag}</span>
+                        <strong className={`font-serif font-normal leading-tight drop-shadow ${cover ? 'line-clamp-2 text-[16px]' : 'text-[22px]'}`}>{b.title}</strong>
+                        <span className="flex items-end justify-between text-[10px] opacity-90">
+                          <span>{b.meta}</span>
+                          {picked && <span className="rounded border border-current px-1 py-0.5 text-[8px] font-bold tracking-widest">ĐÃ CHỌN</span>}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );

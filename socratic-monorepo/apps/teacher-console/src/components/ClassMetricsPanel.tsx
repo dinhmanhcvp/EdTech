@@ -29,8 +29,8 @@ export function ClassMetricsPanel({consoleClassId}: {consoleClassId: string}) {
   if (!m) return <div data-testid="metrics-panel" className="mt-2 w-full text-xs text-stone-500">Đang tải chỉ số…</div>;
 
   const label = (id: string) => m.kcs.find((k) => k.id === id)?.label ?? id;
-  // cột bản đồ nhiệt: mọi kiến thức có nhãn hoặc đã có số liệu của ít nhất một em
-  const kcIds = [...new Set([...m.kcs.map((k) => k.id), ...m.students.flatMap((s) => Object.keys(s.mastery))])];
+  // cột bản đồ nhiệt: chỉ kiến thức đã có số liệu của lớp này (giáo viên có nhiều môn, kho kiến thức dùng chung)
+  const kcIds = [...new Set(m.students.flatMap((s) => Object.keys(s.mastery)))];
   const needs = m.students.filter((s) => s.needsSupport);
   const active = m.students.filter((s) => s.done > 0).length;
 
@@ -86,7 +86,7 @@ export function ClassMetricsPanel({consoleClassId}: {consoleClassId: string}) {
               </tbody>
             </table>
           </div>
-          {kcIds.length === 0 && <p className="text-stone-500">Chưa có kiến thức nào được gắn. Gắn kiến thức vào câu bài tập hoặc giáo án để thấy bản đồ nắm vững.</p>}
+          {kcIds.length === 0 && <p className="text-stone-500">Chưa có số liệu theo kiến thức: cần giao bài tập có gắn kiến thức và để học sinh làm bài.</p>}
           <p className="text-stone-400">Màu: đỏ dưới 40% · vàng 40–70% · xanh trên 70% (xác suất đã nắm vững, ước lượng từ các lần làm bài).</p>
         </>
       )}

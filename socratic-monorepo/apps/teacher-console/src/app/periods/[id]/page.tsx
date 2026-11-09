@@ -118,7 +118,7 @@ function PeriodPage({id}: {id: string}) {
         <h1 data-testid="period-heading" className="min-w-0 flex-1 truncate text-lg font-semibold">
           {period.title}
         </h1>
-        <span data-testid="period-status" data-status={period.status} className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${period.status === 'live' ? 'bg-emerald-100 text-emerald-700' : period.status === 'ended' ? 'bg-stone-100 text-stone-600' : 'bg-blue-50 text-blue-700'}`}>
+        <span data-testid="period-status" data-status={period.status} className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${period.status === 'live' ? 'bg-emerald-100 text-emerald-700' : period.status === 'ended' ? 'bg-stone-100 text-stone-600' : 'bg-brand-50 text-brand-700'}`}>
           {period.status === 'live' ? 'Đang dạy' : period.status === 'ended' ? 'Đã dạy' : 'Đã soạn'}
         </span>
       </div>
@@ -160,7 +160,7 @@ function PeriodPage({id}: {id: string}) {
 
       {period.status === 'live' && (
         <>
-          <details className="rounded-2xl border border-[#E6E4DD] bg-white p-3 text-sm" data-testid="live-prep-summary">
+          <details className="rounded-2xl border border-rule bg-white shadow-card p-3 text-sm" data-testid="live-prep-summary">
             <summary className="cursor-pointer font-medium text-stone-700">
               Chuẩn bị của tiết {cls ? `· ${cls.name}` : ''}
             </summary>
@@ -200,7 +200,7 @@ function PeriodPage({id}: {id: string}) {
       )}
 
       {period.status === 'ended' && (
-        <section data-testid="period-record" className="flex flex-col gap-3 rounded-2xl border border-[#E6E4DD] bg-white p-4">
+        <section data-testid="period-record" className="flex flex-col gap-3 rounded-2xl border border-rule bg-white shadow-card p-4">
           <p className="text-sm text-stone-600">
             Dạy từ {when(period.started_at)} đến {when(period.ended_at)}
             {cls ? ` · ${cls.name}` : ''}.
@@ -213,7 +213,7 @@ function PeriodPage({id}: {id: string}) {
           {record && record.submissions.length > 0 ? (
             <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" data-testid="record-submissions">
               {record.submissions.map((s, i) => (
-                <li key={i} className="flex flex-col gap-1 rounded-lg border border-[#E6E4DD] p-1.5">
+                <li key={i} className="flex flex-col gap-1 rounded-lg border border-rule p-1.5">
                   <Thumb strokes={s.strokes} label={`Bài của ${s.name}`} />
                   <span className="truncate text-[11px] font-semibold text-stone-800">{s.name}</span>
                 </li>

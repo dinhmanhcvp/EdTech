@@ -34,8 +34,8 @@ function Plans() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <h1 className="flex-1 text-lg font-semibold">Giáo án theo mục</h1>
-        <button data-testid="plan-new" onClick={() => setCurrent(null)} className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700">
+        <h1 className="flex-1 font-serif text-2xl font-medium tracking-tight">Giáo án theo mục</h1>
+        <button data-testid="plan-new" onClick={() => setCurrent(null)} className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700">
           <Plus className="h-4 w-4" /> Giáo án mới
         </button>
       </div>
@@ -48,7 +48,7 @@ function Plans() {
         {plans?.length === 0 && current === undefined && <li className="text-sm text-stone-500">Chưa có giáo án nào.</li>}
         {plans?.map((p) => (
           <li key={p.id}>
-            <button data-testid="plan-open" aria-pressed={current === p.id} onClick={() => setCurrent(p.id)} className="rounded-xl border border-[#E6E4DD] bg-white px-3 py-2 text-left text-sm hover:bg-stone-50 aria-[pressed=true]:border-blue-500 aria-[pressed=true]:bg-blue-50">
+            <button data-testid="plan-open" aria-pressed={current === p.id} onClick={() => setCurrent(p.id)} className="rounded-xl border border-rule bg-white px-3 py-2 text-left text-sm hover:bg-stone-50 aria-[pressed=true]:border-brand-500 aria-[pressed=true]:bg-brand-50">
               <span className="block font-semibold text-stone-900">{p.title}</span>
               <span className="text-xs text-stone-500">{SUBJECT[p.subject] ?? p.subject} · phiên bản {p.currentVersion}</span>
             </button>

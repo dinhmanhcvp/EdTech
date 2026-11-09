@@ -44,7 +44,10 @@ describe('chỉ số lớp', () => {
     expect(await screen.findByTestId('metrics-progress')).toHaveTextContent('50%');
     expect(screen.getByTestId('metrics-needs')).toHaveTextContent('An: Chưa vững: Phương trình; Sai 3 câu liên tiếp');
     expect(screen.getAllByTestId('metrics-row')).toHaveLength(2);
-    expect(within(screen.getAllByTestId('metrics-row')[0]).getByText('20%')).toHaveClass('bg-rose-100');
+    const pill = within(screen.getAllByTestId('metrics-row')[0]).getByTestId('status-pill');
+    expect(pill).toHaveAttribute('data-level', 'stuck');
+    expect(pill).toHaveTextContent('Mắc kẹt');
+    expect(pill).toHaveTextContent('20%');
     expect(hub.linkClass).toHaveBeenCalledWith('c1');
     expect(hub.classMetrics).toHaveBeenCalledWith('h1');
   });

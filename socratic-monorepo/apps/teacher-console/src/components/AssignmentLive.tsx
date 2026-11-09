@@ -23,7 +23,7 @@ function Photo({submissionId}: {submissionId: string}) {
   useEffect(() => {
     hub.submissionBlobUrl(submissionId).then(setSrc).catch(() => setSrc(null));
   }, [submissionId]);
-  return src ? <img src={src} alt="Ảnh bài làm" className="max-h-48 rounded border border-[#E6E4DD] object-contain" /> : null;
+  return src ? <img src={src} alt="Ảnh bài làm" className="max-h-48 rounded border border-rule object-contain" /> : null;
 }
 
 function RunCard({run, rows, onChanged, live}: {run: PeriodRun; rows: GridRow[]; onChanged: () => void; live: boolean}) {
@@ -41,7 +41,7 @@ function RunCard({run, rows, onChanged, live}: {run: PeriodRun; rows: GridRow[];
   };
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-[#E6E4DD] bg-white p-4">
+    <section className="flex flex-col gap-3 rounded-2xl border border-rule bg-white shadow-card p-4">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-semibold text-stone-900">{run.title}</h3>
         <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">{PHASE[run.phase]}</span>
@@ -64,7 +64,7 @@ function RunCard({run, rows, onChanged, live}: {run: PeriodRun; rows: GridRow[];
           </thead>
           <tbody>
             {run.metrics.students.map((s) => (
-              <tr key={s.studentId} className="border-t border-[#E6E4DD]">
+              <tr key={s.studentId} className="border-t border-rule">
                 <td className="py-1 pr-3 font-medium text-stone-800">{s.name}</td>
                 {run.metrics.questions.map((q) => {
                   const c = cell(byCell.get(`${s.studentId}:${q.questionId}`));
@@ -77,7 +77,7 @@ function RunCard({run, rows, onChanged, live}: {run: PeriodRun; rows: GridRow[];
                 <td className="px-1.5 text-center">{s.score10 ?? '—'}</td>
               </tr>
             ))}
-            <tr className="border-t border-[#E6E4DD] text-stone-500">
+            <tr className="border-t border-rule text-stone-500">
               <td className="py-1 pr-3">Tỉ lệ đúng</td>
               {run.metrics.questions.map((q) => <td key={q.questionId} className="text-center">{q.correctRate === null ? '—' : `${Math.round(q.correctRate * 100)}%`}</td>)}
               <td />
@@ -106,7 +106,7 @@ function RunCard({run, rows, onChanged, live}: {run: PeriodRun; rows: GridRow[];
                   <button data-testid="review-wrong" onClick={() => act(() => hub.review(r.submissionId, 0))} className="flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1 font-semibold text-white"><XCircle className="h-3.5 w-3.5" /> Sai</button>
                   <button data-testid="review-half" onClick={() => act(() => hub.review(r.submissionId, 0.5))} className="rounded-lg border border-[#DCD9D0] px-2.5 py-1">Nửa điểm</button>
                   {live && r.hasPhoto && (
-                    <button data-testid="show-on-board" onClick={() => act(() => hub.show(run.runId, r.submissionId))} className="ml-auto flex items-center gap-1 rounded-lg border border-blue-300 px-2.5 py-1 text-blue-700"><Monitor className="h-3.5 w-3.5" /> Chiếu lên bảng</button>
+                    <button data-testid="show-on-board" onClick={() => act(() => hub.show(run.runId, r.submissionId))} className="ml-auto flex items-center gap-1 rounded-lg border border-brand-300 px-2.5 py-1 text-brand-700"><Monitor className="h-3.5 w-3.5" /> Chiếu lên bảng</button>
                   )}
                 </div>
               </div>

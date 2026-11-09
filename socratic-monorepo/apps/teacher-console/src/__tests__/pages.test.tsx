@@ -34,7 +34,7 @@ vi.mock('../lib/api', async () => ({...(await vi.importActual<typeof import('../
 
 import {ApiError, setToken} from '../lib/api';
 import LoginPage from '../app/login/page';
-import Dashboard from '../app/page';
+import Dashboard from '../app/periods/page'; // Hồ sơ tiết học (danh sách và soạn tiết mới); trang chủ giờ là cockpit ba trạng thái
 import ClassesPage from '../app/classes/page';
 import LessonsPage from '../app/lessons/page';
 import PeriodRoute from '../app/periods/[id]/page';

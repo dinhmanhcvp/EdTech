@@ -79,9 +79,9 @@ export function ResourceList() {
   const f = 'rounded-lg border border-[#DCD9D0] px-3 py-2 text-sm';
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-lg font-semibold">Tài nguyên</h1>
+      <h1 className="font-serif text-2xl font-medium tracking-tight">Tài nguyên</h1>
       {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
-      <form onSubmit={upload} className="grid gap-2 rounded-2xl border border-[#E6E4DD] bg-white p-3 sm:grid-cols-[1fr_8rem_8rem]">
+      <form onSubmit={upload} className="grid gap-2 rounded-2xl border border-rule bg-white shadow-card p-3 sm:grid-cols-[1fr_8rem_8rem]">
         <input data-testid="upload-title" className={f} placeholder="Tên (VD: Đề 15 phút hàm số)" value={form.title} maxLength={160} onChange={(e) => setForm({...form, title: e.target.value})} />
         <select data-testid="upload-kind" className={f} value={form.kind} onChange={(e) => setForm({...form, kind: e.target.value as ResourceKind})}>
           {(Object.keys(KIND_LABEL) as ResourceKind[]).map((k) => (
@@ -94,7 +94,7 @@ export function ResourceList() {
           ))}
         </select>
         <input data-testid="upload-file" type="file" multiple accept="application/pdf,image/*" className="text-sm sm:col-span-2" onChange={(e) => setForm({...form, files: Array.from(e.target.files || [])})} />
-        <button data-testid="upload-submit" disabled={busy || !form.files.length || !form.title.trim()} className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">
+        <button data-testid="upload-submit" disabled={busy || !form.files.length || !form.title.trim()} className="flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">
           <Upload className="h-4 w-4" /> {busy ? 'Đang tải…' : 'Tải lên'}
         </button>
         <p className="text-xs text-stone-500 sm:col-span-3">Một file PDF (tối đa 20 trang, 15 MB) hoặc nhiều ảnh. File Word/PowerPoint hãy xuất sang PDF trước.</p>
@@ -110,7 +110,7 @@ export function ResourceList() {
         emptyAll="Kệ còn trống. Tải slide, bài tập hoặc đề lên để bắt đầu."
         actions={(b) => (
           <div className="flex items-center gap-1">
-            <Link href={`/resources/${b.id}`} data-testid="resource-open" className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700">
+            <Link href={`/resources/${b.id}`} data-testid="resource-open" className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700">
               <Pencil className="h-3.5 w-3.5" /> Mở & soạn câu
             </Link>
             {confirmDel === b.id ? (

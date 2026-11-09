@@ -64,7 +64,7 @@ export function LiveControl({roomId, live, send, prompts, pairCode, onRepair, on
         )}
       </div>
 
-      <section className="grid gap-4 rounded-2xl border border-[#E6E4DD] bg-white p-4 sm:grid-cols-[1fr_auto]">
+      <section className="grid gap-4 rounded-2xl border border-rule bg-white shadow-card p-4 sm:grid-cols-[1fr_auto]">
         <div className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold text-stone-800">Ghép với bảng</h3>
           {pairCode ? (
@@ -82,7 +82,7 @@ export function LiveControl({roomId, live, send, prompts, pairCode, onRepair, on
           </button>
         </div>
         <div className="flex flex-col items-center gap-1 text-center">
-          {qr ? <img src={qr} alt="QR cho học sinh vào lớp" className="h-28 w-28 rounded-lg border border-[#E6E4DD]" /> : <div className="h-28 w-28 rounded-lg border border-dashed border-[#DCD9D0]" />}
+          {qr ? <img src={qr} alt="QR cho học sinh vào lớp" className="h-28 w-28 rounded-lg border border-rule" /> : <div className="h-28 w-28 rounded-lg border border-dashed border-[#DCD9D0]" />}
           <div className="text-[10px] uppercase tracking-wider text-stone-500">Học sinh vào lớp</div>
           <div data-testid="room-code" className="font-mono text-lg font-bold tracking-[0.2em] text-stone-900">
             {roomId}
@@ -90,7 +90,7 @@ export function LiveControl({roomId, live, send, prompts, pairCode, onRepair, on
         </div>
       </section>
 
-      <section className="rounded-2xl border border-[#E6E4DD] bg-white p-4">
+      <section className="rounded-2xl border border-rule bg-white shadow-card p-4">
         <h3 className="mb-2 text-sm font-semibold text-stone-800">Học sinh trong phòng ({live.studentCount})</h3>
         {live.roster.length === 0 ? (
           <p className="text-xs text-stone-400">Chưa có ai vào. Cho học sinh quét QR hoặc nhập mã lớp.</p>
@@ -99,7 +99,7 @@ export function LiveControl({roomId, live, send, prompts, pairCode, onRepair, on
             {live.roster.map((s) => {
               const has = live.control === s.id;
               return (
-                <li key={s.id} className={`flex items-center gap-1.5 rounded-full border py-1 pl-2.5 pr-1 text-xs ${has ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-[#E6E4DD] bg-[#F8F7F4] text-stone-700'}`}>
+                <li key={s.id} className={`flex items-center gap-1.5 rounded-full border py-1 pl-2.5 pr-1 text-xs ${has ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-rule bg-[#F8F7F4] text-stone-700'}`}>
                   {s.name}
                   <button data-testid={`delegate-${s.id}`} onClick={() => send({type: 'DELEGATE', studentId: has ? null : s.id})} title={has ? 'Thu hồi quyền điều khiển mô phỏng' : 'Giao quyền điều khiển mô phỏng'} className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${has ? 'bg-amber-500 text-white' : 'border border-[#DCD9D0] bg-white text-stone-600 hover:bg-stone-100'}`}>
                     <Hand className="h-3 w-3" /> {has ? 'Thu hồi' : 'Giao quyền'}
@@ -111,7 +111,7 @@ export function LiveControl({roomId, live, send, prompts, pairCode, onRepair, on
         )}
       </section>
 
-      <section data-testid="collect-section" className="flex flex-col gap-2 rounded-2xl border border-[#E6E4DD] bg-white p-4">
+      <section data-testid="collect-section" className="flex flex-col gap-2 rounded-2xl border border-rule bg-white shadow-card p-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-stone-800">
           <PenLine className="h-4 w-4" /> Thu bài làm vẽ tay
         </h3>
@@ -130,13 +130,13 @@ export function LiveControl({roomId, live, send, prompts, pairCode, onRepair, on
             {prompts.length > 0 && (
               <div className="flex flex-wrap gap-1.5" data-testid="prepared-prompts">
                 {prompts.map((p, i) => (
-                  <button key={i} data-testid="prepared-prompt" onClick={() => setPrompt(p)} className="max-w-full truncate rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs text-blue-800 hover:bg-blue-100" title={p}>
+                  <button key={i} data-testid="prepared-prompt" onClick={() => setPrompt(p)} className="max-w-full truncate rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs text-brand-800 hover:bg-brand-100" title={p}>
                     {p}
                   </button>
                 ))}
               </div>
             )}
-            <input data-testid="collect-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={200} placeholder="Đề cho học sinh (chọn đề chuẩn bị sẵn hoặc tự gõ)" className="rounded-lg border border-[#E6E4DD] px-3 py-1.5 text-sm" />
+            <input data-testid="collect-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={200} placeholder="Đề cho học sinh (chọn đề chuẩn bị sẵn hoặc tự gõ)" className="rounded-lg border border-rule px-3 py-1.5 text-sm" />
             <div className="flex items-center gap-2">
               <button data-testid="collect-start" onClick={() => send({type: 'COLLECT_START', prompt})} disabled={live.studentCount === 0} className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-40">
                 {collect ? 'Thu bài đợt mới' : 'Bắt đầu thu bài'}
@@ -157,14 +157,14 @@ export function LiveControl({roomId, live, send, prompts, pairCode, onRepair, on
               {submissions.map((sub, i) => {
                 const anon = `Bài ${i + 1}`;
                 return (
-                  <li key={sub.studentId} data-testid="submission-card" data-student={sub.studentId} className="flex flex-col gap-1 rounded-lg border border-[#E6E4DD] bg-white p-1.5">
+                  <li key={sub.studentId} data-testid="submission-card" data-student={sub.studentId} className="flex flex-col gap-1 rounded-lg border border-rule bg-white p-1.5">
                     <Thumb strokes={sub.strokes} label={`Bản xem trước ${anon}`} />
                     <div className="flex items-center gap-1 text-[11px]">
                       <span data-testid="submission-label" className="min-w-0 truncate font-semibold text-stone-800">
                         {showNames ? sub.name : anon}
                       </span>
                       {sub.rev > 1 && <span className="rounded bg-amber-50 px-1 text-[10px] text-amber-700">lần {sub.rev}</span>}
-                      <button data-testid="submission-show" onClick={() => send({type: 'SHOW', studentId: sub.studentId, label: anon})} disabled={!live.boardOnline} title={live.boardOnline ? 'Chiếu lên bảng (ẩn danh)' : 'Cần ghép bảng trước'} className="ml-auto flex items-center gap-1 rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-blue-700 disabled:opacity-40">
+                      <button data-testid="submission-show" onClick={() => send({type: 'SHOW', studentId: sub.studentId, label: anon})} disabled={!live.boardOnline} title={live.boardOnline ? 'Chiếu lên bảng (ẩn danh)' : 'Cần ghép bảng trước'} className="ml-auto flex items-center gap-1 rounded-md bg-brand-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-brand-700 disabled:opacity-40">
                         <MonitorUp className="h-3 w-3" /> Chiếu
                       </button>
                     </div>
@@ -177,7 +177,7 @@ export function LiveControl({roomId, live, send, prompts, pairCode, onRepair, on
         )}
       </section>
 
-      <section className="flex flex-col gap-2 rounded-2xl border border-[#E6E4DD] bg-white p-4">
+      <section className="flex flex-col gap-2 rounded-2xl border border-rule bg-white shadow-card p-4">
         <h3 className="text-sm font-semibold text-stone-800">Bình chọn dự đoán</h3>
         {poll?.open || result ? (
           <>
@@ -186,8 +186,8 @@ export function LiveControl({roomId, live, send, prompts, pairCode, onRepair, on
               {(poll?.options ?? []).map((o) => {
                 const pct = result?.percents[o] ?? 0;
                 return (
-                  <div key={o} className="relative h-8 overflow-hidden rounded-lg border border-[#E6E4DD] bg-white">
-                    <div className="absolute inset-y-0 left-0 bg-blue-200/70 transition-all" style={{width: `${pct}%`}} />
+                  <div key={o} className="relative h-8 overflow-hidden rounded-lg border border-rule bg-white">
+                    <div className="absolute inset-y-0 left-0 bg-brand-200/70 transition-all" style={{width: `${pct}%`}} />
                     <div className="relative flex h-full items-center justify-between px-3 text-xs">
                       <span className="font-medium text-stone-800">{o}</span>
                       <span className="font-mono text-stone-700">
@@ -215,9 +215,9 @@ export function LiveControl({roomId, live, send, prompts, pairCode, onRepair, on
           </>
         ) : (
           <>
-            <input data-testid="poll-question" value={question} onChange={(e) => setQuestion(e.target.value)} className="rounded-lg border border-[#E6E4DD] px-3 py-1.5 text-sm" />
-            <textarea data-testid="poll-options" value={optionsText} onChange={(e) => setOptionsText(e.target.value)} rows={3} placeholder="Mỗi lựa chọn một dòng" className="rounded-lg border border-[#E6E4DD] px-3 py-1.5 font-mono text-sm" />
-            <button data-testid="poll-start" onClick={() => send({type: 'POLL_START', question, options})} disabled={!question.trim() || options.length < 2} className="self-start rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-40">
+            <input data-testid="poll-question" value={question} onChange={(e) => setQuestion(e.target.value)} className="rounded-lg border border-rule px-3 py-1.5 text-sm" />
+            <textarea data-testid="poll-options" value={optionsText} onChange={(e) => setOptionsText(e.target.value)} rows={3} placeholder="Mỗi lựa chọn một dòng" className="rounded-lg border border-rule px-3 py-1.5 font-mono text-sm" />
+            <button data-testid="poll-start" onClick={() => send({type: 'POLL_START', question, options})} disabled={!question.trim() || options.length < 2} className="self-start rounded-lg bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-40">
               Gửi câu hỏi cho lớp
             </button>
           </>

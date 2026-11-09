@@ -66,7 +66,7 @@ export function PeriodPrep({period, classes, lessons, disabled, onSave, onStart,
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       }}
-      className="grid gap-3 rounded-2xl border border-[#E6E4DD] bg-white p-4 sm:grid-cols-2"
+      className="grid gap-3 rounded-2xl border border-rule bg-white shadow-card p-4 sm:grid-cols-2"
     >
       <label className={`${label} sm:col-span-2`}>
         Tên tiết
@@ -112,7 +112,7 @@ export function PeriodPrep({period, classes, lessons, disabled, onSave, onStart,
             const lesson = b.group === 'lesson';
             const toggle = () => (lesson ? setF({...f, lesson_id: on ? null : b.id}) : setF({...f, resource_ids: on ? (f.resource_ids ?? []).filter((x) => x !== b.id) : [...(f.resource_ids ?? []), b.id]}));
             return (
-              <button type="button" data-testid={`prep-pick-${b.id}`} aria-pressed={on} disabled={disabled} onClick={toggle} className="rounded-lg border border-blue-600 px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50 aria-[pressed=true]:bg-blue-600 aria-[pressed=true]:text-white disabled:opacity-40">
+              <button type="button" data-testid={`prep-pick-${b.id}`} aria-pressed={on} disabled={disabled} onClick={toggle} className="rounded-lg border border-brand-600 px-3 py-1.5 text-sm font-semibold text-brand-700 hover:bg-brand-50 aria-[pressed=true]:bg-brand-600 aria-[pressed=true]:text-white disabled:opacity-40">
                 {on ? 'Bỏ khỏi tiết' : lesson ? 'Nạp lên bảng' : 'Mở sẵn trên bảng'}
               </button>
             );
@@ -124,10 +124,10 @@ export function PeriodPrep({period, classes, lessons, disabled, onSave, onStart,
         {(f.sims ?? []).length > 0 && (
           <div className="flex flex-wrap gap-1">
             {(f.sims ?? []).map((id) => (
-              <span key={id} data-testid="prep-sim-chip" className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-800">
+              <span key={id} data-testid="prep-sim-chip" className="flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-800">
                 {catalog.find((c) => c.id === id)?.title ?? id}
                 {!disabled && (
-                  <button type="button" aria-label="Bỏ mô phỏng" onClick={() => setF({...f, sims: (f.sims ?? []).filter((x) => x !== id)})} className="rounded-full hover:bg-blue-100">
+                  <button type="button" aria-label="Bỏ mô phỏng" onClick={() => setF({...f, sims: (f.sims ?? []).filter((x) => x !== id)})} className="rounded-full hover:bg-brand-100">
                     <X className="h-3 w-3" />
                   </button>
                 )}
@@ -172,7 +172,7 @@ export function PeriodPrep({period, classes, lessons, disabled, onSave, onStart,
       </label>
       {!disabled && (
         <div className="flex items-center gap-2 sm:col-span-2">
-          <button data-testid="prep-save" disabled={!f.title.trim()} className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-40">
+          <button data-testid="prep-save" disabled={!f.title.trim()} className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-40">
             <Save className="h-4 w-4" /> Lưu chuẩn bị
           </button>
           {onStart && (

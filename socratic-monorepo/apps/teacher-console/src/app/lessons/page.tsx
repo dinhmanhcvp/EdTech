@@ -84,7 +84,7 @@ function Lessons() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto text-lg font-semibold">Bài soạn của tôi</h1>
+        <h1 className="mr-auto font-serif text-2xl font-medium tracking-tight">Bài soạn của tôi</h1>
         <button data-testid="lesson-import" onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-50">
           <Upload className="h-4 w-4" /> Nhập tệp
         </button>

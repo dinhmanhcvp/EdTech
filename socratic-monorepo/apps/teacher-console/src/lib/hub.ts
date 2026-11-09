@@ -104,6 +104,7 @@ export interface GridRow {
   answer: string | null; confirmed: string[] | null; ocr: unknown; grade: {summary?: string; first_error?: number | null} | null; hasPhoto: boolean;
 }
 export interface HubStudent {id: string; name: string; loginCode: string; parentToken: string | null}
+export interface ClassRun {runId: string; assignmentId: string; classId: string; periodId: string | null; openedAt: number; closedAt: number | null; dueAt: number | null; phase: 'in_class' | 'homework' | 'closed'}
 
 export interface StudentMetrics {
   studentId: string; name: string; mastery: Record<string, number>; done: number; total: number; firstTryRate: number | null;
@@ -224,6 +225,7 @@ export const hub = {
   quickKey: (text: string) => hubFetch<{questions: Question[]}>('POST', '/assignments/quick-key', {text}).then((r) => r.questions),
   save: (id: string, body: NonNullable<Resource['body']>, baseVersion: number) => hubFetch<{id: string; version: number}>('PUT', `/assignments/${id}`, {body, baseVersion}),
 
+  classRuns: (hubClassId: string) => hubFetch<{runs: ClassRun[]}>('GET', `/runs?classId=${encodeURIComponent(hubClassId)}`).then((r) => r.runs),
   periodSummary: (periodId: string) => hubFetch<PeriodSummary>('GET', `/console/periods/${periodId}/summary`),
   runSubmissions: (runId: string) => hubFetch<{submissions: GridRow[]}>('GET', `/runs/${runId}/submissions`).then((r) => r.submissions),
   review: (submissionId: string, score: number) => hubFetch<{status: string}>('POST', `/submissions/${submissionId}/review`, {score}),

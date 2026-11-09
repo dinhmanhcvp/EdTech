@@ -73,7 +73,7 @@ export function StudentsPanel({consoleClassId}: {consoleClassId: string}) {
   };
 
   return (
-    <div data-testid="students-panel" className="mt-2 w-full rounded-xl border border-[#E6E4DD] bg-stone-50 p-3">
+    <div data-testid="students-panel" className="mt-2 w-full rounded-xl border border-rule bg-stone-50 p-3">
       {error && <div className="mb-2 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div>}
       {list === null ? (
         <div className="text-xs text-stone-500">Đang tải học sinh…</div>
@@ -95,12 +95,12 @@ export function StudentsPanel({consoleClassId}: {consoleClassId: string}) {
             )}
             {list.map((s) => (
               <React.Fragment key={s.id}>
-              <tr className="border-t border-[#E6E4DD]">
+              <tr className="border-t border-rule">
                 <td className="py-1.5 font-medium text-stone-800">{s.name}</td>
                 <td className="font-mono text-stone-700">{s.loginCode}</td>
                 <td className="flex items-center gap-1 py-1">
                   {s.parentToken && (
-                    <button onClick={() => copy(studentLink(studentAppBase(), s.parentToken as string), s.id)} className="flex items-center gap-1 rounded px-1.5 py-0.5 text-blue-700 hover:bg-blue-50">
+                    <button onClick={() => copy(studentLink(studentAppBase(), s.parentToken as string), s.id)} className="flex items-center gap-1 rounded px-1.5 py-0.5 text-brand-700 hover:bg-brand-50">
                       <Copy className="h-3 w-3" /> {copied === s.id ? 'Đã chép' : 'Chép link'}
                     </button>
                   )}
@@ -109,7 +109,7 @@ export function StudentsPanel({consoleClassId}: {consoleClassId: string}) {
                   </button>
                 </td>
                 <td>
-                  <button data-testid="report-now" disabled={reporting === s.id} onClick={() => (report?.id === s.id ? setReport(null) : void makeReport(s))} className="rounded px-1.5 py-0.5 text-blue-700 hover:bg-blue-50 disabled:opacity-40">
+                  <button data-testid="report-now" disabled={reporting === s.id} onClick={() => (report?.id === s.id ? setReport(null) : void makeReport(s))} className="rounded px-1.5 py-0.5 text-brand-700 hover:bg-brand-50 disabled:opacity-40">
                     {reporting === s.id ? 'Đang chốt…' : report?.id === s.id ? 'Ẩn' : 'Chốt & xem'}
                   </button>
                 </td>
@@ -117,7 +117,7 @@ export function StudentsPanel({consoleClassId}: {consoleClassId: string}) {
               {report?.id === s.id && (
                 <tr>
                   <td colSpan={4} className="pb-2">
-                    <div data-testid="report-preview" className="rounded-lg border border-[#E6E4DD] bg-white p-2 text-stone-700">
+                    <div data-testid="report-preview" className="rounded-lg border border-rule bg-white p-2 text-stone-700">
                       <div className="font-semibold text-stone-900">Tuần {report.r.week} · {report.r.activeDays} ngày học · {report.r.minutes} phút · {report.r.done} câu</div>
                       <p className="mt-1">{report.r.comment}</p>
                       {report.r.improved.length > 0 && <p className="mt-1 text-emerald-700">Tiến bộ: {report.r.improved.join(', ')}</p>}
@@ -135,7 +135,7 @@ export function StudentsPanel({consoleClassId}: {consoleClassId: string}) {
       )}
       <div className="mt-2 flex gap-2">
         <textarea data-testid="students-names" rows={2} value={names} onChange={(e) => setNames(e.target.value)} placeholder="Dán tên học sinh, mỗi dòng một em" className="flex-1 rounded-lg border border-[#DCD9D0] px-2 py-1 text-xs" />
-        <button data-testid="students-add" onClick={add} disabled={!names.trim() || !hubClassId} className="self-start rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">
+        <button data-testid="students-add" onClick={add} disabled={!names.trim() || !hubClassId} className="self-start rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">
           Thêm học sinh
         </button>
       </div>

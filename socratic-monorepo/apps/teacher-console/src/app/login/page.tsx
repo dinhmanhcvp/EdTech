@@ -38,13 +38,13 @@ export default function LoginPage() {
     }
   };
 
-  const input = 'rounded-xl border border-[#DCD9D0] px-3 py-2.5 text-base focus:border-blue-500 focus:outline-none';
+  const input = 'rounded-xl border border-[#DCD9D0] px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none';
   return (
     <div className="flex min-h-screen items-center justify-center p-5">
-      <form onSubmit={submit} data-testid="login-form" className="flex w-full max-w-sm flex-col gap-3.5 rounded-2xl border border-[#E6E4DD] bg-white p-6 shadow-lg">
+      <form onSubmit={submit} data-testid="login-form" className="flex w-full max-w-sm flex-col gap-3.5 rounded-2xl border border-rule bg-white shadow-card p-6 shadow-lg">
         <div>
-          <div className="text-[11px] font-mono uppercase tracking-wider text-stone-500">Socratic Vision Board</div>
-          <h1 className="text-xl font-semibold text-stone-900">Trang quản lý giáo viên</h1>
+          <div className="font-serif text-lg font-semibold tracking-[.18em] text-brand-600">AXIOMA</div>
+          <h1 className="font-serif text-2xl font-medium tracking-tight text-ink">Trang quản lý giáo viên</h1>
           <p className="mt-1 text-xs text-stone-500">Soạn tiết, quản lý lớp và điều khiển bảng thông minh từ máy của bạn.</p>
         </div>
         <div className="flex gap-1 rounded-xl bg-stone-100 p-1" role="tablist">
@@ -63,7 +63,7 @@ export default function LoginPage() {
             {error}
           </p>
         )}
-        <button data-testid="login-submit" type="submit" disabled={busy || !username || !password} className="rounded-xl bg-blue-600 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:opacity-40">
+        <button data-testid="login-submit" type="submit" disabled={busy || !username || !password} className="rounded-xl bg-brand-600 py-2.5 font-semibold text-white hover:bg-brand-700 disabled:opacity-40">
           {busy ? 'Đang xử lý…' : mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'}
         </button>
         <details className="text-xs text-stone-500">

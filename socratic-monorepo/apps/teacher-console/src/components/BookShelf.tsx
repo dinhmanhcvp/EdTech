@@ -140,7 +140,7 @@ export function BookShelf({books, testId, tabs, searchTestId, searchPlaceholder 
       <div className="flex flex-wrap items-center gap-2">
         {tabs && (
           <nav aria-label="Lọc theo nhóm" className="relative flex">
-            <span aria-hidden className="absolute top-0 h-full bg-blue-700 transition-all duration-500 motion-reduce:transition-none" style={{left: ind.left, width: ind.width}} />
+            <span aria-hidden className="absolute top-0 h-full bg-brand-700 transition-all duration-500 motion-reduce:transition-none" style={{left: ind.left, width: ind.width}} />
             {allTabs.map((t, i) => (
               <button
                 key={t.key}
@@ -184,7 +184,7 @@ export function BookShelf({books, testId, tabs, searchTestId, searchPlaceholder 
           const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : 0; // cuộn ngang mới chuyển sách; cuộn dọc vẫn cuộn trang
           if (d && Date.now() - wheelAt.current > 250) (wheelAt.current = Date.now(), go(d > 0 ? 1 : -1));
         }}
-        className="relative overflow-hidden rounded-2xl border border-[#DDD9CF] bg-[#EDEBE6] outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="relative overflow-hidden rounded-2xl border border-rule bg-[#EDEBE6] outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
         style={{height: HEIGHT + 64, perspective: 1500, touchAction: 'pan-y'}}
       >
         {books === null && <p className="absolute inset-0 grid place-items-center text-sm text-stone-500">Đang tải…</p>}
@@ -256,7 +256,7 @@ export function BookShelf({books, testId, tabs, searchTestId, searchPlaceholder 
       </section>
 
       {cur && (
-        <div data-testid={`${testId}-caption`} className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#E6E4DD] bg-white px-4 py-3">
+        <div data-testid={`${testId}-caption`} className="flex flex-wrap items-center gap-3 rounded-2xl border border-rule bg-white shadow-card px-4 py-3">
           <div className="min-w-0 flex-1">
             <div className="truncate font-serif text-lg text-stone-900">{cur.title}</div>
             <div className="text-xs text-stone-500">

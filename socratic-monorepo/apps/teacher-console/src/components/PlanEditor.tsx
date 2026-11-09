@@ -111,7 +111,7 @@ function ItemFields({it, set, catalog}: {it: PlanItem; set: (it: PlanItem) => vo
         </div>
       ))}
       {it.options.length < 6 && (
-        <button type="button" onClick={() => set({...it, options: [...it.options, '']})} className="self-start text-xs text-blue-700">+ Phương án</button>
+        <button type="button" onClick={() => set({...it, options: [...it.options, '']})} className="self-start text-xs text-brand-700">+ Phương án</button>
       )}
     </div>
   );
@@ -215,7 +215,7 @@ export function PlanEditor({planId, catalog, classes, onSaved}: {planId: string 
   const f = 'rounded-lg border border-[#DCD9D0] bg-white px-3 py-2 text-sm';
   return (
     <div data-testid="plan-editor" className="flex flex-col gap-3">
-      <div className="grid gap-2 rounded-2xl border border-[#E6E4DD] bg-white p-3 sm:grid-cols-[1fr_10rem]">
+      <div className="grid gap-2 rounded-2xl border border-rule bg-white shadow-card p-3 sm:grid-cols-[1fr_10rem]">
         <input data-testid="plan-title" className={f} value={body.title} onChange={(e) => setBody({...body, title: e.target.value})} placeholder="Tên giáo án, ví dụ: Bài 12. Chuyển động ném" maxLength={160} />
         <select data-testid="plan-subject" className={f} value={body.subject} onChange={(e) => setBody({...body, subject: e.target.value as Subject})}>
           {SUBJECTS.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -226,7 +226,7 @@ export function PlanEditor({planId, catalog, classes, onSaved}: {planId: string 
       {body.sections.map((s, i) => {
         const st = ai[s.id];
         return (
-          <section key={s.id} data-testid="plan-section" className="flex flex-col gap-2 rounded-2xl border border-[#E6E4DD] bg-white p-3">
+          <section key={s.id} data-testid="plan-section" className="flex flex-col gap-2 rounded-2xl border border-rule bg-white shadow-card p-3">
             <div className="flex items-center gap-2">
               <input data-testid="section-title" className={`${f} flex-1 font-semibold`} value={s.title} onChange={(e) => setSection(i, {...s, title: e.target.value})} placeholder="Tên phần" maxLength={160} />
               <button type="button" aria-label="Chuyển phần lên" disabled={i === 0} onClick={() => setBody({...body, sections: move(body.sections, i, -1)})} className="rounded p-1.5 text-stone-500 hover:bg-stone-100 disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
@@ -327,8 +327,8 @@ export function PlanEditor({planId, catalog, classes, onSaved}: {planId: string 
       )}
       {error && <p data-testid="plan-error" role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
 
-      <div className="sticky bottom-0 flex flex-wrap items-center gap-2 border-t border-[#E6E4DD] bg-[#F7F6F2]/95 py-2">
-        <button data-testid="plan-save" disabled={busy || !dirty || problems.length > 0} onClick={() => void save()} className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-40">
+      <div className="sticky bottom-0 flex flex-wrap items-center gap-2 border-t border-rule bg-paper/95 py-2">
+        <button data-testid="plan-save" disabled={busy || !dirty || problems.length > 0} onClick={() => void save()} className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-40">
           <Save className="h-4 w-4" /> {saved ? 'Lưu thay đổi' : 'Tạo giáo án'}
         </button>
         {saved && <span data-testid="plan-version" className="text-xs text-stone-500">Phiên bản {saved.version}{dirty ? ' · có thay đổi chưa lưu' : ' · đã lưu'}</span>}

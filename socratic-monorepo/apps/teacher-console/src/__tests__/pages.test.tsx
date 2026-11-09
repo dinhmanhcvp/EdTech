@@ -177,13 +177,16 @@ describe('Bài soạn', () => {
   it('liệt kê, tìm kiếm theo tên/thư mục, xóa phải xác nhận', async () => {
     mockApi.lessons.mockResolvedValue([meta, {...meta, id: 'l2', title: 'Con lắc', folder: 'Lý 11'}]);
     render(<LessonsPage />);
-    expect(await screen.findAllByTestId('lesson-item')).toHaveLength(2);
+    expect(await screen.findAllByTestId('lesson-list-item')).toHaveLength(2);
     fireEvent.change(screen.getByTestId('lesson-search'), {target: {value: 'lý'}});
-    expect(screen.getAllByTestId('lesson-item')).toHaveLength(1);
+    expect(screen.getAllByTestId('lesson-list-item')).toHaveLength(1);
     fireEvent.change(screen.getByTestId('lesson-search'), {target: {value: 'không có gì'}});
-    expect(screen.getByTestId('lesson-empty')).toBeInTheDocument();
+    expect(screen.getByTestId('lesson-list-empty')).toHaveTextContent('Không có bài khớp từ khóa.');
     fireEvent.change(screen.getByTestId('lesson-search'), {target: {value: ''}});
-    fireEvent.click(screen.getAllByTestId('lesson-delete')[0]);
+    expect(screen.getByTestId('lesson-list-caption')).toHaveTextContent('Con lắc'); // giữ cuốn đang chọn khi bỏ tìm kiếm
+    expect(screen.getByTestId('lesson-list-caption')).toHaveTextContent('Vật lí · Lý 11'); // môn nhận từ tên thư mục
+    fireEvent.click(screen.getByLabelText('Cuốn trước'));
+    fireEvent.click(screen.getByTestId('lesson-delete'));
     expect(mockApi.deleteLesson).not.toHaveBeenCalled();
     mockApi.deleteLesson.mockResolvedValue({ok: true});
     fireEvent.click(screen.getByTestId('lesson-confirm-delete'));
@@ -193,7 +196,7 @@ describe('Bài soạn', () => {
   it('nhập tệp xuất từ bảng: gửi đúng tên/thư mục/trang; tệp lạ bị từ chối', async () => {
     mockApi.createLesson.mockResolvedValue({...meta, title: 'Từ tệp'});
     render(<LessonsPage />);
-    await screen.findByTestId('lesson-empty');
+    await screen.findByTestId('lesson-list-empty');
     const good = new File([lessonToFile('Từ tệp', 'Toán', [[{id: 'a'}]])], 'a.json', {type: 'application/json'});
     fireEvent.change(screen.getByTestId('lesson-import-file'), {target: {files: [good]}});
     await waitFor(() => expect(mockApi.createLesson).toHaveBeenCalledWith('Từ tệp', 'Toán', [[{id: 'a'}]]));
@@ -215,7 +218,7 @@ describe('Soạn tiết', () => {
     expect(screen.queryByTestId('prep-class-context')).toBeNull();
     fireEvent.change(screen.getByTestId('prep-class'), {target: {value: 'c1'}});
     expect(screen.getByTestId('prep-class-context').textContent).toContain('Lớp khá, vài bạn yếu hình');
-    fireEvent.change(screen.getByTestId('prep-lesson'), {target: {value: 'l1'}});
+    fireEvent.click(screen.getByTestId('prep-pick-l1')); // cuốn đầu của kệ đang mở bìa
     fireEvent.change(screen.getByTestId('prep-goals'), {target: {value: 'Hiểu parabol'}});
     fireEvent.change(screen.getByTestId('prep-prompts'), {target: {value: 'Đề 1\n\n  Đề 2  \n'}});
     fireEvent.submit(screen.getByTestId('period-prep'));

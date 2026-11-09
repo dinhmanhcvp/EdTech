@@ -1,10 +1,11 @@
 'use client';
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {Save, X} from 'lucide-react';
 import type {PeriodInput} from '../lib/api';
 import type {PlanListItem, ResourceItem} from '../lib/hub';
 import type {ClassInfo, LessonMeta, Period, SimEntry} from '../lib/types';
+import {BookShelf, SUBJECT_HUE, SUBJECT_LABEL, subjectFromText, type Book} from './BookShelf';
 
 interface Props {
   period: Period;
@@ -27,6 +28,7 @@ const toInput = (p: Period): PeriodInput => ({
 const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
 const KIND: Record<string, string> = {slides: 'Slide', exercise: 'Bài tập', exam: 'Đề'};
 const MAX_SIMS = 12;
+const SHELF_TABS = [{key: 'lesson', label: 'Bài soạn', testId: 'prep-shelf-tab-lesson'}, {key: 'slides', label: 'Slide'}, {key: 'exercise', label: 'Bài tập'}, {key: 'exam', label: 'Đề'}];
 
 /**
  * Chuẩn bị tiết: tên, lớp, bài soạn sẽ nạp lên bảng, mục tiêu, ghi chú riêng của giáo viên, và các đề thu bài đã chuẩn bị sẵn
@@ -37,6 +39,13 @@ export function PeriodPrep({period, classes, lessons, disabled, onSave, onStart,
   const [promptText, setPromptText] = useState(period.prompts.join('\n'));
   const [saved, setSaved] = useState(false);
   const [simQuery, setSimQuery] = useState('');
+  const books = useMemo<Book[]>(
+    () => [
+      ...lessons.map((l): Book => ({id: l.id, title: l.title, tag: `Bài soạn · ${l.folder || 'Chưa xếp thư mục'}`, meta: `${l.page_count} trang`, hue: SUBJECT_HUE[subjectFromText(l.folder)], group: 'lesson', search: `${l.title} ${l.folder}`.toLowerCase()})),
+      ...resources.map((r): Book => ({id: r.id, title: r.title, tag: `${KIND[r.kind] ?? r.kind} · ${SUBJECT_LABEL[r.subject] ?? r.subject}`, meta: `${r.pageCount} trang`, hue: SUBJECT_HUE[r.subject] ?? SUBJECT_HUE.OTHER, group: r.kind, search: r.title.toLowerCase()})),
+    ],
+    [lessons, resources],
+  );
 
   useEffect(() => {
     setF(toInput(period));
@@ -74,18 +83,6 @@ export function PeriodPrep({period, classes, lessons, disabled, onSave, onStart,
           ))}
         </select>
       </label>
-      <label className={label}>
-        Bài soạn nạp lên bảng
-        <select data-testid="prep-lesson" className={field} value={f.lesson_id ?? ''} onChange={(e) => setF({...f, lesson_id: e.target.value || null})} disabled={disabled}>
-          <option value="">(bảng trống)</option>
-          {lessons.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.title}
-              {l.folder ? ` – ${l.folder}` : ''}
-            </option>
-          ))}
-        </select>
-      </label>
       {cls && (cls.notes || cls.size > 0) && (
         <div data-testid="prep-class-context" className="rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-600 sm:col-span-2">
           <b>{cls.name}</b>
@@ -102,23 +99,25 @@ export function PeriodPrep({period, classes, lessons, disabled, onSave, onStart,
         <textarea data-testid="prep-prompts" className={`${field} font-mono`} rows={3} value={promptText} onChange={(e) => setPromptText(e.target.value)} disabled={disabled} placeholder={'Giải phương trình x² − 5x + 6 = 0\nVẽ đồ thị y = x² − 4'} />
       </label>
       <fieldset data-testid="prep-resources" className="flex flex-col gap-1 sm:col-span-2" disabled={disabled}>
-        <legend className="text-[11px] text-stone-500">Tài nguyên mở sẵn trên bảng (slide, bài tập, đề)</legend>
-        {resources.length === 0 ? (
-          <p className="text-xs text-stone-400">Chưa có tài nguyên. Tải lên ở mục Tài nguyên.</p>
-        ) : (
-          <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto rounded-lg border border-[#DCD9D0] p-2">
-            {resources.map((r) => {
-              const on = (f.resource_ids ?? []).includes(r.id);
-              return (
-                <label key={r.id} className="flex items-center gap-2 text-sm text-stone-800">
-                  <input type="checkbox" data-testid={`prep-res-${r.id}`} checked={on} onChange={() => setF({...f, resource_ids: on ? (f.resource_ids ?? []).filter((x) => x !== r.id) : [...(f.resource_ids ?? []), r.id]})} />
-                  <span className="rounded bg-stone-100 px-1.5 text-[10px] text-stone-600">{KIND[r.kind] ?? r.kind}</span>
-                  <span className="truncate">{r.title}</span>
-                </label>
-              );
-            })}
-          </div>
-        )}
+        <legend className="mb-1 text-[11px] text-stone-500">Chọn từ kệ: bài soạn nạp lên bảng (chọn một) và tài nguyên mở sẵn (chọn nhiều)</legend>
+        <BookShelf
+          testId="prep-shelf"
+          books={books}
+          tabs={SHELF_TABS}
+          searchPlaceholder="Tìm bài, slide, đề…"
+          emptyAll="Chưa có bài soạn hay tài nguyên. Tải lên ở mục Tài nguyên."
+          marked={[...(f.lesson_id ? [f.lesson_id] : []), ...(f.resource_ids ?? [])]}
+          actions={(b) => {
+            const on = b.id === f.lesson_id || (f.resource_ids ?? []).includes(b.id);
+            const lesson = b.group === 'lesson';
+            const toggle = () => (lesson ? setF({...f, lesson_id: on ? null : b.id}) : setF({...f, resource_ids: on ? (f.resource_ids ?? []).filter((x) => x !== b.id) : [...(f.resource_ids ?? []), b.id]}));
+            return (
+              <button type="button" data-testid={`prep-pick-${b.id}`} aria-pressed={on} disabled={disabled} onClick={toggle} className="rounded-lg border border-blue-600 px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50 aria-[pressed=true]:bg-blue-600 aria-[pressed=true]:text-white disabled:opacity-40">
+                {on ? 'Bỏ khỏi tiết' : lesson ? 'Nạp lên bảng' : 'Mở sẵn trên bảng'}
+              </button>
+            );
+          }}
+        />
       </fieldset>
       <div data-testid="prep-sims" className="flex flex-col gap-1 sm:col-span-2">
         <span className="text-[11px] text-stone-500">Mô phỏng định mở (bảng mở bằng một chạm)</span>

@@ -2,8 +2,9 @@
 
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import Link from 'next/link';
-import {FileText, Trash2, Upload} from 'lucide-react';
+import {Pencil, Trash2, Upload} from 'lucide-react';
 import {HubError, hub, type ResourceItem, type ResourceKind} from '../lib/hub';
+import {BookShelf, SUBJECT_HUE, SUBJECT_LABEL, type Book} from './BookShelf';
 
 export const KIND_LABEL: Record<ResourceKind, string> = {slides: 'Slide', exercise: 'Bài tập', exam: 'Đề'};
 const SUBJECTS: [string, string][] = [['MATH', 'Toán'], ['PHYSICS', 'Vật lí'], ['CHEMISTRY', 'Hóa học'], ['BIOLOGY', 'Sinh học']];
@@ -11,8 +12,7 @@ const SUBJECTS: [string, string][] = [['MATH', 'Toán'], ['PHYSICS', 'Vật lí'
 /** Kho tài nguyên của giáo viên (đỉnh 1): slide, bài tập, đề — mở được trên bảng. */
 export function ResourceList() {
   const [items, setItems] = useState<ResourceItem[] | null>(null);
-  const [kind, setKind] = useState<ResourceKind | 'all'>('all');
-  const [q, setQ] = useState('');
+  const [focusId, setFocusId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<{title: string; subject: string; kind: ResourceKind; files: File[]}>({title: '', subject: 'MATH', kind: 'exercise', files: []});
   const [busy, setBusy] = useState(false);
@@ -30,10 +30,23 @@ export function ResourceList() {
     void load();
   }, [load]);
 
-  const shown = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    return (items || []).filter((i) => (kind === 'all' || i.kind === kind) && (!needle || i.title.toLowerCase().includes(needle)));
-  }, [items, kind, q]);
+  const books = useMemo<Book[] | null>(
+    () =>
+      items &&
+      items.map((r) => ({
+        id: r.id,
+        title: r.title,
+        tag: `${KIND_LABEL[r.kind]} · ${SUBJECT_LABEL[r.subject] ?? r.subject}`,
+        meta: `${r.pageCount} trang`,
+        hue: SUBJECT_HUE[r.subject] ?? SUBJECT_HUE.OTHER,
+        group: r.kind,
+        search: r.title.toLowerCase(),
+        note: r.kind !== 'slides' && r.currentVersion === 0 ? 'Chưa duyệt câu' : undefined,
+      })),
+    [items],
+  );
+  // ảnh trang đầu làm bìa (mất quyền hoặc lỗi mạng thì dùng bìa tự vẽ)
+  const loadCover = useCallback(async (id: string) => (items?.find((r) => r.id === id)?.pageCount ? await hub.pageBlobUrl(id, 0) : null), [items]);
 
   const upload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,9 +54,10 @@ export function ResourceList() {
     setBusy(true);
     setError(null);
     try {
-      await hub.upload({...form, title: form.title.trim()});
+      const r = await hub.upload({...form, title: form.title.trim()});
       setForm({...form, title: '', files: []});
       await load();
+      if (r?.id) setFocusId(r.id); // cuốn vừa lưu mở bìa ngay trên kệ
     } catch (err) {
       setError(err instanceof HubError ? err.message : 'Không tải lên được.');
     } finally {
@@ -86,42 +100,33 @@ export function ResourceList() {
         <p className="text-xs text-stone-500 sm:col-span-3">Một file PDF (tối đa 20 trang, 15 MB) hoặc nhiều ảnh. File Word/PowerPoint hãy xuất sang PDF trước.</p>
       </form>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {(['all', 'slides', 'exercise', 'exam'] as const).map((k) => (
-          <button key={k} data-testid={`kind-${k}`} aria-pressed={kind === k} onClick={() => setKind(k)} className="rounded-full border border-[#DCD9D0] px-3 py-1 text-xs aria-[pressed=true]:border-blue-600 aria-[pressed=true]:bg-blue-50 aria-[pressed=true]:text-blue-700">
-            {k === 'all' ? 'Tất cả' : KIND_LABEL[k]}
-          </button>
-        ))}
-        <input className={`${f} ml-auto w-56 py-1`} placeholder="Tìm theo tên" value={q} onChange={(e) => setQ(e.target.value)} />
-      </div>
-
-      <ul className="flex flex-col gap-2" data-testid="resource-list">
-        {items === null && <li className="text-sm text-stone-500">Đang tải…</li>}
-        {items !== null && shown.length === 0 && <li className="rounded-xl bg-white p-6 text-center text-sm text-stone-500">Chưa có tài nguyên nào.</li>}
-        {shown.map((r) => (
-          <li key={r.id} className="flex items-center gap-3 rounded-xl border border-[#E6E4DD] bg-white px-4 py-3">
-            <FileText className="h-5 w-5 text-stone-400" />
-            <div className="min-w-0 flex-1">
-              <Link href={`/resources/${r.id}`} className="text-sm font-semibold text-stone-900 hover:underline">{r.title}</Link>
-              <div className="text-xs text-stone-500">
-                {KIND_LABEL[r.kind]} · {r.pageCount} trang
-                {r.kind !== 'slides' && r.currentVersion === 0 && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-amber-800">Chưa duyệt câu</span>}
-              </div>
-            </div>
-            {confirmDel === r.id ? (
+      <BookShelf
+        testId="resource-list"
+        books={books}
+        focusId={focusId}
+        loadCover={loadCover}
+        tabs={(Object.keys(KIND_LABEL) as ResourceKind[]).map((k) => ({key: k, label: KIND_LABEL[k], testId: `kind-${k}`}))}
+        searchPlaceholder="Tìm theo tên"
+        emptyAll="Kệ còn trống. Tải slide, bài tập hoặc đề lên để bắt đầu."
+        actions={(b) => (
+          <div className="flex items-center gap-1">
+            <Link href={`/resources/${b.id}`} data-testid="resource-open" className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700">
+              <Pencil className="h-3.5 w-3.5" /> Mở & soạn câu
+            </Link>
+            {confirmDel === b.id ? (
               <span className="flex items-center gap-1 text-xs">
                 Xóa?
-                <button data-testid="resource-confirm-delete" onClick={() => remove(r.id)} className="rounded-lg bg-rose-600 px-2 py-1 font-semibold text-white">Xóa</button>
+                <button data-testid="resource-confirm-delete" onClick={() => remove(b.id)} className="rounded-lg bg-rose-600 px-2 py-1 font-semibold text-white">Xóa</button>
                 <button onClick={() => setConfirmDel(null)} className="rounded-lg px-2 py-1 text-stone-500 hover:bg-stone-100">Hủy</button>
               </span>
             ) : (
-              <button data-testid="resource-delete" aria-label="Xóa tài nguyên" onClick={() => setConfirmDel(r.id)} className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50">
+              <button data-testid="resource-delete" aria-label="Xóa tài nguyên" onClick={() => setConfirmDel(b.id)} className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50">
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
-          </li>
-        ))}
-      </ul>
+          </div>
+        )}
+      />
     </div>
   );
 }

@@ -79,7 +79,7 @@ describe('soạn tiết: tài nguyên, mô phỏng, giáo án', () => {
         resources={[{id: 'r1', title: 'Đề 15 phút', subject: 'MATH', kind: 'exam', source: 'pdf', currentVersion: 1, pageCount: 1, updatedAt: 1}]}
         plans={[{id: 'plan1', title: 'Bài 12', subject: 'PHYSICS', currentVersion: 2}]} catalog={CATALOG} />,
     );
-    fireEvent.click(screen.getByTestId('prep-res-r1'));
+    fireEvent.click(screen.getByTestId('prep-pick-r1')); // tài nguyên duy nhất trên kệ đang mở bìa
     fireEvent.change(screen.getByTestId('prep-sim-search'), {target: {value: 'con lac'}});
     fireEvent.click(screen.getByTestId('prep-sim-add-PHYS_LAB_PENDULUM_G'));
     expect(screen.getByTestId('prep-sim-chip')).toHaveTextContent('con lắc đơn');

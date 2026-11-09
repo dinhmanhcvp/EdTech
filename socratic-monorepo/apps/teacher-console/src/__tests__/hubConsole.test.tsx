@@ -77,10 +77,13 @@ describe('ResourceList', () => {
   it('filters by kind and marks unreviewed exams', async () => {
     hub.resources.mockResolvedValue(items);
     render(<ResourceList />);
-    expect(await screen.findByText('Bài giảng hàm số')).toBeInTheDocument();
+    expect(await screen.findAllByTestId('resource-list-item')).toHaveLength(2);
+    fireEvent.click(screen.getByLabelText('Cuốn sau'));
+    expect(screen.getByTestId('resource-list-caption')).toHaveTextContent('Đề 15 phút');
     expect(screen.getByText('Chưa duyệt câu')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('kind-slides'));
-    expect(screen.queryByText('Đề 15 phút')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId('resource-list-item')).toHaveLength(1);
+    expect(screen.getByTestId('resource-list-caption')).toHaveTextContent('Bài giảng hàm số');
   });
 
   it('uploads a file with the chosen kind and subject', async () => {
@@ -100,9 +103,10 @@ describe('ResourceList', () => {
     hub.resources.mockResolvedValue(items);
     hub.remove.mockRejectedValue(new HubError('Tài nguyên đã được giao cho lớp, không xóa được.', 409));
     render(<ResourceList />);
-    const row = (await screen.findByText('Bài giảng hàm số')).closest('li') as HTMLElement;
-    fireEvent.click(within(row).getByTestId('resource-delete'));
-    fireEvent.click(within(row).getByTestId('resource-confirm-delete'));
+    const caption = await screen.findByTestId('resource-list-caption');
+    expect(caption).toHaveTextContent('Bài giảng hàm số');
+    fireEvent.click(within(caption).getByTestId('resource-delete'));
+    fireEvent.click(within(caption).getByTestId('resource-confirm-delete'));
     expect(await screen.findByText('Tài nguyên đã được giao cho lớp, không xóa được.')).toBeInTheDocument();
   });
 });

@@ -84,7 +84,7 @@ export const addRequirement = (sc: GeoScene, text: string) => appendPart(sc, tex
 
 /** Tên đỉnh theo chỉ số hiển thị (phục vụ chọn điểm bằng chạm). */
 export function visibleNames(sc: GeoScene, upTo: number): string[] {
-  return sc.order.filter((n) => partShown(sc, sc.ptPart[n] ?? 0, upTo));
+  return sc.order.filter((n) => partShown(sc, sc.ptPart[n] ?? 0, upTo) && !sc.hiddenPts?.includes(n));
 }
 
 // ------------------------------------------------------------------ bật/tắt từng phần của đề (a, b, c, d…)
@@ -239,6 +239,55 @@ function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
     const [A, B, C, D] = [g(d.a), g(d.b), g(d.c), g(d.d)];
     return A && B && C && D ? lineIntersect(A, B, C, D) : null;
   }
+  if (d.k === 'off') {
+    const [P, A, B] = [g(d.p), g(d.a), g(d.b)];
+    if (!P || !A || !B) return null;
+    const v = d.r === 'par' ? sub(B, A) : ([-(B[1] - A[1]), B[0] - A[0], 0] as V3);
+    return add(P, mul(v, d.s)) as V3;
+  }
+  if (d.k === 'refl') {
+    const [P, A, B] = [g(d.p), g(d.a), g(d.b)];
+    if (!P || !A || !B) return null;
+    const dir = sub(B, A);
+    const den = dot(dir, dir);
+    if (den < 1e-12) return null;
+    const F = add(A, mul(dir, dot(sub(P, A), dir) / den));
+    return sub(mul(F, 2), P) as V3;
+  }
+  if (d.k === 'rot') {
+    const [P, O] = [g(d.p), g(d.o)];
+    if (!P || !O) return null;
+    const t = (d.deg * Math.PI) / 180;
+    const [x, y] = [P[0] - O[0], P[1] - O[1]];
+    return [O[0] + x * Math.cos(t) - y * Math.sin(t), O[1] + x * Math.sin(t) + y * Math.cos(t), P[2]] as V3;
+  }
+  if (d.k === 'trans') {
+    const [P, A, B] = [g(d.p), g(d.a), g(d.b)];
+    return P && A && B ? (add(P, sub(B, A)) as V3) : null;
+  }
+  if (d.k === 'dil') {
+    const [P, O] = [g(d.p), g(d.o)];
+    return P && O ? (add(O, mul(sub(P, O), d.f)) as V3) : null;
+  }
+  if (d.k === 'tan') {
+    const [P, O, Q] = [g(d.p), g(d.o), g(d.q)];
+    if (!P || !O || !Q) return null;
+    const r = len(sub(Q, O));
+    const dd = len(sub(P, O));
+    if (dd <= r + 1e-9 || r < 1e-9) return null;
+    const u = mul(sub(P, O), 1 / dd);
+    const al = Math.acos(r / dd);
+    const v: V3 = [-u[1], u[0], 0];
+    return add(O, mul(add(mul(u, Math.cos(al)), mul(v, d.w * Math.sin(al))), r)) as V3;
+  }
+  if (d.k === 'vec') {
+    const P = g(d.p);
+    return P ? ([P[0] + d.dx, P[1] + d.dy, P[2]] as V3) : null;
+  }
+  if (d.k === 'refp') {
+    const [P, O] = [g(d.p), g(d.o)];
+    return P && O ? (sub(mul(O, 2), P) as V3) : null;
+  }
   const ps = d.n.map(g);
   if (ps.some((p) => !p)) return null;
   const [A, B, C] = ps as V3[];
@@ -262,6 +311,10 @@ function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
   return d.f === 'circum' ? O : (sub(add(add(A, B), C), mul(O, 2)) as V3);
 }
 
+/** Các điểm mà công thức `d` dựa vào. */
+export const defDeps = (d: GeoDef): string[] =>
+  d.k === 'seg' ? [d.a, d.b] : d.k === 'vec' ? [d.p] : d.k === 'foot' || d.k === 'refl' || d.k === 'off' || d.k === 'trans' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.k === 'refp' || d.k === 'rot' || d.k === 'dil' ? [d.p, d.o] : d.k === 'tan' ? [d.p, d.o, d.q] : d.n;
+
 /** Tính lại mọi điểm xác định theo điểm khác (điểm trên cạnh, chân đường vuông góc, trọng tâm, giao điểm…) và đường tròn gắn với chúng, theo thứ tự tạo ra. */
 export function applyDefs(sc: GeoScene): GeoScene {
   const defs = sc.defs ?? {};
@@ -279,6 +332,18 @@ export function applyDefs(sc: GeoScene): GeoScene {
     if (q.some((x) => !x)) return c;
     const [A, B, C] = q as V3[];
     if (c.of.f === 'diam') return {...c, center: mul(add(A, B), 0.5) as V3, r: len(sub(A, B)) / 2};
+    if (c.of.f === 'cr') return {...c, center: A};
+    if (c.of.f === 'semi') {
+      const M = mul(add(A, B), 0.5) as V3;
+      return {...c, center: M, r: len(sub(A, B)) / 2, arc: {from: sub(A, M) as V3, span: Math.PI}};
+    }
+    if (c.of.f === 'sector') {
+      const [u, w] = [sub(B, A), sub(C, A)];
+      const span = (Math.atan2(u[0] * w[1] - u[1] * w[0], u[0] * w[0] + u[1] * w[1]) + 2 * Math.PI) % (2 * Math.PI);
+      return {...c, center: A, r: len(u), arc: {from: u, span: span || 2 * Math.PI}};
+    }
+    if (c.of.f === 'comp') return {...c, center: A, r: len(sub(C, B))};
+    if (c.of.f === 'cp') return {...c, center: A, r: len(sub(B, A))};
     const center = calcDef({k: 'calc', f: c.of.f, n: c.of.n}, pts);
     if (!center) return c;
     const r = c.of.f === 'circum' ? len(sub(center, A)) : len(cross(sub(B, A), sub(C, A))) / (len(sub(B, C)) + len(sub(A, C)) + len(sub(A, B)));
@@ -290,7 +355,7 @@ export function applyDefs(sc: GeoScene): GeoScene {
 /** Điểm kéo TỰ DO được (hình phẳng): đỉnh không phụ thuộc điểm nào và nằm trên một cạnh của hình. Kéo đi thì tính chất của hình được giữ. */
 export function freePoints(sc: GeoScene): string[] {
   if (sc.dim !== 2) return [];
-  const onEdge = new Set(sc.edges.flat());
+  const onEdge = new Set([...sc.edges.flat(), ...(sc.loose ?? [])]);
   return sc.order.filter((n) => !sc.defs?.[n] && onEdge.has(n));
 }
 
@@ -321,8 +386,7 @@ export function removePoint(sc: GeoScene, name: string): GeoScene {
   for (let grew = true; grew; ) {
     grew = false;
     for (const [k, d] of Object.entries(n.defs ?? {})) {
-      const deps = d.k === 'seg' ? [d.a, d.b] : d.k === 'foot' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.n;
-      if (!dead.has(k) && deps.some((x) => dead.has(x))) {
+      if (!dead.has(k) && defDeps(d).some((x) => dead.has(x))) {
         dead.add(k);
         grew = true;
       }
@@ -342,12 +406,214 @@ export function removePoint(sc: GeoScene, name: string): GeoScene {
   n.polys = n.polys.filter((p) => p.names.every(alive));
   n.sections = (n.sections ?? []).filter((x) => x.plane.every(alive));
   n.circles = (n.circles ?? []).filter((c) => !c.of || c.of.n.every(alive));
+  n.loose = n.loose?.filter(alive);
+  n.hiddenPts = n.hiddenPts?.filter(alive);
   n.cons = n.cons?.filter((c) => (c.k === 'perp' ? [c.a, c.v, c.c] : [c.a, c.b, c.c, c.d]).every(alive));
   for (const [orig, al] of Object.entries(n.merged)) {
     n.merged[orig] = al.filter(alive);
     if (!alive(orig) || n.merged[orig].length === 0) delete n.merged[orig];
   }
   return n;
+}
+
+// ------------------------------------------------------------------ dựng hình kiểu GeoGebra (hình phẳng; mọi điểm dựng ra đều theo khi kéo đỉnh gốc)
+const addDerived = (n: GeoScene, p: V3, def: GeoDef, part: number, mark = true): string => {
+  const nm = nextName(n);
+  n.pts[nm] = p;
+  n.order.push(nm);
+  if (mark) n.marks.push(nm);
+  n.ptPart[nm] = part;
+  n.defs = {...(n.defs ?? {}), [nm]: def};
+  if (!mark) n.hiddenLabels = [...(n.hiddenLabels ?? []), nm];
+  return nm;
+};
+const plane = (sc: GeoScene, names: string[]) => sc.dim === 2 && names.length > 0 && names.every((x) => !!sc.pts[x]);
+
+/** Đường thẳng qua P song song / vuông góc với AB (vẽ thành đoạn dài gấp đôi AB, P ở giữa). Trả cảnh mới + hai đầu đoạn. */
+export function addLineThrough(sc: GeoScene, kind: 'par' | 'perp', p: string, a: string, b: string, part: number): {scene: GeoScene; ends: [string, string]} | null {
+  if (!plane(sc, [p, a, b]) || a === b) return null;
+  const n = clone(sc);
+  const mk = (s: number) => {
+    const d: GeoDef = {k: 'off', p, a, b, r: kind, s};
+    return addDerived(n, calcDef(d, n.pts)!, d, part, false);
+  };
+  const e1 = mk(1);
+  const e2 = mk(-1);
+  n.aux.push([e1, e2, part]);
+  return {scene: n, ends: [e1, e2]};
+}
+
+/** Đường trung trực của AB: trung điểm M rồi đường vuông góc AB qua M. */
+export function addPerpBisector(sc: GeoScene, a: string, b: string, part: number): GeoScene | null {
+  if (!plane(sc, [a, b]) || a === b) return null;
+  const m = addMidpoint(sc, a, b, part);
+  return addLineThrough(m.scene, 'perp', m.name, a, b, part)?.scene ?? null;
+}
+
+/** Phân giác góc a-v-c: đoạn từ đỉnh v tới chân phân giác D trên ac. */
+export function addBisector(sc: GeoScene, a: string, v: string, c: string, part: number): GeoScene | null {
+  if (!plane(sc, [a, v, c]) || new Set([a, v, c]).size < 3) return null;
+  const n = clone(sc);
+  const d: GeoDef = {k: 'calc', f: 'bis', n: [v, a, c]};
+  const nm = addDerived(n, calcDef(d, n.pts)!, d, part);
+  n.aux.push([v, nm, part]);
+  return n;
+}
+
+/** Giao điểm hai đường thẳng AB và CD (không phải đoạn). */
+export function addIntersection(sc: GeoScene, a: string, b: string, c: string, d: string, part: number): GeoScene | null {
+  if (!plane(sc, [a, b, c, d])) return null;
+  const n = clone(sc);
+  const def: GeoDef = {k: 'inter', a, b, c, d};
+  const p = calcDef(def, n.pts);
+  if (!p) return null;
+  addDerived(n, p, def, part);
+  return n;
+}
+
+/** Đối xứng của P qua đường thẳng AB (axis) hoặc qua điểm O (center). */
+export function addReflection(sc: GeoScene, p: string, axis: [string, string] | string, part: number): GeoScene | null {
+  const names = typeof axis === 'string' ? [p, axis] : [p, ...axis];
+  if (!plane(sc, names)) return null;
+  const n = clone(sc);
+  const def: GeoDef = typeof axis === 'string' ? {k: 'refp', p, o: axis} : {k: 'refl', p, a: axis[0], b: axis[1]};
+  const q = calcDef(def, n.pts);
+  if (!q) return null;
+  const nm = addDerived(n, q, def, part);
+  n.aux.push([p, nm, part]);
+  return n;
+}
+
+/** Đường tròn tâm O đi qua P (cp) hoặc đi qua ba điểm (circum). */
+export function addCircleOf(sc: GeoScene, f: 'cp' | 'circum' | 'comp' | 'cr' | 'semi' | 'sector', ns: string[], part: number, radius = 0): GeoScene | null {
+  if (!plane(sc, ns) || new Set(ns).size !== ns.length) return null;
+  const n = clone(sc);
+  const probe = applyDefs({...n, circles: [{center: [0, 0, 0], normal: [0, 0, 1], r: radius, part, label: '', of: {f, n: ns}}]}).circles![0];
+  if (!(probe.r > 1e-9)) return null;
+  n.circles = [...(n.circles ?? []), {...probe, label: f === 'cp' ? `đường tròn tâm ${ns[0]} qua ${ns[1]}` : f === 'comp' ? `compa: tâm ${ns[0]}, bán kính ${ns[1]}${ns[2]}` : f === 'cr' ? `đường tròn tâm ${ns[0]}, bán kính ${radius}` : f === 'semi' ? `nửa đường tròn đường kính ${ns[0]}${ns[1]}` : f === 'sector' ? `hình quạt tâm ${ns[0]}, từ ${ns[1]} tới ${ns[2]}` : `đường tròn qua ${ns.join('')}`}];
+  return n;
+}
+
+/** Tiếp tuyến tại P của đường tròn tâm O: đường qua P vuông góc OP. */
+export const addTangent = (sc: GeoScene, o: string, p: string, part: number) => addLineThrough(sc, 'perp', p, o, p, part)?.scene ?? null;
+
+/** Đường thẳng qua A, B (kéo dài hai phía) hoặc tia AB (từ A, qua B). */
+export function addLineAB(sc: GeoScene, a: string, b: string, kind: 'line' | 'ray', part: number): GeoScene | null {
+  if (!plane(sc, [a, b]) || a === b) return null;
+  const n = clone(sc);
+  const mk = (s: number) => {
+    const d: GeoDef = {k: 'off', p: a, a, b, r: 'par', s};
+    return addDerived(n, calcDef(d, n.pts)!, d, part, false);
+  };
+  const far = mk(3);
+  const near = kind === 'line' ? mk(-2) : a;
+  n.aux.push([near, far, part]);
+  return n;
+}
+
+/** Véctơ AB: đoạn AB kèm hai nét mũi tên tại B. */
+export function addVector(sc: GeoScene, a: string, b: string, part: number): GeoScene | null {
+  if (!plane(sc, [a, b]) || a === b) return null;
+  const n = clone(sc);
+  const dBack: GeoDef = {k: 'seg', a: b, b: a, t: 0.15};
+  const back = addDerived(n, calcDef(dBack, n.pts)!, dBack, part, false);
+  n.aux.push([a, b, part]);
+  for (const deg of [25, -25]) {
+    const d: GeoDef = {k: 'rot', p: back, o: b, deg};
+    n.aux.push([b, addDerived(n, calcDef(d, n.pts)!, d, part, false), part]);
+  }
+  return n;
+}
+
+/** Đa giác theo thứ tự điểm chạm. */
+export function addPolygon(sc: GeoScene, ns: string[], part: number): GeoScene | null {
+  if (!plane(sc, ns) || ns.length < 3 || new Set(ns).size !== ns.length) return null;
+  let n = sc;
+  ns.forEach((p, i) => (n = addSegment(n, p, ns[(i + 1) % ns.length], part)));
+  return n;
+}
+
+/** Đa giác đều n cạnh dựng trên cạnh AB (đi ngược chiều kim đồng hồ từ A sang B); các đỉnh sau theo AB khi kéo. */
+export function addRegularPolygon(sc: GeoScene, a: string, b: string, sides: number, part: number): GeoScene | null {
+  if (!plane(sc, [a, b]) || a === b || sides < 3) return null;
+  const n = clone(sc);
+  const ring = [a, b];
+  const turn = 360 / sides - 180;
+  while (ring.length < sides) {
+    const d: GeoDef = {k: 'rot', p: ring[ring.length - 2], o: ring[ring.length - 1], deg: turn};
+    ring.push(addDerived(n, calcDef(d, n.pts)!, d, part));
+  }
+  return addPolygon(n, ring, part);
+}
+
+/** Phép biến hình của P: tịnh tiến theo vectơ AB, quay quanh O góc deg, hoặc vị tự tâm O tỉ số f. */
+export function addTransform(sc: GeoScene, p: string, how: {k: 'trans'; a: string; b: string} | {k: 'rot'; o: string; deg: number} | {k: 'dil'; o: string; f: number}, part: number): GeoScene | null {
+  const need = how.k === 'trans' ? [p, how.a, how.b] : [p, how.o];
+  if (!plane(sc, need)) return null;
+  const n = clone(sc);
+  const def: GeoDef = how.k === 'trans' ? {k: 'trans', p, a: how.a, b: how.b} : how.k === 'rot' ? {k: 'rot', p, o: how.o, deg: how.deg} : {k: 'dil', p, o: how.o, f: how.f};
+  const q = calcDef(def, n.pts);
+  if (!q) return null;
+  addDerived(n, q, def, part);
+  return n;
+}
+
+/** Hai tiếp tuyến kẻ từ P tới đường tròn tâm O đi qua q (P phải ở ngoài đường tròn); vẽ luôn đường tròn. */
+export function addTangentsFrom(sc: GeoScene, p: string, o: string, q: string, part: number): GeoScene | null {
+  if (!plane(sc, [p, o, q]) || new Set([p, o, q]).size < 3) return null;
+  let n = clone(sc);
+  const ts = ([1, -1] as const).map((w) => {
+    const d: GeoDef = {k: 'tan', p, o, q, w};
+    const pos = calcDef(d, n.pts);
+    return pos ? addDerived(n, pos, d, part) : null;
+  });
+  if (ts.some((t) => !t)) return null;
+  ts.forEach((t) => n.aux.push([p, t!, part]));
+  if (!n.circles?.some((c) => c.of?.f === 'cp' && c.of.n[0] === o && c.of.n[1] === q)) n = addCircleOf(n, 'cp', [o, q], part) ?? n;
+  return n;
+}
+
+/** Ẩn/hiện tên của một điểm (điểm vẫn còn, chỉ không hiện chữ). */
+export function toggleLabel(sc: GeoScene, name: string): GeoScene {
+  if (!sc.pts[name]) return sc;
+  const hidden = sc.hiddenLabels ?? [];
+  return {...sc, hiddenLabels: hidden.includes(name) ? hidden.filter((x) => x !== name) : [...hidden, name]};
+}
+
+/** Điểm mới đặt tự do (kéo được ở mọi nơi). */
+export function addFreePoint(sc: GeoScene, pos: V3, part: number): {scene: GeoScene; name: string} | null {
+  if (sc.dim !== 2) return null;
+  const n = clone(sc);
+  const nm = nextName(n);
+  addPoint(n, nm, [pos[0], pos[1], 0], part);
+  n.loose = [...(n.loose ?? []), nm];
+  return {scene: n, name: nm};
+}
+
+/** Đoạn thẳng từ A dài `len` (đơn vị của hình) hướng sang phải. */
+export function addSegmentLen(sc: GeoScene, a: string, length: number, part: number): GeoScene | null {
+  if (!plane(sc, [a]) || !(length > 0)) return null;
+  const n = clone(sc);
+  const d: GeoDef = {k: 'vec', p: a, dx: length, dy: 0};
+  const nm = addDerived(n, calcDef(d, n.pts)!, d, part);
+  n.aux.push([a, nm, part]);
+  return n;
+}
+
+/** Nửa đường tròn đường kính AB (từ A quay ngược chiều kim đồng hồ sang B). */
+export const addSemicircle = (sc: GeoScene, a: string, b: string, part: number) => addCircleOf(sc, 'semi', [a, b], part);
+
+/** Hình quạt tâm O từ OA tới OB ngược chiều kim đồng hồ; vẽ thêm hai bán kính. */
+export function addSector(sc: GeoScene, o: string, a: string, b: string, part: number): GeoScene | null {
+  const c = addCircleOf(sc, 'sector', [o, a, b], part);
+  return c ? addSegment(addSegment(c, o, a, part), o, b, part) : null;
+}
+
+/** Ẩn/hiện một điểm dựng thêm cùng mọi đoạn nối nó (đỉnh của hình gốc không ẩn được). */
+export function toggleHidden(sc: GeoScene, name: string): GeoScene {
+  if (!sc.pts[name] || sc.edges.some((e) => e.includes(name))) return sc;
+  const h = sc.hiddenPts ?? [];
+  return {...sc, hiddenPts: h.includes(name) ? h.filter((x) => x !== name) : [...h, name]};
 }
 
 /** Đường trung bình: M, N là trung điểm hai cạnh kề nhau của tam giác (a-b và a-c, a là đỉnh chung), nối MN. */
@@ -610,3 +876,14 @@ export function solidStats(sc: GeoScene): string {
 
 export const geoTitle = (sc: GeoScene) => sc.title;
 export {sceneFromModel};
+
+/** Diện tích / chu vi đa giác theo thứ tự điểm chạm (đơn vị: cạnh a = 1). */
+export function measurePolygon(sc: GeoScene, names: string[], what: 'area' | 'perimeter'): string {
+  if (names.some((n) => !sc.pts[n]) || names.length < 3) return '';
+  const q = names.map((n) => sc.pts[n]);
+  // diện tích = nửa độ dài tổng các tích có hướng (quạt tam giác từ đỉnh đầu): đúng cả trong không gian
+  const sum = q.slice(1, -1).reduce((acc, p, i) => add(acc, cross(sub(p, q[0]), sub(q[i + 2], q[0]))), [0, 0, 0] as V3);
+  const area = len(sum) / 2;
+  const per = q.reduce((s2, p, i) => s2 + Math.hypot(p[0] - q[(i + 1) % q.length][0], p[1] - q[(i + 1) % q.length][1]), 0);
+  return what === 'area' ? `S(${names.join('')}) = ${+area.toFixed(3)}a²` : `Chu vi ${names.join('')} = ${fmtLen(per)} (≈ ${+per.toFixed(3)}a)`;
+}

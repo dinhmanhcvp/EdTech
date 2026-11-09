@@ -19,7 +19,8 @@ interface Props {
   onMoveEnd: () => void;
   onInteractStart: () => void;
   /** hình dựng từ đề: đang chọn điểm ('point') hoặc cạnh ('edge') bằng chạm */
-  pickMode?: 'point' | 'edge' | null;
+  pickMode?: 'point' | 'edge' | 'place' | null;
+  onPlace?: (dx: number, dy: number, anchor: string) => void;
   pickedNames?: string[];
   onPickPoint?: (name: string) => void;
   onPickEdge?: (a: string, b: string, t: number) => void;
@@ -42,7 +43,7 @@ const fmt = (v: number) => v.toFixed(1).replace('.', ',');
 const midOf = (a: P2, b: P2): P2 => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
 
 /** Hình học vẽ thẳng lên bảng: không khung, không nền; chỉ có nét hình, nhãn đỉnh và tay cầm nhỏ. */
-export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onOpenTools, onRotate, rotation, partChips, onTogglePart, dragPoints, onDragPoint, freePts, onDragFree}) => {
+export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onPlace, onOpenTools, onRotate, rotation, partChips, onTogglePart, dragPoints, onDragPoint, freePts, onDragFree}) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const s = stroke.shape!;
   const t = stroke.typeset!;
@@ -502,6 +503,23 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
                   opacity={e.hidden ? 0.8 : 1}
                 />
               ))}
+              {pickMode === 'place' && sk.names?.[0] && sk.verts[0] && (
+                <rect
+                  data-testid="geo-place-area"
+                  x={-4000}
+                  y={-4000}
+                  width={9000}
+                  height={9000}
+                  fill="transparent"
+                  style={{pointerEvents: 'auto', cursor: 'crosshair', touchAction: 'none'}}
+                  onPointerDown={(ev) => {
+                    ev.stopPropagation();
+                    const r = svgRef.current?.getBoundingClientRect();
+                    if (!r) return;
+                    onPlace?.((ev.clientX - r.left) / boardScale - sk.verts[0].x, (ev.clientY - r.top) / boardScale - sk.verts[0].y, sk.names![0]);
+                  }}
+                />
+              )}
               {pickMode === 'edge' &&
                 sk.edges.map((e, i) => (
                   <line
@@ -748,7 +766,7 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
         )}
         {s.kind === 'solid' && (
           <div className="absolute left-0 text-[10px] font-mono text-stone-500 pointer-events-none" style={{top: h * boardScale + (partChips && partChips.length > 0 ? 46 : 26), whiteSpace: 'nowrap'}}>
-            {sk?.fixed ? (pickMode ? (pickMode === 'edge' ? 'Chạm vào cạnh để đặt điểm' : 'Chạm vào điểm để chọn') : 'Hình dựng từ đề · mở dụng cụ vẽ để thêm điểm, đoạn, thiết diện') : sk ? 'Hình giữ đúng nét bạn vẽ · nét đứt: cạnh khuất · kéo đỉnh để chỉnh · ⤢ mở mô hình 3D để xoay' : 'Nét liền: cạnh thấy · nét đứt: cạnh khuất · kéo vòng xoay để xoay khối'}
+            {sk?.fixed ? (pickMode ? (pickMode === 'edge' ? 'Chạm vào cạnh để đặt điểm' : pickMode === 'place' ? 'Chạm vào chỗ trống để đặt điểm' : 'Chạm vào điểm để chọn') : 'Hình dựng từ đề · mở dụng cụ vẽ để thêm điểm, đoạn, thiết diện') : sk ? 'Hình giữ đúng nét bạn vẽ · nét đứt: cạnh khuất · kéo đỉnh để chỉnh · ⤢ mở mô hình 3D để xoay' : 'Nét liền: cạnh thấy · nét đứt: cạnh khuất · kéo vòng xoay để xoay khối'}
           </div>
         )}
       </div>

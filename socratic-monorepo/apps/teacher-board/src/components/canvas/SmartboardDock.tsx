@@ -56,7 +56,7 @@ import {
 import type {CanvasTool, ShapeType, GridPattern} from './SmartboardCanvas';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
 import { DEFAULT_ORBIT } from '../../utils/geometryProblem';
-import { GEO_TOOLS, GEO_MEASURE, type GeoController, type GeoTool } from './GeometryProblemPanel';
+import { GEO_TOOLS, GEO_LINES, GEO_SHAPES, GEO_CURVES, GEO_TRANSFORM, GEO_OBJECTS, GEO_MEASURE, type GeoController, type GeoTool } from './GeometryProblemPanel';
 
 export interface DockScene {
   id: string;
@@ -450,6 +450,41 @@ const GEO_TOOL_ICONS: Record<GeoTool, React.ReactNode> = {
   foot: <CornerDownRight className="w-4 h-4" />,
   section: <Scissors className="w-4 h-4" />,
   midline: <Minus className="w-4 h-4" />,
+  point: <MapPin className="w-4 h-4" />,
+  hide: <EyeOff className="w-4 h-4" />,
+  seglen: <Ruler className="w-4 h-4" />,
+  circlecr: <CircleDot className="w-4 h-4" />,
+  semi: <CircleDot className="w-4 h-4" />,
+  sector: <CircleDot className="w-4 h-4" />,
+  rotate: <Copy className="w-4 h-4" />,
+  dilate: <Layers className="w-4 h-4" />,
+  line: <Minus className="w-4 h-4" />,
+  ray: <ArrowRight className="w-4 h-4" />,
+  vector: <ArrowRight className="w-4 h-4" />,
+  polygon: <Square className="w-4 h-4" />,
+  reg4: <Square className="w-4 h-4" />,
+  reg5: <Shapes className="w-4 h-4" />,
+  reg6: <Shapes className="w-4 h-4" />,
+  compass: <Compass className="w-4 h-4" />,
+  tangents: <CornerDownRight className="w-4 h-4" />,
+  translate: <ArrowRight className="w-4 h-4" />,
+  rot90: <Copy className="w-4 h-4" />,
+  rot60: <Copy className="w-4 h-4" />,
+  dil2: <Layers className="w-4 h-4" />,
+  dilhalf: <Layers className="w-4 h-4" />,
+  label: <Eye className="w-4 h-4" />,
+  perpbis: <Minus className="w-4 h-4" />,
+  bisector: <Compass className="w-4 h-4" />,
+  parallel: <Minus className="w-4 h-4" />,
+  perpline: <CornerDownRight className="w-4 h-4" />,
+  inter: <MapPin className="w-4 h-4" />,
+  circle: <CircleDot className="w-4 h-4" />,
+  circle3: <CircleDot className="w-4 h-4" />,
+  tangent: <CornerDownRight className="w-4 h-4" />,
+  reflline: <Copy className="w-4 h-4" />,
+  reflpt: <Copy className="w-4 h-4" />,
+  area: <Layers className="w-4 h-4" />,
+  perim: <Ruler className="w-4 h-4" />,
   delete: <Eraser className="w-4 h-4" />,
   dist: <Ruler className="w-4 h-4" />,
   angle: <Compass className="w-4 h-4" />,
@@ -458,6 +493,15 @@ const GEO_TOOL_ICONS: Record<GeoTool, React.ReactNode> = {
   alp: <CornerDownRight className="w-4 h-4" />,
   dih: <Box className="w-4 h-4" />,
 };
+
+/** Các nhóm công cụ kiểu GeoGebra trong AI hub (Vẽ hình → GeoGebra). */
+const GGROUPS = [
+  {id: 'lines', label: 'Đường', hint: 'Đường thẳng, tia, trung trực, phân giác, song song, vuông góc, giao điểm', icon: <Minus className="w-4 h-4" />, tools: GEO_LINES},
+  {id: 'shapes', label: 'Hình', hint: 'Đa giác, hình vuông, ngũ giác, lục giác đều, véctơ', icon: <Square className="w-4 h-4" />, tools: GEO_SHAPES},
+  {id: 'circles', label: 'Tròn', hint: 'Đường tròn, compa, tiếp tuyến', icon: <CircleDot className="w-4 h-4" />, tools: GEO_CURVES},
+  {id: 'objects', label: 'Đối tượng', hint: 'Điểm mới, ẩn/hiện tên, ẩn/hiện điểm', icon: <Eye className="w-4 h-4" />, tools: GEO_OBJECTS},
+  {id: 'transform', label: 'Biến hình', hint: 'Tịnh tiến, quay, vị tự, đối xứng trục, đối xứng tâm', icon: <Copy className="w-4 h-4" />, tools: GEO_TRANSFORM},
+];
 
 /**
  * Đĩa Xoay AI Trung Tâm (Solid White AI Radial Turntable Disc):
@@ -763,6 +807,9 @@ export const AiFab: React.FC<AiFabProps> = ({
       ...(geo
         ? [
             sub('tools', 'Dựng', 'Đoạn nối, trung điểm, điểm trên cạnh, chân vuông góc, thiết diện', <Ruler className="w-4 h-4" />, () => setPath(['draw', 'tools']), {keep: true, highlight: GEO_TOOLS.some((t) => t.id === geo.tool)}),
+            ...(geo.is3D
+              ? []
+              : [sub('gg', 'GeoGebra', 'Bộ dụng cụ kiểu GeoGebra: đường, hình, đường tròn, biến hình. Mọi nét dựng ra đều theo khi kéo đỉnh', <Shapes className="w-4 h-4" />, () => setPath(['draw', 'gg']), {keep: true, highlight: GGROUPS.some((g) => g.tools.some((t) => t.id === geo.tool))})]),
             sub('measure', 'Đo', 'Đo độ dài đoạn thẳng và số đo góc ngay trên hình', <Compass className="w-4 h-4" />, () => setPath(['draw', 'measure']), {keep: true, highlight: GEO_MEASURE.some((t) => t.id === geo.tool)}),
             sub('parts', `Phần ${geo.shownParts}/${geo.togglableParts}`, 'Hiện thêm hoặc ẩn bớt từng phần. Muốn thêm yêu cầu: viết lên bảng (VD: vẽ đường tròn ngoại tiếp) rồi khoanh và bấm Vẽ hình', <ChevronRight className="w-4 h-4" />, () => setPath(['draw', 'parts']), {keep: true}),
             sub('view', 'Hiển thị', 'Xoay 3D, tô màu mặt, nét khuất, mở mô phỏng 3D, xuất TikZ', <Eye className="w-4 h-4" />, () => setPath(['draw', 'view']), {keep: true}),
@@ -799,10 +846,19 @@ export const AiFab: React.FC<AiFabProps> = ({
         sub(t.id, t.label, t.hint, GEO_TOOL_ICONS[t.id], () => geo.setTool(geo.tool === t.id ? null : t.id), {highlight: geo.tool === t.id}),
       ),
     ];
+  } else if (tierKey === 'draw/gg' && geo) {
+    items = [back, ...GGROUPS.map((g) => sub(g.id, g.label, g.hint, g.icon, () => setPath(['draw', 'gg', g.id]), {keep: true, highlight: g.tools.some((t) => t.id === geo.tool)}))];
+  } else if (tierKey.startsWith('draw/gg/') && geo) {
+    const group = GGROUPS.find((g) => `draw/gg/${g.id}` === tierKey);
+    items = [
+      back,
+      ...(group?.tools ?? []).map((t) => sub(t.id, t.label, t.hint, GEO_TOOL_ICONS[t.id], () => geo.setTool(geo.tool === t.id ? null : t.id), {highlight: geo.tool === t.id})),
+      ...(group?.id === 'objects' ? [sub('showall', 'Hiện lại tất cả', 'Hiện lại mọi điểm đã ẩn', <Eye className="w-4 h-4" />, () => geo.showHidden(), {keep: true, disabled: !geo.hasHidden})] : []),
+    ];
   } else if (tierKey === 'draw/measure' && geo) {
     items = [
       back,
-      ...GEO_MEASURE.filter((t) => geo.is3D || t.id === 'dist' || t.id === 'angle' || t.id === 'dln').map((t) =>
+      ...GEO_MEASURE.filter((t) => geo.is3D || t.id === 'dist' || t.id === 'angle' || t.id === 'dln' || t.id === 'area' || t.id === 'perim').map((t) =>
         sub(t.id, t.label, t.hint, GEO_TOOL_ICONS[t.id], () => geo.setTool(geo.tool === t.id ? null : t.id), {highlight: geo.tool === t.id}),
       ),
       sub('stats', 'Thể tích', 'Thể tích, diện tích xung quanh và toàn phần của khối', <Sparkles className="w-4 h-4" />, () => geo.measureSolid(), {keep: true, disabled: !geo.is3D}),
@@ -989,7 +1045,7 @@ export const AiFab: React.FC<AiFabProps> = ({
                       : 'text-stone-400'
                   }`}
                 >
-                  {geo?.tool ? (GEO_TOOLS.find((g) => g.id === geo.tool)?.label ?? 'Vẽ') : detectedIntent === 'GRADE' ? 'Chấm' : detectedIntent === 'VISUALIZE' ? 'Đồ thị' : open ? 'Đóng' : 'Công cụ'}
+                  {geo?.tool ? ([...GEO_TOOLS, ...GEO_LINES, ...GEO_SHAPES, ...GEO_CURVES, ...GEO_TRANSFORM, ...GEO_OBJECTS, ...GEO_MEASURE].find((g) => g.id === geo.tool)?.label ?? 'Vẽ') : detectedIntent === 'GRADE' ? 'Chấm' : detectedIntent === 'VISUALIZE' ? 'Đồ thị' : open ? 'Đóng' : 'Công cụ'}
                 </span>
               </>
             )}

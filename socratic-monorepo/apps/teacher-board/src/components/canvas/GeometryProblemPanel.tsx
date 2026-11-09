@@ -5,18 +5,22 @@ import {Eraser, Redo2, Undo2, X} from 'lucide-react';
 import {buildScene, type GeoScene} from '../../utils/geometryProblem';
 import type {V3} from '../../utils/solids';
 import {canUnfold, polygonStats, sliceSection} from '../../utils/netUnfold';
-import {addFoot, addMidline, addMidpoint, moveFreePoint, removePoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, setPointT, solidStats, toTikz, togglePart, visibleNames, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane} from '../../utils/geoTools';
+import {addFreePoint, addSector, addSegmentLen, addSemicircle, toggleHidden, addBisector, addCircleOf, addLineAB, addPolygon, addRegularPolygon, addTangentsFrom, addTransform, addVector, toggleLabel, addFoot, addIntersection, addLineThrough, addMidline, addPerpBisector, addReflection, addTangent, measurePolygon, addMidpoint, moveFreePoint, removePoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, setPointT, solidStats, toTikz, togglePart, visibleNames, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane} from '../../utils/geoTools';
 
-export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'midline' | 'delete' | 'dist' | 'angle' | 'dpl' | 'dln' | 'alp' | 'dih';
+export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'midline' | 'delete' | 'perpbis' | 'bisector' | 'parallel' | 'perpline' | 'inter' | 'circle' | 'circle3' | 'tangent' | 'reflline' | 'reflpt' | 'line' | 'ray' | 'vector' | 'polygon' | 'reg4' | 'reg5' | 'reg6' | 'compass' | 'tangents' | 'translate' | 'rot90' | 'rot60' | 'dil2' | 'dilhalf' | 'label' | 'point' | 'hide' | 'seglen' | 'circlecr' | 'semi' | 'sector' | 'rotate' | 'dilate' | 'area' | 'perim' | 'dist' | 'angle' | 'dpl' | 'dln' | 'alp' | 'dih';
 
 export interface GeoPickConfig {
-  pickMode: 'point' | 'edge' | null;
+  pickMode: 'point' | 'edge' | 'place' | null;
+  /** đặt điểm tự do: dx, dy = vị trí chạm so với đỉnh `anchor` (px cục bộ của hình) */
+  onPlace?: (dx: number, dy: number, anchor: string) => void;
   picks: string[];
   onPickPoint: (name: string) => void;
   onPickEdge: (a: string, b: string, t: number) => void;
 }
 
 /** Bộ điều khiển hình dựng từ đề: AI hub phân tầng dùng để điều khiển, không cần bảng riêng. */
+export type GeoToolSpec = {id: GeoTool; label: string; need: number; hint: string; param?: {label: string; def: number}};
+
 export interface GeoController {
   parts: number;
   upTo: number;
@@ -44,6 +48,8 @@ export interface GeoController {
   measureSolid: () => void;
   /** kéo một điểm trượt trên cạnh: t ∈ (0,1) từ đầu a; `done` = thả tay (ghi một bước hoàn tác). Điểm phụ thuộc và thiết diện tự cập nhật */
   setPointT: (name: string, t: number, done: boolean) => void;
+  hasHidden: boolean;
+  showHidden: () => void;
   /** kéo đỉnh tự do: dx, dy = độ dời con trỏ (px cục bộ) so với lúc bắt đầu kéo */
   moveFree: (name: string, dx: number, dy: number, done: boolean, start: boolean) => void;
   /** hình khối có thể khai triển thành lưới */
@@ -86,7 +92,7 @@ interface Props {
   figureId?: string;
 }
 
-export const GEO_TOOLS: {id: GeoTool; label: string; need: number; hint: string}[] = [
+export const GEO_TOOLS: GeoToolSpec[] = [
   {id: 'segment', label: 'Đoạn nối', need: 2, hint: 'Chạm 2 điểm để nối thành đoạn thẳng'},
   {id: 'midpoint', label: 'Trung điểm', need: 2, hint: 'Chạm 2 điểm để lấy trung điểm'},
   {id: 'onEdge', label: 'Điểm trên cạnh', need: 1, hint: 'Chạm vào một cạnh để đặt điểm tại chỗ chạm'},
@@ -96,16 +102,68 @@ export const GEO_TOOLS: {id: GeoTool; label: string; need: number; hint: string}
   {id: 'section', label: 'Thiết diện', need: 3, hint: 'Chạm 3 điểm xác định mặt phẳng cắt'},
 ];
 
+/** nhóm "Đối tượng": điểm mới, tên, ẩn/hiện */
+export const GEO_OBJECTS: GeoToolSpec[] = [
+  {id: 'point', label: 'Điểm mới', need: 0, hint: 'Chạm vào chỗ trống trên hình để đặt một điểm tự do (kéo đi đâu cũng được)'},
+  {id: 'label', label: 'Ẩn/hiện tên', need: 1, hint: 'Chạm một điểm để ẩn hoặc hiện chữ tên của nó'},
+  {id: 'hide', label: 'Ẩn/hiện điểm', need: 1, hint: 'Chạm một điểm dựng thêm để ẩn nó cùng các đoạn nối; hiện lại bằng nút Hiện lại tất cả'},
+];
+
+/** Bộ dụng cụ kiểu GeoGebra (hình phẳng): mọi nét dựng ra đều theo khi kéo đỉnh gốc. Chia thành bốn nhóm cho AI hub. */
+export const GEO_LINES: GeoToolSpec[] = [
+  {id: 'line', label: 'Đường thẳng', need: 2, hint: 'Chạm 2 điểm: đường thẳng qua hai điểm (kéo dài hai phía)'},
+  {id: 'seglen', label: 'Đoạn dài cố định', need: 1, param: {label: 'Dài', def: 3}, hint: 'Chạm điểm A rồi nhập độ dài: đoạn thẳng từ A sang phải'},
+  {id: 'ray', label: 'Tia', need: 2, hint: 'Chạm gốc A rồi điểm B: tia AB'},
+  {id: 'perpbis', label: 'Trung trực', need: 2, hint: 'Chạm 2 điểm A, B: đường trung trực của AB'},
+  {id: 'bisector', label: 'Phân giác', need: 3, hint: 'Chạm 3 điểm, điểm giữa là đỉnh góc: phân giác của góc đó'},
+  {id: 'parallel', label: 'Song song', need: 3, hint: 'Chạm điểm P, rồi 2 điểm A, B: đường qua P song song AB'},
+  {id: 'perpline', label: 'Vuông góc', need: 3, hint: 'Chạm điểm P, rồi 2 điểm A, B: đường qua P vuông góc AB'},
+  {id: 'inter', label: 'Giao điểm', need: 4, hint: 'Chạm 4 điểm A, B, C, D: giao điểm của đường AB và đường CD'},
+];
+
+export const GEO_SHAPES: GeoToolSpec[] = [
+  {id: 'polygon', label: 'Đa giác', need: 0, hint: 'Chạm lần lượt các đỉnh, rồi chạm lại đỉnh đầu để khép kín'},
+  {id: 'reg4', label: 'Hình vuông', need: 2, hint: 'Chạm 2 điểm A, B: hình vuông có cạnh AB (ngược chiều kim đồng hồ)'},
+  {id: 'reg5', label: 'Ngũ giác đều', need: 2, hint: 'Chạm 2 điểm A, B: ngũ giác đều có cạnh AB'},
+  {id: 'reg6', label: 'Lục giác đều', need: 2, hint: 'Chạm 2 điểm A, B: lục giác đều có cạnh AB'},
+  {id: 'vector', label: 'Véctơ', need: 2, hint: 'Chạm gốc A rồi ngọn B: véctơ AB có mũi tên'},
+];
+
+export const GEO_CURVES: GeoToolSpec[] = [
+  {id: 'circle', label: 'Tròn tâm', need: 2, hint: 'Chạm tâm O, rồi một điểm P trên đường tròn'},
+  {id: 'circlecr', label: 'Tròn bán kính', need: 1, param: {label: 'R', def: 2}, hint: 'Chạm tâm O rồi nhập bán kính R'},
+  {id: 'semi', label: 'Nửa đường tròn', need: 2, hint: 'Chạm 2 điểm A, B: nửa đường tròn đường kính AB (từ A sang B ngược chiều kim đồng hồ)'},
+  {id: 'sector', label: 'Hình quạt', need: 3, hint: 'Chạm tâm O, rồi A, rồi B: hình quạt từ OA tới OB ngược chiều kim đồng hồ'},
+  {id: 'circle3', label: 'Tròn 3 điểm', need: 3, hint: 'Chạm 3 điểm: đường tròn đi qua cả ba'},
+  {id: 'compass', label: 'Compa', need: 3, hint: 'Chạm 2 điểm A, B (bán kính AB), rồi tâm C: đường tròn tâm C bán kính AB'},
+  {id: 'tangent', label: 'Tiếp tuyến', need: 2, hint: 'Chạm tâm O, rồi điểm P trên đường tròn: tiếp tuyến tại P'},
+  {id: 'tangents', label: 'Tiếp tuyến từ điểm', need: 3, hint: 'Chạm điểm P ngoài đường tròn, rồi tâm O, rồi điểm Q trên đường tròn: hai tiếp tuyến kẻ từ P'},
+];
+
+export const GEO_TRANSFORM: GeoToolSpec[] = [
+  {id: 'translate', label: 'Tịnh tiến', need: 3, hint: 'Chạm điểm P, rồi 2 điểm A, B: P tịnh tiến theo véctơ AB'},
+  {id: 'rotate', label: 'Quay góc', need: 2, param: {label: 'Góc °', def: 45}, hint: 'Chạm điểm P, rồi tâm O; nhập góc (độ, ngược chiều kim đồng hồ)'},
+  {id: 'dilate', label: 'Vị tự tỉ số', need: 2, param: {label: 'Tỉ số', def: 3}, hint: 'Chạm điểm P, rồi tâm O; nhập tỉ số (âm = ảnh phía bên kia tâm)'},
+  {id: 'rot90', label: 'Quay 90°', need: 2, hint: 'Chạm điểm P, rồi tâm O: P quay quanh O góc 90°'},
+  {id: 'rot60', label: 'Quay 60°', need: 2, hint: 'Chạm điểm P, rồi tâm O: P quay quanh O góc 60°'},
+  {id: 'dil2', label: 'Vị tự ×2', need: 2, hint: 'Chạm điểm P, rồi tâm O: ảnh của P qua vị tự tâm O tỉ số 2'},
+  {id: 'dilhalf', label: 'Vị tự ×½', need: 2, hint: 'Chạm điểm P, rồi tâm O: ảnh của P qua vị tự tâm O tỉ số 1/2'},
+  {id: 'reflline', label: 'Đối xứng trục', need: 3, hint: 'Chạm điểm P, rồi 2 điểm A, B của trục: điểm đối xứng của P qua AB'},
+  {id: 'reflpt', label: 'Đối xứng tâm', need: 2, hint: 'Chạm điểm P, rồi tâm O: điểm đối xứng của P qua O'},
+];
+
 /** dụng cụ đo (tầng Đo của hub): không đổi hình, chỉ hiện kết quả */
-export const GEO_MEASURE: {id: GeoTool; label: string; need: number; hint: string}[] = [
+export const GEO_MEASURE: GeoToolSpec[] = [
   {id: 'dist', label: 'Độ dài', need: 2, hint: 'Chạm 2 điểm để đo khoảng cách (đơn vị cạnh a)'},
   {id: 'angle', label: 'Góc', need: 3, hint: 'Chạm 3 điểm, điểm giữa là đỉnh góc'},
   {id: 'dpl', label: 'Điểm–mặt', need: 4, hint: 'Khoảng cách điểm đến mặt phẳng: chạm điểm cần đo, rồi 3 điểm của mặt phẳng'},
   {id: 'dln', label: 'Điểm–đường', need: 3, hint: 'Khoảng cách điểm đến đường thẳng: chạm điểm cần đo, rồi 2 điểm của đường thẳng'},
   {id: 'alp', label: 'Đường–mặt', need: 5, hint: 'Góc đường thẳng và mặt phẳng: chạm 2 điểm của đường thẳng, rồi 3 điểm của mặt phẳng'},
+  {id: 'area', label: 'Diện tích', need: 3, hint: 'Chạm 3 điểm (tam giác): diện tích, đơn vị a²'},
+  {id: 'perim', label: 'Chu vi', need: 3, hint: 'Chạm 3 điểm (tam giác): chu vi'},
   {id: 'dih', label: 'Nhị diện', need: 4, hint: 'Góc nhị diện: chạm 2 điểm của cạnh chung, rồi một điểm ở mỗi mặt'},
 ];
-const ALL_TOOLS = [...GEO_TOOLS, ...GEO_MEASURE];
+const ALL_TOOLS: GeoToolSpec[] = [...GEO_TOOLS, ...GEO_LINES, ...GEO_SHAPES, ...GEO_CURVES, ...GEO_TRANSFORM, ...GEO_OBJECTS, ...GEO_MEASURE];
 
 const SAMPLE = 'Cho hình chóp S.ABCD có đáy ABCD là hình vuông cạnh a, SA vuông góc với đáy, SA = a√2.\na) Gọi M là trung điểm SB.\nb) Gọi O = AC ∩ BD.\nc) Tìm thiết diện của hình chóp cắt bởi mặt phẳng (MOD).';
 
@@ -197,6 +255,9 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
 
   // nét tự vẽ bằng dụng cụ thuộc phần 0: luôn hiện, giữ nguyên khi bật/tắt các phần a, b, c
   const part = 0;
+  // tham số số của dụng cụ (góc, tỉ số, độ dài, bán kính): giá trị người dùng nhập, không có thì mặc định
+  const [params, setParams] = useState<Record<string, number>>({});
+  const argOf = (t: GeoTool) => params[t] ?? ALL_TOOLS.find((x) => x.id === t)?.param?.def ?? 1;
   const apply = (t: GeoTool, names: string[], edge?: {t: number}) => {
     if (!cur) return;
     const sc = cur.scene;
@@ -215,6 +276,46 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       setInfo(
         t === 'dpl' ? measureDistPointPlane(sc, names[0], names[1], names[2], names[3]) : t === 'dln' ? measureDistPointLine(sc, names[0], names[1], names[2]) : t === 'alp' ? measureAngleLinePlane(sc, names[0], names[1], names[2], names[3], names[4]) : measureDihedral(sc, names[0], names[1], names[2], names[3]),
       );
+      setPicks([]);
+      return;
+    }
+    if (t === 'area' || t === 'perim') {
+      setInfo(measurePolygon(sc, names, t === 'area' ? 'area' : 'perimeter'));
+      setPicks([]);
+      return;
+    }
+    const built =
+      t === 'perpbis' ? addPerpBisector(sc, names[0], names[1], part)
+      : t === 'bisector' ? addBisector(sc, names[0], names[1], names[2], part)
+      : t === 'parallel' ? addLineThrough(sc, 'par', names[0], names[1], names[2], part)?.scene
+      : t === 'perpline' ? addLineThrough(sc, 'perp', names[0], names[1], names[2], part)?.scene
+      : t === 'inter' ? addIntersection(sc, names[0], names[1], names[2], names[3], part)
+      : t === 'circle' ? addCircleOf(sc, 'cp', names, part)
+      : t === 'circle3' ? addCircleOf(sc, 'circum', names, part)
+      : t === 'tangent' ? addTangent(sc, names[0], names[1], part)
+      : t === 'reflline' ? addReflection(sc, names[0], [names[1], names[2]], part)
+      : t === 'reflpt' ? addReflection(sc, names[0], names[1], part)
+      : t === 'line' || t === 'ray' ? addLineAB(sc, names[0], names[1], t, part)
+      : t === 'vector' ? addVector(sc, names[0], names[1], part)
+      : t === 'polygon' ? addPolygon(sc, names, part)
+      : t === 'reg4' || t === 'reg5' || t === 'reg6' ? addRegularPolygon(sc, names[0], names[1], Number(t.slice(3)), part)
+      : t === 'compass' ? addCircleOf(sc, 'comp', [names[2], names[0], names[1]], part)
+      : t === 'tangents' ? addTangentsFrom(sc, names[0], names[1], names[2], part)
+      : t === 'translate' ? addTransform(sc, names[0], {k: 'trans', a: names[1], b: names[2]}, part)
+      : t === 'rot90' || t === 'rot60' ? addTransform(sc, names[0], {k: 'rot', o: names[1], deg: t === 'rot90' ? 90 : 60}, part)
+      : t === 'dil2' || t === 'dilhalf' ? addTransform(sc, names[0], {k: 'dil', o: names[1], f: t === 'dil2' ? 2 : 0.5}, part)
+      : t === 'label' ? toggleLabel(sc, names[0])
+      : t === 'hide' ? toggleHidden(sc, names[0])
+      : t === 'seglen' ? addSegmentLen(sc, names[0], argOf(t), part)
+      : t === 'circlecr' ? addCircleOf(sc, 'cr', [names[0]], part, argOf(t))
+      : t === 'semi' ? addSemicircle(sc, names[0], names[1], part)
+      : t === 'sector' ? addSector(sc, names[0], names[1], names[2], part)
+      : t === 'rotate' ? addTransform(sc, names[0], {k: 'rot', o: names[1], deg: argOf(t)}, part)
+      : t === 'dilate' ? addTransform(sc, names[0], {k: 'dil', o: names[1], f: argOf(t)}, part)
+      : undefined;
+    if (built !== undefined) {
+      if (built === null) setInfo(sc.dim === 2 ? 'Không dựng được với các điểm này (trùng nhau, thẳng hàng, hai đường song song, hoặc điểm nằm trong đường tròn khi kẻ tiếp tuyến)' : 'Dựng kiểu GeoGebra chỉ dùng cho hình phẳng');
+      else commit(built, cur.upTo);
       setPicks([]);
       return;
     }
@@ -246,9 +347,23 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       return;
     }
     onPickConfig({
-      pickMode: tool === 'onEdge' ? 'edge' : 'point',
+      pickMode: tool === 'onEdge' ? 'edge' : tool === 'point' ? 'place' : 'point',
+      onPlace: (dx, dy, anchor) => {
+        const c0 = curRef.current;
+        if (!c0 || !c0.scene.pts[anchor]) return;
+        const k = c0.scene.view.k || 1;
+        const at = c0.scene.pts[anchor];
+        const made = addFreePoint(c0.scene, [at[0] + dx / k, at[1] - dy / k, 0], 0);
+        if (made) commit(made.scene, c0.upTo);
+      },
       picks,
       onPickPoint: (name) => {
+        // đa giác: số đỉnh tùy ý, chạm lại đỉnh đầu để khép kín
+        if (spec.need === 0) {
+          if (picks.length >= 3 && name === picks[0]) apply(tool, picks);
+          else if (!picks.includes(name)) setPicks([...picks, name]);
+          return;
+        }
         const list = [...picks, name];
         if (list.length >= spec.need) apply(tool, list);
         else setPicks(list);
@@ -301,6 +416,8 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
           onApply?.(next, c0.upTo);
         } else patchScene({pts: next.pts, circles: next.circles, cons: next.cons});
       },
+      hasHidden: (cur.scene.hiddenPts?.length ?? 0) > 0,
+      showHidden: () => commit({...cur.scene, hiddenPts: []}, cur.upTo),
       canNet: canUnfold(cur.scene),
       net: cur.scene.net ?? 0,
       setNet: (t) => tween('net', t, 700),
@@ -414,6 +531,19 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       {(spec || info) && (
         <div data-testid="geo-chip" className="absolute left-1/2 -translate-x-1/2 top-14 z-40 pointer-events-auto flex items-center gap-2 rounded-full bg-white/97 border border-[#DCD9D0] shadow-md px-3 py-1.5 text-[12px] text-stone-800">
               {info && <b data-testid="geo-measure" className="text-blue-700">{info}</b>}
+              {spec?.param && (
+                <label className="flex items-center gap-1 text-stone-600">
+                  {spec.param.label}
+                  <input
+                    data-testid="geo-tool-param"
+                    type="number"
+                    step="any"
+                    value={params[spec.id] ?? spec.param.def}
+                    onChange={(e) => setParams((p) => ({...p, [spec.id]: Number.isFinite(e.target.valueAsNumber) ? e.target.valueAsNumber : spec.param!.def}))}
+                    className="w-16 rounded border border-[#DCD9D0] px-1 py-0.5 text-[12px]"
+                  />
+                </label>
+              )}
               {spec && <span data-testid="geo-tool-hint">{`${spec.label}: ${spec.hint}${picks.length ? ` (đã chọn: ${picks.join(', ')})` : ''}`}</span>}
               <button data-testid="geo-tool-off" onClick={() => { setTool(null); setInfo(''); }} className="text-stone-400 hover:text-stone-700" title="Thôi dùng dụng cụ">
                 <X className="w-4 h-4" />

@@ -328,7 +328,20 @@ export type GeoDef =
   | {k: 'foot'; p: string; a: string; b: string}
   /** điểm tính từ các điểm gốc: trọng tâm/ngoại tâm/nội tâm/trực tâm của tam giác n, chân phân giác (n = [A,B,D]), trung điểm (n = [B,D]) */
   | {k: 'calc'; f: 'centroid' | 'circum' | 'in' | 'ortho' | 'bis' | 'mid'; n: string[]}
-  | {k: 'inter'; a: string; b: string; c: string; d: string};
+  | {k: 'inter'; a: string; b: string; c: string; d: string}
+  /** X = P + s·v, v = vectơ AB (r = 'par': song song) hoặc AB quay 90° (r = 'perp': vuông góc); dùng để vẽ đường song song/vuông góc/trung trực/tiếp tuyến */
+  | {k: 'off'; p: string; a: string; b: string; r: 'par' | 'perp'; s: number}
+  /** đối xứng của P qua đường thẳng AB (refl) hoặc qua điểm O (refp: a = O) */
+  | {k: 'refl'; p: string; a: string; b: string}
+  | {k: 'refp'; p: string; o: string}
+  /** P quay quanh O góc deg (độ, ngược chiều kim đồng hồ); tịnh tiến P theo vectơ AB; vị tự tâm O tỉ số f */
+  | {k: 'rot'; p: string; o: string; deg: number}
+  | {k: 'trans'; p: string; a: string; b: string}
+  | {k: 'dil'; p: string; o: string; f: number}
+  /** tiếp điểm của tiếp tuyến kẻ từ P tới đường tròn tâm O đi qua q (w = ±1: hai tiếp điểm) */
+  | {k: 'tan'; p: string; o: string; q: string; w: 1 | -1}
+  /** X = P + (dx, dy): đoạn thẳng có độ dài cố định theo trục ngang */
+  | {k: 'vec'; p: string; dx: number; dy: number};
 
 /** Thiết diện cắt bởi mặt phẳng qua ba điểm: tính lại lúc vẽ nên theo kịp khi kéo điểm. */
 export interface GeoSection {
@@ -344,7 +357,9 @@ export interface GeoCircle {
   part: number;
   label: string;
   /** đường tròn tự tính lại khi kéo điểm gốc (hình phẳng): ngoại/nội tiếp tam giác n, hoặc đường kính n[0]n[1] */
-  of?: {f: 'circum' | 'in' | 'diam'; n: string[]};
+  of?: {f: 'circum' | 'in' | 'diam' | 'cp' | 'comp' | 'cr' | 'semi' | 'sector'; n: string[]};
+  /** chỉ vẽ một cung: từ hướng `from` (trong mặt phẳng đường tròn) quay ngược chiều kim đồng hồ `span` radian (nửa đường tròn, hình quạt) */
+  arc?: {from: V3; span: number};
   /** 'sphere': đường viền của mặt cầu (hình tròn có tâm và bán kính bằng của cầu, không nằm trong một mặt phẳng cố định) */
   kind?: 'circle' | 'sphere';
   /** thuộc về chính khối (nón, trụ, cầu): vẽ cùng màu nét, không phải đường tròn thêm */
@@ -1217,6 +1232,15 @@ export function circleSamples(c: GeoCircle, n = 96): V3[] {
   const u = norm(ref);
   const w = cross(c.normal, u);
   const out: V3[] = [];
+  if (c.arc) {
+    const e1 = norm(c.arc.from);
+    const e2 = cross(norm(c.normal), e1);
+    for (let i = 0; i <= n; i++) {
+      const t = (i / n) * c.arc.span;
+      out.push(add(c.center, add(mul(e1, c.r * Math.cos(t)), mul(e2, c.r * Math.sin(t)))));
+    }
+    return out;
+  }
   for (let i = 0; i <= n; i++) {
     const t = (i / n) * Math.PI * 2;
     out.push(add(c.center, add(mul(u, c.r * Math.cos(t)), mul(w, c.r * Math.sin(t)))));
@@ -1263,6 +1287,12 @@ export interface GeoScene {
   circles?: GeoCircle[];
   sections?: GeoSection[];
   defs?: Record<string, GeoDef>;
+  /** điểm ẩn tên (điểm phụ của đường dựng, hoặc do người dùng ẩn bằng công cụ Ẩn/hiện tên) */
+  hiddenLabels?: string[];
+  /** điểm (không thuộc cạnh gốc) và mọi đoạn nối nó bị ẩn bằng công cụ Ẩn/hiện đối tượng */
+  hiddenPts?: string[];
+  /** điểm đặt tự do bằng công cụ Điểm mới: kéo đi đâu cũng được */
+  loose?: string[];
   /** ràng buộc hình phẳng (vuông góc/bằng nhau/song song) suy ra lần kéo đầu và giữ nguyên khi kéo đỉnh */
   cons?: import('./geoConstraints').Cons[];
   /** xoay tự do (phép chiếu trực giao); không có = góc chuẩn SGK (chiếu xiên cố định) */
@@ -1388,7 +1418,7 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
     if (nf) return nf;
   }
   const m = modelFromScene(sc);
-  const included = (n: string) => partShown(sc, m.ptPart.get(n) ?? 0, upTo);
+  const included = (n: string) => partShown(sc, m.ptPart.get(n) ?? 0, upTo) && !sc.hiddenPts?.includes(n);
   const names = m.order.filter(included);
   const idx = new Map(names.map((n, i) => [n, i]));
   const v = m.view ?? {k: 1, bx: 0, by: 0};
@@ -1466,6 +1496,7 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
   });
 
   const labels = names.map((n) => {
+    if (sc.hiddenLabels?.includes(n)) return '';
     if (n.startsWith('#') && !m.merged.has(n)) return '';
     const extra = (m.merged.get(n) ?? []).filter((al) => partShown(sc, m.mergedPart.get(al) ?? 0, upTo));
     return [n.startsWith('#') ? '' : n, ...extra].filter(Boolean).join('≡');

@@ -162,6 +162,8 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     measureSolid: vi.fn(),
     setPointT: vi.fn(),
     moveFree: vi.fn(),
+    hasHidden: false,
+    showHidden: vi.fn(),
     canNet: true,
     net: 0,
     setNet: vi.fn(),
@@ -194,6 +196,28 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     expect(ids()).toEqual(expect.arrayContaining(['ai-fab-back', 'ai-fab-draw-tools', 'ai-fab-draw-measure', 'ai-fab-draw-parts', 'ai-fab-draw-view', 'ai-fab-draw-edit']));
     fireEvent.click(screen.getByTestId('ai-fab-back'));
     expect(tier()).toBe('root');
+  });
+
+  it('hình phẳng có tầng GeoGebra với bốn nhóm dụng cụ; hình 3D thì không', () => {
+    const g = ctl({is3D: false});
+    render(<AiFab {...base} geo={g} />);
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw-gg'));
+    expect(tier()).toBe('draw/gg');
+    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-lines', 'ai-fab-draw-shapes', 'ai-fab-draw-circles', 'ai-fab-draw-objects', 'ai-fab-draw-transform']);
+    fireEvent.click(screen.getByTestId('ai-fab-draw-lines'));
+    expect(tier()).toBe('draw/gg/lines');
+    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-line', 'ai-fab-draw-seglen', 'ai-fab-draw-ray', 'ai-fab-draw-perpbis', 'ai-fab-draw-bisector', 'ai-fab-draw-parallel', 'ai-fab-draw-perpline', 'ai-fab-draw-inter']);
+    fireEvent.click(screen.getByTestId('ai-fab-draw-perpbis'));
+    expect(g.setTool).toHaveBeenCalledWith('perpbis');
+    fireEvent.click(screen.getByTestId('ai-fab'));
+    fireEvent.click(screen.getByTestId('ai-fab-back'));
+    fireEvent.click(screen.getByTestId('ai-fab-draw-transform'));
+    expect(ids()).toContain('ai-fab-draw-translate');
+    expect(ids()).toContain('ai-fab-draw-dilhalf');
+    expect(ids()).toContain('ai-fab-draw-rotate');
+    expect(ids()).toContain('ai-fab-draw-dilate');
   });
 
   it('tầng 3 Dụng cụ: chọn dụng cụ thì đĩa đóng nhưng mở lại vẫn ở tầng 3', () => {
@@ -283,7 +307,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     fireEvent.click(screen.getByTestId('ai-fab-back'));
     fireEvent.click(screen.getByTestId('ai-fab-draw-measure'));
     expect(tier()).toBe('draw/measure');
-    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-dist', 'ai-fab-draw-angle', 'ai-fab-draw-dpl', 'ai-fab-draw-dln', 'ai-fab-draw-alp', 'ai-fab-draw-dih', 'ai-fab-draw-stats']);
+    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-dist', 'ai-fab-draw-angle', 'ai-fab-draw-dpl', 'ai-fab-draw-dln', 'ai-fab-draw-alp', 'ai-fab-draw-area', 'ai-fab-draw-perim', 'ai-fab-draw-dih', 'ai-fab-draw-stats']);
     fireEvent.click(screen.getByTestId('ai-fab-draw-stats'));
     expect(g.measureSolid).toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('ai-fab-draw-angle'));

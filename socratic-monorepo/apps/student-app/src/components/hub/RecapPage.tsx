@@ -30,13 +30,13 @@ export function RecapPage({code}: {code: string}) {
       .catch((e: Error) => setError(e.message));
   }, [code]);
 
-  if (error) return <main className="p-6 text-center text-sm text-rose-700">{error}</main>;
+  if (error) return <main className="p-6 text-center text-sm text-brand-700">{error}</main>;
   if (!recap) return <main className="p-6 text-center text-sm text-stone-500">Đang tải bài học…</main>;
   return (
     <main data-testid="recap-page" className="mx-auto flex max-w-xl flex-col gap-3 p-4 text-stone-800">
       <p className="text-xs font-medium text-stone-500">Xem lại tiết học{recap.className ? ` · ${recap.className}` : ''}</p>
       <h1 className="text-xl font-bold">{recap.lessonTitle || 'Bài học hôm nay'}</h1>
-      {recap.summary && <p className="rounded-xl bg-emerald-50 p-3 text-sm leading-relaxed"><MathText text={recap.summary} /></p>}
+      {recap.summary && <p className="rounded-xl bg-mastery-bg p-3 text-sm leading-relaxed"><MathText text={recap.summary} /></p>}
       {recap.keyPoints && recap.keyPoints.length > 0 && (
         <section>
           <h2 className="text-sm font-semibold">Ý cần nhớ</h2>
@@ -46,7 +46,7 @@ export function RecapPage({code}: {code: string}) {
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold">Diễn biến trên bảng</h2>
         {recap.boardSnapshots.map((s, i) => (
-          <article key={s.id} className="rounded-xl border border-[#E6E4DD] bg-white p-3">
+          <article key={s.id} className="rounded-xl border border-rule bg-white p-3">
             <h3 className="text-sm font-semibold">{i + 1}. {s.title}</h3>
             {s.latex && <div className="my-1 overflow-x-auto text-sm"><MathView latex={s.latex} displayMode={false} /></div>}
             {s.note && <p className="text-[13px] leading-relaxed text-stone-600"><MathText text={s.note} /></p>}

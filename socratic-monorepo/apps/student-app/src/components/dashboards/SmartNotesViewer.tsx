@@ -67,18 +67,18 @@ export const SmartNotesViewer: React.FC = () => {
   return (
     <div
       data-testid="smart-notes-viewer"
-      className="w-full max-w-4xl bg-white/95 backdrop-blur-xl rounded-xl border border-[#E6E4DD] p-6 flex flex-col gap-6 text-[#18181B] shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] font-sans"
+      className="w-full max-w-4xl bg-white/95 backdrop-blur-xl rounded-xl border border-rule p-6 flex flex-col gap-6 text-ink shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] font-sans"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#E6E4DD] pb-4 flex-wrap gap-2">
+      <div className="flex items-center justify-between border-b border-rule pb-4 flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#F2F0EA] border border-[#E5E3DC] flex items-center justify-center text-stone-700">
+          <div className="w-8 h-8 rounded-lg bg-sunk border border-rule flex items-center justify-center text-stone-700">
             <FileText className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm text-[#18181B] flex items-center gap-2">
+            <h3 className="font-semibold text-sm text-ink flex items-center gap-2">
               Socratic Smart Notes (Tính năng 5)
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-sunk text-ink border border-rule font-semibold">
                 Live Sync &lt;3s
               </span>
             </h3>
@@ -89,14 +89,14 @@ export const SmartNotesViewer: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-emerald-700 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+          <span className="text-[11px] font-mono text-mastery flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-mastery-bg border border-mastery-bd font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-mastery" />
             <span>Đồng bộ: {lastSyncTime}</span>
           </span>
           <button
             type="button"
             onClick={() => { setLoading(true); fetchLatestNote().finally(() => setLoading(false)); }}
-            className="p-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-700 transition cursor-pointer border border-[#DCD9D0] shadow-2xs active:translate-y-px"
+            className="p-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-700 transition cursor-pointer border border-rule shadow-2xs active:translate-y-px"
             title="Làm mới ghi chú"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -108,15 +108,15 @@ export const SmartNotesViewer: React.FC = () => {
         <div className="flex flex-col gap-4">
           {/* Main Formula & Simulation Meta */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="md:col-span-2 p-4 rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] flex flex-col justify-between">
+            <div className="md:col-span-2 p-4 rounded-xl bg-sunk border border-rule flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between text-xs text-stone-500 mb-2 font-mono">
-                  <span className="uppercase tracking-wider text-blue-600 text-[11px] font-semibold">
+                  <span className="uppercase tracking-wider text-ink text-[11px] font-semibold">
                     {note.engine} ENGINE • {note.template_id}
                   </span>
                   <span className="text-[10px] tabular-nums">Độ trễ xuất: {note.export_ms ?? 12}ms</span>
                 </div>
-                <div className="p-3.5 rounded-lg bg-white border border-[#DCD9D0] text-base font-medium text-[#18181B] text-center shadow-xs overflow-x-auto">
+                <div className="p-3.5 rounded-lg bg-white border border-rule text-base font-medium text-ink text-center shadow-xs overflow-x-auto">
                   <FormulaBlock latex={note.formula} displayMode={true} />
                 </div>
               </div>
@@ -127,7 +127,7 @@ export const SmartNotesViewer: React.FC = () => {
             </div>
 
             {/* Active Parameters Card */}
-            <div className="p-4 rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] flex flex-col justify-between">
+            <div className="p-4 rounded-xl bg-sunk border border-rule flex flex-col justify-between">
               <div>
                 <span className="text-xs font-semibold text-stone-700 uppercase tracking-wider flex items-center gap-1.5 mb-2 font-mono">
                   <Atom className="w-3.5 h-3.5 text-stone-500" />
@@ -136,9 +136,9 @@ export const SmartNotesViewer: React.FC = () => {
                 <div className="flex flex-col gap-1.5">
                   {note.parameters && Object.keys(note.parameters).length > 0 ? (
                     Object.entries(note.parameters).map(([k, v]) => (
-                      <div key={k} className="flex justify-between items-center text-xs font-mono px-2 py-0.5 rounded-md bg-white border border-[#E5E3DC]">
+                      <div key={k} className="flex justify-between items-center text-xs font-mono px-2 py-0.5 rounded-md bg-white border border-rule">
                         <span className="text-stone-500"><MathText text={k} />:</span>
-                        <span className="text-blue-600 font-bold tabular-nums">{v}</span>
+                        <span className="text-ink font-bold tabular-nums">{v}</span>
                       </div>
                     ))
                   ) : (
@@ -168,15 +168,15 @@ export const SmartNotesViewer: React.FC = () => {
           </div>
 
           {/* Key Insights & Takeaways */}
-          <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200">
-            <h4 className="text-[11px] font-mono uppercase tracking-widest text-emerald-800 flex items-center gap-2 mb-2 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+          <div className="p-4 rounded-xl bg-mastery-bg/50 border border-mastery-bd">
+            <h4 className="text-[11px] font-mono uppercase tracking-widest text-mastery flex items-center gap-2 mb-2 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-mastery" />
               <span>Khái niệm &amp; Bản chất cốt lõi:</span>
             </h4>
             <div className="space-y-1.5 text-xs text-stone-800 leading-relaxed">
               {note.key_insights.map((ins, idx) => (
                 <div key={idx} className="flex items-start gap-2">
-                  <span className="text-emerald-600 font-bold font-mono">✓</span>
+                  <span className="text-mastery font-bold font-mono">✓</span>
                   <span><MathText text={ins} /></span>
                 </div>
               ))}

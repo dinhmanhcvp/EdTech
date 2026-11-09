@@ -95,15 +95,15 @@ export function LessonChat({source}: {source?: LessonSource} = {}) {
         <h3 className="font-display text-xl text-stone-900">{plan.title}</h3>
         <div className="flex items-center gap-2 text-xs font-mono">
           {basicMode && <span className="px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-800">Chế độ cơ bản</span>}
-          <span data-testid="lesson-points" className="px-2 py-0.5 rounded border border-[#E6E4DD] bg-stone-50">{points} điểm</span>
+          <span data-testid="lesson-points" className="px-2 py-0.5 rounded border border-rule bg-stone-50">{points} điểm</span>
         </div>
       </header>
 
       {scene && (
-        <div className="rounded-2xl border border-[#E6E4DD] bg-stone-50 p-4">
+        <div className="rounded-2xl border border-rule bg-stone-50 p-4">
           <div className="text-sm font-medium text-stone-900">{scene.title}</div>
           <p className="mt-1 text-sm text-stone-600"><MathText text={scene.concept} /></p>
-          <div className="mt-3 min-h-[2.5rem] rounded-xl bg-white border border-[#E6E4DD] p-3 text-center">
+          <div className="mt-3 min-h-[2.5rem] rounded-xl bg-white border border-rule p-3 text-center">
             {scene.latex
               ? <MathView latex={scene.latex} displayMode={false} />
               : <span className="text-xs text-stone-500">Công thức đang được ẩn — em nhớ lại xem thầy cô đã viết gì nhé.</span>}
@@ -115,7 +115,7 @@ export function LessonChat({source}: {source?: LessonSource} = {}) {
 
       <div className="flex flex-col gap-2" aria-live="polite">
         {messages.map((m, i) => (
-          <div key={i} className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${m.role === 'tutor' ? 'self-start bg-white border border-[#E6E4DD] text-stone-800' : 'self-end bg-stone-900 text-white'}`}>
+          <div key={i} className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${m.role === 'tutor' ? 'self-start bg-white border border-rule text-stone-800' : 'self-end bg-stone-900 text-white'}`}>
             {m.text ? <MathText text={m.text} /> : '…'}
           </div>
         ))}
@@ -127,10 +127,10 @@ export function LessonChat({source}: {source?: LessonSource} = {}) {
           onChange={e => setText(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') void submit('ANSWER'); }}
           placeholder="Trả lời của em…"
-          className="flex-1 rounded-xl border border-[#E6E4DD] bg-white px-3 py-2 text-sm"
+          className="flex-1 rounded-xl border border-rule bg-white px-3 py-2 text-sm"
         />
         <button type="button" data-testid="lesson-hint" disabled={busy} onClick={() => void submit('HINT')}
-          className="inline-flex items-center gap-1 rounded-xl border border-[#E6E4DD] px-3 py-2 text-xs text-stone-700 cursor-pointer">
+          className="inline-flex items-center gap-1 rounded-xl border border-rule px-3 py-2 text-xs text-stone-700 cursor-pointer">
           <Lightbulb className="w-3.5 h-3.5" /> Gợi ý
         </button>
         <button type="button" data-testid="lesson-send" disabled={busy} onClick={() => void submit('ANSWER')}

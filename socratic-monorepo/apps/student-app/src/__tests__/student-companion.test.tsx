@@ -358,7 +358,7 @@ describe('Student Socratic Companion & Dashboards (Phase 4)', () => {
 
     const guardrailCard = screen.getByTestId('guardrail-alert-card');
     expect(guardrailCard).toBeTruthy();
-    expect(guardrailCard.textContent).toContain('KHIÊN BẢO VỆ SOCRATIC');
+    expect(guardrailCard.textContent).toContain('HÀNG RÀO SOCRATIC ĐÃ KÍCH HOẠT');
 
     // 2. Click Director Trigger 4: Jump to Concept Gate
     const jumpGateBtn = screen.getByTestId('director-jump-gate-btn');

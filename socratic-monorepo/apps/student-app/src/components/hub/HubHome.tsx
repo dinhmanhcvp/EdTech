@@ -30,7 +30,7 @@ function SubmissionModal({id, example, onClose}: {id: string; example: boolean; 
         <span className="text-sm font-semibold">{example ? `Bài mẫu ${sub?.label ?? ''}` : 'Bài của em'}</span>
         <button aria-label="Đóng" onClick={onClose} className="ml-auto rounded bg-white/90 p-1 text-stone-800"><X className="h-4 w-4" /></button>
       </div>
-      {error && <p className="text-xs text-rose-300">{error}</p>}
+      {error && <p className="text-xs text-brand-300">{error}</p>}
       <div className="mt-2 flex min-h-0 flex-1 flex-col gap-2 overflow-auto md:flex-row">
         {url && (
           <div className="relative self-start">
@@ -42,7 +42,7 @@ function SubmissionModal({id, example, onClose}: {id: string; example: boolean; 
         )}
         {sub?.confirmed && (
           <ol className="list-decimal rounded bg-white p-3 pl-7 font-mono text-xs text-stone-800">
-            {sub.confirmed.map((l, i) => <li key={i} className={i === first ? 'font-bold text-rose-700' : ''}>{l}</li>)}
+            {sub.confirmed.map((l, i) => <li key={i} className={i === first ? 'font-bold text-brand-700' : ''}>{l}</li>)}
           </ol>
         )}
       </div>
@@ -52,9 +52,9 @@ function SubmissionModal({id, example, onClose}: {id: string; example: boolean; 
 
 function RunCard({a, onOpen, onLesson}: {a: MyAssignment & {lessonAvailable?: boolean}; onOpen: (id: string, example: boolean) => void; onLesson?: () => void}) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-3">
+    <div id={`run-card-${a.runId}`} className="rounded-xl border border-rule bg-white p-3 shadow-card scroll-mt-20">
       <div className="flex items-center gap-2">
-        <span className="font-semibold text-stone-900">{a.title}</span>
+        <span className="font-semibold text-ink">{a.title}</span>
         {a.score10 !== null && <span className="rounded bg-stone-100 px-1.5 py-0.5 text-xs font-semibold">{a.score10}/10</span>}
         <span className="ml-auto text-xs text-stone-500">{PHASE[a.phase]}{a.phase === 'homework' && a.dueAt ? ` · hạn ${new Date(a.dueAt * 1000).toLocaleDateString('vi-VN')}` : ''}</span>
       </div>
@@ -62,12 +62,50 @@ function RunCard({a, onOpen, onLesson}: {a: MyAssignment & {lessonAvailable?: bo
         {a.questions.map((q) => <span key={q.questionId} className="flex items-center gap-1">{q.label} {q.status ? <StatusBadge mine={q} /> : <span className="text-stone-400">chưa làm</span>}</span>)}
       </div>
       <div className="mt-2 flex flex-wrap gap-2 text-xs">
-        {a.phase !== 'closed' && <a href={`/a/${a.code}`} className="rounded-lg bg-blue-600 px-3 py-1 font-semibold text-white">Làm tiếp</a>}
-        {a.corrections.map((c) => <button key={c.submissionId} onClick={() => onOpen(c.submissionId, false)} className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-rose-700">Thầy cô chữa bài em ({c.questionId})</button>)}
+        {a.phase !== 'closed' && <a href={`/a/${a.code}`} className="rounded-lg bg-ink px-3 py-1 font-semibold text-white">Làm tiếp</a>}
+        {a.corrections.map((c) => <button key={c.submissionId} onClick={() => onOpen(c.submissionId, false)} className="rounded-lg border border-brand-200 bg-brand-50 px-2 py-1 text-brand-700">Thầy cô chữa bài em ({c.questionId})</button>)}
         {a.classExamples.map((c) => <button key={c.submissionId} onClick={() => onOpen(c.submissionId, true)} className="rounded-lg border border-stone-200 px-2 py-1">Chữa trên lớp: {c.label}</button>)}
-        {onLesson && <button onClick={onLesson} className="rounded-lg bg-emerald-600 px-3 py-1 font-semibold text-white">Học lại với gia sư</button>}
+        {onLesson && <button onClick={onLesson} className="rounded-lg bg-mastery px-3 py-1 font-semibold text-white">Học lại với gia sư</button>}
       </div>
     </div>
+  );
+}
+
+
+const SCENE_STYLE: Record<string, string> = {slides: 'bg-ink', exercise: 'bg-hint', exam: 'bg-mastery'};
+const KIND_LABEL: Record<string, string> = {slides: 'Slide', exercise: 'Bài tập', exam: 'Đề'};
+
+/**
+ * Một tiết đã học: dải thẻ cảnh ngang (tài liệu thầy cô mở trên bảng, rồi các bài tập), chạm thẻ để mở đúng thứ đó;
+ * bên dưới là chi tiết từng bài tập (điểm, phần chữa, học lại với gia sư).
+ */
+function PeriodDeck({p, onOpen, onLesson, onResource}: {p: PeriodPackage; onOpen: (id: string, example: boolean) => void; onLesson: (runId: string) => void; onResource: (r: MyResource) => void}) {
+  const scenes = [
+    ...p.resources.map((r) => ({key: `r-${r.assignmentId}`, kind: r.kind, title: r.title, meta: `${KIND_LABEL[r.kind] ?? r.kind} · ${r.pages.length} trang`, open: () => onResource(r)})),
+    ...p.runs.map((r) => ({key: `x-${r.runId}`, kind: r.kind, title: r.title, meta: `${KIND_LABEL[r.kind] ?? r.kind} · ${PHASE[r.phase]}`, open: () => document.getElementById(`run-card-${r.runId}`)?.scrollIntoView({behavior: 'smooth', block: 'center'})})),
+  ];
+  return (
+    <section data-testid="period-deck" className="flex flex-col gap-3 rounded-2xl border border-rule bg-white/80 p-4 shadow-card">
+      <h3 className="flex items-baseline gap-2 font-serif text-lg text-ink">
+        {p.title}
+        {p.endedAt ? <span className="font-mono text-xs text-mute">{new Date(p.endedAt * 1000).toLocaleDateString('vi-VN')}</span> : null}
+      </h3>
+      {scenes.length > 0 && (
+        <ol data-testid="scene-deck" className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-1">
+          {scenes.map((sc, i) => (
+            <li key={sc.key} className="snap-start">
+              <button data-testid="scene-card" onClick={sc.open} className="relative flex h-28 w-44 flex-col justify-between overflow-hidden rounded-xl border border-rule bg-paper p-3 text-left transition hover:-translate-y-0.5 hover:shadow-card">
+                <span aria-hidden className={`absolute inset-x-0 top-0 h-1 ${SCENE_STYLE[sc.kind] ?? 'bg-ink'}`} />
+                <span className="font-mono text-[10px] uppercase tracking-wider text-mute">Cảnh {i + 1}</span>
+                <span className="line-clamp-2 font-serif text-base leading-snug text-ink">{sc.title}</span>
+                <span className="truncate text-[11px] text-mute">{sc.meta}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+      {p.runs.map((r) => <RunCard key={r.runId} a={r} onOpen={onOpen} onLesson={r.lessonAvailable ? () => onLesson(r.runId) : undefined} />)}
+    </section>
   );
 }
 
@@ -126,7 +164,7 @@ export function HubHome() {
         {tabBtn('resources', 'Tài liệu của tiết')}
         {tabBtn('periods', 'Tiết học')}
       </div>
-      {error && <p className="text-xs text-rose-600">{error}</p>}
+      {error && <p className="text-xs text-brand-600">{error}</p>}
       {tab === 'assignments' && (assignments?.length === 0 ? empty('Chưa có bài nào được giao.')
         : assignments?.map((a) => <RunCard key={a.runId} a={a} onOpen={(id, example) => setOpened({id, example})} />))}
       {tab === 'resources' && (viewing ? (
@@ -141,15 +179,7 @@ export function HubHome() {
           <span className="text-xs text-stone-500">{r.periodTitle} · {r.pages.length} trang</span>
         </button>
       )))}
-      {tab === 'periods' && (periods?.length === 0 ? empty('Chưa có tiết nào kết thúc.') : periods?.map((p) => (
-        <div key={p.periodId} className="flex flex-col gap-2 rounded-xl bg-stone-50 p-3">
-          <h3 className="text-sm font-bold text-stone-800">{p.title}{p.endedAt ? ` · ${new Date(p.endedAt * 1000).toLocaleDateString('vi-VN')}` : ''}</h3>
-          {p.runs.map((r) => <RunCard key={r.runId} a={r} onOpen={(id, example) => setOpened({id, example})} onLesson={r.lessonAvailable ? () => setLessonRun(r.runId) : undefined} />)}
-          {p.resources.map((r) => (
-            <button key={r.assignmentId} onClick={() => { setViewing(r); setTab('resources'); }} className="self-start text-xs text-blue-700 underline">Tài liệu: {r.title}</button>
-          ))}
-        </div>
-      )))}
+      {tab === 'periods' && (periods?.length === 0 ? empty('Chưa có tiết nào kết thúc.') : periods?.map((p) => <PeriodDeck key={p.periodId} p={p} onOpen={(id, example) => setOpened({id, example})} onLesson={(runId) => setLessonRun(runId)} onResource={(r) => { setViewing(r); setTab('resources'); }} />))}
       {opened && <SubmissionModal id={opened.id} example={opened.example} onClose={() => setOpened(null)} />}
     </section>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useMicLevel } from './useMicLevel';
 import { Mic, MicOff, Sparkles, CheckCircle2, ShieldCheck, ArrowRight, Volume2, HelpCircle } from 'lucide-react';
 import { TrapStatement } from '../../data/socraticProblems';
 import { MathText } from '../ui/MathText';
@@ -40,11 +41,9 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
   const [isQuietMode, setIsQuietMode] = useState(false);
   const [isTrapHunterMode, setIsTrapHunterMode] = useState(false);
 
-  // 32-Bar Real-Time Audio Waveform animation levels
-  const [waveformBars, setWaveformBars] = useState<number[]>(
-    Array.from({ length: 32 }, () => 12)
-  );
-  const animFrameRef = useRef<number | null>(null);
+  const [awarded, setAwarded] = useState(0);
+  // 5 thanh nhảy theo mức âm thật của micro (đứng yên nếu không có micro)
+  const levels = useMicLevel(isRecording, 5);
   const verifyingRef = useRef(false);
   const passedRef = useRef(false);
 
@@ -65,6 +64,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
       if (result.passed === true && typeof result.eureka_points_awarded === 'number') {
         passedRef.current = true;
         setIsPassed(true);
+        setAwarded(result.eureka_points_awarded);
         onPassGate(result.eureka_points_awarded);
       }
     } catch {
@@ -74,25 +74,6 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
       verifyingRef.current = false;
     }
   };
-
-  useEffect(() => {
-    if (isRecording) {
-      const updateWaveform = () => {
-        setWaveformBars(
-          Array.from({ length: 32 }, () => Math.floor(Math.random() * 28 + 6))
-        );
-        animFrameRef.current = requestAnimationFrame(updateWaveform);
-      };
-      animFrameRef.current = requestAnimationFrame(updateWaveform);
-    } else {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      setWaveformBars(Array.from({ length: 32 }, () => 10));
-    }
-
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    };
-  }, [isRecording]);
 
   const defaultCausal = [
     { id: 2, step: 'Bước B', text: 'Diễn biến: Các nguyên tử Fe và O tái tổ hợp tạo phân tử gỉ sắt Fe₂O₃ mới' },
@@ -235,12 +216,12 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
   return (
     <div
       data-testid="concept-check-gate"
-      className="bg-white p-4 rounded-xl border border-[#E6E4DD] shadow-xs flex flex-col gap-3 font-sans select-none"
+      className="bg-white p-4 rounded-xl border border-rule shadow-xs flex flex-col gap-3 font-sans select-none"
     >
       {/* Header Row */}
-      <div className="flex items-center justify-between border-b border-[#E6E4DD] pb-2.5">
+      <div className="flex items-center justify-between border-b border-rule pb-2.5">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
+          <div className="w-7 h-7 rounded-lg bg-mastery-bg border border-mastery-bd flex items-center justify-center text-mastery">
             <ShieldCheck className="w-4 h-4" />
           </div>
           <div>
@@ -264,7 +245,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
       </div>
 
       {/* Mode Switch Tabs */}
-      <div className="flex items-center justify-between bg-[#F8F7F4] p-1 rounded-lg border border-[#E6E4DD]">
+      <div className="flex items-center justify-between bg-paper p-1 rounded-lg border border-rule">
         <div className="flex items-center gap-1 text-xs">
           <button
             type="button"
@@ -317,30 +298,53 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
 
       {/* MODE 1: VOICE DEFENSE (WITH 32-BAR WAVEFORM & LIVE SEMANTIC TRACKER) */}
       {!isQuietMode && !isTrapHunterMode && (
-        <div className="flex flex-col gap-3 p-3.5 rounded-xl bg-[#FCFBF9] border border-[#E6E4DD] animate-in fade-in">
+        <div className="flex flex-col gap-3 p-3.5 rounded-xl bg-paper border border-rule animate-in fade-in">
           <div className="flex items-center justify-between">
             <span className="text-xs text-stone-700 font-medium">
               Nói ngắn gọn định luật/nguyên tắc khoa học vừa áp dụng:
             </span>
-            <span className="text-[10px] font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">
+            <span className="text-[10px] font-mono text-mastery bg-mastery-bg px-2 py-0.5 rounded border border-mastery-bd font-bold">
               Thưởng x2 Grit Score
             </span>
           </div>
 
-          {/* 32-Bar Real-Time Audio Waveform Visualizer */}
-          <div
-            data-testid="voice-defense-waveform"
-            className="w-full h-12 bg-white rounded-lg border border-[#E6E4DD] flex items-center justify-center gap-1 px-4 overflow-hidden shadow-inner"
-          >
-            {waveformBars.map((height, i) => (
-              <div
-                key={i}
-                className={`w-1 rounded-full transition-all duration-75 ${
-                  isRecording ? 'bg-blue-600' : 'bg-stone-300'
-                }`}
-                style={{ height: `${height}px` }}
-              />
-            ))}
+          {/* Viên thuốc micro: 5 thanh theo giọng thật, lời nói hiện nghiêng, đạt thì đóng dấu */}
+          <div className="flex flex-col items-center gap-2.5 py-1">
+            <button
+              type="button"
+              data-testid="mic-voice-defense-btn"
+              aria-pressed={isRecording}
+              onClick={handleStartVoice}
+              disabled={isPassed}
+              className={`relative flex items-center gap-3 rounded-full py-2.5 pl-3 pr-6 transition-all duration-300 cursor-pointer disabled:cursor-default ${
+                isRecording ? 'bg-ink text-white shadow-[0_0_0_7px_rgba(27,31,39,0.08)]' : 'bg-white text-ink border border-rule shadow-card hover:shadow-md'
+              }`}
+            >
+              <span className={`flex h-10 w-10 items-center justify-center rounded-full text-white ${isRecording ? 'bg-hint' : 'bg-ink'}`}>
+                {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </span>
+              <span data-testid="voice-defense-waveform" className="flex h-8 w-14 items-center justify-center gap-[5px]" aria-hidden>
+                {levels.map((lv, i) => (
+                  <span key={i} className={`w-[4px] rounded-full transition-[height] duration-75 ${isRecording ? 'bg-hint' : 'bg-rule'}`} style={{ height: `${Math.max(5, Math.round(lv * 32))}px` }} />
+                ))}
+              </span>
+              <span className="text-sm font-semibold">{isRecording ? 'Đang nghe… chạm để dừng' : 'Chạm để nói giải thích'}</span>
+            </button>
+
+            {transcript.trim() && (
+              <p data-testid="voice-transcript" className="max-w-md text-center font-serif italic text-[15px] leading-relaxed text-ink animate-nudge-in">
+                &ldquo;{transcript.trim()}{isRecording ? '…' : ''}&rdquo;
+              </p>
+            )}
+
+            {isPassed && (
+              <span data-testid="voice-stamp" className="animate-rise-in -rotate-2 rounded-lg border-2 border-mastery bg-mastery-bg px-3 py-1.5 font-mono text-xs font-bold text-mastery flex items-center gap-1.5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="draw-check w-3.5 h-3.5" aria-hidden>
+                  <path d="M5 12.5l4.5 4.5L19 7.5" />
+                </svg>
+                Đã hiểu bản chất • +{awarded || pointsAwarded} Eureka
+              </span>
+            )}
           </div>
 
           {/* Live Semantic Keyword Tracker */}
@@ -355,7 +359,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
                   key={kw}
                   className={`text-[10px] font-mono px-2 py-0.5 rounded-full border transition-all ${
                     isFound
-                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold'
+                      ? 'bg-mastery-bg text-mastery border-mastery-bd font-bold'
                       : 'bg-stone-100 text-stone-500 border-stone-200'
                   }`}
                 >
@@ -366,26 +370,8 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
             })}
           </div>
 
-          {/* Action Row */}
-          <div className="flex items-center gap-2 pt-1">
-            <button
-              type="button"
-              data-testid="mic-voice-defense-btn"
-              onClick={handleStartVoice}
-              disabled={isPassed}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition cursor-pointer shadow-xs ${
-                isRecording
-                  ? 'bg-rose-600 text-white animate-pulse'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              <span>{isRecording ? 'Đang lắng nghe... (Bấm dừng)' : 'Bấm để nói giải thích'}</span>
-            </button>
-          </div>
-
           {/* Fallback Text Input (for headless tests or noisy room) */}
-          <div className="flex items-center gap-2 mt-1 pt-2 border-t border-[#E6E4DD]">
+          <div className="flex items-center gap-2 mt-1 pt-2 border-t border-rule">
             <input
               type="text"
               data-testid="concept-input-fallback"
@@ -393,14 +379,14 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
               onChange={(e) => setTranscript(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleFallbackTextVerify()}
               placeholder="Hoặc gõ giải thích bản chất tại đây..."
-              className="flex-1 px-3 py-1.5 rounded-lg bg-white border border-[#DCD9D0] text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:border-blue-500 font-mono shadow-inner"
+              className="flex-1 px-3 py-1.5 rounded-lg bg-white border border-rule text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:border-ink font-mono shadow-inner"
             />
             <button
               type="button"
               data-testid="btn-verify-explanation"
               onClick={handleFallbackTextVerify}
               disabled={isPassed || transcript.trim().length === 0}
-              className="px-3 py-1.5 rounded-lg bg-[#18181B] hover:bg-stone-800 text-white text-xs font-medium transition cursor-pointer shadow-xs disabled:opacity-40"
+              className="px-3 py-1.5 rounded-lg bg-ink hover:bg-ink/85 text-white text-xs font-medium transition cursor-pointer shadow-xs disabled:opacity-40"
             >
               Nộp
             </button>
@@ -410,7 +396,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
 
       {/* MODE 2: QUIET MODE CAUSAL BLOCKS */}
       {isQuietMode && !isTrapHunterMode && (
-        <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-[#FCFBF9] border border-[#E6E4DD] animate-in fade-in">
+        <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-paper border border-rule animate-in fade-in">
           <span className="text-xs text-stone-700 font-medium">
             Sắp xếp chuỗi nguyên nhân - kết quả theo thứ tự logic:
           </span>
@@ -418,7 +404,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
             {causalBlocks.map((b, idx) => (
               <div
                 key={b.id}
-                className="p-2.5 rounded-lg bg-white border border-[#E6E4DD] text-xs flex items-center justify-between shadow-2xs"
+                className="p-2.5 rounded-lg bg-white border border-rule text-xs flex items-center justify-between shadow-2xs"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-stone-100 text-stone-700 font-mono text-[10px] font-bold flex items-center justify-center">
@@ -435,7 +421,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
             data-testid="btn-verify-causal-blocks"
             onClick={handleVerifyCausalBlocks}
             disabled={isPassed}
-            className="w-full py-2 rounded-lg bg-[#18181B] hover:bg-stone-800 text-white text-xs font-semibold transition cursor-pointer shadow-xs mt-1"
+            className="w-full py-2 rounded-lg bg-ink hover:bg-ink/85 text-white text-xs font-semibold transition cursor-pointer shadow-xs mt-1"
           >
             Xác nhận Chuỗi Nhân Quả
           </button>
@@ -444,7 +430,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
 
       {/* MODE 3: TRAP HUNTER (THPT 2025+ FORMAT 4-STATEMENTS) */}
       {isTrapHunterMode && (
-        <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-[#FCFBF9] border border-[#E6E4DD] animate-in fade-in">
+        <div className="flex flex-col gap-2.5 p-3 rounded-xl bg-paper border border-rule animate-in fade-in">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-stone-900">
               Săn Bẫy Đề Thi THPT 2025+ (Format Đúng / Sai):
@@ -457,7 +443,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
               <div
                 key={stmt.id}
                 data-testid={`trap-stmt-${stmt.id}`}
-                className="p-2.5 rounded-lg bg-white border border-[#E6E4DD] text-xs flex flex-col gap-1.5 shadow-2xs"
+                className="p-2.5 rounded-lg bg-white border border-rule text-xs flex flex-col gap-1.5 shadow-2xs"
               >
                 <div className="text-stone-800 leading-relaxed font-medium">
                   <MathText text={stmt.label} />
@@ -469,8 +455,8 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
                     onClick={() => handleSelectTrapOption(stmt.id, true)}
                     className={`px-3 py-1 rounded text-xs font-mono font-semibold transition cursor-pointer border ${
                       stmt.userVal === true
-                        ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
-                        : 'bg-[#F8F7F4] text-stone-700 border-[#E6E4DD] hover:bg-stone-100'
+                        ? 'bg-ink text-white border-ink shadow-xs'
+                        : 'bg-paper text-stone-700 border-rule hover:bg-stone-100'
                     }`}
                   >
                     ĐÚNG
@@ -481,8 +467,8 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
                     onClick={() => handleSelectTrapOption(stmt.id, false)}
                     className={`px-3 py-1 rounded text-xs font-mono font-semibold transition cursor-pointer border ${
                       stmt.userVal === false
-                        ? 'bg-rose-600 text-white border-rose-700 shadow-xs'
-                        : 'bg-[#F8F7F4] text-stone-700 border-[#E6E4DD] hover:bg-stone-100'
+                        ? 'bg-brand-600 text-white border-brand-700 shadow-xs'
+                        : 'bg-paper text-stone-700 border-rule hover:bg-stone-100'
                     }`}
                   >
                     SAI
@@ -497,7 +483,7 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
             data-testid="btn-verify-trap-statements"
             onClick={handleVerifyTrapStatements}
             disabled={isPassed}
-            className="w-full py-2 rounded-lg bg-[#18181B] hover:bg-stone-800 text-white text-xs font-semibold transition cursor-pointer shadow-xs mt-1"
+            className="w-full py-2 rounded-lg bg-ink hover:bg-ink/85 text-white text-xs font-semibold transition cursor-pointer shadow-xs mt-1"
           >
             Nộp bài Săn Bẫy THPT
           </button>
@@ -510,12 +496,12 @@ export const ConceptCheckGate: React.FC<ConceptCheckGateProps> = ({
           data-testid="concept-feedback"
           className={`p-3 rounded-xl border text-xs font-mono flex items-start gap-2 animate-in fade-in ${
             isPassed
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              ? 'bg-mastery-bg border-mastery-bd text-mastery'
               : 'bg-amber-50 border-amber-200 text-amber-900'
           }`}
         >
           {isPassed ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-mastery shrink-0 mt-0.5" />
           ) : (
             <HelpCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
           )}

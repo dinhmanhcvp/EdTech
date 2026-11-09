@@ -6,15 +6,16 @@
 @tailwind utilities;
 
 :root {
-  --background: #F8F7F4;
-  --foreground: #18181B;
+  --background: #FAF7F0;
+  --foreground: #1B1F27;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #F8F7F4;
-  color: #18181B;
+  background-color: #FAF7F0;
+  color: #1B1F27;
+  letter-spacing: -0.015em;
   font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
 }
@@ -41,6 +42,20 @@ body {
 ::selection { background: #dbeafe; color: #172554; }
 * { scrollbar-width: thin; scrollbar-color: #c9c5bc transparent; }
 .paper-grid { background-image: radial-gradient(rgba(120, 113, 108, 0.12) 0.7px, transparent 0.7px); background-size: 18px 18px; }
+/* "Sổ tay kĩ thuật": lưới chấm bi siêu mờ cho vùng giải bài và mô phỏng (chấm #E2E0D8, cách nhau 20px) */
+.dot-canvas { background-color: #FAF7F0; background-image: radial-gradient(#E2E0D8 1.1px, transparent 1.3px); background-size: 20px 20px; }
+
+/* số liệu thẳng cột */
+.font-mono, .tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* nét tích vẽ mượt khi máy chấm xác nhận đúng */
+@keyframes draw-check { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+.draw-check path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: draw-check .45s .05s ease-out forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  .draw-check path { stroke-dashoffset: 0; }
+}
 
 /* KaTeX Typography Styling for Editorial Daylight */
 .katex {

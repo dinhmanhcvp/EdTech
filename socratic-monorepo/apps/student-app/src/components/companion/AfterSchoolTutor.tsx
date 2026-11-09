@@ -260,7 +260,7 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
   return (
     <div
       data-testid="after-school-tutor"
-      className="w-full max-w-6xl bg-white/95 border border-[#E6E4DD] rounded-[24px] shadow-[0_24px_80px_-36px_rgba(24,24,27,0.5)] overflow-hidden flex flex-col font-sans text-stone-900"
+      className="w-full max-w-6xl bg-white/95 border border-rule rounded-[24px] shadow-[0_24px_80px_-36px_rgba(24,24,27,0.5)] overflow-hidden flex flex-col font-sans text-stone-900"
     >
       <StudentBoardWorkbench />
       <div role="status" className="px-6 py-2 text-xs text-stone-600 bg-stone-50">
@@ -269,9 +269,9 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
       </div>
 
       {/* Header bar */}
-      <div className="bg-[#FCFBF9] border-b border-[#E6E4DD] px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-paper border-b border-rule px-6 py-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-ink text-white flex items-center justify-center shadow-sm">
             <GraduationCap className="w-5 h-5" />
           </div>
           <div>
@@ -279,7 +279,7 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
               <h2 className="text-base font-bold text-stone-900 tracking-tight">
                 Gia sư AI Socratic Đồng hành sau Giờ học
               </h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sunk text-ink border border-rule font-semibold">
                 Classroom-to-Home
               </span>
             </div>
@@ -304,14 +304,14 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
       </div>
 
       {/* 4 Interaction Modes Switcher */}
-      <div className="bg-stone-50 border-b border-[#E6E4DD] px-6 py-2 flex flex-wrap items-center gap-2">
+      <div className="bg-stone-50 border-b border-rule px-6 py-2 flex flex-wrap items-center gap-2">
         <button
           type="button"
           data-testid="mode-socratic-solver"
           onClick={() => setActiveMode('SOCRATIC_SOLVER')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
             activeMode === 'SOCRATIC_SOLVER'
-              ? 'bg-white text-blue-700 shadow-xs border border-[#E6E4DD]'
+              ? 'bg-white text-ink shadow-xs border border-rule'
               : 'text-stone-600 hover:text-stone-900'
           }`}
         >
@@ -325,7 +325,7 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
           onClick={() => setActiveMode('HOME_SANDBOX')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
             activeMode === 'HOME_SANDBOX'
-              ? 'bg-white text-emerald-700 shadow-xs border border-[#E6E4DD]'
+              ? 'bg-white text-mastery shadow-xs border border-rule'
               : 'text-stone-600 hover:text-stone-900'
           }`}
         >
@@ -339,7 +339,7 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
           onClick={() => setActiveMode('SPACED_REVIEWS')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
             activeMode === 'SPACED_REVIEWS'
-              ? 'bg-white text-purple-700 shadow-xs border border-[#E6E4DD]'
+              ? 'bg-white text-purple-700 shadow-xs border border-rule'
               : 'text-stone-600 hover:text-stone-900'
           }`}
         >
@@ -353,7 +353,7 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
           onClick={() => setActiveMode('PARENTPULSE_SYNC')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
             activeMode === 'PARENTPULSE_SYNC'
-              ? 'bg-white text-rose-700 shadow-xs border border-[#E6E4DD]'
+              ? 'bg-white text-brand-700 shadow-xs border border-rule'
               : 'text-stone-600 hover:text-stone-900'
           }`}
         >
@@ -367,7 +367,7 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
           onClick={() => setActiveMode('BOARD_LESSON')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
             activeMode === 'BOARD_LESSON'
-              ? 'bg-white text-amber-700 shadow-xs border border-[#E6E4DD]'
+              ? 'bg-white text-amber-700 shadow-xs border border-rule'
               : 'text-stone-600 hover:text-stone-900'
           }`}
         >
@@ -410,8 +410,8 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
                       }}
                       className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col gap-1.5 ${
                         isSelected
-                          ? 'bg-blue-50/70 border-blue-300 shadow-xs'
-                          : 'bg-white border-[#E6E4DD] hover:bg-stone-50'
+                          ? 'bg-sunk/70 border-rule shadow-xs'
+                          : 'bg-white border-rule hover:bg-stone-50'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -437,9 +437,9 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
                             mastery >= 0.8
-                              ? 'bg-emerald-500'
+                              ? 'bg-mastery'
                               : mastery >= 0.5
-                              ? 'bg-blue-500'
+                              ? 'bg-ink'
                               : 'bg-amber-500'
                           }`}
                           style={{ width: `${Math.round(mastery * 100)}%` }}
@@ -454,15 +454,15 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
             {/* Right Column: Step Scaffolding & Visual Debugger */}
             <div className="lg:col-span-8 flex flex-col gap-4">
               {(completedSteps[currentExercise.id] ?? 0) >= currentExercise.steps.length && (
-                <div data-testid="tutor-completion" role="status" className="p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-sm">
+                <div data-testid="tutor-completion" role="status" className="p-4 rounded-xl border border-mastery-bd bg-mastery-bg text-mastery text-sm">
                   <div className="font-semibold flex items-center gap-2"><CheckCircle2 className="w-4 h-4" />Đã hoàn thành {currentExercise.steps.length}/{currentExercise.steps.length} bước hướng dẫn</div>
                   <p className="mt-1 text-xs">Tiến độ đã lưu trên máy chủ. Em có thể chọn bài tiếp theo hoặc kiểm tra lại bước cuối; bước đã hoàn thành không cộng thêm điểm.</p>
                 </div>
               )}
               {/* Problem statement card */}
-              <div className="p-4 rounded-xl bg-[#FCFBF9] border border-[#E6E4DD] flex flex-col gap-2">
+              <div className="p-4 rounded-xl bg-paper border border-rule flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono uppercase tracking-wider text-blue-700 font-bold">
+                  <span className="text-xs font-mono uppercase tracking-wider text-ink font-bold">
                     Đề bài tự rèn luyện
                   </span>
                   <span className="text-[11px] font-mono text-stone-500">
@@ -488,9 +488,9 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
               )}
 
               {/* Current Active Step */}
-              <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/30 flex flex-col gap-3">
+              <div className="p-4 rounded-xl border border-rule bg-sunk/30 flex flex-col gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold font-mono">
+                  <div className="w-6 h-6 rounded-full bg-ink text-white flex items-center justify-center text-xs font-bold font-mono">
                     {currentStepIdx + 1}
                   </div>
                   <h4 className="text-sm font-bold text-stone-900">{currentStep.prompt}</h4>
@@ -499,15 +499,15 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
                 {/* Socratic Scaffolding Level Indicator */}
                 <div className="flex items-center gap-2 text-[11px] font-mono text-stone-600">
                   <span>Mức độ giàn giáo:</span>
-                  <span className="px-2 py-0.5 rounded bg-white border border-stone-200 font-semibold text-blue-800">
+                  <span className="px-2 py-0.5 rounded bg-white border border-stone-200 font-semibold text-ink">
                     Mức {scaffoldLevel}: {scaffoldLevel === 1 ? 'Gợi ý vi mô' : scaffoldLevel === 2 ? 'Kích hoạt công cụ thị giác' : scaffoldLevel === 3 ? 'Phản ví dụ dẫn dắt' : 'Phân rã bài toán'}
                   </span>
                 </div>
 
                 {/* Micro-Cue or Counter Example */}
                 {scaffoldLevel >= 1 && (
-                  <div className="p-3 rounded-lg bg-white border border-[#E6E4DD] text-xs text-stone-700 flex items-start gap-2">
-                    <HelpCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="p-3 rounded-lg bg-white border border-rule text-xs text-stone-700 flex items-start gap-2">
+                    <HelpCircle className="w-4 h-4 text-ink shrink-0 mt-0.5" />
                     <div>
                       <span className="font-semibold text-stone-900">Gợi ý Socratic: </span>
                       {scaffoldLevel >= 3 ? currentStep.counterExample : currentStep.microCue}
@@ -532,14 +532,14 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
                       }}
                       onKeyDown={(e) => e.key === 'Enter' && handleSubmitAnswer()}
                       placeholder="Gõ biểu thức hoặc lập luận (VD: vx = v0*cos(alpha))"
-                      className="flex-1 px-3 py-2 rounded-lg bg-white border border-[#DCD9D0] text-xs font-mono focus:outline-none focus:border-blue-500 shadow-inner"
+                      className="flex-1 px-3 py-2 rounded-lg bg-white border border-rule text-xs font-mono focus:outline-none focus:border-ink shadow-inner"
                     />
                     <button
                       type="button"
                       data-testid="tutor-submit-btn"
                       disabled={isEvaluating}
                       onClick={handleSubmitAnswer}
-                      className="px-4 py-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                      className="px-4 py-2 rounded-lg bg-stone-900 hover:bg-ink/85 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
                     >
                       <span>{isEvaluating ? 'Đang xác thực…' : 'Kiểm tra online'}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -554,8 +554,8 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
                     role="status"
                     className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
                       feedbackStatus === 'VERIFIED_CORRECT'
-                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium'
-                        : feedbackStatus === 'UNVERIFIED' ? 'bg-amber-50 text-amber-900 border border-amber-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+                        ? 'bg-mastery-bg text-mastery border border-mastery-bd font-medium'
+                        : feedbackStatus === 'UNVERIFIED' ? 'bg-amber-50 text-amber-900 border border-amber-200' : 'bg-brand-50 text-brand-800 border border-brand-200'
                     }`}
                   >
                     {feedbackStatus === 'VERIFIED_CORRECT' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
@@ -619,18 +619,18 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
         {/* MODE 2: HOME SANDBOX & FREE SKETCH */}
         {activeMode === 'HOME_SANDBOX' && (
           <div className="flex flex-col gap-4">
-            <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200 flex flex-col gap-1.5">
-              <h3 className="text-sm font-bold text-emerald-950 flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-emerald-700" />
+            <div className="p-4 rounded-xl bg-mastery-bg/50 border border-mastery-bd flex flex-col gap-1.5">
+              <h3 className="text-sm font-bold text-mastery flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-mastery" />
                 <span>Phòng Thí nghiệm Mô phỏng Tự do tại Nhà (What-If Sandbox)</span>
               </h3>
-              <p className="text-xs text-emerald-900/80">
+              <p className="text-xs text-mastery/80">
                 Tái hiện mô hình sống của thầy cô trên lớp. Em có thể tự do thay đổi tham số góc ném, nhiệt độ hoặc chu kỳ dao động để kiểm chứng các giả thuyết khoa học.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl border border-[#E6E4DD] bg-[#FCFBF9] flex flex-col gap-3">
+              <div className="p-4 rounded-xl border border-rule bg-paper flex flex-col gap-3">
                 <span className="text-xs font-bold text-stone-800">Thí nghiệm Ném xiên Trọng trường</span>
                 <div className="text-xs font-mono text-stone-600 bg-white p-2 rounded border border-stone-200">
                   <MathView latex="v_0 = 22\text{ m/s}, \quad \alpha = 45^\circ" displayMode={false} />
@@ -640,11 +640,11 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
                     <span>Góc ném α:</span>
                     <span className="font-mono font-bold">45°</span>
                   </div>
-                  <input type="range" min="15" max="85" defaultValue="45" className="w-full accent-emerald-600" />
+                  <input type="range" min="15" max="85" defaultValue="45" className="w-full accent-mastery" />
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl border border-[#E6E4DD] bg-[#FCFBF9] flex flex-col gap-3">
+              <div className="p-4 rounded-xl border border-rule bg-paper flex flex-col gap-3">
                 <span className="text-xs font-bold text-stone-800">Thí nghiệm Cân bằng Hóa học Fe + O₂</span>
                 <div className="text-xs font-mono text-stone-600 bg-white p-2 rounded border border-stone-200">
                   <MathView latex="4\text{Fe} + 3\text{O}_2 \rightarrow 2\text{Fe}_2\text{O}_3" displayMode={false} />
@@ -654,7 +654,7 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
                     <span>Hệ số phản ứng Fe:</span>
                     <span className="font-mono font-bold">4</span>
                   </div>
-                  <input type="range" min="1" max="8" defaultValue="4" className="w-full accent-blue-600" />
+                  <input type="range" min="1" max="8" defaultValue="4" className="w-full accent-ink" />
                 </div>
               </div>
             </div>
@@ -678,7 +678,7 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
               <div className="p-4 rounded-xl border border-stone-200 bg-white flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-stone-900">Dao động Con lắc đơn</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-mastery-bg text-mastery font-bold border border-mastery-bd">
                     Sau 7 ngày
                   </span>
                 </div>
@@ -698,7 +698,7 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
               <div className="p-4 rounded-xl border border-stone-200 bg-white flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-stone-900">Ném xiên Trọng trường</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-sunk text-ink font-bold border border-rule">
                     Sau 3 ngày
                   </span>
                 </div>
@@ -711,17 +711,17 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
         {/* MODE 4: PARENTPULSE & TEACHER DASHBOARD SYNC */}
         {activeMode === 'PARENTPULSE_SYNC' && (
           <div className="flex flex-col gap-4">
-            <div className="p-4 rounded-xl bg-rose-50/50 border border-rose-200 flex flex-col gap-1.5">
-              <h3 className="text-sm font-bold text-rose-950 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-rose-700" />
+            <div className="p-4 rounded-xl bg-brand-50/50 border border-brand-200 flex flex-col gap-1.5">
+              <h3 className="text-sm font-bold text-brand-950 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-brand-700" />
                 <span>Cầu nối Phản hồi Định tính: ParentPulse & Bục giảng</span>
               </h3>
-              <p className="text-xs text-rose-900/80">
+              <p className="text-xs text-brand-900/80">
                 Ghi nhận nỗ lực tư duy thực chất thay vì điểm số ảo, tạo sự an tâm cho cha mẹ và đồng bộ bản đồ nhiệt với thầy cô giáo chủ nhiệm.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-[#E6E4DD] bg-[#FCFBF9] flex flex-col gap-3">
+            <div className="p-4 rounded-xl border border-rule bg-paper flex flex-col gap-3">
               <div className="flex items-center justify-between border-b border-stone-200 pb-2">
                 <span className="text-xs font-bold text-stone-800">Báo cáo gửi phụ huynh tối nay</span>
                 <span className="text-[10px] font-mono text-stone-500">Đã đồng bộ lúc 20:45</span>
@@ -731,7 +731,7 @@ export const AfterSchoolTutor: React.FC<AfterSchoolTutorProps> = ({
               </p>
               <div className="flex items-center gap-4 text-xs font-mono text-stone-600 pt-1">
                 <span>Điểm kiên trì Grit: <strong className="text-stone-900">92/100</strong></span>
-                <span>Thời gian nỗ lực: <strong className="text-blue-700">35 phút</strong></span>
+                <span>Thời gian nỗ lực: <strong className="text-ink">35 phút</strong></span>
                 <span>Hạt Eureka: <strong className="text-amber-700">+{eurekaTotal}</strong></span>
               </div>
             </div>

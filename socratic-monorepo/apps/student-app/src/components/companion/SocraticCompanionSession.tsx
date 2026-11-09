@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SOCRATIC_PROBLEMS, SocraticProblem } from '../../data/socraticProblems';
 import { LockedStepper, StepItem } from './LockedStepper';
 import { MathNumpad } from './MathNumpad';
@@ -36,13 +36,26 @@ export interface SocraticCompanionSessionProps {
   apiEndpoint?: string;
   curriculumLevel?: 'THPT_STANDARD' | 'OLYMPIAD_ADVANCED';
   initialProblemId?: string;
+  /** thanh "Demo Director" (nút thao tác nhanh để quay video): mặc định bật cho test và video, trang học sinh chỉ bật khi mở bằng ?demo=1 */
+  showDirector?: boolean;
 }
+
+/** Công cụ trực quan mở ra ngay sau khi Hàng rào Socratic chặn câu xin đáp án: học sinh tự quan sát để tìm lời giải. */
+const guardWidget = (subject: string) =>
+  subject === 'PHYSICS'
+    ? { widget_type: 'VECTOR_FORCE_POLYGON', payload: { gravity: 50, normal: 43.3, friction: 0, angle: 30 } }
+    : subject === 'MATH'
+    ? { widget_type: 'FUNCTION_EXTREMA_TANGENT', payload: { x0: 0.0, expression: 'y = x³ - 3x' } }
+    : subject === 'BIOLOGY'
+    ? { widget_type: 'CELL_OSMOSIS_PRESSURE', payload: { c_out: 2.5, c_in: 0.9 } }
+    : { widget_type: 'CHEMICAL_BALANCE_SCALE', payload: { left_atoms: { O: 2 }, right_atoms: { O: 3 } } };
 
 export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> = ({
   onSessionComplete,
   apiEndpoint = '/api/v1/companion/evaluate-step',
   curriculumLevel = 'THPT_STANDARD',
   initialProblemId = 'PHYSICS_INCLINE',
+  showDirector = true,
 }) => {
   // Problem Selector State (Default: Physics Incline, but allows Chem, Math, Bio)
   const [selectedProblemId, setSelectedProblemId] = useState<string>(initialProblemId);
@@ -75,6 +88,12 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
     reason: string;
     targetHint: string;
   } | null>(null);
+  // mỗi lần hàng rào kích hoạt thẻ rung lại từ đầu; sau 0,3 giây công cụ trực quan tự mở
+  const [guardTick, setGuardTick] = useState(0);
+  const guardTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (guardTimer.current) clearTimeout(guardTimer.current);
+  }, []);
 
   // Lifeline Modal State
   const [showLifelineModal, setShowLifelineModal] = useState<boolean>(false);
@@ -281,6 +300,9 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
             ? 'Hãy kiểm tra tọa độ tâm đối xứng qua gốc O(0,0).'
             : 'Hãy xem trạng thái của protein ức chế trên sơ đồ Operon.',
       });
+      setGuardTick((t) => t + 1);
+      if (guardTimer.current) clearTimeout(guardTimer.current);
+      guardTimer.current = setTimeout(() => setServerVisualDebugger(guardWidget(activeProblem.subject)), 300);
       setChatResponse(
         'Thầy không thể đưa ra đáp số cuối cùng cho em. Mục tiêu của Socratic là rèn luyện tư duy tự thân. Em hãy xem xét biến số được chỉ ra ở trên nhé!'
       );
@@ -354,15 +376,15 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
   return (
     <div
       data-testid="socratic-companion-session"
-      className="w-full max-w-7xl flex flex-col gap-4 text-[#18181B] font-sans select-none"
+      className="w-full max-w-7xl flex flex-col gap-4 text-ink font-sans select-none"
     >
       {/* 1. TOP PROBLEM SELECTOR & BOARD-TO-TUTOR HANDOFF BAR */}
-      <div className="bg-white rounded-2xl border border-[#E6E4DD] p-3.5 shadow-xs flex flex-col gap-3">
+      <div className="bg-white rounded-2xl border border-rule p-3.5 shadow-xs flex flex-col gap-3">
         {/* Row 1: Problem Tabs & Board Sync Badge */}
         <div className="flex flex-wrap items-center justify-between gap-2.5">
           {/* Subject Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] font-mono text-stone-500 uppercase tracking-widest font-semibold px-1">
+          <div className="flex flex-nowrap sm:flex-wrap items-center gap-1.5 overflow-x-auto max-w-full pb-1 sm:pb-0">
+            <span className="shrink-0 text-[10px] font-mono text-stone-500 uppercase tracking-widest font-semibold px-1">
               Ngân hàng Bài toán:
             </span>
             {SOCRATIC_PROBLEMS.filter((p) => p.id !== 'CHEMISTRY_BALANCE').map((prob) => {
@@ -373,14 +395,14 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
                   type="button"
                   data-testid={`problem-tab-${prob.subject.toLowerCase()}`}
                   onClick={() => handleSelectProblem(prob.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition cursor-pointer border ${
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition cursor-pointer border ${
                     isSelected
-                      ? 'bg-[#18181B] text-white border-[#18181B] font-semibold shadow-xs'
-                      : 'bg-[#F8F7F4] hover:bg-[#EFECE6] border-[#E6E4DD] text-stone-700'
+                      ? 'bg-ink text-white border-ink font-semibold shadow-xs'
+                      : 'bg-paper hover:bg-sunk border-rule text-stone-700'
                   }`}
                 >
                   <span className={`w-1.5 h-1.5 rounded-full ${
-                    isSelected ? 'bg-emerald-400' : 'bg-stone-400'
+                    isSelected ? 'bg-mastery' : 'bg-stone-400'
                   }`} />
                   <span>{prob.subjectLabel}</span>
                   <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${
@@ -399,10 +421,10 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
               type="button"
               data-testid="btn-sync-from-board"
               onClick={handleSyncFromTeacherBoard}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-mono font-medium transition cursor-pointer shadow-2xs"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-sunk hover:bg-sunk text-ink border border-rule text-xs font-mono font-medium transition cursor-pointer shadow-2xs"
               title="Đồng bộ bài toán giáo viên vừa khoanh trên bảng Smartboard"
             >
-              <Radio className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+              <Radio className="w-3.5 h-3.5 text-ink animate-pulse" />
               <span>Nhận bài từ Bảng lớp</span>
             </button>
 
@@ -418,17 +440,17 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
 
         {/* Board Sync Confirmation Toast */}
         {boardSyncNotice && (
-          <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+          <div className="p-2 rounded-lg bg-mastery-bg border border-mastery-bd text-mastery text-xs font-mono flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-3.5 h-3.5 text-mastery shrink-0" />
             <span>{boardSyncNotice}</span>
           </div>
         )}
 
         {/* Row 2: Selected Problem Context Header */}
-        <div className="p-3 bg-[#F8F7F4] rounded-xl border border-[#E6E4DD] flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="p-3 bg-paper rounded-xl border border-rule flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-ink font-bold bg-sunk px-2 py-0.5 rounded border border-rule">
                 {activeProblem.curriculumCategory}
               </span>
               <span className="text-[10px] font-mono text-stone-500">
@@ -445,8 +467,9 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
         </div>
       </div>
 
-      {/* 2. DIRECTOR DEMO TOOLBAR (TOP-RIGHT FOR DEMO VIDEO RECORDING) */}
-      <div className="bg-[#FAF9F6] border border-[#E6E4DD] rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+      {/* 2. DIRECTOR DEMO TOOLBAR (để quay video; chỉ hiện khi showDirector) */}
+      {showDirector && (
+      <div className="bg-paper border border-rule rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 rounded bg-stone-900 text-white font-mono text-[9px] uppercase font-bold tracking-wider">
             Demo Director
@@ -461,7 +484,7 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
             type="button"
             data-testid="director-guardrail-btn"
             onClick={handleDirectorCheatingPrompt}
-            className="px-2.5 py-1 rounded-lg text-xs font-mono bg-white hover:bg-stone-100 border border-[#DCD9D0] text-rose-700 font-medium transition cursor-pointer shadow-2xs"
+            className="px-2.5 py-1 rounded-lg text-xs font-mono bg-white hover:bg-stone-100 border border-rule text-brand-700 font-medium transition cursor-pointer shadow-2xs"
             title="Thử xin đáp án trực tiếp để kích hoạt Khiên bảo vệ Socratic"
           >
             1. Bẻ khóa xin đáp án
@@ -471,7 +494,7 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
             type="button"
             data-testid="director-wrong-btn"
             onClick={handleDirectorWrongInput}
-            className="px-2.5 py-1 rounded-lg text-xs font-mono bg-white hover:bg-stone-100 border border-[#DCD9D0] text-amber-800 font-medium transition cursor-pointer shadow-2xs"
+            className="px-2.5 py-1 rounded-lg text-xs font-mono bg-white hover:bg-stone-100 border border-rule text-amber-800 font-medium transition cursor-pointer shadow-2xs"
             title="Nhập thiếu ma sát để kích hoạt cảnh báo thứ nguyên và mô phỏng thị giác"
           >
             2. Nhập sai & Bật gỡ lỗi
@@ -481,7 +504,7 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
             type="button"
             data-testid="director-correct-btn"
             onClick={handleDirectorSolveActiveStep}
-            className="px-2.5 py-1 rounded-lg text-xs font-mono bg-white hover:bg-stone-100 border border-[#DCD9D0] text-emerald-700 font-medium transition cursor-pointer shadow-2xs"
+            className="px-2.5 py-1 rounded-lg text-xs font-mono bg-white hover:bg-stone-100 border border-rule text-mastery font-medium transition cursor-pointer shadow-2xs"
             title="Điền đúng bước hiện tại và mở khóa bước kế tiếp"
           >
             3. Điền đúng bước này
@@ -491,13 +514,14 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
             type="button"
             data-testid="director-jump-gate-btn"
             onClick={handleDirectorJumpToConceptGate}
-            className="px-2.5 py-1 rounded-lg text-xs font-mono bg-blue-600 hover:bg-blue-700 text-white font-medium transition cursor-pointer shadow-xs"
+            className="px-2.5 py-1 rounded-lg text-xs font-mono bg-ink hover:bg-ink/85 text-white font-medium transition cursor-pointer shadow-xs"
             title="Nhảy thẳng đến Chốt chặn kiểm tra bản chất giọng nói"
           >
             4. Mở Chốt chặn Giọng nói (+65 Eureka)
           </button>
         </div>
       </div>
+      )}
 
       {/* 3. MAIN WORKBENCH: 2-COLUMN SPLIT (LEFT 45% VISUAL DEBUGGER | RIGHT 55% SOCRATIC DERIVATION) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start w-full">
@@ -511,11 +535,11 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
           {/* Socratic Chat & Red-Team Guardrail Protection Box */}
           <div
             data-testid="socratic-chat-box"
-            className="p-3.5 rounded-xl bg-white border border-[#E6E4DD] shadow-xs flex flex-col gap-2.5"
+            className="p-3.5 rounded-xl bg-white border border-rule shadow-xs flex flex-col gap-2.5"
           >
-            <div className="flex items-center justify-between border-b border-[#E6E4DD] pb-2">
+            <div className="flex items-center justify-between border-b border-rule pb-2">
               <span className="text-xs font-semibold text-stone-800 flex items-center gap-1.5 font-mono">
-                <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
+                <MessageSquare className="w-3.5 h-3.5 text-ink" />
                 <span>Trợ lý Socratic 1:1:</span>
               </span>
               <span className="text-[10px] text-stone-500 font-mono">Bảo vệ định luật 100%</span>
@@ -532,25 +556,29 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
                   key={attack}
                   type="button"
                   onClick={() => handleSendChatMessage(attack)}
-                  className="px-2 py-0.5 rounded-md bg-[#F8F7F4] hover:bg-[#EFECE6] border border-[#E6E4DD] text-[10px] font-mono text-stone-600 hover:text-stone-900 transition cursor-pointer shadow-2xs"
+                  className="px-2 py-0.5 rounded-md bg-paper hover:bg-sunk border border-rule text-[10px] font-mono text-stone-600 hover:text-stone-900 transition cursor-pointer shadow-2xs"
                 >
                   &quot;{attack}&quot;
                 </button>
               ))}
             </div>
 
-            {/* Red-Team Guardrail Shield Alert Card */}
+            {/* Hàng rào Socratic: đỏ đô chỉ dành cho khoảnh khắc này (xin đáp án), còn lại phản hồi luôn ấm áp */}
             {guardrailAlert && (
               <div
+                key={guardTick}
                 data-testid="guardrail-alert-card"
-                className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-xs font-sans flex flex-col gap-1 animate-in fade-in"
+                role="alert"
+                className="p-3 rounded-xl bg-brand-50 border-2 border-brand-600 text-brand-900 text-xs flex flex-col gap-1.5 animate-head-shake"
               >
-                <div className="flex items-center gap-1.5 font-semibold text-rose-800">
-                  <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
-                  <span>KHIÊN BẢO VỆ SOCRATIC (Red-Team Block):</span>
+                <div className="flex items-center gap-2 font-bold text-brand-700 tracking-[.1em] text-[11px]">
+                  <ShieldAlert className="w-4 h-4 shrink-0" />
+                  <span>HÀNG RÀO SOCRATIC ĐÃ KÍCH HOẠT</span>
                 </div>
-                <p className="text-[11px] text-rose-800">{guardrailAlert.reason}</p>
-                <div className="text-[11px] font-mono text-blue-900 bg-white p-1.5 rounded border border-blue-200 mt-0.5">
+                <p className="text-[12px] text-brand-900 font-serif leading-relaxed">
+                  Trợ lý Socratic không cung cấp đáp án giải sẵn. {guardrailAlert.reason}
+                </p>
+                <div className="text-[11px] text-ink bg-white p-2 rounded-lg border border-brand-200">
                   <strong>Gợi ý định hướng:</strong> {guardrailAlert.targetHint}
                 </div>
               </div>
@@ -558,7 +586,7 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
 
             {/* Socratic Response Banner */}
             {chatResponse && !guardrailAlert && (
-              <div className="p-2.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-xs font-serif italic leading-relaxed animate-in fade-in">
+              <div className="p-2.5 rounded-lg bg-sunk border border-rule text-ink text-xs font-serif italic leading-relaxed animate-in fade-in">
                 &ldquo;{chatResponse}&rdquo;
               </div>
             )}
@@ -572,14 +600,14 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendChatMessage()}
                 placeholder="Đặt câu hỏi gợi mở cho gia sư Socratic..."
-                className="flex-1 px-3 py-1.5 rounded-lg bg-[#FCFBF9] border border-[#DCD9D0] text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:border-blue-500 font-mono shadow-inner"
+                className="flex-1 px-3 py-1.5 rounded-lg bg-paper border border-rule text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:border-ink font-mono shadow-inner"
               />
               <button
                 type="button"
                 data-testid="socratic-chat-send"
                 onClick={() => handleSendChatMessage()}
                 disabled={chatLoading || chatInput.trim().length === 0}
-                className="p-2 rounded-lg bg-[#18181B] hover:bg-stone-800 text-white transition cursor-pointer shadow-xs disabled:opacity-40"
+                className="p-2 rounded-lg bg-ink hover:bg-ink/85 text-white transition cursor-pointer shadow-xs disabled:opacity-40"
               >
                 <Send className="w-3.5 h-3.5" />
               </button>
@@ -659,6 +687,14 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
                   />
                 )}
 
+                {/* Gợi ý ngay tại dòng: bong bóng ngắn, ấm áp, hổ phách (không có chữ "SAI RỒI" hay khung đỏ) */}
+                {serverFeedback && !serverVisualDebugger && (
+                  <div data-testid="inline-nudge" role="status" className="flex items-start gap-2 p-2.5 rounded-xl rounded-tl-sm bg-hint-bg border border-hint-bd text-hint-fg text-xs font-serif italic leading-relaxed animate-nudge-in">
+                    <MessageSquare className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <span>{serverFeedback}</span>
+                  </div>
+                )}
+
                 {/* Step 2 Concept Gate for CHEMISTRY_BALANCE */}
                 {activeProblem.id === 'CHEMISTRY_BALANCE' && currentStep === 2 && (
                   <div className="mt-2">
@@ -693,7 +729,7 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
           {isSessionCompleted && (
             <div
               data-testid="session-completed-banner"
-              className="mt-3 p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 flex items-center justify-between animate-in fade-in"
+              className="mt-3 p-4 rounded-xl bg-mastery-bg border border-mastery-bd text-mastery flex items-center justify-between animate-in fade-in"
             >
               <div className="flex items-center gap-3">
                 <Trophy className="w-5 h-5 text-amber-500" />
@@ -718,8 +754,8 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
           data-testid="lifeline-modal"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-150"
         >
-          <div className="w-full max-w-lg bg-white border border-[#E6E4DD] rounded-2xl p-5 shadow-2xl flex flex-col gap-4 text-stone-900 relative">
-            <div className="flex items-center justify-between border-b border-[#E6E4DD] pb-2.5">
+          <div className="w-full max-w-lg bg-white border border-rule rounded-2xl p-5 shadow-2xl flex flex-col gap-4 text-stone-900 relative">
+            <div className="flex items-center justify-between border-b border-rule pb-2.5">
               <div className="flex items-center gap-2">
                 <HelpCircle className="w-4 h-4 text-amber-600" />
                 <h3 className="font-semibold text-sm text-stone-900 tracking-tight">
@@ -729,7 +765,7 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
               <button
                 type="button"
                 onClick={() => setShowLifelineModal(false)}
-                className="p-1 rounded-md bg-[#F2F0EA] hover:bg-[#EAE7DF] text-stone-600 hover:text-stone-900 border border-[#E6E4DD]"
+                className="p-1 rounded-md bg-sunk hover:bg-[#EAE7DF] text-stone-600 hover:text-stone-900 border border-rule"
               >
                 ✕
               </button>
@@ -744,32 +780,32 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
 
             {/* Sub-steps A & B */}
             <div className="flex flex-col gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-[#F8F7F4] border border-[#E6E4DD] flex flex-col gap-1.5">
-                <span className="font-mono text-[10px] text-blue-700 uppercase font-bold">
+              <div className="p-3 rounded-xl bg-paper border border-rule flex flex-col gap-1.5">
+                <span className="font-mono text-[10px] text-ink uppercase font-bold">
                   Câu hỏi 2a:
                 </span>
                 <p className="text-stone-800 font-medium">
                   <MathText text={activeProblem.steps[currentStep - 1]?.microStepLifeline.questionA || ''} />
                 </p>
-                <div className="p-2 rounded bg-white border border-[#E6E4DD] font-mono text-emerald-800 font-bold">
+                <div className="p-2 rounded bg-white border border-rule font-mono text-mastery font-bold">
                   Gợi ý: <MathText text={activeProblem.steps[currentStep - 1]?.microStepLifeline.answerA || ''} />
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#F8F7F4] border border-[#E6E4DD] flex flex-col gap-1.5">
-                <span className="font-mono text-[10px] text-blue-700 uppercase font-bold">
+              <div className="p-3 rounded-xl bg-paper border border-rule flex flex-col gap-1.5">
+                <span className="font-mono text-[10px] text-ink uppercase font-bold">
                   Câu hỏi 2b:
                 </span>
                 <p className="text-stone-800 font-medium">
                   <MathText text={activeProblem.steps[currentStep - 1]?.microStepLifeline.questionB || ''} />
                 </p>
-                <div className="p-2 rounded bg-white border border-[#E6E4DD] font-mono text-emerald-800 font-bold">
+                <div className="p-2 rounded bg-white border border-rule font-mono text-mastery font-bold">
                   Gợi ý: <MathText text={activeProblem.steps[currentStep - 1]?.microStepLifeline.answerB || ''} />
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E6E4DD]">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-rule">
               <button
                 type="button"
                 onClick={() => {
@@ -777,7 +813,7 @@ export const SocraticCompanionSession: React.FC<SocraticCompanionSessionProps> =
                   setFormulaInput(ans);
                   setShowLifelineModal(false);
                 }}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition cursor-pointer shadow-xs"
+                className="px-4 py-2 rounded-xl bg-ink hover:bg-ink/85 text-white text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Áp dụng gợi ý vào bài làm
               </button>

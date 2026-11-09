@@ -62,9 +62,9 @@ export const TeacherHeatmap: React.FC<TeacherHeatmapProps> = ({ students }: Teac
   };
 
   const badgeClasses: Record<'green' | 'amber' | 'red', string> = {
-    green: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+    green: 'bg-mastery-bg text-mastery border border-mastery-bd',
     amber: 'bg-amber-50 text-amber-800 border border-amber-200',
-    red: 'bg-rose-50 text-rose-700 border border-rose-200',
+    red: 'bg-brand-50 text-brand-700 border border-brand-200',
   };
 
   const badgeLabels: Record<'green' | 'amber' | 'red', string> = {
@@ -74,32 +74,32 @@ export const TeacherHeatmap: React.FC<TeacherHeatmapProps> = ({ students }: Teac
   };
 
   return (
-    <div className="bg-white/95 backdrop-blur-md p-5 rounded-xl border border-[#E6E4DD] shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] relative font-sans text-[#18181B]">
+    <div className="bg-white/95 backdrop-blur-md p-5 rounded-xl border border-rule shadow-[0_4px_24px_-4px_rgba(20,20,19,0.06)] relative font-sans text-ink">
       {pushedToast && (
         <div
           data-testid="pushed-board-toast"
-          className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 px-3.5 py-1.5 rounded-lg bg-[#18181B] text-white font-medium text-xs shadow-xl flex items-center gap-2 animate-in fade-in"
+          className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 px-3.5 py-1.5 rounded-lg bg-ink text-white font-medium text-xs shadow-xl flex items-center gap-2 animate-in fade-in"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span className="w-1.5 h-1.5 rounded-full bg-mastery" />
           <span>{pushedToast}</span>
         </div>
       )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-[#18181B] tracking-tight">Ma trận Nhận thức KHTN</h3>
+          <h3 className="text-sm font-semibold text-ink tracking-tight">Ma trận Nhận thức KHTN</h3>
           <p className="text-xs text-stone-500">Dữ liệu thử sai tổng hợp từ 40 học sinh</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-md text-rose-700 text-xs font-mono flex items-center gap-1.5 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+          <div className="bg-brand-50 border border-brand-200 px-2.5 py-1 rounded-md text-brand-700 text-xs font-mono flex items-center gap-1.5 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
             <span>Cảnh báo điểm nghẽn: 72% kẹt ở cân bằng Oxi</span>
           </div>
           <button
             type="button"
             data-testid="push-to-board-btn"
             onClick={handlePushToBoard}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#18181B] hover:bg-stone-800 text-white text-xs font-medium transition cursor-pointer active:translate-y-px shadow-xs"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-ink hover:bg-ink/85 text-white text-xs font-medium transition cursor-pointer active:translate-y-px shadow-xs"
             title="Sáng mai lên lớp, bài toán này sẽ tự động nạp lên Smartboard lớp để chữa chung"
           >
             <span>Đẩy lên Bảng lớp</span>
@@ -108,7 +108,7 @@ export const TeacherHeatmap: React.FC<TeacherHeatmapProps> = ({ students }: Teac
       </div>
 
       <table className="w-full text-left text-xs">
-        <thead className="border-b border-[#E6E4DD] text-stone-500 font-mono text-[11px]">
+        <thead className="border-b border-rule text-stone-500 font-mono text-[11px]">
           <tr>
             <th className="pb-2.5 px-3">Học sinh</th>
             <th className="pb-2.5 px-3">Toán: Sóng Sin</th>
@@ -120,8 +120,8 @@ export const TeacherHeatmap: React.FC<TeacherHeatmapProps> = ({ students }: Teac
         </thead>
         <tbody className="divide-y divide-[#F2F0EA] font-normal">
           {students.map((st: StudentMastery, i: number) => (
-            <tr key={i} className="hover:bg-[#F8F7F4] transition">
-              <td className="py-2.5 px-3 font-medium text-[#18181B]">{st.name}</td>
+            <tr key={i} className="hover:bg-paper transition">
+              <td className="py-2.5 px-3 font-medium text-ink">{st.name}</td>
               <td className="py-2.5 px-3">
                 <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${badgeClasses[st.mathWave]}`}>
                   {badgeLabels[st.mathWave]}

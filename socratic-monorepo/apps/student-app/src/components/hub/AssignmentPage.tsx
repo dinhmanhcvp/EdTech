@@ -26,8 +26,8 @@ export function LoginForm({onLogin}: {onLogin: (s: HubStudent) => void}) {
       <label className="text-sm font-semibold text-stone-800" htmlFor="login-code">Mã học sinh</label>
       <input id="login-code" data-testid="login-code" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off"
         className="rounded-lg border border-stone-300 px-3 py-2 font-mono uppercase" placeholder="Mã thầy cô phát" />
-      {error && <p className="text-xs text-rose-600">{error}</p>}
-      <button data-testid="login-submit" type="submit" disabled={!code.trim()} className="rounded-lg bg-blue-600 py-2 text-sm font-semibold text-white disabled:opacity-50">Vào lớp</button>
+      {error && <p className="text-xs text-brand-600">{error}</p>}
+      <button data-testid="login-submit" type="submit" disabled={!code.trim()} className="rounded-lg bg-ink py-2 text-sm font-semibold text-white disabled:opacity-50">Vào lớp</button>
     </form>
   );
 }
@@ -35,8 +35,8 @@ export function LoginForm({onLogin}: {onLogin: (s: HubStudent) => void}) {
 export function StatusBadge({mine}: {mine?: {status: Mine['status'] | null; score: number | null} | null}) {
   if (!mine?.status) return null;
   if (mine.status === 'pending_teacher') return <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">Chờ thầy cô duyệt</span>;
-  return mine.score === 1 ? <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-800">Đúng</span>
-    : mine.score === 0 ? <span className="rounded bg-rose-100 px-1.5 py-0.5 text-xs text-rose-800">Sai</span>
+  return mine.score === 1 ? <span className="rounded bg-mastery-bg px-1.5 py-0.5 text-xs text-mastery">Đúng</span>
+    : mine.score === 0 ? <span className="rounded bg-brand-100 px-1.5 py-0.5 text-xs text-brand-800">Sai</span>
     : <span className="rounded bg-sky-100 px-1.5 py-0.5 text-xs text-sky-800">Đã chấm {Math.round((mine.score ?? 0) * 100)}%</span>;
 }
 
@@ -63,7 +63,7 @@ function ConfirmBox({ocr, onSubmit, onCancel}: {ocr: OcrResult; onSubmit: (b: {l
   const resolved = Object.keys(picked).map(Number).sort((a, b) => a - b);
   const ready = resolved.length === ocr.uncertain.length;
   return (
-    <div data-testid="confirm-box" className="mt-2 flex flex-col gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2">
+    <div data-testid="confirm-box" className="mt-2 flex flex-col gap-2 rounded-lg border border-rule bg-sunk p-2">
       <p className="text-xs text-stone-700">Máy đọc vở của em như sau. Sửa nếu sai, chọn lại các chữ được tô vàng.</p>
       {lines.map((l, n) => (
         <input key={n} value={l} onChange={(e) => setLines((ls) => ls.map((x, k) => (k === n ? e.target.value : x)))} className="rounded border border-stone-300 bg-white px-2 py-1 font-mono text-sm" />
@@ -73,12 +73,12 @@ function ConfirmBox({ocr, onSubmit, onCancel}: {ocr: OcrResult; onSubmit: (b: {l
           <span className="text-stone-600">Dòng {u.line + 1}, chữ “{u.token}” là:</span>
           {[u.token, ...u.alternatives.filter((a) => a !== u.token)].map((v) => (
             <button key={v} type="button" onClick={() => pick(i, v)}
-              className={`rounded px-2 py-0.5 font-mono ${picked[i] === v ? 'bg-blue-600 text-white' : 'bg-amber-200 text-stone-900'}`}>{v}</button>
+              className={`rounded px-2 py-0.5 font-mono ${picked[i] === v ? 'bg-ink text-white' : 'bg-amber-200 text-stone-900'}`}>{v}</button>
           ))}
         </div>
       ))}
       <div className="flex gap-2">
-        <button data-testid="confirm-submit" disabled={!ready} onClick={() => onSubmit({lines, resolved, photoOnly: false})} className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Nộp bài</button>
+        <button data-testid="confirm-submit" disabled={!ready} onClick={() => onSubmit({lines, resolved, photoOnly: false})} className="rounded-lg bg-ink px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Nộp bài</button>
         <button onClick={() => onSubmit({lines: [], resolved: [], photoOnly: true})} className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs">Máy đọc sai nhiều — chỉ nộp ảnh</button>
         <button onClick={onCancel} className="ml-auto text-xs text-stone-500">Chụp lại</button>
       </div>
@@ -122,7 +122,7 @@ function QuestionCard({run, q, mine, onResult, onAuthLost}: {run: RunForStudent;
       {q.type === 'short' && (
         <div className="mt-2 flex gap-2">
           <input data-testid="short-input" value={text} onChange={(e) => setText(e.target.value)} maxLength={200} className="flex-1 rounded-lg border border-stone-300 px-2 py-1.5 text-sm" placeholder="Đáp số" />
-          <button data-testid="short-submit" disabled={busy || !text.trim()} onClick={() => answer({text: text.trim()})} className="rounded-lg bg-blue-600 px-3 text-sm font-semibold text-white disabled:opacity-50">Gửi</button>
+          <button data-testid="short-submit" disabled={busy || !text.trim()} onClick={() => answer({text: text.trim()})} className="rounded-lg bg-ink px-3 text-sm font-semibold text-white disabled:opacity-50">Gửi</button>
         </div>
       )}
       {(q.type === 'essay' || q.type === 'open') && !ocr && (
@@ -142,7 +142,7 @@ function QuestionCard({run, q, mine, onResult, onAuthLost}: {run: RunForStudent;
           setOcr(null);
         })} />
       )}
-      {error && <p className="mt-1 text-xs text-rose-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-brand-600">{error}</p>}
     </div>
   );
 }
@@ -172,7 +172,7 @@ export function AssignmentPage({code}: {code: string}) {
 
   if (!ready) return null;
   if (!student) return <main className="p-4"><LoginForm onLogin={(s) => { setError(null); setStudent(s); }} /></main>;
-  if (error) return <main className="p-4 text-center text-sm text-rose-700">{error}</main>;
+  if (error) return <main className="p-4 text-center text-sm text-brand-700">{error}</main>;
   if (!run) return <main className="p-4 text-center text-sm text-stone-500">Đang mở bài…</main>;
 
   const setResult = (qid: string) => (r: SubmissionResult) => setRun((cur) => cur && {...cur, mine: {...cur.mine, [qid]: {status: r.status, score: r.score, attempt: r.attempt}}});

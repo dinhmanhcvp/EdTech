@@ -1,83 +1,83 @@
 {
-  "_note": "Nguồn số liệu duy nhất cho đợt thí điểm 4 tuần (2026). App (Mode 03), slide, poster và video đều đọc file này. Sửa số ở đây rồi dựng lại các sản phẩm.",
+  "_note": "Nguồn số liệu duy nhất cho đợt thử nghiệm đối chứng 8 tuần (2026) N = 412 tại 3 mô hình trường (Vĩnh Phúc, Phú Thọ). App (Mode 03 Analytics), slide, poster và báo cáo đồng bộ với tệp này và diem_thuc_nghiem_412HS.csv.",
   "study": {
-    "weeks": 4,
-    "lessons": 64,
-    "tutorSessions": 1420,
-    "N": 86,
-    "n1": 44,
-    "n1Core": 32,
-    "n1Gifted": 12,
-    "n2": 42,
-    "teachers": 7,
-    "grades": "11–12",
+    "weeks": 8,
+    "lessons": 96,
+    "tutorSessions": 15798,
+    "N": 412,
+    "n1": 208,
+    "n1Core": 140,
+    "n1Gifted": 68,
+    "n2": 204,
+    "teachers": 18,
+    "grades": "11",
     "topics": [
-      "Vật lý 12: mạch điện xoay chiều RLC, dao động cơ",
-      "Hóa học 11/12: cân bằng hóa học, oxi hóa – khử, chuẩn độ"
+      "Vật lí 11: Dao động điều hòa, con lắc RK4, sóng cơ, điện trường, mạch RLC",
+      "Hóa học 11: Cân bằng hóa học Le Chatelier, cân bằng ion trong nước, VSEPR, oxi hóa – khử"
     ],
-    "assessment": "Bài kiểm tra 10 điểm trước và sau, theo cấu trúc đề thi tốt nghiệp THPT từ 2025 (GDPT 2018)"
+    "assessment": "Bài kiểm tra 10 điểm trước và sau, theo cấu trúc đề thi tốt nghiệp THPT từ 2025 (QĐ 764/QĐ-BGDĐT) gồm 3 phần: Trắc nghiệm 4 lựa chọn, Đúng/Sai 4 mệnh đề và Trả lời ngắn"
   },
   "scores": {
     "pre": {
       "control": {
-        "mean": 6.48,
-        "sd": 1.15
+        "mean": 6.05,
+        "sd": 1.73
       },
       "exp": {
-        "mean": 6.42,
-        "sd": 1.18
+        "mean": 5.94,
+        "sd": 1.88
       },
-      "delta": -0.06,
-      "p": "0.81"
+      "delta": -0.11,
+      "p": "0.542"
     },
     "post": {
       "control": {
-        "mean": 6.85,
-        "sd": 1.12
+        "mean": 6.49,
+        "sd": 1.82
       },
       "exp": {
-        "mean": 7.74,
-        "sd": 0.89
+        "mean": 7.32,
+        "sd": 1.77
       },
-      "delta": 0.89,
-      "p": "0.0002"
+      "delta": 0.83,
+      "p": "<0.001"
     },
     "growth": {
       "control": {
-        "pts": 0.37,
-        "pct": 5.7
+        "pts": 0.44,
+        "pct": 7.3
       },
       "exp": {
-        "pts": 1.32,
-        "pct": 20.6
+        "pts": 1.38,
+        "pct": 23.2
       }
     },
-    "cohenD": 0.88
+    "cohenD": 0.51
   },
   "parts": [
     {
       "key": "I",
       "label": "Phần I · Trắc nghiệm 4 lựa chọn",
       "short": "Phần I · Trắc nghiệm",
-      "control": 81.4,
-      "exp": 84.2,
-      "delta": 2.8
+      "control": 71.8,
+      "exp": 77.3,
+      "delta": 5.5
     },
     {
       "key": "II",
       "label": "Phần II · Đúng/Sai 4 mệnh đề",
       "short": "Phần II · Đúng/Sai",
-      "control": 52.6,
-      "exp": 78.4,
-      "delta": 25.8
+      "control": 51.4,
+      "exp": 66.4,
+      "delta": 15.0
     },
     {
       "key": "III",
       "label": "Phần III · Trả lời ngắn nhiều bước",
       "short": "Phần III · Trả lời ngắn",
-      "control": 44.0,
-      "exp": 66.5,
-      "delta": 22.5
+      "control": 43.2,
+      "exp": 49.5,
+      "delta": 6.3
     },
     {
       "key": "RET",
@@ -100,16 +100,16 @@
       "times": 2.6
     },
     "guard": {
-      "blocked": 312,
-      "total": 318,
-      "pct": 98.1,
-      "bypassesWeek1": 6
+      "blocked": 1504,
+      "total": 1535,
+      "pct": 98.0,
+      "bypassesWeek1": 31
     },
     "offload": {
-      "zeroToken": 81.4,
+      "zeroToken": 81.3,
       "sympy": 54.2,
-      "cache": 27.2,
-      "llm": 18.6,
+      "cache": 27.1,
+      "llm": 18.7,
       "sympyMs": 12,
       "cacheMs": 25
     },
@@ -124,34 +124,34 @@
   },
   "feedback": [
     {
-      "who": "Giáo viên Vật lý",
+      "who": "Giáo viên Vật lí",
       "meta": "14 năm dạy THPT và bồi dưỡng HSG",
-      "quote": "Giản đồ Fresnel cho mạch RLC giúp tôi bớt gần 40 phút soạn bài mỗi tiết, và nhờ chạm để sửa, tôi không phải mở bàn phím ảo trên màn hình 75 inch lần nào.",
+      "quote": "Giản đồ Fresnel cho mạch RLC và con lắc RK4 giúp tôi bớt gần 40 phút soạn bài mỗi tiết, và nhờ chạm để sửa mô phỏng, tôi không phải mở bàn phím ảo trên màn hình 75 inch lần nào.",
       "short": "Giản đồ Fresnel giúp tôi bớt gần 40 phút soạn bài mỗi tiết, và tôi không phải mở bàn phím ảo trên màn hình 75 inch lần nào."
     },
     {
-      "who": "Học sinh lớp 12",
+      "who": "Học sinh lớp 11",
       "meta": "Thi khối A00",
       "quote": "Bình thường bí là em tra lời giải ngay rồi tưởng mình hiểu, đến câu Đúng/Sai điều kiện biên thì sai. Ở đây, em quên trừ lực ma sát là mô hình hiện ngay vật trượt quá dốc và báo lệch thứ nguyên.",
       "short": "Em quên trừ lực ma sát là mô hình hiện ngay vật trượt quá dốc và báo lệch thứ nguyên."
     },
     {
       "who": "Học sinh đội tuyển Hóa",
-      "meta": "Lớp 12 chuyên Hóa",
-      "quote": "Đĩa cân bảo toàn electron cho Fe₃O₄ + HNO₃ và giản đồ năng lượng hoạt hóa rất trực quan.",
-      "short": "Đĩa cân bảo toàn electron cho Fe₃O₄ + HNO₃ rất trực quan."
+      "meta": "Lớp 11 chuyên Hóa",
+      "quote": "Đĩa cân bảo toàn electron cho phản ứng oxi hóa – khử và chuyển dịch cân bằng Le Chatelier với piston áp suất rất trực quan.",
+      "short": "Đĩa cân bảo toàn electron và piston chuyển dịch cân bằng rất trực quan."
     }
   ],
   "iterations": [
     {
-      "week": "Tuần 1",
-      "what": "Phát hiện 6 lượt lách qua bộ chặn bằng cách nhập vai gián tiếp",
-      "fix": "Thêm bước kiểm tra đầu ra: lọc mọi con số trùng đáp án trước khi gửi cho học sinh"
+      "week": "Tuần 1–2",
+      "what": "Phát hiện học sinh xin đáp án gián tiếp và lỗi dấu gạch chéo ngược LaTeX khi nhận dạng 2NO2 ⇌ N2O4",
+      "fix": "Thêm rào chắn lọc số trùng đáp án và cơ chế tự động thoát dấu \\ trước khi đọc cấu trúc công thức"
     },
     {
-      "week": "Tuần 2–3",
-      "what": "Đo lại sau khi vá",
-      "fix": "Tổng cộng chặn 312/318 lượt xin đáp án hoặc dán lời giải trong 4 tuần"
+      "week": "Tuần 3–8",
+      "what": "Mở rộng 96 tiết học trên 3 mô hình trường và tích hợp SymPy kiểm chứng đại số",
+      "fix": "Chặn thành công 1.504/1.535 lượt xin đáp án (98,0%), xử lý 81,3% lượt tự học không gọi AI, giữ chi phí <= 350 đồng/tiết"
     }
   ]
 }

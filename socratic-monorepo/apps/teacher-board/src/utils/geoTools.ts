@@ -4,7 +4,7 @@
  * Điểm/đường mới gắn vào `part` đang hiển thị nên bật/tắt từng phần của đề vẫn đúng.
  */
 import {add, cross, dot, len, mul, sub, type V3} from './solids';
-import {inferCons, solveDrag, type P2} from './geoConstraints';
+import {inferCons, solveDragNatural, type P2} from './geoConstraints';
 import {appendPart, lineIntersect, modelFromScene, partShown, renderScene, sceneFromModel, type GeoDef, type GeoScene} from './geometryProblem';
 import type {ShapeMeta} from './lassoGeometry';
 
@@ -369,7 +369,7 @@ export function moveFreePoint(sc: GeoScene, name: string, to: V3): GeoScene {
     (c.k === 'perp' ? [c.a, c.v, c.c] : [c.a, c.b, c.c, c.d]).every((n) => live.has(n)),
   );
   const ring = sc.faces[0] ?? sc.polys[0]?.names ?? [];
-  const out = solveDrag(p2, cons, name, [to[0], to[1]], ring.filter((n) => live.has(n)));
+  const out = solveDragNatural(p2, cons, name, [to[0], to[1]], ring.filter((n) => live.has(n)));
   if (!out) return sc;
   const pts = {...sc.pts};
   for (const n of free) pts[n] = [out[n][0], out[n][1], sc.pts[n][2]];

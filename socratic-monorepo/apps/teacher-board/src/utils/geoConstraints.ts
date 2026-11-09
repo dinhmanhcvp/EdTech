@@ -59,11 +59,12 @@ const signs = (pts: Record<string, P2>, ring: string[]) =>
   });
 
 /**
+ * `anchor` (tùy chọn): một điểm khác cũng được giữ nguyên (hình quay/co giãn quanh nó thay vì cả hình trôi theo).
  * Đưa `pin` tới `to` rồi chỉnh các điểm khác để mọi ràng buộc vẫn đúng.
  * Không giải được (suy biến, đảo chiều đa giác, cạnh co về 0) thì trả null: hình đứng yên thay vì méo.
  * `ring` = đa giác (thứ tự đỉnh) để canh chiều; có thể rỗng.
  */
-export function solveDrag(pts: Record<string, P2>, cons: Cons[], pin: string, to: P2, ring: string[] = [], iters = 80): Record<string, P2> | null {
+export function solveDrag(pts: Record<string, P2>, cons: Cons[], pin: string, to: P2, ring: string[] = [], iters = 80, anchor?: string): Record<string, P2> | null {
   const p: Record<string, P2> = {};
   for (const [n, v] of Object.entries(pts)) p[n] = [v[0], v[1]];
   const used = cons.filter((c) => names(c).every((n) => p[n]));
@@ -88,11 +89,11 @@ export function solveDrag(pts: Record<string, P2>, cons: Cons[], pin: string, to
       }
       let den = 0;
       ns.forEach((n, i) => {
-        if (n !== pin) den += g[2 * i] ** 2 + g[2 * i + 1] ** 2;
+        if (n !== pin && n !== anchor) den += g[2 * i] ** 2 + g[2 * i + 1] ** 2;
       });
       if (den < 1e-18) continue;
       ns.forEach((n, i) => {
-        if (n === pin) return;
+        if (n === pin || n === anchor) return;
         p[n][0] -= (f * g[2 * i]) / den;
         p[n][1] -= (f * g[2 * i + 1]) / den;
       });
@@ -104,4 +105,23 @@ export function solveDrag(pts: Record<string, P2>, cons: Cons[], pin: string, to
   if (before.some((s, i) => s !== after[i])) return null;
   const short = Object.keys(p).some((n) => Object.keys(p).some((m) => m !== n && Math.hypot(p[n][0] - p[m][0], p[n][1] - p[m][1]) < minLen * 0.15));
   return short ? null : p;
+}
+
+/**
+ * Kéo kiểu tự nhiên: giữ yên đỉnh xa nhất (hình quay/co giãn quanh nó, không trôi); nếu không giải được thì thả neo.
+ * Dùng cho cả hình dựng từ đề lẫn hình vẽ tay.
+ */
+export function solveDragNatural(pts: Record<string, P2>, cons: Cons[], pin: string, to: P2, ring: string[] = []): Record<string, P2> | null {
+  if (cons.length === 0) return solveDrag(pts, cons, pin, to, ring);
+  let far = '';
+  let best = -1;
+  for (const [n, v] of Object.entries(pts)) {
+    if (n === pin) continue;
+    const d = Math.hypot(v[0] - pts[pin][0], v[1] - pts[pin][1]);
+    if (d > best) {
+      best = d;
+      far = n;
+    }
+  }
+  return (far ? solveDrag(pts, cons, pin, to, ring, 160, far) : null) ?? solveDrag(pts, cons, pin, to, ring);
 }

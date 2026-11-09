@@ -1,6 +1,6 @@
 'use client';
 
-import {inferCons, solveDrag, type Cons, type P2 as P2g} from '../../utils/geoConstraints';
+import {inferCons, solveDragNatural, type Cons, type P2 as P2g} from '../../utils/geoConstraints';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import type {ShapeMeta, Stroke} from '../../utils/lassoGeometry';
 import {VERTEX_LABELS, planeStats, solidWire, triangleCenters, type P2} from '../../utils/inlineShape';
@@ -126,7 +126,7 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
       let nv = verts.map((p, k) => (k === d.i ? target : p));
       if (d.cons && d.cons.length > 0) {
         // giữ tính chất: các đỉnh còn lại tự điều chỉnh; không giữ được (hình lật/suy biến) thì đứng yên
-        const solved = solveDrag(planePts(verts), d.cons, `v${d.i}`, [target.x, target.y], verts.map((_, k) => `v${k}`));
+        const solved = solveDragNatural(planePts(verts), d.cons, `v${d.i}`, [target.x, target.y], verts.map((_, k) => `v${k}`));
         if (!solved) return;
         nv = verts.map((_, k) => ({x: solved[`v${k}`][0], y: solved[`v${k}`][1]}));
       }
@@ -442,10 +442,8 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
                     const ip = sk.names?.indexOf(nm) ?? -1;
                     if (!onDragFree || ip < 0 || !sk.verts[ip]) return null;
                     const P0 = sk.verts[ip];
-                    const local = (e: React.PointerEvent<Element>) => {
-                      const r = svgRef.current?.getBoundingClientRect();
-                      return r ? {x: (e.clientX - r.left) / boardScale, y: (e.clientY - r.top) / boardScale} : null;
-                    };
+                    // toạ độ MÀN HÌNH (không phải của khung hình): khung hình đổi cỡ và dời liên tục khi kéo, đo theo nó sẽ giật
+                    const local = (e: React.PointerEvent<Element>) => ({x: e.clientX / boardScale, y: e.clientY / boardScale});
                     return (
                       <g key={`free-${nm}`}>
                         <circle cx={P0.x} cy={P0.y} r={9} fill="#16A34A" fillOpacity={0.12} stroke="#16A34A" strokeWidth={1.2} style={{pointerEvents: 'none'}} />

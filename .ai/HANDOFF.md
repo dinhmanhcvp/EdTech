@@ -1570,3 +1570,8 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 - Kéo đỉnh hình phẳng VẼ TAY (`InlineShape`, `plane.verts`): suy vuông góc/bằng nhau/song song lúc bắt đầu kéo (dung sai 2%), giữ bằng `solveDrag`; hình thường không có tính chất thì kéo tự do như cũ.
 - Rà lỗi: fuzz mọi công cụ GeoGebra trên 9 loại hình (dựng, kéo, xóa, vẽ lại): không lỗi, không tham chiếu treo, không số vô hạn; kéo ngẫu nhiên 1.300 lần giữ nguyên mọi tính chất, từ chối < 2%. Sửa: đường dựng (trung trực, song song, vuông góc, đường thẳng/tia) quá dài, tràn khung bảng → rút còn 1,4 lần cạnh gốc.
 - Chưa làm: nhận chữ trong ảnh dán (OCR) để dựng hình từ đề; ảnh PDF/nhiều trang; đổi cỡ ảnh bằng kéo góc (hiện chỉ nút −/+). Kéo đỉnh khi hình dựng lớn ra ngoài mép bảng thì phần ngoài bị cắt (chưa tự co khung).
+
+# 2026-11-09 — Kéo đỉnh mượt (hết giật/trôi hình)
+- Nguyên nhân giật: (1) tay nắm đo con trỏ theo khung SVG của hình, mà khung này đổi cỡ/dời liên tục khi kéo (khung bao tính lại mỗi lần) → sai số phản hồi; nay đo theo toạ độ màn hình (`InlineShape`, `freeDrag`). (2) bộ giải chỉ ghim điểm đang kéo nên MỌI đỉnh khác cùng xê dịch → hình trôi, "phóng to" lạ; nay `solveDragNatural` (geoConstraints.ts) thêm neo: đỉnh xa nhất đứng yên, hình quay/co quanh nó; không giải được thì thả neo; không có tính chất thì chỉ điểm kéo di chuyển.
+- Dùng cho cả hình dựng từ đề (`moveFreePoint`) lẫn hình vẽ tay (`InlineShape`). Đo trên trình duyệt: tay nắm khớp con trỏ (lệch 0 px qua 12 bước), đỉnh neo đứng yên, các đỉnh khác dời đều từng bước.
+- Còn lại: khung bao vẫn co giãn khi hình lớn ra (phần vượt mép bảng bị cắt). Chưa commit.

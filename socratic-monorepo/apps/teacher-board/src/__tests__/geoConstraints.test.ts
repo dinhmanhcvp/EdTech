@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {inferCons, solveDrag, type P2} from '../utils/geoConstraints';
+import {inferCons, solveDrag, solveDragNatural, type P2} from '../utils/geoConstraints';
 
 const d = (p: Record<string, P2>, a: string, b: string) => Math.hypot(p[a][0] - p[b][0], p[a][1] - p[b][1]);
 const cosAt = (p: Record<string, P2>, a: string, v: string, c: string) =>
@@ -40,5 +40,30 @@ describe('giữ tính chất khi kéo đỉnh', () => {
   it('kéo làm đa giác đảo chiều thì từ chối thay vì méo hình', () => {
     const p: Record<string, P2> = {A: [0, 0], B: [4, 0], C: [2, 3]};
     expect(solveDrag(p, [], 'C', [2, -3], ['A', 'B', 'C'])).toBeNull();
+  });
+
+  it('kéo tự nhiên: đỉnh xa nhất đứng yên, hình quay/co quanh nó (không trôi cả hình)', () => {
+    const p: Record<string, P2> = {A: [0, 0], B: [1, 0], C: [1, 1], D: [0, 1]};
+    const e: [string, string][] = [['A', 'B'], ['B', 'C'], ['C', 'D'], ['D', 'A']];
+    const cons = inferCons(p, e);
+    let cur = p;
+    for (let i = 1; i <= 10; i++) {
+      const next = solveDragNatural(cur, cons, 'C', [1 + i * 0.1, 1 - i * 0.05], ['A', 'B', 'C', 'D'])!;
+      expect(next).not.toBeNull();
+      expect(next.A).toEqual([0, 0]); // neo đứng yên
+      const s = d(next, 'A', 'B');
+      for (const [a, b] of e) expect(d(next, a, b)).toBeCloseTo(s, 5);
+      // bước nhỏ thì hình đổi nhỏ: không nhảy
+      expect(d({X: cur.B, Y: next.B}, 'X', 'Y')).toBeLessThan(0.2);
+      cur = next;
+    }
+  });
+
+  it('không có tính chất thì kéo tự do, các điểm khác không nhúc nhích', () => {
+    const p: Record<string, P2> = {A: [0, 0], B: [4, 0], C: [2, 3]};
+    const q = solveDragNatural(p, [], 'C', [3, 4], ['A', 'B', 'C'])!;
+    expect(q.A).toEqual([0, 0]);
+    expect(q.B).toEqual([4, 0]);
+    expect(q.C).toEqual([3, 4]);
   });
 });

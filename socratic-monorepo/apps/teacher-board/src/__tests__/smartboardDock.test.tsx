@@ -21,6 +21,7 @@ const dockProps = (over: Partial<SmartboardDockProps> = {}): SmartboardDockProps
   gridPattern: 'DOTS',
   onCycleGrid: vi.fn(),
   onClear: vi.fn(),
+  onInsertImage: vi.fn(),
   eraserKind: 'round',
   onEraserKind: vi.fn(),
   eraserR: 14,

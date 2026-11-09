@@ -8,8 +8,8 @@ export type BoardImageState = {state: 'loading'} | {state: 'error'} | {state: 'r
 
 export function createBoardImageLoader(onChange: () => void) {
   const cache = new Map<string, BoardImageState>();
-  return (ref: {assignmentId: string; page: number}): BoardImageState => {
-    const key = `${ref.assignmentId}:${ref.page}`;
+  return (ref: {assignmentId: string; page: number; src?: string}): BoardImageState => {
+    const key = ref.src ? `src:${ref.src.length}:${ref.src.slice(-48)}` : `${ref.assignmentId}:${ref.page}`;
     const hit = cache.get(key);
     if (hit) return hit;
     cache.set(key, {state: 'loading'});
@@ -17,8 +17,7 @@ export function createBoardImageLoader(onChange: () => void) {
       cache.set(key, {state: 'error'});
       onChange();
     };
-    hubBoard
-      .pageUrl(ref.assignmentId, ref.page)
+    (ref.src ? Promise.resolve(ref.src) : hubBoard.pageUrl(ref.assignmentId, ref.page))
       .then((url) => {
         const img = new Image();
         img.onload = () => {

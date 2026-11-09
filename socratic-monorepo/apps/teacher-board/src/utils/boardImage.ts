@@ -61,3 +61,15 @@ export function eraserHitsBlock(stroke: Stroke, pt: {x: number; y: number}, r: n
   const a = stroke.points[0];
   return pt.x >= a.x - r && pt.x <= a.x + t.w + r && pt.y >= a.y - r && pt.y <= a.y + t.h + r;
 }
+
+/** Ảnh từ ngoài (dán/tải lên): đặt giữa phía trên bảng, chừa chỗ bên dưới để giải. `w`, `h` đã tính theo khung bảng. */
+export function pastedImageStroke(src: string, w: number, h: number): Stroke {
+  return {
+    id: nextId('img'),
+    points: [{x: Math.round((BOARD_W - w) / 2), y: 24}],
+    color: '#000000',
+    width: 1,
+    typeset: {latex: '', text: '', size: 20, w, h},
+    image: {assignmentId: 'local', page: 0, src},
+  };
+}

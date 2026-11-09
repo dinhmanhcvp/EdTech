@@ -84,6 +84,8 @@ export interface SmartboardDockProps {
   gridPattern: GridPattern;
   onCycleGrid: () => void;
   onClear: () => void;
+  /** mở hộp chọn tệp ảnh để đưa lên bảng (ngoài ra còn dán Ctrl+V và kéo thả) */
+  onInsertImage: () => void;
   eraserKind: EraserKind;
   onEraserKind: (k: EraserKind) => void;
   eraserR: number;
@@ -237,7 +239,7 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
 
       {/* Bảng nhỏ: thêm */}
       <div data-testid="more-popover" className={`${popCls('more')} right-0 flex-col gap-2 w-[min(420px,calc(100vw-110px))]`}>
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-5 gap-1">
           <button data-testid="btn-split-view-toggle" onClick={p.onToggleSplit} className={`${base} ${p.isSplitView ? on : idle}`} title="Ghim mô phỏng sang nửa bảng">
             <Columns className="w-5 h-5" />
             {p.isSplitView ? 'Nửa bảng' : 'Toàn bảng'}
@@ -245,6 +247,10 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
           <button data-testid="btn-pack-smart-notes" onClick={p.onOpenQr} className={`${base} ${idle}`} title="Đóng gói Smart Notes & QR">
             <QrCode className="w-5 h-5" />
             QR Notes
+          </button>
+          <button data-testid="btn-insert-image" onClick={() => { p.onInsertImage(); setPop(null); }} className={`${base} ${idle}`} title="Chèn ảnh (đề bài, hình): chọn tệp, hoặc dán Ctrl+V, hoặc kéo thả vào bảng">
+            <FileText className="w-5 h-5" />
+            Chèn ảnh
           </button>
           <button onClick={p.onExport} className={`${base} ${idle}`} title="Tải ảnh bảng về máy">
             <Download className="w-5 h-5" />

@@ -429,7 +429,7 @@ const addDerived = (n: GeoScene, p: V3, def: GeoDef, part: number, mark = true):
 };
 const plane = (sc: GeoScene, names: string[]) => sc.dim === 2 && names.length > 0 && names.every((x) => !!sc.pts[x]);
 
-/** Đường thẳng qua P song song / vuông góc với AB (vẽ thành đoạn dài gấp đôi AB, P ở giữa). Trả cảnh mới + hai đầu đoạn. */
+/** Đường thẳng qua P song song / vuông góc với AB (vẽ thành đoạn dài 1,4 lần AB, P ở giữa). Trả cảnh mới + hai đầu đoạn. */
 export function addLineThrough(sc: GeoScene, kind: 'par' | 'perp', p: string, a: string, b: string, part: number): {scene: GeoScene; ends: [string, string]} | null {
   if (!plane(sc, [p, a, b]) || a === b) return null;
   const n = clone(sc);
@@ -437,8 +437,8 @@ export function addLineThrough(sc: GeoScene, kind: 'par' | 'perp', p: string, a:
     const d: GeoDef = {k: 'off', p, a, b, r: kind, s};
     return addDerived(n, calcDef(d, n.pts)!, d, part, false);
   };
-  const e1 = mk(1);
-  const e2 = mk(-1);
+  const e1 = mk(0.7);
+  const e2 = mk(-0.7);
   n.aux.push([e1, e2, part]);
   return {scene: n, ends: [e1, e2]};
 }
@@ -505,8 +505,8 @@ export function addLineAB(sc: GeoScene, a: string, b: string, kind: 'line' | 'ra
     const d: GeoDef = {k: 'off', p: a, a, b, r: 'par', s};
     return addDerived(n, calcDef(d, n.pts)!, d, part, false);
   };
-  const far = mk(3);
-  const near = kind === 'line' ? mk(-2) : a;
+  const far = mk(1.8);
+  const near = kind === 'line' ? mk(-0.8) : a;
   n.aux.push([near, far, part]);
   return n;
 }

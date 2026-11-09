@@ -144,3 +144,42 @@ describe('dựng hình trực tiếp trên hình phẳng', () => {
     expect(screen.getAllByTestId('construct-seg').length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe('kéo đỉnh hình vẽ tay giữ tính chất', () => {
+  const drag = (onChange: ReturnType<typeof vi.fn>, idx: number, from: [number, number], to: [number, number]) => {
+    const handle = screen.getAllByTestId('shape-vertex-handle')[idx];
+    fireEvent.pointerDown(handle, {pointerId: 1, clientX: from[0], clientY: from[1]});
+    fireEvent.pointerMove(handle, {pointerId: 1, clientX: to[0], clientY: to[1]});
+    fireEvent.pointerUp(handle, {pointerId: 1, clientX: to[0], clientY: to[1]});
+    return onChange.mock.calls.at(-1)![0].plane.verts as {x: number; y: number}[];
+  };
+  const cos = (v: {x: number; y: number}[], a: number, o: number, b: number) => ((v[a].x - v[o].x) * (v[b].x - v[o].x) + (v[a].y - v[o].y) * (v[b].y - v[o].y)) / (Math.hypot(v[a].x - v[o].x, v[a].y - v[o].y) * Math.hypot(v[b].x - v[o].x, v[b].y - v[o].y));
+
+  it('tam giác vuông: kéo đỉnh nào, góc vuông vẫn vuông', () => {
+    const rt = shapeFromBlueprint({templateId: 'MATH_DYNAMIC_GEOMETRY', meta: {planeTitle: 'Tam giác ABC', vertices2D: [[0, 0], [3, 0], [0, 2]]}}, 200, 160)!;
+    const onChange = vi.fn();
+    render(<Harness initial={rt} onChange={onChange} />);
+    let v = drag(onChange, 1, [0, 0], [40, 25]);
+    expect(Math.abs(cos(v, 1, 0, 2))).toBeLessThan(1e-4);
+    expect(v[1].x).not.toBeCloseTo(rt.plane!.verts[1].x, 1);
+    v = drag(onChange, 2, [0, 0], [-30, 10]);
+    expect(Math.abs(cos(v, 1, 0, 2))).toBeLessThan(1e-4);
+  });
+
+  it('hình vuông: bốn cạnh vẫn bằng nhau sau khi kéo một đỉnh', () => {
+    const sq = shapeFromBlueprint({templateId: 'MATH_DYNAMIC_GEOMETRY', meta: {planeTitle: 'Hình vuông ABCD', vertices2D: [[0, 0], [2, 0], [2, 2], [0, 2]]}}, 200, 160)!;
+    const onChange = vi.fn();
+    render(<Harness initial={sq} onChange={onChange} />);
+    const v = drag(onChange, 2, [0, 0], [30, -20]);
+    const e = Math.hypot(v[1].x - v[0].x, v[1].y - v[0].y);
+    for (let i = 0; i < 4; i++) expect(Math.hypot(v[(i + 1) % 4].x - v[i].x, v[(i + 1) % 4].y - v[i].y)).toBeCloseTo(e, 3);
+  });
+
+  it('tam giác thường: kéo tự do như trước', () => {
+    const onChange = vi.fn();
+    render(<Harness initial={tri()} onChange={onChange} />);
+    const v = drag(onChange, 2, [0, 0], [25, 15]);
+    expect(v[2].x).toBeCloseTo(tri().plane!.verts[2].x + 25, 3);
+    expect(v[2].y).toBeCloseTo(tri().plane!.verts[2].y + 15, 3);
+  });
+});

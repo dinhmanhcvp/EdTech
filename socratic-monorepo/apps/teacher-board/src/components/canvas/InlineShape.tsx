@@ -1,5 +1,6 @@
 'use client';
 
+import {inferCons, solveDrag, type Cons, type P2 as P2g} from '../../utils/geoConstraints';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import type {ShapeMeta, Stroke} from '../../utils/lassoGeometry';
 import {VERTEX_LABELS, planeStats, solidWire, triangleCenters, type P2} from '../../utils/inlineShape';
@@ -43,6 +44,9 @@ const fmt = (v: number) => v.toFixed(1).replace('.', ',');
 const midOf = (a: P2, b: P2): P2 => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
 
 /** Hình học vẽ thẳng lên bảng: không khung, không nền; chỉ có nét hình, nhãn đỉnh và tay cầm nhỏ. */
+const planePts = (vs: {x: number; y: number}[]): Record<string, P2g> => Object.fromEntries(vs.map((v, i) => [`v${i}`, [v.x, v.y] as P2g]));
+const ringEdges = (n: number): [string, string][] => Array.from({length: n}, (_, i) => [`v${i}`, `v${(i + 1) % n}`]);
+
 export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onPlace, onOpenTools, onRotate, rotation, partChips, onTogglePart, dragPoints, onDragPoint, freePts, onDragFree}) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const s = stroke.shape!;
@@ -53,7 +57,7 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
   const ptDrag = useRef<{name: string; a: number; b: number; t: number} | null>(null);
   const freeDrag = useRef<{name: string; x: number; y: number; dx: number; dy: number} | null>(null);
   const rotDrag = useRef<{sx: number; sy: number; yaw: number; pitch: number; started: boolean} | null>(null);
-  const drag = useRef<{kind: 'vertex' | 'rotate'; i: number; sx: number; sy: number; ox: number; oy: number; started: boolean} | null>(null);
+  const drag = useRef<{kind: 'vertex' | 'rotate'; i: number; sx: number; sy: number; ox: number; oy: number; started: boolean; cons?: Cons[]} | null>(null);
 
   const wire = useMemo(
     () => (s.kind === 'solid' && s.solid && !s.sketch ? solidWire(s.solid.kind as SolidKind, s.solid.dims, s.solid.yaw, s.solid.pitch, w, h) : null),
@@ -100,7 +104,9 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
     e.stopPropagation();
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     const o = kind === 'vertex' ? (sk ? sk.verts[i] : verts[i]) : {x: s.solid?.yaw ?? 0, y: s.solid?.pitch ?? 0};
-    drag.current = {kind, i, sx: e.clientX, sy: e.clientY, ox: o.x, oy: o.y, started: false};
+    // hình phẳng vẽ tay: ghi lại tính chất đang có (vuông góc, bằng nhau, song song) để kéo đỉnh mà giữ nguyên chúng
+    const cons = kind === 'vertex' && !sk && s.plane && verts.length >= 3 ? inferCons(planePts(verts), ringEdges(verts.length), 0.02) : undefined;
+    drag.current = {kind, i, sx: e.clientX, sy: e.clientY, ox: o.x, oy: o.y, started: false, cons};
   };
   const move = (e: React.PointerEvent<Element>) => {
     const d = drag.current;
@@ -116,7 +122,14 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
       const nv = sk.verts.map((p, k) => (k === d.i ? {x: d.ox + dx / boardScale, y: d.oy + dy / boardScale} : p));
       onChange({...s, sketch: {...sk, verts: nv}});
     } else if (d.kind === 'vertex' && s.plane) {
-      const nv = verts.map((p, k) => (k === d.i ? {x: d.ox + dx / boardScale, y: d.oy + dy / boardScale} : p));
+      const target = {x: d.ox + dx / boardScale, y: d.oy + dy / boardScale};
+      let nv = verts.map((p, k) => (k === d.i ? target : p));
+      if (d.cons && d.cons.length > 0) {
+        // giữ tính chất: các đỉnh còn lại tự điều chỉnh; không giữ được (hình lật/suy biến) thì đứng yên
+        const solved = solveDrag(planePts(verts), d.cons, `v${d.i}`, [target.x, target.y], verts.map((_, k) => `v${k}`));
+        if (!solved) return;
+        nv = verts.map((_, k) => ({x: solved[`v${k}`][0], y: solved[`v${k}`][1]}));
+      }
       onChange({...s, plane: {...s.plane, verts: nv}});
     } else if (d.kind === 'rotate' && s.solid) {
       const pitch = Math.max(-1.45, Math.min(1.45, d.oy + dy * 0.012));

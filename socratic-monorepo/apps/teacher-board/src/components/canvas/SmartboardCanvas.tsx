@@ -45,7 +45,8 @@ import { PrepPanel } from './PrepPanel';
 import { isPreset } from '../../engines/families';
 import { makePresetBlueprint } from '../../utils/presets';
 import { ResourceViewer } from '../resources/ResourceViewer';
-import { insertPageStrokes, type PageRef } from '../../utils/boardImage';
+import { insertPageStrokes, pastedImageStroke, type PageRef } from '../../utils/boardImage';
+import { firstImage, fitOnBoard, loadImageFile } from '../../utils/imageIntake';
 import { ERASER_SIZES, eraseInZone, rectOf, zoneAt, type EraserKind } from '../../utils/eraser';
 import { createBoardImageLoader } from '../../utils/boardImages';
 import type { InkStroke } from '../../utils/hubBoard';
@@ -1967,6 +1968,48 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     flashError('Chưa hiểu yêu cầu này. Thử viết rõ hơn, VD: "vẽ đường tròn ngoại tiếp tam giác ABC", "gọi M là trung điểm SC".');
   }, [geoCtl]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ảnh từ ngoài (dán Ctrl+V, tải tệp, kéo thả): đặt lên bảng như một đối tượng ảnh, hoàn tác được
+  const [imageNote, setImageNote] = useState('');
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const insertExternalImage = async (file: File) => {
+    setImageNote('Đang đưa ảnh lên bảng…');
+    try {
+      const img = await loadImageFile(file);
+      const {w, h} = fitOnBoard(img.width, img.height);
+      saveToUndo();
+      setStrokes((prev) => [...prev, pastedImageStroke(img.src, w, h)]);
+      setImageNote('');
+    } catch (e) {
+      setImageNote((e as Error).message || 'Không đưa được ảnh lên bảng');
+      setTimeout(() => setImageNote(''), 4000);
+    }
+  };
+  const insertExternalImageRef = useRef(insertExternalImage);
+  insertExternalImageRef.current = insertExternalImage;
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return; // đang gõ chữ thì để dán chữ
+      const f = firstImage(e.clipboardData);
+      if (!f) return;
+      e.preventDefault();
+      void insertExternalImageRef.current(f);
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, []);
+  // phóng to/thu nhỏ ảnh quanh góc trên-trái, không ra ngoài bảng
+  const scaleImage = (id: string, f: number) => {
+    saveToUndo();
+    setStrokes((prev) =>
+      prev.map((s) => {
+        if (s.id !== id || !s.typeset) return s;
+        const w = Math.min(1200, Math.max(60, s.typeset.w * f));
+        const k = w / s.typeset.w;
+        return {...s, typeset: {...s.typeset, w, h: s.typeset.h * k}};
+      }),
+    );
+  };
   const deleteTypeset = (id: string) => {
     saveToUndo();
     setStrokes((prev) => prev.filter((s) => s.id !== id));
@@ -3452,8 +3495,35 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerCancel}
             onPointerLeave={() => setEraserHover(null)}
+            onDragOver={(e) => {
+              if (Array.from(e.dataTransfer?.items ?? []).some((i) => i.kind === 'file')) e.preventDefault();
+            }}
+            onDrop={(e) => {
+              const f = firstImage(e.dataTransfer);
+              if (!f) return;
+              e.preventDefault();
+              void insertExternalImage(f);
+            }}
             className={`${tool === 'PAN' ? 'cursor-grab' : tool === 'TEXT' ? 'cursor-text' : tool === 'ERASER' ? 'cursor-none' : tool === 'LASSO' && selectedStrokes.length > 0 ? 'cursor-move' : 'cursor-crosshair'} touch-none w-full h-auto block`}
           />
+
+          <input
+            ref={imageInputRef}
+            data-testid="image-file-input"
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp,image/bmp"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = '';
+              if (f) void insertExternalImage(f);
+            }}
+          />
+          {imageNote && (
+            <div data-testid="image-note" className="absolute left-1/2 -translate-x-1/2 top-3 z-30 rounded-full bg-white/95 border border-[#DCD9D0] shadow-md px-3 py-1.5 text-[12px] text-stone-800">
+              {imageNote}
+            </div>
+          )}
 
           {sketchAlts && (
             <div data-testid="sketch-alts" className="absolute left-3 top-3 z-20 flex flex-wrap items-center gap-1.5 rounded-xl bg-white/95 backdrop-blur border border-[#DCD9D0] shadow-md px-2.5 py-1.5">
@@ -3670,6 +3740,12 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                     <span data-testid="image-grip" title="Kéo để di chuyển" onPointerDown={(e) => onTypesetGripDown(e, s)} onPointerMove={onTypesetGripMove} onPointerUp={onTypesetGripUp} className="px-1.5 cursor-grab active:cursor-grabbing select-none touch-none text-stone-500">
                       ⠿
                     </span>
+                    <button data-testid="image-smaller" title="Thu nhỏ ảnh" onClick={() => scaleImage(s.id, 1 / 1.2)} className="px-1.5 py-0.5 hover:bg-stone-100 text-stone-600 font-bold">
+                      −
+                    </button>
+                    <button data-testid="image-larger" title="Phóng to ảnh" onClick={() => scaleImage(s.id, 1.2)} className="px-1.5 py-0.5 hover:bg-stone-100 text-stone-600 font-bold">
+                      +
+                    </button>
                     <button data-testid="image-delete" title="Xóa trang ảnh" onClick={() => deleteTypeset(s.id)} className="px-1 py-0.5 hover:bg-rose-50 text-stone-600 hover:text-rose-600">
                       <X className="w-3 h-3" />
                     </button>
@@ -3964,6 +4040,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         gridPattern={gridPattern}
         onCycleGrid={() => setGridPattern(gridPattern === 'DOTS' ? 'GRID' : gridPattern === 'GRID' ? 'BLANK' : 'DOTS')}
         onClear={handleClear}
+        onInsertImage={() => imageInputRef.current?.click()}
         eraserKind={eraserKind}
         onEraserKind={setEraserKind}
         eraserR={eraserR}

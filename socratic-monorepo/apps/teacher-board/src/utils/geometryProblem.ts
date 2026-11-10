@@ -88,6 +88,13 @@ export function normalizeProblem(raw: string): string {
   t = t.replace(/(?<![\p{L}'])([a-z]{2})(?=\s*=\s*[\d√(])/gu, (m) => m.toUpperCase());
   // "AH vuông BC" (thiếu chữ góc) = AH vuông góc BC
   t = t.replace(/(?<![\p{L}A-Z'])([A-Z]'?[A-Z]'?)\s+vuông\s+(?!góc|tại|ở|cân)(?:với\s+)?(?=[A-Z]'?[A-Z]'?(?![A-Za-z']))/gu, '$1 vuông góc ');
+  // điểm trên cạnh nói nhiều kiểu → "M thuộc cạnh XY": "Trên cạnh AB lấy điểm M", "lấy điểm M trên cạnh AB", "Gọi M là điểm trên AB", "M nằm trên AB", "M nằm giữa A và B"
+  t = t.replace(/(?<![\p{L}])[Tt]rên\s*(?:cạnh|đoạn(?: thẳng)?)?\s*([A-Z]'?[A-Z]'?)\s*(?:lấy|chọn|lấy ra)\s*(?:điểm\s*)?([A-Z]'?)(?![\p{L}'])/gu, '$2 thuộc cạnh $1');
+  t = t.replace(/(?<![\p{L}A-Z'])([A-Z]'?)\s*là\s*(?:một\s*)?điểm\s*(?:nằm\s*)?(?:trên|thuộc)\s*(?:cạnh|đoạn(?: thẳng)?)?\s*([A-Z]'?[A-Z]'?)(?![A-Za-z'])/gu, '$1 thuộc cạnh $2');
+  t = t.replace(/(?<![\p{L}])(?:[Ll]ấy|[Cc]họn)\s*(?:điểm\s*)?([A-Z]'?)\s*(?:trên|thuộc)\s*(?:cạnh|đoạn(?: thẳng)?)?\s*([A-Z]'?[A-Z]'?)(?![A-Za-z'])/gu, '$1 thuộc cạnh $2');
+  t = t.replace(/(?<![\p{L}])(?:[Gg]ọi|[Cc]ho)\s*([A-Z]'?)\s*(?:là\s*)?(?:một\s*)?điểm\s*(?:nằm\s*)?(?:trên|thuộc)\s*(?:cạnh|đoạn(?: thẳng)?)?\s*([A-Z]'?[A-Z]'?)(?![A-Za-z'])/gu, '$1 thuộc cạnh $2');
+  t = t.replace(/(?<![\p{L}A-Z'])([A-Z]'?)\s*nằm\s*trên\s*(?:cạnh|đoạn(?: thẳng)?)?\s*([A-Z]'?[A-Z]'?)(?![A-Za-z'])/gu, '$1 thuộc cạnh $2');
+  t = t.replace(/(?<![\p{L}A-Z'])([A-Z]'?)\s*nằm\s*giữa\s*([A-Z]'?)\s*(?:và|,)\s*([A-Z]'?)(?![A-Za-z'])/gu, '$1 thuộc cạnh $2$3');
   // viết tắt: tg ABC, HV ABCD, HCN ABCD, HBH ABCD
   t = t.replace(/(?<![\p{L}])(?:tg|TG)\s*(?=[A-Z]{3}(?![A-Z]))/gu, 'tam giác ');
   t = t.replace(/(?<![\p{L}])HV\s*(?=[A-Z]{4})/gu, 'hình vuông ').replace(/(?<![\p{L}])HCN\s*(?=[A-Z]{4})/gu, 'hình chữ nhật ').replace(/(?<![\p{L}])HBH\s*(?=[A-Z]{4})/gu, 'hình bình hành ');
@@ -681,16 +688,51 @@ function buildFigure(text: string, notes: string[]): Model | null {
   const quad = /(hình vuông|hình chữ nhật|hình bình hành|hình thoi|hình thang(?: vuông| cân)?)\s*([A-Z]{4})/.exec(text);
   const tri = /tam giác\s*(?:nhọn|tù|thường|bất kỳ|đều|cân|vuông cân|vuông)?\s*([A-Z]{3})(?![A-Z])/.exec(text);
   if (quad || tri) {
-    const names = pointsIn(quad ? quad[2] : tri![1]);
-    const desc: BaseDesc = quad
-      ? {kind: ({'hình vuông': 'square', 'hình chữ nhật': 'rect', 'hình bình hành': 'para', 'hình thoi': 'rhombus', 'hình thang': 'trap', 'hình thang vuông': 'trap_right', 'hình thang cân': 'trap_iso'} as Record<string, BaseKind>)[quad[1]]}
+    // đề nhắc cả tam giác lẫn tứ giác: hình ĐẦU TIÊN trong đề là hình chính ("Cho tam giác ABC … Cho hình vuông ABCD" thì vẽ tam giác)
+    const useQuad = !!quad && (!tri || quad.index <= tri.index);
+    const names = pointsIn(useQuad ? quad![2] : tri![1]);
+    const desc: BaseDesc = useQuad
+      ? {kind: ({'hình vuông': 'square', 'hình chữ nhật': 'rect', 'hình bình hành': 'para', 'hình thoi': 'rhombus', 'hình thang': 'trap', 'hình thang vuông': 'trap_right', 'hình thang cân': 'trap_iso'} as Record<string, BaseKind>)[quad![1]]}
       : /tam giác\s*tù/.test(text)
         ? {kind: 'tri_obtuse'}
         : describeBase(text, names);
     const c = baseCoords(desc, names, L, T.all, T.angle);
-    const m = model(quad ? `${quad[1][0].toUpperCase()}${quad[1].slice(1)} ${names.join('')}` : `Tam giác ${names.join('')}`, 2);
+    const m = model(useQuad ? `${quad![1][0].toUpperCase()}${quad![1].slice(1)} ${names.join('')}` : `Tam giác ${names.join('')}`, 2);
     names.forEach((n) => put(m, n, [c[n][0], c[n][1], 0]));
     m.edges.push(...cycle(names));
+    return m;
+  }
+
+  // ---- đề chỉ có đường tròn hoặc đoạn thẳng: "Cho đường tròn (O; R)", "nửa đường tròn tâm O đường kính AB", "Cho đoạn thẳng AB = 6 cm"
+  const circ = /(?:nửa\s*)?đường tròn\s*(?:tâm\s*([A-Z]'?)|\(\s*([A-Z]'?)\s*(?:[;,][^)]*)?\))/u.exec(text);
+  const seg = /đoạn(?: thẳng)?\s*([A-Z]'?)([A-Z]'?)(?![A-Za-z'])/u.exec(text);
+  const hasCoords = parseCoords(text).size >= 2; // có tọa độ thì để nhánh tọa độ xử lý
+  if (circ && !hasCoords && (!seg || circ.index < seg.index)) {
+    const O = circ[1] ?? circ[2];
+    const dia = /đường kính\s*([A-Z]'?)([A-Z]'?)(?![A-Za-z'])/u.exec(text);
+    const rm = /(?:bán kính|(?<![A-Za-z])R)\s*=\s*([\d.,√a/()*+-]+)/u.exec(text);
+    const R = (rm ? evalLength(rm[1].replace(/[.,]+$/, '')) : null) ?? (dia ? (L(dia[1], dia[2]) ?? 2) / 2 : 1);
+    const m = model(`Đường tròn tâm ${O}`, 2);
+    put(m, O, [0, 0, 0]);
+    m.marks.add(O);
+    if (dia) {
+      put(m, dia[1], [-R, 0, 0]);
+      put(m, dia[2], [R, 0, 0]);
+      m.edges.push([dia[1], dia[2]]);
+    }
+    m.circles.push({center: [0, 0, 0], normal: [0, 0, 1], r: R, part: 0, label: `đường tròn tâm ${O}`, own: true});
+    const out = /(?<![A-Za-z'])([A-Z]'?)\s*(?:là một điểm\s*)?nằm ngoài/u.exec(text);
+    if (out && !m.pts.has(out[1])) {
+      put(m, out[1], [2 * R, 0, 0]);
+      m.marks.add(out[1]);
+    }
+    return m;
+  }
+  if (seg && !hasCoords) {
+    const m = model(`Đoạn thẳng ${seg[1]}${seg[2]}`, 2);
+    put(m, seg[1], [0, 0, 0]);
+    put(m, seg[2], [L(seg[1], seg[2]) ?? T.all ?? 4, 0, 0]);
+    m.edges.push([seg[1], seg[2]]);
     return m;
   }
   return null;
@@ -726,8 +768,15 @@ const footOnPlane = (p: V3, pl: {n: V3; d: number}): V3 => sub(p, mul(pl.n, dot(
  * ", sao cho" được gộp vào câu trước (không bị tách ở dấu phẩy).
  */
 export function expandRespectively(text: string): string {
-  const t = text.replace(/,\s*(?=sao cho)/g, ' ');
-  const re = /(?<![A-Za-z'])((?:[A-Z]'?\s*(?:,|và)\s*)+[A-Z]'?)\s*(?:lần lượt\s*)?(là|thuộc)\s*(trung điểm|trọng tâm|các cạnh|cạnh|đoạn thẳng|đoạn)?\s*(?:của\s*)?([^;.\n]*)/gu;
+  // "các đường cao AD, BE, CF cắt nhau tại H" → từng đường cao + "H là trực tâm" (dấu phẩy sẽ tách mất danh sách)
+  const t = text
+    .replace(/,\s*(?=sao cho)/g, ' ')
+    .replace(/(tiếp tuyến\s*[A-Z]'?[A-Z]'?)\s*(?:,|và)\s*(?=[A-Z]'?[A-Z]'?)/gu, '$1 ')
+    .replace(/(?:các\s*)?(đường cao|trung tuyến)\s*((?:[A-Z]'?[A-Z]'?\s*(?:,|và)\s*)+[A-Z]'?[A-Z]'?)(?:\s*cắt nhau\s*(?:tại|ở)\s*([A-Z]'?))?/gu, (_w, kind: string, list: string, pt: string | undefined) => {
+      const segs = list.match(/[A-Z]'?[A-Z]'?/g) ?? [];
+      return [...segs.map((s) => `${kind} ${s}`), ...(pt ? [`${pt} là ${kind === 'đường cao' ? 'trực tâm' : 'trọng tâm'}`] : [])].join('; ');
+    });
+  const re =/(?<![A-Za-z'])((?:[A-Z]'?\s*(?:,|và)\s*)+[A-Z]'?)\s*(?:lần lượt\s*)?(là|thuộc)\s*(trung điểm|trọng tâm|các cạnh|cạnh|đoạn thẳng|đoạn)?\s*(?:của\s*)?([^;.\n]*)/gu;
   return t.replace(re, (whole, namesRaw: string, rel: string, what: string | undefined, rest: string) => {
     const names = namesRaw.match(/[A-Z]'?/g) ?? [];
     const objs = rest.split(/\s*(?:,|và)\s*/).map((s) => s.trim()).filter(Boolean);
@@ -1082,14 +1131,6 @@ function addExtras(m: Model, text0: string): void {
     }
   }
 
-  // điểm được định nghĩa ("X là …") nhưng không dựng được: báo rõ để người dùng sửa câu chữ
-  for (const c of clauses) {
-    const def = /(?<![\p{L}'])([A-Z]'?)\s+là\s+/u.exec(c);
-    if (!def) continue;
-    const known = has(def[1]) || [...m.merged.values()].some((al) => al.includes(def[1]));
-    if (!known) m.ignored.push(`Chưa hiểu: "${c.slice(0, 70)}"`);
-  }
-
   // ---- yêu cầu bằng lời trên hình đang có: đường tròn ngoại/nội tiếp, đường tròn đường kính, tâm, trực tâm, trung tuyến, phân giác
   const basePoly = (): string[] | null => {
     if (m.faces.length > 0) return m.faces[0].length === 3 || m.faces[0].length === 4 ? m.faces[0] : null;
@@ -1128,6 +1169,26 @@ function addExtras(m: Model, text0: string): void {
     const r = len(sub(center, A));
     if (ns.length === 4 && Math.abs(len(sub(P(ns[3])!, center)) - r) > 1e-5) return null;
     return {center, r, normal: n0};
+  };
+  /** Đường thẳng XY cắt đường tròn vừa vẽ tại Z: lấy giao điểm chưa có tên (điểm kia thường là đầu mút đã có). */
+  const cutLines = (c: string) => {
+    const circ = m.circles[m.circles.length - 1];
+    if (!circ || circ.kind === 'sphere') return;
+    for (const mm of c.matchAll(/cắt\s*(?:cạnh\s*|đường thẳng\s*)?([A-Z]'?[A-Z]'?)\s*(?:tại|ở)\s*([A-Z]'?)/gu)) {
+      const s = segOf(mm[1]);
+      if (!s || !has(s[0]) || !has(s[1]) || has(mm[2])) continue;
+      const A0 = P(s[0])!;
+      const d = sub(P(s[1])!, A0);
+      const f = sub(A0, circ.center);
+      const a = dot(d, d);
+      const b = 2 * dot(f, d);
+      const disc = b * b - 4 * a * (dot(f, f) - circ.r * circ.r);
+      if (a < 1e-12 || disc < 0) continue;
+      const roots = [(-b - Math.sqrt(disc)) / (2 * a), (-b + Math.sqrt(disc)) / (2 * a)];
+      const pts = roots.map((t) => add(A0, mul(d, t)));
+      const fresh = pts.find((p) => ![...m.pts.values()].some((q) => near(p, q)));
+      if (fresh) define(mm[2], fresh, `${mm[2]} là giao điểm của ${mm[1]} với đường tròn`);
+    }
   };
   for (const c of clauses) {
     let r: RegExpExecArray | null;
@@ -1171,6 +1232,7 @@ function addExtras(m: Model, text0: string): void {
     // "O là tâm đường tròn ngoại tiếp tam giác ABC" cũng vẽ đường tròn đó
     const nameCenter = /([A-Z]'?)\s*là\s*tâm\s*đường tròn\s*(?:ngoại|nội)\s*tiếp/u.exec(c);
     const kind = /đường tròn\s*(ngoại|nội)\s*tiếp|(?<![\p{L}])(ngoại|nội)\s*tiếp/u.exec(c);
+    if (kind && /chứng minh|cm rằng/i.test(c) && !/đường tròn\s*(?:ngoại|nội)/.test(c)) continue; // "chứng minh tứ giác ABOC nội tiếp" là điều cần chứng minh, không phải yêu cầu vẽ
     if (kind) {
       const inner = /nội/i.test(kind[1] ?? kind[2] ?? '');
       const ns = polyFor(c);
@@ -1202,18 +1264,52 @@ function addExtras(m: Model, text0: string): void {
       }
       continue;
     }
-    // đường tròn đường kính AB
-    if ((r = /đường tròn\s*đường kính\s*([A-Z]'?[A-Z]'?)/u.exec(c))) {
-      const s = segOf(r[1]);
-      if (s && has(s[0]) && has(s[1])) {
-        const bp = basePoly();
-        addCircle(mul(add(P(s[0])!, P(s[1])!), 0.5), bp ? normalOf(bp) : ([0, 0, 1] as V3), len(sub(P(s[0])!, P(s[1])!)) / 2, `đường tròn đường kính ${r[1]}`, {f: 'diam', n: [s[0], s[1]]});
+    // "đường tròn tâm M bán kính 3", "đường tròn (M; 3)": tâm có sẵn, bán kính bằng số (cùng đơn vị với độ dài trong đề)
+    if ((r = /đường tròn\s*(?:tâm\s*([A-Z]'?)\s*(?:,|có)?\s*bán kính\s*(?:R\s*)?(?:=\s*)?|\(\s*([A-Z]'?)\s*[;,]\s*)([\d.,√a/()*+-]+)/u.exec(c)) && has(r[1] ?? r[2]) && !/đường kính/.test(c)) {
+      const cen = r[1] ?? r[2];
+      const rad = evalLength(r[3].replace(/[.,)]+$/, ''));
+      if (rad) addCircle(P(cen)!, ([0, 0, 1] as V3), rad, `đường tròn tâm ${cen}, bán kính ${+rad.toFixed(3)}`);
+      continue;
+    }
+    // "tiếp tuyến AB, AC" kẻ từ A tới đường tròn vừa có: B, C là các tiếp điểm
+    if ((r = /tiếp tuyến\s*([A-Z]'?)([A-Z]'?)\s*(?:,|và)?\s*\1([A-Z]'?)/u.exec(c)) && m.circles.length > 0 && has(r[1]) && !has(r[2]) && !has(r[3])) {
+      const circ = m.circles[m.circles.length - 1];
+      const A0 = P(r[1])!;
+      const dd = len(sub(A0, circ.center));
+      if (dd > circ.r + 1e-9) {
+        const u = mul(sub(A0, circ.center), 1 / dd);
+        const al = Math.acos(circ.r / dd);
+        const v: V3 = [-u[1], u[0], 0];
+        for (const [name, w] of [[r[2], 1], [r[3], -1]] as [string, number][]) {
+          define(name, add(circ.center, mul(add(mul(u, Math.cos(al)), mul(v, w * Math.sin(al))), circ.r)), `${name} là tiếp điểm của tiếp tuyến kẻ từ ${r[1]}`);
+          addAux(r[1], name);
+        }
       }
       continue;
     }
+    // đường tròn đường kính AB
+    if ((r =/đường tròn\s*(?:tâm\s*([A-Z]'?)\s*)?đường kính\s*([A-Z]'?[A-Z]'?)/u.exec(c))) {
+      const s = segOf(r[2]);
+      if (s && has(s[0]) && has(s[1])) {
+        const bp = basePoly();
+        const mid = mul(add(P(s[0])!, P(s[1])!), 0.5);
+        if (r[1] && !has(r[1])) {
+          define(r[1], mid, `${r[1]} là tâm đường tròn đường kính ${r[2]}`);
+          setDef(r[1], {k: 'calc', f: 'mid', n: [s[0], s[1]]});
+        }
+        addCircle(mid, bp ? normalOf(bp) : ([0, 0, 1] as V3), len(sub(P(s[0])!, P(s[1])!)) / 2, `đường tròn đường kính ${r[2]}`, {f: 'diam', n: [s[0], s[1]]});
+        cutLines(c);
+      }
+      continue;
+    }
+    // "(đường tròn) cắt AB tại D, cắt AC tại E": giao điểm thứ hai của đường thẳng với đường tròn vừa vẽ
+    if (/cắt/.test(c) && m.circles.length > 0) {
+      cutLines(c);
+      if (/^\s*(?:và\s*)?cắt\s/.test(c)) continue;
+    }
     // H là trực tâm tam giác ABC
-    if ((r = /([A-Z]'?)\s*là\s*trực tâm\s*(?:của\s*)?(?:tam giác\s*)?((?:[A-Z]'?){3})/u.exec(c))) {
-      const ns = pointsIn(r[2]);
+    if ((r = /([A-Z]'?)\s*là\s*trực tâm\s*(?:của\s*)?(?:tam giác\s*)?((?:[A-Z]'?){3})?/u.exec(c))) {
+      const ns = r[2] ? pointsIn(r[2]) : basePoly()?.length === 3 ? basePoly()! : [];
       const ci = circumOf(ns);
       if (ci && !has(r[1])) {
         define(r[1], sub(add(add(P(ns[0])!, P(ns[1])!), P(ns[2])!), mul(ci.center, 2)), `${r[1]} là trực tâm tam giác ${ns.join('')}`);
@@ -1239,6 +1335,14 @@ function addExtras(m: Model, text0: string): void {
         }
       }
     }
+  }
+
+  // điểm được định nghĩa ("X là …") nhưng không dựng được: báo rõ để người dùng sửa câu chữ (sau khi mọi bước dựng đã chạy)
+  for (const c of clauses) {
+    const def = /(?<![\p{L}'])([A-Z]'?)\s+là\s+/u.exec(c);
+    if (!def) continue;
+    const known = has(def[1]) || [...m.merged.values()].some((al) => al.includes(def[1]));
+    if (!known) m.ignored.push(`Chưa hiểu: "${c.slice(0, 70)}"`);
   }
 }
 
@@ -1672,7 +1776,11 @@ export function parseCoords(raw: string): Map<string, V3> {
 const coordsAre3D = (raw: string) => /(?<![A-Za-z'])[A-Z]'?\s*\(\s*-?\d+(?:[.,]\d+)?\s*[;,]\s*-?\d+(?:[.,]\d+)?\s*[;,]\s*-?\d+(?:[.,]\d+)?\s*\)/.test(raw);
 
 export function buildScene(raw0: string): SceneBuild {
-  const raw = cleanHandwritten(raw0);
+  let raw = cleanHandwritten(raw0);
+  // dán nhiều bài một lúc ("Bài 1 … Bài 2 …"): vẽ bài đầu, báo rõ số bài còn lại (nếu trộn lại sẽ ra hình sai)
+  const heads = [...raw.matchAll(/(?:^|\n)\s*(?:Bài|Câu)\s*\d+\s*[.:)(]/giu)];
+  const moreProblems = heads.length >= 2 ? heads.length - 1 : 0;
+  if (moreProblems > 0) raw = raw.slice(heads[0].index, heads[1].index);
   const parts = splitParts(raw);
   const notes: string[] = [];
   const base = normalizeProblem(parts[0]?.text ?? '');
@@ -1704,6 +1812,7 @@ export function buildScene(raw0: string): SceneBuild {
   if (!m) return {scene: null, notes, ignored: raw.trim() ? ['Chưa nhận ra hình trong đề (cần tên hình và các đỉnh, ví dụ "hình chóp S.ABCD" hoặc "tam giác ABC vuông tại A")'] : []};
   fixView(m);
   m.cur = 0;
+  if (moreProblems > 0) m.ignored.push(`Đề có ${moreProblems + 1} bài: đã vẽ bài đầu, hãy dán từng bài còn lại để vẽ tiếp`);
   addExtras(m, figText);
   parts.forEach((pt, i) => {
     if (i === 0) return;

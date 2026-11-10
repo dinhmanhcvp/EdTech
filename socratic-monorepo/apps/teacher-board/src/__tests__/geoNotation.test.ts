@@ -85,3 +85,54 @@ describe('nét lớn của hình', () => {
     expect(frameStrokes(small)).toHaveLength(4); // không có nét lớn: giữ nguyên
   });
 });
+
+describe('đề dài, nhiều câu', () => {
+  const pts = (t: string) => Object.keys(sceneOf(t).pts).sort().join('');
+  it('lấy điểm trên cạnh viết nhiều kiểu', () => {
+    for (const t of ['Cho hình vuông ABCD. Trên cạnh AB lấy điểm M, trên cạnh AD lấy điểm N.', 'Cho hình vuông ABCD. Lấy điểm M trên cạnh AB, lấy N thuộc cạnh AD.', 'Cho hình vuông ABCD, M nằm trên cạnh AB, N nằm trên AD.', 'Cho hình vuông ABCD. Gọi M là điểm trên cạnh AB, N là điểm thuộc cạnh AD.']) expect(pts(t)).toBe('ABCDMN');
+    expect(pts('Cho tam giác ABC, điểm N nằm giữa A và C.')).toBe('ABCN');
+  });
+
+  it('các đường cao AD, BE, CF cắt nhau tại H: đủ chân đường cao và trực tâm, không báo "chưa hiểu"', () => {
+    const s = sceneOf('Cho tam giác ABC có ba góc nhọn, các đường cao AD, BE, CF cắt nhau tại H. Chứng minh rằng tứ giác BCEF nội tiếp.');
+    expect(Object.keys(s.pts).sort().join('')).toBe('ABCDEFH');
+    expect(s.ignored).toEqual([]);
+    for (const [v, f, p, q] of [['A', 'D', 'B', 'C'], ['B', 'E', 'A', 'C'], ['C', 'F', 'A', 'B']] as const) {
+      const dot = (s.pts[f][0] - s.pts[v][0]) * (s.pts[q][0] - s.pts[p][0]) + (s.pts[f][1] - s.pts[v][1]) * (s.pts[q][1] - s.pts[p][1]);
+      expect(Math.abs(dot)).toBeLessThan(1e-9);
+    }
+    // H nằm trên cả ba đường cao: AH ⊥ BC
+    expect(Math.abs((s.pts.H[0] - s.pts.A[0]) * (s.pts.C[0] - s.pts.B[0]) + (s.pts.H[1] - s.pts.A[1]) * (s.pts.C[1] - s.pts.B[1]))).toBeLessThan(1e-9);
+  });
+
+  it('đường tròn đường kính BC cắt AB tại D, cắt AC tại E', () => {
+    const s = sceneOf('Cho tam giác ABC cân tại A. Vẽ đường tròn tâm O đường kính BC cắt AB tại D, cắt AC tại E. Chứng minh rằng BD = CE.');
+    expect(Object.keys(s.pts).sort().join('')).toBe('ABCDEO');
+    const c = s.circles![0];
+    for (const n of ['B', 'C', 'D', 'E']) expect(Math.hypot(s.pts[n][0] - c.center[0], s.pts[n][1] - c.center[1])).toBeCloseTo(c.r, 6);
+  });
+
+  it('chỉ có đoạn thẳng hoặc đường tròn vẫn dựng được; không nuốt đoạn thẳng thành đường tròn', () => {
+    const seg = sceneOf('Cho đoạn thẳng AB = 6 cm. Gọi M là trung điểm của AB. Vẽ đường tròn tâm M bán kính 3 cm.');
+    expect(Object.keys(seg.pts).sort().join('')).toBe('ABM');
+    expect(seg.circles![0].r).toBeCloseTo(3, 6);
+    expect(pts('Cho nửa đường tròn tâm O đường kính AB. Lấy điểm M trên nửa đường tròn.')).toBe('ABO');
+    const tg = sceneOf('Cho đường tròn (O; R) và điểm A nằm ngoài đường tròn. Kẻ hai tiếp tuyến AB, AC với đường tròn (B, C là các tiếp điểm).');
+    expect(Object.keys(tg.pts).sort().join('')).toBe('ABCO');
+    expect(tg.ignored).toEqual([]);
+    const c = tg.circles![0];
+    for (const n of ['B', 'C']) expect(Math.hypot(tg.pts[n][0] - c.center[0], tg.pts[n][1] - c.center[1])).toBeCloseTo(c.r, 6);
+  });
+
+  it('nhiều bài dán cùng lúc: vẽ bài đầu và báo rõ; tam giác đứng trước hình vuông thì vẽ tam giác', () => {
+    const s = sceneOf('Bài 1: Cho tam giác ABC có AB = 5, AC = 6, BC = 7. Chứng minh ABC nhọn.\nBài 2: Cho hình vuông ABCD.');
+    expect(Object.keys(s.pts).sort().join('')).toBe('ABC');
+    expect(s.ignored.join(' ')).toContain('2 bài');
+    expect(pts('Cho tam giác ABC. Dựng hình vuông ABDE trên cạnh AB.')).toContain('C');
+  });
+
+  it('trực tâm/trọng tâm không ghi tên tam giác, và các đề dài có a), b) vẫn giữ đủ điểm', () => {
+    const t = 'Câu 1. Cho tam giác ABC vuông tại A, có AB = 6 cm, AC = 8 cm. Kẻ đường cao AH. a) Tính BC, AH. b) Gọi M là trung điểm của BC. Chứng minh AM = BC/2.';
+    expect(pts(t)).toBe('ABCHM');
+  });
+});

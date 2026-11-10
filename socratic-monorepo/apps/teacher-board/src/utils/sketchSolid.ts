@@ -525,3 +525,11 @@ export function detectPlaneShapeFromStrokes(strokes: SketchStrokeLike[]): Sketch
     note: `4 đỉnh, góc ${angles.map((a) => `${Math.round(a)}°`).join(' · ')}`,
   };
 }
+
+/** Các nét LỚN của hình (khung hình); bỏ nhãn đỉnh, dấu góc vuông, dấu bằng nhau… viết kèm. Không có nét nào đủ lớn thì giữ nguyên tất cả. */
+export function frameStrokes<T extends {points: {x: number; y: number}[]}>(ink: T[], ratio = 0.3): T[] {
+  const side = (q: T) => Math.max(Math.max(...q.points.map((p) => p.x)) - Math.min(...q.points.map((p) => p.x)), Math.max(...q.points.map((p) => p.y)) - Math.min(...q.points.map((p) => p.y)));
+  const span = Math.max(1, ...ink.map(side));
+  const big = ink.filter((q) => side(q) >= span * ratio);
+  return big.length > 0 ? big : ink;
+}

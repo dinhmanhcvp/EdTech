@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
 import { routeLocally, matchStemModel, makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES, type SolidKind } from '../../utils/localRouter';
-import { detectSolidSketch, detectPlaneShapeFromStrokes, type SketchWireGraph } from '../../utils/sketchSolid';
+import { detectSolidSketch, detectPlaneShapeFromStrokes, frameStrokes, type SketchWireGraph } from '../../utils/sketchSolid';
 import { buildSketchWire } from '../../utils/sketchWire';
 import { shapeFromBlueprint, solidWire, planeStats, VERTEX_LABELS } from '../../utils/inlineShape';
 import { drawConstructsOnCtx, evalConstructs } from '../../utils/planeConstruct';
@@ -787,8 +787,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         const localTry = recognizeLocal(src);
         const localLatex = localTry?.lines.map((l) => l.latex).join(' ') ?? '';
         const textHit = looksLikeWords(localLatex) && !!matchViName(localLatex);
-        const solidSk = !textHit && detectSolidSketch(src);
-        const planeSk = !textHit && !solidSk && src.length >= 1 && src.length <= 4 ? detectPlaneShapeFromStrokes(src) : null;
+        const frame = frameStrokes(src); // bỏ nhãn đỉnh/dấu góc vuông viết kèm
+        const solidSk = !textHit && (detectSolidSketch(src) ?? (frame.length < src.length ? detectSolidSketch(frame) : null));
+        const planeSk = !textHit && !solidSk && frame.length >= 1 && frame.length <= 4 ? detectPlaneShapeFromStrokes(frame) : null;
         if (solidSk && solidSk.confidence >= 0.72) {
           if (alive) {
             setInstantResult(null);
@@ -841,7 +842,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           setIsAiVisionScanning(false);
           const isGeo =
             (detectSolidSketch(src)?.confidence ?? 0) >= 0.72 ||
-            (src.length >= 1 && src.length <= 4 && (detectPlaneShapeFromStrokes(src)?.confidence ?? 0) >= 0.78);
+            (detectSolidSketch(frameStrokes(src))?.confidence ?? 0) >= 0.72 ||
+            (frameStrokes(src).length >= 1 && frameStrokes(src).length <= 4 && (detectPlaneShapeFromStrokes(frameStrokes(src))?.confidence ?? 0) >= 0.78);
           if (!aiRes || aiRes.lines.length === 0) {
             // Vision không dùng được (không khóa, hết hạn mức, lỗi mạng): dùng bản đọc cục bộ và nói rõ lý do
             if (lastAiFailure) flashError(`Đang dùng nhận diện cục bộ. ${lastAiFailure}`, 7000);
@@ -2739,6 +2741,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       .map((s) => (s.id.startsWith('text-') ? s.typeset!.text : s.typeset!.latex))
       .join('\n');
     const ink = sourceStrokes(selectedStrokes);
+    // nhãn đỉnh (A, B, C), dấu góc vuông, dấu bằng nhau… là nét nhỏ viết kèm: nhận dạng hình chỉ dựa vào các nét LỚN (khung hình)
+    const shapeInk = frameStrokes(ink);
     // Chọn đúng hình đã dựng: chỉ mở dụng cụ của hình đó
     const pickedFigure = selectedStrokes.length > 0 && selectedStrokes.every((q) => q.shape?.geo);
     if (pickedFigure) {
@@ -2811,7 +2815,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     if (hit) return place(hit);
     // nét vẽ tay: khối trước (phân biệt hộp chữ nhật / lập phương theo tỉ lệ cạnh), rồi đa giác phẳng
     if (!typesetHint && ink.length >= 1) {
-      const sk = detectSolidSketch(ink);
+      const sk = detectSolidSketch(shapeInk);
       if (sk && sk.confidence >= 0.7) {
         const t = problemTextForSolid(sk.kind, sk.dims);
         const built = t ? buildScene(t).scene : null;
@@ -2820,8 +2824,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         return;
       }
     }
-    if (!typesetHint && ink.length >= 1 && ink.length <= 4) {
-      const pl = detectPlaneShapeFromStrokes(ink);
+    if (!typesetHint && shapeInk.length >= 1 && shapeInk.length <= 4) {
+      const pl = detectPlaneShapeFromStrokes(shapeInk);
       if (pl && pl.confidence >= 0.78) {
         const t = problemTextForPlane(pl.kind);
         const built = t ? buildScene(t).scene : null;

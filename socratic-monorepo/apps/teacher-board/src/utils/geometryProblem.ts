@@ -70,9 +70,15 @@ export function normalizeProblem(raw: string): string {
   t = fixed + restore(t.slice(last));
   t = t.replace(/[’′`´]/g, "'");
   t = t.replace(/\\sqrt\s*\{([^}]*)\}/g, '√($1)').replace(/\\frac\s*\{([^}]*)\}\s*\{([^}]*)\}/g, '(($1)/($2))');
-  t = t.replace(/⊥|\\perp/g, ' vuông góc ').replace(/∥|\\parallel|\/\//g, ' song song ').replace(/∩|\\cap/g, ' giao ');
+  t = t.replace(/⊥|⟂|┴|\\perp|\\bot/g, ' vuông góc ').replace(/∥|\\parallel|\/\//g, ' song song ').replace(/∩|\\cap/g, ' giao ');
+  t = t.replace(/(\d)\s*\^\s*\{?\s*(?:\\circ|°|0|o)\s*\}?/g, '$1°'); // 90^\circ, 90^0 (trước khi ^ bị coi là "góc")
   t = t.replace(/≡|\\equiv/g, ' trùng ').replace(/∈|\\in(?![a-z])/g, ' thuộc ').replace(/∠|\\widehat|\\angle|\^/g, ' góc ');
-  t = t.replace(/[△Δ∆]|\\triangle/g, ' tam giác ').replace(/[⇒⟹→⟶]/g, ';').replace(/°|\\circ|độ/g, '°');
+  t = t.replace(/[△Δ∆]|\\triangle|\\Delta/g, ' tam giác ').replace(/[⇒⟹→⟶]/g, ';').replace(/\\circ|°/g, '°').replace(/(\d)\s*độ(?![\p{L}])/gu, '$1°');
+  // góc vuông viết bằng ký hiệu: "Â = 90°", "∠A = 90°", "góc BAC = 90°", "A = 90°" → "vuông tại A"
+  t = t.replace(/[ÂĈÊĜĤÎĴÔŜÛŴŶẐ]|[A-Z]̂/g, (m) => ` góc ${m.normalize('NFD')[0]} `);
+  t = t.replace(/góc\s*\{?\s*([A-Z])([A-Z])([A-Z])\s*\}?\s*=\s*90\s*°/g, ' vuông tại $2 ');
+  t = t.replace(/góc\s*\{?\s*([A-Z])\s*\}?\s*=\s*90\s*°/g, ' vuông tại $1 ');
+  t = t.replace(/(?<![\p{L}A-Z'])([A-Z])\s*=\s*90\s*°/gu, ' vuông tại $1 ');
   t = t.replace(/(?<!\p{L})(?:GT|KL|Giả thiết|Kết luận|Tóm tắt|Đề bài)\s*[:：]/giu, ';');
   t = t.replace(/([A-Z'])\s*\.\s*([A-Z])/g, '$1.$2');
   t = t.replace(KW_RE, (m) => m.toLowerCase().replace(/\s+/g, ' '));
@@ -80,6 +86,19 @@ export function normalizeProblem(raw: string): string {
   t = t.replace(/(?<=(?:tam giác|tứ giác|hình [\p{L} ]*?)\s)([a-z]{3,4})(?![\p{L}'])/gu, (m) => m.toUpperCase());
   t = t.replace(/(?<![\p{L}'])([a-z]{2})(\s*(?:vuông(?: góc)?|song song)\s*(?:với\s*)?)([a-z]{2})(?![\p{L}'])/gu, (_m, a: string, mid: string, b: string) => `${a.toUpperCase()}${mid}${b.toUpperCase()}`);
   t = t.replace(/(?<![\p{L}'])([a-z]{2})(?=\s*=\s*[\d√(])/gu, (m) => m.toUpperCase());
+  // "AH vuông BC" (thiếu chữ góc) = AH vuông góc BC
+  t = t.replace(/(?<![\p{L}A-Z'])([A-Z]'?[A-Z]'?)\s+vuông\s+(?!góc|tại|ở|cân)(?:với\s+)?(?=[A-Z]'?[A-Z]'?(?![A-Za-z']))/gu, '$1 vuông góc ');
+  // viết tắt: tg ABC, HV ABCD, HCN ABCD, HBH ABCD
+  t = t.replace(/(?<![\p{L}])(?:tg|TG)\s*(?=[A-Z]{3}(?![A-Z]))/gu, 'tam giác ');
+  t = t.replace(/(?<![\p{L}])HV\s*(?=[A-Z]{4})/gu, 'hình vuông ').replace(/(?<![\p{L}])HCN\s*(?=[A-Z]{4})/gu, 'hình chữ nhật ').replace(/(?<![\p{L}])HBH\s*(?=[A-Z]{4})/gu, 'hình bình hành ');
+  // "tứ giác ABCD là hình chữ nhật" / "ABCD là hình thoi" → "hình chữ nhật ABCD" (không đụng "đáy ABCD là hình vuông")
+  t = t.replace(/(?:tứ giác\s*)?(?<![\p{L}A-Z'])(?<!đáy\s*)([A-Z]{4})\s*(?:là|:)\s*(hình\s+(?:vuông|chữ nhật|bình hành|thoi|thang\s+vuông|thang\s+cân|thang))(?![\p{L}])/gu, '$2 $1');
+  // thiếu chữ "tam giác": "ABC vuông tại A", "AB ⊥ AC"
+  if (!/tam giác|tứ giác|hình|chóp|lăng trụ|tứ diện|đường tròn|[A-Z]\.[A-Z]/.test(t)) {
+    t = t.replace(/(^|[;,\n]\s*)([A-Z]{3})(?=\s+(?:vuông|cân|đều|có)(?![\p{L}]))/u, '$1tam giác $2');
+    t = t.replace(/^\s*([A-Z]{3})(?=\s*[,;])/, 'tam giác $1');
+    t = t.replace(/^\s*([A-Z])([A-Z])\s+vuông góc\s+(?:với\s+)?\1([A-Z])\s*$/, 'tam giác $2$1$3 vuông tại $1');
+  }
   return t.replace(/[ \t]+/g, ' ');
 }
 

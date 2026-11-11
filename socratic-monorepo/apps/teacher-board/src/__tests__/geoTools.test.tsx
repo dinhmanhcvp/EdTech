@@ -198,16 +198,17 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     expect(tier()).toBe('root');
   });
 
-  it('hình phẳng có tầng GeoGebra với bốn nhóm dụng cụ; hình 3D thì không', () => {
+  it('hình phẳng: Dựng chứa các nhóm dụng cụ (không còn mục riêng đặt tên hãng); hình 3D thì Dựng là danh sách phẳng', () => {
     const g = ctl({is3D: false});
     render(<AiFab {...base} geo={g} />);
     fireEvent.click(screen.getByTestId('ai-fab'));
     fireEvent.click(screen.getByTestId('ai-fab-draw'));
-    fireEvent.click(screen.getByTestId('ai-fab-draw-gg'));
-    expect(tier()).toBe('draw/gg');
-    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-lines', 'ai-fab-draw-shapes', 'ai-fab-draw-circles', 'ai-fab-draw-objects', 'ai-fab-draw-transform']);
+    expect(ids()).not.toContain('ai-fab-draw-gg');
+    fireEvent.click(screen.getByTestId('ai-fab-draw-tools'));
+    expect(tier()).toBe('draw/tools');
+    expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-basic', 'ai-fab-draw-lines', 'ai-fab-draw-shapes', 'ai-fab-draw-circles', 'ai-fab-draw-objects', 'ai-fab-draw-transform']);
     fireEvent.click(screen.getByTestId('ai-fab-draw-lines'));
-    expect(tier()).toBe('draw/gg/lines');
+    expect(tier()).toBe('draw/tools/lines');
     expect(ids()).toEqual(['ai-fab-back', 'ai-fab-draw-line', 'ai-fab-draw-seglen', 'ai-fab-draw-ray', 'ai-fab-draw-perpbis', 'ai-fab-draw-bisector', 'ai-fab-draw-parallel', 'ai-fab-draw-perpline', 'ai-fab-draw-inter']);
     fireEvent.click(screen.getByTestId('ai-fab-draw-perpbis'));
     expect(g.setTool).toHaveBeenCalledWith('perpbis');

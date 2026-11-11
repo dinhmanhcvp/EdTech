@@ -75,7 +75,7 @@ export class StemProRenderer {
     cssWidth: number,
     cssHeight: number
   ): CanvasRenderingContext2D {
-    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 2 : 2;
+    const dpr = typeof window !== "undefined" ? Math.min(3, window.devicePixelRatio || 2) : 2; // trần 3: tránh tràn RAM GPU trên màn 4K
 
     canvas.width = Math.floor(cssWidth * dpr);
     canvas.height = Math.floor(cssHeight * dpr);

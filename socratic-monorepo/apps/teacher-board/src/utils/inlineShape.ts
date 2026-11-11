@@ -5,6 +5,7 @@
  */
 import type {ShapeMeta} from './lassoGeometry';
 import type {SolidKind} from './localRouter';
+import {snapPlane} from './planeConstraints';
 import {makeSolid, edgesOf, faceNormal, mulMV, mulMM, rotAxis, project, type M3, type V3} from './solids';
 
 export interface P2 {
@@ -113,6 +114,8 @@ export function solidWire(kind: SolidKind, dims: Record<string, number | undefin
 }
 
 // ------------------------------------------------------------------ tạo đối tượng từ blueprint
+const SNAPPABLE = new Set(['triangle_equilateral', 'triangle_right', 'triangle_isosceles', 'square', 'rectangle', 'rhombus', 'parallelogram']);
+
 export interface ShapeSeed {
   shape: ShapeMeta;
 }
@@ -123,7 +126,11 @@ export function shapeFromBlueprint(bp: {templateId: string; meta?: Record<string
     return {kind: 'solid', title: solidWire(m.solid as SolidKind, m.dims ?? {}, DEFAULT_YAW, DEFAULT_PITCH, w, h).title, solid: {kind: m.solid as SolidKind, dims: m.dims ?? {}, yaw: DEFAULT_YAW, pitch: DEFAULT_PITCH}};
   }
   if (bp.templateId === 'MATH_DYNAMIC_GEOMETRY' && Array.isArray(m.vertices2D) && m.vertices2D.length >= 3) {
-    return {kind: 'plane', title: String(m.planeTitle ?? 'Hình phẳng'), plane: {verts: fitPlaneVertices(m.vertices2D, w, h), euler: false}};
+    const title = String(m.planeTitle ?? 'Hình phẳng');
+    let verts = fitPlaneVertices(m.vertices2D, w, h);
+    // nét vẽ tay chỉ gần đúng: khớp đúng ràng buộc (góc vuông, cạnh bằng nhau, song song) để kéo đỉnh sau đó giữ được tính chất
+    if (SNAPPABLE.has(m.planeKind)) verts = snapPlane(m.planeKind, verts, {legsEqual: /vuông cân/.test(title)}).verts;
+    return {kind: 'plane', title, plane: {verts, euler: false}};
   }
   return null;
 }

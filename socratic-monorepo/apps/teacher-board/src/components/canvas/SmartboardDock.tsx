@@ -104,6 +104,8 @@ export interface SmartboardDockProps {
   busyLabel: string | null;
   onOpenClassroom: () => void;
   classroomStudents: number | null;
+  /** bộ điều khiển hình đang sửa (hình phẳng): popover Hình hiện các nhóm dụng cụ dựng hình, chọn là dùng ngay trên hình */
+  geo?: GeoController | null;
 }
 
 const base = 'flex flex-col items-center justify-center gap-0.5 min-w-[52px] px-2 py-1.5 rounded-xl text-[10px] font-medium leading-none transition cursor-pointer select-none border';
@@ -120,6 +122,7 @@ const ShapeIcon: Record<ShapeType, React.ReactNode> = {
 /** Thanh tác vụ duy nhất của bảng thông minh: các chức năng chuẩn, tùy chọn con mở bằng bảng nhỏ phía trên. */
 export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
   const [pop, setPop] = useState<null | 'pen' | 'shape' | 'more' | 'eraser'>(null);
+  const [geoGroup, setGeoGroup] = useState<string | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -201,7 +204,7 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
       </div>
 
       {/* Bảng nhỏ: hình */}
-      <div data-testid="shape-popover" className={`${popCls('shape')} left-[250px] items-center gap-1`}>
+      <div data-testid="shape-popover" className={`${popCls('shape')} left-[250px] flex-wrap items-center gap-1 max-w-[min(560px,calc(100vw-110px))]`}>
         {([['CIRCLE', 'tool-circle', 'Hình tròn'], ['LINE', 'tool-line', 'Đoạn thẳng'], ['ARROW', 'tool-arrow', 'Mũi tên'], ['RECTANGLE', 'tool-rect', 'Chữ nhật']] as [ShapeType, string, string][]).map(([s, id, label]) => (
           <button
             key={s}
@@ -235,6 +238,46 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
             <span>Trực quan hình học {p.isGeometryLiveMode ? '(BẬT)' : ''}</span>
           </button>
         )}
+        {/* dụng cụ dựng hình: cùng bộ với AI hub (Vẽ hình → Dựng); cần có hình phẳng đang sửa */}
+        <div data-testid="shape-construct" className="basis-full mt-1 border-t border-[#E6E4DD] pt-1.5 flex flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-1">
+            {GGROUPS.map((g) => {
+              const ready = !!p.geo && !p.geo.is3D;
+              return (
+                <button
+                  key={g.id}
+                  data-testid={`shape-group-${g.id}`}
+                  disabled={!ready}
+                  onClick={() => setGeoGroup(geoGroup === g.id ? null : g.id)}
+                  title={ready ? g.hint : 'Cần có hình phẳng trước: gõ đề hoặc khoanh nét vẽ rồi chọn Vẽ hình'}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border transition ${ready ? 'cursor-pointer' : 'opacity-40 cursor-not-allowed'} ${geoGroup === g.id || (ready && g.tools.some((t) => t.id === p.geo!.tool)) ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-[#DCD9D0] text-stone-700 hover:bg-stone-50'}`}
+                >
+                  {g.icon}
+                  {g.label}
+                </button>
+              );
+            })}
+          </div>
+          {p.geo && !p.geo.is3D && geoGroup && (
+            <div data-testid="shape-group-tools" className="flex flex-wrap items-center gap-1">
+              {(GGROUPS.find((g) => g.id === geoGroup)?.tools ?? []).map((t) => (
+                <button
+                  key={t.id}
+                  data-testid={`shape-tool-${t.id}`}
+                  title={t.hint}
+                  onClick={() => {
+                    p.geo!.setTool(p.geo!.tool === t.id ? null : t.id);
+                    setPop(null);
+                  }}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] border transition cursor-pointer ${p.geo!.tool === t.id ? 'bg-emerald-600 border-emerald-700 text-white' : 'bg-white border-[#DCD9D0] text-stone-700 hover:bg-emerald-50'}`}
+                >
+                  {GEO_TOOL_ICONS[t.id]}
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bảng nhỏ: thêm */}
@@ -500,8 +543,9 @@ const GEO_TOOL_ICONS: Record<GeoTool, React.ReactNode> = {
   dih: <Box className="w-4 h-4" />,
 };
 
-/** Các nhóm công cụ kiểu GeoGebra trong AI hub (Vẽ hình → GeoGebra). */
+/** Nhóm công cụ dựng hình phẳng trong AI hub (Vẽ hình → Dựng → nhóm). Nhóm đầu là phép dựng cơ bản trên hình đề bài. */
 const GGROUPS = [
+  {id: 'basic', label: 'Điểm đoạn', hint: 'Đoạn nối, trung điểm, điểm trên cạnh, chân vuông góc, đường trung bình, xóa điểm', icon: <Ruler className="w-4 h-4" />, tools: GEO_TOOLS.filter((t) => t.id !== 'section')},
   {id: 'lines', label: 'Đường', hint: 'Đường thẳng, tia, trung trực, phân giác, song song, vuông góc, giao điểm', icon: <Minus className="w-4 h-4" />, tools: GEO_LINES},
   {id: 'shapes', label: 'Hình', hint: 'Đa giác, hình vuông, ngũ giác, lục giác đều, véctơ', icon: <Square className="w-4 h-4" />, tools: GEO_SHAPES},
   {id: 'circles', label: 'Tròn', hint: 'Đường tròn, compa, tiếp tuyến', icon: <CircleDot className="w-4 h-4" />, tools: GEO_CURVES},
@@ -812,10 +856,14 @@ export const AiFab: React.FC<AiFabProps> = ({
       back,
       ...(geo
         ? [
-            sub('tools', 'Dựng', 'Đoạn nối, trung điểm, điểm trên cạnh, chân vuông góc, thiết diện', <Ruler className="w-4 h-4" />, () => setPath(['draw', 'tools']), {keep: true, highlight: GEO_TOOLS.some((t) => t.id === geo.tool)}),
-            ...(geo.is3D
-              ? []
-              : [sub('gg', 'GeoGebra', 'Bộ dụng cụ kiểu GeoGebra: đường, hình, đường tròn, biến hình. Mọi nét dựng ra đều theo khi kéo đỉnh', <Shapes className="w-4 h-4" />, () => setPath(['draw', 'gg']), {keep: true, highlight: GGROUPS.some((g) => g.tools.some((t) => t.id === geo.tool))})]),
+            sub(
+              'tools',
+              'Dựng',
+              geo.is3D ? 'Đoạn nối, trung điểm, điểm trên cạnh, chân vuông góc, thiết diện' : 'Điểm đoạn, đường, hình, đường tròn, biến hình, đối tượng. Mọi nét dựng ra đều theo khi kéo đỉnh',
+              <Ruler className="w-4 h-4" />,
+              () => setPath(['draw', 'tools']),
+              {keep: true, highlight: GEO_TOOLS.some((t) => t.id === geo.tool) || (!geo.is3D && GGROUPS.some((g) => g.tools.some((t) => t.id === geo.tool)))},
+            ),
             sub('measure', 'Đo', 'Đo độ dài đoạn thẳng và số đo góc ngay trên hình', <Compass className="w-4 h-4" />, () => setPath(['draw', 'measure']), {keep: true, highlight: GEO_MEASURE.some((t) => t.id === geo.tool)}),
             sub('parts', `Phần ${geo.shownParts}/${geo.togglableParts}`, 'Hiện thêm hoặc ẩn bớt từng phần. Muốn thêm yêu cầu: viết lên bảng (VD: vẽ đường tròn ngoại tiếp) rồi khoanh và bấm Vẽ hình', <ChevronRight className="w-4 h-4" />, () => setPath(['draw', 'parts']), {keep: true}),
             sub('view', 'Hiển thị', 'Xoay 3D, tô màu mặt, nét khuất, mở mô phỏng 3D, xuất TikZ', <Eye className="w-4 h-4" />, () => setPath(['draw', 'view']), {keep: true}),
@@ -845,17 +893,18 @@ export const AiFab: React.FC<AiFabProps> = ({
             sub('view', 'Hiển thị', 'Cần có hình trước: xoay 3D, tô màu mặt, nét khuất, xem 3D, xuất TikZ', <Eye className="w-4 h-4" />, () => undefined, {disabled: true}),
           ]),
     ];
-  } else if (tierKey === 'draw/tools' && geo) {
+  } else if (tierKey === 'draw/tools' && geo && geo.is3D) {
     items = [
       back,
       ...GEO_TOOLS.map((t) =>
         sub(t.id, t.label, t.hint, GEO_TOOL_ICONS[t.id], () => geo.setTool(geo.tool === t.id ? null : t.id), {highlight: geo.tool === t.id}),
       ),
     ];
-  } else if (tierKey === 'draw/gg' && geo) {
-    items = [back, ...GGROUPS.map((g) => sub(g.id, g.label, g.hint, g.icon, () => setPath(['draw', 'gg', g.id]), {keep: true, highlight: g.tools.some((t) => t.id === geo.tool)}))];
-  } else if (tierKey.startsWith('draw/gg/') && geo) {
-    const group = GGROUPS.find((g) => `draw/gg/${g.id}` === tierKey);
+  } else if (tierKey === 'draw/tools' && geo) {
+    // hình phẳng: các nhóm dựng hình nằm ngay trong Dựng, không gói dưới một tên riêng
+    items = [back, ...GGROUPS.map((g) => sub(g.id, g.label, g.hint, g.icon, () => setPath(['draw', 'tools', g.id]), {keep: true, highlight: g.tools.some((t) => t.id === geo.tool)}))];
+  } else if (tierKey.startsWith('draw/tools/') && geo) {
+    const group = GGROUPS.find((g) => `draw/tools/${g.id}` === tierKey);
     items = [
       back,
       ...(group?.tools ?? []).map((t) => sub(t.id, t.label, t.hint, GEO_TOOL_ICONS[t.id], () => geo.setTool(geo.tool === t.id ? null : t.id), {highlight: geo.tool === t.id})),

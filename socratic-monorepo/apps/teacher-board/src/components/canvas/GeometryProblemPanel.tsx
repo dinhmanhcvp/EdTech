@@ -109,7 +109,7 @@ export const GEO_OBJECTS: GeoToolSpec[] = [
   {id: 'hide', label: 'Ẩn/hiện điểm', need: 1, hint: 'Chạm một điểm dựng thêm để ẩn nó cùng các đoạn nối; hiện lại bằng nút Hiện lại tất cả'},
 ];
 
-/** Bộ dụng cụ kiểu GeoGebra (hình phẳng): mọi nét dựng ra đều theo khi kéo đỉnh gốc. Chia thành bốn nhóm cho AI hub. */
+/** Bộ dụng cụ dựng hình phẳng: mọi nét dựng ra đều theo khi kéo đỉnh gốc. Chia thành nhóm cho AI hub (Vẽ hình → Dựng). */
 export const GEO_LINES: GeoToolSpec[] = [
   {id: 'line', label: 'Đường thẳng', need: 2, hint: 'Chạm 2 điểm: đường thẳng qua hai điểm (kéo dài hai phía)'},
   {id: 'seglen', label: 'Đoạn dài cố định', need: 1, param: {label: 'Dài', def: 3}, hint: 'Chạm điểm A rồi nhập độ dài: đoạn thẳng từ A sang phải'},
@@ -314,7 +314,7 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       : t === 'dilate' ? addTransform(sc, names[0], {k: 'dil', o: names[1], f: argOf(t)}, part)
       : undefined;
     if (built !== undefined) {
-      if (built === null) setInfo(sc.dim === 2 ? 'Không dựng được với các điểm này (trùng nhau, thẳng hàng, hai đường song song, hoặc điểm nằm trong đường tròn khi kẻ tiếp tuyến)' : 'Dựng kiểu GeoGebra chỉ dùng cho hình phẳng');
+      if (built === null) setInfo(sc.dim === 2 ? 'Không dựng được với các điểm này (trùng nhau, thẳng hàng, hai đường song song, hoặc điểm nằm trong đường tròn khi kẻ tiếp tuyến)' : 'Các công cụ dựng này chỉ dùng cho hình phẳng');
       else commit(built, cur.upTo);
       setPicks([]);
       return;

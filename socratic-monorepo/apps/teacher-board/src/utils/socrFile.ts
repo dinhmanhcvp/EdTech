@@ -15,6 +15,15 @@ const EVENT_TYPES = new Set([
 ]);
 
 export const SOCR_MAX_BYTES = 8 * 1024 * 1024;
+export const SOCR_MAX_EVENTS = 200_000;
+
+/** Loại sự kiện có toạ độ NaN/Infinity (tệp hỏng hoặc cố ý) để không làm sập canvas khi phát lại. */
+function coordsFinite(e: any): boolean {
+  if ('x' in e && !Number.isFinite(e.x)) return false;
+  if ('y' in e && !Number.isFinite(e.y)) return false;
+  if (Array.isArray(e.pts)) return e.pts.every((p: unknown) => Array.isArray(p) && p.every((v) => Number.isFinite(v)));
+  return true;
+}
 
 export function serializeSocr(data: BoardJournalData): string {
   return JSON.stringify(data);
@@ -30,8 +39,10 @@ export function parseSocr(text: string): BoardJournalData {
   }
   if (!parsed || !Array.isArray(parsed.events)) throw new Error('Tệp .socr thiếu danh sách sự kiện.');
 
+  if (parsed.events.length > SOCR_MAX_EVENTS) throw new Error('Tệp .socr có quá nhiều sự kiện.');
+
   const events = (parsed.events as any[])
-    .filter((e) => e && typeof e === 'object' && EVENT_TYPES.has(e.type) && Number.isFinite(e.t) && e.t >= 0)
+    .filter((e) => e && typeof e === 'object' && EVENT_TYPES.has(e.type) && Number.isFinite(e.t) && e.t >= 0 && coordsFinite(e))
     .sort((a, b) => a.t - b.t) as BoardJournalEvent[];
   if (events.length === 0 && parsed.events.length > 0) throw new Error('Tệp .socr không có sự kiện hợp lệ nào.');
 

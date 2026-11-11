@@ -416,7 +416,7 @@ export function removePoint(sc: GeoScene, name: string): GeoScene {
   return n;
 }
 
-// ------------------------------------------------------------------ dựng hình kiểu GeoGebra (hình phẳng; mọi điểm dựng ra đều theo khi kéo đỉnh gốc)
+// ------------------------------------------------------------------ dựng hình bằng bộ dụng cụ (hình phẳng; mọi điểm dựng ra đều theo khi kéo đỉnh gốc)
 const addDerived = (n: GeoScene, p: V3, def: GeoDef, part: number, mark = true): string => {
   const nm = nextName(n);
   n.pts[nm] = p;
@@ -737,6 +737,20 @@ export function problemTextForPlane(kind: string): string | null {
       return 'hình chữ nhật ABCD';
     case 'parallelogram':
       return 'hình bình hành ABCD';
+    case 'rhombus':
+      return 'hình thoi ABCD';
+    case 'trapezoid':
+      return 'hình thang ABCD';
+    case 'quadrilateral':
+      return 'tứ giác ABCD';
+    case 'pentagon':
+      return 'ngũ giác ABCDE';
+    case 'hexagon':
+      return 'lục giác ABCDEF';
+    case 'heptagon':
+      return 'thất giác ABCDEFG';
+    case 'octagon':
+      return 'bát giác ABCDEFGH';
     default:
       return null;
   }

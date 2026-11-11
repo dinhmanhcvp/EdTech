@@ -3170,7 +3170,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   return (
     <div
       data-testid="smartboard-container"
-      className="relative w-full min-h-screen bg-[#F8F7F4] text-[#18181B] flex flex-col items-center justify-start p-2 pb-28 select-none"
+      className="relative w-full min-h-screen bg-[#F8F7F4] text-[#18181B] flex flex-col items-center justify-start p-0 select-none"
     >
       {/* CHỮ VIẾT TAY → CÔNG THỨC CHUẨN */}
       {convertCtx && (
@@ -3465,7 +3465,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       {/* Mọi tác vụ trên vùng khoanh nằm trong thẻ của nút AI nổi (xem <AiFab panel=…>) */}
 
       {/* Smartboard Canvas & Side-by-Side Ergonomic Split-View Workspace */}
-      <div className="flex flex-col lg:flex-row items-start justify-center gap-3 mt-1 w-full max-w-[1500px]">
+      <div className="flex flex-col lg:flex-row items-start justify-center gap-0 w-full my-auto">
         {/* Drawing Canvas Area (Always visible, NEVER covered, high-def 1200x675) */}
         <div
           ref={boardWrapRef}
@@ -3475,8 +3475,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           onPointerCancelCapture={gestureUp}
           data-testid="board-wrap"
           data-zoom={view.k.toFixed(3)}
-          style={{ maxWidth: 'min(1800px, calc((100vh - 120px) * 1.7778))' }}
-          className={`relative rounded-2xl overflow-hidden border border-[#E6E4DD] bg-[#EDEBE5] shadow-sm ${
+          style={{ maxWidth: 'min(100vw, calc(100vh * 1.7778))' }} /* bảng phủ kín màn hình, giữ tỉ lệ 16:9 */
+          className={`relative overflow-hidden bg-[#EDEBE5] ${
             (activeBlueprint && displayMode === 'DOCK') || isCompilingShimmer
               ? isSplitView
                 ? 'w-full lg:w-1/2'
@@ -4020,6 +4020,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
 
       {/* THANH TÁC VỤ BẢNG THÔNG MINH + NÚT AI NỔI */}
       <SmartboardDock
+        geo={geoPanel?.mode === 'edit' && geoStroke ? geoCtl : null}
         tool={tool}
         onTool={(t) => {
           setTool(t);

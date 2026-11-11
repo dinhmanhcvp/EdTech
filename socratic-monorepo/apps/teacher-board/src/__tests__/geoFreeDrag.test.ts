@@ -76,7 +76,7 @@ describe('gõ ký hiệu chữ thường', () => {
 
 import {addFreePoint, addSector, addSegmentLen, addSemicircle, toggleHidden, removePoint as rmPoint, addLineAB, addPolygon, addRegularPolygon, addTangentsFrom, addTransform, addVector, toggleLabel, addBisector, addCircleOf, addIntersection, addLineThrough, addPerpBisector, addReflection, addTangent, measurePolygon} from '../utils/geoTools';
 
-describe('dựng hình kiểu GeoGebra', () => {
+describe('dựng hình bằng bộ dụng cụ (đường, hình, tròn, biến hình)', () => {
   const tri = () => sceneOf('Cho tam giác ABC có AB = 4, AC = 3, BC = 5.');
   const dot2 = (s: ReturnType<typeof sceneOf>, a: string, b: string, c: string, d: string) =>
     (s.pts[b][0] - s.pts[a][0]) * (s.pts[d][0] - s.pts[c][0]) + (s.pts[b][1] - s.pts[a][1]) * (s.pts[d][1] - s.pts[c][1]);
@@ -125,7 +125,7 @@ describe('dựng hình kiểu GeoGebra', () => {
   });
 });
 
-describe('dựng hình kiểu GeoGebra (phần 2)', () => {
+describe('dựng hình bằng bộ dụng cụ (đường, hình, tròn, biến hình) (phần 2)', () => {
   const tri = () => sceneOf('Cho tam giác ABC có AB = 4, AC = 3, BC = 5.');
 
   it('đa giác đều dựng trên cạnh AB: các cạnh bằng nhau và vẫn đều khi kéo', () => {
@@ -185,7 +185,7 @@ describe('dựng hình kiểu GeoGebra (phần 2)', () => {
   });
 });
 
-describe('dựng hình kiểu GeoGebra (phần 3)', () => {
+describe('dựng hình bằng bộ dụng cụ (đường, hình, tròn, biến hình) (phần 3)', () => {
   const tri = () => sceneOf('Cho tam giác ABC có AB = 4, AC = 3, BC = 5.');
 
   it('điểm mới đặt tự do kéo được ở mọi nơi và xóa được', () => {

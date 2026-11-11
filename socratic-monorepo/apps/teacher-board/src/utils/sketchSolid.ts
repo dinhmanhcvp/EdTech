@@ -384,7 +384,14 @@ export type PlaneShapeKind =
   | 'triangle_scalene'
   | 'square'
   | 'rectangle'
-  | 'parallelogram';
+  | 'rhombus'
+  | 'trapezoid'
+  | 'quadrilateral'
+  | 'parallelogram'
+  | 'pentagon'
+  | 'hexagon'
+  | 'heptagon'
+  | 'octagon';
 
 export interface SketchPlaneShape {
   kind: PlaneShapeKind;
@@ -409,7 +416,7 @@ export function detectPlaneShapeFromStrokes(strokes: SketchStrokeLike[]): Sketch
   if (D < 45) return null;
   const V = g.verts.length;
   const E = g.edges.length;
-  if (!((V === 3 && E === 3) || (V === 4 && E === 4))) return null;
+  if (V < 3 || V > 8 || E !== V) return null;
 
   // Mọi đỉnh trong đa giác đơn khép kín phải có bậc đúng bằng 2
   const deg = new Array<number>(V).fill(0);
@@ -495,6 +502,32 @@ export function detectPlaneShapeFromStrokes(strokes: SketchStrokeLike[]): Sketch
     };
   }
 
+  if (V >= 5) {
+    // đa giác lồi 5–8 cạnh: góc trong dùng acos nên chỉ đúng với đa giác lồi
+    const convex = ordered.every((p, i) => {
+      const a = ordered[(i + 1) % V], b = ordered[(i + 2) % V];
+      return (a.x - p.x) * (b.y - a.y) - (a.y - p.y) * (b.x - a.x) > 0;
+    }) || ordered.every((p, i) => {
+      const a = ordered[(i + 1) % V], b = ordered[(i + 2) % V];
+      return (a.x - p.x) * (b.y - a.y) - (a.y - p.y) * (b.x - a.x) < 0;
+    });
+    if (!convex) return null;
+    const names = ['', '', '', '', '', 'Ngũ giác', 'Lục giác', 'Thất giác', 'Bát giác'];
+    const kinds: PlaneShapeKind[] = ['pentagon', 'hexagon', 'heptagon', 'octagon'];
+    const maxS = Math.max(...sides);
+    const regular = (maxS - Math.min(...sides)) / maxS <= 0.18 && angles.every((a) => Math.abs(a - ((V - 2) * 180) / V) <= 14);
+    const letters = 'ABCDEFGH'.slice(0, V);
+    return {
+      kind: kinds[V - 5],
+      title: `${names[V]}${regular ? ' đều' : ''} ${letters}`,
+      vertices2D,
+      confidence: regular ? 0.85 : 0.78,
+      anglesDeg: angles.map((a) => Math.round(a)),
+      sideLengths: sides.map((x) => Number((x * scale).toFixed(2))),
+      note: `${V} đỉnh${regular ? ', đa giác đều' : ''}, góc ${angles.map((a) => `${Math.round(a)}°`).join(' · ')}`,
+    };
+  }
+
   // V === 4: Tứ giác
   const maxS = Math.max(...sides);
   const minS = Math.min(...sides);
@@ -502,7 +535,16 @@ export function detectPlaneShapeFromStrokes(strokes: SketchStrokeLike[]): Sketch
   const rightCount = angles.filter((a) => Math.abs(a - 90) <= 14).length;
   const allSidesNear = (maxS - minS) / maxS <= 0.18;
 
-  let kind: PlaneShapeKind = 'parallelogram';
+  // hai cạnh đối song song khi góc giữa chúng < ~9°
+  const parallel = (i: number, j: number) => {
+    const a = ordered[i], b = ordered[(i + 1) % V], c = ordered[j], d = ordered[(j + 1) % V];
+    const ux = b.x - a.x, uy = b.y - a.y, vx = d.x - c.x, vy = d.y - c.y;
+    return Math.abs(ux * vy - uy * vx) / ((Math.hypot(ux, uy) || 1) * (Math.hypot(vx, vy) || 1)) < 0.156;
+  };
+  const par02 = parallel(0, 2);
+  const par13 = parallel(1, 3);
+
+  let kind: PlaneShapeKind = 'quadrilateral';
   let title = 'Tứ giác ABCD';
   if (rightCount >= 3 && allSidesNear) {
     kind = 'square';
@@ -510,9 +552,12 @@ export function detectPlaneShapeFromStrokes(strokes: SketchStrokeLike[]): Sketch
   } else if (rightCount >= 3) {
     kind = 'rectangle';
     title = 'Hình chữ nhật ABCD';
-  } else if (oppEqual) {
-    kind = 'parallelogram';
-    title = 'Hình bình hành ABCD';
+  } else if (oppEqual && par02 && par13) {
+    kind = allSidesNear ? 'rhombus' : 'parallelogram';
+    title = allSidesNear ? 'Hình thoi ABCD' : 'Hình bình hành ABCD';
+  } else if (par02 !== par13) {
+    kind = 'trapezoid';
+    title = 'Hình thang ABCD';
   }
 
   return {

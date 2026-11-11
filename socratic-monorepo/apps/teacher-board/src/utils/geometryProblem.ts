@@ -684,6 +684,29 @@ function buildFigure(text: string, notes: string[]): Model | null {
     return m;
   }
 
+  // ---- tứ giác nội tiếp: "Cho tứ giác ABCD nội tiếp đường tròn (O)"
+  const cyc = /tứ giác\s*([A-Z]{4})\s*nội tiếp/.exec(text);
+  // chỉ khi tứ giác nội tiếp là hình gốc: "Chứng minh tứ giác BCEF nội tiếp" sau một tam giác là điều cần chứng minh
+  if (cyc && !/chứng minh|cm rằng|tam giác\s*[A-Z]{3}/i.test(text.slice(0, cyc.index))) {
+    const names = pointsIn(cyc[1]);
+    const O = /đường tròn\s*\(\s*([A-Z]'?)/u.exec(text)?.[1] ?? 'O';
+    const R = 3.2;
+    // cung AB = 40°, BC = 70°, CD = 200°, DA = 50°: ∠ADC = 55° > ∠DCB = 45° (đề hay gặp), ∠A = 135°, ∠B = 125° nên điểm trong tứ giác (P…) còn chỗ rộng
+    const arcs = [40, 70, 200, 50];
+    const m = model(`Tứ giác ${names.join('')} nội tiếp đường tròn (${O})`, 2);
+    let a = 60;
+    names.forEach((n, i) => {
+      put(m, n, [R * Math.cos((a * Math.PI) / 180), R * Math.sin((a * Math.PI) / 180), 0]);
+      a += arcs[i];
+    });
+    m.edges.push(...cycle(names));
+    put(m, O, [0, 0, 0]);
+    m.marks.add(O);
+    m.defs.set(O, {k: 'calc', f: 'circum', n: names.slice(0, 3)});
+    m.circles.push({center: [0, 0, 0], normal: [0, 0, 1], r: R, part: 0, label: `đường tròn (${O})`, of: {f: 'circum', n: names.slice(0, 3)}});
+    return m;
+  }
+
   // ---- tam giác / tứ giác phẳng
   const quad = /(hình vuông|hình chữ nhật|hình bình hành|hình thoi|hình thang(?: vuông| cân)?)\s*([A-Z]{4})/.exec(text);
   const tri = /tam giác\s*(?:nhọn|tù|thường|bất kỳ|đều|cân|vuông cân|vuông)?\s*([A-Z]{3})(?![A-Z])/.exec(text);
@@ -846,7 +869,7 @@ export function sectionHits(edges: [string, string][], P: (n: string) => V3 | un
 
 function addExtras(m: Model, text0: string): void {
   // câu mới bắt đầu bằng chữ hoa ngay sau dấu chấm ("…CC'.Tìm giao điểm…") phải tách câu; "S.ABCD" (chữ hoa liền chữ hoa) thì giữ nguyên
-  const text = expandRespectively(text0.replace(/([A-Za-z0-9')])\.([A-ZĐ][a-zà-ỹ])/g, '$1; $2'));
+  const text = expandRespectively(text0.replace(/([A-Za-z0-9')])\.([A-ZĐ][a-zà-ỹ])/g, '$1; $2').replace(/giao điểm của\s+hai\s+đường\s+thẳng\s*([A-Z]'?[A-Z]'?)\s+và\s+([A-Z]'?[A-Z]'?)/g, '$1 giao $2'));
   const P = (n: string) => m.pts.get(n);
   const has = (n: string) => m.pts.has(n);
   const clauses = text.split(/[;\n]|,(?!\d)|\.(?![A-Z]|\d)|\s+và\s+/).map((s) => s.trim()).filter(Boolean);
@@ -879,8 +902,42 @@ function addExtras(m: Model, text0: string): void {
   };
 
   for (let pass = 0; pass < 2; pass++) {
+    // điểm chưa có, xác định bởi hai điều kiện "XY vuông góc/song song ZW" (X chưa có; Y, Z, W đã có): giao của hai đường thẳng
+    // vd. "PA ⊥ AD và PB ⊥ BC" → P; "DR // AH và CR // BH" → R
+    if (m.dim === 2) {
+      const lineCons = new Map<string, {y: string; dir: V3}[]>();
+      for (const c of clauses) {
+        for (const mm of c.matchAll(/(?<![A-Za-z'])([A-Z]'?)([A-Z]'?)\s*(vuông góc|song song)\s*(?:với\s*)?([A-Z]'?)([A-Z]'?)(?![A-Za-z'])/g)) {
+          const [, a, b, rel, z, w] = mm;
+          const [x, y] = has(a) && !has(b) ? [b, a] : has(b) && !has(a) ? [a, b] : ['', ''];
+          if (!x || !has(z) || !has(w)) continue;
+          const d = sub(P(w)!, P(z)!);
+          (lineCons.get(x) ?? lineCons.set(x, []).get(x)!).push({y, dir: rel === 'song song' ? d : [-d[1], d[0], 0]});
+        }
+      }
+      for (const [x, cs] of lineCons) {
+        if (cs.length < 2 || has(x)) continue;
+        const [c1, c2] = cs;
+        const X = lineIntersect(P(c1.y)!, add(P(c1.y)!, c1.dir), P(c2.y)!, add(P(c2.y)!, c2.dir));
+        if (!X) continue;
+        define(x, X, `${x} là giao của hai đường thẳng theo điều kiện đề`);
+        for (const {y} of cs) addAux(x, y);
+      }
+    }
     for (const c of clauses) {
       let r: RegExpExecArray | null;
+      // hình bình hành PAQB khi biết ba đỉnh: đỉnh còn lại = tổng hai đỉnh kề − đỉnh đối
+      if ((r = /hình bình hành\s*([A-Z]'?)([A-Z]'?)([A-Z]'?)([A-Z]'?)(?![A-Za-z'])/.exec(c)) && m.dim === 2) {
+        const v = [r[1], r[2], r[3], r[4]];
+        const unk = v.filter((n) => !has(n));
+        if (unk.length === 1) {
+          const i = v.indexOf(unk[0]);
+          const prev = P(v[(i + 3) % 4])!, next = P(v[(i + 1) % 4])!, opp = P(v[(i + 2) % 4])!;
+          define(unk[0], sub(add(prev, next), opp), `${v.join('')} là hình bình hành`);
+        }
+        if (v.every(has)) for (let i = 0; i < 4; i++) addAux(v[i], v[(i + 1) % 4]);
+        continue;
+      }
       // trung điểm
       if ((r = /([A-Z]'?)\s*là\s*trung điểm\s*(?:của\s*|cạnh\s*|đoạn(?: thẳng)?\s*)?([A-Z]'?[A-Z]'?)/.exec(c))) {
         const s = segOf(r[2]);
@@ -1231,7 +1288,8 @@ function addExtras(m: Model, text0: string): void {
     }
     // "O là tâm đường tròn ngoại tiếp tam giác ABC" cũng vẽ đường tròn đó
     const nameCenter = /([A-Z]'?)\s*là\s*tâm\s*đường tròn\s*(?:ngoại|nội)\s*tiếp/u.exec(c);
-    const kind = /đường tròn\s*(ngoại|nội)\s*tiếp|(?<![\p{L}])(ngoại|nội)\s*tiếp/u.exec(c);
+    // "tứ giác ABCD nội tiếp (O)" là dữ kiện của đề (hình gốc đã vẽ), không phải yêu cầu vẽ đường tròn nội tiếp
+    const kind = /(?<!giác\s*[A-Z]{4}\s*)(?:đường tròn\s*(ngoại|nội)\s*tiếp|(?<![\p{L}])(ngoại|nội)\s*tiếp)/u.exec(c);
     if (kind && /chứng minh|cm rằng/i.test(c) && !/đường tròn\s*(?:ngoại|nội)/.test(c)) continue; // "chứng minh tứ giác ABOC nội tiếp" là điều cần chứng minh, không phải yêu cầu vẽ
     if (kind) {
       const inner = /nội/i.test(kind[1] ?? kind[2] ?? '');
@@ -1751,6 +1809,10 @@ export function cleanHandwritten(raw: string): string {
   t = t.replace(/\\(?:widehat|hat|angle)\s*\{?\s*([A-Z]'?[A-Z]'?[A-Z]'?)\s*\}?/g, ' góc $1 ');
   t = t.replace(/\\(?:overline|overrightarrow|vec|overleftrightarrow)\s*\{\s*([A-Z]'?[A-Z]'?)\s*\}/g, '$1');
   t = t.replace(/\\(?:Rightarrow|Longrightarrow|Leftrightarrow|rightarrow|to)(?![a-zA-Z])/g, ';').replace(/\\sqrt\s*(\d)/g, '√$1').replace(/\\cdot|\\times/g, '*');
+  // chữ PDF: dấu mũ rời đứng trước tên góc ("̂ DCB") và ký hiệu độ "◦"
+  t = t.replace(/\u0302\s*([A-Z]{3})/g, ' góc $1 ').replace(/◦|∘/g, '°');
+  // tên hình bị tách chữ đầu: "hình bình hành P AQB" → "PAQB"
+  t = t.replace(/(hình\s+(?:bình hành|vuông|chữ nhật|thoi|thang(?:\s+(?:vuông|cân))?)|tứ giác|tam giác)\s+([A-Z])\s+([A-Z]{2,3})(?![\p{L}'])/gu, '$1 $2$3');
   t = t.replace(/[´‘’′]/g, "'").replace(/⟂|⊥/g, '⊥').replace(/\u2225|\|\|/g, '∥');
   // chữ cái đỉnh bị đọc tách: "A B C D", "S . A B C D", "A ' B ' C '" → ABCD, S.ABCD, A'B'C'
   t = t.replace(/(?<![A-Za-z'])([A-Z])\s*['`]\s*(?=[A-Z]\s*'|\s|$|[.,;)])/g, "$1'");

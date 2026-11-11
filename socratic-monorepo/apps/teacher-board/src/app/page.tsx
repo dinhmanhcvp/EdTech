@@ -400,7 +400,7 @@ export default function UnifiedPlatformPage() {
       )}
 
       {/* 3. UNIFIED WORKSPACE VIEW AREA (100% height khi thu gọn thanh điều khiển) */}
-      <div className={`flex-1 overflow-y-auto relative ${isHeaderExpanded ? 'h-[calc(100vh-40px)]' : 'h-screen'}`}>
+      <div className={`flex-1 relative ${activeMode === 'BOARD' ? 'overflow-hidden' : 'overflow-y-auto'} ${isHeaderExpanded ? 'h-[calc(100vh-40px)]' : 'h-screen'}`}>
 
         {/* MODE 01: Interactive Board & Precision Lab Studio */}
         <div className={`w-full min-h-full ${activeMode === 'BOARD' ? 'block' : 'hidden'}`}>

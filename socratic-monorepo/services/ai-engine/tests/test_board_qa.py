@@ -153,3 +153,47 @@ def test_llm_failure_is_swallowed_into_offline_answer(client, monkeypatch):
     monkeypatch.setattr(bq, "_llm_json", boom)
     r = client.post("/api/v1/canvas/ask-board", json={"question": "tam giác?", "context": TRI_CTX})
     assert r.status_code == 200 and r.json()["source"] == "offline"
+
+
+def test_set_param_action_is_validated_against_open_simulation_and_clamped():
+    ctx = {"simulation": {"parameters": [{"key": "angle", "label": "Góc", "unit": "°", "min": 0, "max": 90}]}}
+    raw = {"actions": [
+        {"type": "set_param", "key": "angle", "value": 200, "label": "Góc 90°"},
+        {"type": "set_param", "key": "mass", "value": 1},        # khóa không có thật
+        {"type": "set_param", "key": "angle", "value": "abc"},   # không phải số
+        {"type": "set_param", "key": "angle", "value": "nan"},
+    ]}
+    acts = bq.clean_answer(raw, ctx)["actions"]
+    assert acts == [{"type": "set_param", "label": "Góc 90°", "key": "angle", "value": 90.0}]
+    assert bq.clean_answer(raw, {})["actions"] == []  # không có mô phỏng mở thì bỏ hết
+
+
+GEO_CTX = {"items": [{"id": "g1", "kind": "solid", "title": "Tam giác ABC", "names": ["A", "B", "C", "M"],
+                      "geo": {"problem": "Cho tam giác ABC vuông tại A. Chứng minh AM = BM", "points": ["A", "B", "C", "M"], "facts": ["AB ⊥ AC"], "goal": "AM = BM"}}]}
+
+
+def test_coach_mode_uses_socratic_prompt_and_level_and_validates_construct_actions(client, monkeypatch):
+    fake = _fake_llm({"headline": "Em thấy M có vai trò gì với BC?", "steps": ["Nếu nối AM thì có tam giác nào?"], "actions": [
+        {"type": "construct", "tool": "segment", "names": ["A", "M"], "label": "Nối AM"},
+        {"type": "construct", "tool": "segment", "names": ["A", "Z"], "label": "điểm không có"},      # tên không có thật
+        {"type": "construct", "tool": "delete_all", "names": ["A"], "label": "lệnh lạ"},               # dụng cụ ngoài danh sách
+        {"type": "construct", "tool": "foot", "names": ["A", "B"], "label": "thiếu điểm"},            # sai số điểm
+    ]})
+    monkeypatch.setattr(bq, "_llm_json", fake)
+    r = client.post("/api/v1/canvas/ask-board", json={"question": "Gợi ý giúp em", "context": GEO_CTX, "mode": "coach", "hint_level": 3})
+    j = r.json()
+    assert j["source"] == "gemini"
+    assert "Socrate" in fake.calls[0][0] and "hint_level: 3" in fake.calls[0][1]
+    assert j["answer"]["actions"] == [{"type": "construct", "tool": "segment", "names": ["A", "M"], "label": "Nối AM"}]
+
+
+def test_coach_mode_drops_answers_that_are_not_questions(client, monkeypatch):
+    monkeypatch.setattr(bq, "_llm_json", _fake_llm({"headline": "Vậy AM = BM vì M là trung điểm của cạnh huyền.", "steps": [], "actions": []}))
+    j = client.post("/api/v1/canvas/ask-board", json={"question": "giải giúp em", "context": GEO_CTX, "mode": "coach"}).json()
+    assert j["source"] == "offline" and j["answer"]["headline"] == ""  # lộ lời giải → bỏ, bảng dùng bộ gợi ý ngoại tuyến
+
+
+def test_coach_mode_without_ai_returns_empty_so_the_board_uses_offline_coach(client, monkeypatch):
+    monkeypatch.setattr(bq, "_llm_json", lambda *a, **k: None)
+    j = client.post("/api/v1/canvas/ask-board", json={"question": "gợi ý", "context": GEO_CTX, "mode": "coach"}).json()
+    assert j["source"] == "offline" and j["answer"]["actions"] == []

@@ -107,3 +107,11 @@ def test_slow_ai_times_out_and_returns_machine_result(client, monkeypatch):
     monkeypatch.setattr(gs, "_llm_json", lambda *a, **k: (time.sleep(1), None)[1])
     r = client.post("/api/v1/canvas/grade-steps", json={"lines": [{"latex": "x^2 - 5x + 6 = 0"}, {"latex": "x^2 - 5x = 6"}]}).json()
     assert r["status"] == "OFFLINE" and r["first_error"] == 1  # máy vẫn bắt được lỗi chuyển vế
+
+
+def test_figure_context_reaches_the_grader_prompt_as_data():
+    req = gs.GradeStepsRequest(lines=[gs.GradeLine(latex="AB \perp CD")], figure="Quan hệ đo được trên hình: AB ⊥ CD.\nDòng [0] «AB ⊥ CD»: KHÔNG khớp trên hình")
+    u = gs.build_user(req, {})
+    assert "Hình vẽ của bài" in u and "KHÔNG khớp trên hình" in u
+    assert "KHÔNG khớp trên hình" in gs.SYSTEM  # lời nhắc dặn cách dùng bằng chứng số
+    assert "Hình vẽ" not in gs.build_user(gs.GradeStepsRequest(lines=[gs.GradeLine(latex="x=1")]), {})

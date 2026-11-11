@@ -142,6 +142,8 @@ describe('bảng dụng cụ / hộp thoại vẽ từ đề', () => {
 
 describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
   const ctl = (over: Partial<GeoController> = {}): GeoController => ({
+    scene: {} as GeoController['scene'],
+    applyTool: vi.fn(),
     parts: 3,
     upTo: 1,
     shownParts: 1,

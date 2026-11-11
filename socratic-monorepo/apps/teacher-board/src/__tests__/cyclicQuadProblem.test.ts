@@ -50,3 +50,42 @@ describe('tứ giác nội tiếp + P, Q, K, H, R, L', () => {
     expect(Math.abs(det(pts))).toBeLessThan(1e-6);
   });
 });
+
+import {partChips, showUpTo, visibleNames, togglePart} from '../utils/geoTools';
+
+describe('vẽ từng phần theo đề (a, b, c…) với đề tứ giác nội tiếp', () => {
+  const sc = buildScene(T).scene!;
+  it('đề có 4 phần: hình gốc + 3 yêu cầu, bật từng phần thì điểm của phần đó mới hiện', () => {
+    expect(sc.parts.length).toBe(4);
+    expect(partChips(sc).length).toBeGreaterThanOrEqual(2);
+    const only1 = new Set(visibleNames(showUpTo(sc, 1), 1));
+    expect(['A', 'B', 'C', 'D', 'P', 'Q', 'K'].every((n) => only1.has(n))).toBe(true); // phần 1: dựng K
+    expect(only1.has('H')).toBe(false); // H thuộc phần 2
+    expect(only1.has('R') || only1.has('L')).toBe(false); // R, L thuộc phần 3
+    const upTo2 = new Set(visibleNames(showUpTo(sc, 2), 2));
+    expect(upTo2.has('H')).toBe(true);
+    expect(upTo2.has('L')).toBe(false);
+    const all = new Set(visibleNames(showUpTo(sc, 3), 3));
+    expect(all.has('L') && all.has('R')).toBe(true);
+  });
+  it('ẩn riêng một phần rồi bật lại', () => {
+    const hidden = togglePart(sc, 2);
+    expect(new Set(visibleNames(hidden, 3)).has('H')).toBe(false);
+    expect(new Set(visibleNames(togglePart(hidden, 2), 3)).has('H')).toBe(true);
+  });
+});
+
+import {splitParts} from '../utils/geometryProblem';
+
+describe('tách đề đánh số 1. 2. 3.', () => {
+  it('đề dán thành một dòng vẫn tách 3 phần; số thập phân và S.ABCD không bị nhầm', () => {
+    const one = splitParts(T.replace(/\n/g, ' '));
+    expect(one.map((p) => p.label)).toEqual(['Đề', '1.', '2.', '3.']);
+    expect(one[2].text).toContain('hình chiếu vuông góc của P lên CD');
+    expect(splitParts('Cho hình chóp S.ABCD đáy là hình vuông cạnh 3.5. Tính thể tích.').length).toBe(1);
+    expect(splitParts('Cho tam giác ABC có AB = 2. 5 điểm khác nhau').length).toBe(1);
+  });
+  it('dãy phải bắt đầu từ 1 và liên tiếp; 2. đứng một mình không tách', () => {
+    expect(splitParts('Cho tam giác ABC. 2. Gọi M là trung điểm BC.').length).toBe(1);
+  });
+});

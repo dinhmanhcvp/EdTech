@@ -65,6 +65,16 @@ describe('BoardAskCard', () => {
     expect(props.onVisualize).toHaveBeenCalledWith('đồ thị y = x^2');
   });
 
+  it('hành động set_param: bấm → chỉnh tham số mô phỏng, không mở mô phỏng mới', async () => {
+    const askFn = vi.fn().mockResolvedValue(RES({actions: [{type: 'set_param', label: 'Góc 60°', key: 'angle', value: 60}]}));
+    const onSetParam = vi.fn();
+    const {props} = setup(askFn, {onSetParam});
+    ask('thử góc 60');
+    fireEvent.click(await screen.findByTestId('board-ask-action'));
+    expect(onSetParam).toHaveBeenCalledWith('angle', 60);
+    expect(props.onVisualize).not.toHaveBeenCalled();
+  });
+
   it('hiện câu hỏi làm rõ khi AI thiếu dữ kiện; nguồn ngoại tuyến được ghi rõ', async () => {
     const askFn = vi.fn().mockResolvedValue(RES({headline: '', clarify: 'Bạn muốn nói tam giác nào?'}, 'offline'));
     setup(askFn);

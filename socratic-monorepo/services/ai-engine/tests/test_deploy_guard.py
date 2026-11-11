@@ -35,6 +35,9 @@ def test_rate_limit_blocks_after_limit_with_retry_after(monkeypatch):
     assert r.status_code == 429
     assert int(r.headers["retry-after"]) >= 1
     assert "Quá nhiều" in r.json()["detail"]
+    j = r.json()
+    assert j["code"] == "RATE_LIMITED" and j["retryable"] is True
+    assert j["trace_id"] == r.headers["x-trace-id"] and len(j["trace_id"]) == 32
 
 
 def test_only_listed_post_endpoints_are_limited(monkeypatch):

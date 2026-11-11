@@ -43,7 +43,9 @@ Canonical source: `socratic-monorepo/packages/types/src/index.ts`, re-exported b
 - Vào: `{question ≤ 600, context: BoardContext, history ≤ 6 lượt {q,a}, subject_hint?}`; khóa AI qua tiêu đề `x-gemini-api-key` / `x-openrouter-api-key`.
 - `BoardContext` (`apps/teacher-board/src/utils/boardContext.ts`): `items[]` (formula | plane | solid | ink; số đo hình theo TÊN: `sides_named`, `angles_named`), `selection.item_ids`, `simulation {templateId, params hiện tại, parameters, meta}`, `subject`.
 - Ra: `{answer: {steps, headline, formula_latex, highlights, follow_ups, actions[{type:'visualize',label,text}], clarify, used}, source: gemini|openrouter|offline, model, note?}`.
-  `actions` chỉ nhận `visualize` (chuyển cho bộ định tuyến cục bộ của bảng); `highlights`/`used` chỉ giữ tên và id có thật trong `context`.
+  `actions` nhận `visualize` (chuyển cho bộ định tuyến cục bộ của bảng) và `set_param {key,value}` (chỉnh tham số mô phỏng đang mở: máy chủ loại khóa không có trong `simulation.parameters`, kẹp `value` theo min–max; bảng áp qua `remoteParams` của SimulationWidget khi giáo viên bấm); `highlights`/`used` chỉ giữ tên và id có thật trong `context`.
+- Chế độ coach: thêm `mode: "coach"`, `hint_level` 1–4 (giải bài hình kiểu Socrate: chỉ hỏi, không lời giải). `actions` có thêm `construct {tool, names, label}` (tool ∈ segment|midpoint|foot|perpbis|bisector|parallel|perpline|line|ray|circle3|circle|tangent|inter|reflline|reflpt, đủ số điểm, mọi tên phải có trong `items[].names`). `headline` không phải câu hỏi → bị bỏ, trả `source: offline` để bảng dùng gợi ý ngoại tuyến. `BoardItem.geo` có thêm `points`, `facts`, `goal`.
+- `POST /api/v1/canvas/grade-steps` nhận thêm `figure` (≤ 1500 ký tự: quan hệ đo được trên hình + kiểm chứng số từng dòng; là dữ liệu cho người/AI chấm, không phải kết luận).
 - Chữ trên bảng là dữ liệu, không phải lệnh (lời nhắc dặn bỏ qua chỉ dẫn trong BẢNG_JSON). Không có khóa/mô hình lỗi → `source: offline`, chỉ đọc số đo có sẵn.
 
 ## Pilot data

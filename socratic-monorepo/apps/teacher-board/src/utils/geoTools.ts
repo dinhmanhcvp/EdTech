@@ -7,6 +7,7 @@ import {add, cross, dot, len, mul, sub, type V3} from './solids';
 import {inferCons, solveDragNatural, type P2} from './geoConstraints';
 import {appendPart, lineIntersect, modelFromScene, partShown, renderScene, sceneFromModel, type GeoDef, type GeoScene} from './geometryProblem';
 import type {ShapeMeta} from './lassoGeometry';
+import {snapPlane, type PlaneConstraintKind} from './planeConstraints';
 
 const NAMES = 'MNPQRTUVWXYZHKIJEFGL'.split('');
 
@@ -756,6 +757,44 @@ export function problemTextForPlane(kind: string): string | null {
   }
 }
 
+const SNAP_KINDS = new Set(['triangle_equilateral', 'triangle_right', 'triangle_isosceles', 'square', 'rectangle', 'rhombus', 'parallelogram']);
+
+/**
+ * Hình phẳng nhận dạng từ nét vẽ tay → đề kèm TỌA ĐỘ các đỉnh đúng như người vẽ (đã khớp ràng buộc: góc vuông, cạnh bằng nhau, song song).
+ * Kết quả vẫn là cảnh GeoScene (kéo đỉnh giữ tính chất, có dụng cụ dựng) nhưng giữ tỉ lệ và hướng của hình đã vẽ, không phải hình mẫu mặc định.
+ * `v2`: đỉnh theo chu trình, y hướng lên (như `SketchPlaneShape.vertices2D`). Đỉnh góc vuông / đỉnh cân được đặt làm A để khớp lời mô tả.
+ * Hình thang chỉ dùng tọa độ khi tìm được cặp cạnh song song (đặt làm AB ∥ CD); không chắc thì trả đề không tọa độ.
+ */
+export function planeTextWithCoords(kind: string, v2: [number, number][]): string | null {
+  const base = problemTextForPlane(kind);
+  if (!base) return null;
+  const letters = base.match(/\b[A-Z]{3,8}\b/)?.[0];
+  if (!letters || v2.length !== letters.length || v2.some((p) => !Number.isFinite(p[0]) || !Number.isFinite(p[1]))) return base;
+  let verts = v2.map(([x, y]) => ({x, y}));
+  let first = 0;
+  if (SNAP_KINDS.has(kind)) {
+    const st = snapPlane(kind as PlaneConstraintKind, verts);
+    verts = st.verts;
+    first = st.right ?? st.apex ?? 0;
+  } else if (kind === 'trapezoid' && verts.length === 4) {
+    const par = (i: number) => {
+      const a = sub2(verts[(i + 1) % 4], verts[i]);
+      const b = sub2(verts[(i + 3) % 4], verts[(i + 2) % 4]);
+      return Math.abs(a.x * b.y - a.y * b.x) / (Math.hypot(a.x, a.y) * Math.hypot(b.x, b.y) || 1);
+    };
+    const [s0, s1] = [par(0), par(1)];
+    if (Math.min(s0, s1) > 0.2) return base;
+    first = s0 <= s1 ? 0 : 1;
+  }
+  verts = verts.map((_, i) => verts[(first + i) % verts.length]);
+  const minX = Math.min(...verts.map((p) => p.x));
+  const minY = Math.min(...verts.map((p) => p.y));
+  const ext = Math.max(Math.max(...verts.map((p) => p.x)) - minX, Math.max(...verts.map((p) => p.y)) - minY, 1e-6);
+  const k = 4 / ext;
+  const r = (x: number) => `${+x.toFixed(3)}`;
+  return `${base}, ${[...letters].map((nm, i) => `${nm}(${r((verts[i].x - minX) * k)};${r((verts[i].y - minY) * k)})`).join(', ')}`;
+}
+const sub2 = (a: {x: number; y: number}, b: {x: number; y: number}) => ({x: a.x - b.x, y: a.y - b.y});
 
 // ------------------------------------------------------------------ đo nâng cao: khoảng cách, góc đường–mặt, nhị diện, thể tích, diện tích
 const PI = Math.PI;

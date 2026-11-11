@@ -9,6 +9,8 @@ import type {SimulationBlueprint} from '@socratic/types';
 import type {Stroke} from './lassoGeometry';
 import {VERTEX_LABELS, planeStats} from './inlineShape';
 import {KIND_LABEL, evalConstructs} from './planeConstruct';
+import {detectFacts} from './geoClaims';
+import {goalOf} from './geoCoach';
 
 export const BOARD_W = 1200;
 export const BOARD_H = 675;
@@ -33,7 +35,7 @@ export interface BoardItem {
   constructs?: string[];
   facts?: string[];
   solid?: {kind: string; dims: Record<string, number | undefined>};
-  geo?: {problem?: string; parts: string[]; edges: string[]};
+  geo?: {problem?: string; parts: string[]; edges: string[]; /** điểm có thật trên hình */ points?: string[]; /** quan hệ đo được trên hình (⊥, ∥, =, trung điểm…) */ facts?: string[]; /** điều cần chứng minh */ goal?: string};
   /** nét viết tay chưa nhận dạng: số lượng */
   count?: number;
 }
@@ -99,6 +101,19 @@ function solidItem(s: Stroke): BoardItem {
       problem: sh.geo ? clip(sh.geo.source, 400) : undefined,
       parts: (sh.geo?.scene.parts ?? []).map((p) => clip(p.text, 200)).slice(0, 8),
       edges: sh.sketch.edges.slice(0, 60).map((e) => `${names[e.a] ?? '?'}${names[e.b] ?? '?'}${e.hidden ? '(khuất)' : ''}`),
+    };
+  }
+  const scene = sh.geo?.scene;
+  if (scene) {
+    // hình dựng từ đề/nét vẽ: AI cần biết điểm nào có thật, quan hệ nào đã đo được và đề đòi chứng minh gì
+    item.names = scene.order.filter((n) => scene.pts[n]).slice(0, 40);
+    const goal = goalOf(scene.parts.map((p) => p.text).join(' '));
+    item.geo = {
+      ...(item.geo ?? {parts: scene.parts.map((p) => clip(p.text, 200)).slice(0, 8), edges: []}),
+      problem: clip(sh.geo!.source, 400),
+      points: item.names,
+      facts: detectFacts(scene, 24),
+      ...(goal ? {goal: clip(goal.text, 200)} : {}),
     };
   }
   return item;

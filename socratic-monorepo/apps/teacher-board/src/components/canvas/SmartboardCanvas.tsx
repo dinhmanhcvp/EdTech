@@ -14,7 +14,7 @@ import { looksLikeWords, matchViName } from '../../utils/viKeywords';
 import { InlineShape } from './InlineShape';
 import { GeometryProblemPanel, type GeoPickConfig, type GeoController } from './GeometryProblemPanel';
 import { buildScene, parseGeometryProblem, parseRichestGeometry, type GeoScene } from '../../utils/geometryProblem';
-import { draggablePoints, freePoints, layoutGeo, partChips, problemTextForPlane, problemTextForSolid, showUpTo, togglePart } from '../../utils/geoTools';
+import { draggablePoints, freePoints, layoutGeo, partChips, planeTextWithCoords, problemTextForSolid, showUpTo, togglePart } from '../../utils/geoTools';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -24,6 +24,10 @@ import { SimulationWidget } from './SimulationWidget';
 import { InkConvertPanel } from './InkConvertPanel';
 import { SmartboardDock, AiFab } from './SmartboardDock';
 import { BoardAskCard } from './BoardAskCard';
+import type { GeoTool } from './GeometryProblemPanel';
+import { figureContext } from '../../utils/geoGrade';
+import { buildFrame, type FrameId } from '../../utils/teachingFrames';
+import { GeoCoachPanel } from './GeoCoachPanel';
 import { GradeMarks, StepExplainWindow, UncertainBars } from './GradeOverlay';
 import { applyPick, gradeSteps, lineBox, type GradeResult } from '../../utils/gradeUi';
 import { buildBoardContext } from '../../utils/boardContext';
@@ -455,6 +459,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [geoPickCfg, setGeoPickCfg] = useState<GeoPickConfig | null>(null);
   // AI hub phân tầng: bộ điều khiển hình đang chọn + yêu cầu mở hub tại tầng 'Vẽ hình'
   const [geoCtl, setGeoCtl] = useState<GeoController | null>(null);
+  const [geoCoachOpen, setGeoCoachOpen] = useState(false);
   // yêu cầu bằng lời đang chờ áp lên một hình (hình được bật lên trước, bộ điều khiển đăng ký sau)
   const pendingReqRef = useRef<{ id: string; sources: string[] } | null>(null);
   const [hubOpenAt, setHubOpenAt] = useState<{ path: string[]; nonce: number } | null>(null);
@@ -494,6 +499,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [voiceQaNonce, setVoiceQaNonce] = useState<number>(0);
   // giá trị tham số mô phỏng đang hiển thị, để AI biết "đang kéo tới đâu" khi trả lời
   const [simParams, setSimParams] = useState<Record<string, number>>({});
+  // tham số do hành động set_param của Hỏi đáp AI đặt; SimulationWidget áp qua remoteParams
+  const [aiParams, setAiParams] = useState<Record<string, number>>({});
   const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
   const [qrCopied, setQrCopied] = useState<boolean>(false);
 
@@ -538,6 +545,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   // Chế độ trực quan hình học tự động: khi vẽ xong đa giác/khối 3D, tự biến nét vẽ thành mô hình tương tác tại chỗ
   const [isGeometryLiveMode, setIsGeometryLiveMode] = useState<boolean>(initialGeometryLiveMode);
   const autoGeoTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const liveConvertRef = useRef<((ink: Stroke[]) => boolean) | null>(null);
   const strokesRef = useRef<Stroke[]>([]);
   useEffect(() => {
     strokesRef.current = strokes;
@@ -1660,15 +1668,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           const allCur = strokesRef.current;
           if (allCur.length >= 1) {
             const recent = allCur.slice(-12).filter((s) => !s.typeset);
-            if (recent.length >= 1) {
-              const solidSk = detectSolidSketch(recent);
-              const planeSk = !solidSk && recent.length >= 1 && recent.length <= 4 ? detectPlaneShapeFromStrokes(recent) : null;
-              if (solidSk && solidSk.confidence >= 0.70) {
-                transformStrokesToGeometryInPlace(recent, makeSolidBlueprint(solidSk.kind, solidSk.dims, solidSk.wire));
-              } else if (planeSk && planeSk.confidence >= 0.78) {
-                transformStrokesToGeometryInPlace(recent, makePlaneGeometryBlueprint(planeSk));
-              }
-            }
+            // cùng đường nhận dạng với "Vẽ hình" của AI hub → hình giữ tính chất khi tương tác
+            if (recent.length >= 1) liveConvertRef.current?.(recent);
           }
         }, 850);
       }
@@ -1798,7 +1799,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const keepAllUncertain = () => setAiVisionResult((r) => (r ? { ...r, uncertain: [] } : r));
   const runGrade = async (r: ConvertResult) => {
     setIsGrading(true);
-    const out = await gradeSteps(r.lines.map((l) => l.latex || l.text), subjectLock ?? undefined);
+    const lines = r.lines.map((l) => l.latex || l.text);
+    // bài hình: gửi kèm đề và quan hệ đo được trên hình + kiểm chứng số từng dòng (bằng chứng cho AI chấm)
+    const out = await gradeSteps(lines, subjectLock ?? undefined, fetch, figureContext(strokes, lines) ?? undefined);
     setIsGrading(false);
     if (!out) return flashError('Chưa chấm được: máy chủ AI không phản hồi. Kiểm tra kết nối rồi thử lại.');
     setGradeResult(out);
@@ -1933,6 +1936,9 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     saveToUndo();
     setStrokes((prev) => [...(replaceIds ? prev.filter((q) => !replaceIds.has(q.id)) : prev), made]);
     setGeoPanel({ mode: 'edit', id });
+    setGeoCoachOpen(false);
+    // dụng cụ dựng nằm ở AI hub: mở sẵn tầng Vẽ hình để thấy ngay có gì (không thêm thanh công cụ thứ hai)
+    setHubOpenAt({ path: ['draw'], nonce: Date.now() });
     setSelectedStrokes([]);
     setLassoLoop([]);
     announceRecognized(`${scene.dim === 3 ? '3D' : 'Hình phẳng'} · ${scene.title}`, L.ax + L.w / 2, L.ay);
@@ -2297,23 +2303,36 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     resetPageState();
   };
 
+  const SKETCH_TEXT_MAX = 80;
+  const TEXT_WRAP_MIN = 70;
+  const TEXT_WRAP_W = 520;
   const escapeTex = (t: string) => t.replace(/\\/g, '\\textbackslash{}').replace(/([{}%#&_$^~])/g, (m) => (m === '^' || m === '~' ? `\\${m}{}` : `\\${m}`));
   const commitText = () => {
     const d = textDraft;
     setTextDraft(null);
     const val = d?.value.trim();
     if (!d || !val) return;
-    const size = 30;
-    const w = Math.max(size, val.length * size * 0.55);
+    // đề dài (dán nguyên bài): chữ nhỏ hơn, tự xuống dòng trong khung ~520 px thay vì một dòng dài hàng nghìn px nằm ngoài bảng
+    const long = val.length > TEXT_WRAP_MIN;
+    const size = long ? 22 : 30;
+    const w = long ? TEXT_WRAP_W : Math.max(size, val.length * size * 0.55);
+    const h = long ? Math.ceil((val.length * size * 0.5) / w + 1) * size * 1.4 : size * 1.5;
+    const x = Math.max(10, Math.min(d.x, 1190 - w));
+    const y = Math.max(10, Math.min(d.y, 660 - h));
     const st: Stroke = {
       id: `text-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
-      points: [{ x: Math.min(d.x, 1150), y: Math.min(d.y, 640) }],
+      points: [{ x, y }],
       color: strokeColor,
       width: 0,
-      typeset: { latex: looksMathy(val) ? typedToLatex(val) : `\\text{${escapeTex(val)}}`, text: val, size, w, h: size * 1.5 },
+      typeset: { latex: looksMathy(val) ? typedToLatex(val) : `\\text{${escapeTex(val)}}`, text: val, size, w, h },
     };
     saveToUndo();
     setStrokes((prev) => [...prev, st]);
+    // đề hình học gõ/dán: vẽ luôn hình bên cạnh (không bắt chọn rồi bấm Vẽ hình)
+    if (long) {
+      const hit = parseRichestGeometry([val]);
+      if (hit) insertGeoFigure(hit.scene, hit.scene.parts.length > 1 ? 0 : hit.scene.parts.length - 1, hit.src, { x: Math.min(x + w + 30, 700), y });
+    }
   };
 
   useEffect(() => {
@@ -2727,6 +2746,41 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   );
 
   /**
+   * MỘT đường nhận dạng nét vẽ tay → hình dựng, dùng chung cho "Vẽ hình" (AI hub) và chế độ Trực quan hình học của nút Hình:
+   * khối trước (hộp chữ nhật / lập phương theo tỉ lệ cạnh), rồi đa giác phẳng. Thay CHÍNH các nét bằng cảnh GeoScene (ràng buộc,
+   * dụng cụ dựng, kéo đỉnh giữ tính chất) đặt đúng chỗ nét; chỉ khi không dựng được cảnh mới dùng hình mẫu cũ. Trả true nếu đã chuyển.
+   */
+  const convertSketchToFigure = (ink: Stroke[], replaced: Stroke[] = ink): boolean => {
+    const shapeInk = frameStrokes(ink);
+    const bb = bboxOfStrokes(replaced);
+    const ids = new Set(replaced.map((q) => q.id));
+    const put = (text: string | null | undefined): boolean => {
+      const built = text ? buildScene(text).scene : null;
+      if (!built) return false;
+      insertGeoFigure(built, built.parts.length > 1 ? 0 : built.parts.length - 1, text!, { x: Math.max(10, bb.x0), y: Math.max(10, bb.y0) }, ids);
+      setFormulaInput('');
+      setIsLoading(false);
+      return true;
+    };
+    if (ink.length >= 1) {
+      const sk = detectSolidSketch(shapeInk);
+      if (sk && sk.confidence >= 0.7) {
+        if (!put(problemTextForSolid(sk.kind, sk.dims))) transformStrokesToGeometryInPlace(ink, makeSolidBlueprint(sk.kind, sk.dims, sk.wire));
+        return true;
+      }
+    }
+    if (shapeInk.length >= 1 && shapeInk.length <= 4) {
+      const pl = detectPlaneShapeFromStrokes(shapeInk);
+      if (pl && pl.confidence >= 0.78) {
+        if (!put(planeTextWithCoords(pl.kind, pl.vertices2D))) transformStrokesToGeometryInPlace(ink, makePlaneGeometryBlueprint(pl));
+        return true;
+      }
+    }
+    return false;
+  };
+  liveConvertRef.current = convertSketchToFigure; // bộ hẹn giờ của chế độ trực quan gọi bản mới nhất, không giữ state cũ
+
+  /**
    * Chức năng Vẽ hình: chạy ngay theo loại vùng khoanh.
    * 1) chữ đã có (gõ, công thức, AI đã đọc): tên hình (S.ABCD, tam giác nhọn ABC) hoặc cả đề → dựng hình từng phần
    * 2) nét vẽ tay: hình hộp/lập phương/chóp/lăng trụ hoặc đa giác phẳng → nắn thành hình tại chỗ
@@ -2799,42 +2853,22 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     };
     const place = (hit: { scene: GeoScene; src: string }) => {
       const bb = bboxOfStrokes(selectedStrokes);
-      insertGeoFigure(hit.scene, hit.scene.parts.length > 1 ? 0 : hit.scene.parts.length - 1, hit.src, { x: Math.min(820, bb.x1 + 50), y: Math.max(20, bb.y0) });
+      // khoanh nét VẼ TAY một hình (đề ngắn như "tam giác ABC", không phải đoạn chữ dài): thay chính các nét bằng hình dựng, không vẽ thêm một hình bên cạnh
+      const drawn = !typesetHint && shapeInk.length >= 1 && hit.src.length <= SKETCH_TEXT_MAX;
+      insertGeoFigure(hit.scene, hit.scene.parts.length > 1 ? 0 : hit.scene.parts.length - 1, hit.src,
+        drawn ? { x: Math.max(10, bb.x0), y: Math.max(10, bb.y0) } : { x: Math.min(820, bb.x1 + 50), y: Math.max(20, bb.y0) },
+        drawn ? new Set(selectedStrokes.map((q) => q.id)) : undefined);
       setFormulaInput('');
       setIsLoading(false);
       if (hit.scene.ignored.length > 0) flashError(`Đã vẽ hình; ${hit.scene.ignored.slice(0, 2).join(' · ')}`, 5000);
     };
-    // nét vẽ tay đã nhận dạng: thay bằng hình dựng (đủ dụng cụ tầng 2) đặt đúng chỗ các nét
-    const placeSketch = (scene: GeoScene, src: string) => {
-      const bb = bboxOfStrokes(selectedStrokes);
-      insertGeoFigure(scene, scene.parts.length > 1 ? 0 : scene.parts.length - 1, src, { x: Math.max(10, bb.x0), y: Math.max(10, bb.y0) }, new Set(selectedStrokes.map((q) => q.id)));
-      setFormulaInput('');
-      setIsLoading(false);
-    };
     let hit = fromText(aiVisionResult);
-    if (hit) return place(hit);
+    // chữ/đề dài (hoặc không có nét khung) → hình từ chữ ngay; còn nét vẽ tay + nhãn ngắn thì để bộ nhận dạng nét dưới đây giữ ĐÚNG hình người vẽ (tỉ lệ, vị trí)
+    if (hit && (typesetHint || shapeInk.length === 0 || hit.src.length > SKETCH_TEXT_MAX)) return place(hit);
     // nét vẽ tay: khối trước (phân biệt hộp chữ nhật / lập phương theo tỉ lệ cạnh), rồi đa giác phẳng
-    if (!typesetHint && ink.length >= 1) {
-      const sk = detectSolidSketch(shapeInk);
-      if (sk && sk.confidence >= 0.7) {
-        const t = problemTextForSolid(sk.kind, sk.dims);
-        const built = t ? buildScene(t).scene : null;
-        if (built) return placeSketch(built, t!);
-        transformStrokesToGeometryInPlace(ink, makeSolidBlueprint(sk.kind, sk.dims, sk.wire));
-        return;
-      }
-    }
-    if (!typesetHint && shapeInk.length >= 1 && shapeInk.length <= 4) {
-      const pl = detectPlaneShapeFromStrokes(shapeInk);
-      if (pl && pl.confidence >= 0.78) {
-        const t = problemTextForPlane(pl.kind);
-        const built = t ? buildScene(t).scene : null;
-        if (built) return placeSketch(built, t!);
-        transformStrokesToGeometryInPlace(ink, makePlaneGeometryBlueprint(pl));
-        return;
-      }
-    }
+    if (!typesetHint && convertSketchToFigure(ink, selectedStrokes)) return;
     // có thể là chữ viết tay: chờ AI đọc (tối đa 9 giây) rồi thử lại
+    if (hit) return place(hit);
     let ai: ConvertResult | null = null;
     if (visionPendingRef.current && visionPromiseRef.current) {
       ai = await Promise.race([visionPromiseRef.current, new Promise<null>((r) => setTimeout(() => r(null), 9000))]);
@@ -2846,7 +2880,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   };
 
   // Ảnh chụp trạng thái bảng gửi kèm câu hỏi AI: lấy lúc hỏi (không dùng bản cũ) nên luôn khớp với những gì đang hiện.
-  useEffect(() => setSimParams({}), [activeBlueprint?.templateId]);
+  useEffect(() => { setSimParams({}); setAiParams({}); }, [activeBlueprint?.templateId]);
+  const mergedRemoteParams = useMemo(() => {
+    const m = { ...(room.state.role === 'teacher' ? room.state.params : {}), ...aiParams };
+    return Object.keys(m).length ? m : undefined;
+  }, [room.state.role, room.state.params, aiParams]);
   const getBoardContext = useCallback(
     () => buildBoardContext({ strokes, selected: selectedStrokes, blueprint: activeBlueprint, params: simParams, subject: subjectLock, lesson: lessonContext(session) }),
     [strokes, selectedStrokes, activeBlueprint, simParams, subjectLock, session],
@@ -3615,6 +3653,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               }}
             />
           )}
+          {/* Gợi ý giải Socratic: mở từ AI hub (Vẽ hình → Gợi ý); công cụ dựng nằm trong AI hub, không thêm thanh thứ hai */}
+          {geoPanel?.mode === 'edit' && geoStroke && geoCtl?.figureId === geoStroke.id && geoCoachOpen && !geoCtl.is3D && <GeoCoachPanel geo={geoCtl} onClose={() => setGeoCoachOpen(false)} />}
 
           {/* Lớp công thức chuẩn (KaTeX) đặt trên canvas; chỉ phần tay cầm nhận chuột nên bút vẫn viết xuyên qua được */}
           <div className="absolute inset-0 pointer-events-none" data-testid="typeset-layer">
@@ -3654,6 +3694,17 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   else if (e.key === 'Escape') setTextDraft(null);
                 }}
                 onBlur={commitText}
+                onPaste={(e) => {
+                  // <input> một dòng xóa hẳn dấu xuống dòng khi dán → dính từ ("Pnằm", "haiđường"); đổi thành khoảng trắng
+                  const t = e.clipboardData.getData('text');
+                  if (!/[\r\n]/.test(t)) return;
+                  e.preventDefault();
+                  const el = e.currentTarget;
+                  const a = el.selectionStart ?? el.value.length;
+                  const b = el.selectionEnd ?? el.value.length;
+                  const ins = t.replace(/\s*[\r\n]+\s*/g, ' ').trim();
+                  setTextDraft((dr) => (dr ? { ...dr, value: dr.value.slice(0, a) + ins + dr.value.slice(b) } : dr));
+                }}
                 placeholder="Gõ chữ rồi Enter…"
                 className="absolute pointer-events-auto bg-white/90 border-2 border-blue-500 rounded-md px-2 outline-none shadow-md"
                 style={{ left: `${(textDraft.x / 1200) * 100}%`, top: `${(textDraft.y / 675) * 100}%`, fontSize: Math.max(10, 30 * boardScale), color: strokeColor, minWidth: 160 * boardScale + 120, lineHeight: 1.3 }}
@@ -3802,7 +3853,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                         <X className="w-3 h-3" />
                       </button>
                     </div>
-                    <MathView latex={t.latex} />
+                    {s.id.startsWith('text-') && t.text.length * t.size * 0.55 > t.w * 1.05 ? (
+                      <div data-testid="typeset-wrapped" style={{ whiteSpace: 'pre-wrap', width: t.w * boardScale }}>{t.text}</div>
+                    ) : (
+                      <MathView latex={t.latex} />
+                    )}
                   </div>
                 );
               })}
@@ -3861,7 +3916,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 onGripPointerDown={handleHoloPointerDownAnywhere}
                 onGripPointerMove={handleHoloGripMove}
                 onGripPointerUp={handleHoloGripUp}
-                remoteParams={room.state.role === 'teacher' ? room.state.params : undefined}
+                remoteParams={mergedRemoteParams}
                 onParamChange={(k, v) => {
                   setSimParams((p) => ({ ...p, [k]: v }));
                   if (room.state.role === 'teacher') room.send({ type: 'SLIDER', key: k, value: v });
@@ -4004,7 +4059,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 blueprint={activeBlueprint}
                 displayMode="DOCK"
                 onToggleDisplayMode={() => setDisplayMode('HOLOGRAM')}
-                remoteParams={room.state.role === 'teacher' ? room.state.params : undefined}
+                remoteParams={mergedRemoteParams}
                 onParamChange={(k, v) => {
                   setSimParams((p) => ({ ...p, [k]: v }));
                   if (room.state.role === 'teacher') room.send({ type: 'SLIDER', key: k, value: v });
@@ -4053,6 +4108,10 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         onExport={handleExportBoard}
         isSplitView={isSplitView}
         onToggleSplit={() => setIsSplitView((v) => !v)}
+        onInsertFrame={(id: FrameId) => {
+          saveToUndo();
+          setStrokes((prev) => [...prev, ...buildFrame(id)]);
+        }}
         onOpenQr={handleOpenQrModal}
         isRecorderOpen={isStudioRecorderOpen}
         onToggleRecorder={() => setIsStudioRecorderOpen((o) => !o)}
@@ -4105,6 +4164,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         onAskQa={() => setIsVoiceQaOpen(true)}
         geo={geoPanel?.mode === 'edit' && geoStroke ? geoCtl : null}
         onGeoNew={() => setGeoPanel({ mode: 'new' })}
+        onGeoCoach={() => setGeoCoachOpen((v) => !v)}
+        geoCoachOpen={geoCoachOpen}
         openAtPath={hubOpenAt}
         onDrawSelected={() => void handleDrawSelection()}
         onDuplicate={duplicateSelection}
@@ -4212,6 +4273,12 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         onVisualize={(text) => {
           setIsVoiceQaOpen(false);
           void handleVisualize(text);
+        }}
+        onConstruct={(tool, names) => geoCtl?.applyTool(tool as GeoTool, names)}
+        onSetParam={(k, v) => {
+          setAiParams((p) => ({ ...p, [k]: v }));
+          setSimParams((p) => ({ ...p, [k]: v }));
+          if (room.state.role === 'teacher') room.send({ type: 'SLIDER', key: k, value: v });
         }}
       />
       {isClassroomOpen && <ClassroomPanel room={room} templateId={activeBlueprint?.templateId ?? null} onClose={() => setIsClassroomOpen(false)} onShowSubmission={showSubmission} managed={session ? { title: session.title, teacherName: session.teacherName } : null} />}

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hmac
 import json
+import uuid
 import os
 import threading
 import time
@@ -79,8 +80,9 @@ class RateLimitMiddleware:
             if not byok:
                 retry = self._allow(self._client_ip(scope))
                 if retry is not None:
-                    body = json.dumps({"detail": f"Quá nhiều yêu cầu AI từ địa chỉ này. Thử lại sau {retry} giây."}).encode()
-                    await send({"type": "http.response.start", "status": 429, "headers": [(b"content-type", b"application/json"), (b"retry-after", str(retry).encode()), (b"content-length", str(len(body)).encode())]})
+                    trace = uuid.uuid4().hex  # học từ iFly-Skills: mã vết để đối chiếu nhật ký; mã lỗi ổn định + retryable cho máy đọc
+                    body = json.dumps({"detail": f"Quá nhiều yêu cầu AI từ địa chỉ này. Thử lại sau {retry} giây.", "code": "RATE_LIMITED", "retryable": True, "retry_after": retry, "trace_id": trace}).encode()
+                    await send({"type": "http.response.start", "status": 429, "headers": [(b"content-type", b"application/json"), (b"retry-after", str(retry).encode()), (b"x-trace-id", trace.encode()), (b"content-length", str(len(body)).encode())]})
                     await send({"type": "http.response.body", "body": body})
                     return
         await self.app(scope, receive, send)

@@ -30,6 +30,8 @@ export interface BoardAskCardProps {
   subject?: string | null;
   /** hành động "mở mô phỏng" do AI đề xuất: chuyển cho bộ định tuyến của bảng */
   onVisualize: (text: string) => void;
+  onSetParam?: (key: string, value: number) => void;
+  onConstruct?: (tool: string, names: string[]) => void;
   /** chỉ dùng cho kiểm thử */
   askFn?: typeof askBoard;
 }
@@ -37,7 +39,7 @@ export interface BoardAskCardProps {
 const SOURCE_LABEL = (r: BoardQaResponse) =>
   r.source === 'offline' ? 'Chưa gọi được AI · chỉ đọc số đo trên bảng' : `${r.source === 'gemini' ? 'Gemini' : 'OpenRouter'}${r.model ? ` · ${r.model}` : ''}`;
 
-export const BoardAskCard: React.FC<BoardAskCardProps> = ({isOpen, initialQuery = '', autoAskNonce = 0, isListening = false, onStartVoice, onClose, getContext, subject, onVisualize, askFn = askBoard}) => {
+export const BoardAskCard: React.FC<BoardAskCardProps> = ({isOpen, initialQuery = '', autoAskNonce = 0, isListening = false, onStartVoice, onClose, getContext, subject, onVisualize, onSetParam, onConstruct, askFn = askBoard}) => {
   const [query, setQuery] = useState(initialQuery);
   const [turns, setTurns] = useState<Turn[]>([]);
   const nextId = useRef(1);
@@ -147,7 +149,7 @@ export const BoardAskCard: React.FC<BoardAskCardProps> = ({isOpen, initialQuery 
                 </button>
               </div>
             )}
-            {t.status === 'done' && t.res && <AnswerView res={t.res} onAsk={(s) => void ask(s)} onVisualize={onVisualize} />}
+            {t.status === 'done' && t.res && <AnswerView res={t.res} onAsk={(s) => void ask(s)} onVisualize={onVisualize} onSetParam={onSetParam} onConstruct={onConstruct} />}
           </div>
         ))}
         <div ref={endRef} />
@@ -184,7 +186,7 @@ export const BoardAskCard: React.FC<BoardAskCardProps> = ({isOpen, initialQuery 
   );
 };
 
-const AnswerView: React.FC<{res: BoardQaResponse; onAsk: (q: string) => void; onVisualize: (text: string) => void}> = ({res, onAsk, onVisualize}) => {
+const AnswerView: React.FC<{res: BoardQaResponse; onAsk: (q: string) => void; onVisualize: (text: string) => void; onSetParam?: (key: string, value: number) => void; onConstruct?: (tool: string, names: string[]) => void}> = ({res, onAsk, onVisualize, onSetParam, onConstruct}) => {
   const a = res.answer;
   return (
     <div className="flex flex-col gap-2 rounded-2xl rounded-bl-md border border-[#E6E4DD] bg-[#FBFAF7] p-3" data-testid="board-ask-answer" data-source={res.source}>
@@ -220,9 +222,9 @@ const AnswerView: React.FC<{res: BoardQaResponse; onAsk: (q: string) => void; on
       {a.actions.length > 0 && (
         <div className="flex flex-col gap-1.5" data-testid="board-ask-actions">
           {a.actions.map((act, i) => (
-            <button key={i} type="button" data-testid="board-ask-action" onClick={() => onVisualize(act.text)} className="flex min-h-[40px] items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-3 text-left text-[12px] font-semibold text-cyan-900 transition hover:bg-cyan-100 active:scale-[0.99]">
+            <button key={i} type="button" data-testid="board-ask-action" onClick={() => (act.type === 'set_param' ? onSetParam?.(act.key, act.value) : act.type === 'construct' ? onConstruct?.(act.tool, act.names) : onVisualize(act.text))} className="flex min-h-[40px] items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-3 text-left text-[12px] font-semibold text-cyan-900 transition hover:bg-cyan-100 active:scale-[0.99]">
               <Play className="h-3 w-3 fill-current" /> {act.label}
-              <span className="ml-auto text-[10px] font-normal text-cyan-700">minh họa lên bảng</span>
+              <span className="ml-auto text-[10px] font-normal text-cyan-700">{act.type === 'set_param' ? 'chỉnh mô phỏng' : act.type === 'construct' ? 'vẽ thêm trên hình' : 'minh họa lên bảng'}</span>
             </button>
           ))}
         </div>

@@ -75,14 +75,14 @@ export interface GradeResult {
 const keyOf = (name: string) => (typeof window !== 'undefined' ? window.localStorage.getItem(name) || '' : '').replace(/[\r\n]+/g, ',').replace(/[,;\s]+/g, ',').replace(/^,|,$/g, '').trim();
 
 /** Gửi các dòng bài làm (LaTeX đã xác nhận) cho máy chủ chấm theo từng bước. null nếu không gọi được. */
-export async function gradeSteps(lines: string[], subject?: string, doFetch: typeof fetch = fetch): Promise<GradeResult | null> {
+export async function gradeSteps(lines: string[], subject?: string, doFetch: typeof fetch = fetch, ctx?: { problem?: string; figure?: string }): Promise<GradeResult | null> {
   const g = keyOf('gemini_api_key');
   const o = keyOf('openrouter_api_key');
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (g) headers['x-gemini-api-key'] = g;
   if (o) headers['x-openrouter-api-key'] = o;
   try {
-    const r = await doFetch(`${apiBase()}/api/v1/canvas/grade-steps`, { method: 'POST', headers, body: JSON.stringify({ lines: lines.map((latex) => ({ latex })), subject }) });
+    const r = await doFetch(`${apiBase()}/api/v1/canvas/grade-steps`, { method: 'POST', headers, body: JSON.stringify({ lines: lines.map((latex) => ({ latex })), subject, problem: ctx?.problem || undefined, figure: ctx?.figure || undefined }) });
     return r.ok ? ((await r.json()) as GradeResult) : null;
   } catch {
     return null;

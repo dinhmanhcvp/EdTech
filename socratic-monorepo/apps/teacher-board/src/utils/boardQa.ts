@@ -5,11 +5,12 @@
 import {apiBase} from './apiBase';
 import type {BoardContext} from './boardContext';
 
-export interface BoardQaAction {
-  type: 'visualize';
-  label: string;
-  text: string;
-}
+export type BoardQaAction =
+  | {type: 'visualize'; label: string; text: string}
+  /** Chỉnh một tham số của mô phỏng đang mở (máy chủ đã kiểm khóa và kẹp giá trị theo min–max). */
+  | {type: 'set_param'; label: string; key: string; value: number}
+  /** vẽ đường phụ trên hình (chế độ coach); máy chủ đã kiểm dụng cụ, số điểm và tên điểm có thật */
+  | {type: 'construct'; label: string; tool: string; names: string[]};
 
 export interface BoardQaAnswer {
   headline: string;
@@ -60,7 +61,7 @@ export function aiHeaders(): Record<string, string> {
 }
 
 export async function askBoard(
-  input: {question: string; context: BoardContext; history?: BoardQaTurn[]; subject?: string | null; signal?: AbortSignal},
+  input: {question: string; context: BoardContext; history?: BoardQaTurn[]; subject?: string | null; signal?: AbortSignal; mode?: 'coach'; level?: number},
   fetchImpl: typeof fetch = fetch,
 ): Promise<BoardQaResponse> {
   let res: Response;
@@ -74,6 +75,8 @@ export async function askBoard(
         context: input.context,
         history: (input.history ?? []).slice(-4).map((t) => ({q: t.q.slice(0, 600), a: t.a.slice(0, 1200)})),
         subject_hint: input.subject ?? undefined,
+        mode: input.mode,
+        hint_level: input.mode === 'coach' ? input.level ?? 1 : undefined,
       }),
     });
   } catch (e) {

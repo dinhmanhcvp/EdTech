@@ -7,7 +7,7 @@ import type {V3} from '../../utils/solids';
 import {canUnfold, polygonStats, sliceSection} from '../../utils/netUnfold';
 import {addFreePoint, addSector, addSegmentLen, addSemicircle, toggleHidden, addBisector, addCircleOf, addLineAB, addPolygon, addRegularPolygon, addTangentsFrom, addTransform, addVector, toggleLabel, addFoot, addIntersection, addLineThrough, addMidline, addPerpBisector, addReflection, addTangent, measurePolygon, addMidpoint, moveFreePoint, removePoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, setPointT, solidStats, toTikz, togglePart, visibleNames, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane} from '../../utils/geoTools';
 
-export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'midline' | 'delete' | 'perpbis' | 'bisector' | 'parallel' | 'perpline' | 'inter' | 'circle' | 'circle3' | 'tangent' | 'reflline' | 'reflpt' | 'line' | 'ray' | 'vector' | 'polygon' | 'reg4' | 'reg5' | 'reg6' | 'compass' | 'tangents' | 'translate' | 'rot90' | 'rot60' | 'dil2' | 'dilhalf' | 'label' | 'point' | 'hide' | 'seglen' | 'circlecr' | 'semi' | 'sector' | 'rotate' | 'dilate' | 'area' | 'perim' | 'dist' | 'angle' | 'dpl' | 'dln' | 'alp' | 'dih';
+export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'midline' | 'delete' | 'perpbis' | 'bisector' | 'parallel' | 'perpline' | 'inter' | 'circle' | 'circle3' | 'tangent' | 'reflline' | 'reflpt' | 'line' | 'ray' | 'vector' | 'polygon' | 'reg4' | 'reg5' | 'reg6' | 'regn' | 'compass' | 'tangents' | 'translate' | 'rot90' | 'rot60' | 'dil2' | 'dilhalf' | 'label' | 'point' | 'hide' | 'seglen' | 'circlecr' | 'semi' | 'sector' | 'rotate' | 'dilate' | 'area' | 'perim' | 'dist' | 'angle' | 'dpl' | 'dln' | 'alp' | 'dih';
 
 export interface GeoPickConfig {
   pickMode: 'point' | 'edge' | 'place' | null;
@@ -74,6 +74,10 @@ export interface GeoController {
   addRequirementText: (text: string) => {grew: boolean; notes: string[]; ignored: string[]};
   /** mã của nét hình trên bảng */
   figureId?: string;
+  /** cảnh hiện tại (cho coach Socratic, kiểm chứng mệnh đề, ngữ cảnh AI) */
+  scene: GeoScene;
+  /** áp một dụng cụ lên các điểm có tên (như chạm lần lượt các điểm) — để vẽ đường phụ do coach gợi ý */
+  applyTool: (t: GeoTool, names: string[]) => void;
 }
 
 interface Props {
@@ -125,6 +129,7 @@ export const GEO_SHAPES: GeoToolSpec[] = [
   {id: 'polygon', label: 'Đa giác', need: 0, hint: 'Chạm lần lượt các đỉnh, rồi chạm lại đỉnh đầu để khép kín'},
   {id: 'reg4', label: 'Hình vuông', need: 2, hint: 'Chạm 2 điểm A, B: hình vuông có cạnh AB (ngược chiều kim đồng hồ)'},
   {id: 'reg5', label: 'Ngũ giác đều', need: 2, hint: 'Chạm 2 điểm A, B: ngũ giác đều có cạnh AB'},
+  {id: 'regn', label: 'Đa giác đều', need: 2, param: {label: 'Số cạnh', def: 7}, hint: 'Chạm 2 điểm A, B, nhập số cạnh: đa giác đều có cạnh AB'},
   {id: 'reg6', label: 'Lục giác đều', need: 2, hint: 'Chạm 2 điểm A, B: lục giác đều có cạnh AB'},
   {id: 'vector', label: 'Véctơ', need: 2, hint: 'Chạm gốc A rồi ngọn B: véctơ AB có mũi tên'},
 ];
@@ -299,6 +304,7 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       : t === 'vector' ? addVector(sc, names[0], names[1], part)
       : t === 'polygon' ? addPolygon(sc, names, part)
       : t === 'reg4' || t === 'reg5' || t === 'reg6' ? addRegularPolygon(sc, names[0], names[1], Number(t.slice(3)), part)
+      : t === 'regn' ? addRegularPolygon(sc, names[0], names[1], Math.min(24, Math.max(3, Math.round(argOf(t)))), part)
       : t === 'compass' ? addCircleOf(sc, 'comp', [names[2], names[0], names[1]], part)
       : t === 'tangents' ? addTangentsFrom(sc, names[0], names[1], names[2], part)
       : t === 'translate' ? addTransform(sc, names[0], {k: 'trans', a: names[1], b: names[2]}, part)
@@ -455,6 +461,8 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       redo: () => jump(at + 1),
       remove: () => onDeleteFigure?.(),
       figureId,
+      scene: cur.scene,
+      applyTool: (t, names) => apply(t, names),
       addRequirementText: (text) => {
         const before = cur.scene;
         const next = addRequirement(before, text.trim());

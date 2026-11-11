@@ -1774,6 +1774,15 @@ export function splitParts(raw: string): {label: string; text: string}[] {
     // "S.ABCD" và "(ABCD)" không bị nhầm: chỉ nhận a)…e) hoặc 1)…9) đứng sau khoảng trắng/dấu câu
     cuts.push({idx: mm.index, skip: mm[0].length, label: `${mm[1].toLowerCase()})`});
   }
+  // đề đánh số "1. … 2. … 3. …" (đầu dòng hoặc sau dấu chấm câu, kể cả khi dán thành một dòng): chỉ nhận dãy liên tiếp bắt đầu từ 1,
+  // nên số thập phân ("3.5"), "S.ABCD", "Bài 2." không bị nhầm thành phần của đề
+  let expect = 1;
+  for (const mm of text.matchAll(/(?:^|\n)[ \t]*([1-9])[ \t]*\.[ \t]+(?=\S)|(?<=[.;:?!][ \t])([1-9])\.[ \t]+(?=[A-ZÀ-Ỹ])/gu)) {
+    const n = Number(mm[1] ?? mm[2]);
+    if (mm.index === undefined || n !== expect) continue;
+    expect++;
+    cuts.push({idx: mm.index, skip: mm[0].length, label: `${n}.`});
+  }
   cuts.sort((a, b) => a.idx - b.idx);
   const parts: {label: string; text: string}[] = [];
   let pos = 0;

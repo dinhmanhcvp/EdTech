@@ -1,10 +1,12 @@
 'use client';
 
+import {FRAMES, type FrameId} from '../../utils/teachingFrames';
 import {ERASER_KINDS, ERASER_SIZES, type EraserKind} from '../../utils/eraser';
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Pen,
   Highlighter,
+  Lightbulb,
   Eraser,
   Shapes,
   Circle,
@@ -93,6 +95,8 @@ export interface SmartboardDockProps {
   onExport: () => void;
   isSplitView: boolean;
   onToggleSplit: () => void;
+  /** chèn khung sư phạm (Polya, POE, CER, 3-2-1…) lên bảng */
+  onInsertFrame?: (id: FrameId) => void;
   onOpenQr: () => void;
   isRecorderOpen: boolean;
   onToggleRecorder: () => void;
@@ -122,7 +126,6 @@ const ShapeIcon: Record<ShapeType, React.ReactNode> = {
 /** Thanh tác vụ duy nhất của bảng thông minh: các chức năng chuẩn, tùy chọn con mở bằng bảng nhỏ phía trên. */
 export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
   const [pop, setPop] = useState<null | 'pen' | 'shape' | 'more' | 'eraser'>(null);
-  const [geoGroup, setGeoGroup] = useState<string | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -238,46 +241,6 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
             <span>Trực quan hình học {p.isGeometryLiveMode ? '(BẬT)' : ''}</span>
           </button>
         )}
-        {/* dụng cụ dựng hình: cùng bộ với AI hub (Vẽ hình → Dựng); cần có hình phẳng đang sửa */}
-        <div data-testid="shape-construct" className="basis-full mt-1 border-t border-[#E6E4DD] pt-1.5 flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-1">
-            {GGROUPS.map((g) => {
-              const ready = !!p.geo && !p.geo.is3D;
-              return (
-                <button
-                  key={g.id}
-                  data-testid={`shape-group-${g.id}`}
-                  disabled={!ready}
-                  onClick={() => setGeoGroup(geoGroup === g.id ? null : g.id)}
-                  title={ready ? g.hint : 'Cần có hình phẳng trước: gõ đề hoặc khoanh nét vẽ rồi chọn Vẽ hình'}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border transition ${ready ? 'cursor-pointer' : 'opacity-40 cursor-not-allowed'} ${geoGroup === g.id || (ready && g.tools.some((t) => t.id === p.geo!.tool)) ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-[#DCD9D0] text-stone-700 hover:bg-stone-50'}`}
-                >
-                  {g.icon}
-                  {g.label}
-                </button>
-              );
-            })}
-          </div>
-          {p.geo && !p.geo.is3D && geoGroup && (
-            <div data-testid="shape-group-tools" className="flex flex-wrap items-center gap-1">
-              {(GGROUPS.find((g) => g.id === geoGroup)?.tools ?? []).map((t) => (
-                <button
-                  key={t.id}
-                  data-testid={`shape-tool-${t.id}`}
-                  title={t.hint}
-                  onClick={() => {
-                    p.geo!.setTool(p.geo!.tool === t.id ? null : t.id);
-                    setPop(null);
-                  }}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] border transition cursor-pointer ${p.geo!.tool === t.id ? 'bg-emerald-600 border-emerald-700 text-white' : 'bg-white border-[#DCD9D0] text-stone-700 hover:bg-emerald-50'}`}
-                >
-                  {GEO_TOOL_ICONS[t.id]}
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Bảng nhỏ: thêm */}
@@ -305,6 +268,18 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
             {p.customSlotCount > 0 && <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[9px] rounded-full px-1">{p.customSlotCount}/4</span>}
           </button>
         </div>
+        {p.onInsertFrame && (
+          <div data-testid="frames-section" className="border-t border-[#E6E4DD] pt-2">
+            <span className="mb-1.5 block text-[10px] font-mono uppercase tracking-wider text-stone-500">Khung sư phạm</span>
+            <div className="grid grid-cols-3 gap-1.5">
+              {FRAMES.map((f) => (
+                <button key={f.id} type="button" data-testid={`frame-${f.id}`} onClick={() => { p.onInsertFrame?.(f.id); setPop(null); }} className="rounded-lg border border-[#E5E3DC] bg-[#F4F3EE] px-2 py-1.5 text-[11px] text-stone-700 transition hover:bg-[#EAE7DF] active:scale-[0.98]">
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div data-testid="director-scene-switcher-bar" className="border-t border-[#E6E4DD] pt-2">
           <div className="flex items-center gap-2 mb-1.5">
             <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500">Cảnh mẫu (phím 1–4)</span>
@@ -464,6 +439,9 @@ export interface AiFabProps {
   geo?: GeoController | null;
   /** mở hộp nhập đề mới */
   onGeoNew?: () => void;
+  /** mở/đóng panel Gợi ý giải kiểu Socratic (hình phẳng) */
+  onGeoCoach?: () => void;
+  geoCoachOpen?: boolean;
   /** vẽ hình từ nét đã khoanh (đề bài viết tay hoặc gõ chữ trong vùng khoanh) */
   onDrawSelected?: () => void;
   onDuplicate?: () => void;
@@ -492,7 +470,7 @@ interface HubItem {
   disabled?: boolean;
 }
 
-const GEO_TOOL_ICONS: Record<GeoTool, React.ReactNode> = {
+export const GEO_TOOL_ICONS: Record<GeoTool, React.ReactNode> = {
   segment: <Minus className="w-4 h-4" />,
   midpoint: <CircleDot className="w-4 h-4" />,
   onEdge: <MapPin className="w-4 h-4" />,
@@ -514,6 +492,7 @@ const GEO_TOOL_ICONS: Record<GeoTool, React.ReactNode> = {
   reg4: <Square className="w-4 h-4" />,
   reg5: <Shapes className="w-4 h-4" />,
   reg6: <Shapes className="w-4 h-4" />,
+  regn: <Shapes className="w-4 h-4" />,
   compass: <Compass className="w-4 h-4" />,
   tangents: <CornerDownRight className="w-4 h-4" />,
   translate: <ArrowRight className="w-4 h-4" />,
@@ -544,7 +523,7 @@ const GEO_TOOL_ICONS: Record<GeoTool, React.ReactNode> = {
 };
 
 /** Nhóm công cụ dựng hình phẳng trong AI hub (Vẽ hình → Dựng → nhóm). Nhóm đầu là phép dựng cơ bản trên hình đề bài. */
-const GGROUPS = [
+export const GGROUPS = [
   {id: 'basic', label: 'Điểm đoạn', hint: 'Đoạn nối, trung điểm, điểm trên cạnh, chân vuông góc, đường trung bình, xóa điểm', icon: <Ruler className="w-4 h-4" />, tools: GEO_TOOLS.filter((t) => t.id !== 'section')},
   {id: 'lines', label: 'Đường', hint: 'Đường thẳng, tia, trung trực, phân giác, song song, vuông góc, giao điểm', icon: <Minus className="w-4 h-4" />, tools: GEO_LINES},
   {id: 'shapes', label: 'Hình', hint: 'Đa giác, hình vuông, ngũ giác, lục giác đều, véctơ', icon: <Square className="w-4 h-4" />, tools: GEO_SHAPES},
@@ -576,6 +555,8 @@ export const AiFab: React.FC<AiFabProps> = ({
   anchor,
   geo,
   onGeoNew,
+  onGeoCoach,
+  geoCoachOpen,
   onDrawSelected,
   onDuplicate,
   onCover,
@@ -856,6 +837,7 @@ export const AiFab: React.FC<AiFabProps> = ({
       back,
       ...(geo
         ? [
+            ...(!geo.is3D && onGeoCoach ? [sub('coach', 'Gợi ý', 'Gợi ý giải kiểu Socratic: câu hỏi dẫn dắt, đường phụ cần vẽ, kiểm tra mệnh đề của em trên hình', <Lightbulb className="w-4 h-4" />, () => onGeoCoach(), {highlight: !!geoCoachOpen, tone: 'text-amber-600', activeTone: 'bg-amber-50 text-amber-700 ring-1 ring-amber-300'})] : []),
             sub(
               'tools',
               'Dựng',

@@ -145,27 +145,12 @@ describe('AiFab: một nút AI nổi, bung ra các chức năng nhỏ', () => {
   });
 });
 
-describe('popover Hình: nhóm dụng cụ dựng hình', () => {
-  const geoStub = (over: Record<string, unknown> = {}) => ({is3D: false, tool: null, setTool: vi.fn(), ...over}) as unknown as NonNullable<SmartboardDockProps['geo']>;
-
-  it('chưa có hình phẳng: các nhóm hiện nhưng mờ, không bấm được', () => {
+describe('popover Hình gọn: dụng cụ dựng hình nằm ở AI hub, không lặp ở dock', () => {
+  it('chỉ còn hình cơ bản và chế độ trực quan; không có nhóm dựng hình', () => {
     render(<SmartboardDock {...dockProps()} />);
     fireEvent.click(screen.getByTestId('tool-shape'));
-    for (const g of ['basic', 'lines', 'shapes', 'circles', 'objects', 'transform']) expect((screen.getByTestId(`shape-group-${g}`) as HTMLButtonElement).disabled).toBe(true);
-  });
-
-  it('có hình phẳng: chọn nhóm rồi chọn dụng cụ thì dùng ngay trên hình', () => {
-    const geo = geoStub();
-    render(<SmartboardDock {...dockProps({geo})} />);
-    fireEvent.click(screen.getByTestId('tool-shape'));
-    fireEvent.click(screen.getByTestId('shape-group-lines'));
-    fireEvent.click(screen.getByTestId('shape-tool-perpbis'));
-    expect(geo.setTool).toHaveBeenCalledWith('perpbis');
-  });
-
-  it('hình 3D: không dùng nhóm hình phẳng', () => {
-    render(<SmartboardDock {...dockProps({geo: geoStub({is3D: true})})} />);
-    fireEvent.click(screen.getByTestId('tool-shape'));
-    expect((screen.getByTestId('shape-group-lines') as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId('tool-circle')).toBeInTheDocument();
+    expect(screen.queryByTestId('shape-construct')).toBeNull();
+    expect(screen.queryByTestId('shape-group-lines')).toBeNull();
   });
 });

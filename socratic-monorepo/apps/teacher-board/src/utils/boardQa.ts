@@ -61,7 +61,7 @@ export function aiHeaders(): Record<string, string> {
 }
 
 export async function askBoard(
-  input: {question: string; context: BoardContext; history?: BoardQaTurn[]; subject?: string | null; signal?: AbortSignal; mode?: 'coach'; level?: number},
+  input: {question: string; context: BoardContext; history?: BoardQaTurn[]; subject?: string | null; signal?: AbortSignal; mode?: 'coach' | 'solve'; level?: number},
   fetchImpl: typeof fetch = fetch,
 ): Promise<BoardQaResponse> {
   let res: Response;
@@ -76,7 +76,7 @@ export async function askBoard(
         history: (input.history ?? []).slice(-4).map((t) => ({q: t.q.slice(0, 600), a: t.a.slice(0, 1200)})),
         subject_hint: input.subject ?? undefined,
         mode: input.mode,
-        hint_level: input.mode === 'coach' ? input.level ?? 1 : undefined,
+        hint_level: input.mode ? input.level ?? 1 : undefined,
       }),
     });
   } catch (e) {

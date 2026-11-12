@@ -3,10 +3,12 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { setupHiDpiCanvas } from './visualKit';
-import { hudCard, roundRectPath } from '../utils/canvasKit';
+import {hudCard, roundRectPath, stageFill} from '../utils/canvasKit';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { Sparkles, Layers, RotateCw, Eye } from 'lucide-react';
 import { formatCanvasMath } from '../utils/canvasMath';
+import { drawEquationScale } from './chemEquationDraw';
+import type { EquationMeta } from '../utils/chemBalanceBlueprint';
 
 interface Props {
   blueprint: SimulationBlueprint;
@@ -107,8 +109,7 @@ export const ChemistryLabEngine: React.FC<Props> = ({
       ctx.clearRect(0, 0, LW, LH);
 
       // Warm Daylight Technical Graph Paper Background
-      ctx.fillStyle = '#FCFBF9';
-      ctx.fillRect(0, 0, LW, LH);
+      stageFill(ctx, LW, LH);
 
       // Precise architectural millimeter grid
       ctx.strokeStyle = '#EFECE6';
@@ -862,6 +863,9 @@ export const ChemistryLabEngine: React.FC<Props> = ({
       // ==============================================================
       // 4. MODE D: CHEMICAL BALANCE SCALE (Bảo toàn khối lượng)
       // ==============================================================
+      } else if ((blueprint.meta as { species?: unknown } | undefined)?.species) {
+        // phương trình do người dùng viết: vẽ đúng các chất đó, thanh trượt c1…cn là hệ số của chính các chất này
+        drawEquationScale(ctx, LW, LH, blueprint.meta as unknown as EquationMeta, params);
       } else {
         const c1 = params.c1 ?? 4;
         const c2 = params.c2 ?? 3;
@@ -942,7 +946,7 @@ export const ChemistryLabEngine: React.FC<Props> = ({
             onClick={() => setActiveSubMode('MOLECULAR_3D')}
             className={`px-2.5 py-1 rounded-md text-[11px] font-mono transition cursor-pointer border ${
               activeSubMode === 'MOLECULAR_3D'
-                ? 'bg-blue-50 text-blue-700 border-blue-200 font-bold shadow-xs'
+                ? 'bg-[#FBF9F4] text-[#1D1B16] border-[#1D1B16]/40 font-bold shadow-xs'
                 : 'bg-white text-stone-600 border-[#E6E4DD] hover:bg-stone-50'
             }`}
           >
@@ -953,7 +957,7 @@ export const ChemistryLabEngine: React.FC<Props> = ({
             onClick={() => setActiveSubMode('REACTION_GLASSWARE')}
             className={`px-2.5 py-1 rounded-md text-[11px] font-mono transition cursor-pointer border ${
               activeSubMode === 'REACTION_GLASSWARE'
-                ? 'bg-blue-50 text-blue-700 border-blue-200 font-bold shadow-xs'
+                ? 'bg-[#FBF9F4] text-[#1D1B16] border-[#1D1B16]/40 font-bold shadow-xs'
                 : 'bg-white text-stone-600 border-[#E6E4DD] hover:bg-stone-50'
             }`}
           >

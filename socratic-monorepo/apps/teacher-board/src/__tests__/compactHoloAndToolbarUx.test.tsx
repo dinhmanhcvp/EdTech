@@ -24,12 +24,12 @@ describe('Compact Hologram & Parameter Auto-Play UI/UX Upgrades', () => {
     const autoPlayABtn = screen.getByTestId('param-autoplay-A');
     expect(autoPlayABtn).toBeInTheDocument();
     expect(autoPlayABtn).toHaveAttribute('aria-pressed', 'false');
-    expect(autoPlayABtn.textContent).toBe('▶');
+    expect(autoPlayABtn.textContent).toContain('▶');
 
     // Bấm bật Auto-Play cho tham số A
     fireEvent.click(autoPlayABtn);
     expect(autoPlayABtn).toHaveAttribute('aria-pressed', 'true');
-    expect(autoPlayABtn.textContent).toBe('⏸');
+    expect(autoPlayABtn.textContent).toContain('⏸');
 
     // Khi người dùng bấm nút + hoặc kéo thanh trượt, Auto-Play tự động dừng để nhường quyền điều khiển tay
     fireEvent.click(screen.getByTestId('slider-plus-A'));

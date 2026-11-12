@@ -10,6 +10,7 @@ import {latexToExpr, normalizeMathInput, parseEquation, toLatex} from './mathExp
 import {parseCross, parseGenotypeFreqs, parseLP, parseRecurrence} from './stemModels';
 import {matchBioKeywords} from './bioModels';
 import {matchChemKeywords} from './chemModels';
+import {matchChemEquation} from './chemBalanceBlueprint';
 import {matchPhysKeywords} from './physicsModels';
 import {matchAdvancedKeywords, ADVANCED_TEMPLATES} from './advancedStemModels';
 import {parseBoxplot, parseVariationTable} from './mathModels';
@@ -236,6 +237,16 @@ export function matchStemModel(text: string): SimulationBlueprint | null {
       socraticQuestion: 'Khoảng tứ phân vị ΔQ = Q₃ − Q₁ cho biết điều gì về độ phân tán của dữ liệu? Vì sao một giá trị ngoại lai làm trung bình đổi nhiều nhưng hầu như không làm trung vị đổi?',
       curriculumLevel: 'THPT_STANDARD',
     };
+  }
+  // phương trình hóa học (một hoặc hai vế): cân bằng, dự đoán sản phẩm, thanh trượt hệ số đúng các chất của phương trình.
+  // Câu nói về tốc độ/nhiệt độ/nồng độ thì vẫn mở mô phỏng tốc độ phản ứng ở bước sau.
+  // Viết một vế KHÔNG kèm mũi tên/từ "cân bằng, hoàn thành, sản phẩm" mà có axit/bazơ mạnh (HCl, NaOH…) thì giữ hướng dẫn cũ (chuẩn độ, tốc độ phản ứng);
+  // thêm "→" cuối (vd "Zn + HCl →") hoặc viết hai vế thì ra sản phẩm và cân bằng.
+  const eqAsked = /→|->|⟶|=>|=|cân bằng|hoàn thành|sản phẩm|dự đoán|tạo ra/i.test(raw);
+  const ownedByOlderDemo = !eqAsked && /(?<![A-Za-z])(?:HCl|H_?\{?2\}?SO_?\{?4\}?|HNO_?\{?3\}?|NaOH|KOH)(?![a-z])/i.test(raw);
+  const chemEq = ownedByOlderDemo || /tốc độ|toc do|nhiệt độ|nồng độ|bọt khí|arrhenius|°\s*c\b|\d\s*độ\s*c\b|mol\s*\/\s*l|\d\s*m\b/i.test(raw) ? null : matchChemEquation(raw);
+  if (chemEq) {
+    return {engine: 'CHEMISTRY', templateId: chemEq.templateId, recognizedLatex: chemEq.recognizedLatex, ocrAlternatives: [], parameters: chemEq.parameters, meta: chemEq.meta as unknown as Record<string, unknown>, socraticQuestion: chemEq.question, curriculumLevel: 'THPT_STANDARD'} as SimulationBlueprint;
   }
   const legacy = matchLegacyTemplate(raw);
   if (legacy) return legacy;

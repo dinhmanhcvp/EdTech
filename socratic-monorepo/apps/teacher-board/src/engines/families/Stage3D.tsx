@@ -44,6 +44,8 @@ export interface SceneDef {
   floor?: boolean;
   /** bỏ lưới sàn (vật thể lơ lửng: cơ quan, tế bào) */
   noGrid?: boolean;
+  /** phòng thực hành ảo: nền tối, góc nhìn rộng, không lưới; cảnh tự dựng phòng (`labRoom`) */
+  room?: boolean;
   dist: number;
   target?: [number, number, number];
   /** góc ngang, góc cao (độ) lấy từ thanh trượt: đổi thì đặt lại máy quay, sau đó người dùng vẫn kéo tự do */
@@ -76,7 +78,7 @@ export function setLine(o: FatLine, pts: number[]): void {
  * kéo để xoay, lăn để phóng, nhãn HTML bám điểm 3D. Mỗi cảnh chỉ khai báo vật thể và hàm cập nhật theo (tham số, thời gian).
  * Không tạo được WebGL thì gọi `onFail` để SceneLab quay về bản SVG.
  */
-export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPick?: (id: string | null) => void}> = ({def, p, t, s, onFail, onPick}) => {
+export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPick?: (id: string | null) => void; fill?: boolean}> = ({def, p, t, s, onFail, onPick, fill}) => {
   const box = useRef<HTMLDivElement>(null);
   const cap = useRef<HTMLDivElement>(null);
   const pickAt = useRef<((x: number, y: number) => string | null) | null>(null);
@@ -84,6 +86,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
   const live = useRef({p, t, s, at: 0});
   live.current = {p, t, s, at: typeof performance !== 'undefined' ? performance.now() : 0};
   const night = !!def.night;
+  const dark = night || !!def.room;
 
   useEffect(() => {
     const el = box.current;
@@ -103,7 +106,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
     el.prepend(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const bg = night ? '#0B0E2A' : '#EEEAE0';
+    const bg = night ? '#0B0E2A' : def.room ? '#0E1030' : '#EEEAE0';
     scene.background = new THREE.Color(bg);
     const pmrem = new THREE.PMREMGenerator(renderer);
     if (night) {
@@ -120,15 +123,16 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
     } else {
       scene.fog = new THREE.Fog(bg, def.dist * 1.6, def.dist * 3.2);
       scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-      const sun = new THREE.DirectionalLight('#FFF6E8', 2.2);
+      const sun = new THREE.DirectionalLight('#FFF6E8', def.room ? 1.5 : 2.2);
       sun.position.set(2.5, 4.5, 3.5);
       sun.castShadow = true;
       sun.shadow.mapSize.set(1024, 1024);
       sun.shadow.radius = 5;
-      Object.assign(sun.shadow.camera, {left: -3, right: 3, top: 3, bottom: -3, near: 0.5, far: 14});
-      scene.add(sun, new THREE.HemisphereLight('#FFFFFF', '#D8D2C4', 0.5));
-      if (!def.noGrid) scene.add(new THREE.GridHelper(24, 48, '#CFC8B8', '#DDD7C9'));
-      if (def.floor) {
+      const sh = def.room ? 5 : 3;
+      Object.assign(sun.shadow.camera, {left: -sh, right: sh, top: sh, bottom: -sh, near: 0.5, far: 14});
+      scene.add(sun, new THREE.HemisphereLight('#FFFFFF', '#D8D2C4', def.room ? 0.25 : 0.5));
+      if (!def.noGrid && !def.room) scene.add(new THREE.GridHelper(24, 48, '#CFC8B8', '#DDD7C9'));
+      if (def.floor && !def.room) {
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({opacity: 0.22}));
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
@@ -136,7 +140,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       }
     }
 
-    const camera = new THREE.PerspectiveCamera(30, 560 / 340, 0.1, 120);
+    const camera = new THREE.PerspectiveCamera(def.room ? 45 : 30, 560 / 340, 0.1, 120);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enablePan = false;
     controls.minDistance = def.dist * 0.45;
@@ -200,10 +204,10 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
         const sp = document.createElement('span');
         sp.className = plain
           ? 'pointer-events-none absolute -translate-x-1/2 -translate-y-[130%] whitespace-nowrap text-[13px] font-semibold'
-          : `pointer-events-none absolute -translate-x-1/2 -translate-y-[200%] whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium shadow-sm ${night ? 'border-white/20 bg-[#11143A]/85 text-[#E8E6F5]' : 'border-[#1D1B16]/15 bg-[#FBF9F4]/90 text-[#1D1B16]'}`;
+          : `pointer-events-none absolute -translate-x-1/2 -translate-y-[200%] whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums shadow-sm ${dark ? 'border-white/20 bg-[#11143A]/85 text-[#E8E6F5]' : 'border-[#1D1B16]/15 bg-[#FBF9F4]/90 text-[#1D1B16]'}`;
         if (plain) {
-          sp.style.color = color ?? (night ? '#E8E6F5' : '#1D1B16');
-          sp.style.textShadow = night ? '0 0 4px #0B0E2A' : '0 0 3px #FBF9F4, 0 0 3px #FBF9F4';
+          sp.style.color = color ?? (dark ? '#E8E6F5' : '#1D1B16');
+          sp.style.textShadow = dark ? '0 0 4px #0B0E2A' : '0 0 3px #FBF9F4, 0 0 3px #FBF9F4';
         } else if (color) {
           const dot = document.createElement('i');
           dot.className = 'mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle';
@@ -244,6 +248,8 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       const h = el.clientHeight || 340;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
+      // phòng thực hành phủ kín màn hình: màn hình hẹp hơn tỉ lệ thiết kế thì mở rộng góc nhìn để vẫn thấy trọn bề ngang bàn
+      if (def.room) camera.fov = (360 / Math.PI) * Math.atan(Math.tan(Math.PI / 8) * Math.max(1, 1.647 / camera.aspect));
       camera.updateProjectionMatrix();
     };
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resize) : null;
@@ -320,9 +326,9 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
         if (onPick && Math.hypot(e.clientX - down.current[0], e.clientY - down.current[1]) < 6) onPick(pickAt.current?.(e.clientX, e.clientY) ?? null);
       }}
       onWheel={(e) => e.stopPropagation()}
-      className={`relative w-full aspect-[560/340] overflow-hidden rounded-2xl border cursor-grab active:cursor-grabbing ${night ? 'border-[#1B1B4B] text-[#E8E6F5]' : 'border-[#1D1B16]/15 text-[#1D1B16]'}`}
+      className={`relative w-full overflow-hidden cursor-grab active:cursor-grabbing ${fill ? 'h-full' : 'aspect-[560/340] rounded-2xl border'} ${dark ? 'border-[#1B1B4B] text-[#E8E6F5]' : 'border-[#1D1B16]/15 text-[#1D1B16]'}`}
     >
-      <div ref={cap} className="pointer-events-none absolute left-4 top-3 max-w-[70%]" />
+      <div ref={cap} className={`pointer-events-none absolute max-w-[70%] ${fill ? 'bottom-6 left-6 origin-bottom-left scale-125 rounded-xl bg-[#11143A]/85 font-mono tabular-nums px-3 py-2 empty:hidden' : 'left-4 top-3'}`} />
       <span className="pointer-events-none absolute bottom-2 right-3 text-[10px] opacity-70">Kéo để xoay · lăn để phóng</span>
     </div>
   );

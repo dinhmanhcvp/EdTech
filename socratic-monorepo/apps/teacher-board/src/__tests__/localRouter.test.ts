@@ -32,7 +32,7 @@ describe('localRouter: định tuyến cục bộ', () => {
 
   it('công thức vật lý/hóa học không bị nhận nhầm', () => {
     expect(routeLocally('v_0 = 22 m/s, α = 45° (Ném xiên)')).toBeNull();
-    expect(routeLocally('N2 + 3H2 -> 2NH3')).toBeNull();
+    expect(routeLocally('N2 + 3H2 -> 2NH3')?.templateId).toBe('CHEM_BALANCE_SCALE'); // không bị nhầm sang Le Chatelier NO₂/N₂O₄
     expect(routeLocally('Z = √(R² + (Z_L − Z_C)²) (Mạch RLC)')).toBeNull();
     expect(routeLocally('ADN: A = T, G ≡ X')).toBeNull();
     expect(matchGraphEquations('T = 2π√(l/g)')).toBeNull();

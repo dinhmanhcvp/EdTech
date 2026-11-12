@@ -12,6 +12,7 @@ const Organ3D = React.lazy(() => import('./Organ3D'));
 /** Hình giải phẫu/sơ đồ phân lớp: chạm bộ phận xem chú giải, "đi theo" lần lượt, hạt chuyển động dọc đường chảy. */
 export const AnatomyFlow: React.FC<{id: string; data: AnatomyData}> = ({id, data}) => {
   const [sel, setSel] = useState<string | null>(null);
+  const [hov, setHov] = useState<string | null>(null);
   const [tour, setTour] = useState<number | null>(null);
   const [flowOn, setFlowOn] = useState(true);
   const reduced = usePrefersReducedMotion();
@@ -58,14 +59,18 @@ export const AnatomyFlow: React.FC<{id: string; data: AnatomyData}> = ({id, data
         {data.flow && <path id={flowId} d={data.flow.d} fill="none" stroke={flowOn ? data.flow.color : 'none'} strokeOpacity="0.18" strokeWidth="3" strokeDasharray="2 5" />}
         {data.parts.map((p) => {
           const on = sel === p.id;
+          const hot = on || hov === p.id;
           return (
-            <g key={p.id} data-testid={`anatomy-part-${p.id}`} data-on={on} onClick={() => setSel(on ? null : p.id)} className="cursor-pointer" opacity={sel && !on ? 0.5 : 1}>
+            <g key={p.id} data-testid={`anatomy-part-${p.id}`} data-on={on} onClick={() => setSel(on ? null : p.id)} onPointerEnter={() => setHov(p.id)} onPointerLeave={() => setHov((h) => (h === p.id ? null : h))} className="cursor-pointer" opacity={sel && !on ? 0.5 : 1} style={{transition: 'opacity .3s ease'}}>
+              {/* vùng chạm rộng (ngón tay trên bảng cảm ứng không cần trúng nét mảnh) và quầng sáng khi chọn */}
+              <path d={p.d} fill="none" stroke="transparent" strokeWidth="20" strokeLinecap="round" strokeLinejoin="round" pointerEvents="stroke" />
+              {on && <path d={p.d} fill="none" stroke="#D9481C" strokeOpacity=".22" strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />}
               <path
                 d={p.d}
                 fill={p.fill ?? 'none'}
                 stroke={on ? '#A8481C' : p.stroke ?? '#78716C'}
-                style={p.fill ? {filter: 'drop-shadow(0 2px 2px rgba(29,27,22,.16))'} : undefined}
-                strokeWidth={(p.strokeWidth ?? 1.6) + (on ? 2.5 : 0)}
+                style={{filter: hot ? 'drop-shadow(0 0 5px rgba(217,72,28,.5))' : p.fill ? 'drop-shadow(0 2px 2px rgba(29,27,22,.16))' : undefined, transition: 'stroke .2s ease, stroke-width .2s ease, filter .25s ease'}}
+                strokeWidth={(p.strokeWidth ?? 1.6) + (on ? 2.5 : hot ? 1.2 : 0)}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -91,12 +96,12 @@ export const AnatomyFlow: React.FC<{id: string; data: AnatomyData}> = ({id, data
         <div className="flex flex-wrap gap-2">
           {data.tour && (
             <>
-              <button data-testid="anatomy-tour-start" onClick={startTour} className="inline-flex items-center justify-center min-h-[36px] rounded-[10px] bg-[#1D1B16] px-4 text-xs font-medium text-[#F3EFE6] disabled:opacity-40">▶ Đi theo {data.flow ? data.flow.label.toLowerCase().replace('đường đi của ', '') : 'từng bộ phận'}</button>
-              <button data-testid="anatomy-tour-next" onClick={nextTour} className="inline-flex items-center justify-center min-h-[36px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 text-xs font-medium text-[#1D1B16] disabled:opacity-40">Bộ phận tiếp</button>
+              <button data-testid="anatomy-tour-start" onClick={startTour} className="inline-flex items-center justify-center min-h-[44px] rounded-[10px] bg-[#1D1B16] px-4 text-xs font-medium text-[#F3EFE6] disabled:opacity-40">▶ Đi theo {data.flow ? data.flow.label.toLowerCase().replace('đường đi của ', '') : 'từng bộ phận'}</button>
+              <button data-testid="anatomy-tour-next" onClick={nextTour} className="inline-flex items-center justify-center min-h-[44px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 text-xs font-medium text-[#1D1B16] disabled:opacity-40">Bộ phận tiếp</button>
             </>
           )}
           {data.flow && (
-            <button data-testid="anatomy-flow-toggle" onClick={() => setFlowOn((v) => !v)} className="inline-flex items-center justify-center min-h-[36px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 text-xs font-medium text-[#1D1B16] disabled:opacity-40">
+            <button data-testid="anatomy-flow-toggle" onClick={() => setFlowOn((v) => !v)} className="inline-flex items-center justify-center min-h-[44px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 text-xs font-medium text-[#1D1B16] disabled:opacity-40">
               {flowOn ? 'Ẩn' : 'Hiện'} đường chảy
             </button>
           )}

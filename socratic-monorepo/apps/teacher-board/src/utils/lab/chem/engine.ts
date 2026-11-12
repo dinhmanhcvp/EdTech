@@ -60,7 +60,8 @@ function apply(r: Rule, v: Vessel, fraction: number, evs: Ev[]): {ext: number; g
     v.moles[s] = (v.moles[s] ?? 0) + c * ext;
     if (SPECIES[s]?.phase === 'g') gas += c * ext;
   }
-  if (r.heat) v.temp += (-r.heat * ext * 1000) / (Math.max(v.liquidMl, 2) * 4.18);
+  // kẹp ở 0 °C: dung dịch nước, nước đá không làm lạnh hơn điểm đông
+  if (r.heat) v.temp = Math.max(0, v.temp + (-r.heat * ext * 1000) / (Math.max(v.liquidMl, 2) * 4.18));
   if (!v.fired.includes(r.id)) {
     v.fired.push(r.id);
     if (r.text) evs.push({text: r.text});
@@ -183,7 +184,7 @@ export function derive(v: Vessel): Derived {
     .filter(([s, m]) => SPECIES[s]?.phase === 's' && m > 1e-6)
     .map(([s, m]) => ({species: s, name: SPECIES[s].name, color: SPECIES[s].color ?? '#E5E7EB', mol: m}));
   const smell = [
-    ...Object.entries(v.moles).filter(([s, m]) => SPECIES[s]?.smell && m > 1e-6 && (SPECIES[s].phase === 'g' || s === 'CH3COOH' || s === 'NH3(aq)' && m / V > 0.01)).map(([s]) => SPECIES[s].smell as string),
+    ...Object.entries(v.moles).filter(([s, m]) => SPECIES[s]?.smell && m > 1e-6 && (SPECIES[s].phase === 'g' || ['CH3COOH', 'CH3COOC2H5', 'C6H6', 'C6H5OH', 'HCOOH', 'CH3NH2', 'oleic', 'C6H5NO2', 'HCHO'].includes(s) || s === 'NH3(aq)' && m / V > 0.01)).map(([s]) => SPECIES[s].smell as string),
   ].filter((x, i, a) => a.indexOf(x) === i);
   let I = 0;
   for (const [s, m] of Object.entries(v.moles)) {

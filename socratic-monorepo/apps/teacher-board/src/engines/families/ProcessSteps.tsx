@@ -1,6 +1,6 @@
 'use client';
 
-import React, {Suspense, useEffect, useState} from 'react';
+import React, {Suspense, useEffect, useRef, useState} from 'react';
 import type {ProcessData, ProcessFrame, ProcessItem} from '../../utils/presets/types';
 import {usePrefersReducedMotion} from '../visualKit';
 import {StageBackdrop, canWebGL} from './SceneLab';
@@ -27,6 +27,7 @@ export const ProcessSteps: React.FC<{id: string; data: ProcessData}> = ({id, dat
     if (has3d && canWebGL()) setIn3d(true);
   }, [has3d]);
   const last = data.steps.length - 1;
+  const swipe = useRef<number | null>(null);
 
   useEffect(() => {
     if (!playing) return;
@@ -55,7 +56,19 @@ export const ProcessSteps: React.FC<{id: string; data: ProcessData}> = ({id, dat
           <Organ3D id={id} p={{step}} s={{}} onFail={() => setIn3d(false)} />
         </Suspense>
       ) : (
-      <svg viewBox={`0 0 ${vw} ${vh}`} className="w-full rounded-2xl border border-[#1D1B16]/15">
+      <svg
+        viewBox={`0 0 ${vw} ${vh}`}
+        data-testid="process-stage"
+        className="w-full rounded-2xl border border-[#1D1B16]/15 select-none"
+        style={{touchAction: 'pan-y'}}
+        onPointerDown={(e) => (swipe.current = e.clientX)}
+        onPointerUp={(e) => {
+          // vuốt ngang trên hình: sang bước kế (vuốt trái) hoặc bước trước (vuốt phải)
+          const dx = e.clientX - (swipe.current ?? e.clientX);
+          swipe.current = null;
+          if (Math.abs(dx) > 48) setStep((s) => Math.min(last, Math.max(0, s + (dx < 0 ? 1 : -1))));
+        }}
+      >
         <StageBackdrop vw={vw} vh={vh} night={false} id={`ps${id.replace(/\W/g, '')}`} />
         {data.items.map((it) => {
           const f = frameAt(it, step);
@@ -97,10 +110,13 @@ export const ProcessSteps: React.FC<{id: string; data: ProcessData}> = ({id, dat
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <button data-testid="process-prev" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))} className="inline-flex items-center justify-center min-h-[36px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 text-xs font-medium text-[#1D1B16] disabled:opacity-40">← Bước trước</button>
-        <button data-testid="process-next" disabled={step === last} onClick={() => setStep((s) => Math.min(last, s + 1))} className="inline-flex items-center justify-center min-h-[36px] rounded-[10px] bg-[#1D1B16] px-4 text-xs font-medium text-[#F3EFE6] disabled:opacity-40">Bước tiếp →</button>
-        <button data-testid="process-play" onClick={() => { if (step >= last) setStep(0); setPlaying((v) => !v); }} className="inline-flex items-center justify-center min-h-[36px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 text-xs font-medium text-[#1D1B16] disabled:opacity-40">{playing ? '⏸ Dừng' : '▶ Tự chạy'}</button>
+        <button data-testid="process-prev" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))} className="inline-flex items-center justify-center min-h-[44px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 text-xs font-medium text-[#1D1B16] disabled:opacity-40">← Bước trước</button>
+        <button data-testid="process-next" disabled={step === last} onClick={() => setStep((s) => Math.min(last, s + 1))} className="inline-flex items-center justify-center min-h-[44px] rounded-[10px] bg-[#1D1B16] px-4 text-xs font-medium text-[#F3EFE6] disabled:opacity-40">Bước tiếp →</button>
+        <button data-testid="process-play" onClick={() => { if (step >= last) setStep(0); setPlaying((v) => !v); }} className="inline-flex items-center justify-center min-h-[44px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 text-xs font-medium text-[#1D1B16] disabled:opacity-40">{playing ? '⏸ Dừng' : '▶ Tự chạy'}</button>
         <span className="text-xs text-stone-500 ml-auto">Bước {step + 1}/{data.steps.length}</span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#1D1B16]/10" role="progressbar" aria-valuemin={1} aria-valuemax={data.steps.length} aria-valuenow={step + 1}>
+        <div className="h-full rounded-full bg-[#D9481C]" style={{width: `${((step + 1) / data.steps.length) * 100}%`, transition: reduced ? 'none' : 'width .5s ease'}} />
       </div>
 
       <ol className="flex flex-col gap-1.5" data-testid="process-list">

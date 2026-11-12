@@ -355,6 +355,14 @@ const SELF_CONTROLLED = new Set(['PHYS_GAS_STATE_PV', 'PHYS_DOUBLE_PENDULUM', 'P
 Object.keys(ADVANCED_ENGINES).forEach((id) => SELF_CONTROLLED.add(id));
 Object.keys(PRESETS).forEach((id) => SELF_CONTROLLED.add(id));
 
+/** Câu hỏi gợi mở rút gọn cho thanh quan sát: tới dấu hỏi đầu tiên nếu không quá dài, nếu không cắt ở khoảng 150 ký tự. */
+function firstSentence(q: string): string {
+  const t = (q || '').trim().replace(/\s+/g, ' ');
+  const m = /^(.{12,160}?\?)(\s|$)/.exec(t);
+  if (m) return m[1];
+  return t.length <= 160 ? t : `${t.slice(0, 150).replace(/\s+\S*$/, '')}…`;
+}
+
 export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   blueprint,
   onClose,
@@ -401,6 +409,24 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   });
 
   const [showSocratic, setShowSocratic] = useState<boolean>(false);
+  // Chế độ lớp học: chữ và nút to hơn cho cả lớp nhìn từ xa; nhớ lựa chọn trên máy này
+  const [classroom, setClassroom] = useState<boolean>(() => {
+    try {
+      return typeof window !== 'undefined' && window.localStorage.getItem('sim_classroom') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleClassroom = () =>
+    setClassroom((v) => {
+      try {
+        window.localStorage.setItem('sim_classroom', v ? '0' : '1');
+      } catch {
+        /* không lưu được thì thôi */
+      }
+      return !v;
+    });
+  const [moreOpen, setMoreOpen] = useState<boolean>(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const [autoPlayKey, setAutoPlayKey] = useState<string | null>(null);
   const autoPlayDirRef = useRef<number>(1);
@@ -615,12 +641,8 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
           <div className="flex items-center gap-2">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono uppercase tracking-widest font-medium text-stone-500">
+                <span className={`font-semibold tracking-wide text-stone-700 ${classroom ? 'text-lg' : 'text-[13px]'}`}>
                   {getTopicDisplayName(activeBlueprint)}
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded font-medium bg-[#F2F0EA] border border-[#E6E4DD] text-stone-600">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {AdvancedEngine ? 'Mô phỏng tại máy' : '60 FPS • Local Engine'}
                 </span>
               </div>
               {!AdvancedEngine && (
@@ -636,6 +658,68 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Breathing Socratic Cue Lightbulb */}
+            <button
+              data-testid="socratic-cue-btn"
+              onClick={() => setShowSocratic(!showSocratic)}
+              className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-xs font-medium transition border cursor-pointer shadow-sm ${
+                showSocratic
+                  ? 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]'
+                  : 'bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50'
+              }`}
+              title="Câu hỏi gợi mở tư duy Socratic"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+              <span>Gợi ý Socratic</span>
+            </button>
+
+            {/* Reset button */}
+            <button
+              data-testid="reset-btn"
+              onClick={handleReset}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-stone-50 border border-[#DCD9D0] text-stone-700 text-xs font-medium shadow-sm transition cursor-pointer"
+              title="Khôi phục thông số mặc định"
+            >
+              <RotateCcw className="w-3 h-3 text-stone-600" />
+              <span>Đặt lại</span>
+            </button>
+
+            {/* Chế độ lớp học */}
+            <button
+              type="button"
+              data-testid="classroom-toggle"
+              aria-pressed={classroom}
+              onClick={toggleClassroom}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-semibold transition cursor-pointer shadow-sm ${
+                classroom ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50'
+              }`}
+              title="Chế độ lớp học: chữ và nút to hơn để cả lớp nhìn rõ từ xa"
+            >
+              <span className="font-serif text-sm leading-none">Aa</span>
+              <span>Lớp học</span>
+            </button>
+
+            {/* Thêm: tùy chọn ít dùng */}
+            <button
+              type="button"
+              data-testid="sim-more-btn"
+              aria-expanded={moreOpen}
+              onClick={() => setMoreOpen((v) => !v)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium transition cursor-pointer shadow-sm bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50"
+              title="Thêm tùy chọn: đồ họa, mức kiến thức, nửa bảng, đóng gói bài giảng"
+            >
+              Thêm {moreOpen ? '▴' : '▾'}
+            </button>
+            {/* Close button if modal */}
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="px-2 py-1 rounded-lg bg-white hover:bg-stone-50 text-stone-600 hover:text-stone-900 border border-[#DCD9D0] text-xs shadow-sm transition cursor-pointer"
+              >
+                ✕ Đóng
+              </button>
+            )}
+            <div data-testid="sim-more-menu" className={moreOpen ? 'flex basis-full flex-wrap items-center gap-2 border-t border-[#E6E4DD] pt-2' : 'hidden'}>
             {/* Segmented Render Mode Toggle: [Mô hình Engine Chuẩn | Đồ họa AI Sinh động] */}
             <div
               className="flex items-center bg-[#F2F0EA] p-1 rounded-lg border border-[#E6E4DD]"
@@ -728,32 +812,6 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               <span>Smart Notes</span>
             </button>
 
-            {/* Reset button */}
-            <button
-              data-testid="reset-btn"
-              onClick={handleReset}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-stone-50 border border-[#DCD9D0] text-stone-700 text-xs font-medium shadow-sm transition cursor-pointer"
-              title="Khôi phục thông số mặc định"
-            >
-              <RotateCcw className="w-3 h-3 text-stone-600" />
-              <span>Đặt lại</span>
-            </button>
-
-            {/* Breathing Socratic Cue Lightbulb */}
-            <button
-              data-testid="socratic-cue-btn"
-              onClick={() => setShowSocratic(!showSocratic)}
-              className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-xs font-medium transition border cursor-pointer shadow-sm ${
-                showSocratic
-                  ? 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]'
-                  : 'bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50'
-              }`}
-              title="Câu hỏi gợi mở tư duy Socratic"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
-              <span>Gợi ý Socratic</span>
-            </button>
-
             {/* Toggle between Hologram and Dock */}
             {onToggleDisplayMode && (
               <button
@@ -767,17 +825,26 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               </button>
             )}
 
-            {/* Close button if modal */}
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="px-2 py-1 rounded-lg bg-white hover:bg-stone-50 text-stone-600 hover:text-stone-900 border border-[#DCD9D0] text-xs shadow-sm transition cursor-pointer"
-              >
-                ✕ Đóng
-              </button>
-            )}
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Thanh quan sát: câu hỏi gợi mở luôn hiện sẵn (học sinh biết cần nhìn vào đâu); bấm để xem đầy đủ */}
+      {!isHolo && !showSocratic && blueprint.socraticQuestion && (
+        <button
+          type="button"
+          data-testid="observe-bar"
+          onClick={() => setShowSocratic(true)}
+          className={`mx-4 mt-2 flex w-[calc(100%-2rem)] items-start gap-2 rounded-xl border border-amber-200 bg-[#FFFBEB] px-3 py-2 text-left text-[#78350F] transition hover:border-amber-400 cursor-pointer ${classroom ? 'text-[18px]' : 'text-[13px]'}`}
+          title="Bấm để xem câu hỏi đầy đủ"
+        >
+          <span aria-hidden="true">💡</span>
+          <span className="font-serif leading-snug">
+            <b className="font-sans text-[0.72em] uppercase tracking-wide text-amber-700">Hãy quan sát · </b>
+            <MathText text={firstSentence(blueprint.socraticQuestion)} />
+          </span>
+        </button>
       )}
 
       {/* Export Toast Notification */}
@@ -955,7 +1022,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
         className={`transition-all ${
           isHolo
             ? 'p-1 pt-0.5 bg-transparent border-0 flex flex-wrap justify-center gap-1.5'
-            : 'p-4 bg-[#FCFBF9] border-t border-[#E6E4DD] grid grid-cols-2 gap-2.5'
+            : `p-4 bg-[#FCFBF9] border-t border-[#E6E4DD] grid gap-3 ${classroom ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-2'}`
         } ${SELF_CONTROLLED.has(blueprint.templateId) ? 'hidden' : ''} ${locked ? 'pointer-events-none opacity-60' : ''}`}
         data-locked={locked}
         data-testid="macro-sliders-container"
@@ -990,59 +1057,50 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               </div>
             );
           }
+          const setValue = (v: number) => {
+            if (autoPlayKey === p.key) setAutoPlayKey(null);
+            handleParamChange(p.key, Math.min(p.max, Math.max(p.min, Number(v.toFixed(4)))));
+          };
+          const btn = classroom ? 'w-11 h-11 text-xl' : 'w-9 h-9 text-base';
           return (
             <div
               key={p.key}
               data-testid={`param-box-${p.key}`}
-              className={
-                isHolo
-                  ? 'p-2 rounded-xl bg-stone-900/5 dark:bg-white/5 border border-stone-300/40 dark:border-white/10 flex flex-col gap-1.5 transition-colors'
-                  : 'p-3 rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] flex flex-col gap-2 hover:border-[#DCD9D0] transition-colors'
-              }
+              className={`${classroom ? 'p-4 gap-3' : 'p-3 gap-2'} rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] flex flex-col hover:border-[#DCD9D0] transition-colors`}
             >
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-stone-700 dark:text-stone-300 font-medium tracking-tight text-[11px]"><MathText text={p.label} /></span>
-                <div className="flex items-center gap-1.5">
+              <div className="flex justify-between items-center gap-2">
+                <span className={`text-stone-800 font-semibold tracking-tight ${classroom ? 'text-[17px]' : 'text-[13px]'}`}>
+                  <MathText text={p.label} />
+                </span>
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     data-testid={`param-autoplay-${p.key}`}
                     aria-pressed={autoPlayKey === p.key}
                     onClick={() => setAutoPlayKey((cur) => (cur === p.key ? null : p.key))}
-                    className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold transition cursor-pointer ${
-                      autoPlayKey === p.key
-                        ? 'bg-amber-400 text-stone-950 shadow-2xs'
-                        : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-cyan-300 border border-blue-400/30'
+                    className={`px-2 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
+                      autoPlayKey === p.key ? 'bg-amber-400 text-stone-950 shadow-sm' : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 border border-blue-400/30'
                     }`}
-                    title={autoPlayKey === p.key ? 'Dừng tự động biến thiên' : 'Tự động biến thiên tham số này (Auto-Play)'}
+                    title={autoPlayKey === p.key ? 'Dừng tự chạy' : 'Tự chạy: giá trị tự biến thiên để quan sát'}
                   >
-                    {autoPlayKey === p.key ? '⏸' : '▶'}
+                    {autoPlayKey === p.key ? '⏸ Dừng' : '▶ Tự chạy'}
                   </button>
-                  <span
-                    data-testid={`param-val-${p.key}`}
-                    className="font-mono tabular-nums text-xs text-blue-600 dark:text-cyan-400 font-bold"
-                  >
+                  <span data-testid={`param-val-${p.key}`} className={`font-mono tabular-nums font-bold text-blue-700 ${classroom ? 'text-2xl' : 'text-base'}`}>
                     {currentVal} {p.unit}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <button
                   data-testid={`slider-minus-${p.key}`}
                   type="button"
-                  onClick={() => {
-                    if (autoPlayKey === p.key) setAutoPlayKey(null);
-                    handleParamChange(p.key, Math.max(p.min, Number((currentVal - p.step).toFixed(2))));
-                  }}
-                  className={
-                    isHolo
-                      ? 'w-6 h-6 rounded-md bg-stone-200/50 dark:bg-stone-800/50 border border-stone-300/50 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-300/60 active:translate-y-px text-xs font-mono font-bold flex items-center justify-center cursor-pointer transition'
-                      : 'w-7 h-7 rounded-lg bg-white border border-[#DCD9D0] shadow-sm text-stone-700 hover:bg-stone-50 active:translate-y-px text-xs font-mono font-bold flex items-center justify-center cursor-pointer transition'
-                  }
+                  onClick={() => setValue(currentVal - p.step)}
+                  className={`${btn} shrink-0 rounded-lg bg-white border border-[#DCD9D0] shadow-sm text-stone-700 hover:bg-stone-50 active:translate-y-px font-mono font-bold flex items-center justify-center cursor-pointer transition`}
+                  aria-label={`Giảm ${p.label}`}
                 >
-                  -
+                  −
                 </button>
-
                 <input
                   type="range"
                   data-testid={`slider-${p.key}`}
@@ -1050,28 +1108,31 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
                   max={p.max}
                   step={p.step}
                   value={currentVal}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    if (autoPlayKey === p.key) setAutoPlayKey(null);
-                    handleParamChange(p.key, parseFloat(e.target.value));
-                  }}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(parseFloat(e.target.value))}
                   className={`flex-1 ${RANGE_CLASS}`}
                   style={rangeFill(Number(currentVal), p.min, p.max)}
                 />
-
                 <button
                   data-testid={`slider-plus-${p.key}`}
                   type="button"
-                  onClick={() => {
-                    if (autoPlayKey === p.key) setAutoPlayKey(null);
-                    handleParamChange(p.key, Math.min(p.max, Number((currentVal + p.step).toFixed(2))));
-                  }}
-                  className={
-                    isHolo
-                      ? 'w-6 h-6 rounded-md bg-stone-200/50 dark:bg-stone-800/50 border border-stone-300/50 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-300/60 active:translate-y-px text-xs font-mono font-bold flex items-center justify-center cursor-pointer transition'
-                      : 'w-7 h-7 rounded-lg bg-white border border-[#DCD9D0] shadow-sm text-stone-700 hover:bg-stone-50 active:translate-y-px text-xs font-mono font-bold flex items-center justify-center cursor-pointer transition'
-                  }
+                  onClick={() => setValue(currentVal + p.step)}
+                  className={`${btn} shrink-0 rounded-lg bg-white border border-[#DCD9D0] shadow-sm text-stone-700 hover:bg-stone-50 active:translate-y-px font-mono font-bold flex items-center justify-center cursor-pointer transition`}
+                  aria-label={`Tăng ${p.label}`}
                 >
                   +
+                </button>
+              </div>
+
+              {/* nhảy nhanh tới giá trị tiêu biểu: nhỏ nhất, mặc định, lớn nhất (khỏi kéo từng chút khi đang giảng) */}
+              <div className={`flex items-center justify-between gap-1 font-mono text-stone-600 ${classroom ? 'text-sm' : 'text-[11px]'}`}>
+                <button type="button" data-testid={`param-min-${p.key}`} onClick={() => setValue(p.min)} className="rounded-md px-2 py-1 hover:bg-white border border-transparent hover:border-[#DCD9D0] cursor-pointer">
+                  Nhỏ nhất {p.min}
+                </button>
+                <button type="button" data-testid={`param-default-${p.key}`} onClick={() => setValue(p.defaultValue)} className="rounded-md px-2 py-1 hover:bg-white border border-transparent hover:border-[#DCD9D0] cursor-pointer">
+                  Mặc định {p.defaultValue}
+                </button>
+                <button type="button" data-testid={`param-max-${p.key}`} onClick={() => setValue(p.max)} className="rounded-md px-2 py-1 hover:bg-white border border-transparent hover:border-[#DCD9D0] cursor-pointer">
+                  Lớn nhất {p.max}
                 </button>
               </div>
             </div>

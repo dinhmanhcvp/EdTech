@@ -15,8 +15,9 @@ describe('định tuyến Hóa học', () => {
     expect(bp('Pin Mg - Cu').meta).toEqual({anode: 'Mg', cathode: 'Cu'});
   });
   it('không bắt nhầm phương trình hóa học thường', () => {
-    expect(routeLocally('Fe + O2 -> Fe2O3')).toBeNull();
-    expect(routeLocally('6CO2 + 6H2O -> C6H12O6 + 6O2')).toBeNull();
+    // phương trình thường không bị nhận nhầm sang pin Daniell / cân bằng NO₂ / phân tử 3D: vào cân đĩa phương trình
+    expect(routeLocally('Fe + O2 -> Fe2O3')?.templateId).toBe('CHEM_BALANCE_SCALE');
+    expect(routeLocally('6CO2 + 6H2O -> C6H12O6 + 6O2')?.templateId).toBe('CHEM_BALANCE_SCALE');
   });
 });
 

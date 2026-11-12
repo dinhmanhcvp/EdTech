@@ -1,5 +1,6 @@
 'use client';
 
+import {SolveCoachView} from './SolveCoachView';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Mic, MicOff, Play, RotateCw, Send, Sparkles, X} from 'lucide-react';
 import {MathView} from '../common/MathView';
@@ -41,6 +42,7 @@ const SOURCE_LABEL = (r: BoardQaResponse) =>
 
 export const BoardAskCard: React.FC<BoardAskCardProps> = ({isOpen, initialQuery = '', autoAskNonce = 0, isListening = false, onStartVoice, onClose, getContext, subject, onVisualize, onSetParam, onConstruct, askFn = askBoard}) => {
   const [query, setQuery] = useState(initialQuery);
+  const [mode, setMode] = useState<'ask' | 'solve'>('ask');
   const [turns, setTurns] = useState<Turn[]>([]);
   const nextId = useRef(1);
   const abort = useRef<AbortController | null>(null);
@@ -105,6 +107,18 @@ export const BoardAskCard: React.FC<BoardAskCardProps> = ({isOpen, initialQuery 
         </button>
       </div>
 
+      <div className="flex gap-1 rounded-xl bg-[#F4F3EE] p-1" role="tablist" data-testid="board-ask-tabs">
+        {([['ask', 'Hỏi đáp'], ['solve', 'Gợi ý giải (Socratic)']] as const).map(([id, label]) => (
+          <button key={id} type="button" role="tab" aria-selected={mode === id} data-testid={`board-ask-tab-${id}`} onClick={() => setMode(id)} className={`flex-1 rounded-lg px-2 py-1.5 text-[12px] font-semibold transition ${mode === id ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {mode === 'solve' ? (
+        <SolveCoachView getContext={getContext} subject={subject} onVisualize={onVisualize} />
+      ) : (
+      <>
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5" data-testid="board-ask-thread">
         {turns.length === 0 && (
           <div className="flex flex-col gap-2 rounded-xl bg-[#F4F3EE] p-3">
@@ -182,6 +196,8 @@ export const BoardAskCard: React.FC<BoardAskCardProps> = ({isOpen, initialQuery 
           <Send className="h-3.5 w-3.5" /> Hỏi
         </button>
       </div>
+      </>
+      )}
     </div>
   );
 };

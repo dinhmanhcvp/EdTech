@@ -1,6 +1,6 @@
 'use client';
 
-import React, {Suspense, useEffect, useId, useMemo, useState} from 'react';
+import React, {Suspense, useEffect, useId, useMemo, useRef, useState} from 'react';
 import type {SceneData, Shape} from '../../utils/presets/types';
 import {BTN, ControlPanel, PANEL, Readouts, initialP, initialS} from './Controls';
 import {Slider} from '../StemModelEngines';
@@ -190,6 +190,8 @@ export const SceneLab: React.FC<{id: string; data: SceneData}> = ({id, data}) =>
   const [p, setPs] = useState(() => initialP(data));
   const [s, setSs] = useState(() => initialS(data));
   const [t, setT] = useState(0);
+  const tRef = useRef(0);
+  tRef.current = t;
   const [playing, setPlaying] = useState(!!data.time?.autoplay);
   const tm = data.time;
   const night = data.stage === 'night';
@@ -204,16 +206,26 @@ export const SceneLab: React.FC<{id: string; data: SceneData}> = ({id, data}) =>
 
   useEffect(() => {
     if (!playing || !tm) return;
-    const h = setInterval(() => {
-      setT((x) => {
-        const n = x + 0.05;
-        if (n < tm.max) return n;
-        if (tm.loop) return 0;
+    // theo nhịp vẽ của màn hình (60 khung/giây) và giờ thật, không dùng bộ đếm 50 ms (20 khung/giây) làm chuyển động giật
+    let raf = 0;
+    let last = performance.now();
+    let cur = tRef.current; // bộ cộng riêng: không phụ thuộc lúc React vẽ lại
+    const loop = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.1);
+      last = now;
+      cur += dt;
+      const n = cur;
+      if (n < tm.max) setT(n);
+      else if (tm.loop) setT((cur = 0));
+      else {
+        setT(tm.max);
         setPlaying(false);
-        return tm.max;
-      });
-    }, 50);
-    return () => clearInterval(h);
+        return;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
   }, [playing, tm]);
 
   const shapes = useMemo(() => data.draw(p, t, s), [data, p, t, s]);

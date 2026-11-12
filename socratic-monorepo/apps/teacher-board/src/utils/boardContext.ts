@@ -46,6 +46,11 @@ export interface BoardContext {
   lesson?: {title: string; goals?: string; class?: {name: string; grade?: string; subject?: string; size?: number; notes?: string}};
   selection?: {item_ids: string[]};
   items: BoardItem[];
+  /** gợi ý giải Socratic (mọi môn): đề, dạng bài máy đoán, bước Polya hiện tại, điều học sinh vừa viết */
+  problem?: string;
+  problem_type?: string;
+  stage?: string;
+  student_note?: string;
   simulation?: {
     templateId: string;
     engine: string;

@@ -245,7 +245,7 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
 
       {/* Bảng nhỏ: thêm */}
       <div data-testid="more-popover" className={`${popCls('more')} right-0 flex-col gap-2 w-[min(420px,calc(100vw-110px))]`}>
-        <div className="grid grid-cols-5 gap-1">
+        <div className="grid grid-cols-6 gap-1">
           <button data-testid="btn-split-view-toggle" onClick={p.onToggleSplit} className={`${base} ${p.isSplitView ? on : idle}`} title="Ghim mô phỏng sang nửa bảng">
             <Columns className="w-5 h-5" />
             {p.isSplitView ? 'Nửa bảng' : 'Toàn bảng'}
@@ -267,6 +267,10 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
             Phòng thu
             {p.customSlotCount > 0 && <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[9px] rounded-full px-1">{p.customSlotCount}/4</span>}
           </button>
+          <a data-testid="link-hands-lab" href="/lab" target="_blank" rel="noopener" className={`${base} ${idle}`} title="Phòng thực hành ảo điều khiển bằng tay (mở trang riêng)">
+            <Hand className="w-5 h-5" />
+            Thực hành
+          </a>
         </div>
         {p.onInsertFrame && (
           <div data-testid="frames-section" className="border-t border-[#E6E4DD] pt-2">

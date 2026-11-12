@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {alkali, bleach, no2, titrationPH} from '../../utils/lab/hands/sims/thptChemBio';
 import {BZ_SAMPLES, oregonator} from '../../utils/lab/hands/sims/advanced';
+import {alkaliRows, bzRows, chlorineRows, no2Rows, titrationRows} from '../../utils/lab/chem/opsCards';
 import {tiltFor} from '../../utils/lab/hands/handTracker';
 import {spillOf} from '../../utils/lab/hands/mishap';
 import type {SimLive} from './HandsSims3D';
@@ -99,6 +100,7 @@ const titrationLab: Lab = ({k, P, live}) => {
   const sol = glass(k, yCyl(0.36, 0.46, 0.3), '#F2F6F8', 0.85, X, 0.2, Z);
   const cock = solid(k.scene, box(0.06, 0.24, 0.06), '#2459C9', {x: X, y: TIP + 0.36, z: Z + 0.14});
   const drop = solid(k.scene, new THREE.SphereGeometry(0.035, 10, 8), '#CFEFFF', {});
+  const rx = k.card('#2E9B57'); // thẻ phản ứng ngay trên dụng cụ (thay cho phần giải thích trong tab Hướng dẫn)
   k.label('Khóa buret: chụm nhanh = 1 giọt, giữ = chảy thành dòng')(V(X + 1.1, TIP + 0.36, Z));
   k.label('Rót NaOH vào đây')(V(X, TIP + 2.75, Z));
   const bottles = NAOH.map((c, i) => {
@@ -201,8 +203,9 @@ const titrationLab: Lab = ({k, P, live}) => {
         const tl = p ? tiltFor(p.roll, fillRoll[i], over) : 0;
         b.m.position.lerp(p ? P.onPlane(p.ndc.x, p.ndc.y, over ? TOP.y : 1.6, v3) : b.home, p ? 0.5 : 0.25);
         b.m.rotation.z += (tl * 1.9 - b.m.rotation.z) * 0.3;
-        if (p) pouring = over ? (tl > 0.5 ? `Đang rót NaOH ${b.c.toString().replace('.', ',')} M vào buret (làm lại từ 0 mL với mẻ acid mới)` : 'Nghiêng chai (xoay cổ tay) để rót NaOH vào buret') : 'Đưa chai lên miệng buret rồi nghiêng chai';
+        if (p) pouring = over ? (tl > 0.5 ? `Đang rót NaOH ${b.c.toString().replace('.', ',')} M vào buret (làm lại từ 0 mL với mẻ acid mới)` : 'Giữ chai trên miệng buret để rót NaOH') : 'Đưa chai lên miệng buret (chụm giữ chai)';
       });
+      rx(V(X + 1.9, 1.6, Z), titrationRows(vol, cb, pH));
       if (pouring) return `${pouring}\nBuret đang chứa NaOH ${cb.toFixed(3).replace('.', ',')} M`;
       return `pH = ${pH.toFixed(2)} sau ${vol.toFixed(2)} mL NaOH ${cb.toFixed(3).replace('.', ',')} M · dung dịch ${pH > 8.2 ? 'đã chuyển hồng' : 'còn không màu'}\nBóp khóa buret để nhỏ; gần điểm tương đương hãy nhỏ từng giọt. Cầm chai NaOH khác rót vào buret để đổi nồng độ`;
     },
@@ -222,6 +225,7 @@ const no2Lab: Lab = ({k, P, live}) => {
   void rod;
   void thumb;
   const bath = glass(k, box(4, 0.42, 1.6), '#2F6FD0', 0.45, MID, 0.25, Z);
+  const rx = k.card('#2E9B57');
   const bathTag = k.label('Bể nước');
   const pTag = k.label('Pít-tông');
   const brown = cloud(k, 120, '#C2562A', 5);
@@ -311,9 +315,10 @@ const no2Lab: Lab = ({k, P, live}) => {
         j.stream.visible = pour;
         j.stream.position.set(j.m.position.x - 0.45, 0.45, j.m.position.z);
         j.stream.scale.y = Math.max(0.05, j.m.position.y - 0.1);
-        if (ptr) hint = pour ? `Đang rót ${j.name.toLowerCase()}: bể ${live.v.T.toFixed(0)} °C` : overTank(ptr) ? `Nghiêng cốc ${j.name.toLowerCase()} (xoay cổ tay) để rót` : `Đưa cốc ${j.name.toLowerCase()} tới trên bể nước`;
+        if (ptr) hint = pour ? `Đang rót ${j.name.toLowerCase()}: bể ${live.v.T.toFixed(0)} °C` : overTank(ptr) ? `Giữ cốc ${j.name.toLowerCase()} trên bể để rót; nhấc ra để dừng` : `Đưa cốc ${j.name.toLowerCase()} tới trên bể nước`;
       });
       if (G.by(plunger)) hint = `Đang ${live.v.P > 1 ? 'nén' : 'giãn'} khí: ${live.v.P.toFixed(1)} atm`;
+      rx(V(MID, 1.9, Z - 0.5), no2Rows(live.v.T, live.v.P, q.x));
       return `${hint || `NO₂ (nâu) ${(q.x * 100).toFixed(0)} % · N₂O₄ (không màu) ${(100 - q.x * 100).toFixed(0)} % số phân tử`}\nĐẩy pít-tông để nén; rót nước sôi hoặc nước đá vào bể để đổi nhiệt độ. Độ đậm của ống vẽ theo phần mol NO₂`;
     },
   };
@@ -348,6 +353,7 @@ const chlorineLab: Lab = ({k, P, live}) => {
     return {...w, m, tag: k.label(w.name)};
   });
   const cloth = solid(k.scene, box(0.8, 1.0, 0.03), '#C2185B', {x: OUT.x, y: OUT.y, z: OUT.z});
+  const rx = k.card('#2E9B57');
   const clothTag = k.label('Vải màu');
   let clothSkin: Skin | null = null;
   loadModel(CHEM)
@@ -417,6 +423,7 @@ const chlorineLab: Lab = ({k, P, live}) => {
       clothTag(v3.set(cloth.position.x, cloth.position.y + 0.9, cloth.position.z), undefined, inJar ? `Vải trong bình ${t.toFixed(0)} s: mất ${(b * 100).toFixed(0)} % màu` : 'Vải màu: thả vào bình khí clo');
       if (holdingCloth) hint = 'Thả vải vào bình khí để bắt đầu tính giờ; thả ra ngoài là thay mảnh vải mới';
       if (G.by(cockGrip)) hint = `Đang nhỏ HCl đặc: khí clo trong bình ${cl.toFixed(0)} %`;
+      rx(V(JAR.x, 2.3, Z), chlorineRows(wet, cl, b, t, inJar));
       return `${hint || (inJar ? `Vải mất ${(b * 100).toFixed(0)} % màu sau ${t.toFixed(0)} s trong khí clo ${cl.toFixed(0)} %` : 'Vải đang ở ngoài bình')}\n${wet ? 'Clo ẩm: Cl₂ + H₂O ⇌ HCl + HClO, HClO tẩy màu' : 'Clo khô (đã qua H₂SO₄ đặc): không có HClO nên không tẩy màu. Thử đổi bình rửa khí sang bình nước'}`;
     },
   };
@@ -439,6 +446,7 @@ const alkaliLab: Lab = ({k, P, live}) => {
   const rest = solid(k.scene, box(1, 0.14, 0.14).translate(0.5, 0, 0), '#8E949C', {metal: 0.6, rough: 0.5, y: TILE.y + 0.07, z: TILE.z});
   const knife = solid(k.scene, box(0.02, 0.34, 0.5), '#C9CED6', {metal: 0.9, rough: 0.2});
   solid(knife, box(0.05, 0.1, 0.5), '#3A2A20', {y: 0.2});
+  const rx = k.card('#2E9B57');
   const barTag = k.label('Na');
   const jars = METALS.map((sym, i) => {
     const home = V(-3.8 + i * 0.7, 0, 1.5);
@@ -539,6 +547,7 @@ const alkaliLab: Lab = ({k, P, live}) => {
         burst.pos.set([x + Math.cos(th) * sp * w, 0.7 + sp * w * 1.6 - 3 * w * w, z + Math.sin(th) * sp * w], i * 3);
       }
       burst.flush(react && a.level === 3 ? 90 : 0);
+      rx(V(C.x, 1.9, Z), alkaliRows(a.m.sym, live.v.d, a.level, a.pH, !!react, pink));
       if (hint) return `${hint}\nLấy lọ kim loại đặt lên tấm cắt, kéo dao chọn cỡ mẩu, rồi cầm mẩu thả vào chậu`;
       if (react) return `${a.m.sym} ${live.v.d.toFixed(1)} mm: ${a.level === 3 ? 'NỔ, ngoài đời đây là tai nạn bỏng kiềm' : a.level === 2 ? `H₂ bốc cháy, ngọn lửa mang màu của ${a.m.sym}` : a.level === 1 ? 'nóng chảy, vo tròn chạy trên mặt nước' : 'sủi bọt êm trên mặt nước'}\n2${a.m.sym} + 2H₂O → 2${a.m.sym}OH + H₂↑ · pH ≈ ${a.pH.toFixed(1)}`;
       return `${pink > 0.02 ? `Dung dịch sau phản ứng: phenolphtalein ${pink > 0.3 ? 'hồng rõ' : 'hồng nhạt'}` : 'Nước trong chậu còn không màu'}\nLấy lọ kim loại đặt lên tấm cắt, kéo dao chọn cỡ mẩu, rồi cầm mẩu thả vào chậu nước`;
@@ -570,6 +579,7 @@ const bzLab: Lab = ({k, P, live}) => {
     stream.visible = false;
     return {...r, home, m, stream, pill};
   });
+  const rx = k.card('#2E9B57');
   const tag = k.label('f = 3,50', '#FBF9F4');
   loadModel(SIMS_PARTS)
     .then((lib) => place(k.scene, lib, 'Stirrer', [BX, 0, Z]))
@@ -674,9 +684,10 @@ const bzLab: Lab = ({k, P, live}) => {
         g.stream.scale.x = g.stream.scale.z = 0.5 + tl;
         g.stream.position.set(g.m.position.x - 0.4, 1.15, g.m.position.z);
         g.stream.scale.y = Math.max(0.05, g.m.position.y - 1.15);
-        if (ptr) hint = pour ? `Đang rót ${g.name}: ${g.id === 'f' ? `f = ${live.v.f.toFixed(2)}` : `ε = ${live.v.eps.toFixed(3)}`}` : over ? `Nghiêng lọ ${g.name} (xoay cổ tay) để rót` : `Đưa lọ ${g.name} tới trên miệng cốc rồi nghiêng`;
+        if (ptr) hint = pour ? `Đang rót ${g.name}: ${g.id === 'f' ? `f = ${live.v.f.toFixed(2)}` : `ε = ${live.v.eps.toFixed(3)}`}` : over ? `Giữ lọ ${g.name} trên miệng cốc để rót; nhấc ra để dừng` : `Đưa lọ ${g.name} tới trên miệng cốc`;
       });
       tag(V(BX, 1.7, Z + 1.25), undefined, `f = ${live.v.f.toFixed(2).replace('.', ',')} · ε = ${live.v.eps.toFixed(3).replace('.', ',')}`);
+      rx(V(BX + 1.7, 1.9, Z), bzRows(live.v.f, live.v.eps, r.period));
       return `${hint || (r.period > 0 ? `Dao động, chu kì ≈ ${r.period.toFixed(1)}` : 'Không dao động: cốc đứng ở một màu')}\nĐỏ = ferroin khử, xanh = ferriin oxi hóa. Rót acid malonic / bromat để đổi f, H₂SO₄ / nước để đổi ε; đồ thị chạy lại mỗi 15 giây`;
     },
   };

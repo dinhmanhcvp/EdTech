@@ -137,8 +137,15 @@ def plot_equation(equation: str = "A * sin(x)", a: float = 1.0, b: float = 0.0, 
     svg_data = generate_neon_graph(equation, param_a=a, param_b=b, param_c=c, param_d=d)
     if format == "json":
         return JSONResponse({"equation": equation, "param_a": a, "param_b": b, "param_c": c, "param_d": d, "svg": svg_data})
-    return Response(content=svg_data, media_type="image/svg+xml")
+    # kết quả chỉ phụ thuộc vào địa chỉ yêu cầu: trình duyệt và CDN giữ lại 1 giờ
+    return Response(content=svg_data, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=3600"})
 
+
+
+@app.api_route("/ping", methods=["GET", "HEAD"])
+def ping():
+    """Siêu nhẹ cho giữ-thức và làm ấm sớm từ trình duyệt: không đụng bể khóa AI hay hạn mức model như /health."""
+    return {"ok": True}
 
 
 @app.get("/health")

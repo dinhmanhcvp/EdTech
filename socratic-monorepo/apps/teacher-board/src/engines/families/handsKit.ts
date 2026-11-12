@@ -64,6 +64,12 @@ export function labRoom(k: Kit, [w, d, cx, cz]: [number, number, number, number]
 const BONES = [0, 1, 1, 2, 2, 3, 3, 4, 0, 5, 5, 6, 6, 7, 7, 8, 5, 9, 9, 10, 10, 11, 11, 12, 9, 13, 13, 14, 14, 15, 15, 16, 13, 17, 17, 18, 18, 19, 19, 20, 0, 17];
 
 /** Hai bàn tay ảo (21 khớp) + vòng con trỏ, vẽ trên mặt phẳng cao `h`; trả ba con trỏ (tay 0, tay 1, chuột). */
+/**
+ * Góc nghiêng cổ tay (`p.roll`) chỉ đáng tin khi có camera độ sâu: webcam thường chỉ cho `z` ước lượng, nhiễu nên vặn vít và nghiêng lọ giật.
+ * Tắt thì `p.roll` luôn NaN và mọi bài dùng cử chỉ chỉ cần vị trí 2D (giữ để vặn / rót, vẽ vòng tròn). Bật lại khi dùng camera độ sâu.
+ */
+export const WRIST_ROLL = false;
+
 export function handPointers(k: Kit, input: HandsInput, h: number) {
   const overlay = {depthTest: false, transparent: true};
   const ray = new THREE.Raycaster();
@@ -166,7 +172,7 @@ export function handPointers(k: Kit, input: HandsInput, h: number) {
         p.active = active;
         p.slide = hand?.slide ?? 0;
         // góc cổ tay mẫu thưa theo camera (30 Hz): lọc mũ theo thời gian thực, đi theo đường ngắn nhất qua mốc ±π
-        if (hand && hand.pts.length === 21) {
+        if (WRIST_ROLL && hand && hand.pts.length === 21) {
           const nowS = performance.now() / 1000;
           if (hand.pts !== rollSrc[i]) {
             rollSrc[i] = hand.pts;

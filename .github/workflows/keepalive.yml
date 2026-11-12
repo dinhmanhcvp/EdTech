@@ -1,4 +1,4 @@
-# Giữ máy chủ AI trên Render (gói Free) luôn thức: gọi /health mỗi 10 phút để dịch vụ không bị ngủ sau 15 phút.
+# Giữ máy chủ AI trên Render (gói Free) luôn thức: gọi /ping (siêu nhẹ) mỗi 10 phút để dịch vụ không bị ngủ sau 15 phút.
 # Bật: GitHub → Settings → Secrets and variables → Actions → tab Variables → New repository variable
 #   RENDER_URL = https://socratic-ai-engine.onrender.com   (không có dấu / cuối)
 # Chưa đặt RENDER_URL thì workflow tự bỏ qua. Lưu ý: GitHub có thể trễ vài phút và tự tắt lịch chạy nếu kho mã không có hoạt động 60 ngày.
@@ -11,7 +11,8 @@ jobs:
   ping:
     if: ${{ vars.RENDER_URL != '' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     steps:
-      - name: Ping /health
-        run: curl -fsS --max-time 60 "${{ vars.RENDER_URL }}/health" -o /dev/null || echo "Render chưa phản hồi (đang khởi động?)"
+      - name: Ping /ping
+        # thử lại 3 lần: máy chủ đang thức dậy có thể mất tới 60 giây mới trả lời lần đầu
+        run: curl -fsS --max-time 60 --retry 3 --retry-delay 10 --retry-all-errors "${{ vars.RENDER_URL }}/ping" -o /dev/null || echo "Render chưa phản hồi (đang khởi động?)"

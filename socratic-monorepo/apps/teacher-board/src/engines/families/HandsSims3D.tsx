@@ -18,6 +18,7 @@ import {mishapFx, mishapSound} from './mishapFx';
 import {CHEM_LABS} from './HandsChemOps3D';
 import {collisionLab} from './HandsCollision3D';
 import {ENG_LABS} from './HandsEngOps3D';
+import {ENG2_LABS} from './HandsEngOps2';
 import {THPT_SCENES} from './HandsSimsThpt3D';
 import {Stage3D, setLine, type Kit, type SceneDef} from './Stage3D';
 
@@ -263,7 +264,7 @@ function makeDef(input: HandsInput, live: SimLive): SceneDef {
         }
         fx.update(dt);
       };
-      const custom = live.id === 'collision' ? collisionLab : CHEM_LABS[live.id] ?? ENG_LABS[live.id];
+      const custom = live.id === 'collision' ? collisionLab : CHEM_LABS[live.id] ?? ENG_LABS[live.id] ?? ENG2_LABS[live.id];
       if (custom) {
         // bài thao tác trực tiếp trên dụng cụ (va chạm, bốn bài hóa, ba bài kĩ thuật): không qua núm hay ổ lắp
         const lab = custom({k, P, live});

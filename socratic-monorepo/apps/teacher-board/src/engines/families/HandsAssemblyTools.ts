@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {FASTENERS, KITS, TOOLS, orderMistake, toolFor, toolMistake, type Dir, type Fastener, type ToolId} from '../../utils/lab/hands/fasteners';
+import {DWELL, FASTENERS, KITS, TOOLS, driveRev, orderMistake, toolFor, toolMistake, type Dir, type Fastener, type ToolId} from '../../utils/lab/hands/fasteners';
 import {wrapAngle} from '../../utils/lab/hands/handTracker';
 import type {AssemblyLive} from './HandsAssembly3D';
 import {handPointers} from './handsKit';
@@ -9,14 +9,15 @@ import type {Kit} from './Stage3D';
 
 /**
  * Bộ dụng cụ tháo lắp trong cảnh 3D: hộp dụng cụ (mô hình Blender `tools-parts.glb`), ốc vít / bu-lông trên từng chi tiết, khay từ đựng vít.
- * Cầm dụng cụ (chụm), đưa mũi tới đầu vít: đúng dụng cụ thì mũi tự khớp vào đầu vít. Vặn bằng CỔ TAY: xoay ngược chiều kim đồng hồ để nới,
- * thuận chiều để siết; xoay qua lại như vặn cần tự động (chỉ chiều đúng mới tính, chiều ngược là đổi thế cầm). Chuột: giữ nút trên đầu vít.
+ * Cầm dụng cụ (chụm), đưa mũi tới đầu vít: đúng dụng cụ thì mũi tự khớp vào đầu vít. Vặn KHÔNG cần xoay cổ tay (webcam thường không có
+ * độ sâu): giữ mũi trên đầu vít ~0,25 s thì tự vặn theo chiều đúng (nới / siết do trạng thái con vít); vẽ vòng tròn quanh đầu vít (ngược chiều kim
+ * đồng hồ để nới, thuận để siết) thì vặn nhanh hơn. Chuột: giữ nút trên đầu vít.
  * Luật (đúng dụng cụ, thứ tự đường chéo, đủ vít mới nhấc được chi tiết) nằm ở `utils/lab/hands/fasteners.ts`.
  */
 const PLUCK = 0.095; // khoảng cách trên màn hình để chụm được tay cầm dụng cụ
 const SNAP = 0.085; // khoảng cách trên màn hình để mũi dụng cụ nhận một đầu vít
-const GAIN = 4; // xoay cổ tay 90° tương ứng một vòng vặn
-const DEAD = 0.003; // rad mỗi khung: nhỏ hơn thế là rung tay, không tính
+/** Camera thường không có độ sâu nên KHÔNG vặn bằng xoay cổ tay: giữ mũi trên đầu vít một lúc thì tự vặn, vẽ vòng tròn quanh đầu vít thì vặn nhanh hơn (`driveRev`). */
+const CIRC_MIN = 0.02; // bán kính tối thiểu (màn hình) để góc quanh đầu vít còn đáng tin
 const TOOL_Y = 0.55;
 const TILT = 0.45;
 const LIFT = 0.09; // vít nhô lên bao nhiêu khi đã nới hết
@@ -144,7 +145,7 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
     })
     .catch(() => undefined);
 
-  const eng = P.ptrs.map(() => ({lastRoll: NaN, spin: 0, target: null as ScrewRt | null, lock: null as ScrewRt | null, warn: '', warnAt: -1e9}));
+  const eng = P.ptrs.map(() => ({lastRoll: NaN, ang: NaN, dwell: 0, spin: 0, target: null as ScrewRt | null, lock: null as ScrewRt | null, warn: '', warnAt: -1e9}));
   const scr = (a: THREE.Vector3, b: THREE.Vector3) => {
     v3.copy(a).project(k.camera);
     v4.copy(b).project(k.camera);
@@ -265,22 +266,28 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
         }
         if (engaged !== e.target) {
           e.target = engaged;
-          e.lastRoll = p.roll;
+          e.dwell = 0;
+          e.ang = NaN;
         }
         if (engaged) {
           const need = toolFor(engaged.fa, dir);
           void need;
-          let rev = 0;
-          if (Number.isNaN(p.roll)) rev = p.down ? dt / 0.45 : 0;
-          else {
-            const d = wrapAngle(p.roll - e.lastRoll);
-            if (Math.abs(d) > DEAD) rev = ((dir === 'loosen' ? -d : d) > 0 ? Math.abs(d) : 0) * (GAIN / (2 * Math.PI));
-          }
-          e.lastRoll = p.roll;
+          e.dwell += dt;
+          // góc điểm chụm quanh đầu vít trên màn hình (chỉ cần x, y): nới = ngược chiều kim đồng hồ, siết = thuận chiều
+          v3.copy(anchorWorld(engaged, aw)).project(k.camera);
+          const ox = (p.ndc.x - v3.x) * k.camera.aspect;
+          const oy = p.ndc.y - v3.y;
+          let dAng = 0;
+          if (Math.hypot(ox, oy) >= CIRC_MIN) {
+            const a = Math.atan2(oy, ox);
+            if (!Number.isNaN(e.ang)) dAng = wrapAngle(a - e.ang);
+            e.ang = a;
+          } else e.ang = NaN;
+          const rev = driveRev(e.dwell, dt, dAng, dir);
           engaged.prog += rev / engaged.fa.turns;
           e.spin += (dir === 'loosen' ? -1 : 1) * rev * 2 * Math.PI;
           const left = (live.screws[engaged.part] ?? []).filter(Boolean).length;
-          hint = `${dir === 'loosen' ? 'Đang nới' : 'Đang siết'} ${engaged.fa.what} (${Math.round(Math.min(1, engaged.prog) * 100)} %; còn ${dir === 'loosen' ? left : engaged.fa.count - left} con). ${Number.isNaN(p.roll) ? 'Giữ nút chuột trên đầu vít.' : `Xoay cổ tay ${dir === 'loosen' ? 'ngược' : 'thuận'} chiều kim đồng hồ, nhấc về rồi xoay tiếp như vặn cần tự động.`}`;
+          hint = `${dir === 'loosen' ? 'Đang nới' : 'Đang siết'} ${engaged.fa.what} (${Math.round(Math.min(1, engaged.prog) * 100)} %; còn ${dir === 'loosen' ? left : engaged.fa.count - left} con). ${e.dwell < DWELL ? 'Giữ yên mũi trên đầu vít…' : `Giữ mũi trên đầu vít để vặn; vẽ vòng tròn ${dir === 'loosen' ? 'ngược' : 'thuận'} chiều kim đồng hồ quanh đầu vít để vặn nhanh hơn.`}`;
           if (engaged.prog >= 1) {
             engaged.prog = 0;
             e.lock = engaged;

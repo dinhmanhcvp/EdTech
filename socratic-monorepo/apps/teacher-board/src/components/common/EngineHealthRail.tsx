@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, AlertTriangle, CheckCircle2, Database, Radio, ScanLine, Sparkles, Settings2 } from 'lucide-react';
 import { AiBackendConfigModal } from './AiBackendConfigModal';
 import { apiBase } from '../../utils/apiBase';
@@ -33,23 +33,29 @@ export const EngineHealthRail: React.FC = () => {
   const [health, setHealth] = useState<HealthPayload | null>(null);
   const [state, setState] = useState<RailState>('checking');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // quá 3 s chưa có phản hồi đầu tiên thì gần như chắc chắn Render đang ngủ: nói rõ để người dùng không tưởng là treo
+  const [waking, setWaking] = useState(false);
   // /?clean=1: ẩn thanh chẩn đoán khi quay video/trình chiếu; vẫn mở được hộp cấu hình qua sự kiện
   const [hidden, setHidden] = useState(false);
   useEffect(() => {
     setHidden(new URLSearchParams(window.location.search).has('clean'));
   }, []);
 
+  const okRef = useRef(false);
   const check = async () => {
     try {
+      // gọi THẲNG Render trước (một chặng); rewrite của Vercel chỉ là dự phòng vì nó treo tới 30 s khi Render đang ngủ
       let response: Response;
       try {
-        response = await fetch('/health', { cache: 'no-store' });
-      } catch {
         response = await fetch(`${backendUrl()}/health`, { cache: 'no-store' });
+      } catch {
+        if (!backendUrl()) throw new Error('offline');
+        response = await fetch('/health', { cache: 'no-store' });
       }
       if (!response.ok) throw new Error(`health_${response.status}`);
       const data = (await response.json()) as HealthPayload;
       setHealth(data);
+      okRef.current = true;
       const runtime = data.runtime;
       const hasLocalKey = typeof window !== 'undefined' && Boolean(window.localStorage.getItem('gemini_api_key'));
       const isGeminiReady = Boolean(runtime?.gemini_configured || hasLocalKey);
@@ -61,6 +67,7 @@ export const EngineHealthRail: React.FC = () => {
         setState('online');
       }
     } catch {
+      okRef.current = false;
       setState('offline');
     }
   };
@@ -70,8 +77,14 @@ export const EngineHealthRail: React.FC = () => {
     const runCheck = async () => {
       if (!cancelled) await check();
     };
-    void runCheck();
-    const timer = window.setInterval(runCheck, 15000);
+    const wake = window.setTimeout(() => setWaking(!/^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)), 3000); // cục bộ chưa chạy máy chủ thì không phải "đang thức dậy"
+    // 15 s khi đã thông; 4 s khi chưa thông để biết ngay lúc máy chủ thức dậy xong
+    let timer = 0;
+    const loop = async () => {
+      await runCheck();
+      if (!cancelled) timer = window.setTimeout(loop, okRef.current ? 15000 : 4000);
+    };
+    void loop();
 
     const onOpen = () => setIsModalOpen(true);
     const onUpdated = () => void runCheck();
@@ -81,7 +94,8 @@ export const EngineHealthRail: React.FC = () => {
 
     return () => {
       cancelled = true;
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
+      window.clearTimeout(wake);
       window.removeEventListener('open-ai-backend-config', onOpen);
       window.removeEventListener('backend_config_updated', onUpdated);
     };
@@ -94,9 +108,9 @@ export const EngineHealthRail: React.FC = () => {
       return 'AI Vision sẵn sàng · Gemini 2.5';
     }
     if (state === 'degraded') return 'Backend OK · Cần khóa Gemini';
-    if (state === 'checking') return 'Đang bắt tay backend...';
+    if (state === 'checking' || (state === 'offline' && waking)) return waking ? 'Máy chủ AI đang thức dậy (30–60 s)…' : 'Đang bắt tay backend...';
     return 'Render ngủ / Ngoại tuyến';
-  }, [state, health]);
+  }, [state, health, waking]);
 
   const StatusIcon = state === 'offline' ? AlertTriangle : state === 'degraded' ? AlertTriangle : state === 'checking' ? Activity : CheckCircle2;
   const statusColor = state === 'online' ? 'text-emerald-700' : state === 'checking' ? 'text-blue-700' : state === 'degraded' ? 'text-amber-700' : 'text-rose-700';

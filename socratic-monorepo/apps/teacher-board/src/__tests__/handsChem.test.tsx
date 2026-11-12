@@ -113,15 +113,17 @@ describe('tính chất hóa học của từng chất (rút từ cơ sở dữ l
     const nh3 = propertiesOf('nh3')!.reactions.find((r) => r.id === 'nh3-heat')!;
     expect(nh3.conditions.join(' ')).toContain('55');
   });
-  it('thẻ chất hiện trong bàn hóa học; chạm "Thử với" cho cả hai chất vào ống và ghi hiện tượng', () => {
+  it('bảng bên không còn khối tính chất / phản ứng (thông tin nằm trên chất trong cảnh); chạm "Thử với" cho cả hai chất vào ống và ghi hiện tượng', () => {
     const r = render(<HandsLab experiment={'chem' as never} />);
-    expect(r.getByTestId('chem3d-props').textContent).toContain('Tính chất hóa học');
-    fireEvent.click(r.getByTestId('chem3d-try-co3-h-na2co3'));
+    expect(r.queryByTestId('chem3d-props')).toBeNull();
+    expect(r.queryByTestId('chem3d-physical')).toBeNull();
+    expect(r.getByTestId('chem3d-partners').textContent).toContain('Thử');
+    fireEvent.click(r.getByTestId('chem3d-try-na2co3'));
     expect(r.getByTestId('chem3d-log').textContent).toMatch(/sủi bọt khí/);
     expect(r.getByTestId('chem3d-equations').textContent).toContain('CO₂');
     fireEvent.click(r.getByTestId('chem3d-group-Kim loại'));
     fireEvent.change(r.getByTestId('chem3d-sub'), {target: {value: 'zn'}});
-    expect(r.getByTestId('chem3d-props').textContent).toContain('Zn');
+    expect(r.getByTestId('chem3d-partners').textContent).toContain('Thử Kẽm');
   });
 });
 

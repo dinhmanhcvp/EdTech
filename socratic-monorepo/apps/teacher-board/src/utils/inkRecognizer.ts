@@ -11,7 +11,19 @@
  * Giới hạn trung thực: chỉ tin cậy với công thức/ký hiệu toán một hoặc nhiều dòng (số, chữ Latin, + − × ÷ = ( ) / √ π,
  * mũ, phân số). KHÔNG nhận dạng được tiếng Việt có dấu hay chữ nối: dùng bộ nhận dạng AI (Vision) cho các trường hợp đó.
  */
-import glyphData from './inkGlyphs.json';
+type GlyphJson = {n: number; templates: {c: string; w: number; h: number; p: [number, number][]}[]};
+/**
+ * Bảng mẫu nét (640 kB, 162 kB nén) nạp theo nhu cầu để KHÔNG nằm trong gói JS đầu của bảng (chiếm hơn 1/6 gói đầu).
+ * Trình duyệt tải ngay sau khi gói chính chạy xong (không chặn vẽ trang); chưa về thì `templates()` trả rỗng và nhận dạng không ra ký hiệu,
+ * người dùng chưa kịp viết xong một công thức trong khoảng đó. Kiểm thử nạp sẵn ở `__tests__/setup.ts`.
+ */
+let glyphData: GlyphJson | null = null;
+export const loadGlyphs = (): Promise<void> =>
+  import('./inkGlyphs.json').then((m) => {
+    glyphData = m.default as unknown as GlyphJson;
+    TEMPLATES = null;
+  });
+if (typeof window !== 'undefined') void loadGlyphs();
 import {tryCompile, parseEquation} from './mathExpr';
 
 export interface Pt {
@@ -163,8 +175,8 @@ const gridOf = (pts: Float32Array): Uint8Array => {
 let TEMPLATES: Template[] | null = null;
 const templates = (): Template[] => {
   if (TEMPLATES) return TEMPLATES;
-  const d = glyphData as unknown as {n: number; templates: {c: string; w: number; h: number; p: [number, number][]}[]};
-  TEMPLATES = d.templates.map((t) => {
+  if (!glyphData) return [];
+  TEMPLATES = glyphData.templates.map((t) => {
     const m = Math.min(t.p.length, NQ);
     const a = new Float32Array(m * 2);
     for (let i = 0; i < m; i++) {

@@ -1,9 +1,12 @@
 // apps/teacher-board/src/__tests__/setup.ts
 import '@testing-library/jest-dom';
 import {preloadEngines} from '../engines/lazyEngines';
+import {loadGlyphs} from '../utils/inkRecognizer';
 
 // engine mô phỏng nạp theo nhu cầu: nạp trước để các bài kiểm thử dựng đồng bộ như trước
 await preloadEngines();
+// bảng mẫu nét viết nạp theo nhu cầu trong trình duyệt: nạp sẵn để kiểm thử nhận dạng chạy đồng bộ như trước
+await loadGlyphs();
 
 // Polyfill HTMLCanvasElement.prototype.getContext for jsdom
 if (typeof HTMLCanvasElement !== 'undefined') {

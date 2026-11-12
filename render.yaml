@@ -11,7 +11,8 @@ services:
     plan: free
     rootDir: socratic-monorepo/services/ai-engine
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    # --timeout-keep-alive 75: lớn hơn thời gian giữ kết nối rảnh của bộ cân tải Render, nếu không kết nối giữ sống bị cắt giữa chừng và lời gọi kế tiếp trả 502.
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*" --timeout-keep-alive 75
     healthCheckPath: /health
     autoDeploy: true
     # Chỉ build lại khi mã máy chủ đổi (không build lại khi sửa tài liệu, video, giao diện).

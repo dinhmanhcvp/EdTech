@@ -1,3 +1,4 @@
+import functools
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -42,6 +43,7 @@ def clean_equation_string(raw: str) -> str:
     eq = eq.replace('²', '^2').replace('³', '^3').replace('⁴', '^4')
     return eq.strip()
 
+@functools.lru_cache(maxsize=256)  # cùng phương trình + tham số thì trả lại ngay (matplotlib mất ~100 ms/lần trên máy mạnh, nhiều lần hơn trên gói Free của Render)
 def generate_neon_graph(equation_str: str, param_a: float = 1.0, param_b: float = 0.0, param_c: float = 0.0, param_d: float = 0.0) -> str:
     """
     Parses any mathematical expression safely with SymPy and renders a high-contrast dark-neon SVG.

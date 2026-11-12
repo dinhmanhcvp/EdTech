@@ -74,6 +74,17 @@ describe('tab Hướng dẫn của phòng thực hành', () => {
     expect(r.getByTestId('lab-tools').textContent).toContain('Khóa buret');
     expect(r.getByTestId('lab-step-0').textContent).toContain('Bước 1/');
     expect(r.getByTestId('lab-step-how').querySelectorAll('li').length).toBeGreaterThanOrEqual(2);
+    // bài hóa: tính chất / hiện tượng / phản ứng nằm trên chất và dụng cụ trong cảnh, không nằm trong tab Hướng dẫn
+    expect(r.getByTestId('lab-in-scene').textContent).toContain('trên chất');
+    expect(r.queryByTestId('lab-step-see')).toBeNull();
+    expect(r.getByTestId('lab-step-0').textContent).not.toContain('Giải thích');
+  });
+
+  it('bài không phải hóa vẫn hiện mục Quan sát và Giải thích trong tab Hướng dẫn', () => {
+    const r = render(<HandsLab experiment={'balance' as never} />);
+    fireEvent.click(r.getByTestId('lab-panel-guide'));
+    expect(r.queryByTestId('lab-in-scene')).toBeNull();
     expect(r.getByTestId('lab-step-see').textContent).toContain('Quan sát');
+    expect(r.getByTestId('lab-step-0').textContent).toContain('Giải thích');
   });
 });

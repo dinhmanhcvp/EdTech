@@ -9,6 +9,9 @@ import {LineSegments2} from 'three/examples/jsm/lines/LineSegments2.js';
 import {LineSegmentsGeometry} from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import type {P, S} from '../../utils/presets/types';
 
+/** một dòng của thẻ thông tin: h = tiêu đề, kv = cặp tên–giá trị, eq = phương trình (chữ đơn cách), p = câu thường, warn = cảnh báo */
+export type CardRow = {t: 'h' | 'kv' | 'eq' | 'p' | 'warn'; a: string; b?: string; c?: string};
+
 export interface View3 {
   p: P;
   t: number;
@@ -32,6 +35,8 @@ export interface Kit {
   arrow(color: string, radius?: number): Arrow3;
   /** nhãn HTML bám theo một điểm 3D; gọi với null để ẩn. `parent` = nhóm chứa điểm (để đổi về toạ độ thế giới) */
   label(text: string, color?: string, plain?: boolean): (at: THREE.Vector3 | null, parent?: THREE.Object3D, text?: string) => void;
+  /** thẻ thông tin nhiều dòng bám theo một điểm 3D (tính chất chất, phản ứng đang xảy ra); gọi với at = null để ẩn, `rows` để đổi nội dung */
+  card(color?: string): (at: THREE.Vector3 | null, rows?: CardRow[]) => void;
   /** chú thích góc trên trái: dòng đầu đậm */
   caption(text: string): void;
   /** đăng ký vật có thể chạm chọn (nhóm cha mang id); `lowPriority`: chỉ được chọn khi không trúng vật nào khác (màng tế bào bao ngoài) */
@@ -239,6 +244,42 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
             L.pos.copy(at);
             parent?.localToWorld(L.pos);
           }
+        };
+      },
+      card: (color) => {
+        const root = document.createElement('div');
+        root.className = `pointer-events-none absolute -translate-x-1/2 -translate-y-full w-max max-w-[260px] rounded-xl border px-3 py-2 text-[11px] leading-snug shadow-lg ${dark ? 'border-white/20 bg-[#11143A]/92 text-[#E8E6F5]' : 'border-[#1D1B16]/15 bg-[#FBF9F4]/95 text-[#1D1B16]'}`;
+        if (color) root.style.borderTop = `3px solid ${color}`;
+        root.style.opacity = '0';
+        el.append(root);
+        const L = {el: root, pos: new THREE.Vector3(), on: false};
+        labels.push(L);
+        let last = '';
+        return (at, rows) => {
+          if (rows) {
+            const key = JSON.stringify(rows);
+            if (key !== last) {
+              last = key;
+              root.replaceChildren(
+                ...rows.map((r) => {
+                  const d = document.createElement('div');
+                  if (r.t === 'h') d.className = 'text-[12px] font-semibold';
+                  else if (r.t === 'eq') d.className = 'mt-1 font-mono text-[11px] text-[#FFD27F]';
+                  else if (r.t === 'warn') d.className = 'text-[#FF8A7A]';
+                  else d.className = r.t === 'kv' ? 'flex gap-1.5' : 'opacity-85';
+                  if (r.t === 'kv') {
+                    const k = Object.assign(document.createElement('span'), {className: 'shrink-0 opacity-60', textContent: r.a});
+                    const v = Object.assign(document.createElement('span'), {textContent: r.b ?? ''});
+                    if (r.c) v.style.color = r.c;
+                    d.append(k, v);
+                  } else d.textContent = r.a;
+                  return d;
+                }),
+              );
+            }
+          }
+          L.on = !!at;
+          if (at) L.pos.copy(at);
         };
       },
       pick: (obj, id, lowPriority = false) => {

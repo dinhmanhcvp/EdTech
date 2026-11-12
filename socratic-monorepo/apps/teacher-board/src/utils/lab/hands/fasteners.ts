@@ -164,3 +164,16 @@ export const allTight = (kind: AssemblyKind, screws: Record<string, boolean[]>):
 
 /** Khi chi tiết vừa được đặt vào chỗ: lắp kiểu ép thì các con coi như đã khoá, còn lại tất cả còn lỏng. */
 export const seated = (fa: Fastener | undefined): boolean[] | undefined => (fa ? Array.from({length: fa.count}, () => !!fa.press) : undefined);
+
+/** Vặn vít bằng cử chỉ chỉ cần vị trí 2D (webcam thường không có độ sâu nên không dùng xoay cổ tay). */
+export const DWELL = 0.25; // giây giữ mũi trên đầu vít trước khi bắt đầu vặn (lướt qua không vặn nhầm)
+export const HOLD_REV = 0.5; // giây cho một vòng khi chỉ giữ
+export const CIRC_GAIN = 2; // một vòng tròn của tay quanh đầu vít = bấy nhiêu vòng vặn
+/**
+ * Số vòng vặn trong một khung hình: giữ yên đủ `DWELL` thì tự vặn (một vòng mỗi `HOLD_REV` giây), cộng thêm phần do tay vẽ vòng tròn quanh đầu vít
+ * (`dAngle` = góc điểm chụm quay quanh đầu vít trong khung hình này, rad, dương = ngược chiều kim đồng hồ). Chỉ chiều đúng mới tính: nới = ngược, siết = thuận.
+ */
+export function driveRev(dwell: number, dt: number, dAngle: number, dir: Dir): number {
+  const circ = (dir === 'loosen' ? dAngle : -dAngle) > 0 ? Math.abs(dAngle) / (2 * Math.PI) : 0;
+  return (dwell >= DWELL ? dt / HOLD_REV : 0) + circ * CIRC_GAIN;
+}

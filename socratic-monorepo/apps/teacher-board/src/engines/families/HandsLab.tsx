@@ -1147,7 +1147,8 @@ const ChemLab: React.FC = () => {
   }, [lab]);
   const s0 = SUB_BY_ID[sub];
   const props = useMemo(() => propertiesOf(sub), [sub]);
-  const KIND: Record<string, string> = {solution: 'dung dịch', solid: 'chất rắn', liquid: 'chất lỏng', indicator: 'chất chỉ thị'};
+  /** các chất có thể cho vào cùng (rút từ chính cơ sở dữ liệu phản ứng): chỉ là lối tắt thao tác, thông tin nằm trên chất trong cảnh */
+  const partners = useMemo(() => [...new Map((propertiesOf(sub)?.reactions ?? []).flatMap((r) => r.partners).map((q) => [q.id, q])).values()], [sub]);
   /** thử ngay một cặp: cho chất đang chọn rồi chất cặp vào ống đang chọn */
   const tryWith = (partner: string) => {
     dispatch({type: 'add', v: active, sub, amount});
@@ -1216,72 +1217,17 @@ const ChemLab: React.FC = () => {
         </button>
       </div>
       <p className="text-[#4B473D]">Chọn ở đây khi không có camera; có camera thì rót bằng tay thẳng từ kệ.</p>
-      {props && (
-        <div data-testid="chem3d-props" className="rounded-xl border border-[#1D1B16]/15 bg-white px-3 py-2">
-          <b className="block text-sm">
-            {s0.label} <span className="font-normal text-[#4B473D]">({s0.formula || '—'})</span>
-          </b>
-          <p className="text-[#4B473D]">
-            {KIND[s0.kind]} · nhóm {s0.group}
-            {s0.conc ? ` · ${s0.conc} mol/L` : ''}
-            {s0.molar ? ` · M = ${s0.molar} g/mol` : ''}
-          </p>
-          {s0.hazard && <p className="text-[#C4261A]">⚠ {s0.hazard}</p>}
-          <p className="text-[#4B473D]">
-            Gồm: {props.species.map((q) => q.name).join(', ') || 'nước'}
-            {props.smell.length ? ` · mùi ${props.smell.join(', ')}` : ''}
-          </p>
-          {props.physical && (
-            <dl data-testid="chem3d-physical" className="mt-1 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 rounded-lg bg-[#0E7C66]/[.07] px-2 py-1.5">
-              <b className="col-span-2">Tính chất vật lí</b>
-              {(
-                [
-                  ['Bề ngoài', props.physical.look],
-                  ['Mùi', props.physical.smell],
-                  ['Trong nước', props.physical.water],
-                  ['Nóng chảy (°C)', props.physical.mp],
-                  ['Sôi (°C)', props.physical.bp],
-                  ['Khối lượng riêng (g/cm³)', props.physical.rho],
-                  ['Khác', props.physical.more],
-                ] as [string, string | undefined][]
-              )
-                .filter(([, v]) => v)
-                .map(([k, v]) => (
-                  <React.Fragment key={k}>
-                    <dt className="text-[#4B473D]">{k}</dt>
-                    <dd>{v}</dd>
-                  </React.Fragment>
-                ))}
-            </dl>
-          )}
-          {props.notes.map((n) => (
-            <p key={n} data-testid="chem3d-note" className="mt-1 rounded-lg bg-[#2459C9]/[.07] px-2 py-1">
-              {n}
-            </p>
+      {partners.length > 0 && (
+        <div data-testid="chem3d-partners" className="flex max-h-36 flex-wrap items-center gap-1.5 overflow-auto">
+          <span className="text-[#4B473D]">Thử {s0.label} với</span>
+          {partners.map((p) => (
+            <button key={p.id} type="button" data-testid={`chem3d-try-${p.id}`} onClick={() => tryWith(p.id)} className="min-h-[36px] rounded-full border border-[#1D1B16]/25 bg-white px-2.5 font-medium hover:bg-[#FBF9F4]">
+              {p.label}
+            </button>
           ))}
-          <b className="mt-1 block">Tính chất hóa học ({props.reactions.length} phản ứng trong cơ sở dữ liệu)</b>
-          <ul className="mt-1 max-h-56 space-y-1.5 overflow-auto">
-            {props.reactions.map((r) => (
-              <li key={r.id} data-testid={`chem3d-rxn-${r.id}`} className="rounded-lg bg-[#1D1B16]/[.04] px-2 py-1.5">
-                <span className="block font-mono text-[11px]">{r.eq}</span>
-                {r.text && <span className="block">Hiện tượng: {r.text}</span>}
-                {r.conditions.length > 0 && <span className="block text-[#4B473D]">Điều kiện: {r.conditions.join('; ')}</span>}
-                {r.heat !== undefined && <span className="block text-[#4B473D]">{r.heat < 0 ? 'Tỏa nhiệt' : 'Thu nhiệt'} {Math.abs(r.heat)} kJ/mol</span>}
-                {r.partners.length > 0 && (
-                  <span className="mt-1 flex flex-wrap gap-1">
-                    <span className="text-[#4B473D]">Thử với:</span>
-                    {r.partners.slice(0, 6).map((p) => (
-                      <button key={p.id} type="button" data-testid={`chem3d-try-${r.id}-${p.id}`} onClick={() => tryWith(p.id)} className="min-h-[36px] rounded-full border border-[#1D1B16]/25 bg-white px-2.5 font-medium hover:bg-[#FBF9F4]">
-                        {p.label}
-                      </button>
-                    ))}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
         </div>
       )}
+      <p className="text-[#4B473D]">Tính chất vật lí, hóa học và phản ứng hiện ngay trên chai (trỏ vào hoặc cầm chai) và trên ống đang phản ứng trong cảnh 3D.</p>
       <div className="flex flex-wrap items-center gap-1.5">
         <button type="button" data-testid="chem3d-goggles" aria-pressed={lab.goggles} onClick={() => dispatch({type: 'goggles', on: !lab.goggles})} className={PILL(lab.goggles)}>
           {lab.goggles ? 'Đã đeo kính' : 'Đeo kính bảo hộ'}

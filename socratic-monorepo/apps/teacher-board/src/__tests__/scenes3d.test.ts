@@ -37,6 +37,7 @@ function fakeKit(): Kit {
     caption: () => undefined,
     pick: () => undefined,
     drag: () => () => undefined,
+    card: () => () => undefined,
     set: () => undefined,
   };
 }

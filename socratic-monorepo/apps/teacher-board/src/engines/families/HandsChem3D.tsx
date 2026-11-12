@@ -2,6 +2,7 @@
 
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
+import {substanceRows, vesselRows, type Row} from '../../utils/lab/chem/cards';
 import {derive} from '../../utils/lab/chem/engine';
 import {SPECIES, SUBSTANCES} from '../../utils/lab/chem/species';
 import type {Action, Derived, LabState, Substance} from '../../utils/lab/chem/types';
@@ -108,7 +109,7 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
         const flash = new THREE.PointLight('#FFF1C2', 0, 3);
         flash.position.y = h * 0.6;
         g.add(liquid, sediment, shell, base, rim, bub, fall, wisp, flash, ring);
-        return {g, h, r, shell, floor: base, rim, liquid, sediment, bub, fall, wisp, flash, flashAt: -1e9, shownColor: new THREE.Color('#E0F2FE'), shownSh: 0, ring, tag: k.label(v0.id), what: k.label(''), home: new THREE.Vector3(VX[i], 0.1, VZ), base: {x: VX[i], z: VZ}};
+        return {g, h, r, shell, floor: base, rim, liquid, sediment, bub, fall, wisp, flash, flashAt: -1e9, shownColor: new THREE.Color('#E0F2FE'), shownSh: 0, ring, tag: k.label(v0.id), what: k.label(''), card: k.card('#2E9B57'), rows: [] as Row[], activeAt: -1e9, logLen: 0, home: new THREE.Vector3(VX[i], 0.1, VZ), base: {x: VX[i], z: VZ}};
       });
 
       // ---- đèn cồn
@@ -133,6 +134,9 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
         return {s, g: b, home: new THREE.Vector3(), tilt: 0};
       });
       const bottleTag = k.label('');
+      // thẻ tính chất ngay trên chai khi trỏ vào / cầm; tính một lần cho mỗi chất
+      const bottleCard = k.card('#E3B341');
+      const bottleRows = new Map<string, Row[]>();
       const place = () => {
         const mine = bottles.filter((b) => b.s.group === live.group);
         bottles.forEach((b) => (b.g.visible = b.s.group === live.group));
@@ -240,7 +244,7 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
       let seenViol = 0; // số vi phạm đã xử lí: vi phạm mới → sự cố tương ứng
       let airFor = 0; // thời gian nghiêng chai giữa không trung
       let spilled = false;
-      let roll0 = 0; // góc cổ tay lúc nhấc chai: nghiêng chai = xoay cổ tay so với góc này
+      let roll0 = 0; // góc cổ tay lúc nhấc chai (chỉ khi có camera độ sâu, xem WRIST_ROLL; webcam thường: chai tự nghiêng khi tới miệng ống)
       let heatAcc = 0;
       let poured = 0;
       let full = false;
@@ -272,6 +276,13 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
           seenLog = live.lab.log.length;
           seen = live.lab;
           derived = live.lab.vessels.map(derive);
+          // thẻ phản ứng trên từng ống: nội dung tính lại mỗi khi trạng thái đổi; có việc mới (cho chất, phản ứng) thì thẻ nổi lên 12 giây
+          live.lab.vessels.forEach((v, i) => {
+            const vs = vessels[i];
+            vs.rows = vesselRows(v, derived[i]);
+            if (v.log.length > vs.logLen) vs.activeAt = now;
+            vs.logLen = v.log.length;
+          });
         }
         // thời gian phản ứng chạy theo giờ thật nhân hệ số tua nhanh
         tickAcc += dt;
@@ -312,12 +323,15 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
           if (hv?.kind === 'bottle') {
             const b = bottles[hv.i];
             info = `${b.s.label} (${b.s.formula})${b.s.hazard ? ` ⚠ ${b.s.hazard}` : ''}`;
-            bottleTag(pos.copy(b.g.position).setY(b.g.position.y + 0.85), undefined, b.s.label);
+            bottleTag(null);
+            if (!bottleRows.has(b.s.id)) bottleRows.set(b.s.id, substanceRows(b.s.id));
+            bottleCard(pos.copy(b.g.position).setY(b.g.position.y + 0.95), bottleRows.get(b.s.id));
           } else if (hv?.kind === 'vessel') info = `${live.lab.vessels[hv.i].id}: nhấc ra thùng thải để đổ bỏ`;
           else if (hv?.kind === 'port') info = 'Vòng vàng ở miệng ống: kéo sang ống khác để dẫn khí';
           else if (hv?.kind === 'lamp') info = 'Đèn cồn: giữ dưới ống để đun';
           else if (hv?.kind === 'goggles') info = live.lab.goggles ? 'Đã đeo kính bảo hộ (chạm để bỏ)' : 'Chạm để đeo kính bảo hộ trước khi dùng hóa chất độc hại';
           else if (!hv) bottleTag(null);
+          if (hv?.kind !== 'bottle') bottleCard(null);
           if (!cur) return;
           const target = P.onPlane(p.ndc.x, p.ndc.y, 1.5, v3);
           if (cur.kind === 'bottle') {
@@ -477,7 +491,12 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
           // thành phần đang có trong ống
           const inside = Object.entries(v.moles).filter(([, mol]) => mol > 1e-7).map(([sp]) => SPECIES[sp]?.name.replace(/^ion /, '') ?? sp);
           vs.what(inside.length && v.liquidMl > 0 ? pos.set(vs.g.position.x, vs.g.position.y + vs.h * 0.45, vs.g.position.z + vs.r + 0.05) : null, undefined, `${inside.slice(0, 3).join(', ')}${inside.length > 3 ? ` +${inside.length - 3}` : ''}`);
-          vs.tag(pos.set(vs.g.position.x, vs.g.position.y + vs.h + 0.3, vs.g.position.z), undefined, `${v.id} · ${d.temp.toFixed(0)} °C${d.ph !== null ? ` · pH ${d.ph.toFixed(1)}` : ''} · ${v.liquidMl.toFixed(1)} mL`);
+          // ống đang chọn, ống đang trỏ vào hoặc ống vừa có phản ứng: hiện thẻ ngay trên ống (thay cho chip một dòng)
+          const pointed = P.ptrs.some((q) => q.active && P.distAt(q.ndc.x, q.ndc.y, pos.set(vs.g.position.x, vs.g.position.y + vs.h * 0.5, vs.g.position.z)) < 0.22);
+          const showCard = vs.rows.length > 0 && (i === live.active || pointed || now - vs.activeAt < 12000);
+          if (showCard) vs.what(null);
+          vs.card(showCard ? pos.set(vs.g.position.x, vs.g.position.y + vs.h + 0.25, vs.g.position.z) : null, vs.rows);
+          vs.tag(showCard ? null : pos.set(vs.g.position.x, vs.g.position.y + vs.h + 0.3, vs.g.position.z), undefined, `${v.id} · ${d.temp.toFixed(0)} °C${d.ph !== null ? ` · pH ${d.ph.toFixed(1)}` : ''} · ${v.liquidMl.toFixed(1)} mL`);
         });
         gogTag(pos.set(GOGGLES.x, 0.55, GOGGLES.z), undefined, live.lab.goggles ? 'Đã đeo kính bảo hộ' : 'Kính bảo hộ (chạm để đeo)');
         tabs.forEach((t) => t.m.scale.set(1, t.gname === live.group ? 2.2 : 1, 1));

@@ -27,7 +27,9 @@ Tối ưu tải cho phòng thực hành `/lab` (3D):
 - **Cache dài hạn**: `/models/*` và `/draco/*` gửi `Cache-Control: immutable` (1 năm); địa chỉ mô hình có `?v=<mã commit>` (`NEXT_PUBLIC_ASSET_V` lấy từ `VERCEL_GIT_COMMIT_SHA`), nên mỗi lần deploy trình duyệt tải bản mới, các lần mở sau thì lấy từ bộ nhớ đệm.
 - **Chất lượng thích nghi** (`Stage3D.tsx`): máy chạy dưới ~30 khung/giây thì tự hạ độ phân giải từng bậc rồi tắt bóng đổ; lựa chọn nhớ trong phiên.
 - **Camera**: `Permissions-Policy` của bảng giáo viên cho phép `camera=(self)` (trước đó `camera=()` chặn camera tay trên bản deploy). Camera chỉ chạy trên `https` (Vercel có sẵn) hoặc `localhost`.
-- Kích thước đã đo (`next build`): `/lab` 431 kB, bảng `/` 965 kB tải lần đầu (gần như toàn mã bảng; chia nhỏ tiếp cần lazy-load các panel trong `SmartboardCanvas.tsx`, nhiều bài test dựa vào việc chúng hiện đồng bộ nên chưa làm).
+- Kích thước đã đo (`next build`, trước đợt tối ưu này): `/lab` 431 kB, bảng `/` 965 kB tải lần đầu. Đợt tối ưu sau đó: **bảng mẫu nét viết tay `inkGlyphs.json` (640 kB, 162 kB nén, hơn 1/6 gói đầu) chuyển thành `import()` động** (nạp ngay khi trình duyệt chạy xong gói chính, không chặn vẽ trang; mã nguồn trong gói đầu giảm 2865 → 2231 kB theo đồ thị `import` tĩnh); `three` không nằm trong gói đầu của bảng (đã kiểm). Chưa đo lại bằng `next build` thật sau thay đổi này. Chia nhỏ tiếp các panel trong `SmartboardCanvas.tsx` chỉ bớt khoảng 35–40 kB nén và buộc sửa nhiều test, nên chưa làm.
+- **Bỏ KaTeX từ CDN** trong `layout.tsx` (CSS chặn vẽ trang + một script bên thứ ba, bản 0.16.8 lệch với gói npm 0.19 mà mã thực sự dùng): `globals.css` đã nhập CSS từ gói npm.
+- **Render**: `--timeout-keep-alive 75` (tránh 502 do bộ cân tải cắt kết nối giữ sống); đồ thị `/api/v1/plot` có cache LRU 256 mục và `Cache-Control: public, max-age=3600` (đo cục bộ: lần lặp lại 100–260 ms → 0–16 ms); thanh trạng thái gọi thẳng Render trước, rewrite của Vercel (treo tới 30 s khi Render ngủ) chỉ còn là đường dự phòng.
 
 Đã kiểm chứng trong môi trường Python **sạch chỉ cài `requirements.txt`** (giả lập Render, chạy `APP_ENV=production`, không có tệp `.env`): khởi động tới `/health` trong 1,7 giây; đồ thị lần đầu 0,22 giây; gzip hoạt động; CORS cho `*.vercel.app` và chặn tên miền lạ; ghi khóa AI qua API bị tắt; giới hạn tần suất trả 429 đúng; tạo phòng và nối WebSocket giáo viên thành công. Đây là giả lập trên máy bạn, **chưa phải bản chạy thật trên Render/Vercel**: hãy làm bước 4 (kiểm tra) sau khi deploy.
 
@@ -96,10 +98,12 @@ Render gói Free **ngủ sau 15 phút không có truy cập**; lần gọi đầ
 | Cách | Làm thế nào | Đánh đổi |
 |---|---|---|
 | **A. Gói trả phí của Render** (khuyên dùng khi trình chiếu/thi) | Render → dịch vụ → *Settings → Instance Type* → chọn gói starter trở lên | Có phí; không ngủ; nhiều RAM hơn (xem mục OCR bên dưới). Xem giá hiện hành ở trang giá của Render |
-| **B. Gọi `/health` định kỳ** (miễn phí) | Đã có `.github/workflows/keepalive.yml`: đặt biến kho `RENDER_URL` (GitHub → Settings → Secrets and variables → Actions → **Variables**) | GitHub có thể trễ vài phút và tự tắt lịch chạy nếu kho không hoạt động 60 ngày. Hoặc dùng dịch vụ giám sát ngoài (UptimeRobot, cron-job.org) gọi `/health` mỗi 5 đến 10 phút |
+| **B. Gọi `/ping` định kỳ** (miễn phí) | Đã có `.github/workflows/keepalive.yml` (gọi `/ping`, thử lại 3 lần): đặt biến kho `RENDER_URL` (GitHub → Settings → Secrets and variables → Actions → **Variables**). **Nên thêm UptimeRobot hoặc cron-job.org gọi `https://<tên>.onrender.com/ping` mỗi 5 phút** (miễn phí, chạy đều hơn) | Lịch của GitHub Actions hay trễ hoặc bỏ nhịp, nên một mình nó không đủ giữ máy chủ thức; cũng tự tắt nếu kho không hoạt động 60 ngày |
 | **C. Đánh thức thủ công** | Trước buổi trình chiếu 5 phút, mở `…onrender.com/health` | Dễ quên |
 
-Ngoài ra: giao diện tự gọi `/health` ngay khi mở trang (thanh trạng thái), nên mở bảng trước vài phút cũng đánh thức máy chủ.
+Ngoài ra: giao diện gọi `/ping` NGAY khi HTML được phân tích (trước khi tải xong gói JS) cùng với `preconnect` tới Render, nên máy chủ ngủ bắt đầu thức dậy song song với việc tải trang; thanh trạng thái hiện "Máy chủ AI đang thức dậy (30–60 s)…" khi chờ quá 3 giây và thử lại mỗi 4 giây tới khi thông. `/ping` chỉ trả `{"ok":true}` (không đụng bể khóa AI như `/health`).
+
+**Muốn hết hẳn độ trễ khi trình chiếu/thi: nâng Render lên gói starter** (cách A). Mọi cách trên chỉ giảm khả năng gặp máy chủ ngủ, không loại bỏ hẳn; gói Free còn rất ít CPU nên lời gọi nặng (đồ thị, Vision) vẫn chậm hơn máy cục bộ.
 
 **OCR thần kinh (RapidOCR/ONNX) và ChromaDB** không cài mặc định vì nặng (gói Free chỉ 512 MB RAM). Hệ quả: nhận dạng ảnh không có khóa OpenRouter kém hơn máy của bạn (máy bạn đang có RapidOCR). Việc chính (chữ → công thức, vẽ tay → khối, định tuyến mô phỏng, hình học, đề viết tay qua OpenRouter) chạy trong trình duyệt hoặc qua Gemini nên không bị ảnh hưởng. Nếu cần OCR đầy đủ, dùng gói Render ≥ 2 GB RAM và đổi lệnh build thành `pip install -r requirements-edge.txt`.
 
@@ -119,7 +123,7 @@ Ngoài ra: giao diện tự gọi `/health` ngay khi mở trang (thanh trạng t
 |---|---|
 | Vercel Hobby | Chỉ cho dự án **phi thương mại** |
 | Lưu nét viết mẫu | Điểm cuối `user-ink` của Next ghi vào đĩa; Vercel chỉ đọc nên lưu lên máy chủ không được. Ứng dụng vẫn lưu trong trình duyệt (localStorage) |
-| Tải trang đầu | Trang bảng giáo viên khoảng 630 kB mã (đã nén còn khoảng 1/3), tải một lần rồi được cache vĩnh viễn theo phiên bản. Muốn nhẹ hơn nữa có thể tách các engine mô phỏng bằng `next/dynamic` (việc về sau, có thể cần sửa test) |
+| Tải trang đầu | Trang bảng giáo viên khoảng 630 kB mã (đã nén còn khoảng 1/3), tải một lần rồi được cache vĩnh viễn theo phiên bản. Gói đầu đã bớt bảng mẫu nét viết (xem mục 0). Muốn nhẹ hơn nữa: `utils/presets` và `utils/lab` (khoảng 680 kB mã nguồn, dữ liệu định tuyến mô phỏng) đang nằm trong gói đầu vì nhận dạng chạy đồng bộ; tách chúng cần đổi các điểm gọi sang bất đồng bộ |
 | Font | Tải từ Google Fonts; cần có mạng khi mở lần đầu |
 | WebSocket qua Vercel | Không chuyển tiếp được; Lớp học luôn nối thẳng Render (đã xử lý) |
 

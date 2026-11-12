@@ -4,6 +4,7 @@ import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {TERMS, explain, netSources, wireKey, type Term, type Verdict, type Wire} from '../../utils/lab/hands/threePhase';
 import {handPointers, labRoom, type HandsInput} from './handsKit';
+import {dress, loadModel, partOf, place} from './labParts';
 import {Stage3D, type SceneDef} from './Stage3D';
 
 /** Trạng thái bài đấu 3 pha dùng chung giữa bảng điều khiển React và cảnh 3D. */
@@ -61,14 +62,14 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
       // ---- mặt bàn, tủ điện
       labRoom(k, [7.4, 4.8, -0.4, -0.4]);
       solid(new THREE.BoxGeometry(7.4, 0.12, 4.8), '#D9C6A5', {rough: 0.85, x: -0.4, y: -0.056, z: -0.4});
-      solid(new THREE.BoxGeometry(0.8, 0.5, 1.3), '#ECE8DF', {rough: 0.4, x: -2.5, y: 0.25, z: -0.3});
+      const breakerBox = solid(new THREE.BoxGeometry(0.8, 0.5, 1.3), '#ECE8DF', {rough: 0.4, x: -2.5, y: 0.25, z: -0.3});
       solid(xCyl(0.07, 0.07, 1.1, 16), '#1D1B16', {x: -3.4, y: 0.12, z: -0.3});
       const handle = solid(new THREE.BoxGeometry(0.34, 0.14, 0.95), '#2459C9', {rough: 0.35, x: -2.5, y: 0.56, z: -0.3});
       const led = solid(new THREE.SphereGeometry(0.05, 16, 12), '#333333', {x: -2.5, y: 0.52, z: 0.25});
       for (const t of ['L1', 'L2', 'L3', 'PE'] as const) solid(new THREE.BoxGeometry(t === 'PE' ? 2.4 : 0.6, 0.04, 0.08), COLOR[t], {x: t === 'PE' ? -2.75 : -1.85, y: 0.025, z: POS[t][1]});
 
       // ---- bảng cọc đấu dây của động cơ (hộp đấu dây vẽ phóng to), nét đồng = ba cuộn dây bên trong
-      solid(new THREE.BoxGeometry(1.75, 0.06, 1.2), '#23272E', {rough: 0.5, x: 0.7, y: 0.03, z: 0.1});
+      const termPlate = solid(new THREE.BoxGeometry(1.75, 0.06, 1.2), '#23272E', {rough: 0.5, x: 0.7, y: 0.03, z: 0.1});
       k.scene.add(k.line('#C99A52', 2.5, (['U1', 'U2', 'V1', 'V2', 'W1', 'W2'] as const).flatMap((t) => at(t, 0.065).toArray()), true));
       solid(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(0.7, 0.06, -0.5), new THREE.Vector3(0.7, 0.5, -0.95), new THREE.Vector3(0.7, 1.05, -1.25), new THREE.Vector3(0.7, 1.08, -1.6)]), 24, 0.06, 10), '#3A3F47', {rough: 0.7});
 
@@ -94,6 +95,17 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
       solid(xCyl(0.27, 0.27, 0.12), '#B9BEC5', {...steel, x: 1.22});
       // vấu màu trên vành puli: nhìn từ trên xuống vẫn thấy rõ đang quay và quay chiều nào
       for (let i = 0; i < 3; i++) solid(new THREE.BoxGeometry(0.13, 0.05, 0.12), '#D9481C', {parent: rotor, x: 1.22, y: 0.27 * Math.cos((i * 2 * Math.PI) / 3), z: 0.27 * Math.sin((i * 2 * Math.PI) / 3)}).rotation.x = (i * 2 * Math.PI) / 3;
+      // thiết bị thật dựng bằng Blender (tools/lab-models/sims_parts.py); tải lỗi thì giữ hình khối ở trên
+      let paint3: THREE.MeshStandardMaterial[] = [];
+      void loadModel('/models/sims-parts.glb')
+        .then((lib) => {
+          paint3 = place(motor, lib, 'Motor3', [0, 0, 0], motor.children.filter((c) => c !== rotor))?.mats.filter((m) => m.name === 'paint') ?? [];
+          place(rotor, lib, 'Motor3Rotor', [0, 0, 0], [...rotor.children]);
+          place(k.scene, lib, 'Breaker3', [-2.5, 0, -0.3], [breakerBox]);
+          place(k.scene, lib, 'TermBoard', [0.7, 0, 0.1], [termPlate]);
+          dress(handle, partOf(lib, 'BreakerHandle'));
+        })
+        .catch(() => undefined);
       k.label('Động cơ không đồng bộ 3 pha')(new THREE.Vector3(0.7, 1.35, -1.7));
       const smoke = Array.from({length: 6}, () => {
         const m = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), new THREE.MeshBasicMaterial({color: '#5B5852', transparent: true, opacity: 0, depthWrite: false}));
@@ -238,6 +250,7 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
         rotor.rotation.x = angle;
         heat += ((bad ? 1 : 0) - heat) * Math.min(1, dt * (bad ? 0.5 : 0.8));
         (body.material as THREE.MeshStandardMaterial).emissive.setRGB(heat * 0.55, heat * 0.06, 0);
+        for (const m of paint3) m.emissive.setRGB(heat * 0.55, heat * 0.06, 0);
         const shake = live.on && v?.kind === 'unbalanced' ? 0.012 : 0;
         motor.position.set(0.7 + shake * Math.sin(now / 9), 0, -1.7 + shake * Math.cos(now / 7));
         smoke.forEach((s, i) => {

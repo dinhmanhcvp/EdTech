@@ -10,7 +10,7 @@ const smooth = (x: number) => {
 const lerp = (a: number, b: number, u: number) => a + (b - a) * u;
 
 /** Các bộ phận chạm chọn được: mỗi bộ phận một nhóm vật có vật liệu riêng, được tô sáng khi chọn và mờ đi khi bộ phận khác được chọn. */
-function parts(k: Kit) {
+export function parts(k: Kit) {
   const reg = new Map<string, {obj: THREE.Object3D; mats: THREE.MeshStandardMaterial[]}>();
   const tag = k.label('', '#A8481C');
   const box = new THREE.Box3();

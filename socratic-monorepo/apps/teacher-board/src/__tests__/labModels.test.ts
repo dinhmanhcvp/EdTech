@@ -36,4 +36,15 @@ describe('mô hình Blender của phòng thực hành: tên nút là hợp đồ
     const names = nodeNames('eng-parts.glb');
     for (const n of ['Wheel', 'HalfShaft', 'DiffCage', 'Spider', 'DrivePinion', 'AxleStand', 'SteeringWheel', 'SteeringColumn', 'LockLever', 'LockBase', 'JetCasing', 'Impeller', 'TurbineWheel', 'JetShaft', 'Combustor', 'ThrottleBase', 'ThrottleLever', 'FuelValve', 'ValveWheel', 'StirCyl', 'StirHotCap', 'StirFins', 'StirPiston', 'Flywheel', 'StirFrame', 'CrankDisc', 'HandPump', 'PumpHandle', 'GasBottle', 'Gauge', 'GaugeNeedle']) expect(names, n).toContain(n);
   });
+
+  it('thiết bị chính của chín bài còn lại có đủ các tên mà cảnh đấu 3 pha, THPT và đỉnh cao lắp vào', () => {
+    const names = nodeNames('sims-parts.glb');
+    for (const n of ['Motor3', 'Motor3Rotor', 'Breaker3', 'BreakerHandle', 'TermBoard', 'BotBody', 'BotWheel', 'PmsmStator', 'PmsmRotor', 'HarmonicRing', 'WaveGen', 'Clevis', 'Stirrer', 'GelTank', 'GelPSU', 'FlyTray', 'FlyVial', 'AlphaSource', 'ScintScreen']) expect(names, n).toContain(n);
+  });
+  it('chi tiết năm máy tháo lắp: mọi tên mà HandsMachines mặc lên có trong machines-parts.glb', async () => {
+    const {NODE_OF} = await import('../engines/families/HandsMachines');
+    const names = nodeNames('machines-parts.glb');
+    for (const kind of Object.keys(NODE_OF) as (keyof typeof NODE_OF)[]) for (const n of Object.values(NODE_OF[kind])) expect(names, `${kind}:${n}`).toContain(n);
+    for (const n of ['MotorStator', 'EngineFrame', 'RobotBase', 'DronePad', 'PcCase', 'PcFan', 'DroneProp']) expect(names, n).toContain(n);
+  });
 });

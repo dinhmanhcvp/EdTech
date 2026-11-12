@@ -537,7 +537,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
   },
 };
 
-const STRUCT: Record<string, {before: string[]; after: string[]}> = {
+export const STRUCT: Record<string, {before: string[]; after: string[]}> = {
   del: {before: ['ABCDEFG'], after: ['ABDEFG']},
   dup: {before: ['ABCDEFG'], after: ['ABCBCDEFG']},
   inv: {before: ['ABCDEFG'], after: ['ABEDCFG']},

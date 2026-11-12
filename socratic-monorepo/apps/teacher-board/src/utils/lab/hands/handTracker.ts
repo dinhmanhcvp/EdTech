@@ -1,6 +1,6 @@
 /** Theo dõi hai bàn tay bằng camera nhìn từ trên xuống (MediaPipe Hand Landmarker), tải khi người dùng bật camera. */
 
-export type Pt = {x: number; y: number};
+export type Pt = {x: number; y: number; /** độ sâu tương đối so với cổ tay (MediaPipe), cùng thang với x; có thể vắng */ z?: number};
 
 // shortcut: tệp wasm và mô hình tải từ CDN nên lần bật đầu cần mạng; lớp học không có mạng thì chép hai thứ này vào public/ và đổi hai hằng dưới.
 const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3/wasm';
@@ -10,6 +10,48 @@ const MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/h
 export const pinchRatio = (p: Pt[]): number => Math.hypot(p[4].x - p[8].x, p[4].y - p[8].y) / (Math.hypot(p[0].x - p[9].x, p[0].y - p[9].y) || 1);
 /** Hai ngưỡng (chụm < 0,3; nhả > 0,5) để tay run không làm rơi vật đang cầm. */
 export const nextPinch = (was: boolean, ratio: number): boolean => ratio < (was ? 0.5 : 0.3);
+
+/** góc xoay cổ tay trong mặt phẳng ảnh (rad): 0 khi các ngón chỉ lên trên màn hình, dương khi xoay sang phải */
+export const rollOf = (p: Pt[]): number => Math.atan2(p[9].x - p[0].x, p[0].y - p[9].y);
+export const wrapAngle = (a: number): number => a - 2 * Math.PI * Math.round(a / (2 * Math.PI));
+/**
+ * Góc xoay cổ tay ổn định hơn `rollOf`: hướng từ cổ tay tới TRUNG ĐIỂM bốn khớp gốc ngón (5, 9, 13, 17) thay vì chỉ khớp 9,
+ * nên một điểm nhận diện nhảy vài điểm ảnh không làm góc giật. Cùng quy ước: 0 khi các ngón chỉ lên trên màn hình, dương khi xoay sang phải.
+ */
+export const steadyRoll = (p: Pt[]): number => {
+  const cx = (p[5].x + p[9].x + p[13].x + p[17].x) / 4;
+  const cy = (p[5].y + p[9].y + p[13].y + p[17].y) / 4;
+  return Math.atan2(cx - p[0].x, p[0].y - cy);
+};
+/** Hằng thời gian (giây) làm mượt góc xoay: đủ dài để khử rung và nhịp 30 khung/giây của camera, đủ ngắn để không thấy trễ khi nghiêng lọ. */
+export const ROLL_TAU = 0.09;
+/**
+ * Góc NGHIÊNG lòng bàn tay quanh trục cẳng tay (động tác xoay cổ tay để rót): 0 khi lòng bàn tay úp phẳng nhìn từ trên xuống, dương / âm theo chiều xoay.
+ * Khác `rollOf` / `steadyRoll` (đó là góc quay của bàn tay TRONG mặt phẳng ảnh, tức là vẫy tay sang bên): nghiêng cổ tay làm hàng khớp gốc ngón
+ * (5 → 17 và 9 → 13) ngả vào chiều sâu, nên góc = atan2(thành phần sâu, thành phần ngang vuông góc trục bàn tay). Dấu theo chiều tay nên
+ * trái / phải đều cho 0 khi phẳng. Trả NaN khi không có độ sâu (chuột, bài kiểm thử): nơi gọi quay về `steadyRoll`.
+ */
+export const palmRoll = (p: Pt[]): number => {
+  if (p[5].z === undefined || p[17].z === undefined || p[9].z === undefined || p[13].z === undefined) return NaN;
+  const ux = p[9].x - p[0].x;
+  const uy = p[9].y - p[0].y;
+  const len = Math.hypot(ux, uy) || 1;
+  // hai cặp khớp gốc ngón (ngoài cùng và giữa) cộng lại: một khớp nhận diện nhảy chỉ làm góc lệch một nửa
+  const dx = p[17].x - p[5].x + 0.6 * (p[13].x - p[9].x);
+  const dy = p[17].y - p[5].y + 0.6 * (p[13].y - p[9].y);
+  const dz = p[17].z! - p[5].z! + 0.6 * (p[13].z! - p[9].z!);
+  const perp = (dx * -uy + dy * ux) / len;
+  return Math.atan2((perp < 0 ? -1 : 1) * dz, Math.abs(perp));
+};
+export const TILT_START = 0.26; // 15°: xoay ít hơn thế thì coi là tay còn đứng, lọ chưa nghiêng
+export const TILT_SPAN = 0.7; // thêm 40°: tới 55° là nghiêng hết, rót nhanh nhất
+/**
+ * Độ nghiêng 0–1 của lọ đang cầm. Tay thật: góc xoay cổ tay so với lúc nhấc lọ (`r0`), nghiêng sang trái hay phải đều được.
+ * Chuột không xoay cổ tay được (`roll` NaN) nên coi là nghiêng hết khi lọ đang ở trên miệng dụng cụ (`over`), không thì thẳng.
+ */
+/** đoạn nối mượt (nhẹ ở hai đầu): bắt đầu nghiêng không bị "giật" ở góc ngưỡng và rót không đột ngột tăng tốc ở góc cuối */
+const smoothstep = (t: number): number => t * t * (3 - 2 * t);
+export const tiltFor = (roll: number, r0: number, over: boolean): number => (Number.isNaN(roll) ? (over ? 1 : 0) : smoothstep(Math.min(1, Math.max(0, (Math.abs(wrapAngle(roll - r0)) - TILT_START) / TILT_SPAN))));
 
 export const PAD_DWELL = 0.15;
 /**
@@ -113,7 +155,7 @@ export function handGate(): (pts: Pt[] | null, pinch: boolean, t: number) => Gat
       return {pts: [], pinch: false, alpha: 0, event: dock ? 'dock' : undefined};
     }
     const s = TAU * (1 - Math.exp(-lost / TAU));
-    return {pts: last.map((p) => ({x: p.x + v.x * s, y: p.y + v.y * s})), pinch: held, alpha: 1 - 0.6 * (lost / GRACE)};
+    return {pts: last.map((p) => ({x: p.x + v.x * s, y: p.y + v.y * s, z: p.z})), pinch: held, alpha: 1 - 0.6 * (lost / GRACE)};
   };
 }
 
@@ -203,14 +245,45 @@ export async function listCameras(): Promise<MediaDeviceInfo[]> {
  * Mở camera vào `video` và gọi `onHands` mỗi khung hình với tối đa hai bàn tay (21 điểm, toạ độ 0–1 theo khung hình).
  * Thứ tự tay được giữ ổn định giữa các khung hình. Trả về hàm dừng.
  */
+/** Lỗi ở khâu nào: 'camera' (mở thiết bị) hay 'model' (tải bộ nhận diện tay); giao diện dùng để báo đúng nguyên nhân. */
+export class HandsError extends Error {
+  constructor(public stage: 'camera' | 'model', public cause: unknown) {
+    super(`${stage}: ${cause instanceof Error ? `${cause.name}: ${cause.message}` : String(cause)}`);
+  }
+}
+const ours = (e: unknown, ...names: string[]) => e instanceof DOMException && names.includes(e.name);
+/**
+ * Mở camera, chịu được các lỗi hay gặp: mã camera đã lưu không còn (đổi trình duyệt, rút camera) → thử lại bằng camera mặc định;
+ * camera không đáp ứng độ phân giải xin → thử lại không ràng buộc.
+ */
+async function openCamera(deviceId?: string): Promise<MediaStream> {
+  const want = {width: {ideal: 640}, height: {ideal: 360}, frameRate: {ideal: 30}};
+  const get = (video: MediaTrackConstraints | true) => navigator.mediaDevices.getUserMedia({video});
+  try {
+    return await get({...want, deviceId: deviceId ? {exact: deviceId} : undefined});
+  } catch (e) {
+    if (deviceId && ours(e, 'OverconstrainedError', 'NotFoundError')) return openCamera();
+    if (ours(e, 'OverconstrainedError')) return get(true);
+    throw new HandsError('camera', e);
+  }
+}
+
 export async function startHands(video: HTMLVideoElement, deviceId: string | undefined, onHands: (hands: Pt[][]) => void): Promise<() => void> {
-  const stream = await navigator.mediaDevices.getUserMedia({video: {deviceId: deviceId ? {exact: deviceId} : undefined, width: {ideal: 640}, height: {ideal: 360}, frameRate: {ideal: 30}}});
+  const stream = await openCamera(deviceId);
   const stopCam = () => stream.getTracks().forEach((t) => t.stop());
   try {
     video.srcObject = stream;
     await video.play();
-    const {FilesetResolver, HandLandmarker} = await import('@mediapipe/tasks-vision');
-    const lm = await HandLandmarker.createFromOptions(await FilesetResolver.forVisionTasks(WASM), {baseOptions: {modelAssetPath: MODEL, delegate: 'GPU'}, runningMode: 'VIDEO', numHands: 2});
+    let lm: import('@mediapipe/tasks-vision').HandLandmarker;
+    try {
+      const {FilesetResolver, HandLandmarker} = await import('@mediapipe/tasks-vision');
+      const files = await FilesetResolver.forVisionTasks(WASM);
+      const make = (delegate: 'GPU' | 'CPU') => HandLandmarker.createFromOptions(files, {baseOptions: {modelAssetPath: MODEL, delegate}, runningMode: 'VIDEO', numHands: 2});
+      // một số máy / trình duyệt không chạy được GPU: thử lại bằng CPU thay vì bỏ cuộc
+      lm = await make('GPU').catch(() => make('CPU'));
+    } catch (e) {
+      throw new HandsError('model', e);
+    }
     let raf = 0;
     let vfc = 0;
     let stopped = false;

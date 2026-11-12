@@ -8,10 +8,13 @@ import {fringe, orderWeight, visibility} from '../../utils/lab/hands/sims/matter
 import {SIM_BY_ID} from '../../utils/lab/hands/sims';
 import {fmt, fromUnit, toUnit, type Values} from '../../utils/lab/hands/sims/types';
 import {handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
-import {handOps} from './handsOps';
+import {handOps, padBank} from './handsOps';
 import {OPS} from '../../utils/lab/hands/sims/ops';
 import {solid} from './handsModels';
+import {dress, partOf, place, withSims2} from './labParts';
 import {ADVANCED_SCENES} from './HandsSimsAdvanced3D';
+import {MISHAPS, mishapOf} from '../../utils/lab/hands/mishap';
+import {mishapFx, mishapSound} from './mishapFx';
 import {CHEM_LABS} from './HandsChemOps3D';
 import {collisionLab} from './HandsCollision3D';
 import {ENG_LABS} from './HandsEngOps3D';
@@ -31,6 +34,10 @@ export interface SimLive {
    * (ví dụ mặt trên của xe đang chạy); bộ thao tác thả vật vào đúng chỗ đó thay cho ổ lắp ở mép bàn.
    */
   anchors?: Record<string, THREE.Vector3>;
+  /** do `makeDef` gán: cảnh gọi khi thao tác sai gây hậu quả (id trong `MISHAPS`); vẽ hiệu ứng ở `at`, phát âm thanh và báo thẻ sự cố */
+  hazard?: (id: string, at?: THREE.Vector3) => void;
+  /** do bảng điều khiển gán: nhận id sự cố để hiện thẻ giải thích */
+  report?: (id: string) => void;
 }
 type Ctx = {k: Kit; live: SimLive};
 /** mỗi bài dựng vật thể rồi trả hàm cập nhật mỗi khung hình (trả chú thích) */
@@ -44,14 +51,20 @@ const matterwave: Scene = ({k, live}) => {
   const Y = 0.5;
   const Z = -1.0;
   const FLOOR = 0.09; // phân tử bay sát mặt bàn để vân nhìn rõ từ trên xuống
-  solid(k.scene, new THREE.CylinderGeometry(0.35, 0.4, 0.7, 24).rotateZ(Math.PI / 2), '#D9481C', {metal: 0.5, rough: 0.4, x: -3.3, y: Y, z: Z});
+  const oven = solid(k.scene, new THREE.CylinderGeometry(0.35, 0.4, 0.7, 24).rotateZ(Math.PI / 2), '#D9481C', {metal: 0.5, rough: 0.4, x: -3.3, y: Y, z: Z});
   k.label('Lò bay hơi')(new THREE.Vector3(-3.3, 1.1, Z));
-  solid(k.scene, new THREE.BoxGeometry(0.06, 0.8, 0.9), '#6B7380', {metal: 0.6, x: -2.3, y: Y, z: Z});
+  const slitPlate = solid(k.scene, new THREE.BoxGeometry(0.06, 0.8, 0.9), '#6B7380', {metal: 0.6, x: -2.3, y: Y, z: Z});
   // cách tử: nhiều khe song song
   for (let i = -6; i <= 6; i++) solid(k.scene, new THREE.BoxGeometry(0.04, 0.3, 0.045), '#C9CED6', {metal: 0.8, x: -0.3, y: FLOOR + 0.15, z: Z + i * 0.065});
   k.label('Cách tử 100 nm')(new THREE.Vector3(-0.3, 1.2, Z));
   const SCREEN_X = 2.9;
-  solid(k.scene, new THREE.BoxGeometry(1.5, 0.04, 3.6), '#15171B', {rough: 0.6, x: SCREEN_X, y: 0.02, z: Z});
+  const screen = solid(k.scene, new THREE.BoxGeometry(1.5, 0.04, 3.6), '#15171B', {rough: 0.6, x: SCREEN_X, y: 0.02, z: Z});
+  withSims2((lib) => {
+    dress(oven, partOf(lib, 'Oven'));
+    dress(slitPlate, partOf(lib, 'SlitPlate'));
+    dress(screen, partOf(lib, 'DetScreen'));
+    place(k.scene, lib, 'GratingFrame', [-0.3, 0, Z]); // khung giữ cách tử; các khe vẫn là hình khối
+  });
   k.label('Màn đầu dò (nhìn từ trên)')(new THREE.Vector3(SCREEN_X, 0.5, Z - 1.9));
   const N = 4000;
   const dots = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(N * 3), 3)), new THREE.PointsMaterial({color: '#7FFFB0', size: 5, sizeAttenuation: false}));
@@ -110,6 +123,7 @@ const ligo: Scene = ({k, live}) => {
     solid(k.scene, new THREE.BoxGeometry(X1 - X0 + 0.3, 0.04, 0.9), '#15171B', {rough: 0.7, x: (X0 + X1) / 2, y: 0.02, z});
     k.label(names[i])(new THREE.Vector3((X0 + X1) / 2, 0.1, z - 0.55));
   });
+  withSims2((lib) => rows.forEach((z) => place(k.scene, lib, 'ScopeBezel', [0, 0, z]))); // viền màn hiện sóng
   const N = 700;
   const seed = (i: number) => {
     const a = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
@@ -163,6 +177,12 @@ const bec: Scene = ({k, live}) => {
   const CZ = -1.3;
   const CX = 0;
   solid(k.scene, new THREE.BoxGeometry(5.2, 0.04, 2.6), '#0C1118', {rough: 0.6, x: CX, y: 0.02, z: CZ});
+  withSims2((lib) => {
+    place(k.scene, lib, 'ImageBezel', [CX, 0, CZ]);
+    const chamber = place(k.scene, lib, 'BecChamber', [-3.5, 0, CZ]); // buồng chân không có hai cuộn từ giữ đám nguyên tử, đặt bên trái màn ảnh
+    if (chamber) chamber.obj.rotation.y = Math.PI / 2; // bơm ion quay ra phía sau
+  });
+  k.label('Buồng chân không + cuộn từ')(new THREE.Vector3(-3.5, 1.0, CZ));
   k.label('Ảnh hấp thụ sau khi thả bẫy 20 ms (nhìn từ trên)')(new THREE.Vector3(CX, 0.1, CZ - 1.5));
   const N = 2500;
   const pos = new Float32Array(N * 3);
@@ -209,6 +229,9 @@ const bec: Scene = ({k, live}) => {
 
 const SCENES: Record<string, Scene> = {...THPT_SCENES, ...ADVANCED_SCENES, matterwave, ligo, bec};
 
+/** nơi hiệu ứng sự cố xuất hiện cho các bài phát sự cố theo tham số (toạ độ cảnh) */
+const ANCHOR: Record<string, [number, number, number]> = {thomson: [-0.5, 1.1, -1.2], harmonic: [0, 0.6, -1.2], fatigue: [0, 0.4, -1.2]};
+
 function makeDef(input: HandsInput, live: SimLive): SceneDef {
   const spec = SIM_BY_ID[live.id];
   return {
@@ -221,17 +244,40 @@ function makeDef(input: HandsInput, live: SimLive): SceneDef {
       labRoom(k, [8.4, 5.6, -0.3, 0.1]);
       solid(k.scene, new THREE.BoxGeometry(8.4, 0.12, 5.6), '#1C1F4A', {rough: 0.9, x: -0.3, y: -0.056, z: 0.1});
       const P = handPointers(k, input, 0.3);
+      // hậu quả thao tác sai: hiệu ứng 3D + âm thanh + thẻ sự cố; sự cố do tham số (quá nhiệt, quá dòng…) phát hiện theo giá trị hiện tại, mỗi lần chuyển từ an toàn sang nguy hiểm
+      const fx = mishapFx(k);
+      let current: string | null = null;
+      live.hazard = (id, at) => {
+        const mh = MISHAPS[id];
+        if (!mh) return;
+        const a = ANCHOR[live.id];
+        fx.go(mh.kind, at ?? (a ? new THREE.Vector3(...a) : new THREE.Vector3(0, 0.7, -1.2)));
+        mishapSound(mh.kind);
+        live.report?.(id);
+      };
+      const watch = (dt: number) => {
+        const id = mishapOf(live.id, live.v);
+        if (id !== current) {
+          current = id;
+          if (id) live.hazard!(id);
+        }
+        fx.update(dt);
+      };
       const custom = live.id === 'collision' ? collisionLab : CHEM_LABS[live.id] ?? ENG_LABS[live.id];
       if (custom) {
         // bài thao tác trực tiếp trên dụng cụ (va chạm, bốn bài hóa, ba bài kĩ thuật): không qua núm hay ổ lắp
         const lab = custom({k, P, live});
-        P.grabWhen((nx, ny) => lab.grab(nx, ny));
+        // dải nút − / + ở mép trước bàn cho mọi tham số liên tục (va chạm đã có thao tác riêng cho khối lượng và đệm)
+        const bank = padBank(k, P, spec, () => live.v, (id, x) => live.set(id, x), live.id === 'collision' ? ['m1', 'm2', 'e'] : []);
+        P.grabWhen((nx, ny) => lab.grab(nx, ny) || bank.grab(nx, ny));
         let t0 = performance.now();
         return () => {
           const now = performance.now();
           const dt = Math.min((now - t0) / 1000, 0.05);
           t0 = now;
           P.step(1 - Math.exp(-dt * 28));
+          bank.step();
+          watch(dt);
           k.caption(lab.step(now, dt));
         };
       }
@@ -256,6 +302,7 @@ function makeDef(input: HandsInput, live: SimLive): SceneDef {
         last = now;
         P.step(1 - Math.exp(-dt * 28));
         sliders.step(ops ? live.v : Object.fromEntries(spec.params.map((p) => [p.id, toUnit(p, live.v[p.id])])));
+        watch(dt);
         k.caption(run(now, dt));
       };
     },

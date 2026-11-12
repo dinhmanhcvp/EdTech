@@ -4,6 +4,8 @@ import React, {useEffect, useRef, useState} from 'react';
 import {BAL, START, directionVerdict, force, measure, measureVerdict, range, reading, type BalState, type Sample} from '../../utils/lab/hands/currentBalance';
 import {BTN, BTN_GHOST} from './Controls';
 import type {BalanceLive} from './HandsBalance3D';
+import {IncidentCard} from './Incident';
+import {MISHAPS} from '../../utils/lab/hands/mishap';
 import type {HandsInput} from './handsKit';
 
 const Balance3D = React.lazy(() => import('./HandsBalance3D'));
@@ -72,6 +74,7 @@ export const BalanceLab: React.FC<{Shell: React.ComponentType<ShellProps>}> = ({
   const [seen, setSeen] = useState({down: false, up: false});
   const [task, setTask] = useState<1 | 2>(1);
   const [note, setNote] = useState('');
+  const [incident, setIncident] = useState<string | null>(null);
   const [demo, setDemo] = useState(-1);
   const link = useRef<SVGLineElement>(null);
   const lensBox = useRef<HTMLDivElement>(null);
@@ -84,6 +87,7 @@ export const BalanceLab: React.FC<{Shell: React.ComponentType<ShellProps>}> = ({
       const f = force(next);
       if (f) setSeen((q) => ({down: q.down || f > 0, up: q.up || f < 0}));
     },
+    report: (mid) => setIncident(mid),
     record: () => {
       const m = measure(live.current.s);
       setNote(m ? '' : live.current.s.K ? 'Lực kế đang ngoài thang đo: số này không ghi được.' : 'Công tắc K đang mở: chưa có lực từ để ghi.');
@@ -134,6 +138,7 @@ export const BalanceLab: React.FC<{Shell: React.ComponentType<ShellProps>}> = ({
 
   const overlay = (
     <>
+      <IncidentCard m={incident ? MISHAPS[incident] : null} onClose={() => setIncident(null)} onReset={reset} />
       <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full">
         <line ref={link} stroke="#FBF9F4" strokeWidth={2} strokeDasharray="6 6" opacity={0.85} />
       </svg>

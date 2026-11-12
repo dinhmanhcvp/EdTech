@@ -4,6 +4,7 @@ import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {BAL, force, range, reading, type BalState} from '../../utils/lab/hands/currentBalance';
 import {padRate} from '../../utils/lab/hands/handTracker';
+import {mishapFx, mishapSound} from './mishapFx';
 import {handPointers, labRoom, type HandsInput} from './handsKit';
 import {V, solid} from './handsModels';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -15,6 +16,8 @@ export interface BalanceLive {
   set: (patch: Partial<BalState>) => void;
   /** ghi số đo hiện tại vào sổ */
   record: () => void;
+  /** nhận id sự cố để hiện thẻ giải thích */
+  report?: (id: string) => void;
   /** cảnh báo vị trí khe nam châm trên màn hình (px) để kính lúp vẽ nét nối tới đúng chỗ */
   anchor?: (x: number, y: number) => void;
 }
@@ -143,7 +146,7 @@ function makeDef(input: HandsInput, live: BalanceLive): SceneDef {
         }
         return best;
       };
-      P.grabWhen((nx, ny) => hit(nx, ny, 0.07) !== null || pads.some((pd) => P.distAt(nx, ny, pd.at) < 0.05));
+      P.grabWhen((nx, ny) => hit(nx, ny, 0.07) !== null || pads.some((pd) => P.distAt(nx, ny, pd.at) < 0.08));
       const held: ({i: number; a: number} | null)[] = P.ptrs.map(() => null);
       const slid = P.ptrs.map((p) => p.slide);
       let sel = 1;
@@ -160,6 +163,9 @@ function makeDef(input: HandsInput, live: BalanceLive): SceneDef {
       let tiltV = 0;
       let last = performance.now();
       let flash = 0;
+      const fx = mishapFx(k);
+      let heat = 0; // 0 → 1 trong ~5 s khi dòng qua khung ≥ 0,9 A; nguội dần khi giảm dòng hay mở công tắc
+      let burned = false;
 
       return () => {
         const now = performance.now();
@@ -167,6 +173,15 @@ function makeDef(input: HandsInput, live: BalanceLive): SceneDef {
         last = now;
         P.step(1 - Math.exp(-dt * 28));
         const s = live.s;
+        heat = Math.min(1, Math.max(0, heat + ((s.K && s.I >= 0.9 ? 1 / 5 : -1 / 3) * dt)));
+        if (heat >= 1 && !burned) {
+          burned = true;
+          fx.go('burn', V(GAP.x, GAP.y + 0.3, GAP.z));
+          mishapSound('burn');
+          live.report?.('coil-burn');
+        }
+        if (heat < 0.2) burned = false;
+        fx.update(dt);
         P.ptrs.forEach((ptr, n) => {
           const h = ptr.active && !held[n] ? hit(ptr.ndc.x, ptr.ndc.y, ptr.reach) : null;
           if (ptr.pressed && h) {
@@ -199,7 +214,7 @@ function makeDef(input: HandsInput, live: BalanceLive): SceneDef {
         });
 
         for (const pd of pads) {
-          const on = P.ptrs.some((ptr, n) => ptr.active && !held[n] && (ptr.hand || ptr.down) && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < (ptr.hand ? 0.06 : 0.05));
+          const on = P.ptrs.some((ptr, n) => ptr.active && !held[n] && (ptr.hand || ptr.down) && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < (ptr.hand ? 0.09 : 0.05));
           pd.held = on ? pd.held + dt : 0;
           const rate = padRate(pd.held);
           if (rate) {

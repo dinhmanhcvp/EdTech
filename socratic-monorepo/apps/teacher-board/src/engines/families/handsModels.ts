@@ -88,6 +88,7 @@ export function buildEngine(scene: THREE.Scene): Model {
   const valve = [-1, 1].map((sx) => {
     const g = new THREE.Group();
     g.position.x = sx * 0.14;
+    g.userData.keep = true; // van chuyển động do `run` điều khiển: không thay bằng mô hình tĩnh
     P.valves.obj.add(g);
     solid(g, yCyl(0.022, 0.36, 12), '#DADDE2', steel);
     solid(g, yCyl(0.09, 0.02, 24), '#DADDE2', {...steel, y: -0.19});
@@ -167,6 +168,8 @@ export function buildDrone(scene: THREE.Scene): Model {
       solid(P[`motors_${key}`].obj, yCyl(0.07, 0.1, 20), dir > 0 ? '#D9481C' : '#2F6FD0', {...steel, x, z});
       const g = new THREE.Group();
       g.position.set(x, 0, z);
+      g.userData.keep = true;
+      g.userData.prop = dir; // cánh quay: mô hình thật được đặt vào chính nhóm này (HandsMachines)
       P[`props_${key}`].obj.add(g);
       solid(g, box(0.5, 0.008, 0.05), dir > 0 ? '#F2B49F' : '#A9C6F2', {rough: 0.4});
       solid(g, yCyl(0.03, 0.03, 12), '#E9E4D8');
@@ -233,12 +236,18 @@ export function buildPC(scene: THREE.Scene): Model {
   const fan = (parent: THREE.Object3D, r: number, x: number, y: number) => {
     const g = new THREE.Group();
     g.position.set(x, y, 0);
+    g.userData.keep = true;
+    g.userData.fanR = r;
     parent.add(g);
     solid(g, yCyl(r, 0.02, 24), '#15171B', {rough: 0.5});
     for (let i = 0; i < 3; i++) solid(g, box(r * 1.8, 0.012, r * 0.3), '#E9E4D8', {y: 0.012}).rotation.y = (i * Math.PI) / 3;
     fans.push(g);
   };
-  const led = (parent: THREE.Object3D, geo: THREE.BufferGeometry, x: number, y: number, z = 0) => leds.push(solid(parent, geo, '#3A3F47', {x, y, z}).material);
+  const led = (parent: THREE.Object3D, geo: THREE.BufferGeometry, x: number, y: number, z = 0) => {
+    const m = solid(parent, geo, '#3A3F47', {x, y, z});
+    m.userData.keep = true; // dải LED đổi màu theo thời gian: giữ lại khi chi tiết có mô hình thật
+    leds.push(m.material);
+  };
   solid(P.mainboard.obj, box(1.2, 0.03, 1.3), '#1B3A2B', {rough: 0.6});
   solid(P.mainboard.obj, box(0.26, 0.02, 0.26), '#9AA0A8', {...steel, y: 0.02, z: -0.3});
   for (const x of [0.335, 0.405]) solid(P.mainboard.obj, box(0.03, 0.03, 0.52), '#15171B', {x, y: 0.02, z: -0.3});

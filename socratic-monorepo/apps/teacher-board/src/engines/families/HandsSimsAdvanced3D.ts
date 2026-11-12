@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import {BZ_SAMPLES, PMSM, brayton, crackAt, fatigue, foc, harmonic, oregonator, quadruped, schmidt, shock, slam, stirling, surgery} from '../../utils/lab/hands/sims/advanced';
 import type {Scene} from './HandsSims3D';
-import {Z, board, box, clamp, cloud, glass, glow, path, rnd, sig, yCyl} from './HandsSimsThpt3D';
+import {Z, board, box, clamp, cloud, glass, glow, path, rnd, sig, withSims, yCyl} from './HandsSimsThpt3D';
 import {V, solid, xCyl} from './handsModels';
+import {dress, partOf, place, withSims2} from './labParts';
 import {setLine} from './Stage3D';
 
 /** Cảnh 3D của 10 bài đỉnh cao còn lại (`sims/advanced.ts`). Cùng quy ước với `HandsSimsThpt3D.ts`. */
@@ -49,6 +50,10 @@ const focScene: Scene = ({k, live}) => {
   solid(rotor, box(0.8, 0.3, 1.2), '#D9481C', {x: -0.4});
   solid(rotor, box(0.8, 0.3, 1.2), '#2F6FD0', {x: 0.4});
   k.scene.add(rotor);
+  withSims((lib) => {
+    place(k.scene, lib, 'PmsmStator', [-2.4, 0, Z]);
+    place(rotor, lib, 'PmsmRotor', [0, 0, 0], [...rotor.children]);
+  });
   k.label('Rô-to nam châm vĩnh cửu')(V(-2.4, 1, Z));
   const CX = 1.3;
   const R = 1.15;
@@ -62,6 +67,7 @@ const focScene: Scene = ({k, live}) => {
   k.label('trục q')(V(CX, 0.1, Z - 1.5));
   const tags = [k.label('dòng i', '#FF9A4D'), k.label('điện áp v', '#7FFFB0')];
   let on = false;
+  let burnt = false;
   let spin = 0;
   let seen = {start: 0, stop: 0};
   return (_now, dt) => {
@@ -71,6 +77,11 @@ const focScene: Scene = ({k, live}) => {
     seen = {start: live.events.start ?? 0, stop: live.events.stop ?? 0};
     spin += ((on ? 1 : 0) - spin) * Math.min(1, dt * 1.5);
     const s = foc(live.v.rpm, live.v.iq, live.v.id);
+    // đang chạy mà điện áp hoặc dòng vượt giới hạn nghịch lưu: transistor cháy
+    if (on && spin > 0.5 && (s.V > PMSM.Vmax || s.I > PMSM.Imax)) {
+      if (!burnt) live.hazard?.('inverter-burn', V(-2.4, 0.4, Z));
+      burnt = true;
+    } else burnt = false;
     rotor.rotation.y += dt * (live.v.rpm / 1500) * spin;
     if (!on && spin < 0.03) {
       setLine(cur, [CX, 0.09, Z, CX, 0.09, Z]);
@@ -130,10 +141,14 @@ const stirlingScene: Scene = ({k, live}) => {
 
 // ------------------------------------------------------------------ Harmonic Drive
 const harmonicScene: Scene = ({k, live}) => {
-  solid(k.scene, new THREE.TorusGeometry(1.25, 0.12, 12, 64).rotateX(Math.PI / 2), '#6B7380', {metal: 0.8, y: 0.14, z: Z});
+  const ring = solid(k.scene, new THREE.TorusGeometry(1.25, 0.12, 12, 64).rotateX(Math.PI / 2), '#6B7380', {metal: 0.8, y: 0.14, z: Z});
   k.label('Vành cứng (cố định)')(V(0, 0.1, Z - 1.6));
   const flex = path(k, '#7FFFB0', 5, 97);
   const gen = solid(k.scene, box(1.9, 0.12, 0.5), '#E3B341', {metal: 0.7, y: 0.1, z: Z});
+  withSims((lib) => {
+    place(k.scene, lib, 'HarmonicRing', [0, 0, Z], [ring]);
+    dress(gen, partOf(lib, 'WaveGen'));
+  });
   const mark = glow(k, new THREE.SphereGeometry(0.09, 12, 8), '#FFFFFF');
   const tag = k.label('Đầu ra');
   k.label('Bộ tạo sóng (nối động cơ)', '#E3B341')(V(0, 0.9, Z));
@@ -166,6 +181,11 @@ const fatigueScene: Scene = ({k, live}) => {
     const m = solid(g, box(3.2, 0.12, 1.1), '#9AA3AE', {metal: 0.7, x: 1.6, z: s * 0.56});
     k.scene.add(g);
     return {g, m, s};
+  });
+  withSims((lib) => {
+    place(k.scene, lib, 'Clevis', [0, 0, Z + 0.95]);
+    const far = place(k.scene, lib, 'Clevis', [0, 0, Z - 0.95]);
+    if (far) far.obj.rotation.y = Math.PI;
   });
   const crack = k.line('#FF3B3B', 4, [0, 0, 0, 0, 0, 0]);
   k.scene.add(crack);
@@ -202,6 +222,7 @@ const fatigueScene: Scene = ({k, live}) => {
 const shockScene: Scene = ({k, live}) => {
   const AX = -0.6;
   board(k, 0, Z, 7, 2.9, '#0C1118');
+  withSims2((lib) => place(k.scene, lib, 'WindTunnel', [0, 0, Z])); // hầm gió: cửa kính, nắn dòng, đồng hồ áp suất
   const wedge = k.line('#E8E2D4', 4, new Array(12).fill(0));
   const waves = [path(k, '#FF9A4D', 3, 41), path(k, '#5E7A9A', 1.5, 3)];
   k.scene.add(wedge);
@@ -236,6 +257,11 @@ const quadScene: Scene = ({k, live}) => {
   // gốc của nhóm nằm ở hàng chân bên phải, trên mặt sàn: quay nhóm quanh trục z là lật quanh hàng chân đó
   const body = solid(robot, box(1.7, 0.3, 0.8), '#E3B341', {metal: 0.4, x: -0.7});
   const legs = [-1.4, 0].flatMap((x) => [-0.3, 0.3].map((z) => solid(robot, box(0.12, 1, 0.12), '#3A3F47', {x, z})));
+  // mô hình Blender: thân có đầu cảm biến, bốn chân có khớp gối và bàn chân cao su (chân co giãn theo độ cao trọng tâm)
+  withSims2((lib) => {
+    dress(body, partOf(lib, 'QuadBody'));
+    legs.forEach((l) => dress(l, partOf(lib, 'QuadLeg')));
+  });
   k.scene.add(robot);
   const floor = board(k, 0, Z, 6.5, 2.4, '#4A5666');
   const push = k.arrow('#FF3B3B', 0.05);
@@ -275,6 +301,10 @@ const surgeryScene: Scene = ({k, live}) => {
   k.label('Đầu kim trong mạch máu 1 mm', '#FF9A4D')(V(-2, 0.1, Z + 0.15));
   const MM = 0.5; // đơn vị cảnh cho mỗi milimét
   glass(k, xCyl(MM / 2, MM / 2, 6.6), '#E0314B', 0.25, 0, 0.1, Z + 0.75);
+  withSims2((lib) => {
+    place(k.scene, lib, 'SurgeryJoystick', [-3.9, 0, Z - 0.7]); // tay điều khiển của bác sĩ
+    place(k.scene, lib, 'CatheterDrive', [-3.75, 0, Z + 0.75]); // bộ đẩy ống thông ở đầu mạch máu
+  });
   const hand = path(k, '#7FD4FF', 2.5, 300);
   const tool = path(k, '#FF9A4D', 3, 300);
   let key = '';
@@ -318,6 +348,7 @@ const slamScene: Scene = ({k, live}) => {
     feats.pos.set([x * 1.18 + (p[i * 2 + 1] - 0.5) * 0.15, 0.07, Z + z * 1.25 + (p[i * 2 + 1] - 0.5) * 0.15], i * 3);
   }
   const car = solid(k.scene, box(0.3, 0.15, 0.2), '#E3B341', {});
+  withSims2((lib) => dress(car, partOf(lib, 'LidarBot')));
   k.label('Quỹ đạo thật', '#9FB6CC')(V(0, 0.1, Z - 1.25));
   const tag = k.label('Bản đồ ước lượng', '#FF9A4D');
   return (now) => {
@@ -338,6 +369,7 @@ const slamScene: Scene = ({k, live}) => {
 const bzScene: Scene = ({k, live}) => {
   glass(k, yCyl(1, 1, 1.5, true), '#BFD8E8', 0.22, -2.3, 0.78, Z);
   const liquid = solid(k.scene, yCyl(0.95, 0.95, 1.1), '#C4261A', {x: -2.3, y: 0.57, z: Z});
+  withSims((lib) => place(k.scene, lib, 'Stirrer', [-2.3, 0, Z]));
   k.label('Bình khuấy')(V(-2.3, 1.9, Z));
   const CX = 1.2;
   board(k, CX, Z, 4.4, 2.2);

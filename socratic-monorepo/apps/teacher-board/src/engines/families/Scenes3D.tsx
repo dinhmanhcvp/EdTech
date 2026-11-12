@@ -10,6 +10,11 @@ import {CUBE, CUBE_EDGES, CUBE_HIGHLIGHT, CUBE_QUESTIONS, SURFACES} from '../../
 import {Stage3D, setLine, type Kit, type SceneDef} from './Stage3D';
 import {MORE_SCENES} from './Scenes3DMore';
 import {BIO_SCENES} from './Scenes3DBio';
+import {EXTRA_SCENES} from './Scenes3DExtra';
+import {BLENDER_SCENES} from './Scenes3DBlender';
+import {BLENDER2_SCENES} from './Scenes3DBlender2';
+import {BLENDER3_SCENES} from './Scenes3DBlender3';
+import {BLENDER4_SCENES} from './Scenes3DBlender4';
 
 const rad = (d: number) => (d * Math.PI) / 180;
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
@@ -359,7 +364,7 @@ const CORE: Record<string, SceneDef> = {
   },
 };
 
-export const SCENES: Record<string, SceneDef> = {...CORE, ...MORE_SCENES, ...BIO_SCENES};
+export const SCENES: Record<string, SceneDef> = {...CORE, ...MORE_SCENES, ...BIO_SCENES, ...EXTRA_SCENES, ...BLENDER_SCENES, ...BLENDER2_SCENES, ...BLENDER3_SCENES, ...BLENDER4_SCENES};
 
-const Scene3D: React.FC<{id: string; p: P; t: number; s: S; onFail: () => void}> = ({id, ...rest}) => <Stage3D def={SCENES[id]} {...rest} />;
+const Scene3D: React.FC<{id: string; p: P; t: number; s: S; onFail: () => void; onSet?: (key: string, value: number | string) => void}> = ({id, ...rest}) => <Stage3D def={SCENES[id]} {...rest} />;
 export default Scene3D;

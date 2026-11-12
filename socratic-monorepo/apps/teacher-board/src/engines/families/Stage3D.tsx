@@ -36,6 +36,13 @@ export interface Kit {
   caption(text: string): void;
   /** đăng ký vật có thể chạm chọn (nhóm cha mang id); `lowPriority`: chỉ được chọn khi không trúng vật nào khác (màng tế bào bao ngoài) */
   pick(obj: THREE.Object3D, id: string, lowPriority?: boolean): void;
+  /**
+   * Cho kéo một vật bằng chuột, bút hay ngón tay: trong lúc kéo máy quay không xoay. `onMove` nhận điểm thế giới nằm trên mặt phẳng
+   * hướng về máy quay đi qua điểm chạm; `onEnd` gọi khi nhả (kể cả thả vào đâu thì `pt` là điểm thả). Trả hàm huỷ đăng ký.
+   */
+  drag(obj: THREE.Object3D, spec: {plane?: THREE.Plane; onStart?: () => void; onMove: (pt: THREE.Vector3) => void; onEnd?: (pt: THREE.Vector3) => void}): () => void;
+  /** đẩy giá trị về bảng điều khiển (thanh trượt hoặc lựa chọn); SceneLab chặn theo min/max/bước của thanh trượt */
+  set(key: string, value: number | string): void;
 }
 export interface SceneDef {
   /** nền trời đêm, không sàn, không đèn mặc định (cảnh tự đặt đèn) */
@@ -78,11 +85,13 @@ export function setLine(o: FatLine, pts: number[]): void {
  * kéo để xoay, lăn để phóng, nhãn HTML bám điểm 3D. Mỗi cảnh chỉ khai báo vật thể và hàm cập nhật theo (tham số, thời gian).
  * Không tạo được WebGL thì gọi `onFail` để SceneLab quay về bản SVG.
  */
-export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPick?: (id: string | null) => void; fill?: boolean}> = ({def, p, t, s, onFail, onPick, fill}) => {
+export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPick?: (id: string | null) => void; onSet?: (key: string, value: number | string) => void; fill?: boolean}> = ({def, p, t, s, onFail, onPick, onSet, fill}) => {
   const box = useRef<HTMLDivElement>(null);
   const cap = useRef<HTMLDivElement>(null);
   const pickAt = useRef<((x: number, y: number) => string | null) | null>(null);
   const down = useRef<[number, number]>([0, 0]);
+  const setRef = useRef(onSet);
+  setRef.current = onSet;
   const live = useRef({p, t, s, at: 0});
   live.current = {p, t, s, at: typeof performance !== 'undefined' ? performance.now() : 0};
   const night = !!def.night;
@@ -159,6 +168,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
     let capText = '';
     const pickers: THREE.Object3D[] = [];
     const ray = new THREE.Raycaster();
+    const draggables: {obj: THREE.Object3D; spec: Parameters<Kit['drag']>[1]}[] = [];
     const kit: Kit = {
       scene,
       camera,
@@ -234,6 +244,12 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
         obj.userData.low = lowPriority;
         pickers.push(obj);
       },
+      drag: (obj, spec) => {
+        const d = {obj, spec};
+        draggables.push(d);
+        return () => void draggables.splice(draggables.indexOf(d), 1);
+      },
+      set: (key, value) => setRef.current?.(key, value),
       caption: (text) => {
         if (text === capText || !cap.current) return;
         capText = text;
@@ -264,6 +280,57 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       const owners = hits.map((h) => root(h.object)).filter((o): o is THREE.Object3D => !!o && o.visible);
       return (owners.find((o) => !o.userData.low) ?? owners[0])?.userData.part ?? null;
     };
+    // kéo vật: nghe ở pha bắt (capture) để chạy trước OrbitControls rồi tắt xoay máy quay trong lúc kéo; pointer events dùng chung cho chuột, bút, ngón tay
+    const dom = renderer.domElement;
+    const plane = new THREE.Plane();
+    const hitPt = new THREE.Vector3();
+    let active: (typeof draggables)[number] | null = null;
+    const toRay = (e: PointerEvent) => {
+      const r = el.getBoundingClientRect();
+      ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+    };
+    const grabbed = (e: PointerEvent) => {
+      toRay(e);
+      const live = draggables.filter((d) => d.obj.visible);
+      const hits = ray.intersectObjects(live.map((d) => d.obj), true).filter((h) => h.object.visible);
+      const own = (o: THREE.Object3D | null): (typeof draggables)[number] | undefined => (o ? live.find((d) => d.obj === o) ?? own(o.parent) : undefined);
+      const h = hits[0];
+      return h ? {d: own(h.object), point: h.point} : null;
+    };
+    const onDown = (e: PointerEvent) => {
+      const g = grabbed(e);
+      if (!g?.d) return;
+      active = g.d;
+      controls.enabled = false;
+      dom.setPointerCapture?.(e.pointerId);
+      if (active.spec.plane) plane.copy(active.spec.plane);
+      else plane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(new THREE.Vector3()).negate(), g.point);
+      dom.style.cursor = 'grabbing';
+      active.spec.onStart?.();
+      e.stopPropagation();
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!active) {
+        dom.style.cursor = e.pointerType === 'mouse' && grabbed(e)?.d ? 'grab' : '';
+        return;
+      }
+      toRay(e);
+      if (ray.ray.intersectPlane(plane, hitPt)) active.spec.onMove(hitPt);
+    };
+    const onUp = (e: PointerEvent) => {
+      if (!active) return;
+      toRay(e);
+      ray.ray.intersectPlane(plane, hitPt);
+      active.spec.onEnd?.(hitPt);
+      active = null;
+      controls.enabled = true;
+      dom.style.cursor = '';
+      dom.releasePointerCapture?.(e.pointerId);
+    };
+    dom.addEventListener('pointerdown', onDown, true);
+    dom.addEventListener('pointermove', onMove);
+    dom.addEventListener('pointerup', onUp);
+    dom.addEventListener('pointercancel', onUp);
     let lastAz = NaN;
     let lastEl = NaN;
     const v = new THREE.Vector3();
@@ -298,6 +365,10 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
 
     return () => {
       cancelAnimationFrame(raf);
+      dom.removeEventListener('pointerdown', onDown, true);
+      dom.removeEventListener('pointermove', onMove);
+      dom.removeEventListener('pointerup', onUp);
+      dom.removeEventListener('pointercancel', onUp);
       ro?.disconnect();
       controls.dispose();
       scene.traverse((o) => {
@@ -307,6 +378,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       });
       pmrem.dispose();
       renderer.dispose();
+      renderer.forceContextLoss(); // giải phóng ngữ cảnh WebGL ngay (không chờ GC): đổi bài nhiều lần không làm cạn ngữ cảnh của trình duyệt
       renderer.domElement.remove();
       labels.forEach((L) => L.el.remove());
     };
@@ -329,7 +401,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       className={`relative w-full overflow-hidden cursor-grab active:cursor-grabbing ${fill ? 'h-full' : 'aspect-[560/340] rounded-2xl border'} ${dark ? 'border-[#1B1B4B] text-[#E8E6F5]' : 'border-[#1D1B16]/15 text-[#1D1B16]'}`}
     >
       <div ref={cap} className={`pointer-events-none absolute max-w-[70%] ${fill ? 'bottom-6 left-6 origin-bottom-left scale-125 rounded-xl bg-[#11143A]/85 font-mono tabular-nums px-3 py-2 empty:hidden' : 'left-4 top-3'}`} />
-      <span className="pointer-events-none absolute bottom-2 right-3 text-[10px] opacity-70">Kéo để xoay · lăn để phóng</span>
+      <span className="pointer-events-none absolute bottom-2 right-3 text-[10px] opacity-70">Kéo nền để xoay · lăn để phóng · kéo vật có chấm cam để thao tác</span>
     </div>
   );
 };

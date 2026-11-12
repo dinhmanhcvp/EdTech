@@ -6,7 +6,7 @@ import {usePrefersReducedMotion} from '../visualKit';
 import {StageBackdrop, canWebGL} from './SceneLab';
 
 /** Sơ đồ có bản 3D thật (chạm chọn bộ phận); bản SVG luôn còn làm dự phòng. */
-export const ANATOMY_3D = new Set(['BIO_HEART_CIRCULATION', 'BIO_EUKARYOTE_CELL', 'BIO_FLOWER_STRUCTURE']);
+export const ANATOMY_3D = new Set(['BIO_HEART_CIRCULATION', 'BIO_EUKARYOTE_CELL', 'BIO_FLOWER_STRUCTURE', 'BIO_DIGESTIVE_SYSTEM', 'BIO_RESPIRATORY_SYSTEM', 'BIO_EAR_HEARING', 'BIO_NEPHRON']);
 const Organ3D = React.lazy(() => import('./Organ3D'));
 
 /** Hình giải phẫu/sơ đồ phân lớp: chạm bộ phận xem chú giải, "đi theo" lần lượt, hạt chuyển động dọc đường chảy. */

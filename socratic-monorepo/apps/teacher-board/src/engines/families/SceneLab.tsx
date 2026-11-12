@@ -175,11 +175,14 @@ export const StageBackdrop: React.FC<{vw: number; vh: number; night: boolean; gl
 );
 
 /** Template có thêm bản 3D thật (three.js), tải khi cần để three không nằm trong gói chính. Bản SVG luôn còn làm dự phòng. */
-export const HAS_3D = new Set(['PHYS_NEWTON_CRADLE', 'PHYS_EM_WAVE_3D', 'PHYS_EARTH_SEASONS', 'MATH_VECTOR_3D', 'MATH_SPACE_RELATIONS', 'MATH_QUADRIC_SURFACES', 'PHYS_MAGNETIC_FIELD', 'PHYS_EM_INDUCTION', 'PHYS_CIRCULAR_MOTION', 'PHYS_KINETIC_GAS_PARTICLES', 'PHYS_STATES_OF_MATTER', 'CHEM_BONDING', 'CHEM_LIPID_SOAP', 'BIO_BIOMOLECULES', 'BIO_MEMBRANE_TRANSPORT', 'BIO_SCALE_CELL_TYPES']);
+export const HAS_3D = new Set(['PHYS_NEWTON_CRADLE', 'PHYS_EM_WAVE_3D', 'PHYS_EARTH_SEASONS', 'MATH_VECTOR_3D', 'MATH_SPACE_RELATIONS', 'MATH_QUADRIC_SURFACES', 'PHYS_MAGNETIC_FIELD', 'PHYS_EM_INDUCTION', 'PHYS_CIRCULAR_MOTION', 'PHYS_KINETIC_GAS_PARTICLES', 'PHYS_STATES_OF_MATTER', 'CHEM_BONDING', 'CHEM_LIPID_SOAP', 'BIO_BIOMOLECULES', 'BIO_MEMBRANE_TRANSPORT', 'BIO_SCALE_CELL_TYPES', 'CHEM_ATOM_STRUCTURE', 'CHEM_ORGANIC_STRUCTURE', 'PHYS_ELECTRIC_FIELD', 'PHYS_ALPHA_SCATTERING', 'BIO_CHROMOSOME', 'PHYS_MOMENT_LEVER', 'PHYS_FLUID_PRESSURE', 'CHEM_ELECTROLYSIS', 'PHYS_FISSION_REACTOR', 'PHYS_KINEMATICS_1D', 'PHYS_NEWTON_LAWS', 'PHYS_COLLISION_1D', 'PHYS_SHM', 'PHYS_SPRING_HOOKE', 'PHYS_WORK_ENERGY', 'PHYS_DC_CIRCUIT', 'CHEM_VIRTUAL_TESTTUBE', 'CHEM_HALOGEN_LAB', 'CHEM_ALKALI_EARTH', 'CHEM_REDOX', 'BIO_TRANSCRIPTION_TRANSLATION', 'BIO_PLANT_TROPISM', 'BIO_PEDIGREE', 'BIO_FOOD_WEB_ENERGY', 'BIO_POPULATION_ECOLOGY', 'BIO_POPULATION_EVOLUTION', 'CHEM_CARBOHYDRATE', 'CHEM_POLYMER', 'CHEM_SPECTRA']);
 const Scene3D = React.lazy(() => import('./Scenes3D'));
 export const canWebGL = () => {
   try {
-    return !!document.createElement('canvas').getContext('webgl2');
+    const gl = document.createElement('canvas').getContext('webgl2');
+    // trả ngay ngữ cảnh vừa tạo để thử: mỗi lần mở một bài mà để ngữ cảnh treo thì chỉ vài lần đổi bài là trình duyệt hết chỗ (khoảng 16) và báo "không dựng được 3D"
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    return !!gl;
   } catch {
     return false;
   }
@@ -228,6 +231,13 @@ export const SceneLab: React.FC<{id: string; data: SceneData}> = ({id, data}) =>
     return () => cancelAnimationFrame(raf);
   }, [playing, tm]);
 
+  /** thao tác kéo trong cảnh 3D: số được chặn theo thanh trượt cùng khóa (min, max, bước), chuỗi vào lựa chọn */
+  const onSet = (key: string, v: number | string) => {
+    if (typeof v === 'string') return setSs((x) => (x[key] === v ? x : {...x, [key]: v}));
+    const sl = data.sliders?.find((q) => q.key === key);
+    const n = sl ? Math.min(sl.max, Math.max(sl.min, Math.round((v - sl.min) / sl.step) * sl.step + sl.min)) : v;
+    setPs((x) => (x[key] === n ? x : {...x, [key]: Number(n.toFixed(6))}));
+  };
   const shapes = useMemo(() => data.draw(p, t, s), [data, p, t, s]);
   const [vw, vh] = data.viewBox;
 
@@ -245,7 +255,7 @@ export const SceneLab: React.FC<{id: string; data: SceneData}> = ({id, data}) =>
       )}
       {View3D && in3d ? (
         <Suspense fallback={<div className={`w-full aspect-[560/340] rounded-2xl border border-[#1D1B16]/15 ${night ? 'bg-[#0B0E2A]' : 'bg-[#EEEAE0]'}`} />}>
-          <Scene3D id={id} p={p} t={t} s={s} onFail={() => setIn3d(false)} />
+          <Scene3D id={id} p={p} t={t} s={s} onFail={() => setIn3d(false)} onSet={onSet} />
         </Suspense>
       ) : (
       <svg viewBox={`0 0 ${vw} ${vh}`} className={`w-full rounded-2xl border ${night ? 'border-[#1B1B4B]' : 'border-[#1D1B16]/15'}`} data-testid="scene-svg" data-shapes={shapes.length} data-stage={night ? 'night' : glass ? 'glass' : 'studio'}>

@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import {BENCH, MIRROR_LEN, clampMirror, trace, type Mirror} from '../../utils/lab/hands/optics';
 import {handPointers, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
+import {dress, partOf, withSims2} from './labParts';
 import {Stage3D, setLine, type SceneDef} from './Stage3D';
 
 /** Trạng thái bài căn chỉnh laser dùng chung giữa bảng điều khiển React và cảnh 3D. */
@@ -27,7 +28,7 @@ function makeDef(input: HandsInput, live: OpticsLive): SceneDef {
       labRoom(k, [8.4, 5.6, -0.3, -0.5]);
       solid(k.scene, new THREE.BoxGeometry(8.4, 0.12, 5.6), '#1C1F4A', {rough: 0.9, x: -0.3, y: -0.056, z: -0.5});
       const {laser, wall, detector: det} = BENCH;
-      solid(k.scene, new THREE.BoxGeometry(0.7, 0.3, 0.3), '#C9CED6', {metal: 0.8, rough: 0.3, x: laser.x - 0.4, y: Y, z: laser.z});
+      const laserBox = solid(k.scene, new THREE.BoxGeometry(0.7, 0.3, 0.3), '#C9CED6', {metal: 0.8, rough: 0.3, x: laser.x - 0.4, y: Y, z: laser.z});
       solid(k.scene, new THREE.BoxGeometry(0.16, Y, 0.16), '#3A3F47', {x: laser.x - 0.4, y: Y / 2, z: laser.z});
       k.label('Laser 532 nm', '#39FF6A')(new THREE.Vector3(laser.x - 0.4, 0.55, laser.z));
       solid(k.scene, new THREE.BoxGeometry(0.08, 0.8, wall[1][1] - wall[0][1]), '#15171B', {rough: 0.9, x: wall[0][0], y: 0.4, z: (wall[0][1] + wall[1][1]) / 2});
@@ -36,6 +37,10 @@ function makeDef(input: HandsInput, live: OpticsLive): SceneDef {
       tube.rotation.y = tubeAngle;
       const sensor = solid(k.scene, new THREE.BoxGeometry(0.5, 0.5, 0.2), '#23272E', {x: det.x - det.face[0] * 0.6, y: Y, z: det.z - det.face[1] * 0.6});
       sensor.rotation.y = tubeAngle;
+      withSims2((lib) => {
+        dress(laserBox, partOf(lib, 'LaserHead'));
+        dress(sensor, partOf(lib, 'PhotoDetector'));
+      });
       const lamp = solid(k.scene, new THREE.SphereGeometry(0.08, 16, 12), '#55524B', {x: sensor.position.x, y: Y + 0.33, z: sensor.position.z});
       k.label('Đầu thu')(new THREE.Vector3(sensor.position.x, 0.8, sensor.position.z));
 
@@ -49,8 +54,14 @@ function makeDef(input: HandsInput, live: OpticsLive): SceneDef {
       const rigs = live.mirrors.map((_, i) => {
         const g = new THREE.Group();
         k.scene.add(g);
-        solid(g, new THREE.BoxGeometry(MIRROR_LEN, 0.5, 0.03), '#DDF1FF', {metal: 1, rough: 0.05, y: Y});
-        solid(g, new THREE.CylinderGeometry(0.12, 0.14, 0.05, 24), '#3A3F47', {y: 0.025});
+        const mirrorPlain = [solid(g, new THREE.BoxGeometry(MIRROR_LEN, 0.5, 0.03), '#DDF1FF', {metal: 1, rough: 0.05, y: Y}), solid(g, new THREE.CylinderGeometry(0.12, 0.14, 0.05, 24), '#3A3F47', {y: 0.025})];
+        withSims2((lib) => {
+          const sk = partOf(lib, 'MirrorMount'); // mô hình dài 1: co lại cho vừa chiều dài gương của bài
+          if (!sk) return;
+          sk.obj.scale.x = MIRROR_LEN;
+          g.add(sk.obj);
+          mirrorPlain.forEach((m) => (m.visible = false));
+        });
         const knob = solid(g, new THREE.SphereGeometry(0.07, 16, 12), '#E3B341', {rough: 0.4, x: MIRROR_LEN / 2, y: Y + 0.3});
         return {g, knob, label: k.label(`Gương ${i + 1}`)};
       });

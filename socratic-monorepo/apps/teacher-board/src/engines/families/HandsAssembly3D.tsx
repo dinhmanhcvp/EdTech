@@ -3,6 +3,9 @@
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {armIK, blockersToRemove, type AssemblyKind, type AssemblySpec} from '../../utils/lab/hands/assembly';
+import {holdingMessage} from '../../utils/lab/hands/fasteners';
+import {toolKit} from './HandsAssemblyTools';
+import {dressMachine} from './HandsMachines';
 import {handPointers, labRoom, type HandsInput} from './handsKit';
 import {V, about, buildDrone, buildEngine, buildPC, part, solid, xCyl, xRing, type Built, type Model} from './handsModels';
 import {Stage3D, type SceneDef} from './Stage3D';
@@ -21,6 +24,13 @@ export interface AssemblyLive {
   attempt: (id: string) => boolean;
   /** chi tiết đang cầm hoặc đang trỏ vào, để bảng điều khiển hiện vai trò của nó */
   focus: (id: string | null) => void;
+  /** vít / bu-lông / phe đang giữ từng chi tiết (true = đang siết chặt); cảnh đọc mỗi khung hình */
+  screws: Record<string, boolean[]>;
+  setScrew: (id: string, idx: number, tight: boolean) => void;
+  /** nhắc người làm; `mistake` = tính thêm một lần sai thao tác */
+  warn: (text: string, mistake?: boolean) => void;
+  /** dụng cụ đang cầm và gợi ý đang hiện, để bảng điều khiển hiện thẻ dụng cụ; null = đã đặt xuống */
+  tool: (info: {name: string; use: string; hint: string} | null) => void;
 }
 
 const HOLD = 0.6;
@@ -138,7 +148,11 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
     orbit: () => [0, 48],
     setup: (k) => {
       labRoom(k, [8.4, 5.6, -0.4, 0.1]);
+      const sceneKids = new Set(k.scene.children);
       const model = BUILD[live.kind](k.scene);
+      // vật đứng yên của máy (đế, khung, thùng) dựng bằng hình khối: lấy ngay sau khi dựng (trước sàn và khay) để thay bằng mô hình Blender khi nó về
+      const partObjs = new Set<THREE.Object3D>(Object.values(model.parts).map((q) => q.obj));
+      const scenery = k.scene.children.filter((c) => !sceneKids.has(c) && !partObjs.has(c) && ((c as THREE.Mesh).isMesh || (c as THREE.Group).isGroup));
       const robot = live.kind === 'robot';
       solid(k.scene, new THREE.BoxGeometry(8.4, 0.12, 5.6), '#D9C6A5', {rough: 0.85, x: -0.4, y: -0.056, z: 0.1});
       // khay đặt chi tiết
@@ -165,6 +179,8 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
       const built0 = () => live.off.size === 0;
       const ikMode = () => (robot || !!model.tip) && built0();
       const tip = model.tip ?? V();
+      const tools = toolKit({k, P, live, parts, ik: ikMode});
+      void dressMachine(live.kind, k.scene, parts, scenery, tools.reanchor);
       /** chi tiết gần con trỏ nhất; ưu tiên chi tiết tháo được ngay (các chi tiết lắp chồng nhau nằm sát nhau trên màn hình) */
       const pick = (nx: number, ny: number, reach: number): PartRt | null => {
         let best: PartRt | null = null;
@@ -180,7 +196,7 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
         }
         return best;
       };
-      P.grabWhen((nx, ny) => (ikMode() ? P.distAt(nx, ny, tip) < 0.12 : !!pick(nx, ny, 0.07)));
+      P.grabWhen((nx, ny) => tools.grab(nx, ny) || (ikMode() ? P.distAt(nx, ny, tip) < 0.12 : !!pick(nx, ny, 0.07)));
 
       let last = performance.now();
       let omega = 0;
@@ -206,7 +222,9 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
         let reach: THREE.Vector3 | null = null;
         goal.visible = false;
 
+        const toolCaption = tools.step(now, dt);
         P.ptrs.forEach((p, i) => {
+          if (!ik && tools.owns(i)) return; // con trỏ đang cầm dụng cụ
           if (ik) {
             held[i] = null;
             if (p.down) reach = P.onPlane(p.ndc.x, p.ndc.y, model.driveY ?? 0.25, V());
@@ -216,7 +234,7 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
           const hover = p.active && !held[i] ? pick(p.ndc.x, p.ndc.y, p.reach) : null;
           if (p.pressed && hover) {
             // chi tiết còn bị che: báo lí do ngay, không cho nhấc
-            if (!live.off.has(hover.id) && blockersToRemove(live.spec, live.off, hover.id).length) live.attempt(hover.id);
+            if (!live.off.has(hover.id) && (blockersToRemove(live.spec, live.off, hover.id).length || holdingMessage(live.kind, hover.id, live.screws[hover.id]))) live.attempt(hover.id);
             else held[i] = hover;
           }
           const h = held[i];
@@ -261,7 +279,7 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
           about(m3.copy(m2), elbow, new THREE.Matrix4().makeRotationZ(ang.a2 - ang.a1 + Math.PI / 2));
           tip.set(ARM.base.x + ARM.l2, ARM.elbowY, ARM.base.z).applyMatrix4(m3);
           k.caption(`Xoay đế θ₀ = ${deg(ang.yaw)} · vai θ₁ = ${deg(ang.a1)} · khuỷu θ₂ = ${deg(ang.a1 - ang.a2)}\nChụm tay rồi kéo trên mặt bàn (hoặc kéo tay kẹp bằng chuột)`);
-        } else k.caption(text || (built0() ? `${live.spec.title}\nĐã lắp hoàn chỉnh` : `${live.spec.title}\nChụm vào chi tiết để nhấc, kéo ra khay hoặc về đúng vị trí rồi nhả`));
+        } else k.caption(text || toolCaption || (built0() ? `${live.spec.title}\nĐã lắp hoàn chỉnh` : `${live.spec.title}\nChụm vào chi tiết để nhấc, kéo ra khay hoặc về đúng vị trí rồi nhả`));
 
         for (const p of parts) {
           const isHeld = held.includes(p);

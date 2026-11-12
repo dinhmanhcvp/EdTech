@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import {DNA, jitter, settle} from '../../utils/lab/hands/tweezers';
 import {handPointers, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
+import {place, withSims2} from './labParts';
 import {Stage3D, setLine, type SceneDef} from './Stage3D';
 
 /** Trạng thái bài kẹp quang học dùng chung giữa bảng điều khiển React và cảnh 3D. */
@@ -33,6 +34,10 @@ function makeDef(input: HandsInput, live: TweezersLive): SceneDef {
       solid(k.scene, new THREE.BoxGeometry(9, 0.12, 4.2), '#1C1F4A', {rough: 0.9, y: -0.056, z: -0.2});
       // lam kính của buồng vi lưu: dải sáng mờ để thấy mặt phẳng làm việc
       Object.assign(solid(k.scene, new THREE.BoxGeometry(8.6, 0.04, 1.3), '#7FC8FF', {rough: 0.1, y: 0.03, z: -0.2}).material, {transparent: true, opacity: 0.25});
+      withSims2((lib) => {
+        place(k.scene, lib, 'TrapStage', [0, 0, -0.2]); // bàn kính vi lưu quanh dải làm việc
+        place(k.scene, lib, 'LaserTower', [3.8, 0, -1.9]); // tháp laser tạo bẫy
+      });
       const bead = (color: string) => solid(k.scene, new THREE.SphereGeometry(0.2, 32, 24), color, {metal: 0.1, rough: 0.2, y: Y, z: -0.2});
       const anchor = bead('#E3B341');
       anchor.position.x = ANCHOR;

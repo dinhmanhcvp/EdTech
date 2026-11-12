@@ -172,14 +172,14 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
   let sel = 0;
   const holding = (f: (h: Held) => boolean) => held.some((h) => h && f(h));
   return {
-    grab: (nx: number, ny: number) => hit(nx, ny, 0.07) !== null || pads.some((pd) => P.distAt(nx, ny, pd.at) < 0.06),
+    grab: (nx: number, ny: number) => hit(nx, ny, 0.07) !== null || pads.some((pd) => P.distAt(nx, ny, pd.at) < 0.1),
     step(v: Record<string, number>) {
       const padNow = performance.now();
       const padDt = Math.min((padNow - padClock) / 1000, 0.05);
       padClock = padNow;
       for (const pd of pads) {
         // tay: chỉ cần đưa điểm chụm tới trên nút; chuột: nhấn giữ
-        const on = P.ptrs.some((ptr, n) => ptr.active && !held[n] && (ptr.hand || ptr.down) && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < (ptr.hand ? 0.075 : 0.06));
+        const on = P.ptrs.some((ptr, n) => ptr.active && !held[n] && (ptr.hand || ptr.down) && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < (ptr.hand ? 0.11 : 0.06));
         pd.held = on ? pd.held + padDt : 0;
         const rate = padRate(pd.held);
         if (rate) {
@@ -242,7 +242,7 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
           const at = P.onPlane(ptr.ndc.x, ptr.ndc.y, 0.2, v3);
           pl.pull = Math.max(0, Math.min(1, (pl.rest.x - at.x) / 1.1));
         } else if (d && knobs[sel]) adjust(sel, d);
-        ptr.hot = !!(now ?? h) || d !== 0 || pads.some((pd) => pd.held > 0 && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < 0.075);
+        ptr.hot = !!(now ?? h) || d !== 0 || pads.some((pd) => pd.held > 0 && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < 0.11);
       });
 
       // ---- vẽ
@@ -287,3 +287,44 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
 }
 
 export const hasOps = (id: string): boolean => id in OPS;
+
+/**
+ * Dải nút − / + ở mép trước bàn cho các bài thao tác tùy biến (bàn hóa, kĩ thuật, va chạm): mỗi tham số liên tục một hàng gồm
+ * nhãn giá trị và hai nút tròn. Giữ ngón tay trên nút (không cần chụm, chuột thì nhấn giữ) để đổi giá trị mượt theo thời gian giữ (`padRate`),
+ * dùng khi thao tác trực tiếp trên dụng cụ khó chính xác. `skip` = tham số đã có thao tác riêng không cần dải nút.
+ */
+export function padBank(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpec, read: () => Record<string, number>, write: (id: string, x: number) => void, skip: string[] = []) {
+  const ps = spec.params.filter((p) => !skip.includes(p.id));
+  const Z0 = 2.7;
+  const rows = ps.map((p, i) => {
+    const x = -0.3 + (i - (ps.length - 1) / 2) * 1.7;
+    const mk = (dir: number) => {
+      const at = new THREE.Vector3(x + dir * 0.5, 0.09, Z0);
+      const m = mesh(k, new THREE.CylinderGeometry(0.15, 0.17, 0.09, 24), dir > 0 ? '#2E9B57' : '#C4261A', at.x, 0.045, at.z);
+      k.label(dir > 0 ? '+' : '−', '#FBF9F4', true)(new THREE.Vector3(at.x, 0.14, at.z));
+      return {dir, m, at, held: 0};
+    };
+    return {p, tag: k.label(p.label), x, pads: [mk(-1), mk(1)]};
+  });
+  let clock = performance.now();
+  return {
+    grab: (nx: number, ny: number) => rows.some((r) => r.pads.some((pd) => P.distAt(nx, ny, pd.at) < 0.1)),
+    step() {
+      const now = performance.now();
+      const dt = Math.min((now - clock) / 1000, 0.05);
+      clock = now;
+      const v = read();
+      for (const r of rows) {
+        for (const pd of r.pads) {
+          const on = P.ptrs.some((ptr) => ptr.active && (ptr.hand || ptr.down) && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < (ptr.hand ? 0.11 : 0.1));
+          pd.held = on ? pd.held + dt : 0;
+          const rate = padRate(pd.held);
+          if (rate) write(r.p.id, fromUnit(r.p, Math.min(1, Math.max(0, toUnit(r.p, v[r.p.id]) + pd.dir * rate * dt))));
+          pd.m.position.y = on ? 0.02 : 0.045;
+          (pd.m.material as THREE.MeshStandardMaterial).emissive.set(on ? (pd.dir > 0 ? '#1E9E4D' : '#8A1A12') : '#000000');
+        }
+        r.tag(new THREE.Vector3(r.x, 0.45, Z0 + 0.1), undefined, `${r.p.label}: ${fmt(r.p, v[r.p.id])}`);
+      }
+    },
+  };
+}

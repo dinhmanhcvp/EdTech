@@ -18,7 +18,7 @@ describe('hồ sơ chất đầy đủ: tính chất vật lí, hóa học và h
   it('mọi phản ứng trong cơ sở dữ liệu đều mô tả hiện tượng quan sát được', () => {
     expect(RULES.filter((r) => !r.text).map((r) => r.id)).toEqual([]);
   });
-  it('bốn bài hóa THPT có cảnh thao tác riêng thay thanh trượt', () => {
-    expect(Object.keys(CHEM_LABS).sort()).toEqual(['alkali', 'chlorine', 'no2', 'titration']);
+  it('các bài hóa THPT có cảnh thao tác riêng thay thanh trượt', () => {
+    expect(Object.keys(CHEM_LABS)).toEqual(expect.arrayContaining(['alkali', 'chlorine', 'no2', 'titration']));
   });
 });

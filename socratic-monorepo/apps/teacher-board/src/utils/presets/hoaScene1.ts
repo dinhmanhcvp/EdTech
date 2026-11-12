@@ -61,8 +61,8 @@ export interface LabResult {
   gas?: boolean;
   text: string;
 }
-const CLEAR = '#E0F2FE';
-const COLOR_OF: Record<string, string> = {Cu: '#60A5FA', Fe2: '#BEF264', Fe3: '#FBBF24', Br: '#FDBA74', I: '#92400E', Cl: '#ECFCCB'};
+export const CLEAR = '#E0F2FE';
+export const COLOR_OF: Record<string, string> = {Cu: '#60A5FA', Fe2: '#BEF264', Fe3: '#FBBF24', Br: '#FDBA74', I: '#92400E', Cl: '#ECFCCB'};
 export const HALOGEN_SALTS: [string, string][] = [['F', 'NaF'], ['Cl', 'NaCl'], ['Br', 'NaBr'], ['I', 'NaI']];
 export function halogenResult(salt: string, reagent: string): LabResult {
   if (reagent === 'ag') {
@@ -92,7 +92,7 @@ export const TUBE_SOLUTIONS: [string, string, string][] = [
   ['CO3', 'Na₂CO₃ (CO₃²⁻)', CLEAR],
 ];
 export const TUBE_REAGENTS: [string, string][] = [['naoh', 'NaOH'], ['bacl2', 'BaCl₂'], ['agno3', 'AgNO₃'], ['hcl', 'HCl']];
-const STOCK: Record<string, string> = Object.fromEntries(TUBE_SOLUTIONS.map(([k, , c]) => [k, c]));
+export const STOCK: Record<string, string> = Object.fromEntries(TUBE_SOLUTIONS.map(([k, , c]) => [k, c]));
 export function testTubeResult(sol: string, reagent: string, excess: boolean): LabResult {
   const base = STOCK[sol];
   const no = (extra = ''): LabResult => ({liquid: base, text: `Không có hiện tượng${extra}.`});
@@ -174,6 +174,7 @@ export const HOA_SCENE1_PRESETS: Record<string, PresetSpec> = {
     data: {
       viewBox: [560, 330],
       sliders: [{key: 'z', label: 'Số hiệu nguyên tử Z', min: 1, max: 36, step: 1, value: 26}],
+      toggles: [{key: 'orb', label: 'Bản 3D: hiện orbital s, p lớp ngoài cùng', value: false}],
       draw: (p) => {
         const z = Math.round(p.z);
         const cfg = configuration(z);

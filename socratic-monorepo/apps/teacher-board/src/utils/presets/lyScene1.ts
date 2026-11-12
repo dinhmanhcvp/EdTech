@@ -258,7 +258,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
       ],
       draw: (p) => {
         const M = p.m1 * G * p.d1 - p.m2 * G * p.d2;
-        const ang = Math.max(-18, Math.min(18, M / 8));
+        const ang = -Math.max(-18, Math.min(18, M / 8)); // y màn hình hướng xuống: bên nặng hơn (M > 0, trái) phải hạ xuống
         const cx = 280;
         const cy = 190;
         const k = 55;

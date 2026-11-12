@@ -2,7 +2,8 @@
 
 import React, {useContext, Suspense, useEffect, useMemo, useReducer, useRef, useState} from 'react';
 import {SPECS, allOff, movePart, type AssemblyKind} from '../../utils/lab/hands/assembly';
-import {edgeGlow, handGate, listCameras, oneEuro, pinchLatch, pinchRatio, skinAlpha, slideTravel, startHands, thumbSlide, type Pt} from '../../utils/lab/hands/handTracker';
+import {FASTENERS, KITS, TOOLS, allTight, holdingMessage, initialScrews, seated, tightCount} from '../../utils/lab/hands/fasteners';
+import {HandsError, edgeGlow, handGate, listCameras, oneEuro, pinchLatch, pinchRatio, skinAlpha, slideTravel, startHands, thumbSlide, type Pt} from '../../utils/lab/hands/handTracker';
 import {SAMPLE_MIRRORS, START, trace, type Mirror} from '../../utils/lab/hands/optics';
 import {SAMPLE, evaluate, explain, wireKey, type Verdict, type Wire} from '../../utils/lab/hands/threePhase';
 import {BTN, BTN_GHOST} from './Controls';
@@ -29,6 +30,8 @@ import type {TweezersLive} from './HandsTweezers3D';
 import type {HandsLive} from './HandsThreePhase3D';
 import {newInput, type HandsInput} from './handsKit';
 import {BalanceLab} from './HandsBalanceLab';
+import {IncidentCard} from './Incident';
+import {MISHAPS, mishapOf} from '../../utils/lab/hands/mishap';
 import {LabIdContext, LabManual} from './LabManual';
 import {canWebGL} from './SceneLab';
 
@@ -85,6 +88,18 @@ const storedNum = (k: string, d: number) => {
     return d;
   }
 };
+/** Báo lỗi camera bằng tiếng Việt, nêu đúng nguyên nhân và cách xử lí; kèm tên lỗi gốc để dễ tra. */
+function camMessage(e: unknown): string {
+  const inner = e instanceof HandsError ? e.cause : e;
+  const name = inner instanceof Error ? inner.name : '';
+  const raw = inner instanceof Error ? `${inner.name}: ${inner.message}` : String(inner);
+  if (e instanceof HandsError && e.stage === 'model') return `Không tải được bộ nhận diện tay (lần đầu cần internet để tải tệp từ cdn.jsdelivr.net và storage.googleapis.com; kiểm tra mạng hoặc tường lửa). Chi tiết: ${raw}`;
+  if (name === 'NotAllowedError') return 'Trình duyệt chưa cho phép dùng camera: bấm biểu tượng ổ khóa cạnh địa chỉ trang, chọn Camera → Cho phép, rồi tải lại trang.';
+  if (name === 'NotFoundError') return 'Không thấy camera nào trên máy: cắm camera rồi thử lại.';
+  if (name === 'NotReadableError') return 'Camera đang được ứng dụng hoặc tab khác dùng (Zoom, Meet, ứng dụng Camera, tab /lab khác): đóng chúng rồi bấm lại.';
+  return `Không mở được camera hoặc bộ nhận diện tay. Chi tiết: ${raw}`;
+}
+
 const PALM = [0, 1, 2, 5, 9, 13, 17];
 const FINGERS = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16], [17, 18, 19, 20]];
 /**
@@ -342,6 +357,8 @@ const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: ()
     setCam('loading');
     setCamError('');
     const filters = [0, 1].map(() => Array.from({length: 42}, () => oneEuro(0.9, 14)));
+    // độ sâu (z) nhiễu hơn x, y nhiều: lọc mạnh hơn; chỉ dùng cho góc nghiêng cổ tay (`palmRoll`)
+    const zFilters = [0, 1].map(() => Array.from({length: 21}, () => oneEuro(0.5, 5)));
     // lọc riêng cho hình tay (toạ độ camera): cắt rung nhưng bám sát tay đi nhanh để mặt nạ không trễ so với ảnh
     const maskFilters = [0, 1].map(() => Array.from({length: 42}, () => oneEuro(2.5, 25)));
     const gates = [0, 1].map(() => handGate());
@@ -362,8 +379,11 @@ const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: ()
           // vùng giữa 80 % khung hình camera phủ kín bàn ảo: tay không phải với ra sát mép ảnh, nơi nhận diện kém
           const map = (v: number, flip: boolean) => 0.5 + ((flip ? 1 - v : v) - 0.5) * 1.25;
           const pinched = !!raw && latch[i](pinchRatio(raw), t);
-          const g = gates[i](raw && raw.map((p, j) => ({x: filters[i][j * 2](map(p.x, fx), t), y: filters[i][j * 2 + 1](map(p.y, fy), t)})), pinched, t);
-          if (g.event === 'dock') filters[i] = Array.from({length: 42}, () => oneEuro(0.9, 14));
+          const g = gates[i](raw && raw.map((p, j) => ({x: filters[i][j * 2](map(p.x, fx), t), y: filters[i][j * 2 + 1](map(p.y, fy), t), z: p.z === undefined ? undefined : zFilters[i][j](p.z, t)})), pinched, t);
+          if (g.event === 'dock') {
+            filters[i] = Array.from({length: 42}, () => oneEuro(0.9, 14));
+            zFilters[i] = Array.from({length: 21}, () => oneEuro(0.5, 5));
+          }
           if (g.event) tone(g.event === 'dock' ? 180 : 880);
           if (g.alpha > 0 && g.alpha < 1) ghosts.push(g);
           // chụm vào nút trên màn hình = bấm nút đó: đổi bài, làm lại, đấu mẫu… mà không phải rút tay ra cầm chuột
@@ -401,11 +421,14 @@ const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: ()
       stop.current = halt;
       setCam('on');
       remember('cam', '1');
-      remember('camId', deviceId);
+      // lưu mã camera THẬT đang dùng (không phải mã cũ đã hỏng, nếu đã phải rơi về camera mặc định)
+      const realId = (video.current?.srcObject as MediaStream | null)?.getVideoTracks()[0]?.getSettings().deviceId ?? '';
+      remember('camId', realId);
+      setCamId(realId);
       setCams(await listCameras());
     } catch (e) {
       setCam('off');
-      setCamError(e instanceof DOMException && e.name === 'NotAllowedError' ? 'Trình duyệt chưa được phép dùng camera.' : 'Không mở được camera hoặc không tải được bộ nhận diện tay (lần đầu cần mạng).');
+      setCamError(camMessage(e));
     }
   };
   const stopCam = () => {
@@ -452,7 +475,7 @@ const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: ()
           <Suspense fallback={null}>{render(input, () => setGl(false))}</Suspense>
         </div>
       ) : (
-        <p className="absolute left-6 top-24 max-w-md rounded-2xl border border-white/20 bg-white/10 px-4 py-6 text-xs leading-relaxed text-[#E8E6F5]">Thiết bị này không dựng được cảnh 3D (cần WebGL 2). Vẫn có thể làm bài bằng các nút bên cạnh để xem kết quả.</p>
+        <p className="absolute left-6 top-24 max-w-md rounded-2xl border border-white/20 bg-white/10 px-4 py-6 text-xs leading-relaxed text-[#E8E6F5]">Thiết bị này không dựng được cảnh 3D (cần WebGL 2). Vẫn có thể làm bài bằng các nút bên cạnh để xem kết quả.<button type="button" data-testid="gl-retry" onClick={() => setGl(canWebGL())} className="mt-3 block min-h-[44px] rounded-full border border-white/40 px-5 font-semibold text-[#FBF9F4]">Thử lại</button><span className="mt-2 block opacity-70">Nếu vẫn không được: đóng bớt tab đang dùng 3D, bật tăng tốc phần cứng của trình duyệt (Cài đặt → Hệ thống), rồi tải lại trang.</span></p>
       )}
 
       {hud && <div className="pointer-events-none absolute left-1/2 top-16 z-10 flex w-[min(720px,calc(100vw-420px))] -translate-x-1/2 flex-wrap justify-center gap-1.5">{hud}</div>}
@@ -482,7 +505,8 @@ const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: ()
             </button>
           </div>
           {camError && <p role="alert" className="text-[#C4261A]">{camError}</p>}
-          <div className={cam === 'on' ? 'flex flex-col gap-2' : 'hidden'}>
+          {/* video khi tắt vẫn có khung hiển thị (cao 0) chứ không display:none, vì một số trình duyệt không giải mã video bị ẩn hẳn */}
+          <div aria-hidden={cam !== 'on'} className={cam === 'on' ? 'flex flex-col gap-2' : 'h-0 overflow-hidden opacity-0'}>
             {cams.length > 1 && (
               <select aria-label="Chọn camera" value={camId} onChange={(e) => { setCamId(e.target.value); void startCam(e.target.value); }} className="min-h-[32px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-2">
                 <option value="">Camera mặc định</option>
@@ -565,6 +589,12 @@ const ThreePhaseLab: React.FC = () => {
   const [warn, setWarn] = useState('');
   const st = useRef({wires, on, rated});
   st.current = {wires, on, rated};
+  // hậu quả đấu sai: chập pha, vỏ mang điện, quá áp làm cháy cuộn dây
+  const wrong = verdict?.kind === 'short' ? 'electric-short' : verdict?.kind === 'live_frame' ? 'electric-frame' : verdict?.kind === 'run' && verdict.load === 'over' && !on ? 'electric-over' : null;
+  const [ack, setAck] = useState<string | null>(null);
+  useEffect(() => {
+    if (!wrong) setAck(null);
+  }, [wrong]);
   const edit = (fn: (w: Wire[]) => Wire[]) => {
     if (st.current.on) return setWarn(LIVE_WARNING);
     setWarn('');
@@ -605,7 +635,7 @@ const ThreePhaseLab: React.FC = () => {
   const shown = verdict ? explain(verdict) : null;
 
   return (
-    <HandsShell hint="Chụm ngón cái và ngón trỏ vào một cọc, kéo tới cọc khác rồi nhả để nối dây. Chụm vào hạt trắng giữa dây để gỡ, vào cần aptomat để đóng hoặc cắt." render={(input, onFail) => <ThreePhase3D input={input} live={live.current} onFail={onFail} />}>
+    <HandsShell hint="Chụm ngón cái và ngón trỏ vào một cọc, kéo tới cọc khác rồi nhả để nối dây. Chụm vào hạt trắng giữa dây để gỡ, vào cần aptomat để đóng hoặc cắt." render={(input, onFail) => <ThreePhase3D input={input} live={live.current} onFail={onFail} />} lens={<IncidentCard m={wrong && wrong !== ack ? MISHAPS[wrong] : null} onClose={() => setAck(wrong)} onReset={() => { setWires([]); setOn(false); setVerdict(null); setWarn(''); }} />}>
       <Task>Lưới điện 3 pha 380 V. Đấu dây để động cơ chạy đúng định mức, nối đất vỏ máy, rồi đóng aptomat.</Task>
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="text-[#4B473D]">Nhãn động cơ</span>
@@ -655,8 +685,21 @@ const AssemblyLab: React.FC<{kind: AssemblyKind}> = ({kind}) => {
   const [mistakes, setMistakes] = useState(0);
   const [focus, setFocus] = useState<string | null>(null);
   const [names, setNames] = useState(false);
-  const done = wasApart && off.size === 0;
+  // vít / bu-lông / phe giữ từng chi tiết (true = đang siết chặt) và dụng cụ đang cầm
+  const [screws, setScrews] = useState<Record<string, boolean[]>>(() => initialScrews(kind, spec));
+  const [tool, setTool] = useState<{name: string; use: string; hint: string} | null>(null);
+  const done = wasApart && off.size === 0 && allTight(kind, screws);
   const live = useRef<AssemblyLive>({
+    screws,
+    setScrew: (id, idx, tight) => {
+      live.current.screws = {...live.current.screws, [id]: (live.current.screws[id] ?? []).map((v, j) => (j === idx ? tight : v))};
+      setScrews(live.current.screws);
+    },
+    warn: (text, mistake = false) => {
+      setWarn(text);
+      if (mistake) setMistakes((m) => m + 1);
+    },
+    tool: setTool,
     kind,
     spec,
     off,
@@ -664,6 +707,14 @@ const AssemblyLab: React.FC<{kind: AssemblyKind}> = ({kind}) => {
     run: done,
     focus: setFocus,
     attempt: (id) => {
+      const wasOff = live.current.off.has(id);
+      // còn vít / bu-lông giữ thì không nhấc được: phải nới hết bằng dụng cụ đúng
+      const held = wasOff ? null : holdingMessage(kind, id, live.current.screws[id]);
+      if (held) {
+        setWarn(held);
+        setMistakes((m) => m + 1);
+        return false;
+      }
       const r = movePart(spec, live.current.off, id);
       if ('blocked' in r) {
         setWarn(`Chưa được: phải ${live.current.off.has(id) ? 'lắp' : 'tháo'} ${r.blocked.join(', ')} trước.`);
@@ -673,27 +724,61 @@ const AssemblyLab: React.FC<{kind: AssemblyKind}> = ({kind}) => {
       live.current.off = r.off; // cảnh 3D đọc ngay trong khung hình này, không chờ React
       setOff(r.off);
       setWarn('');
+      const lock = seated(FASTENERS[kind][id]);
+      if (wasOff && lock) {
+        // chi tiết vừa đặt vào chỗ: vít còn lỏng (trừ chi tiết ép vào), phải siết đủ mới tính là xong
+        live.current.screws = {...live.current.screws, [id]: lock};
+        setScrews(live.current.screws);
+      }
       if (r.off.size === spec.parts.length) setWasApart(true);
       return true;
     },
   });
-  Object.assign(live.current, {off, names, run: done});
+  Object.assign(live.current, {off, names, run: done, screws});
   const reset = () => {
+    live.current.screws = initialScrews(kind, spec);
+    setScrews(live.current.screws);
+    setTool(null);
     setOff(fresh());
     setWasApart(spec.start === 'apart');
     setWarn('');
     setMistakes(0);
+  };
+  const setAllScrews = (tight: boolean) => {
+    // chỉ chi tiết đang lắp mới có vít để siết; chi tiết nằm trên khay thì vít đã rời
+    live.current.screws = Object.fromEntries(Object.entries(live.current.screws).map(([id, s]) => [id, s.map(() => tight && !live.current.off.has(id))]));
+    setScrews(live.current.screws);
+    setWarn('');
   };
   const shownPart = spec.parts.find((p) => p.id === focus);
   const n = spec.parts.length;
 
   return (
     <HandsShell hint="Chụm ngón cái và ngón trỏ vào một chi tiết để nhấc, kéo ra khay hoặc đưa về đúng vị trí (vòng cam) rồi nhả." render={(input, onFail) => <Assembly3D input={input} live={live.current} onFail={onFail} />}>
-      <Task>{spec.task}</Task>
+      <Task>{spec.task} Mỗi chi tiết được giữ bằng vít, bu-lông hay phe: chọn đúng dụng cụ trong hộp, vặn hết ra mới nhấc được; lắp lại thì đặt vào chỗ rồi siết đủ.</Task>
       <div data-testid="asm-status" data-done={done} className={`rounded-xl px-3 py-2 leading-relaxed ${done ? 'bg-[#1F7A4D]/[.09]' : 'bg-[#1D1B16]/[.05]'}`}>
         <b className={`block font-semibold ${done ? 'text-[#1F7A4D]' : ''}`}>{done ? 'Hoàn thành' : wasApart && spec.start === 'built' ? `Đang lắp lại: ${n - off.size}/${n} chi tiết` : spec.start === 'built' ? `Đang tháo: ${off.size}/${n} chi tiết` : `Đang lắp: ${n - off.size}/${n} chi tiết`}</b>
         {done ? spec.done : `Số lần sai thứ tự: ${mistakes}`}
       </div>
+      <p data-testid="asm-screws" className="text-[#4B473D]">
+        Vít, bu-lông đang siết: {Object.values(screws).reduce((a, s) => a + tightCount(s), 0)}/{Object.values(screws).reduce((a, s) => a + s.length, 0)}
+      </p>
+      {tool && (
+        <p data-testid="asm-tool" className="rounded-xl border border-[#D9481C]/40 bg-white px-3 py-2 leading-relaxed text-[#4B473D]">
+          <b className="block font-semibold text-[#1D1B16]">Đang cầm: {tool.name}</b>
+          Dùng cho {tool.use}.<span className="mt-1 block text-[#D9481C]">{tool.hint}</span>
+        </p>
+      )}
+      <details data-testid="asm-kit" className="rounded-xl border border-[#1D1B16]/10 bg-white/60 px-3 py-2">
+        <summary className="cursor-pointer font-semibold">Hộp dụng cụ ({KITS[kind].length} món)</summary>
+        <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[#4B473D]">
+          {KITS[kind].map((id) => (
+            <li key={id}>
+              <b>{TOOLS[id].name}</b>: {TOOLS[id].use}
+            </li>
+          ))}
+        </ul>
+      </details>
       <Warning testid="asm-warning" text={warn} />
       {shownPart && (
         <p data-testid="asm-info" className="rounded-xl border border-[#1D1B16]/15 bg-white px-3 py-2 leading-relaxed text-[#4B473D]">
@@ -711,6 +796,13 @@ const AssemblyLab: React.FC<{kind: AssemblyKind}> = ({kind}) => {
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" data-testid="asm-reset" onClick={reset} className={BTN_GHOST}>
           Làm lại
+        </button>
+        {/* lối tắt khi chưa có camera hoặc để xem mẫu: không thay cho việc tập dùng dụng cụ */}
+        <button type="button" data-testid="asm-loosen-all" onClick={() => setAllScrews(false)} className={BTN_GHOST}>
+          Nới hết vít (xem mẫu)
+        </button>
+        <button type="button" data-testid="asm-tighten-all" onClick={() => setAllScrews(true)} className={BTN_GHOST}>
+          Siết hết vít (xem mẫu)
         </button>
         <label className="inline-flex items-center gap-1.5">
           <input type="checkbox" checked={names} onChange={(e) => setNames(e.target.checked)} />
@@ -937,6 +1029,15 @@ const SimLab: React.FC<{id: string}> = ({id}) => {
   });
   live.current.v = v;
   const verdict = spec.evaluate(v);
+  // thẻ sự cố: do tham số (phát hiện thuần, chạy cả khi không có WebGL) hoặc do sự kiện trong cảnh (rót đổ, thả kim loại nổ…)
+  const [incident, setIncident] = useState<string | null>(null);
+  // đặt lại thí nghiệm = dựng lại cảnh 3D (xoá vũng hóa chất, hiệu ứng, vị trí vật đã kéo) chứ không chỉ trả các tham số về ban đầu
+  const [epoch, setEpoch] = useState(0);
+  live.current.report = setIncident;
+  const hazard = mishapOf(id, v);
+  useEffect(() => {
+    if (hazard) setIncident(hazard);
+  }, [hazard]);
   const guide = GUIDE[id];
   const [why, setWhy] = useState(false);
   const [, setPressed] = useState(0);
@@ -950,7 +1051,11 @@ const SimLab: React.FC<{id: string}> = ({id}) => {
     </label>
   );
   return (
-    <HandsShell hint="Chụm vào con trượt trên các ray ở phía trước bàn rồi kéo sang trái hoặc phải. Chỉnh tinh con trượt màu cam (cái vừa cầm): duỗi ngón trỏ, miết ngón cái dọc ngón trỏ, tay để yên." render={(input, onFail) => <Sims3D input={input} live={live.current} onFail={onFail} />} lens={micro && <MicroLens view={micro} />} hud={<LiveHud ok={verdict.ok} head={verdict.head} items={spec.params.map((p) => [p.label, fmt(p, v[p.id])])} />}>
+    <HandsShell hint="Chụm vào con trượt trên các ray ở phía trước bàn rồi kéo sang trái hoặc phải. Chỉnh tinh con trượt màu cam (cái vừa cầm): duỗi ngón trỏ, miết ngón cái dọc ngón trỏ, tay để yên." render={(input, onFail) => <Sims3D key={epoch} input={input} live={live.current} onFail={onFail} />} lens={<>{micro && <MicroLens view={micro} />}<IncidentCard m={incident ? MISHAPS[incident] : null} onClose={() => setIncident(null)} onReset={() => {
+          live.current.events = {};
+          setV(initial(spec));
+          setEpoch((e) => e + 1);
+        }} /></>} hud={<LiveHud ok={verdict.ok} head={verdict.head} items={spec.params.map((p) => [p.label, fmt(p, v[p.id])])} />}>
       <Task>{spec.task}</Task>
       {guide && (
         <div data-testid="sim-guide" className="rounded-xl border border-[#1D1B16]/15 bg-white px-3 py-2 leading-relaxed text-[#4B473D]">
@@ -996,7 +1101,7 @@ const SimLab: React.FC<{id: string}> = ({id}) => {
         <button type="button" data-testid="sim-sample" onClick={() => setV(spec.solution)} className={BTN_GHOST}>
           Đặt giá trị mẫu
         </button>
-        <button type="button" data-testid="sim-reset" onClick={() => setV(initial(spec))} className={BTN_GHOST}>
+        <button type="button" data-testid="sim-reset" onClick={() => { live.current.events = {}; setV(initial(spec)); setEpoch((e) => e + 1); }} className={BTN_GHOST}>
           Làm lại
         </button>
       </div>
@@ -1029,6 +1134,9 @@ const ChemLab: React.FC = () => {
     setActive,
   });
   Object.assign(live.current, {lab, group, scale, active});
+  const [incident, setIncident] = useState<string | null>(null);
+  const [epoch, setEpoch] = useState(0); // đặt lại: dựng lại cảnh 3D để xoá vũng axit, bọt, vị trí chai và ống
+  live.current.report = setIncident;
   const e = exp ? EXPERIMENT_BY_ID[exp] : undefined;
   const ds = useMemo(() => lab.vessels.map(derive), [lab]);
   const done = useMemo(() => (e ? stepsDone(e, lab) : []), [e, lab]);
@@ -1051,12 +1159,14 @@ const ChemLab: React.FC = () => {
   const reset = () => {
     dispatch({type: 'reset'});
     setAnswers({});
+    setEpoch((e) => e + 1);
   };
   const correct = e ? e.questions.filter((q, i) => answers[`${e.id}:${i}`] === q.answer).length : 0;
   return (
     <HandsShell
       hint="Chọn nhóm hóa chất ở dải màu trước kệ, chụm vào chai rồi kéo tới ống, giữ để rót. Chụm vào ống để nhấc ra thùng thải, vào vòng vàng ở miệng ống để kéo ống dẫn khí, vào đèn cồn để đun."
-      render={(input, onFail) => <Chem3D input={input} live={live.current} onFail={onFail} />}
+      render={(input, onFail) => <Chem3D key={epoch} input={input} live={live.current} onFail={onFail} />}
+      lens={<IncidentCard m={incident ? MISHAPS[incident] : null} onClose={() => setIncident(null)} onReset={reset} />}
       hud={<LiveHud ok={!lab.violations.length} head={lab.violations.length ? `${lab.violations.length} vi phạm an toàn` : lab.goggles ? 'Đã đeo kính bảo hộ' : 'Chưa đeo kính bảo hộ'} items={[['Đồng hồ', `${lab.clock.toFixed(0)} s`], ['Tua nhanh', `×${scale}`], [av.id, `${ds[active].temp.toFixed(0)} °C${ds[active].ph !== null ? ` · pH ${ds[active].ph!.toFixed(1)}` : ''}`]]} />}
     >
       <Task>{e ? e.goal : `Bàn tự do: ${SUBSTANCES.length} hóa chất, ống nghiệm, cốc, đèn cồn, ống dẫn khí, thùng thải. Tự chọn chất để thử mọi phản ứng trong cơ sở dữ liệu (${RULES.length} luật), hoặc chọn một bài thí nghiệm có bước kiểm tra.`}</Task>

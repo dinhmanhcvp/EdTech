@@ -9,6 +9,9 @@ import {setLine, type Kit} from './Stage3D';
 /** Cảnh 3D của 13 bài THPT (`sims/thptPhys.ts`, `sims/thptChemBio.ts`). Mặt bàn ở y = 0; vùng dựng cảnh x ∈ [−3,5; 3,5], z ∈ [−2,6; 0,4]. */
 export const Z = -1.2;
 const PHYS = '/models/phys-parts.glb';
+/** thiết bị chính của các bài còn lại (kịch bản `tools/lab-models/sims_parts.py`); tải lỗi thì cảnh giữ hình khối */
+export const SIMS = '/models/sims-parts.glb';
+export const withSims = (use: (lib: THREE.Group) => void) => void loadModel(SIMS).then(use).catch(() => undefined);
 export const sig = (live: SimLive) => Object.values(live.v).join('|');
 export const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 export const box = (x: number, y: number, z: number) => new THREE.BoxGeometry(x, y, z);
@@ -243,6 +246,12 @@ const rutherford: Scene = ({k, live}) => {
   board(k, 0, Z, 7, 2.9);
   solid(k.scene, new THREE.SphereGeometry(0.09, 16, 12), '#E3B341', {metal: 0.7, x: CX, y: 0.1, z: Z});
   k.label('Hạt nhân')(V(CX, 0.5, Z + 0.3));
+  withSims((lib) => {
+    place(k.scene, lib, 'AlphaSource', [-3.95, 0, Z]);
+    place(k.scene, lib, 'ScintScreen', [3.62, 0, Z]);
+  });
+  k.label('Nguồn hạt α')(V(-3.95, 0.9, Z));
+  k.label('Màn ZnS')(V(3.62, 1, Z));
   const N = 240;
   const main = path(k, '#FF9A4D', 4, N);
   const fan = [-3, -2, -1, 1, 2, 3].map(() => path(k, '#5E7A9A', 1.5, N));
@@ -332,6 +341,10 @@ const pid: Scene = ({k, live}) => {
   solid(body, box(0.3, 1.5, 0.6), '#2F6FD0', {y: 0.75});
   solid(body, box(0.4, 0.25, 0.7), '#E3B341', {y: 1.5});
   k.scene.add(body);
+  withSims((lib) => {
+    place(body, lib, 'BotBody', [0, 0, 0], [...body.children]);
+    dress(wheel, partOf(lib, 'BotWheel'));
+  });
   board(k, 0, Z - 0.9, 6.4, 1.1);
   k.label('Góc nghiêng θ theo thời gian (5 s)')(V(0, 0.1, Z - 1.6));
   const N = 5 * PID_HZ;
@@ -514,6 +527,10 @@ const gel: Scene = ({k, live}) => {
   const WELL = Z - 1.3;
   const RUN = 2.6;
   glass(k, box(4.4, 0.2, RUN + 0.5), '#3E6FB0', 0.35, 0, 0.14, WELL + RUN / 2);
+  withSims((lib) => {
+    place(k.scene, lib, 'GelTank', [0, 0, WELL + RUN / 2]);
+    place(k.scene, lib, 'GelPSU', [3.35, 0, Z + 0.9]);
+  });
   k.label('Cực âm (−): giếng tra mẫu')(V(-3.3, 0.1, WELL));
   k.label('Cực dương (+)')(V(-3.1, 0.1, WELL + RUN));
   const lanes = LANES.map(([name, bps], i) => {
@@ -546,7 +563,11 @@ const morgan: Scene = ({k, live}) => {
   const MAX = 400;
   const trays = KINDS.map(([name, color], i) => {
     const x = -2.7 + i * 1.8;
-    board(k, x, Z, 1.6, 2.2, '#E8E2D4');
+    const plain = board(k, x, Z, 1.6, 2.2, '#E8E2D4');
+    withSims((lib) => {
+      place(k.scene, lib, 'FlyTray', [x, 0, Z], [plain]);
+      place(k.scene, lib, 'FlyVial', [x + 0.55, 0, Z + 1.35]);
+    });
     const c = cloud(k, MAX, color, 4);
     const p = rnd(MAX * 2);
     for (let j = 0; j < MAX; j++) c.pos.set([x + (p[j * 2] - 0.5) * 1.45, 0.07, Z + (p[j * 2 + 1] - 0.5) * 2.05], j * 3);

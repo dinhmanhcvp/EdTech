@@ -6,7 +6,7 @@ import {MOTOR, ROBOT, SPECS, allOff, armIK, movePart, pistonHeight, strokeOf} fr
 import {SAMPLE_MIRRORS, START, trace} from '../utils/lab/hands/optics';
 import {GAINS, START_STATE, simulate} from '../utils/lab/hands/cartpole';
 import {DNA, OVERSTRETCH_X, dnaForce, fitPersistence, jitter, settle} from '../utils/lab/hands/tweezers';
-import {GRACE, PAD_DWELL, PINCH_HOLD, REGRAB_LOCK, SKIN_FAR, SKIN_NEAR, SLIDE_DWELL, edgeGlow, glide, handGate, nextPinch, oneEuro, padRate, pinchLatch, pinchRatio, skinAlpha, slideTravel, thumbSlide} from '../utils/lab/hands/handTracker';
+import {GRACE, PAD_DWELL, TILT_START, rollOf, palmRoll, steadyRoll, tiltFor, PINCH_HOLD, REGRAB_LOCK, SKIN_FAR, SKIN_NEAR, SLIDE_DWELL, edgeGlow, glide, handGate, nextPinch, oneEuro, padRate, pinchLatch, pinchRatio, skinAlpha, slideTravel, thumbSlide} from '../utils/lab/hands/handTracker';
 import {SAMPLE, evaluate, explain, netSources, type Wire} from '../utils/lab/hands/threePhase';
 
 afterEach(cleanup);
@@ -111,6 +111,41 @@ describe('theo dõi tay', () => {
     expect(tr(null, 1)).toBeCloseTo(0.2, 10);
     expect(tr(0.1, 2)).toBeCloseTo(0.2, 10); // đặt lại ở chỗ khác: không nhảy
     expect(tr(0, 2.2)).toBeCloseTo(0.1, 10);
+  });
+  it('nghiêng lọ: xoay cổ tay dưới 15° chưa nghiêng, trên 55° nghiêng hết, trái hay phải đều được; chuột thì nghiêng hết khi ở trên miệng dụng cụ', () => {
+    const hand = (dx: number, dy: number) => Array.from({length: 21}, (_, i) => (i === 9 ? {x: 0.5 + dx, y: 0.5 - dy} : {x: 0.5, y: 0.5}));
+    expect(rollOf(hand(0, 0.2))).toBeCloseTo(0, 10); // ngón chỉ lên
+    expect(rollOf(hand(0.2, 0))).toBeCloseTo(Math.PI / 2, 10); // ngón chỉ sang phải
+    const r0 = rollOf(hand(0, 0.2));
+    expect(tiltFor(r0, r0, true)).toBe(0);
+    expect(tiltFor(r0 + TILT_START - 0.01, r0, true)).toBe(0);
+    expect(tiltFor(r0 + 0.61, r0, true)).toBeCloseTo(0.5, 2);
+    expect(tiltFor(r0 + 1.2, r0, true)).toBe(1);
+    // đường cong nhẹ ở hai đầu: vừa quá ngưỡng thì gần như chưa nghiêng, sắp đủ thì gần như đã nghiêng hết
+    expect(tiltFor(r0 + TILT_START + 0.07, r0, true)).toBeLessThan(0.05);
+    expect(tiltFor(r0 + TILT_START + 0.63, r0, true)).toBeGreaterThan(0.95);
+    expect(tiltFor(r0 - 1.2, r0, true)).toBe(1); // nghiêng sang trái cũng được
+    expect(tiltFor(Math.PI - 0.1, -Math.PI + 0.1, true)).toBe(0); // qua mốc ±π không bị nhảy
+    expect(tiltFor(NaN, 0, true)).toBe(1);
+    expect(tiltFor(NaN, 0, false)).toBe(0);
+    // nghiêng cổ tay quanh trục cẳng tay: 0 khi phẳng, bằng góc xoay thật khi xoay, trái / phải đều được, không có độ sâu thì NaN
+    const turned = (th: number, side = 1) =>
+      Array.from({length: 21}, (_, i) => {
+        const off = i === 5 ? -0.08 : i === 9 ? -0.02 : i === 13 ? 0.04 : i === 17 ? 0.1 : 0;
+        return i === 0 ? {x: 0.5, y: 0.8, z: 0} : {x: 0.5 + side * off * Math.cos(th), y: 0.5, z: side * off * Math.sin(th)};
+      });
+    expect(palmRoll(turned(0))).toBeCloseTo(0, 6);
+    expect(palmRoll(turned(0.7))).toBeCloseTo(0.7, 2);
+    expect(palmRoll(turned(-0.5))).toBeCloseTo(-0.5, 2);
+    expect(Math.abs(palmRoll(turned(0.7, -1)))).toBeCloseTo(0.7, 2); // tay còn lại (ảnh gương)
+    expect(palmRoll(turned(0.7).map((q) => ({x: q.x, y: q.y})))).toBeNaN();
+    // vẫy tay sang bên (xoay trong mặt phẳng ảnh) KHÔNG phải nghiêng cổ tay
+    const waved = turned(0).map((q) => ({x: 0.5 + (q.x - 0.5) * Math.cos(0.6) - (q.y - 0.8) * Math.sin(0.6), y: 0.8 + (q.x - 0.5) * Math.sin(0.6) + (q.y - 0.8) * Math.cos(0.6), z: q.z}));
+    expect(Math.abs(palmRoll(waved))).toBeLessThan(0.05);
+    // góc ổn định: cùng quy ước với rollOf; một khớp gốc ngón nhảy chỉ làm góc lệch khoảng một phần tư
+    const real = (jx = 0) => Array.from({length: 21}, (_, i) => ({x: i === 0 ? 0.5 : i === 5 ? 0.42 : i === 9 ? 0.48 + jx : i === 13 ? 0.54 : i === 17 ? 0.6 : 0.5, y: i === 0 ? 0.8 : 0.5}));
+    expect(Math.abs(steadyRoll(real()))).toBeLessThan(0.1); // ngón chỉ lên (lệch nhẹ vì bàn tay lệch cổ tay)
+    expect(steadyRoll(real(0.02)) - steadyRoll(real())).toBeLessThan((rollOf(real(0.02)) - rollOf(real())) / 3);
   });
   it('nút − / + cạnh núm: lướt qua thì chưa đổi, giữ thì đổi chậm để chỉnh chính xác, giữ lâu nhanh dần và có trần', () => {
     expect(padRate(0)).toBe(0);
@@ -262,14 +297,21 @@ describe('tháo lắp: thứ tự chi tiết và động học tay máy', () => 
     click('rotor');
     expect(getByTestId('asm-warning').textContent).toContain('tháo Ổ bi trước, Ổ bi sau');
     expect(getByTestId('asm-info').textContent).toContain('lồng');
+    // còn vít giữ thì không nhấc được: báo rõ loại vít và dụng cụ đúng
+    click('cowl');
+    expect(getByTestId('asm-warning').textContent).toContain('vít chữ thập M5');
+    expect(getByTestId('asm-warning').textContent).toContain('Tua vít chữ thập PH2');
+    fireEvent.click(getByTestId('asm-loosen-all'));
     const order = ['cowl', 'fan', 'rear_shield', 'rear_bearing', 'pulley', 'front_shield', 'front_bearing', 'rotor', 'box_cover'];
     order.forEach(click);
     expect(queryByTestId('asm-warning')).toBeNull();
     expect(getByTestId('asm-status').textContent).toContain('Đang lắp lại: 0/9');
     click('fan');
     expect(getByTestId('asm-warning').textContent).toContain('lắp Nắp máy sau');
-    expect(getByTestId('asm-status').textContent).toContain('sai thứ tự: 2');
+    expect(getByTestId('asm-status').textContent).toContain('sai thứ tự: 3');
     [...order].reverse().forEach(click);
+    expect(getByTestId('asm-status').getAttribute('data-done')).toBe('false'); // đã lắp đủ nhưng vít còn lỏng
+    fireEvent.click(getByTestId('asm-tighten-all'));
     expect(getByTestId('asm-status').getAttribute('data-done')).toBe('true');
     fireEvent.click(getByTestId('asm-reset'));
     expect(getByTestId('asm-status').textContent).toContain('Đang tháo: 0/9');
@@ -279,6 +321,8 @@ describe('tháo lắp: thứ tự chi tiết và động học tay máy', () => 
     const {getByTestId} = render(<HandsLab experiment="robot" />);
     expect(getByTestId('asm-status').textContent).toContain('Đang lắp: 0/9');
     for (const id of ['base_servo', 'turntable', 'shoulder_servo', 'lower_arm', 'elbow_servo', 'forearm', 'gripper', 'board', 'battery']) fireEvent.click(getByTestId(`asm-part-${id}`));
+    expect(getByTestId('asm-status').textContent).not.toContain('Hoàn thành'); // vít chưa siết
+    fireEvent.click(getByTestId('asm-tighten-all'));
     expect(getByTestId('asm-status').textContent).toContain('Hoàn thành');
   });
 });
@@ -353,6 +397,7 @@ describe('bài mới: động cơ 4 kì, drone, máy tính, laser', () => {
     cleanup();
     const pc = render(<HandsLab experiment="pc" />);
     for (const id of ['mainboard', 'cpu', 'cooler', 'ram', 'ssd', 'gpu', 'psu', 'cable', 'panel']) fireEvent.click(pc.getByTestId(`asm-part-${id}`));
+    fireEvent.click(pc.getByTestId('asm-tighten-all'));
     expect(pc.getByTestId('asm-status').textContent).toContain('Hoàn thành');
   });
 });

@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import {CART, control, fallen, step, type CartState, type Gains} from '../../utils/lab/hands/cartpole';
 import {handPointers, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
+import {partOf, withSims2} from './labParts';
 import {Stage3D, type SceneDef} from './Stage3D';
 
 /** Trạng thái bài con lắc ngược dùng chung giữa bảng điều khiển React và cảnh 3D (cảnh tích phân, bảng chỉ đọc). */
@@ -35,12 +36,25 @@ function makeDef(input: HandsInput, live: CartLive): SceneDef {
     setup: (k) => {
       labRoom(k, [9, 3.6, 0, -0.2]);
       solid(k.scene, new THREE.BoxGeometry(9, 0.12, 3.6), '#1C1F4A', {rough: 0.9, y: -0.056, z: -0.2});
-      solid(k.scene, new THREE.BoxGeometry(CART.rail * 2 * SCALE, 0.06, 0.18), '#C9CED6', {metal: 0.8, rough: 0.3, y: 0.15, z: -0.2});
+      const rail = solid(k.scene, new THREE.BoxGeometry(CART.rail * 2 * SCALE, 0.06, 0.18), '#C9CED6', {metal: 0.8, rough: 0.3, y: 0.15, z: -0.2});
       for (const s of [-1, 1]) solid(k.scene, new THREE.BoxGeometry(0.15, 0.5, 0.4), '#D9481C', {y: 0.25, x: s * (CART.rail * SCALE + 0.1), z: -0.2});
       const cart = new THREE.Group();
       k.scene.add(cart);
-      solid(cart, new THREE.BoxGeometry(0.9, 0.25, 0.5), '#2F6FD0', {metal: 0.4, rough: 0.4, y: 0.35});
-      for (const sx of [-1, 1]) solid(cart, new THREE.CylinderGeometry(0.11, 0.11, 0.55, 20).rotateX(Math.PI / 2), '#15171B', {x: sx * 0.3, y: 0.22});
+      const cartPlain = [solid(cart, new THREE.BoxGeometry(0.9, 0.25, 0.5), '#2F6FD0', {metal: 0.4, rough: 0.4, y: 0.35}), ...[-1, 1].map((sx) => solid(cart, new THREE.CylinderGeometry(0.11, 0.11, 0.55, 20).rotateX(Math.PI / 2), '#15171B', {x: sx * 0.3, y: 0.22}))];
+      withSims2((lib) => {
+        const rl = partOf(lib, 'CartRail'); // ray nhôm chữ T: mô hình dài 1, co giãn theo chiều dài ray của bài
+        if (rl) {
+          rl.obj.scale.x = CART.rail * 2 * SCALE;
+          rl.obj.position.set(0, 0, -0.2);
+          k.scene.add(rl.obj);
+          rail.visible = false;
+        }
+        const cb = partOf(lib, 'CartBody'); // xe có động cơ, bánh và bộ mã hoá; gốc ở giữa xe nên đi theo nhóm xe
+        if (cb) {
+          cart.add(cb.obj);
+          cartPlain.forEach((m) => (m.visible = false));
+        }
+      });
       const pivot = new THREE.Group();
       pivot.position.y = Y + 0.15;
       cart.add(pivot);

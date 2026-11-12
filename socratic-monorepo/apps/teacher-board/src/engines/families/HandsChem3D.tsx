@@ -7,7 +7,10 @@ import {SPECIES, SUBSTANCES} from '../../utils/lab/chem/species';
 import type {Action, Derived, LabState, Substance} from '../../utils/lab/chem/types';
 import {handPointers, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
-import {loadModel, partOf} from './labParts';
+import {tiltFor} from '../../utils/lab/hands/handTracker';
+import {MISHAPS, chemMishapOf, spillOf} from '../../utils/lab/hands/mishap';
+import {mishapFx, mishapSound} from './mishapFx';
+import {labelBottle, loadModel, partOf} from './labParts';
 import {Stage3D, setLine, type SceneDef} from './Stage3D';
 
 export const CHEM_GROUPS = ['Acid', 'Base', 'Muối', 'Halogen', 'Kim loại', 'Chất rắn', 'Hữu cơ', 'Chỉ thị'] as const;
@@ -23,6 +26,8 @@ export interface ChemLive {
   scale: number;
   active: number;
   setActive: (i: number) => void;
+  /** do bảng điều khiển gán: nhận id sự cố để hiện thẻ giải thích */
+  report?: (id: string) => void;
 }
 
 const VX = [-2.9, -2.1, -1.3, -0.5, 1.4];
@@ -51,6 +56,14 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
       labRoom(k, [8.4, 5.6, -0.3, 0.1]);
       solid(k.scene, new THREE.BoxGeometry(8.4, 0.12, 5.6), '#1C1F4A', {rough: 0.8, x: -0.3, y: -0.056, z: 0.1});
       const P = handPointers(k, input, 0.5);
+      const fx = mishapFx(k);
+      const raise = (id: string, at: THREE.Vector3) => {
+        const mh = MISHAPS[id];
+        if (!mh) return;
+        fx.go(mh.kind, at);
+        mishapSound(mh.kind);
+        live.report?.(id);
+      };
       const v3 = new THREE.Vector3();
       const glassMat = (color: string, opacity: number) => new THREE.MeshPhysicalMaterial({color, transparent: true, opacity, roughness: 0.06, ior: 1.458, clearcoat: 1, clearcoatRoughness: 0.03, depthWrite: false, side: THREE.DoubleSide});
 
@@ -175,6 +188,7 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
             sk.mats.find((m) => m.name === 'liquid')?.color.set(contentColor(b.s));
             sk.mats.find((m) => m.name === 'cap')?.color.set(GROUP_COLOR[b.s.group] ?? '#666');
             glassy(sk.obj);
+            labelBottle(sk, b.s.formula, b.s.label, GROUP_COLOR[b.s.group] ?? '#666');
             b.g.children.forEach((c) => (c.visible = false));
             b.g.add(sk.obj);
           });
@@ -223,6 +237,10 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
       let last = performance.now();
       let tickAcc = 0;
       let pourAcc = 0;
+      let seenViol = 0; // số vi phạm đã xử lí: vi phạm mới → sự cố tương ứng
+      let airFor = 0; // thời gian nghiêng chai giữa không trung
+      let spilled = false;
+      let roll0 = 0; // góc cổ tay lúc nhấc chai: nghiêng chai = xoay cổ tay so với góc này
       let heatAcc = 0;
       let poured = 0;
       let full = false;
@@ -233,6 +251,17 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
         const dt = Math.min((now - last) / 1000, 0.05);
         last = now;
         P.step(1 - Math.exp(-dt * 28));
+        fx.update(dt);
+        {
+          const viol = live.lab.violations;
+          if (viol.length < seenViol) seenViol = viol.length; // làm lại thí nghiệm
+          for (const text of viol.slice(seenViol)) {
+            const id = chemMishapOf(text);
+            const v = vessels[live.active] ?? vessels[0];
+            if (id && v) raise(id, new THREE.Vector3(v.g.position.x, v.g.position.y + v.h, v.g.position.z));
+          }
+          seenViol = viol.length;
+        }
         if (shownGroup !== live.group) {
           shownGroup = live.group;
           place();
@@ -258,6 +287,9 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
             else if (hover.kind === 'tab') live.setGroup(hover.g);
             else {
               held[n] = hover;
+              roll0 = p.roll;
+              airFor = 0;
+              spilled = false;
               if (hover.kind === 'vessel') live.setActive(hover.i);
               pourAcc = 0;
               poured = 0;
@@ -293,12 +325,23 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
             const over = mouthAt(p.ndc.x, p.ndc.y);
             const pourPos = over >= 0 ? new THREE.Vector3(vessels[over].g.position.x + 0.34 + vessels[over].r * 0.5, vessels[over].g.position.y + vessels[over].h + 0.2, vessels[over].g.position.z) : target;
             b.g.position.lerp(pourPos, 1 - Math.exp(-dt * 16));
-            b.tilt += ((over >= 0 ? 1.9 : 0) - b.tilt) * (1 - Math.exp(-dt * 10));
+            // tay thật: chai nghiêng theo cổ tay ở mọi nơi, chỉ đổ khi đang ở trên miệng ống; chuột: tự nghiêng khi tới miệng ống
+            const tl = tiltFor(p.roll, roll0, over >= 0);
+            b.tilt += (1.9 * tl - b.tilt) * (1 - Math.exp(-dt * 10));
             b.g.rotation.z = b.tilt;
+            // nghiêng chai acid / base giữa không trung (chưa ở trên miệng ống) quá 0,6 s thì đổ ra bàn
+            const spillKind = b.s.group === 'Acid' ? 'acid' : b.s.group === 'Base' ? 'base' : null;
+            if (spillKind && over < 0 && tl > 0.5) {
+              airFor += dt;
+              if (airFor > 0.6 && !spilled) {
+                spilled = true;
+                raise(spillOf(spillKind), new THREE.Vector3(target.x, 0.06, target.z));
+              }
+            } else airFor = 0;
             if (over >= 0 && b.tilt > 1.3) {
               full = b.s.kind !== 'solid' && live.lab.vessels[over].liquidMl + live.amountOf(b.s.id) > live.lab.vessels[over].capacityMl;
               pourAcc += dt;
-              const every = b.s.kind === 'solid' ? 0.7 : 0.3;
+              const every = (b.s.kind === 'solid' ? 0.7 : 0.3) / Math.max(0.5, tl); // nghiêng nhiều thì rót nhanh hơn
               if (pourAcc >= every) {
                 pourAcc = 0;
                 const amt = live.amountOf(b.s.id);

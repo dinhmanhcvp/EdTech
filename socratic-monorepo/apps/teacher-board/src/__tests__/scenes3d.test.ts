@@ -2,7 +2,7 @@ import {describe, expect, it, vi} from 'vitest';
 import * as THREE from 'three';
 import {HAS_3D} from '../engines/families/SceneLab';
 import {SCENES} from '../engines/families/Scenes3D';
-import {ORGAN_SCENES} from '../engines/families/Scenes3DOrgans';
+import {ALL_ORGAN_SCENES as ORGAN_SCENES} from '../engines/families/Scenes3DOrgans2';
 import {ANATOMY_3D} from '../engines/families/AnatomyFlow';
 import {PROCESS_3D} from '../engines/families/ProcessSteps';
 import {initialP, initialS} from '../engines/families/Controls';
@@ -36,6 +36,8 @@ function fakeKit(): Kit {
     label: () => () => undefined,
     caption: () => undefined,
     pick: () => undefined,
+    drag: () => () => undefined,
+    set: () => undefined,
   };
 }
 

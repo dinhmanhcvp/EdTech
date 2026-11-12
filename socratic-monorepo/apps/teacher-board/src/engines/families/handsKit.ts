@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {glide, type Pt} from '../../utils/lab/hands/handTracker';
+import {TILT_START, glide, oneEuro, palmRoll, steadyRoll, wrapAngle, type Pt} from '../../utils/lab/hands/handTracker';
 import {setLine, type Kit} from './Stage3D';
 
 /** Đầu vào tay / chuột dùng chung cho mọi bài thực hành tay; React ghi, cảnh 3D đọc mỗi khung hình (không gây render lại). */
@@ -29,6 +29,8 @@ export interface Ptr {
   reach: number;
   /** quãng miết cộng dồn của tay này (chuột: luôn 0); cảnh lấy hiệu giữa hai khung hình */
   slide: number;
+  /** góc xoay cổ tay (rad, xem `rollOf`); chuột: NaN */
+  roll: number;
 }
 
 /**
@@ -89,13 +91,22 @@ export function handPointers(k: Kit, input: HandsInput, h: number) {
     k.scene.add(joints, bones);
     return {ring, joints, bones, pts: [] as THREE.Vector3[], seen: false, gl: Array.from({length: 42}, () => glide()), src: null as Pt[] | null, t: 0};
   });
-  const ptrs: Ptr[] = [0, 1, 2].map((i) => ({ndc: new THREE.Vector2(), hand: i < 2, active: false, down: false, pressed: false, released: false, hot: false, reach: i < 2 ? 0.16 : 0.07, slide: 0}));
+  const ptrs: Ptr[] = [0, 1, 2].map((i) => ({ndc: new THREE.Vector2(), hand: i < 2, active: false, down: false, pressed: false, released: false, hot: false, reach: i < 2 ? 0.16 : 0.07, slide: 0, roll: NaN}));
   /** khoảng cách trên MÀN HÌNH từ điểm (nx, ny) tới một điểm 3D: đúng cho cả vật nằm cao */
   const distAt = (nx: number, ny: number, pos: THREE.Vector3) => {
     v3.copy(pos).project(k.camera);
     return Math.hypot((v3.x - nx) * k.camera.aspect, v3.y - ny);
   };
 
+  // góc nghiêng cổ tay: mẫu thưa theo camera (30 Hz) được trải đều theo thời gian thực bằng `glide` (nội suy có ngoại suy vận tốc ngắn), trên góc đã gỡ nhảy ±π
+  // góc nghiêng nhiễu hơn vị trí: lọc One Euro (đứng yên thì lọc mạnh, xoay nhanh thì nhẹ) trước khi nội suy; nội suy chỉ ngoại suy rất ngắn để không khuếch đại nhiễu
+  const rollGl = [0, 1, 2].map(() => glide(0.015, 16));
+  const rollEuro = [0, 1, 2].map(() => oneEuro(1.2, 6));
+  const rollBase = [NaN, NaN, NaN]; // góc "đứng" thích nghi chậm: bỏ trôi tay từ từ, giữ nguyên khi đang nghiêng thật
+  const rollRaw = [NaN, NaN, NaN];
+  const rollUnw = [0, 0, 0];
+  const rollSrc: (Pt[] | null)[] = [null, null, null];
+  let stepAt = performance.now();
   return {
     ptrs,
     onPlane,
@@ -111,6 +122,9 @@ export function handPointers(k: Kit, input: HandsInput, h: number) {
     step(ease: number) {
       void ease; // tay tự trượt bằng `glide`; tham số giữ lại cho các cảnh đang gọi
       Object.assign(input.mouse, input.mouse.queue.shift());
+      const nowMs = performance.now();
+      const rollDt = Math.min((nowMs - stepAt) / 1000, 0.05);
+      stepAt = nowMs;
       ptrs.forEach((p, i) => {
         const g = gfx[i];
         const hand = p.hand ? input.hands[i] : null;
@@ -151,6 +165,32 @@ export function handPointers(k: Kit, input: HandsInput, h: number) {
         p.down = down;
         p.active = active;
         p.slide = hand?.slide ?? 0;
+        // góc cổ tay mẫu thưa theo camera (30 Hz): lọc mũ theo thời gian thực, đi theo đường ngắn nhất qua mốc ±π
+        if (hand && hand.pts.length === 21) {
+          const nowS = performance.now() / 1000;
+          if (hand.pts !== rollSrc[i]) {
+            rollSrc[i] = hand.pts;
+            const pr = palmRoll(hand.pts);
+            const target = Number.isNaN(pr) ? steadyRoll(hand.pts) : pr;
+            if (Number.isNaN(rollRaw[i])) {
+              rollUnw[i] = target;
+              rollGl[i].reset();
+              rollEuro[i] = oneEuro(1.2, 6);
+              rollBase[i] = target;
+            } else rollUnw[i] += wrapAngle(target - rollRaw[i]);
+            rollRaw[i] = target;
+            rollGl[i].sample(rollEuro[i](rollUnw[i], nowS), nowS);
+          }
+          const abs = rollGl[i].at(nowS, rollDt);
+          // góc so với tư thế đứng: trôi chậm (dưới ngưỡng nghiêng) được hấp thụ với hằng thời gian 3 s, đang nghiêng thì giữ nguyên
+          if (Math.abs(abs - rollBase[i]) < TILT_START * 0.9) rollBase[i] += (abs - rollBase[i]) * (1 - Math.exp(-rollDt / 3));
+          p.roll = abs - rollBase[i];
+        } else {
+          rollRaw[i] = NaN;
+          rollSrc[i] = null;
+          rollBase[i] = NaN;
+          p.roll = NaN;
+        }
         if (!p.hand && p.released) k.controls.enabled = true;
         g.ring.visible = active && p.hand;
         g.ring.position.copy(onPlane(p.ndc.x, p.ndc.y, h, v3));

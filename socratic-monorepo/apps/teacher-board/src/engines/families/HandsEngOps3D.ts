@@ -198,6 +198,7 @@ const turbineLab: Lab = ({k, P, live}) => {
 
   const CUT = 0.1; // phần hành trình cần ga dành cho vị trí cắt nhiên liệu
   let run = false;
+  let burnt = false;
   let spool = 0;
   let seen = {start: live.events.start ?? 0, stop: live.events.stop ?? 0};
   const travel = () => (run ? CUT + ((live.v.throttle - 10) / 90) * (1 - CUT) : 0);
@@ -237,6 +238,11 @@ const turbineLab: Lab = ({k, P, live}) => {
       seen = {start: live.events.start ?? 0, stop: live.events.stop ?? 0};
       spool += ((run ? 1 : 0) - spool) * Math.min(1, dt * 1.2);
       const b = brayton(live.v.throttle, live.v.far);
+      // máy ĐANG CHẠY mà nhiệt trước tuabin vượt giới hạn thì cháy (máy tắt thì thông số cao chưa gây hậu quả)
+      if (run && spool > 0.6 && b.hot) {
+        if (!burnt) live.hazard?.('turbine-overheat', V(CX, Y, Z));
+        burnt = true;
+      } else if (!b.hot || !run) burnt = false;
       rotor.rotation.x += dt * (4 + live.v.throttle / 4) * spool * 3;
       const heat = (b.flameout ? 0 : clamp((b.T4 - 600) / 900, 0, 1)) * spool;
       liner.forEach((m) => m.emissive.set('#FF4D1C').multiplyScalar(heat));

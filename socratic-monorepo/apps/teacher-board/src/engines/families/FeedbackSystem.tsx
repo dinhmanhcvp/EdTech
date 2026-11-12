@@ -50,7 +50,7 @@ export const FeedbackSystem: React.FC<{id: string; data: FeedbackData}> = ({id, 
 
   return (
     <div className="p-4 flex flex-col gap-3" data-testid="feedback-system" data-preset={id} data-phase={phase}>
-      <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="feedback-chart">
+      <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="feedback-chart">
         <rect x={L} y={sy(v.band[1])} width={W - L - R} height={sy(v.band[0]) - sy(v.band[1])} fill="#10B981" opacity="0.12" />
         <line x1={L} y1={sy(v.setpoint)} x2={W - R} y2={sy(v.setpoint)} stroke="#059669" strokeDasharray="5 4" />
         {[0, 0.25, 0.5, 0.75, 1].map((f) => (
@@ -68,7 +68,7 @@ export const FeedbackSystem: React.FC<{id: string; data: FeedbackData}> = ({id, 
       </svg>
 
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs text-stone-700">
-        <span>{v.label} lúc {i * data.dt} {data.timeUnit}: <b data-testid="feedback-now" className="font-mono text-blue-700">{fmtNum(series[i], 3)} {v.unit}</b></span>
+        <span>{v.label} lúc {i * data.dt} {data.timeUnit}: <b data-testid="feedback-now" className="font-mono text-[#1D1B16]">{fmtNum(series[i], 3)} {v.unit}</b></span>
         <span>Đỉnh: <b data-testid="feedback-peak" data-value={peak.toFixed(3)} className="font-mono">{fmtNum(peak, 3)}</b></span>
         <span>Cuối: <b data-testid="feedback-final" data-value={fin.toFixed(3)} className="font-mono">{fmtNum(fin, 3)}</b></span>
         <span className={`ml-auto px-2 py-0.5 rounded-md border font-semibold ${PHASE_STYLE[phase]}`} data-testid="feedback-phase-label">{PHASE_NAME[phase]}</span>
@@ -84,7 +84,7 @@ export const FeedbackSystem: React.FC<{id: string; data: FeedbackData}> = ({id, 
       </div>
       <p className="text-[11px] text-stone-500 -mt-1">Kết quả tác động ngược trở lại bộ phận tiếp nhận (liên hệ ngược).</p>
 
-      <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 flex flex-col gap-2">
+      <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 flex flex-col gap-2">
         <Slider testid="feedback-cursor" label={`Thời điểm (${data.timeUnit})`} value={i} min={0} max={n} step={1} onChange={setTi} fmt={(x) => String(x * data.dt)} />
         {data.params.map((q) => (
           <Slider

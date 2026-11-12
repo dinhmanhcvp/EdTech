@@ -23,8 +23,8 @@ interface Props {
   curriculumLevel?: CurriculumLevel;
 }
 
-const card = 'rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3';
-const chip = (on: boolean, color = '#2563EB') => `px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border text-xs font-semibold transition cursor-pointer ${on ? 'text-white' : 'bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50'}` + (on ? '' : '') ;
+const card = 'rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3';
+const chip = (on: boolean, color = '#2459C9') => `px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border text-xs font-semibold transition cursor-pointer ${on ? 'text-white' : 'bg-white text-stone-700 border-[#DCD9D0] hover:bg-stone-50'}` + (on ? '' : '') ;
 void chip;
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
@@ -66,11 +66,11 @@ export const StomataEngine: React.FC<Props> = () => {
         <span className="font-mono text-sm font-bold text-stone-900">Khí khổng: {label} ({pct(r.aperture)})</span>
         <span data-testid="stomata-reason" className="text-xs text-stone-600 flex-1 min-w-[220px]">{r.reason}</span>
       </div>
-      <svg viewBox="0 0 520 300" className="w-full rounded-xl border border-[#E6E4DD] bg-gradient-to-b from-sky-50 to-white" data-testid="stomata-svg">
+      <svg viewBox="0 0 520 300" className="w-full rounded-2xl border border-[#1D1B16]/15 bg-gradient-to-b from-sky-50 to-white" data-testid="stomata-svg">
         <defs>
           <VisualDefs id={uid} />
           <SphereGrad id={`${uid}-chl`} light="#BBF7D0" base="#16A34A" dark="#14532D" />
-          <SphereGrad id={`${uid}-k`} light="#EDE9FE" base="#7C3AED" dark="#4C1D95" />
+          <SphereGrad id={`${uid}-k`} light="#EDE9FE" base="#6B4BC8" dark="#4C1D95" />
           <linearGradient id={`${uid}-epi`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#DCFCE7" />
             <stop offset="1" stopColor="#86EFAC" />
@@ -104,8 +104,8 @@ export const StomataEngine: React.FC<Props> = () => {
         })}
         <ellipse cx={cx} cy={151} rx={Math.max(gap / 2, 0.8)} ry={46} fill="#E0F2FE" opacity={r.aperture > 0.02 ? 1 : 0} data-testid="stomata-pore" />
         {/* khí ra vào */}
-        <g transform="translate(0,0)">{arrows(Math.round(r.co2Uptake * 4), true, '#2563EB', cx)}</g>
-        <text x={cx + 78} y="58" fontSize="11" fill="#2563EB">CO₂ vào</text>
+        <g transform="translate(0,0)">{arrows(Math.round(r.co2Uptake * 4), true, '#2459C9', cx)}</g>
+        <text x={cx + 78} y="58" fontSize="11" fill="#2459C9">CO₂ vào</text>
         <g transform="translate(0,200)">{arrows(Math.round(r.waterLoss * 4), false, '#0891B2', cx)}</g>
         <text x={cx + 78} y="262" fontSize="11" fill="#0891B2">H₂O thoát</text>
         <text x="14" y="288" fontSize="10.5" fill="#6D28D9">● K⁺ trong tế bào bảo vệ</text>
@@ -141,7 +141,7 @@ export const OsmosisEngine: React.FC<Props> = ({blueprint}) => {
   const vmax = Math.max(1.6, ...curve.map((p) => p.v));
   const gx = (cc: number) => 28 + (cc / 6) * 240;
   const gy = (v: number) => 130 - (v / vmax) * 110;
-  const flowCol = r.waterFlow === 'in' ? '#2563EB' : r.waterFlow === 'out' ? '#E11D48' : '#A8A29E';
+  const flowCol = r.waterFlow === 'in' ? '#2459C9' : r.waterFlow === 'out' ? '#E11D48' : '#A8A29E';
   const arrowsN = r.waterFlow === 'none' ? 0 : 4;
   const wallW = 190;
   const wallH = 130;
@@ -157,7 +157,7 @@ export const OsmosisEngine: React.FC<Props> = ({blueprint}) => {
         <span data-testid="osmosis-label" className="ml-auto text-xs font-semibold text-stone-800">{r.label}</span>
       </div>
       <div className="grid md:grid-cols-[3fr_2fr] gap-3">
-        <svg viewBox="0 0 400 260" className="w-full rounded-xl border border-[#E6E4DD] bg-sky-50/60" data-testid="osmosis-svg">
+        <svg viewBox="0 0 400 260" className="w-full rounded-2xl border border-[#1D1B16]/15 bg-sky-50/60" data-testid="osmosis-svg">
           <defs>
             <VisualDefs id={uid} />
             <radialGradient id={`${uid}-rbc`} cx="0.38" cy="0.32" r="0.8">
@@ -224,7 +224,7 @@ export const OsmosisEngine: React.FC<Props> = ({blueprint}) => {
           })}
           <text x="10" y="252" fontSize="11" fill={flowCol} fontWeight="700">{r.waterFlow === 'in' ? 'Nước đi vào tế bào' : r.waterFlow === 'out' ? 'Nước đi ra khỏi tế bào' : 'Không có dòng nước thực'}</text>
         </svg>
-        <svg viewBox="0 0 290 160" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="osmosis-chart">
+        <svg viewBox="0 0 290 160" className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="osmosis-chart">
           <text x="8" y="12" fontSize="10" fill="#78716C">Thể tích tương đối theo nồng độ NaCl ngoài (%)</text>
           <line x1="28" y1="130" x2="270" y2="130" stroke="#57534E" />
           <line x1="28" y1="14" x2="28" y2="130" stroke="#57534E" />
@@ -236,7 +236,7 @@ export const OsmosisEngine: React.FC<Props> = ({blueprint}) => {
           ))}
           <line x1={gx(0.9)} y1="14" x2={gx(0.9)} y2="130" stroke="#10B981" strokeDasharray="3 3" />
           <text x={gx(0.9) + 3} y="26" fontSize="9" fill="#047857">đẳng trương</text>
-          <CurvePath d={curve.map((p, i) => `${i ? 'L' : 'M'}${gx(p.c).toFixed(1)},${gy(Math.min(p.v, vmax)).toFixed(1)}`).join(' ')} color="#2563EB" />
+          <CurvePath d={curve.map((p, i) => `${i ? 'L' : 'M'}${gx(p.c).toFixed(1)},${gy(Math.min(p.v, vmax)).toFixed(1)}`).join(' ')} color="#2459C9" />
           <circle cx={gx(Math.min(c, 6))} cy={gy(Math.min(r.volume, vmax))} r="5" fill="#E11D48" />
         </svg>
       </div>
@@ -294,7 +294,7 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
     <div className="p-4 flex flex-col gap-3" data-testid="lac-engine" data-expression={r.expression.toFixed(2)} data-pol={r.rnaPol} data-repressor={r.repressorBound}>
       <div className="flex flex-wrap items-center gap-2">
         {toggle(glucose, setGlucose, 'Glucose', '#D97706', 'lac-glucose')}
-        {toggle(lactose, setLactose, 'Lactose', '#2563EB', 'lac-lactose')}
+        {toggle(lactose, setLactose, 'Lactose', '#2459C9', 'lac-lactose')}
         <label className="flex items-center gap-1.5 text-xs text-stone-700 ml-auto">
           Đột biến
           <select data-testid="lac-mutant" value={mutant} onChange={(e) => setMutant(e.target.value as LacMutant)} className="border border-[#DCD9D0] rounded-lg px-2 py-1.5 bg-white text-xs">
@@ -305,10 +305,10 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
           </select>
         </label>
       </div>
-      <svg viewBox="0 0 600 300" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="lac-svg">
+      <svg viewBox="0 0 600 300" className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="lac-svg">
         <defs>
           <VisualDefs id={uid} />
-          <SphereGrad id={`${uid}-pol`} light="#BFDBFE" base="#2563EB" dark="#1E3A8A" />
+          <SphereGrad id={`${uid}-pol`} light="#BFDBFE" base="#2459C9" dark="#1E3A8A" />
           <SphereGrad id={`${uid}-pol0`} light="#E7E5E4" base="#A8A29E" dark="#57534E" />
           <linearGradient id={`${uid}-dna`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#F5F5F4" />
@@ -325,14 +325,14 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
           <g key={s.n}>
             <rect x={s.x} y="138" width={s.w} height="38" rx="6" fill={s.c} stroke="#78716C" />
             <rect x={s.x} y="138" width={s.w} height="38" rx="6" fill={`url(#${uid}-glass)`} pointerEvents="none" />
-            <text x={s.x + s.w / 2} y="162" fontSize="10.5" textAnchor="middle" fill="#292524">{s.n}</text>
+            <text x={s.x + s.w / 2} y="162" fontSize="10.5" textAnchor="middle" fill="#1D1B16">{s.n}</text>
           </g>
         ))}
         {genes.map((g) => (
           <g key={g.k}>
             <rect x={g.x} y="138" width={g.w} height="38" rx="6" fill="#FDE68A" stroke="#78716C" />
             <rect x={g.x} y="138" width={g.w} height="38" rx="6" fill={`url(#${uid}-glass)`} pointerEvents="none" />
-            <text x={g.x + g.w / 2} y="162" fontSize="11" textAnchor="middle" fill="#292524" fontWeight="700">{g.k}</text>
+            <text x={g.x + g.w / 2} y="162" fontSize="11" textAnchor="middle" fill="#1D1B16" fontWeight="700">{g.k}</text>
           </g>
         ))}
         <rect x="20" y="40" width="165" height="52" rx="8" fill="#F5F5F4" stroke="#D6D3D1" />
@@ -348,7 +348,7 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
           <g data-testid="repressor-free" opacity={mutant === 'lacI-' ? 0.35 : 1}>
             <polygon points="150,60 168,70 168,88 150,98 132,88 132,70" fill={mutant === 'lacI-' ? '#A8A29E' : '#F87171'} stroke="#7F1D1D" strokeWidth="2" transform="translate(120,-20)" />
             <text x="270" y="64" fontSize="9.5" textAnchor="middle" fill="#fff" fontWeight="700">R</text>
-            {r.allolactose && mutant !== 'lacI-' && <circle cx="292" cy="58" r="6" fill="#2563EB" stroke="#fff" strokeWidth="1.5" />}
+            {r.allolactose && mutant !== 'lacI-' && <circle cx="292" cy="58" r="6" fill="#2459C9" stroke="#fff" strokeWidth="1.5" />}
           </g>
         )}
         {/* CAP–cAMP */}
@@ -378,7 +378,7 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
           </g>
         )}
         {/* mRNA */}
-        <path d={`M 330 200 q 20 -16 40 0 t 40 0 t 40 0 t 40 0 t 40 0 t 40 0`} fill="none" stroke="#7C3AED" strokeWidth="3" strokeLinecap="round" strokeDasharray={`${mrnaLen} 600`} data-testid="mrna" />
+        <path d={`M 330 200 q 20 -16 40 0 t 40 0 t 40 0 t 40 0 t 40 0 t 40 0`} fill="none" stroke="#6B4BC8" strokeWidth="3" strokeLinecap="round" strokeDasharray={`${mrnaLen} 600`} data-testid="mrna" />
         <text x="330" y="226" fontSize="10.5" fill="#6D28D9">mARN lacZYA {pct(r.expression)}</text>
         {/* enzyme */}
         {genes.map((g) => (
@@ -390,7 +390,7 @@ export const OperonLacEngine: React.FC<Props> = ({blueprint}) => {
         ))}
         <text x="28" y="262" fontSize="10.5" fill="#57534E">Phân giải lactose</text>
         <rect x="28" y="268" width="180" height="8" rx="4" fill="#E7E5E4" />
-        <rect x="28" y="268" width={180 * brkE} height="8" rx="4" fill="#2563EB" />
+        <rect x="28" y="268" width={180 * brkE} height="8" rx="4" fill="#2459C9" />
       </svg>
       <div className={`${card} flex flex-col gap-1.5`}>
         <p data-testid="lac-explanation" className="text-xs text-stone-800">{r.explanation}</p>
@@ -454,7 +454,7 @@ export const BoxplotEngine: React.FC<Props> = ({blueprint}) => {
           {stats.outliers.length ? `Có ${stats.outliers.length} giá trị ngoại lai` : 'Không có giá trị ngoại lai'}
         </span>
       </div>
-      <svg viewBox={`0 0 ${W} 190`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="boxplot-svg">
+      <svg viewBox={`0 0 ${W} 190`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="boxplot-svg">
         {ticks(x0, x1).map((t) => (
           <g key={t}>
             <line x1={sx(t)} y1="20" x2={sx(t)} y2="150" stroke="#EFECE6" />
@@ -463,10 +463,10 @@ export const BoxplotEngine: React.FC<Props> = ({blueprint}) => {
         ))}
         <line x1={sx(stats.lowFence)} y1="28" x2={sx(stats.lowFence)} y2="112" stroke="#F59E0B" strokeDasharray="4 3" />
         <line x1={sx(stats.highFence)} y1="28" x2={sx(stats.highFence)} y2="112" stroke="#F59E0B" strokeDasharray="4 3" />
-        <line x1={sx(stats.whiskerLow)} y1="70" x2={sx(stats.q1)} y2="70" stroke="#18181B" strokeWidth="2" />
-        <line x1={sx(stats.q3)} y1="70" x2={sx(stats.whiskerHigh)} y2="70" stroke="#18181B" strokeWidth="2" />
-        <line x1={sx(stats.whiskerLow)} y1="56" x2={sx(stats.whiskerLow)} y2="84" stroke="#18181B" strokeWidth="2" />
-        <line x1={sx(stats.whiskerHigh)} y1="56" x2={sx(stats.whiskerHigh)} y2="84" stroke="#18181B" strokeWidth="2" />
+        <line x1={sx(stats.whiskerLow)} y1="70" x2={sx(stats.q1)} y2="70" stroke="#1D1B16" strokeWidth="2" />
+        <line x1={sx(stats.q3)} y1="70" x2={sx(stats.whiskerHigh)} y2="70" stroke="#1D1B16" strokeWidth="2" />
+        <line x1={sx(stats.whiskerLow)} y1="56" x2={sx(stats.whiskerLow)} y2="84" stroke="#1D1B16" strokeWidth="2" />
+        <line x1={sx(stats.whiskerHigh)} y1="56" x2={sx(stats.whiskerHigh)} y2="84" stroke="#1D1B16" strokeWidth="2" />
         <rect data-testid="box" x={sx(stats.q1)} y="42" width={Math.max(sx(stats.q3) - sx(stats.q1), 1)} height="56" fill="#BFDBFE" stroke="#1D4ED8" strokeWidth="2.2" />
         <line x1={sx(stats.q2)} y1="42" x2={sx(stats.q2)} y2="98" stroke="#DC2626" strokeWidth="3.4" />
         {[['Q₁', stats.q1], ['Q₂', stats.q2], ['Q₃', stats.q3]].map(([k, v]) => (
@@ -482,7 +482,7 @@ export const BoxplotEngine: React.FC<Props> = ({blueprint}) => {
         ))}
         {sorted.map((v, i) => {
           const out = v < stats.lowFence || v > stats.highFence;
-          return <circle key={i} cx={sx(v)} cy={124 + (i % 3) * 7} r="3.2" fill={out ? '#E11D48' : '#2563EB'} opacity="0.75" />;
+          return <circle key={i} cx={sx(v)} cy={124 + (i % 3) * 7} r="3.2" fill={out ? '#E11D48' : '#2459C9'} opacity="0.75" />;
         })}
       </svg>
       <div className="grid md:grid-cols-[1fr_1fr] gap-3">
@@ -492,7 +492,7 @@ export const BoxplotEngine: React.FC<Props> = ({blueprint}) => {
           {!summary && (
             <div className="flex items-center gap-2">
               <input data-testid="boxplot-input" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addValue()} placeholder="Thêm giá trị" className="flex-1 px-2.5 py-1.5 rounded-lg border border-[#DCD9D0] text-xs bg-white" />
-              <button data-testid="boxplot-add" onClick={addValue} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-blue-600 text-white text-xs font-semibold">Thêm</button>
+              <button data-testid="boxplot-add" onClick={addValue} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-[#1D1B16] text-white text-xs font-semibold">Thêm</button>
             </div>
           )}
           {!summary && (
@@ -505,7 +505,7 @@ export const BoxplotEngine: React.FC<Props> = ({blueprint}) => {
             </div>
           )}
         </div>
-        <table className="w-full text-xs font-mono rounded-xl border border-[#E6E4DD] bg-white overflow-hidden" data-testid="boxplot-table">
+        <table className="w-full text-xs font-mono rounded-2xl border border-[#1D1B16]/15 bg-white overflow-hidden" data-testid="boxplot-table">
           <tbody>
             {rows.map(([k, v]) => (
               <tr key={k} className="border-b border-[#F0EEE8] last:border-0">
@@ -558,7 +558,7 @@ export const VariationTableEngine: React.FC<Props> = ({blueprint}) => {
   const inp = 'w-14 text-center bg-white border border-[#DCD9D0] rounded px-1 py-0.5 text-xs font-mono';
   return (
     <div className="p-4 flex flex-col gap-3" data-testid="variation-engine" data-valid={!err} data-kinds={kinds.join(',')} data-signs={signs.join('')}>
-      <div className="overflow-x-auto rounded-xl border border-[#E6E4DD] bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-[#1D1B16]/15 bg-white">
         <table className="w-full text-xs font-mono border-collapse" data-testid="variation-table">
           <tbody>
             <tr>
@@ -590,7 +590,7 @@ export const VariationTableEngine: React.FC<Props> = ({blueprint}) => {
                 <React.Fragment key={i}>
                   <td className={cell}>
                     <input data-testid={`vt-y-${i}`} type="number" step="0.5" value={p.y} onChange={(e) => upd(i, 'y', parseFloat(e.target.value))} className={inp} />
-                    <div className={`text-[10px] font-bold ${kinds[i] === 'max' ? 'text-rose-600' : 'text-blue-600'}`}>{kinds[i] === 'max' ? 'cực đại' : kinds[i] === 'min' ? 'cực tiểu' : ''}</div>
+                    <div className={`text-[10px] font-bold ${kinds[i] === 'max' ? 'text-rose-600' : 'text-[#1D1B16]'}`}>{kinds[i] === 'max' ? 'cực đại' : kinds[i] === 'min' ? 'cực tiểu' : ''}</div>
                   </td>
                   <td className={`${cell} text-lg`}>{signs[i + 1] ? ARROW[signs[i + 1] as '+' | '-'] : ''}</td>
                 </React.Fragment>
@@ -600,13 +600,13 @@ export const VariationTableEngine: React.FC<Props> = ({blueprint}) => {
         </table>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <button data-testid="vt-add" onClick={addPoint} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-blue-600 text-white text-xs font-semibold">+ Thêm cực trị</button>
+        <button data-testid="vt-add" onClick={addPoint} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-[#1D1B16] text-white text-xs font-semibold">+ Thêm cực trị</button>
         <button data-testid="vt-remove" onClick={() => table.points.length > 1 && setTable({...table, points: table.points.slice(0, -1)})} disabled={table.points.length <= 1} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs disabled:opacity-40">− Bớt điểm cuối</button>
         <button data-testid="vt-flip" onClick={() => setTable({...table, leftDir: table.leftDir === 'up' ? 'down' : 'up'})} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">Đổi chiều biến thiên đầu: {table.leftDir === 'up' ? '↗ đồng biến' : '↘ nghịch biến'}</button>
         {err && <span data-testid="vt-error" className="text-xs text-rose-700">{err}</span>}
       </div>
       {f && (
-        <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="variation-graph">
+        <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="variation-graph">
           {ticks(xMin, xMax, 10).map((t) => (
             <g key={`x${t}`}>
               <line x1={sx(t)} y1="8" x2={sx(t)} y2={H - 24} stroke={t === 0 ? '#57534E' : '#EFECE6'} strokeWidth={t === 0 ? 1.5 : 1} />
@@ -619,7 +619,7 @@ export const VariationTableEngine: React.FC<Props> = ({blueprint}) => {
               <text x="26" y={sy(t) + 3} fontSize="10" textAnchor="end" fill="#78716C">{t}</text>
             </g>
           ))}
-          <path data-testid="variation-curve" d={samples.map((p, i) => `${i ? 'L' : 'M'}${sx(p.x).toFixed(1)},${sy(Math.max(yLo - 5, Math.min(yHi + 5, p.y))).toFixed(1)}`).join(' ')} fill="none" stroke="#2563EB" strokeWidth="2.6" />
+          <path data-testid="variation-curve" d={samples.map((p, i) => `${i ? 'L' : 'M'}${sx(p.x).toFixed(1)},${sy(Math.max(yLo - 5, Math.min(yHi + 5, p.y))).toFixed(1)}`).join(' ')} fill="none" stroke="#2459C9" strokeWidth="2.6" />
           {Math.abs(slope) < 1e3 && (
             <line x1={sx(x0 - 1.5)} y1={sy(tx0 - 1.5 * slope)} x2={sx(x0 + 1.5)} y2={sy(tx0 + 1.5 * slope)} stroke="#E11D48" strokeWidth="2" strokeDasharray="6 4" data-testid="variation-tangent" />
           )}
@@ -627,7 +627,7 @@ export const VariationTableEngine: React.FC<Props> = ({blueprint}) => {
           {table.points.map((p, i) => (
             <g key={i}>
               <circle cx={sx(p.x)} cy={sy(p.y)} r="6" fill="#fff" stroke={kinds[i] === 'max' ? '#E11D48' : '#1D4ED8'} strokeWidth="2.5" />
-              <text x={sx(p.x) + 9} y={sy(p.y) + (kinds[i] === 'max' ? -9 : 17)} fontSize="11" fontWeight="700" fill="#18181B">({fmtNum(p.x, 3)} ; {fmtNum(p.y, 3)})</text>
+              <text x={sx(p.x) + 9} y={sy(p.y) + (kinds[i] === 'max' ? -9 : 17)} fontSize="11" fontWeight="700" fill="#1D1B16">({fmtNum(p.x, 3)} ; {fmtNum(p.y, 3)})</text>
             </g>
           ))}
         </svg>

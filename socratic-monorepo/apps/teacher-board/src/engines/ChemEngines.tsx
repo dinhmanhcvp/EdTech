@@ -31,7 +31,7 @@ interface Props {
   curriculumLevel?: CurriculumLevel;
 }
 
-const card = 'rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3';
+const card = 'rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3';
 const sub = (n: number) => String(n).replace(/\d/g, (d) => '₀₁₂₃₄₅₆₇₈₉'[+d]);
 
 // ====================================================================== VSEPR 3D
@@ -151,7 +151,7 @@ export const VseprEngine: React.FC<Props> = ({blueprint}) => {
       </div>
       <svg
         viewBox="0 0 420 330"
-        className="w-full rounded-xl border border-[#E6E4DD] bg-gradient-to-b from-white to-stone-100 touch-none cursor-grab active:cursor-grabbing"
+        className="w-full rounded-2xl border border-[#1D1B16]/15 bg-gradient-to-b from-white to-stone-100 touch-none cursor-grab active:cursor-grabbing"
         data-testid="vsepr-svg"
         onPointerDown={(e) => {
           drag.current = {x: e.clientX, y: e.clientY};
@@ -271,7 +271,7 @@ export const LeChatelierEngine: React.FC<Props> = () => {
         <span data-testid="lc-shift" className={`ml-auto px-2.5 py-1 rounded-lg text-xs font-semibold border ${view.shift === 'none' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>{shiftText}</span>
       </div>
       <div className="grid md:grid-cols-[3fr_2fr] gap-3">
-        <svg viewBox="0 0 400 300" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="lc-svg">
+        <svg viewBox="0 0 400 300" className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="lc-svg">
           <defs>
             <VisualDefs id={uid} />
             <SphereGrad id={`${uid}-no2a`} light="#FDBA74" base="#C2410C" dark="#7C2D12" />
@@ -329,7 +329,7 @@ export const LeChatelierEngine: React.FC<Props> = () => {
           <text x="14" y="292" fontSize="11" fill="#57534E">T = {Tc} °C</text>
         </svg>
         <div className="flex flex-col gap-2">
-          <svg viewBox="0 0 290 130" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="lc-chart">
+          <svg viewBox="0 0 290 130" className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="lc-chart">
             <text x="8" y="12" fontSize="10" fill="#78716C">[NO₂] theo thời gian (độ đậm màu nâu)</text>
             <line x1="14" y1="112" x2="278" y2="112" stroke="#57534E" />
             {hist.length > 1 && <polyline points={hist.map((h) => `${hx(h.t).toFixed(1)},${hy(h.c).toFixed(1)}`).join(' ')} fill="none" stroke="#9A3412" strokeWidth="2.2" />}
@@ -354,7 +354,7 @@ export const LeChatelierEngine: React.FC<Props> = () => {
         <Slider testid="lc-v" label="Thể tích (piston)" value={V} min={0.4} max={3} step={0.05} onChange={(v) => { mark(v < V ? 'nén' : 'giãn'); setV(v); }} fmt={(v) => `${fmtNum(v, 3)} L`} />
         <Slider testid="lc-t" label="Nhiệt độ" value={Tc} min={-20} max={120} step={1} onChange={(v) => { mark(v > Tc ? 'đun' : 'làm lạnh'); setTc(v); }} fmt={(v) => `${v} °C`} />
         <div className="flex flex-wrap gap-2">
-          <button data-testid="lc-compress" onClick={() => { mark('nén ×2'); setV((v) => Math.max(0.4, v / 2)); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-blue-600 text-white text-xs font-semibold">Nén piston ×2</button>
+          <button data-testid="lc-compress" onClick={() => { mark('nén ×2'); setV((v) => Math.max(0.4, v / 2)); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-[#1D1B16] text-white text-xs font-semibold">Nén piston ×2</button>
           <button data-testid="lc-heat" onClick={() => { mark('đun nóng'); setTc((t) => Math.min(120, t + 40)); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-orange-600 text-white text-xs font-semibold">Đun nóng +40 °C</button>
           <button data-testid="lc-cool" onClick={() => { mark('làm lạnh'); setTc((t) => Math.max(-20, t - 40)); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-sky-600 text-white text-xs font-semibold">Làm lạnh −40 °C</button>
           <button data-testid="lc-reset" onClick={() => { setVal(1.5, 25); ref.current.xi = lcEquilibrium(N0, 1.5, 298.15); setXi(ref.current.xi); setHist([]); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">Đặt lại</button>
@@ -433,7 +433,7 @@ export const DaniellEngine: React.FC<Props> = ({blueprint}) => {
           {cell.anode.metal} + {cell.cathode.metal}²⁺ → {cell.anode.metal}²⁺ + {cell.cathode.metal}
         </span>
       </div>
-      <svg viewBox="0 0 560 330" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="daniell-svg">
+      <svg viewBox="0 0 560 330" className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="daniell-svg">
         <defs>
           <VisualDefs id={uid} />
           <marker id="earr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto">

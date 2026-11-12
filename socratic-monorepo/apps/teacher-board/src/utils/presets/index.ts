@@ -12,6 +12,7 @@ import {LY_CURVE_PRESETS} from './lyCurve';
 import {LY_LAB_PRESETS} from './lyLab';
 import {LY_SCENE1_PRESETS} from './lyScene1';
 import {LY_SCENE2_PRESETS} from './lyScene2';
+import {LY_SCENE3_PRESETS} from './lyScene3';
 import {PROCESS_PRESETS} from './process';
 import {SINH2_ANAT_PRESETS} from './sinh2Anat';
 import {SINH2_CURVE_PRESETS} from './sinh2Curve';
@@ -50,6 +51,8 @@ export const PRESETS: Record<string, PresetSpec> = {
   ...SINH2_SCENE_PRESETS,
   ...SINH2_CURVE_PRESETS,
   ...SINH2_ANAT_PRESETS,
+  // 3D cụ thể (con lắc Newton, sóng điện từ, Trái Đất nghiêng) đứng trước họ cơ học chung để không bị từ khóa rộng như "va chạm" nuốt
+  ...LY_SCENE3_PRESETS,
   ...LY_SCENE1_PRESETS,
   ...LY_SCENE2_PRESETS,
   ...LY_CURVE_PRESETS,

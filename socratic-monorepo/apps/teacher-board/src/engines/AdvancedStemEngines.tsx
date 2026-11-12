@@ -36,7 +36,7 @@ interface Props {
   blueprint: SimulationBlueprint;
 }
 const button =
-  "min-h-[44px] px-3 py-2 rounded-lg border border-stone-300 bg-white text-sm text-stone-800 shadow-sm transition-colors hover:bg-blue-50 aria-pressed:border-blue-600 aria-pressed:bg-blue-600 aria-pressed:text-white aria-pressed:shadow-md";
+  "min-h-[44px] px-3 py-2 rounded-lg border border-stone-300 bg-white text-sm text-stone-800 shadow-sm transition-colors hover:bg-[#FBF9F4] aria-pressed:border-[#1D1B16] aria-pressed:bg-[#1D1B16] aria-pressed:text-white aria-pressed:shadow-md";
 const panel = "rounded-xl border border-stone-200 bg-stone-50 p-3";
 const num = (value: unknown, fallback: number, min: number, max: number) =>
   typeof value === "number" && Number.isFinite(value)
@@ -66,7 +66,7 @@ const Control: React.FC<{
       className={`flex-1 min-w-20 ${RANGE_CLASS}`}
       style={rangeFill(value, min, max)}
     />
-    <output className="w-16 text-right font-mono text-blue-700">
+    <output className="w-16 text-right font-mono text-[#1D1B16]">
       {F(value)}
     </output>
   </label>
@@ -119,7 +119,7 @@ const Scene: React.FC<{
         role="img"
         aria-label={label}
         viewBox="0 0 520 300"
-        className="w-full rounded-xl border border-stone-200/60 bg-[radial-gradient(ellipse_at_50%_35%,#ffffff_0%,#f5f5f4_62%,#e7e5e4_100%)] shadow-sm"
+        className="w-full rounded-2xl border border-[#1D1B16]/15 bg-[radial-gradient(ellipse_at_50%_42%,#ffffff_0%,#F4F1EA_62%,#E7E3D9_100%)] shadow-sm"
         style={{ touchAction: "none" }}
         onPointerDown={(e) => {
           if (drag.current || e.button !== 0) return;
@@ -148,11 +148,11 @@ const Scene: React.FC<{
           <radialGradient id={id} cx="30%" cy="25%" r="80%">
             <stop offset="0" stopColor="#fff" />
             <stop offset="0.25" stopColor="#93C5FD" />
-            <stop offset="0.7" stopColor="#2563EB" />
+            <stop offset="0.7" stopColor="#2459C9" />
             <stop offset="1" stopColor="#172554" />
           </radialGradient>
         </defs>
-        <ellipse cx="260" cy="278" rx="150" ry="11" fill="#292524" opacity="0.07" />
+        <ellipse cx="260" cy="278" rx="150" ry="11" fill="#1D1B16" opacity="0.07" />
         {children(project, id)}
       </svg>
       <div className="flex items-center justify-between gap-2 text-xs text-stone-500">
@@ -331,7 +331,7 @@ export const OxyzEngine: React.FC<Props> = ({ blueprint }) => {
                       ring(center, u, axes[(i + 1) % 3], radius),
                     )}
                     fill="none"
-                    stroke="#2563EB"
+                    stroke="#2459C9"
                     strokeWidth="2"
                   />
                 ))}
@@ -346,7 +346,7 @@ export const OxyzEngine: React.FC<Props> = ({ blueprint }) => {
                   />
                 )}
                 {[
-                  { point: center, label: "I", color: "#2563EB" },
+                  { point: center, label: "I", color: "#2459C9" },
                   { point: r.foot, label: "H", color: "#DC2626" },
                 ].map(({ point, label, color }) => (
                   <g key={label}>
@@ -540,9 +540,9 @@ export const RevolutionEngine: React.FC<Props> = ({ blueprint }) => {
                     <polygon
                       key={i}
                       points={points3(p, [[d.x, 0, 0], ...arc])}
-                      fill="#2563EB"
+                      fill="#2459C9"
                       fillOpacity="0.06"
-                      stroke="#3B82F6"
+                      stroke="#2459C9"
                       strokeOpacity="0.65"
                       strokeWidth="1.2"
                     />
@@ -787,7 +787,7 @@ export const DynamicGeometryEngine: React.FC<Props> = ({ blueprint }) => {
         role="img"
         aria-label="Tam giác kéo đỉnh, đường Euler, đối cực và nghịch đảo"
         viewBox="0 0 520 320"
-        className="w-full rounded-xl border border-stone-200/60 bg-[radial-gradient(ellipse_at_50%_35%,#ffffff_0%,#f5f5f4_62%,#e7e5e4_100%)] shadow-sm"
+        className="w-full rounded-2xl border border-[#1D1B16]/15 bg-[radial-gradient(ellipse_at_50%_42%,#ffffff_0%,#F4F1EA_62%,#E7E3D9_100%)] shadow-sm"
         style={{ touchAction: "none" }}
         onPointerMove={(e) => {
           const d = drag.current;
@@ -820,9 +820,9 @@ export const DynamicGeometryEngine: React.FC<Props> = ({ blueprint }) => {
           <line x1="260" y1="0" x2="260" y2="320" stroke="#E7E5E4" />
           <polygon
             points={screenPoints(vertices)}
-            fill="#2563EB"
+            fill="#2459C9"
             fillOpacity="0.08"
-            stroke="#2563EB"
+            stroke="#2459C9"
             strokeWidth="2.5"
           />
           {centers && layers.altitudes && (
@@ -857,7 +857,7 @@ export const DynamicGeometryEngine: React.FC<Props> = ({ blueprint }) => {
                     y1={xy(v)[1]}
                     x2={xy(midpoints[i])[0]}
                     y2={xy(midpoints[i])[1]}
-                    stroke="#8B5CF6"
+                    stroke="#6B4BC8"
                     strokeWidth="1.5"
                     strokeDasharray="3 3"
                   />
@@ -865,7 +865,7 @@ export const DynamicGeometryEngine: React.FC<Props> = ({ blueprint }) => {
                     cx={xy(midpoints[i])[0]}
                     cy={xy(midpoints[i])[1]}
                     r="3.2"
-                    fill="#8B5CF6"
+                    fill="#6B4BC8"
                   />
                   <text
                     x={xy(midpoints[i])[0] + 5}
@@ -905,7 +905,7 @@ export const DynamicGeometryEngine: React.FC<Props> = ({ blueprint }) => {
                 cy={xy(centers.o)[1]}
                 r={centers.radius * 42}
                 fill="none"
-                stroke="#3B82F6"
+                stroke="#2459C9"
                 strokeDasharray="5 4"
               />
               <circle
@@ -987,10 +987,10 @@ export const DynamicGeometryEngine: React.FC<Props> = ({ blueprint }) => {
                 y1="160"
                 x2={xy(inv)[0]}
                 y2={xy(inv)[1]}
-                stroke="#7C3AED"
+                stroke="#6B4BC8"
                 strokeDasharray="4 4"
               />
-              <circle cx={xy(inv)[0]} cy={xy(inv)[1]} r="6" fill="#7C3AED" />
+              <circle cx={xy(inv)[0]} cy={xy(inv)[1]} r="6" fill="#6B4BC8" />
               <text x={xy(inv)[0] + 8} y={xy(inv)[1]} fontSize="14">
                 P′
               </text>
@@ -1019,7 +1019,7 @@ export const DynamicGeometryEngine: React.FC<Props> = ({ blueprint }) => {
               cx={xy(v)[0]}
               cy={xy(v)[1]}
               r="6"
-              fill={i === 3 ? "#D97706" : "#2563EB"}
+              fill={i === 3 ? "#D97706" : "#2459C9"}
               pointerEvents="none"
             />
             <text
@@ -1045,7 +1045,7 @@ export const DynamicGeometryEngine: React.FC<Props> = ({ blueprint }) => {
       {centers && (
         <div
           data-testid="dynamic-geo-metrics"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-blue-50/70 border border-blue-200 px-3 py-2 text-xs font-mono text-blue-950"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#FBF9F4]/70 border border-[#1D1B16]/40 px-3 py-2 text-xs font-mono text-blue-950"
         >
           <span>
             Cạnh: a={fmtNum(triMetrics.aLen, 2)} · b={fmtNum(triMetrics.bLen, 2)} · c={fmtNum(triMetrics.cLen, 2)}
@@ -1403,7 +1403,7 @@ export const CrystalFieldEngine: React.FC<Props> = ({ blueprint }) => {
           <text x="12" y={y(0.6 * delta) - 23} fontSize="13" fill="#DC2626">
             e_g (+0,6Δ)
           </text>
-          <text x="12" y={y(-0.4 * delta) + 27} fontSize="13" fill="#2563EB">
+          <text x="12" y={y(-0.4 * delta) + 27} fontSize="13" fill="#2459C9">
             t₂g (−0,4Δ)
           </text>
           {r.occupancy.map((n, i) => {
@@ -1417,10 +1417,10 @@ export const CrystalFieldEngine: React.FC<Props> = ({ blueprint }) => {
                   y1={yy}
                   x2={x + 20}
                   y2={yy}
-                  stroke={upper ? "#DC2626" : "#2563EB"}
+                  stroke={upper ? "#DC2626" : "#2459C9"}
                   strokeWidth="3"
                 />
-                <text x={x - 10} y={yy - 7} fontSize="22" fill="#1C1917">
+                <text x={x - 10} y={yy - 7} fontSize="22" fill="#1D1B16">
                   {n === 2 ? "↑↓" : n === 1 ? "↑" : ""}
                 </text>
               </g>
@@ -1439,7 +1439,7 @@ export const CrystalFieldEngine: React.FC<Props> = ({ blueprint }) => {
           </text>
         </svg>
       </div>
-      <p className="font-semibold text-sm text-blue-800" data-testid="cft-spin">
+      <p className="font-semibold text-sm text-[#1D1B16]" data-testid="cft-spin">
         {label}
       </p>
       {r.crossover && (
@@ -1662,7 +1662,7 @@ export const Sn2Engine: React.FC<Props> = () => {
         role="img"
         aria-label="Giản đồ năng lượng phản ứng một trạng thái chuyển tiếp"
         viewBox="0 0 520 155"
-        className="w-full rounded-xl border border-stone-200/60 bg-[radial-gradient(ellipse_at_50%_35%,#ffffff_0%,#f5f5f4_62%,#e7e5e4_100%)] shadow-sm"
+        className="w-full rounded-2xl border border-[#1D1B16]/15 bg-[radial-gradient(ellipse_at_50%_42%,#ffffff_0%,#F4F1EA_62%,#E7E3D9_100%)] shadow-sm"
       >
         <line x1="35" y1="125" x2="490" y2="125" stroke="#78716C" />
         <path
@@ -1672,7 +1672,7 @@ export const Sn2Engine: React.FC<Props> = () => {
               `${i ? "L" : "M"}${35 + i * 4.5},${125 - Math.sin((Math.PI * i) / 100) ** 2 * 95}`,
           ).join(" ")}
           fill="none"
-          stroke="#2563EB"
+          stroke="#2459C9"
           strokeWidth="2.5"
         />
         <circle
@@ -1816,7 +1816,7 @@ export const CyclohexaneEngine: React.FC<Props> = ({ blueprint }) => {
         role="img"
         aria-label="Mô hình cấu dạng cyclohexane với liên kết trục và xích đạo"
         viewBox="0 0 520 280"
-        className="w-full rounded-xl border border-stone-200 bg-gradient-to-b from-white to-[#FAF9F6] select-none"
+        className="w-full rounded-2xl border border-[#1D1B16]/15 bg-[radial-gradient(ellipse_at_50%_42%,#ffffff_0%,#F4F1EA_62%,#E7E3D9_100%)] select-none"
       >
         <defs>
           <radialGradient id="carbonGrad" cx="35%" cy="35%" r="65%">
@@ -1908,7 +1908,7 @@ export const CyclohexaneEngine: React.FC<Props> = ({ blueprint }) => {
         {/* Khung vòng Carbon */}
         <polygon
           points={polyPoints}
-          fill="#3B82F6"
+          fill="#2459C9"
           fillOpacity="0.08"
           stroke="#1E293B"
           strokeWidth="4"
@@ -2018,7 +2018,7 @@ export const CyclohexaneEngine: React.FC<Props> = ({ blueprint }) => {
           <button
             className={`${button} ${
               form === "chair"
-                ? "bg-blue-100 font-semibold border-blue-500"
+                ? "bg-[#F3EFE6] font-semibold border-[#1D1B16]"
                 : ""
             }`}
             onClick={() => setForm("chair")}
@@ -2028,7 +2028,7 @@ export const CyclohexaneEngine: React.FC<Props> = ({ blueprint }) => {
           <button
             className={`${button} ${
               form === "boat"
-                ? "bg-blue-100 font-semibold border-blue-500"
+                ? "bg-[#F3EFE6] font-semibold border-[#1D1B16]"
                 : ""
             }`}
             onClick={() => setForm("boat")}
@@ -2038,7 +2038,7 @@ export const CyclohexaneEngine: React.FC<Props> = ({ blueprint }) => {
           <button
             className={`${button} ${
               form === "twist"
-                ? "bg-blue-100 font-semibold border-blue-500"
+                ? "bg-[#F3EFE6] font-semibold border-[#1D1B16]"
                 : ""
             }`}
             onClick={() => setForm("twist")}
@@ -2048,7 +2048,7 @@ export const CyclohexaneEngine: React.FC<Props> = ({ blueprint }) => {
           <button
             className={`${button} ${
               form === "inverted"
-                ? "bg-blue-100 font-semibold border-blue-500"
+                ? "bg-[#F3EFE6] font-semibold border-[#1D1B16]"
                 : ""
             }`}
             onClick={() => setForm("inverted")}
@@ -2138,7 +2138,7 @@ export const CellRespirationEngine: React.FC<Props> = ({ blueprint }) => {
         role="img"
         aria-label="Sơ đồ chuỗi truyền electron ti thể, gradient proton H+ và ATP Synthase"
         viewBox="0 0 520 280"
-        className="w-full rounded-xl border border-stone-200 bg-gradient-to-b from-white to-[#FAF9F6] select-none"
+        className="w-full rounded-2xl border border-[#1D1B16]/15 bg-[radial-gradient(ellipse_at_50%_42%,#ffffff_0%,#F4F1EA_62%,#E7E3D9_100%)] select-none"
       >
         <defs>
           <linearGradient id="imsGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2606,7 +2606,7 @@ export const LotkaVolterraEngine: React.FC<Props> = ({ blueprint }) => {
         <h4 className="text-base font-semibold text-stone-800">
           Động thái Quần thể 2 Loài Lotka–Volterra
         </h4>
-        <span className="text-xs px-2.5 py-1 rounded-full font-mono font-medium bg-blue-100 text-blue-800">
+        <span className="text-xs px-2.5 py-1 rounded-full font-mono font-medium bg-[#F3EFE6] text-[#1D1B16]">
           Cân bằng: ({res.equilibrium[0]}; {res.equilibrium[1]}) | Chu kỳ: ~
           {res.periodApprox}s
         </span>
@@ -2616,7 +2616,7 @@ export const LotkaVolterraEngine: React.FC<Props> = ({ blueprint }) => {
         role="img"
         aria-label="Đồ thị thời gian và chân dung mặt phẳng pha Lotka-Volterra"
         viewBox="0 0 520 280"
-        className="w-full rounded-xl border border-stone-200 bg-gradient-to-b from-white to-[#FAF9F6] select-none"
+        className="w-full rounded-2xl border border-[#1D1B16]/15 bg-[radial-gradient(ellipse_at_50%_42%,#ffffff_0%,#F4F1EA_62%,#E7E3D9_100%)] select-none"
       >
         {viewMode !== "phase" && (
           <g>
@@ -2723,9 +2723,9 @@ export const LotkaVolterraEngine: React.FC<Props> = ({ blueprint }) => {
               points={res.phasePoints
                 .map((p) => pToScreen(p).join(","))
                 .join(" ")}
-              fill="#3B82F6"
+              fill="#2459C9"
               fillOpacity="0.08"
-              stroke="#2563EB"
+              stroke="#2459C9"
               strokeWidth="2"
             />
 
@@ -2787,7 +2787,7 @@ export const LotkaVolterraEngine: React.FC<Props> = ({ blueprint }) => {
           <button
             className={`${button} ${
               viewMode === "both"
-                ? "bg-blue-100 font-semibold border-blue-500"
+                ? "bg-[#F3EFE6] font-semibold border-[#1D1B16]"
                 : ""
             }`}
             onClick={() => setViewMode("both")}
@@ -2797,7 +2797,7 @@ export const LotkaVolterraEngine: React.FC<Props> = ({ blueprint }) => {
           <button
             className={`${button} ${
               viewMode === "time"
-                ? "bg-blue-100 font-semibold border-blue-500"
+                ? "bg-[#F3EFE6] font-semibold border-[#1D1B16]"
                 : ""
             }`}
             onClick={() => setViewMode("time")}
@@ -2807,7 +2807,7 @@ export const LotkaVolterraEngine: React.FC<Props> = ({ blueprint }) => {
           <button
             className={`${button} ${
               viewMode === "phase"
-                ? "bg-blue-100 font-semibold border-blue-500"
+                ? "bg-[#F3EFE6] font-semibold border-[#1D1B16]"
                 : ""
             }`}
             onClick={() => setViewMode("phase")}
@@ -2931,7 +2931,7 @@ export const CellSignalingEngine: React.FC<Props> = ({ blueprint }) => {
               ? "bg-rose-100 text-rose-800"
               : res.cellFate === "GLYCOGEN_BREAKDOWN"
               ? "bg-emerald-100 text-emerald-800"
-              : "bg-blue-100 text-blue-800"
+              : "bg-[#F3EFE6] text-[#1D1B16]"
           }`}
         >
           {res.cellFate === "APOPTOSIS_DEATH"
@@ -2946,7 +2946,7 @@ export const CellSignalingEngine: React.FC<Props> = ({ blueprint }) => {
         role="img"
         aria-label="Sơ đồ con đường truyền tin qua thụ thể GPCR, G-protein, cAMP và thụ thể chết Fas"
         viewBox="0 0 520 280"
-        className="w-full rounded-xl border border-stone-200 bg-gradient-to-b from-white to-[#FAF9F6] select-none"
+        className="w-full rounded-2xl border border-[#1D1B16]/15 bg-[radial-gradient(ellipse_at_50%_42%,#ffffff_0%,#F4F1EA_62%,#E7E3D9_100%)] select-none"
       >
         <defs>
           <linearGradient id="cytoGrad" x1="0" y1="0" x2="0" y2="1">
@@ -3012,7 +3012,7 @@ export const CellSignalingEngine: React.FC<Props> = ({ blueprint }) => {
           <path
             d="M 10 0 C 10 30, 20 50, 25 15 C 30 -10, 40 45, 45 10"
             fill="none"
-            stroke={res.gpcrActive ? "#2563EB" : "#64748B"}
+            stroke={res.gpcrActive ? "#2459C9" : "#64748B"}
             strokeWidth="6"
             strokeLinecap="round"
           />
@@ -3064,7 +3064,7 @@ export const CellSignalingEngine: React.FC<Props> = ({ blueprint }) => {
 
         {!res.gAlphaActive && (
           <g transform="translate(100, 142)">
-            <circle cx="10" cy="8" r="8" fill="#8B5CF6" />
+            <circle cx="10" cy="8" r="8" fill="#6B4BC8" />
             <circle cx="24" cy="8" r="7" fill="#A855F7" />
             <text x="17" y="11" textAnchor="middle" fontSize="8" fill="#FFFFFF">
               βγ

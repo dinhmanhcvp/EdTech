@@ -3,7 +3,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { setupHiDpiCanvas } from './visualKit';
-import { angleArc, glowPath, hatch, hudCard, lensBody, shadedBlock } from '../utils/canvasKit';
+import {angleArc, glowPath, hatch, hudCard, lensBody, shadedBlock, stageFill} from '../utils/canvasKit';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { computeProjectile } from '../utils/physics';
 import { Waves, Zap, Compass, ArrowUpRight, Scale } from 'lucide-react';
@@ -103,7 +103,7 @@ function drawPbrSphere(
   x: number,
   y: number,
   radius: number,
-  baseColor: string = '#2563EB',
+  baseColor: string = '#2459C9',
   highlightColor: string = '#FFFFFF'
 ) {
   ctx.save();
@@ -426,8 +426,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
       if (!isHologram) {
         // Warm Alabaster Technical Graph Paper
-        ctx.fillStyle = '#FCFBF9';
-        ctx.fillRect(0, 0, LW, LH);
+        stageFill(ctx, LW, LH);
 
         // Millimeter grid
         ctx.strokeStyle = '#EFECE6';
@@ -653,7 +652,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ctx.lineTo(305, LH - 10);
         ctx.stroke();
 
-        ctx.fillStyle = '#2563EB';
+        ctx.fillStyle = '#2459C9';
         ctx.font = 'bold 12px monospace';
         ctx.fillText(formatCanvasMath('GIẢN ĐỒ FRESNEL (PHASOR)'), 18, 22);
 
@@ -680,7 +679,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
 
         // Draw rotating vectors with 3D arcs
         drawVector(ctx, leftCenterX, leftCenterY, uRx, uRy, '#059669', `U_R (${U_R.toFixed(0)}V)`);
-        drawVector(ctx, leftCenterX, leftCenterY, uLx, uLy, '#2563EB', `U_L (${U_L.toFixed(0)}V)`);
+        drawVector(ctx, leftCenterX, leftCenterY, uLx, uLy, '#2459C9', `U_L (${U_L.toFixed(0)}V)`);
         drawVector(ctx, leftCenterX, leftCenterY, uCx, uCy, '#D97706', `U_C (${U_C.toFixed(0)}V)`);
         drawVector(ctx, leftCenterX, leftCenterY, uTotalX, uTotalY, '#E11D48', `U (${U.toFixed(0)}V)`);
 
@@ -740,7 +739,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         const curPx = plotLeft + ((omega - minW) / (maxW - minW)) * plotW;
         const curPy = plotBottom - (I / iMaxRes) * (plotH * 0.9);
 
-        drawPbrSphere(ctx, curPx, curPy, 6, isResonant ? '#D97706' : '#2563EB', '#FFFFFF');
+        drawPbrSphere(ctx, curPx, curPy, 6, isResonant ? '#D97706' : '#2459C9', '#FFFFFF');
 
         // Update HUD
         if (Math.floor(t * 50) % 4 === 0) {
@@ -798,7 +797,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           ctx.lineTo(295, LH - 10);
           ctx.stroke();
 
-          ctx.fillStyle = '#2563EB';
+          ctx.fillStyle = '#2459C9';
           ctx.font = 'bold 12px monospace';
           ctx.fillText(formatCanvasMath('RK4 CON LẮC GÓC LỚN'), 16, 22);
 
@@ -835,7 +834,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
             ctx.stroke();
           }
 
-          drawPbrSphere(ctx, pOriginX + theta * pScaleTheta, pOriginY - omega * pScaleOmega, 5, '#2563EB', '#FFFFFF');
+          drawPbrSphere(ctx, pOriginX + theta * pScaleTheta, pOriginY - omega * pScaleOmega, 5, '#2459C9', '#FFFFFF');
         }
 
         // Draw Comet Motion Trail behind Pendulum Bob
@@ -879,7 +878,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ctx.fill();
 
         // 3D PBR Bob with specular glint
-        drawPbrSphere(ctx, bobX, bobY, 16, '#2563EB', '#FFFFFF');
+        drawPbrSphere(ctx, bobX, bobY, 16, '#2459C9', '#FFFFFF');
 
         // Dynamic Vectors
         const v = L * omega;
@@ -929,7 +928,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ctx.fillText("F'", lensX + f - 5, axisY + 18);
 
         const objX = lensX - d;
-        drawVector(ctx, objX, axisY, objX, axisY - h, '#2563EB', 'AB');
+        drawVector(ctx, objX, axisY, objX, axisY - h, '#2459C9', 'AB');
 
         if (Math.abs(d - f) > 5) {
           const dPrime = (d * f) / (d - f);
@@ -941,14 +940,14 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           glowPath(ctx, [[objX, axisY - h], [lensX, axisY - h], [imgX, imgY]], '#D97706');
 
           // Ray 2: Passes through optical center O undeflected
-          glowPath(ctx, [[objX, axisY - h], [lensX, axisY], [imgX, imgY]], '#EA580C');
+          glowPath(ctx, [[objX, axisY - h], [lensX, axisY], [imgX, imgY]], '#D9481C');
 
           drawVector(ctx, imgX, axisY, imgX, imgY, '#E11D48', "A'B'");
 
           hudCard(
             ctx,
             [
-              { text: formatCanvasMath(`d' = ${dPrime.toFixed(1)}px (${dPrime > 0 ? 'Ảnh thật' : 'Ảnh ảo'})`), bold: true, color: dPrime > 0 ? '#047857' : '#7C3AED' },
+              { text: formatCanvasMath(`d' = ${dPrime.toFixed(1)}px (${dPrime > 0 ? 'Ảnh thật' : 'Ảnh ảo'})`), bold: true, color: dPrime > 0 ? '#047857' : '#6B4BC8' },
               { text: formatCanvasMath(`Độ phóng đại k = ${(-dPrime / d).toFixed(2)}`), color: '#57534E' },
             ],
             12,
@@ -1002,7 +1001,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         ctx.rotate(-alpha);
 
         // Block with 3D shadow
-        shadedBlock(ctx, -22, -26, 44, 26, '#2563EB', '#1D4ED8');
+        shadedBlock(ctx, -22, -26, 44, 26, '#2459C9', '#1D4ED8');
 
         drawVector(ctx, 0, 0, 0, 50, '#E11D48', 'P');
         drawVector(ctx, 0, 0, 0, -42, '#059669', 'N');
@@ -1120,7 +1119,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
         }
 
         // 3D PBR Ball with specular glint
-        drawPbrSphere(ctx, curX, curY, 8.5, '#2563EB', '#FFFFFF');
+        drawPbrSphere(ctx, curX, curY, 8.5, '#2459C9', '#FFFFFF');
 
         // Dynamic Vectors
         const vScale = 1.6;
@@ -1162,7 +1161,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
   return (
     <div className="relative w-full max-w-[620px] flex flex-col items-center">
       {/* Subject Content Ribbon */}
-      <div className={isHologram ? "hidden" : "w-full flex items-center justify-between px-3 py-1.5 mb-2 bg-white/95 backdrop-blur-md rounded-xl border border-[#E6E4DD] shadow-[0_2px_12px_-2px_rgba(20,20,19,0.04)] flex-wrap gap-2"}>
+      <div className={isHologram ? "hidden" : "w-full flex items-center justify-between px-3 py-1.5 mb-2 bg-white/95 backdrop-blur-md rounded-2xl border border-[#1D1B16]/15 shadow-[0_2px_12px_-2px_rgba(20,20,19,0.04)] flex-wrap gap-2"}>
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-semibold">
             Nội dung Vật lý:
@@ -1179,11 +1178,11 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
             onClick={() => setActiveMode('PROJECTILE')}
             className={`flex items-center gap-1 px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-medium transition active:scale-[0.97] cursor-pointer ${
               currentMode === 'PROJECTILE'
-                ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm font-semibold'
+                ? 'bg-[#FBF9F4] text-[#1D1B16] border border-[#1D1B16]/40 shadow-sm font-semibold'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
             }`}
           >
-            <ArrowUpRight className="w-3.5 h-3.5 text-blue-600" />
+            <ArrowUpRight className="w-3.5 h-3.5 text-[#1D1B16]" />
             <span>Ném xiên (Parabol)</span>
           </button>
 
@@ -1279,7 +1278,7 @@ export const PhysicsSandboxEngine: React.FC<Props> = ({
           <div className="w-[1px] h-3 bg-stone-300 dark:bg-stone-700" />
           <div className="flex items-center gap-1">
             <span className="text-stone-500">Cơ năng W:</span>{' '}
-            <span className="text-blue-700 dark:text-cyan-400 font-bold tabular-nums">{hud.wTotal}J</span>
+            <span className="text-[#1D1B16] dark:text-cyan-400 font-bold tabular-nums">{hud.wTotal}J</span>
           </div>
         </div>
       )}

@@ -29,17 +29,17 @@ export const TableLab: React.FC<{id: string; data: TableData}> = ({id, data}) =>
   return (
     <div className="p-4 flex flex-col gap-3" data-testid="table-lab" data-preset={id} data-selected={sel ?? ''} data-colorby={colorBy}>
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <button type="button" data-testid="table-colorby-group" aria-pressed={colorBy === 'group'} onClick={() => setColorBy('group')} className={`rounded-full border px-3 py-1 ${colorBy === 'group' ? 'border-blue-600 bg-blue-600 text-white' : 'border-stone-300 bg-white'}`}>
+        <button type="button" data-testid="table-colorby-group" aria-pressed={colorBy === 'group'} onClick={() => setColorBy('group')} className={`rounded-full border px-3 py-1 ${colorBy === 'group' ? 'border-[#1D1B16] bg-[#1D1B16] text-white' : 'border-stone-300 bg-white'}`}>
           Theo nhóm
         </button>
         {numeric.map((d) => (
-          <button key={d.key} type="button" data-testid={`table-colorby-${d.key}`} aria-pressed={colorBy === d.key} onClick={() => setColorBy(d.key)} className={`rounded-full border px-3 py-1 ${colorBy === d.key ? 'border-blue-600 bg-blue-600 text-white' : 'border-stone-300 bg-white'}`}>
+          <button key={d.key} type="button" data-testid={`table-colorby-${d.key}`} aria-pressed={colorBy === d.key} onClick={() => setColorBy(d.key)} className={`rounded-full border px-3 py-1 ${colorBy === d.key ? 'border-[#1D1B16] bg-[#1D1B16] text-white' : 'border-stone-300 bg-white'}`}>
             {d.label}
           </button>
         ))}
       </div>
 
-      <div className="overflow-auto rounded-xl border border-[#E6E4DD] bg-white p-2">
+      <div className="overflow-auto rounded-2xl border border-[#1D1B16]/15 bg-white p-2">
         <div className="grid gap-[3px]" style={{gridTemplateColumns: `repeat(${data.cols}, minmax(${data.dense ? 44 : 30}px, 1fr))`, gridTemplateRows: `repeat(${data.rows}, auto)`}}>
           {data.cells.map((c) => (
             <button
@@ -69,7 +69,7 @@ export const TableLab: React.FC<{id: string; data: TableData}> = ({id, data}) =>
         ))}
       </div>
 
-      <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 text-xs text-stone-700" data-testid="table-detail">
+      <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 text-xs text-stone-700" data-testid="table-detail">
         {cell ? (
           <>
             <b className="text-sm text-stone-900">{cell.title}</b>

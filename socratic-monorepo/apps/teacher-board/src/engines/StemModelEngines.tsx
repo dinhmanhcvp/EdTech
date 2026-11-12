@@ -13,14 +13,14 @@ interface Props {
   curriculumLevel?: CurriculumLevel;
 }
 
-const PALETTE = ['#2563EB', '#E11D48', '#059669', '#D97706', '#7C3AED', '#0891B2', '#DB2777', '#4D7C0F'];
+const PALETTE = ['#2459C9', '#E11D48', '#059669', '#D97706', '#6B4BC8', '#0891B2', '#DB2777', '#4D7C0F'];
 const pct = (v: number) => `${fmtNum(v * 100, 3)}%`;
 
 export const Slider: React.FC<{label: React.ReactNode; value: number; min: number; max: number; step: number; onChange: (v: number) => void; testid: string; fmt?: (v: number) => string}> = ({label, value, min, max, step, onChange, testid, fmt}) => (
   <label className="flex items-center gap-3 text-xs text-stone-700">
     <span className="w-28 shrink-0 font-medium">{label}</span>
     <input data-testid={testid} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className={`flex-1 ${RANGE_CLASS}`} style={rangeFill(value, min, max)} />
-    <span className="w-16 text-right font-mono tabular-nums text-blue-600 font-bold">{fmt ? fmt(value) : fmtNum(value, 3)}</span>
+    <span className="w-16 text-right font-mono tabular-nums text-[#1D1B16] font-semibold">{fmt ? fmt(value) : fmtNum(value, 3)}</span>
   </label>
 );
 
@@ -39,10 +39,10 @@ export const PunnettEngine: React.FC<Props> = ({blueprint}) => {
       <div className="flex flex-wrap items-baseline gap-3">
         <span className="font-mono text-sm font-bold text-stone-900">P: {cross.p1} × {cross.p2}</span>
         <span className="text-xs text-stone-500">{res.gametes1.length} loại giao tử × {res.gametes2.length} loại giao tử → {res.cells.flat().length} ô</span>
-        <span data-testid="punnett-ratio" className="ml-auto font-mono text-sm font-bold text-blue-700">Tỉ lệ kiểu hình {res.ratio ?? res.phenotypes.map((x) => pct(x.p)).join(' : ')}</span>
+        <span data-testid="punnett-ratio" className="ml-auto font-mono text-sm font-bold text-[#1D1B16]">Tỉ lệ kiểu hình {res.ratio ?? res.phenotypes.map((x) => pct(x.p)).join(' : ')}</span>
       </div>
 
-      <div className="overflow-auto rounded-xl border border-[#E6E4DD] bg-white">
+      <div className="overflow-auto rounded-2xl border border-[#1D1B16]/15 bg-white">
         <table className="border-collapse w-full text-center font-mono" data-testid="punnett-table">
           <thead>
             <tr>
@@ -102,7 +102,7 @@ export const PunnettEngine: React.FC<Props> = ({blueprint}) => {
       </div>
 
       {res.linkageAdjustable && (
-        <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3">
+        <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3">
           <Slider testid="punnett-f" label="Tần số hoán vị f" value={f} min={0} max={0.5} step={0.01} onChange={setF} fmt={(v) => `${Math.round(v * 100)}%`} />
           <p className="text-[11px] text-stone-500 mt-1">f = 50%: phân li độc lập (9:3:3:1). f = 0%: liên kết gen hoàn toàn. Giữa hai giá trị: hoán vị gen.</p>
         </div>
@@ -127,7 +127,7 @@ export const HardyWeinbergEngine: React.FC<Props> = ({blueprint}) => {
   const curve = (fn: (x: number) => number) => Array.from({length: 101}, (_, i) => `${i ? 'L' : 'M'}${sx(i / 100).toFixed(1)},${sy(fn(i / 100)).toFixed(1)}`).join(' ');
   const q = 1 - p;
   const cur = {AA: p * p, Aa: 2 * p * q, aa: q * q};
-  const cols = {AA: '#2563EB', Aa: '#7C3AED', aa: '#E11D48'};
+  const cols = {AA: '#2459C9', Aa: '#6B4BC8', aa: '#E11D48'};
   const rows: [keyof GenotypeFreqs, string][] = [['AA', 'p²'], ['Aa', '2pq'], ['aa', 'q²']];
   return (
     <div className="p-4 flex flex-col gap-3" data-testid="hw-engine" data-p={fmtNum(hw.p, 4)} data-equilibrium={hw.equilibrium}>
@@ -137,7 +137,7 @@ export const HardyWeinbergEngine: React.FC<Props> = ({blueprint}) => {
           {hw.equilibrium ? 'Quần thể đang cân bằng Hardy–Weinberg' : `Chưa cân bằng (lệch tối đa ${pct(hw.maxDev)}) — sau 1 thế hệ ngẫu phối sẽ về p², 2pq, q²`}
         </span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="hw-chart">
+      <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="hw-chart">
         {[0, 0.25, 0.5, 0.75, 1].map((t) => (
           <g key={t}>
             <line x1={sx(t)} y1={sy(0)} x2={sx(t)} y2={sy(1)} stroke="#EFECE6" />
@@ -153,7 +153,7 @@ export const HardyWeinbergEngine: React.FC<Props> = ({blueprint}) => {
         <text x={sx(0.9)} y={sy(0.82) - 6} fontSize="11" fill={cols.AA} fontWeight="700">AA = p²</text>
         <text x={sx(0.5) + 6} y={sy(0.5) - 8} fontSize="11" fill={cols.Aa} fontWeight="700">Aa = 2pq</text>
         <text x={sx(0.02)} y={sy(0.97)} fontSize="11" fill={cols.aa} fontWeight="700">aa = q²</text>
-        <line x1={sx(p)} y1={sy(0)} x2={sx(p)} y2={sy(1)} stroke="#18181B" strokeDasharray="4 3" />
+        <line x1={sx(p)} y1={sy(0)} x2={sx(p)} y2={sy(1)} stroke="#1D1B16" strokeDasharray="4 3" />
         {rows.map(([k]) => (
           <circle key={k} cx={sx(p)} cy={sy(cur[k])} r="5" fill="#fff" stroke={cols[k]} strokeWidth="2.5" />
         ))}
@@ -161,7 +161,7 @@ export const HardyWeinbergEngine: React.FC<Props> = ({blueprint}) => {
           <rect key={`o${k}`} x={sx(hw.p) - 5} y={sy(obs[k]) - 5} width="10" height="10" transform={`rotate(45 ${sx(hw.p)} ${sy(obs[k])})`} fill={cols[k]} opacity="0.85" />
         ))}
       </svg>
-      <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 flex flex-col gap-2">
+      <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 flex flex-col gap-2">
         <Slider testid="hw-p" label="Tần số alen p(A)" value={p} min={0} max={1} step={0.01} onChange={setP} />
         <table className="w-full text-xs font-mono text-center" data-testid="hw-table">
           <thead>
@@ -265,7 +265,7 @@ export const LinearProgrammingEngine: React.FC<Props> = ({blueprint}) => {
                   : 'Miền nghiệm là đa giác lồi'}
         </span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="lp-chart">
+      <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="lp-chart">
         {tick(xMin, xMax).map((v) => (
           <g key={`x${v}`}>
             <line x1={sx(v)} y1={0} x2={sx(v)} y2={H} stroke={v === 0 ? '#57534E' : '#EFECE6'} strokeWidth={v === 0 ? 1.5 : 1} />
@@ -278,7 +278,7 @@ export const LinearProgrammingEngine: React.FC<Props> = ({blueprint}) => {
             <text x={Math.min(W - 24, Math.max(2, sx(0) + 3))} y={sy(v) - 2} fontSize="10" fill="#78716C">{v}</text>
           </g>
         ))}
-        {polyPts.length >= 3 && <polygon data-testid="lp-region" points={polyPts.map((v) => `${sx(v.x)},${sy(v.y)}`).join(' ')} fill="#2563EB" fillOpacity="0.16" stroke="#2563EB" strokeWidth="1.8" strokeLinejoin="round" />}
+        {polyPts.length >= 3 && <polygon data-testid="lp-region" points={polyPts.map((v) => `${sx(v.x)},${sy(v.y)}`).join(' ')} fill="#2459C9" fillOpacity="0.16" stroke="#2459C9" strokeWidth="1.8" strokeLinejoin="round" />}
         {pb.constraints.map((k, i) => {
           const s = segment(k.a, k.b, k.c);
           return s ? <line key={i} x1={sx(s[0][0])} y1={sy(s[0][1])} x2={sx(s[1][0])} y2={sy(s[1][1])} stroke={PALETTE[i % PALETTE.length]} strokeWidth="1.8" opacity="0.8" /> : null;
@@ -289,14 +289,14 @@ export const LinearProgrammingEngine: React.FC<Props> = ({blueprint}) => {
           return (
             <g key={i}>
               <circle cx={sx(v.x)} cy={sy(v.y)} r={best ? 7 : 4.5} fill={best ? '#E11D48' : '#fff'} stroke={best ? '#E11D48' : '#1D4ED8'} strokeWidth="2" />
-              <text x={sx(v.x) + 8} y={sy(v.y) - 8} fontSize="10.5" fill="#18181B" fontWeight={best ? 700 : 500}>
+              <text x={sx(v.x) + 8} y={sy(v.y) - 8} fontSize="10.5" fill="#1D1B16" fontWeight={best ? 700 : 500}>
                 ({fmtNum(v.x, 2)} ; {fmtNum(v.y, 2)}){v.value !== null ? ` F=${fmtNum(v.value, 2)}` : ''}
               </text>
             </g>
           );
         })}
       </svg>
-      <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 flex flex-col gap-2">
+      <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 flex flex-col gap-2">
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-mono text-stone-700">
           {pb.constraints.map((k, i) => (
             <span key={i} style={{color: PALETTE[i % PALETTE.length]}}>
@@ -370,21 +370,21 @@ export const CobwebEngine: React.FC<Props> = ({blueprint}) => {
         <span data-testid="cobweb-verdict" className={`ml-auto px-2.5 py-1 rounded-lg text-xs font-semibold border ${tone}`}>{label[res.behavior]}</span>
       </div>
       <div className="grid md:grid-cols-[3fr_2fr] gap-3">
-        <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="cobweb-chart">
+        <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="cobweb-chart">
           <line x1={sx(lo)} y1={sy(lo)} x2={sx(hi)} y2={sy(hi)} stroke="#A8A29E" strokeDasharray="5 4" />
           <line x1={sx(lo)} y1={sy(lo)} x2={sx(hi)} y2={sy(lo)} stroke="#57534E" />
           <line x1={sx(lo)} y1={sy(lo)} x2={sx(lo)} y2={sy(hi)} stroke="#57534E" />
           <text x={sx(hi) - 4} y={sy(hi) + 12} fontSize="10" textAnchor="end" fill="#78716C">y = x</text>
-          <path d={curve} fill="none" stroke="#2563EB" strokeWidth="2.4" />
+          <path d={curve} fill="none" stroke="#2459C9" strokeWidth="2.4" />
           <polyline data-testid="cobweb-path" points={res.path.map((p) => `${sx(p.x)},${sy(p.y)}`).join(' ')} fill="none" stroke="#E11D48" strokeWidth="1.3" opacity="0.85" />
           {res.fixedPoints.map((p, i) => (
             <circle key={i} cx={sx(p.x)} cy={sy(p.x)} r="5.5" fill={p.stable ? '#059669' : '#fff'} stroke={p.stable ? '#059669' : '#E11D48'} strokeWidth="2.2">
               <title>{`x* = ${fmtNum(p.x, 4)} (${p.stable ? 'ổn định' : 'không ổn định'}, f′ = ${fmtNum(p.slope, 3)})`}</title>
             </circle>
           ))}
-          <circle cx={sx(x0)} cy={sy(lo)} r="4" fill="#18181B" />
+          <circle cx={sx(x0)} cy={sy(lo)} r="4" fill="#1D1B16" />
         </svg>
-        <svg viewBox="0 0 300 240" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="cobweb-series">
+        <svg viewBox="0 0 300 240" className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="cobweb-series">
           <text x="8" y="14" fontSize="10" fill="#78716C">xₙ theo n</text>
           {tail.map((v, i) => {
             const y = 220 - ((Math.max(tmin, Math.min(tmax, v)) - tmin) / Math.max(tmax - tmin, 1e-9)) * 190;
@@ -393,14 +393,14 @@ export const CobwebEngine: React.FC<Props> = ({blueprint}) => {
             const px = 12 + ((i - 1) / (tail.length - 1)) * 276;
             return (
               <g key={i}>
-                {i > 0 && <line x1={px} y1={prev} x2={x} y2={y} stroke="#2563EB" strokeWidth="1.2" />}
-                <circle cx={x} cy={y} r="2.4" fill="#2563EB" />
+                {i > 0 && <line x1={px} y1={prev} x2={x} y2={y} stroke="#2459C9" strokeWidth="1.2" />}
+                <circle cx={x} cy={y} r="2.4" fill="#2459C9" />
               </g>
             );
           })}
         </svg>
       </div>
-      <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 flex flex-col gap-2">
+      <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 flex flex-col gap-2">
         {rec.params.map((k) => {
           const d = defaultParam(k);
           const rng = k === 'r' ? {min: 0, max: 4, step: 0.01} : {min: d.min, max: d.max, step: d.step};

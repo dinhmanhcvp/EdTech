@@ -3,7 +3,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { setupHiDpiCanvas } from './visualKit';
-import { hudCard } from '../utils/canvasKit';
+import {hudCard, stageFill} from '../utils/canvasKit';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
 import { Dna, Leaf, Heart, GitBranch, Rotate3d } from 'lucide-react';
 import { formatCanvasMath } from '../utils/canvasMath';
@@ -118,8 +118,7 @@ export const BioSystemEngine: React.FC<Props> = ({
       ctx.clearRect(0, 0, LW, LH);
 
       // Editorial Warm Paper Background
-      ctx.fillStyle = '#FCFBF9';
-      ctx.fillRect(0, 0, LW, LH);
+      stageFill(ctx, LW, LH);
 
       // Fine architectural millimeter grid
       ctx.strokeStyle = '#EFECE6';
@@ -1026,7 +1025,7 @@ export const BioSystemEngine: React.FC<Props> = ({
   return (
     <div className="relative w-full max-w-[620px] flex flex-col items-center">
       {/* Subject Mode Switcher Ribbon */}
-      <div className="w-full flex items-center justify-between px-3 py-1.5 mb-2 bg-white/95 backdrop-blur-md rounded-xl border border-[#E6E4DD] shadow-[0_2px_12px_-2px_rgba(20,20,19,0.04)] flex-wrap gap-2">
+      <div className="w-full flex items-center justify-between px-3 py-1.5 mb-2 bg-white/95 backdrop-blur-md rounded-2xl border border-[#1D1B16]/15 shadow-[0_2px_12px_-2px_rgba(20,20,19,0.04)] flex-wrap gap-2">
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-semibold">Chế độ Sinh học:</span>
         </div>
@@ -1037,11 +1036,11 @@ export const BioSystemEngine: React.FC<Props> = ({
             onClick={() => setActiveMode('DNA_HELIX')}
             className={`flex items-center gap-1 px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-medium transition active:scale-[0.97] cursor-pointer ${
               currentMode === 'DNA_HELIX'
-                ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm font-semibold'
+                ? 'bg-[#FBF9F4] text-[#1D1B16] border border-[#1D1B16]/40 shadow-sm font-semibold'
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
             }`}
           >
-            <Dna className="w-3.5 h-3.5 text-blue-600" />
+            <Dna className="w-3.5 h-3.5 text-[#1D1B16]" />
             <span>3D DNA & Helicase</span>
           </button>
 

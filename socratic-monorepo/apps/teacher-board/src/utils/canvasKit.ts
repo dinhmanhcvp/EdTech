@@ -4,6 +4,18 @@
  */
 type Ctx = CanvasRenderingContext2D;
 
+/** Nền sân khấu studio cho engine canvas (cùng sắc với StageBackdrop của các cảnh SVG): trắng ở giữa, kem dần ra rìa. ctx giả không có gradient thì tô phẳng. */
+export function stageFill(ctx: Ctx, w: number, h: number): void {
+  const g = ctx.createRadialGradient?.(w / 2, h * 0.42, 0, w / 2, h * 0.42, Math.max(w, h) * 0.75);
+  if (g) {
+    g.addColorStop(0, '#FFFFFF');
+    g.addColorStop(0.62, '#F4F1EA');
+    g.addColorStop(1, '#E7E3D9');
+  }
+  ctx.fillStyle = g ?? '#F4F1EA';
+  ctx.fillRect(0, 0, w, h);
+}
+
 export function roundRectPath(ctx: Ctx, x: number, y: number, w: number, h: number, r: number): void {
   const k = Math.min(r, w / 2, h / 2);
   ctx.beginPath();

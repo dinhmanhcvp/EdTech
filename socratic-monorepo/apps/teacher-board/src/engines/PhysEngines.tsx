@@ -33,7 +33,7 @@ interface Props {
   params?: Record<string, number>;
   curriculumLevel?: CurriculumLevel;
 }
-const card = 'rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3';
+const card = 'rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3';
 const J = (v: number) => `${Math.round(v).toLocaleString('vi-VN')} J`;
 
 // ====================================================================== KHÍ p–V
@@ -112,10 +112,10 @@ export const GasEngine: React.FC<Props> = ({blueprint}) => {
         <button data-testid="gas-play" onClick={() => setPlay((p) => !p)} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">{play ? '⏸ Dừng' : '▶ Chạy'}</button>
       </div>
       <div className="grid md:grid-cols-[2fr_3fr] gap-3">
-        <svg viewBox="0 0 220 230" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="gas-cylinder">
+        <svg viewBox="0 0 220 230" className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="gas-cylinder">
           <defs>
             <VisualDefs id={uid} />
-            <SphereGrad id={`${uid}-cold`} light="#BFDBFE" base="#2563EB" dark="#1E3A8A" />
+            <SphereGrad id={`${uid}-cold`} light="#BFDBFE" base="#2459C9" dark="#1E3A8A" />
             <SphereGrad id={`${uid}-hot`} light="#FECACA" base="#DC2626" dark="#7F1D1D" />
           </defs>
           <GroundShadow id={uid} cx={110} cy={220} rx={78} ry={5} />
@@ -135,24 +135,24 @@ export const GasEngine: React.FC<Props> = ({blueprint}) => {
           <rect x="44" y={205 - gasH - 10} width="132" height="2.5" rx="1.2" fill="#fff" opacity="0.5" pointerEvents="none" />
           <text x="6" y="226" fontSize="10" fill="#57534E">T = {fmtNum(cur.T, 4)} K · V = {fmtNum(cur.V, 3)} L</text>
         </svg>
-        <svg viewBox="0 0 370 232" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="gas-pv">
+        <svg viewBox="0 0 370 232" className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="gas-pv">
           <line x1="44" y1="200" x2="350" y2="200" stroke="#57534E" />
           <line x1="44" y1="200" x2="44" y2="12" stroke="#57534E" />
           <text x="340" y="216" fontSize="10" fill="#57534E">V (L)</text>
           <text x="4" y="16" fontSize="10" fill="#57534E">p (atm)</text>
-          <path d={path + ' Z'} fill={stats.Wnet >= 0 ? '#2563EB' : '#E11D48'} opacity="0.13" />
+          <path d={path + ' Z'} fill={stats.Wnet >= 0 ? '#2459C9' : '#E11D48'} opacity="0.13" />
           <path d={path} fill="none" stroke="#1D4ED8" strokeWidth="2.4" />
           {procs.map((p, i) => {
             const mid = along(p, 0.5, n, gamma);
             const right = sx(mid.V) > 270;
             return <text key={i} x={sx(mid.V) + (right ? -6 : 5)} y={sy(mid.p) - 5} textAnchor={right ? 'end' : 'start'} fontSize="9.5" fill="#44403C">{i + 1}: {KIND_NAME[p.kind]}</text>;
           })}
-          {procs.map((p, i) => <circle key={`c${i}`} cx={sx(p.from.V)} cy={sy(p.from.p)} r="3.4" fill="#18181B" />)}
+          {procs.map((p, i) => <circle key={`c${i}`} cx={sx(p.from.V)} cy={sy(p.from.p)} r="3.4" fill="#1D1B16" />)}
           <circle cx={sx(cur.V)} cy={sy(cur.p)} r="6.5" fill="#E11D48" stroke="#fff" strokeWidth="2" data-testid="gas-point" />
           <text x="130" y="228" fontSize="10" fill={stats.Wnet >= 0 ? '#1D4ED8' : '#BE123C'}>{stats.Wnet >= 0 ? 'Chiều kim đồng hồ: khí sinh công' : 'Ngược chiều kim đồng hồ: nhận công'}</text>
         </svg>
       </div>
-      <table className="w-full text-xs font-mono rounded-xl border border-[#E6E4DD] bg-white overflow-hidden" data-testid="gas-table">
+      <table className="w-full text-xs font-mono rounded-2xl border border-[#1D1B16]/15 bg-white overflow-hidden" data-testid="gas-table">
         <thead><tr className="bg-stone-100 text-stone-600"><th className="text-left px-3 py-1">Quá trình</th><th>W (khí sinh)</th><th>ΔU</th><th>Q (khí nhận)</th></tr></thead>
         <tbody>
           {procs.map((p, i) => (
@@ -278,7 +278,7 @@ export const DoublePendulumEngine: React.FC<Props> = () => {
         </span>
       </div>
       <div className="grid md:grid-cols-[3fr_2fr] gap-3">
-        <svg viewBox="0 0 380 270" className="w-full rounded-xl border border-[#E6E4DD] bg-slate-900" data-testid="dp-svg">
+        <svg viewBox="0 0 380 270" className="w-full rounded-2xl border border-[#1D1B16]/15 bg-slate-900" data-testid="dp-svg">
           <defs>
             <VisualDefs id={uid} />
             <SphereGrad id={`${uid}-bobA`} light="#E0F2FE" base="#38BDF8" dark="#0369A1" />
@@ -290,7 +290,7 @@ export const DoublePendulumEngine: React.FC<Props> = () => {
           {rod(pa, '#38BDF8', 0.95, 'bobA')}
           <circle cx={X(0)} cy={Y(0)} r="5" fill="#E2E8F0" stroke="#64748B" strokeWidth="1.5" />
         </svg>
-        <svg viewBox="0 0 280 160" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="dp-chart">
+        <svg viewBox="0 0 280 160" className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="dp-chart">
           <text x="8" y="12" fontSize="10" fill="#78716C">Khoảng cách giữa hai quả nặng cuối (m)</text>
           <line x1="14" y1="140" x2="270" y2="140" stroke="#57534E" />
           <polyline points={S.sep.map(([t, d]) => `${(14 + (t / tMax) * 256).toFixed(1)},${(140 - (d / sepMax) * 110).toFixed(1)}`).join(' ')} fill="none" stroke="#E11D48" strokeWidth="2" />
@@ -300,7 +300,7 @@ export const DoublePendulumEngine: React.FC<Props> = () => {
       <div className={`${card} flex flex-col gap-2`}>
         <div className="flex gap-2 flex-wrap">
           <button data-testid="dp-run" onClick={() => setRunning((r) => !r)} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">{running ? '⏸ Dừng' : '▶ Chạy'}</button>
-          <button data-testid="dp-reset" onClick={reset} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-blue-600 text-white text-xs font-semibold">Thả lại</button>
+          <button data-testid="dp-reset" onClick={reset} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] bg-[#1D1B16] text-white text-xs font-semibold">Thả lại</button>
           <button data-testid="dp-small" onClick={() => { setA1(10); setA2(8); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">Biên độ nhỏ (10°, 8°)</button>
           <button data-testid="dp-large" onClick={() => { setA1(150); setA2(120); }} className="px-3.5 py-2 min-h-[40px] rounded-lg transition active:scale-[0.97] border border-[#DCD9D0] bg-white text-xs">Biên độ lớn (150°, 120°)</button>
         </div>
@@ -371,7 +371,7 @@ export const CoriolisEngine: React.FC<Props> = () => {
           {frame === 'rot' ? `Quỹ đạo cong: lệch ${fmtNum(Math.abs(dev), 3)}° ${omega > 0 ? 'sang phải' : omega < 0 ? 'sang trái' : '(không lệch)'}` : 'Vật chuyển động thẳng đều; chỉ có đĩa quay bên dưới'}
         </span>
       </div>
-      <svg viewBox="0 0 400 300" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="cor-svg">
+      <svg viewBox="0 0 400 300" className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="cor-svg">
         <g transform={`rotate(${(-diskAngle * 180) / Math.PI} ${cx} ${cy})`}>
           <circle cx={cx} cy={cy} r={R * sc} fill={`url(#${uid}-disk)`} stroke="#0369A1" strokeWidth="3" />
           {Array.from({length: 12}, (_, i) => {
@@ -383,12 +383,12 @@ export const CoriolisEngine: React.FC<Props> = () => {
           <text x={cx + R * sc - 22} y={cy - 6} fontSize="10" fill="#B45309">mốc</text>
         </g>
         <polyline points={trail.map((p) => `${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(' ')} fill="none" stroke="#E11D48" strokeWidth="2.6" />
-        <circle cx={X(ball.x) + 2} cy={Y(ball.y) + 4} r="8" fill="#292524" opacity="0.2" filter={`url(#${uid}-soft)`} />
+        <circle cx={X(ball.x) + 2} cy={Y(ball.y) + 4} r="8" fill="#1D1B16" opacity="0.2" filter={`url(#${uid}-soft)`} />
         <circle cx={X(ball.x)} cy={Y(ball.y)} r="8" fill={`url(#${uid}-ball)`} stroke="#fff" strokeWidth="2" data-testid="cor-ball" />
         {frame === 'rot' && omega !== 0 && tt < path.tHit && (
           <g>
             <line x1={X(ball.x)} y1={Y(ball.y)} x2={X(ball.x) + vRot.x * 40} y2={Y(ball.y) - vRot.y * 40} stroke="#16A34A" strokeWidth="3" markerEnd="url(#cva)" />
-            <line x1={X(ball.x)} y1={Y(ball.y)} x2={X(ball.x) + fc.x * 38} y2={Y(ball.y) - fc.y * 38} stroke="#7C3AED" strokeWidth="3" markerEnd="url(#cfa)" />
+            <line x1={X(ball.x)} y1={Y(ball.y)} x2={X(ball.x) + fc.x * 38} y2={Y(ball.y) - fc.y * 38} stroke="#6B4BC8" strokeWidth="3" markerEnd="url(#cfa)" />
             <text x={X(ball.x) + fc.x * 42} y={Y(ball.y) - fc.y * 42} fontSize="10" fill="#6D28D9">F_Cor</text>
           </g>
         )}
@@ -400,7 +400,7 @@ export const CoriolisEngine: React.FC<Props> = () => {
           </radialGradient>
           <SphereGrad id={`${uid}-ball`} light="#FECDD3" base="#E11D48" dark="#881337" />
           <marker id="cva" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#16A34A" /></marker>
-          <marker id="cfa" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7C3AED" /></marker>
+          <marker id="cfa" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6B4BC8" /></marker>
         </defs>
         <text x="8" y="14" fontSize="10" fill="#57534E">ω = {fmtNum(omega, 3)} rad/s {omega >= 0 ? '(ngược chiều kim đồng hồ, như Bắc bán cầu nhìn từ trên cực)' : '(cùng chiều kim đồng hồ, như Nam bán cầu)'}</text>
       </svg>
@@ -450,11 +450,11 @@ export const FraunhoferEngine: React.FC<Props> = ({blueprint}) => {
         <span className="font-mono text-sm font-bold text-stone-900">I(θ) = I₀ (sin β / β)² (sin Nγ / N sin γ)²</span>
         <span className="ml-auto text-xs text-stone-600">β = πb sinθ/λ · γ = πd sinθ/λ</span>
       </div>
-      <svg viewBox={`0 0 ${W} 240`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="fraunhofer-chart">
+      <svg viewBox={`0 0 ${W} 240`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="fraunhofer-chart">
         <defs>
           <linearGradient id={`${uid}-area`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor={color === '#000000' ? '#2563EB' : color} stopOpacity="0.35" />
-            <stop offset="1" stopColor={color === '#000000' ? '#2563EB' : color} stopOpacity="0" />
+            <stop offset="0" stopColor={color === '#000000' ? '#2459C9' : color} stopOpacity="0.35" />
+            <stop offset="1" stopColor={color === '#000000' ? '#2459C9' : color} stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={`${pts.map((p, i) => `${i ? 'L' : 'M'}${sx(p.s).toFixed(1)},${sy(p.I).toFixed(1)}`).join(' ')} L${sx(smax).toFixed(1)},170 L${sx(-smax).toFixed(1)},170 Z`} fill={`url(#${uid}-area)`} pointerEvents="none" />
@@ -467,10 +467,10 @@ export const FraunhoferEngine: React.FC<Props> = ({blueprint}) => {
         ))}
         <text x={W - 24} y="200" fontSize="9.5" textAnchor="end" fill="#57534E">sinθ</text>
         <path d={pts.map((p, i) => `${i ? 'L' : 'M'}${sx(p.s).toFixed(1)},${sy(p.E).toFixed(1)}`).join(' ')} fill="none" stroke="#F59E0B" strokeWidth="1.6" strokeDasharray="5 4" />
-        <path d={pts.map((p, i) => `${i ? 'L' : 'M'}${sx(p.s).toFixed(1)},${sy(p.I).toFixed(1)}`).join(' ')} fill="none" stroke={color === '#000000' ? '#2563EB' : '#1D4ED8'} strokeWidth="1.8" data-testid="fraunhofer-curve" />
+        <path d={pts.map((p, i) => `${i ? 'L' : 'M'}${sx(p.s).toFixed(1)},${sy(p.I).toFixed(1)}`).join(' ')} fill="none" stroke={color === '#000000' ? '#2459C9' : '#1D4ED8'} strokeWidth="1.8" data-testid="fraunhofer-curve" />
         {orders.filter((o) => Math.abs(o.s) <= smax).map((o) => (
           <g key={o.m}>
-            <text x={sx(o.s)} y={o.missing ? 160 : Math.max(16, sy(o.I) - 5)} fontSize="9.5" textAnchor="middle" fill={o.missing ? '#BE123C' : '#18181B'} fontWeight="700">{o.missing ? '✕' : o.m}</text>
+            <text x={sx(o.s)} y={o.missing ? 160 : Math.max(16, sy(o.I) - 5)} fontSize="9.5" textAnchor="middle" fill={o.missing ? '#BE123C' : '#1D1B16'} fontWeight="700">{o.missing ? '✕' : o.m}</text>
           </g>
         ))}
         {/* màn quan sát */}

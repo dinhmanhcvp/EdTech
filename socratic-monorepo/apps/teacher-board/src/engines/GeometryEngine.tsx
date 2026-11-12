@@ -1,5 +1,6 @@
 'use client';
 
+import {stageFill} from '../utils/canvasKit';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {SimulationBlueprint, CurriculumLevel} from '@socratic/types';
 import {fmtNum} from '../utils/mathExpr';
@@ -291,15 +292,8 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
 
     if (isHologram) {
       ctx.clearRect(0, 0, w, h);
-    } else if (ctx.createRadialGradient) {
-      const bg = ctx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, Math.max(w, h) * 0.7);
-      bg.addColorStop(0, '#FFFFFF');
-      bg.addColorStop(1, '#F1EFEA');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, w, h);
     } else {
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, w, h);
+      stageFill(ctx, w, h);
     }
 
     // Nếu ở chế độ Cắt Thiết Diện: Bên trái (0 .. splitX) vẽ Hình phẳng 2D trích xuất thật, Bên phải (splitX .. w) vẽ Hình 3D có mặt cắt xanh bán trong suốt
@@ -659,7 +653,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
         ctx.beginPath();
         f.poly.forEach((p, k) => (k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
         ctx.closePath();
-        ctx.strokeStyle = '#2563EB';
+        ctx.strokeStyle = '#2459C9';
         ctx.lineWidth = 4;
         ctx.stroke();
         ctx.fillStyle = 'rgba(37,99,235,0.16)';
@@ -686,7 +680,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
         ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
         ctx.fillStyle = '#FFFFFF';
         ctx.fill();
-        ctx.strokeStyle = '#2563EB';
+        ctx.strokeStyle = '#2459C9';
         ctx.lineWidth = 2;
         ctx.stroke();
       });
@@ -902,12 +896,12 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
 
         draw3DGreatCircle(xyCircle, '#EF4444');
         draw3DGreatCircle(yzCircle, '#10B981');
-        draw3DGreatCircle(xzCircle, '#3B82F6');
+        draw3DGreatCircle(xzCircle, '#2459C9');
 
         // Tâm mặt cầu O
         ctx.beginPath();
         ctx.arc(spCenter.x, spCenter.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#2563EB';
+        ctx.fillStyle = '#2459C9';
         ctx.fill();
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 1.5;
@@ -921,7 +915,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
         if (solid.verts[0]) {
           const spV0 = project(cam, solid.verts[0], center);
           ctx.setLineDash([4, 3]);
-          ctx.strokeStyle = '#2563EB';
+          ctx.strokeStyle = '#2459C9';
           ctx.lineWidth = 1.6;
           ctx.beginPath();
           ctx.moveTo(spCenter.x, spCenter.y);
@@ -932,7 +926,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
           const mrx = (spCenter.x + spV0.x) / 2;
           const mry = (spCenter.y + spV0.y) / 2;
           ctx.font = 'italic 700 12px Georgia, serif';
-          ctx.fillStyle = '#2563EB';
+          ctx.fillStyle = '#2459C9';
           ctx.fillText(`R = ${fmtNum(rSphere, 2)}`, mrx + 10, mry);
         }
 
@@ -948,7 +942,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
             const sp = project(cam, mp.pos, center);
             ctx.beginPath();
             ctx.arc(sp.x, sp.y, 4.2, 0, Math.PI * 2);
-            ctx.fillStyle = '#7C3AED';
+            ctx.fillStyle = '#6B4BC8';
             ctx.fill();
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 1.4;
@@ -1264,7 +1258,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
         mode === m
           ? m === 'section'
             ? 'bg-cyan-600 border-cyan-700 text-white shadow-sm font-semibold'
-            : 'bg-blue-600 border-blue-700 text-white shadow-sm'
+            : 'bg-[#1D1B16] border-[#1D1B16] text-white shadow-sm'
           : 'bg-white border-[#DCD9D0] text-stone-700 hover:bg-stone-50'
       }`}
     >
@@ -1310,7 +1304,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
           {mode === 'section' ? 'Trái: Mặt cắt 2D thật · Phải: Khối 3D & mặt phẳng cắt' : 'Kéo: xoay · Cuộn/chụm: thu phóng · Chạm: tô màu/chọn mặt'}
         </div>
         {selInfo && mode !== 'section' && (
-          <div data-testid="geo-face-info" className="absolute right-2 bottom-2 text-[11px] font-mono font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1">
+          <div data-testid="geo-face-info" className="absolute right-2 bottom-2 text-[11px] font-mono font-bold text-[#1D1B16] bg-[#FBF9F4] border border-[#1D1B16]/40 rounded-lg px-2 py-1">
             Mặt {selFace! + 1}: {selInfo.map((i) => solid.labels[i]).join('')} · S = {fmtNum(Math.abs(areaOf(solid, selInfo)), 3)}
           </div>
         )}
@@ -1340,7 +1334,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
             kick();
           }}
           className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer flex items-center gap-1 ${
-            showLabels ? 'bg-blue-600 text-white shadow-xs' : 'text-stone-300 hover:text-white hover:bg-white/10'
+            showLabels ? 'bg-[#1D1B16] text-white shadow-xs' : 'text-stone-300 hover:text-white hover:bg-white/10'
           }`}
           title="Bật/tắt nhãn đỉnh A, B, C..."
         >
@@ -1474,7 +1468,7 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
         >
           📐 Vẽ Thêm Hình Phụ
         </button>
-        <button type="button" data-testid="geo-labels-toggle" aria-pressed={showLabels} onClick={() => (setShowLabels((v) => !v), kick())} className={`${BTN} ${showLabels ? 'bg-blue-600 border-blue-700 text-white' : 'bg-white border-[#DCD9D0] text-stone-700 hover:bg-stone-50'}`}>
+        <button type="button" data-testid="geo-labels-toggle" aria-pressed={showLabels} onClick={() => (setShowLabels((v) => !v), kick())} className={`${BTN} ${showLabels ? 'bg-[#1D1B16] border-[#1D1B16] text-white' : 'bg-white border-[#DCD9D0] text-stone-700 hover:bg-stone-50'}`}>
           Nhãn đỉnh
         </button>
         <button type="button" data-testid="geo-reset-view" onClick={resetView} className={`${BTN} bg-white border-[#DCD9D0] text-stone-700 hover:bg-stone-50 ml-auto`}>
@@ -1784,9 +1778,9 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
       </div>
 
       {/* hàng 3: khai triển */}
-      <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] px-3 py-2 flex flex-col gap-1.5">
+      <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 px-3 py-2 flex flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-1.5">
-          <button type="button" data-testid="geo-unfold-btn" onClick={unfold} className={`${BTN} bg-blue-600 border-blue-700 text-white shadow-sm`}>
+          <button type="button" data-testid="geo-unfold-btn" onClick={unfold} className={`${BTN} bg-[#1D1B16] border-[#1D1B16] text-white shadow-sm`}>
             ▸ Khai triển
           </button>
           <button type="button" data-testid="geo-fold-btn" onClick={fold} className={`${BTN} bg-white border-[#DCD9D0] text-stone-700 hover:bg-stone-50`}>
@@ -1805,10 +1799,10 @@ export const GeometryEngine: React.FC<Props> = ({blueprint, isHologram}) => {
       {/* hàng 4: kích thước + số liệu */}
       <div className="grid grid-cols-2 gap-2">
         {solid.dimKeys.map((d) => (
-          <label key={d.key} className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] px-3 py-2 flex flex-col gap-1">
+          <label key={d.key} className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 px-3 py-2 flex flex-col gap-1">
             <span className="flex justify-between text-[11px] font-medium text-stone-700">
               <span>{d.label}</span>
-              <span data-testid={`geo-dim-val-${d.key}`} className="font-mono font-bold text-blue-600 tabular-nums">
+              <span data-testid={`geo-dim-val-${d.key}`} className="font-mono font-bold text-[#1D1B16] tabular-nums">
                 {fmtNum(d.value, 2)}
               </span>
             </span>

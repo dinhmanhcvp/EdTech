@@ -2486,7 +2486,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         const nh = hCanvas * next;
         setHoloPosition((p) => {
           const y = Math.max(8, Math.min(p.y, 675 - nh - 8));
-          return y === p.y ? p : { ...p, y: Math.round(y) };
+          const x = Math.max(8, Math.min(p.x, 1200 - (el.offsetWidth / boardScale) * next - 8));
+          return y === p.y && x === p.x ? p : { x: Math.round(x), y: Math.round(y) };
         });
         return next;
       });
@@ -3901,7 +3902,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 top: `${(holoPosition.y / 675) * 100}%`,
                 transform: `scale(${holoScale})`,
                 transformOrigin: 'top left',
-                width: '560px',
+                // Họ có hình + bảng điều khiển đặt cạnh nhau: khung rộng hơn để hình to mà không cao quá bảng.
+                width: ['SCENE_LAB', 'CURVE_LAB'].includes(String(activeBlueprint.meta?.preset)) ? '900px' : '560px',
                 maxWidth: '92%',
                 transition: isDraggingHoloRef.current || isPinchingHoloRef.current || isResizingHoloRef.current ? 'none' : 'transform 0.15s ease-out',
               }}

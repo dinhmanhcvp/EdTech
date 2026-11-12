@@ -115,15 +115,15 @@ export const distSkew = (p1: number[], d1: number[], p2: number[], d2: number[])
   const n = cross3(d1, d2);
   return Math.abs(dot3(sub3(p2, p1), n)) / len3(n);
 };
-const CUBE: Record<string, V3> = {A: [0, 0, 0], B: [1, 0, 0], C: [1, 1, 0], D: [0, 1, 0], A1: [0, 0, 1], B1: [1, 0, 1], C1: [1, 1, 1], D1: [0, 1, 1]};
-const CUBE_EDGES: [string, string][] = [['A', 'B'], ['B', 'C'], ['C', 'D'], ['D', 'A'], ['A1', 'B1'], ['B1', 'C1'], ['C1', 'D1'], ['D1', 'A1'], ['A', 'A1'], ['B', 'B1'], ['C', 'C1'], ['D', 'D1']];
+export const CUBE: Record<string, V3> = {A: [0, 0, 0], B: [1, 0, 0], C: [1, 1, 0], D: [0, 1, 0], A1: [0, 0, 1], B1: [1, 0, 1], C1: [1, 1, 1], D1: [0, 1, 1]};
+export const CUBE_EDGES: [string, string][] = [['A', 'B'], ['B', 'C'], ['C', 'D'], ['D', 'A'], ['A1', 'B1'], ['B1', 'C1'], ['C1', 'D1'], ['D1', 'A1'], ['A', 'A1'], ['B', 'B1'], ['C', 'C1'], ['D', 'D1']];
 export const CUBE_QUESTIONS: Record<string, {label: string; value: (a: number) => number; unit: string; text: string}> = {
   lineplane: {label: 'Góc giữa AC′ và mặt phẳng (ABCD)', value: () => angleLinePlane(sub3(CUBE.C1, CUBE.A), [0, 0, 1]), unit: '°', text: 'tan φ = AA′ / AC = 1/√2'},
   planes: {label: 'Góc giữa hai mặt phẳng (A′BD) và (ABCD)', value: () => anglePlanes(cross3(sub3(CUBE.B, CUBE.A1), sub3(CUBE.D, CUBE.A1)), [0, 0, 1]), unit: '°', text: 'Nhị diện cạnh BD: tan φ = AA′ / (AC/2) = √2'},
   pointplane: {label: 'Khoảng cách từ A đến (BDD′B′)', value: (a) => a * distPointPlane(CUBE.A, CUBE.B, cross3(sub3(CUBE.D, CUBE.B), [0, 0, 1])), unit: '', text: 'AC ⟂ (BDD′B′) nên d = AC/2 = a√2/2'},
   skew: {label: 'Khoảng cách hai đường chéo nhau AC và BD′', value: (a) => a * distSkew(CUBE.A, sub3(CUBE.C, CUBE.A), CUBE.B, sub3(CUBE.D1, CUBE.B)), unit: '', text: 'd = |[AC, BD′]·AB| / |[AC, BD′]| = a/√6'},
 };
-const CUBE_HIGHLIGHT: Record<string, {lines: [string, string][]; planePts: string[]; col: string}> = {
+export const CUBE_HIGHLIGHT: Record<string, {lines: [string, string][]; planePts: string[]; col: string}> = {
   lineplane: {lines: [['A', 'C1'], ['A', 'C']], planePts: ['A', 'B', 'C', 'D'], col: C.blue},
   planes: {lines: [['A1', 'B'], ['A1', 'D'], ['B', 'D']], planePts: ['A1', 'B', 'D'], col: C.red},
   pointplane: {lines: [['A', 'C']], planePts: ['B', 'D', 'D1', 'B1'], col: C.green},

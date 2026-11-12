@@ -5,6 +5,7 @@ import React, {useMemo, useState} from 'react';
 import type {CurveData, P} from '../../utils/presets/types';
 import {CHART_BG, CurvePath} from '../visualKit';
 import {Slider} from '../StemModelEngines';
+import {Readouts} from './Controls';
 
 const W = 560;
 const H = 300;
@@ -51,12 +52,13 @@ export const CurveLab: React.FC<{id: string; data: CurveData}> = ({id, data}) =>
   const ticks = [0, 0.25, 0.5, 0.75, 1];
 
   return (
-    <div className="p-4 flex flex-col gap-3" data-testid="curve-lab" data-preset={id}>
-      <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="curve-chart">
+    <div className="p-4 flex flex-wrap items-start gap-3" data-testid="curve-lab" data-preset={id}>
+      <div className="flex-[3_1_320px] min-w-0 flex flex-col gap-3">
+      <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="curve-chart">
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={sx(x0 + t * (x1 - x0))} y1={sy(y0)} x2={sx(x0 + t * (x1 - x0))} y2={sy(y1)} stroke="#EFECE6" />
-            <line x1={sx(x0)} y1={sy(y0 + t * (y1 - y0))} x2={sx(x1)} y2={sy(y0 + t * (y1 - y0))} stroke="#EFECE6" />
+            <line x1={sx(x0 + t * (x1 - x0))} y1={sy(y0)} x2={sx(x0 + t * (x1 - x0))} y2={sy(y1)} stroke="#E9E4D8" />
+            <line x1={sx(x0)} y1={sy(y0 + t * (y1 - y0))} x2={sx(x1)} y2={sy(y0 + t * (y1 - y0))} stroke="#E9E4D8" />
             <text x={sx(x0 + t * (x1 - x0))} y={H - B + 14} fontSize="10" textAnchor="middle" fill="#78716C">{fmt(x0 + t * (x1 - x0), 3)}</text>
             <text x={L - 6} y={sy(y0 + t * (y1 - y0)) + 3} fontSize="10" textAnchor="end" fill="#78716C">{fmt(y0 + t * (y1 - y0), 3)}</text>
           </g>
@@ -83,7 +85,9 @@ export const CurveLab: React.FC<{id: string; data: CurveData}> = ({id, data}) =>
         ))}
       </div>
 
-      <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 flex flex-col gap-2">
+      </div>
+
+      <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3.5 flex-[2_1_260px] min-w-0 flex flex-col gap-2.5">
         <Slider testid="curve-cursor" label={data.xLabel} value={cur} min={0} max={1} step={0.005} onChange={setCur} fmt={() => fmt(xc, 4)} />
         {data.params.map((q) => (
           <Slider
@@ -97,16 +101,8 @@ export const CurveLab: React.FC<{id: string; data: CurveData}> = ({id, data}) =>
             onChange={(v) => setVals((s) => ({...s, [q.key]: v}))}
           />
         ))}
-        {data.readouts && (
-          <ul className="text-xs text-stone-700 mt-1 space-y-0.5" data-testid="curve-readouts">
-            {data.readouts.map((r, i) => (
-              <li key={r.label}>
-                {r.label}: <b data-testid={`curve-readout-${i}`} className="font-mono">{r.value(vals)}</b>
-              </li>
-            ))}
-          </ul>
-        )}
-        {data.note && <p className="text-[11px] text-stone-500">{data.note}</p>}
+        {data.readouts && <Readouts prefix="curve" items={data.readouts.map((r) => [r.label, r.value(vals)])} />}
+        {data.note && <p className="text-[11px] leading-relaxed text-[#5A5548]">{data.note}</p>}
       </div>
     </div>
   );

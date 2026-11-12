@@ -7,7 +7,7 @@ import {initialPhys, linearFit, physCtx, physReducer, physStepsDone} from '../..
 import type {PhysAction, PhysExperiment, PhysState} from '../../utils/lab/phys/types';
 import {CHART_BG} from '../visualKit';
 import {ControlPanel} from './Controls';
-import {renderShape} from './SceneLab';
+import {SceneShapes, StageBackdrop} from './SceneLab';
 
 const fmt = (v: number, d = 2) => (Number.isFinite(v) ? v.toLocaleString('vi-VN', {maximumFractionDigits: d, minimumFractionDigits: 0}) : '—');
 
@@ -26,7 +26,7 @@ const Chart: React.FC<{e: PhysExperiment; st: PhysState}> = ({e, st}) => {
   const sy = (y: number) => H - 36 - ((y - y0) / (y1 - y0 || 1)) * (H - 56);
   const fit = ch.fit ? linearFit(xs, ys) : null;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="phys-chart" data-points={st.rows.length}>
+    <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="phys-chart" data-points={st.rows.length}>
       <line x1="52" y1={sy(y0)} x2={W - 14} y2={sy(y0)} stroke="#78716C" />
       <line x1={sx(x0)} y1="14" x2={sx(x0)} y2={H - 36} stroke="#78716C" />
       {[0, 0.5, 1].map((t) => (
@@ -83,10 +83,10 @@ export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, exper
             <option key={x.id} value={x.id}>{x.lesson}: {x.title}</option>
           ))}
         </select>
-        <button type="button" data-testid="phys-sample" onClick={sample} className="rounded-md border border-stone-300 bg-white px-3 py-1">Xem thao tác mẫu</button>
+        <button type="button" data-testid="phys-sample" onClick={sample} className="inline-flex items-center justify-center min-h-[32px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 py-1 font-medium text-[#1D1B16]">Xem thao tác mẫu</button>
       </div>
 
-      <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 text-xs text-stone-700">
+      <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 text-xs text-stone-700">
         <b className="text-sm text-stone-900">{e.title}</b>
         <span className="ml-2 text-stone-500">({e.lesson})</span>
         <p className="mt-1">{e.goal}</p>
@@ -94,15 +94,16 @@ export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, exper
         {e.hazards.length > 0 && <p className="mt-1 text-rose-700">An toàn: {e.hazards.join('; ')}.</p>}
       </div>
 
-      <svg viewBox={`0 0 ${e.viewBox[0]} ${e.viewBox[1]}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="phys-scene">
-        {e.scene(st.p, st.s, last).map((sh, i) => renderShape(sh, i))}
+      <svg viewBox={`0 0 ${e.viewBox[0]} ${e.viewBox[1]}`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="phys-scene">
+        <StageBackdrop vw={e.viewBox[0]} vh={e.viewBox[1]} night={false} id={`pbs${id.replace(/\W/g, '')}`} />
+        <SceneShapes shapes={e.scene(st.p, st.s, last)} id={`pb${id.replace(/\W/g, '')}`} vw={e.viewBox[0]} vh={e.viewBox[1]} />
       </svg>
 
-      <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 flex flex-col gap-2">
+      <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 flex flex-col gap-2">
         <ControlPanel prefix="phys" c={controls} p={st.p} s={st.s} setP={(k, v) => dispatch({type: 'set', key: k, value: v})} setS={(k, v) => dispatch({type: 'choose', key: k, value: v})} />
         {e.columns.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <button type="button" data-testid="phys-measure" onClick={() => dispatch({type: 'measure'})} className="rounded-md border border-blue-600 bg-blue-600 px-4 py-1.5 font-semibold text-white">Đo (lần {st.rows.length + 1})</button>
+            <button type="button" data-testid="phys-measure" onClick={() => dispatch({type: 'measure'})} className="rounded-md border border-[#1D1B16] bg-[#1D1B16] px-4 py-1.5 font-semibold text-white">Đo (lần {st.rows.length + 1})</button>
             <button type="button" data-testid="phys-clear" onClick={() => dispatch({type: 'clear'})} className="rounded-md border border-stone-300 bg-white px-3 py-1.5">Xóa số liệu</button>
             <span className="text-stone-500">Mỗi lần đo cho một số khác nhau do sai số ngẫu nhiên và độ chia nhỏ nhất của dụng cụ.</span>
           </div>
@@ -110,7 +111,7 @@ export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, exper
       </div>
 
       {e.columns.length > 0 && (
-        <div className="overflow-auto rounded-xl border border-[#E6E4DD] bg-white" data-testid="phys-table" data-rows={st.rows.length}>
+        <div className="overflow-auto rounded-2xl border border-[#1D1B16]/15 bg-white" data-testid="phys-table" data-rows={st.rows.length}>
           <table className="w-full border-collapse text-center text-xs font-mono">
             <thead>
               <tr className="bg-stone-100 text-stone-600">
@@ -142,7 +143,7 @@ export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, exper
       <Chart e={e} st={st} />
 
       {results.length > 0 && st.rows.length > 0 && (
-        <ul className="rounded-xl border border-[#E6E4DD] bg-white p-3 text-xs space-y-0.5" data-testid="phys-results">
+        <ul className="rounded-2xl border border-[#1D1B16]/15 bg-white p-3 text-xs space-y-0.5" data-testid="phys-results">
           {results.map((r) => (
             <li key={r.key}>
               {r.label}: <b data-testid={`phys-result-${r.key}`} data-value={Number.isFinite(r.value) ? r.value : ''} className="font-mono">{fmt(r.value, r.digits ?? 3)}{r.unit ? ` ${r.unit}` : ''}</b>
@@ -152,7 +153,7 @@ export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, exper
       )}
 
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 text-xs" data-testid="phys-steps">
+        <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 text-xs" data-testid="phys-steps">
           <b className="text-stone-900">Các bước ({done.filter(Boolean).length}/{e.steps.length})</b>
           <ul className="mt-1 space-y-1">
             {e.steps.map((s, i) => (
@@ -161,12 +162,12 @@ export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, exper
               </li>
             ))}
           </ul>
-          <button type="button" data-testid="phys-check" onClick={() => setChecked(true)} className="mt-2 rounded-md border border-stone-300 bg-white px-3 py-1">Kiểm tra kết quả của em</button>
+          <button type="button" data-testid="phys-check" onClick={() => setChecked(true)} className="mt-2 inline-flex items-center justify-center min-h-[32px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 py-1 font-medium text-[#1D1B16]">Kiểm tra kết quả của em</button>
           {verdict && (
             <p data-testid="phys-verdict" data-ok={verdict.ok ? '1' : '0'} className={`mt-1 ${verdict.ok ? 'text-emerald-700' : 'text-rose-700'}`}>{verdict.ok ? 'Đạt. ' : 'Chưa đạt. '}{verdict.text}</p>
           )}
         </div>
-        <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 text-xs" data-testid="phys-questions">
+        <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 text-xs" data-testid="phys-questions">
           <b className="text-stone-900">Câu hỏi sau thí nghiệm</b>
           {e.questions.map((q, qi) => {
             const key = `${e.id}:${qi}`;

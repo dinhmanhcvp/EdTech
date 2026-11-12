@@ -124,6 +124,12 @@ export type Shape =
 
 export interface SceneData extends Controls {
   viewBox: [number, number];
+  /** sân khấu: 'studio' (mặc định) nền xám kem mờ có lưới sàn, vật mờ có bóng; 'night' nền chàm sâu, nét phát sáng (thế giới vi mô, vũ trụ) */
+  stage?: 'studio' | 'night' | 'glass';
+  /** "Tự tay thử": việc học sinh làm với thanh trượt (câu lệnh ngắn) */
+  tryIt?: string;
+  /** "Em sẽ thấy": điều cần quan sát sau khi làm */
+  see?: string;
   /** có `time` thì hiện nút chạy và thanh thời gian; draw nhận t (giây mô phỏng) */
   time?: {max: number; loop?: boolean; autoplay?: boolean; label?: string; unit?: string};
   /** hàm thuần: cùng (p, t, s) cho cùng hình */

@@ -1,5 +1,6 @@
 'use client';
 
+import {stageFill} from '../utils/canvasKit';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {SimulationBlueprint, CurriculumLevel} from '@socratic/types';
 import {MathView} from '../components/common/MathView';
@@ -197,8 +198,7 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
     } else {
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, w, h);
+      stageFill(ctx, w, h);
     }
 
     // lưới
@@ -269,7 +269,7 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
     cfns.forEach((f, idx) => {
       if (!f.visible) return;
       // Nổi bật sắc nét trên nền bảng tối
-      const strokeCol = isDark && idx === 1 && f.color === '#2563EB' ? '#38BDF8' : f.color;
+      const strokeCol = isDark && idx === 1 && f.color === '#2459C9' ? '#38BDF8' : f.color;
       ctx.strokeStyle = strokeCol;
       ctx.lineWidth = 2.8;
       ctx.lineJoin = 'round';
@@ -308,7 +308,7 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
     specials.forEach((p) => {
       const s = toScreen(v, w, h, p.x, p.y);
       if (s.px < -10 || s.px > w + 10 || s.py < -10 || s.py > h + 10) return;
-      const col = p.kind === 'intersection' ? (isDark ? '#FACC15' : '#111827') : p.kind === 'zero' ? '#0891B2' : p.kind === 'max' ? '#DC2626' : '#2563EB';
+      const col = p.kind === 'intersection' ? (isDark ? '#FACC15' : '#111827') : p.kind === 'zero' ? '#0891B2' : p.kind === 'max' ? '#DC2626' : '#2459C9';
       ctx.fillStyle = isDark ? '#0F172A' : '#fff';
       ctx.strokeStyle = col;
       ctx.lineWidth = 2.4;
@@ -532,7 +532,7 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
   const toggle = (k: keyof typeof opt) => setOpt((o) => ({...o, [k]: !o[k]}));
 
   const chip = (k: keyof typeof opt, label: string) => (
-    <button key={k} type="button" data-testid={`graph-toggle-${k}`} aria-pressed={opt[k]} onClick={() => toggle(k)} className={`${BTN} ${opt[k] ? 'bg-blue-600 border-blue-700 text-white shadow-sm' : 'bg-white border-[#DCD9D0] text-stone-700 hover:bg-stone-50'}`}>
+    <button key={k} type="button" data-testid={`graph-toggle-${k}`} aria-pressed={opt[k]} onClick={() => toggle(k)} className={`${BTN} ${opt[k] ? 'bg-[#1D1B16] border-[#1D1B16] text-white shadow-sm' : 'bg-white border-[#DCD9D0] text-stone-700 hover:bg-stone-50'}`}>
       {label}
     </button>
   );
@@ -549,7 +549,7 @@ export const GraphEngine: React.FC<Props> = ({blueprint, isHologram = false}) =>
               value={f.text}
               spellCheck={false}
               onChange={(e) => updateFn(f.id, {text: e.target.value})}
-              className={`flex-1 min-w-0 px-2 py-1 rounded-lg text-xs font-mono bg-[#F8F7F4] border focus:outline-none ${f.kind === 'error' && f.text.trim().length > 2 ? 'border-rose-300 focus:border-rose-400' : 'border-[#E6E4DD] focus:border-blue-400'}`}
+              className={`flex-1 min-w-0 px-2 py-1 rounded-lg text-xs font-mono bg-[#F8F7F4] border focus:outline-none ${f.kind === 'error' && f.text.trim().length > 2 ? 'border-rose-300 focus:border-rose-400' : 'border-[#E6E4DD] focus:border-[#1D1B16]/40'}`}
             />
             <div className="hidden sm:block text-sm min-w-[120px] text-stone-900" data-testid={`graph-fn-latex-${i}`}>
               {f.kind !== 'error' ? <MathView latex={f.latex} /> : <span className="text-[10px] text-rose-600 font-mono">{f.error}</span>}

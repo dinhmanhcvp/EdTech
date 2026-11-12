@@ -114,22 +114,22 @@ export const VisualDefs: React.FC<{id: string}> = ({id}) => (
 
 /** Bóng đổ elip mờ dưới một vật đặt trên mặt bàn. */
 export const GroundShadow: React.FC<{id: string; cx: number; cy: number; rx: number; ry?: number; opacity?: number}> = ({id, cx, cy, rx, ry = 6, opacity = 0.16}) => (
-  <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="#292524" opacity={opacity} filter={`url(#${id}-soft)`} pointerEvents="none" />
+  <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="#1D1B16" opacity={opacity} filter={`url(#${id}-soft)`} pointerEvents="none" />
 );
 
 // ------------------------------------------------------------------ thanh trượt dùng chung
 /** Lớp Tailwind cho thanh trượt: rãnh đậm dần theo giá trị (dùng kèm `rangeFill`), núm tròn lớn dễ chạm trên bảng. */
 export const RANGE_CLASS =
-  'appearance-none h-2 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ' +
+  'appearance-none h-2 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#2F6FEB] ' +
   '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:rounded-full ' +
-  '[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:shadow-md ' +
+  '[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-[#1D1B16] [&::-webkit-slider-thumb]:shadow-md ' +
   '[&::-webkit-slider-thumb]:transition-transform active:[&::-webkit-slider-thumb]:scale-110 ' +
   '[&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white ' +
-  '[&::-moz-range-thumb]:border-[3px] [&::-moz-range-thumb]:border-solid [&::-moz-range-thumb]:border-blue-600 [&::-moz-range-thumb]:shadow-md';
+  '[&::-moz-range-thumb]:border-[3px] [&::-moz-range-thumb]:border-solid [&::-moz-range-thumb]:border-[#1D1B16] [&::-moz-range-thumb]:shadow-md';
 
-export const rangeFill = (value: number, min: number, max: number, color = '#2563EB'): React.CSSProperties => {
+export const rangeFill = (value: number, min: number, max: number, color = '#1D1B16'): React.CSSProperties => {
   const p = max > min ? Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100)) : 0;
-  return {background: `linear-gradient(to right, ${color} ${p}%, #E7E5E4 ${p}%)`};
+  return {background: `linear-gradient(to right, ${color} ${p}%, #E4DFD3 ${p}%)`};
 };
 
 // ------------------------------------------------------------------ đường cong biểu đồ
@@ -142,7 +142,7 @@ export const CurvePath: React.FC<{d: string; color: string; width?: number; dash
 );
 
 /** Nền biểu đồ: trắng dịu chuyển nhẹ sang kem, thay cho nền trắng phẳng. */
-export const CHART_BG = 'bg-gradient-to-b from-white to-[#FAF9F6]';
+export const CHART_BG = 'bg-[radial-gradient(ellipse_at_50%_42%,#ffffff_0%,#F4F1EA_62%,#E7E3D9_100%)]';
 
 // ------------------------------------------------------------------ canvas sắc nét
 /**

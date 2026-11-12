@@ -70,11 +70,11 @@ export const TrialLab: React.FC<{id: string; data: TrialData}> = ({id, data}) =>
     <div className="p-4 flex flex-col gap-3" data-testid="trial-lab" data-preset={id} data-trials={n}>
       <div className="flex flex-wrap items-center gap-2">
         {[1, 10, 100, 1000].map((k) => (
-          <button key={k} type="button" data-testid={`trial-run-${k}`} onClick={() => add(k)} className="rounded-md border border-stone-300 bg-white px-3 py-1 text-xs font-medium hover:bg-stone-50">
+          <button key={k} type="button" data-testid={`trial-run-${k}`} onClick={() => add(k)} className="inline-flex items-center justify-center min-h-[32px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 py-1 text-xs font-medium text-[#1D1B16] font-medium hover:bg-stone-50">
             +{k} {data.unit}
           </button>
         ))}
-        <button type="button" data-testid="trial-reset" onClick={() => reset()} className="rounded-md border border-stone-300 bg-white px-3 py-1 text-xs text-stone-600">
+        <button type="button" data-testid="trial-reset" onClick={() => reset()} className="inline-flex items-center justify-center min-h-[32px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 py-1 text-xs font-medium text-[#1D1B16] text-stone-600">
           Làm lại
         </button>
         <span className="ml-auto text-xs text-stone-600">
@@ -82,7 +82,7 @@ export const TrialLab: React.FC<{id: string; data: TrialData}> = ({id, data}) =>
         </span>
       </div>
 
-      <div className="rounded-xl border border-[#E6E4DD] bg-white p-3 flex flex-col gap-1.5" data-testid="trial-bars">
+      <div className="rounded-2xl border border-[#1D1B16]/15 bg-white p-3 flex flex-col gap-1.5" data-testid="trial-bars">
         {outs.map((o, i) => {
           const f = n ? counts[i] / n : 0;
           return (
@@ -101,7 +101,7 @@ export const TrialLab: React.FC<{id: string; data: TrialData}> = ({id, data}) =>
         <p className="text-[11px] text-stone-500">Thanh màu: tần suất quan sát. Vạch đen: xác suất lí thuyết. Chạm một dòng để theo dõi tần suất tích lũy của nó.</p>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="trial-chart">
+      <svg viewBox={`0 0 ${W} ${H}`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="trial-chart">
         <line x1="40" y1={H - 24} x2={W - 16} y2={H - 24} stroke="#A8A29E" />
         <line x1="40" y1="10" x2="40" y2={H - 24} stroke="#A8A29E" />
         <text x="34" y="14" fontSize="10" textAnchor="end" fill="#78716C">100%</text>
@@ -111,7 +111,7 @@ export const TrialLab: React.FC<{id: string; data: TrialData}> = ({id, data}) =>
         {path && <path d={path} fill="none" stroke={outs[sel]?.color ?? '#2563EB'} strokeWidth="2.2" data-testid="trial-path" />}
       </svg>
 
-      <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 flex flex-col gap-2">
+      <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 flex flex-col gap-2">
         <ControlPanel prefix="trial" c={data} p={p} s={s} setP={(k, v) => change(() => setPs((x) => ({...x, [k]: v})))} setS={(k, v) => change(() => setSs((x) => ({...x, [k]: v})))} />
         {data.note && <p className="text-[11px] text-stone-500">{data.note}</p>}
       </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import {StageBackdrop} from './SceneLab';
 import React, {useMemo, useReducer, useState} from 'react';
 import {CHEM_EXPERIMENTS, EXPERIMENT_BY_ID} from '../../utils/lab/chem/experiments';
 import {derive, labReducer, newLab, stepsDone} from '../../utils/lab/chem/engine';
@@ -85,12 +86,12 @@ export const ChemBench: React.FC<{id: string; experiment: string | null}> = ({id
         <button type="button" data-testid="chem-goggles" aria-pressed={lab.goggles} onClick={() => dispatch({type: 'goggles', on: !lab.goggles})} className={`rounded-full border px-3 py-1 ${lab.goggles ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-stone-300 bg-white'}`}>
           {lab.goggles ? 'Đã đeo kính và găng' : 'Chưa đeo kính, găng'}
         </button>
-        <button type="button" data-testid="chem-reset" onClick={reset} className="rounded-md border border-stone-300 bg-white px-3 py-1">Làm lại</button>
-        {e && <button type="button" data-testid="chem-sample" onClick={sample} className="rounded-md border border-stone-300 bg-white px-3 py-1">Xem thao tác mẫu</button>}
+        <button type="button" data-testid="chem-reset" onClick={reset} className="inline-flex items-center justify-center min-h-[32px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 py-1 font-medium text-[#1D1B16]">Làm lại</button>
+        {e && <button type="button" data-testid="chem-sample" onClick={sample} className="inline-flex items-center justify-center min-h-[32px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 py-1 font-medium text-[#1D1B16]">Xem thao tác mẫu</button>}
       </div>
 
       {e && (
-        <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 text-xs text-stone-700">
+        <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 text-xs text-stone-700">
           <b className="text-sm text-stone-900">{e.title}</b>
           <span className="ml-2 text-stone-500">({e.lesson})</span>
           <p className="mt-1">{e.goal}</p>
@@ -98,7 +99,8 @@ export const ChemBench: React.FC<{id: string; experiment: string | null}> = ({id
         </div>
       )}
 
-      <svg viewBox="0 0 560 250" className={`w-full rounded-xl border border-[#E6E4DD] ${CHART_BG}`} data-testid="chem-bench-svg">
+      <svg viewBox="0 0 560 250" className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="chem-bench-svg">
+        <StageBackdrop vw={560} vh={250} night={false} glass id="chemstage" />
         <rect x="20" y="206" width="520" height="6" rx="3" fill="#A8A29E" />
         {lab.vessels.map((v, i) => (
           <VesselSvg key={v.id} i={i} v={v} d={ds[i]} active={i === active} onClick={() => setActive(i)} />
@@ -107,14 +109,14 @@ export const ChemBench: React.FC<{id: string; experiment: string | null}> = ({id
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <b>{av.id}:</b>
-        <button type="button" data-testid="chem-heat" onClick={() => dispatch({type: 'heat', v: active})} className="rounded-md border border-stone-300 bg-white px-3 py-1">Đun nóng</button>
+        <button type="button" data-testid="chem-heat" onClick={() => dispatch({type: 'heat', v: active})} className="inline-flex items-center justify-center min-h-[32px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 py-1 font-medium text-[#1D1B16]">Đun nóng</button>
         <button type="button" data-testid="chem-light" aria-pressed={av.light} onClick={() => dispatch({type: 'light', v: active, on: !av.light})} className={`rounded-md border px-3 py-1 ${av.light ? 'border-amber-500 bg-amber-100' : 'border-stone-300 bg-white'}`}>Chiếu sáng</button>
-        <button type="button" data-testid="chem-discard" onClick={() => dispatch({type: 'discard', v: active})} className="rounded-md border border-stone-300 bg-white px-3 py-1">Đổ bỏ</button>
+        <button type="button" data-testid="chem-discard" onClick={() => dispatch({type: 'discard', v: active})} className="inline-flex items-center justify-center min-h-[32px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 py-1 font-medium text-[#1D1B16]">Đổ bỏ</button>
         <span className="text-stone-500">Dẫn khí sang</span>
         <select data-testid="chem-gas-to" value={target} onChange={(ev) => setTarget(Number(ev.target.value))} className="rounded-md border border-stone-300 bg-white px-1 py-1">
           {lab.vessels.map((v, i) => (i === active ? null : <option key={v.id} value={i}>{v.id}</option>))}
         </select>
-        <button type="button" data-testid="chem-transfer" onClick={() => dispatch({type: 'transferGas', v: active, to: target === active ? (active + 1) % lab.vessels.length : target})} className="rounded-md border border-stone-300 bg-white px-3 py-1">Dẫn</button>
+        <button type="button" data-testid="chem-transfer" onClick={() => dispatch({type: 'transferGas', v: active, to: target === active ? (active + 1) % lab.vessels.length : target})} className="inline-flex items-center justify-center min-h-[32px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 py-1 font-medium text-[#1D1B16]">Dẫn</button>
         <span className="ml-auto flex items-center gap-1">
           Chờ:
           {[5, 30, 120].map((sec) => (
@@ -134,7 +136,7 @@ export const ChemBench: React.FC<{id: string; experiment: string | null}> = ({id
         <span className="ml-auto text-[11px] text-stone-500">Đồng hồ: {fmt(lab.clock, 0)} s</span>
       </div>
 
-      <div className="rounded-xl border border-[#E6E4DD] bg-white p-3 flex flex-col gap-2" data-testid="chem-shelf">
+      <div className="rounded-2xl border border-[#1D1B16]/15 bg-white p-3 flex flex-col gap-2" data-testid="chem-shelf">
         {GROUPS.map((g) => {
           const items = SUBSTANCES.filter((s) => (g === 'Chất rắn' ? s.group === 'Chất rắn' : s.group === g));
           if (!items.length) return null;
@@ -160,7 +162,7 @@ export const ChemBench: React.FC<{id: string; experiment: string | null}> = ({id
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 text-xs" data-testid="chem-log">
+        <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 text-xs" data-testid="chem-log">
           <b className="text-stone-900">Nhật kí hiện tượng</b>
           {lab.log.length === 0 ? <p className="mt-1 text-stone-500">Chưa có thao tác.</p> : (
             <ul className="mt-1 max-h-40 overflow-auto space-y-0.5">
@@ -184,7 +186,7 @@ export const ChemBench: React.FC<{id: string; experiment: string | null}> = ({id
         </div>
 
         {e && (
-          <div className="rounded-xl bg-[#F4F3EE] border border-[#E5E3DC] p-3 text-xs" data-testid="chem-steps">
+          <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 text-xs" data-testid="chem-steps">
             <b className="text-stone-900">Các bước ({done.filter(Boolean).length}/{e.steps.length})</b>
             <ul className="mt-1 space-y-1">
               {e.steps.map((s, i) => (

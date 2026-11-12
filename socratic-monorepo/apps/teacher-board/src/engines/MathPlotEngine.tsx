@@ -1,6 +1,7 @@
 // apps/teacher-board/src/engines/MathPlotEngine.tsx
 'use client';
 
+import {stageFill} from '../utils/canvasKit';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { setupHiDpiCanvas } from './visualKit';
 import { SimulationBlueprint, CurriculumLevel } from '@socratic/types';
@@ -335,8 +336,7 @@ export const MathPlotEngine: React.FC<Props> = ({
         ctx.stroke();
       }
     } else {
-      ctx.fillStyle = '#FCFBF9';
-      ctx.fillRect(0, 0, width, height);
+      stageFill(ctx, width, height);
 
       // 1. Fine Millimeter Grid
       ctx.strokeStyle = '#EFECE6';
@@ -459,7 +459,7 @@ export const MathPlotEngine: React.FC<Props> = ({
         }
 
         // Center sample node marker
-        ctx.fillStyle = '#2563EB';
+        ctx.fillStyle = '#2459C9';
         ctx.beginPath();
         ctx.arc(originX + xMid * scale, originY - yi * scale, 2.5, 0, Math.PI * 2);
         ctx.fill();
@@ -489,7 +489,7 @@ export const MathPlotEngine: React.FC<Props> = ({
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = '#18181B';
+      ctx.fillStyle = '#1D1B16';
       ctx.font = 'bold 10px "JetBrains Mono", monospace';
       ctx.fillText(
         formatCanvasMath(`Riemann N=${N}  |  S_N=${riemannSum.toFixed(3)}  |  I=${exactIntegral.toFixed(3)}  |  Δ=${absError.toFixed(4)}`),
@@ -516,7 +516,7 @@ export const MathPlotEngine: React.FC<Props> = ({
 
     // 6. Active Curve: Crisp Cobalt Blue anti-aliased stroke
     ctx.save();
-    ctx.strokeStyle = '#2563EB';
+    ctx.strokeStyle = '#2459C9';
     ctx.lineWidth = 2.75;
     ctx.beginPath();
     let first = true;
@@ -627,7 +627,7 @@ export const MathPlotEngine: React.FC<Props> = ({
         ctx.restore();
 
         // White callout badge
-        ctx.fillStyle = '#18181B';
+        ctx.fillStyle = '#1D1B16';
         ctx.font = 'bold 10px monospace';
         ctx.fillText(formatCanvasMath(`x${idx + 1}=${root.toFixed(2)}`), rPixX - 18, rPixY - 10);
       });
@@ -700,7 +700,7 @@ export const MathPlotEngine: React.FC<Props> = ({
     ctx.lineWidth = 1;
     ctx.strokeRect(15, 15, badgeW, badgeH);
 
-    ctx.fillStyle = '#2563EB';
+    ctx.fillStyle = '#2459C9';
     ctx.font = 'bold 12px monospace';
     ctx.fillText(formatCanvasMath(compiled.curveTitle), 25, 34);
 
@@ -752,7 +752,7 @@ export const MathPlotEngine: React.FC<Props> = ({
       {/* Top Engine Mode Switcher */}
       <div className="flex items-center justify-between w-full px-2">
         <span className="text-[11px] font-mono text-stone-500 flex items-center gap-1.5">
-          <Activity className="w-3.5 h-3.5 text-blue-600" />
+          <Activity className="w-3.5 h-3.5 text-[#1D1B16]" />
           <span>{viewMode === 'PYTHON_SVG' ? 'Python SymPy Matplotlib (Chính xác 100%)' : '60FPS HTML5 Canvas (Thời gian thực)'}</span>
         </span>
         <div className="flex items-center gap-1 bg-[#F2F0EA] p-1 rounded-lg border border-[#E6E4DD]">
@@ -798,7 +798,7 @@ export const MathPlotEngine: React.FC<Props> = ({
         {viewMode === 'PYTHON_SVG' && (
           <div className="w-full h-full flex items-center justify-center p-1">
             {svgLoading && !svgData && (
-              <div className="flex items-center gap-2 text-blue-600 text-xs font-mono">
+              <div className="flex items-center gap-2 text-[#1D1B16] text-xs font-mono">
                 <RefreshCw className="w-4 h-4 animate-spin" />
                 <span>Đang render đồ thị SymPy Python...</span>
               </div>

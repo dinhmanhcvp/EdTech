@@ -8,6 +8,7 @@
     "start": "next start -p 3001"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^1.2.3",
     "@socratic/types": "*",
     "@socratic/ui": "*",
     "@types/katex": "^0.16.8",
@@ -16,12 +17,14 @@
     "next": "^14.1.0",
     "qrcode": "^1.5.4",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^18.2.0",
+    "@types/three": "^0.180.0",
     "typescript": "^5.0.0"
   }
 }

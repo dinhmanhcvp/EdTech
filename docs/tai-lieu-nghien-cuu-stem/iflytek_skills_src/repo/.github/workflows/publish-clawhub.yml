@@ -1,0 +1,36 @@
+name: Publish to ClawHub
+
+on:
+  push:
+    tags: ["v*"]
+    paths:
+      - "skills/**"
+  workflow_dispatch:
+    inputs:
+      skill_path:
+        description: "Path to a single skill folder (e.g. skills/iflytek-translate). Leave empty to publish all."
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry run — preview without actually publishing"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish Skills to ClawHub
+    uses: openclaw/clawhub/.github/workflows/skill-publish.yml@main
+    with:
+      root: skills
+      owner: iflytek.skills
+      dry_run: ${{ github.event.inputs.dry_run == 'true' }}
+      skill_path: ${{ github.event.inputs.skill_path }}
+      registry: https://clawhub.ai
+      site: https://clawhub.ai
+    secrets:
+      clawhub_token: ${{ secrets.CLAWHUB_TOKEN }}

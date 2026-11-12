@@ -1,0 +1,10 @@
+﻿AXIOMA - bộ slide 12 trang cho cuộc thi Ý tưởng sáng tạo
+
+1. Bản PDF: AXIOMA_Slide-Y-tuong-sang-tao.pdf (16:9, dùng để nộp hoặc trình chiếu).
+2. Ảnh từng slide (PNG 1920x1080): thư mục anh-tung-slide.
+3. Bản web có nút trình diễn trực tiếp:
+   - Mở terminal tại socratic-monorepo\apps\teacher-board, chạy: npx next dev -p 3001
+   - Mở trình duyệt: http://localhost:3001/pitch
+   - Phím: mũi tên phải / Space = tiếp, mũi tên trái = lùi, F = toàn màn hình.
+   - Slide 12 có nút mở thẳng vào ứng dụng để demo.
+Mã nguồn slide: socratic-monorepo\apps\teacher-board\src\components\pitch\

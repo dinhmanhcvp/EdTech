@@ -1,0 +1,25 @@
+BẢN KIỂM TRA LIÊM CHÍNH VÀ TRÙNG LẶP NỘI BỘ
+Tệp báo cáo: Bao_cao_ViSEF_Dong_hoc_chu_ky.docx
+Ngày kiểm tra: 27/10/2026
+
+1. Phạm vi kiểm tra
+- So sánh văn bản báo cáo với bản tóm tắt Tóm tắt.docx.
+- So sánh văn bản báo cáo với Phản biện ý tưởng máy ký KHKT.pdf.
+- Phương pháp tiền kiểm: so khớp cụm 8 từ liên tiếp sau khi chuẩn hóa chữ thường.
+
+2. Kết quả tiền kiểm
+- Báo cáo: khoảng 8.840 từ sau khi trích xuất văn bản.
+- So với Tóm tắt.docx: 0 cụm 8 từ trùng.
+- So với Phản biện ý tưởng máy ký KHKT.pdf: 10 cụm 8 từ trùng, chủ yếu là tiêu đề và thuật ngữ chỉ số kỹ thuật; khoảng 0,115% tổng số cụm 8 từ của báo cáo.
+
+3. Giới hạn
+- Đây không phải kết quả Turnitin chính thức.
+- Không thể suy ra phần trăm Similarity của Turnitin từ phép tiền kiểm này.
+- Kết quả Turnitin phụ thuộc cơ sở dữ liệu, chế độ loại trừ tài liệu tham khảo, trích dẫn, cụm từ ngắn và kho bài nộp của trường.
+
+4. Yêu cầu trước khi nộp
+- Bổ sung số liệu thô, nhật ký nghiên cứu, phiên bản phần cứng/phần mềm và phần đóng góp của từng học sinh.
+- Kiểm tra từng trích dẫn và tài liệu tham khảo theo mẫu của đơn vị tổ chức.
+- Không giữ lại các con số minh họa nếu chưa có dữ liệu gốc.
+- Khai báo trung thực việc dùng công cụ hỗ trợ biên tập; không dùng công cụ để tạo dữ liệu, kết quả hoặc thay thế phần nghiên cứu cốt lõi.
+- Chạy Turnitin chính thức bằng tài khoản của trường và xử lý từng đoạn bị đánh dấu theo nguồn cụ thể, thay vì cố giảm điểm bằng cách thay từ máy móc.

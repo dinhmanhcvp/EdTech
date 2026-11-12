@@ -1,0 +1,42 @@
+=== ../socratic-video/public/fn/2328.mp4
+[   1.38 ->    9.14] Quay ai mới chỉ là điểm khởi đầu. Mục tiêu của dự án là làm chủ công nghệ cảm biến mùi và mở rõ sang các phương ngành công nghiệp khác.
+[  10.20 ->   13.94] TREASURE AI. Người thấy vý khí, giữ chọn vị tươi.
+=== ../socratic-video/public/fn/2336.mp4
+[   2.10 ->    8.62] FESNO AI mới chỉ là niềm khởi đầu, mục tiêu của dự án là làm truyền phủ công nghệ cảm biến mùi và mở dọng xác ác ngành công nghiệp khác.
+[   9.66 ->   13.48] FESNO AI, Người tới vi khí, dứa tròn bị tươi.
+=== ../socratic-video/public/fn/2348.mp4
+[   5.55 ->    9.91] Fresno AI là hệ thống theo dõi tình trạng nông sản bằng cảm biến và trí tựa nhân tạo.
+[  10.21 ->   13.45] Các cảm biến sẽ thu thập dư liệu về khí, nhật độ và đậu ẩm.
+[  13.73 ->   16.05] Sau đó, mô hình AI sẽ phân tích những dư liệu này
+[  16.05 ->   20.89] để tìm ra các dấu hiệu bất thường có thể liên quan đến quá trình 9 hoặc khư hầm của nông sản.
+[  21.19 ->   24.51] Từ đó, hỗ trợ người dùng kiểm soát và theo dõi tình trạng nông sản tốt hơn.
+=== ../socratic-video/public/fn/2361.mp4
+[   4.82 ->   10.22] Khi phát hiện bất thường, hệ thống giữ cảnh báo để người quản lý đến kiểm tra trực tiếp và xử lý gịp thời,
+[  10.60 ->   12.12] thay vì với giá soát tăn bộ khô.
+=== ../socratic-video/public/fn/2387.mp4
+[   2.08 ->    5.58] Trong giai loại đầu, First No AI hướng đến các kho lạnh, hợp tác xã,
+[   5.82 ->    9.90] câu sở bảo quản nông sản và các doanh nghiệp xuất nhập khẩu, những nơi cần bảo quản nhiều kho hàng một lúc.
+=== ../socratic-video/public/fn/2403.mp4
+[   3.28 ->    8.90] Về mô hình kinh doanh, dự án xây dựng phương án ra bán thử nghiệm khoảng 8 triệu đồng trong 1 bộ thiết bị
+[   8.90 ->   11.44] với mức chi phí 4 ban đầu khoảng 3 triệu đồng.
+=== ../socratic-video/public/fn/2404.mp4
+[   0.69 ->    2.35] Em cầm lên à, bình thíng này em...
+[   2.35 ->    4.69] 1, 2, 3, 2, 1, 2, 1
+[   5.81 ->    7.63] Xin chào, đây là dự án festival
+=== ../socratic-video/public/fn/2405.mp4
+[   0.88 ->    3.19] 3, 2, 1
+[   3.40 ->    7.34] Xin chào này
+=== ../socratic-video/public/fn/2422.mp4
+[   3.94 ->   10.64] Xin chào, đây là dự án Fes Noi Ai, hệ thống nguyên đen tử thông minh, cảnh báo sống mức hỏng và tối hóa thời gian lưu con nông sản.
+=== ../socratic-video/public/fn/2479.mp4
+[   4.11 ->    7.63] Trong bảo quản, nhận độ và độ ẩm là chưa đủ, với các kho lớn,
+[   7.81 ->   11.23] kiểm tra thủ công rất khó phát hiện ra sự thay đổi với chất lượng trước khi nông sản bư hư học,
+[  11.49 ->   13.47] liệu công nghệ có giúp chúng ta phát hiện sớm những nguy cơ này.
+=== ../socratic-video/public/fn/2483.mp4
+[   8.91 ->    9.49] Hãy subscribe cho kênh Ghiền Mì Gõ Để không bỏ lỡ những video hấp dẫn
+=== ../socratic-video/public/fn/2487.mp4
+[   0.00 ->    7.87] Hãy subscribe cho kênh Ghiền Mì Gõ Để không bỏ lỡ những video hấp dẫn
+=== ../socratic-video/public/fn/2492.mp4
+[   0.00 ->    4.78] Hãy subscribe cho kênh Ghiền Mì Gõ Để không bỏ lỡ những video hấp dẫn
+=== ../socratic-video/public/fn/2499.mp4
+[   0.00 ->    0.46] Bye!

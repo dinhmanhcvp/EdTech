@@ -1,0 +1,74 @@
+{
+ "tam-trai": {
+  "blocks": [
+   {
+    "id": "b1",
+    "boxH": 49.9,
+    "usedH": 49.9,
+    "over": false
+   },
+   {
+    "id": "b2",
+    "boxH": 40.2,
+    "usedH": 40.2,
+    "over": false
+   },
+   {
+    "id": "b3",
+    "boxH": 22.3,
+    "usedH": 22.3,
+    "over": false
+   }
+  ],
+  "imgPct": 24
+ },
+ "tam-trai_words": 221,
+ "tam-giua": {
+  "blocks": [
+   {
+    "id": "b4",
+    "boxH": 31.3,
+    "usedH": 29.5,
+    "over": false
+   },
+   {
+    "id": "b5",
+    "boxH": 31.3,
+    "usedH": 31.3,
+    "over": false
+   },
+   {
+    "id": "b6",
+    "boxH": 77.6,
+    "usedH": 69.5,
+    "over": false
+   },
+   {
+    "id": "b7",
+    "boxH": 77.6,
+    "usedH": 77.6,
+    "over": false
+   }
+  ],
+  "imgPct": 25.2
+ },
+ "tam-giua_words": 368,
+ "tam-phai": {
+  "blocks": [
+   {
+    "id": "b8",
+    "boxH": 76.9,
+    "usedH": 76.9,
+    "over": false
+   },
+   {
+    "id": "b9",
+    "boxH": 40.1,
+    "usedH": 40.1,
+    "over": false
+   }
+  ],
+  "imgPct": 52.9
+ },
+ "tam-phai_words": 199
+}

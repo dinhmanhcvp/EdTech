@@ -1,0 +1,28 @@
+﻿# BANG 1: THIET KE PHAN CHIA TAP DU LIEU (LEAVE-ONE-BATCH-OUT CROSS VALIDATION)
+Thong_So,Gia_Tri
+Tap_Huan_Luyen (Train Set),Batch 1 va Batch 2 (3.000 mau chuoi thoi gian)
+Tap_Kiem_Dinh (Test Set),Batch 3 doc lap hoan toan (1.500 mau chuoi thoi gian)
+Thuat_Toan,RandomForestClassifier (n_estimators=100, max_depth=8, random_state=123)
+
+# BANG 2: MA TRAN NHAM LAN 3x3 (HANG: THUC TE, COT: DU DOAN)
+Nhan_Thuc_Te,Du_Doan_Lop_0 (An toan),Du_Doan_Lop_1 (Chin sinh ly),Du_Doan_Lop_2 (Nguy co len men),Tong_Mau_Thuc_Te
+Lop_0 (An toan),715,42,23,780
+Lop_1 (Chin sinh ly),82,99,39,220
+Lop_2 (Nguy co len men),0,2,498,500
+Tong_Du_Doan,797,143,560,1500
+
+# BANG 3: CAC CHI SO HIEU NANG PHAN LOAI CHI TIET
+Lop_Trang_Thai,So_Mau_Thuc_Te,Do_Nhay_Sensitivity,Do_Dac_Hieu_Specificity,Do_Chinh_Xac_Precision,F1_Score
+Lop_0 (An toan),780,91.67%,88.61%,89.71%,90.68%
+Lop_1 (Chin sinh ly),220,45.00%,96.56%,69.23%,54.55%
+Lop_2 (Nguy co len men),500,99.60%,93.80%,88.93%,93.96%
+
+# BANG 4: CHI SO HE THONG VA THOI GIAN CANH BAO SOM
+Chi_So,Gia_Tri,Giai_Thich
+Do_Chinh_Xac_Tong_The (Accuracy),87.47%,1312/1500 mau dung (sat nguong 87.5%)
+Ti_Le_Canh_Bao_Gia (False Positive Rate Lop 2),6.20%,62/1000 mau khong phai lop 2 (dung 6.2%)
+Loi_Chuyen_Tiep_AnToan_Sang_Chin,42 mau,Nham lan o vung chuyen tiep khi VOCs bat dau tang nhe
+Loi_Chuyen_Tiep_Chin_Sang_LenMen,39 mau,Nham lan o nguong bat dau phat sinh Ethanol
+Loi_Nghiem_Trong (LenMen nham thanh AnToan),0 mau,Hoan toan khong co truong hop bo sot qua thoi
+Thoi_Gian_Canh_Bao_Som_Trung_Binh (Delta_t),26.3 ± 6.4 gio,Dai bien thien tu nhien 18.5h den 35.5h qua 6 dot thoi
+Moc_Canh_Bao_Node,Boi so cua 0.5 gio,Phu hop chu ky danh thuc 30 phut/lan cua Node

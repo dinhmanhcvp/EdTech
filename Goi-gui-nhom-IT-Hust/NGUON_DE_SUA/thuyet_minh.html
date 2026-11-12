@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Thuyết minh sản phẩm dự thi - Socratic Vision Board (AXIOMA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=block" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 20mm 18mm 20mm 18mm; }
+  * { box-sizing: border-box; }
+  body { background:#fff; font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 11.5pt; line-height: 1.5; color: #18181b; margin: 0; }
+  h1,h2,h3 { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+  h1 { font-size: 24pt; margin: 0 0 4pt; letter-spacing: -0.02em; }
+  h2 { font-size: 14pt; margin: 20pt 0 6pt; padding-top: 8pt; border-top: 1.5px solid #e6e4dd; page-break-after: avoid; }
+  h2 .n { color:#d97706; margin-right:6pt; }
+  h3 { font-size: 12pt; margin: 12pt 0 4pt; color: #2563eb; page-break-after: avoid; }
+  p { margin: 0 0 7pt; text-align: justify; }
+  ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  .meta { color: #52525b; font-size: 10.5pt; margin-bottom: 4pt; }
+  .cover { display:flex; gap:16pt; align-items:center; padding:14pt 16pt; margin-bottom:16pt; background:#f8f7f4; border:1.5px solid #e6e4dd; border-radius:12px; border-top:4px solid #2563eb; }
+  .cover img { width:64pt; height:64pt; }
+  .pill { display:inline-block; background:#18181b; color:#fff; border-radius:99px; padding:3pt 12pt; font-size:9pt; font-weight:600; letter-spacing:.08em; margin-bottom:6pt; }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; font-size: 10.5pt; page-break-inside: avoid; }
+  tr { page-break-inside: avoid; }
+  th, td { border: 1px solid #e6e4dd; padding: 5pt 7pt; text-align: left; vertical-align: top; }
+  th { background: #f8f7f4; font-family: 'Space Grotesk','Inter',sans-serif; }
+  figure { margin: 8pt 0 10pt; page-break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid #d4d4d8; border-radius: 4px; }
+  figcaption { font-size: 9.5pt; color: #52525b; margin-top: 3pt; }
+  .note { background: #f8f7f4; border-left: 4px solid #d97706; padding: 6pt 10pt; font-size: 10.5pt; margin: 8pt 0; page-break-inside: avoid; }
+  .fill { background: #fef08a; padding: 0 3pt; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <img src="logo-mark.svg" alt="">
+  <div>
+  <div class="pill">SÁNG TẠO TRẺ HÀ NỘI 2026 · BẢNG B</div>
+  <h1>Socratic Vision Board <span style="color:#d97706">· AXIOMA</span></h1>
+  <div style="font-size:13pt;font-weight:600;">Bảng tương tác thông minh và gia sư Socratic cho Toán, Lý, Hóa, Sinh THPT</div>
+  <div class="meta">Bản thuyết minh sản phẩm dự thi · Lĩnh vực: Giáo dục, hỗ trợ học tập và giải pháp vì cộng đồng</div>
+  </div>
+</div>
+
+<table>
+  <tr><th style="width:28%">Tên sản phẩm</th><td>Socratic Vision Board (tên giới thiệu: AXIOMA)</td></tr>
+  <tr><th>Nhóm tác giả</th><td>Nhóm IT-Hust · 4 sinh viên Đại học Bách khoa Hà Nội (danh sách ở mục 10)</td></tr>
+  <tr><th>Người hướng dẫn</th><td>Phùng Văn Kiệm, giáo viên Tin học, Trường THPT Chuyên Vĩnh Phúc (cố vấn, không tính là thành viên dự thi)</td></tr>
+  <tr><th>Trang sản phẩm / mã nguồn</th><td>Chưa công khai; nhóm trình diễn trực tiếp và cung cấp mã nguồn khi Ban Giám khảo yêu cầu</td></tr>
+  <tr><th>Mức độ hoàn thiện</th><td>Sản phẩm khả dụng tối thiểu (MVP) chạy được trên màn hình tương tác; đã thí điểm 4 tuần có nhóm đối chứng (86 học sinh); chưa thương mại hóa</td></tr>
+</table>
+
+<h2><span class="n">1</span>Vấn đề thực tiễn</h2>
+<p>Dạy các môn Khoa học tự nhiên ở THPT đang kẹt giữa hai thực tế: màn hình tương tác của trường chủ yếu để chiếu slide tĩnh, còn ở nhà học sinh dùng chatbot để lấy lời giải. Ba vấn đề cụ thể:</p>
+<ul>
+  <li><b>Giáo viên trên bục giảng.</b> Dựng một mô phỏng động cho một tiết mất trung bình 38,5 phút (số đo trong thí điểm) và không thay đổi được theo câu hỏi phát sinh trong lớp. Vì thế màn hình tương tác, thiết bị đắt tiền của trường, ít được dùng đúng sức.</li>
+  <li><b>Học sinh tự học.</b> Chatbot đa năng giải trọn bài trong vài giây. Trước thí điểm, 71,6% lượt học sinh bỏ cuộc hoặc chép lời giải có sẵn khi gặp bài khó. Học sinh chép lập luận, bỏ qua tư duy, và điều này lộ ra ở dạng câu hỏi Đúng/Sai về điều kiện biên và câu trả lời ngắn nhiều bước của đề thi tốt nghiệp THPT từ 2025.</li>
+  <li><b>Nhà trường.</b> Các ứng dụng "bọc" AI sinh ảnh hoặc video phải chờ nhiều giây cho mỗi hình, tính tiền theo lượt, và không bảo đảm đúng quy luật vật lý. Khó dùng giữa tiết, khó nhân rộng cho cả trường.</li>
+</ul>
+<p><b>Đối tượng hưởng lợi:</b> giáo viên và học sinh THPT (kể cả lớp chuyên và bồi dưỡng học sinh giỏi) các môn Toán, Vật lý, Hóa học, Sinh học; các trường THPT và cơ quan quản lý giáo dục.</p>
+
+<h2><span class="n">2</span>Mục tiêu</h2>
+<ul>
+  <li>Cho giáo viên biến nét viết tay trên bảng thành mô phỏng tương tác trong vài giây, không cần soạn trước.</li>
+  <li>Bảo đảm mô phỏng đúng quy luật khoa học: AI chỉ đọc và dịch dữ liệu; phần tính toán do mã chương trình thực hiện tất định.</li>
+  <li>Giữ học sinh ở vị trí người tự nghĩ: gia sư không bao giờ nói đáp án, khóa bước sau cho đến khi bước trước đúng.</li>
+  <li>Giữ chi phí AI ở mức mọi lớp học dùng được, chạy trên thiết bị trường đã có.</li>
+</ul>
+
+<h2><span class="n">3</span>Giải pháp và tính mới, sáng tạo</h2>
+<p>Hai thành phần dùng chung một định dạng dữ liệu (<i>SimulationBlueprint</i>, JSON dưới 5 KB). <b>Trên lớp:</b> Magic Lasso. <b>Khi tự học:</b> gia sư Socratic có "ma sát nhận thức" chủ ý. Cuối tiết học sinh quét mã QR để mở lại đúng mô phỏng; tối hôm đó học sinh làm bài theo từng bậc; sáng hôm sau giáo viên xem bản đồ nhiệt các điểm nghẽn của cả lớp.</p>
+<table>
+  <tr><th style="width:26%">Điểm mới</th><th>Nội dung</th></tr>
+  <tr><td><b>AI là trình biên dịch, không phải máy vẽ</b></td><td>Viết tay thường chạy hoàn toàn tại máy (nhận dạng nét ngoại tuyến, dưới 16 ms), không gọi AI. Khi giáo viên khoanh một vùng, hệ thống chỉ lọc đúng nét được khoanh, vẽ lại trên nền trắng (ảnh dưới 8 KB) và gọi mô hình <b>một lần</b>. Mô hình trả về công thức, các cách đọc thay thế, tham số thanh trượt và câu hỏi Socratic; trình duyệt dựng mô phỏng 60 khung hình/giây bằng bốn bộ máy Toán, Lý, Hóa, Sinh. Kéo thanh trượt không gọi lại AI.</td></tr>
+  <tr><td><b>Ma sát nhận thức có chủ ý</b></td><td>Đảo ngược thói quen của chatbot. Bước giải sau bị khóa cho đến khi bước trước đúng; bàn phím số chuyên dụng chặn dán; bộ chặn nhận diện bốn kiểu xin đáp án (chèn lệnh, xin đáp án trực tiếp, hỏi Đúng/Sai, ép gấp). Học sinh phải tự giải thích bản chất ở cuối bài.</td></tr>
+  <tr><td><b>Chấm bằng toán học trước, AI sau</b></td><td>Gia sư kiểm ba tầng. Tầng 1: SymPy kiểm tra tương đương đại số và thứ nguyên (khoảng 12 ms, không tốn token). Tầng 2: kho câu hỏi gợi mở theo dạng bài. Tầng 3: mô hình ngôn ngữ có rào chắn, chỉ được hỏi, không được trả lời. Trong thí điểm, 81,4% phiên được xử lý ở hai tầng đầu, không tốn token.</td></tr>
+  <tr><td><b>Gỡ lỗi bằng hình</b></td><td>Lỗi đại số hiện thành hệ quả vật lý ngay trên hình: quên lực ma sát thì vật trượt quá dốc và hệ thống báo lệch thứ nguyên; sai hệ số cân bằng thì cân đĩa nghiêng. Học sinh tự kéo để sửa.</td></tr>
+  <tr><td><b>Công thái học bục giảng</b></td><td>Giáo viên không phải gõ bàn phím trên màn hình 75 inch: chạm để đổi ký tự OCR nhận nhầm, thanh trượt neo đáy để tay không che mô hình, vệt mờ giữ trạng thái trước để cả lớp so sánh.</td></tr>
+</table>
+<figure><img src="kien_truc.png"><figcaption>Hình 1. Kiến trúc lõi: cắt vùng, biên dịch một lần, dựng tại trình duyệt, sơ đồ SVG dự phòng.</figcaption></figure>
+<figure><img src="../01_FILE_UPLOAD/Hinh_anh_san_pham/01_Magic_Lasso_khoanh_thanh_mo_phong.jpg"><figcaption>Hình 2. Khoanh một công thức viết tay, mô phỏng ném xiên hiện ngay.</figcaption></figure>
+
+<h2><span class="n">4</span>Nội dung khoa học – công nghệ</h2>
+<h3>4.1. Kiến trúc</h3>
+<ul>
+  <li><b>Bảng giáo viên:</b> Next.js, React, TypeScript; vẽ nét bằng Canvas 2D; nhận dạng hình học bằng bộ nhận dạng nét $1 Unistroke chạy ngoại tuyến; lọc nét được khoanh bằng thuật toán điểm-trong-đa-giác; bốn bộ máy mô phỏng tất định (đồ thị và giải tích, động lực học và vector, hóa học, sinh học).</li>
+  <li><b>Ứng dụng học sinh:</b> Next.js; gia sư với các bước bị khóa, bàn phím số chuyên dụng, bàn cân đĩa, chốt chặn giọng nói.</li>
+  <li><b>Máy chủ:</b> Python, FastAPI. Một điểm vào duy nhất biên dịch ảnh nét khoanh thành <i>SimulationBlueprint</i> qua Google Gemini Flash. SymPy kiểm tra đại số, thứ nguyên và cân bằng phương trình hóa học. Kho dữ liệu câu hỏi gợi mở dùng ChromaDB, hiện có phương án dự phòng so khớp từ khóa khi thiếu vector.</li>
+  <li><b>Gói kiểu dữ liệu dùng chung</b> giữa các ứng dụng, để hợp đồng JSON giữa AI và trình duyệt được kiểm tra chặt.</li>
+</ul>
+<h3>4.2. Vì sao hướng này vững về khoa học</h3>
+<p>Mô hình ngôn ngữ giỏi đọc và diễn giải nhưng không bảo đảm tính toán. Sản phẩm tách rõ hai việc: AI chỉ làm phần nhận dạng ngữ nghĩa (một lần, nhỏ); mọi giá trị hiển thị trên mô phỏng do công thức tất định tính, và mọi bước giải của học sinh do SymPy kiểm. Nhờ vậy giảm sai số do "bịa số", đồng thời giảm chi phí vì phần lớn thời gian trình duyệt tự chạy.</p>
+<h3>4.3. AI có trách nhiệm, quyền riêng tư</h3>
+<p>Chỉ gửi ảnh nét chữ được khoanh (khoảng 8 KB, nền trắng); không gửi ảnh lớp học hay khuôn mặt. Bộ chặn xin đáp án có bước kiểm tra đầu ra: lọc mọi con số trùng đáp án trước khi gửi cho học sinh. Giáo viên làm chủ: AI chỉ chạy khi thấy khoanh vùng, nhận nhầm thì sửa bằng một chạm.</p>
+
+<h2><span class="n">5</span>Sản phẩm hiện có và kết quả kiểm chứng</h2>
+<p>Sản phẩm là MVP chạy được: bảng giáo viên với Magic Lasso và bốn bộ máy mô phỏng, ứng dụng gia sư cho học sinh, bản đồ nhiệt cho giáo viên, vở ghi QR. Kiểm thử tự động chạy ngày 25/10/2026: máy chủ 22/22 bài đạt, giao diện 101/101 bài đạt (12 tệp).</p>
+<figure><img src="../01_FILE_UPLOAD/Hinh_anh_san_pham/02_Bon_mon_mot_net_khoanh.jpg"><figcaption>Hình 3. Bốn môn trên cùng một bảng.</figcaption></figure>
+<figure><img src="../01_FILE_UPLOAD/Hinh_anh_san_pham/03_Gia_su_Socratic.jpg"><figcaption>Hình 4. Gia sư Socratic: bước sau khóa cho đến khi bước trước đúng; SymPy chấm từng bước.</figcaption></figure>
+<h3>Thí điểm 4 tuần có nhóm đối chứng</h3>
+<p>Thí điểm 64 tiết, 1.420 phiên gia sư, 7 giáo viên, <b>86 học sinh lớp 11–12</b>: nhóm thực nghiệm 44 em (32 học sinh THPT và 12 học sinh chuyên), nhóm đối chứng 42 em. Chủ đề: Vật lý 12 (điện xoay chiều RLC, dao động cơ), Hóa học 11 và 12 (cân bằng hóa học, oxi hóa – khử, chuẩn độ). Đo bằng bài kiểm tra thang 10 trước và sau, theo cấu trúc đề thi tốt nghiệp THPT từ 2025. Đợt thí điểm diễn ra tại Trường THPT Chuyên Vĩnh Phúc.</p>
+<table>
+  <tr><th>Chỉ số</th><th>Đối chứng (n = 42)</th><th>Thực nghiệm (n = 44)</th></tr>
+  <tr><td>Điểm trước (TB ± SD)</td><td>6,48 ± 1,15</td><td>6,42 ± 1,18 (p = 0,81, hai nhóm tương đương)</td></tr>
+  <tr><td>Điểm sau (TB ± SD)</td><td>6,85 ± 1,12</td><td><b>7,74 ± 0,89</b> (chênh +0,89; p = 0,0002; Cohen d = 0,88)</td></tr>
+  <tr><td>Tăng so với đầu kỳ</td><td>+0,37 điểm (+5,7%)</td><td>+1,32 điểm (+20,6%)</td></tr>
+  <tr><td>Phần I · Trắc nghiệm (% đúng)</td><td>81,4</td><td>84,2 (+2,8)</td></tr>
+  <tr><td>Phần II · Đúng/Sai</td><td>52,6</td><td>78,4 (+25,8)</td></tr>
+  <tr><td>Phần III · Trả lời ngắn nhiều bước</td><td>44,0</td><td>66,5 (+22,5)</td></tr>
+  <tr><td>Ghi nhớ sau 2 tuần</td><td>61,2</td><td>82,7 (+21,5)</td></tr>
+</table>
+<table>
+  <tr><th>Chỉ số vận hành</th><th>Giá trị</th></tr>
+  <tr><td>Thời gian giáo viên dựng mô phỏng mỗi tiết</td><td>38,5 phút → 4,2 phút (−89,1%)</td></tr>
+  <tr><td>Kiên trì sau lần sai đầu tiên của học sinh</td><td>28,4% → 74,6% (gấp 2,6 lần)</td></tr>
+  <tr><td>Bộ chặn xin đáp án</td><td>chặn 312/318 lượt (98,1%); tuần 1 có 6 lượt lách bằng nhập vai gián tiếp, đã bổ sung lọc đầu ra và đo lại</td></tr>
+  <tr><td>Phiên gia sư không tốn token</td><td>81,4% (SymPy 54,2%, kho gợi mở 27,2%; LLM 18,6%)</td></tr>
+  <tr><td>Gọi AI mỗi tiết · chi phí AI mỗi tiết</td><td>trung bình 4,3 lần · khoảng 0,014 USD (≈ 350 đồng), thấp hơn khoảng 94,6% so với phương án sinh ảnh theo lượt (ước tính của nhóm)</td></tr>
+</table>
+<figure><img src="../01_FILE_UPLOAD/Hinh_anh_san_pham/04_Go_loi_va_chot_chan_ban_chat.jpg"><figcaption>Hình 5. Gỡ lỗi bằng hình và chốt chặn bản chất.</figcaption></figure>
+<p><b>Phản hồi người dùng (ẩn danh).</b> Giáo viên Vật lý (14 năm dạy THPT và bồi dưỡng học sinh giỏi): giản đồ Fresnel cho mạch RLC giúp bớt gần 40 phút soạn bài mỗi tiết, và nhờ chạm để sửa nên không phải mở bàn phím ảo trên màn hình 75 inch lần nào. Học sinh lớp 12: quên trừ lực ma sát thì mô hình hiện ngay vật trượt quá dốc và báo lệch thứ nguyên.</p>
+<div class="note">Giới hạn của kiểm chứng: thí điểm 4 tuần, hai chủ đề, quy mô 86 học sinh, chưa có đánh giá độc lập; đề kiểm tra do nhóm thí điểm xây dựng theo cấu trúc đề thi tốt nghiệp, chưa phải đề chuẩn hóa. Nhóm không khẳng định kết quả tương tự cho mọi môn và mọi trường.</div>
+
+<h2><span class="n">6</span>Thị trường và mô hình kinh doanh</h2>
+<h3>6.1. Khách hàng và đối thủ thay thế</h3>
+<p>Khách hàng đầu tiên là các trường THPT đã có màn hình tương tác và các sở giáo dục; sau đó là gia sư và học sinh ôn thi tại nhà. Giải pháp thay thế gồm: bảng tương tác thông thường (không có mô phỏng từ nét viết), ứng dụng "bọc" AI sinh ảnh hoặc video (chậm, tính tiền theo lượt, không bảo đảm đúng quy luật), và chatbot đa năng (giải hộ, học sinh ngừng nghĩ).</p>
+<table>
+  <tr><th></th><th>Bảng thường</th><th>Ứng dụng bọc AI sinh ảnh</th><th>Socratic Vision Board</th></tr>
+  <tr><td>Mô phỏng đúng quy luật, tương tác</td><td>Không</td><td>Không bảo đảm</td><td>Có (công thức tất định)</td></tr>
+  <tr><td>Dùng màn hình trường đã có</td><td>Có</td><td>Có</td><td>Có</td></tr>
+  <tr><td>Học sinh tự tư duy, không chép</td><td>Không áp dụng</td><td>Không</td><td>Có (khóa bước, không nói đáp án)</td></tr>
+  <tr><td>Chi phí AI mỗi tiết</td><td>0 đồng</td><td>Theo lượt tạo ảnh</td><td>khoảng 350 đồng</td></tr>
+</table>
+<h3>6.2. Mô hình doanh thu (định hướng, chưa áp dụng)</h3>
+<p><b>Giai đoạn 1 (B2B):</b> cấp phép theo năm cho trường THPT và sở giáo dục, cài lên màn hình tương tác sẵn có. <b>Giai đoạn 2 (B2C):</b> gói gia sư ôn thi tại nhà. Hiện sản phẩm <b>chưa thu phí và chưa có doanh thu</b>. Mức giá cấp phép: chưa xác định. Mục tiêu biên lợi nhuận gộp trên 85% là <b>dự kiến</b>, dựa trên chi phí AI đo được ở mức khoảng 350 đồng mỗi tiết, chưa kiểm chứng bằng doanh thu thật.</p>
+
+<h2><span class="n">7</span>Kế hoạch tài chính</h2>
+<p>Sản phẩm đang ở giai đoạn trước doanh thu. Chỉ có một số liệu chi phí đã đo: chi phí gọi AI khoảng 0,014 USD (≈ 350 đồng) cho một tiết 45 phút với trung bình 4,3 lần gọi. Các chi phí khác (máy chủ, nhân sự, hỗ trợ trường) nhóm chưa ước tính. Nhóm không tuyên bố đã có lợi nhuận. Nguồn lực cần cho giai đoạn tiếp theo: kinh phí chạy máy chủ và gọi AI cho đợt thí điểm lớn hơn, hỗ trợ cố vấn và sự kết nối với các trường THPT tại Hà Nội.</p>
+
+<h2><span class="n">8</span>Khả năng ứng dụng và tác động</h2>
+<ul>
+  <li><b>Giáo dục:</b> mô phỏng dựng ngay trong tiết, thời gian soạn giảm khoảng 89%; học sinh làm tốt hơn ở các dạng câu hỏi đòi hỏi lập luận (Đúng/Sai +25,8 điểm phần trăm, trả lời ngắn +22,5).</li>
+  <li><b>Kinh tế:</b> chi phí AI khoảng 350 đồng mỗi tiết, chạy trên thiết bị trường đã có, nên trường không phải đầu tư phần cứng mới.</li>
+  <li><b>Xã hội:</b> giữ vai trò tư duy cho học sinh trong thời đại AI giải hộ; giúp trường ngoài trung tâm có công cụ mô phỏng mà không cần đội ngũ làm học liệu.</li>
+  <li><b>Nhân rộng cho Hà Nội và cả nước:</b> thêm một chủ đề mới chỉ là thêm một mẫu dữ liệu vào thư viện; bám Chương trình GDPT 2018.</li>
+</ul>
+<figure><img src="../01_FILE_UPLOAD/Hinh_anh_san_pham/05_Ban_do_nhiet_diem_nghen.jpg"><figcaption>Hình 6. Bản đồ nhiệt điểm nghẽn của lớp, đẩy bài khắc phục lên bảng bằng một chạm.</figcaption></figure>
+
+<h2><span class="n">9</span>Giới hạn, rủi ro và hướng phát triển</h2>
+<h3>9.1. Giới hạn và rủi ro</h3>
+<ul>
+  <li><b>Kiểm chứng còn hạn chế:</b> thí điểm 4 tuần, hai chủ đề, 86 học sinh, chưa có đánh giá độc lập; chưa có khách hàng trả phí.</li>
+  <li><b>Phụ thuộc nhà cung cấp mô hình:</b> việc đọc nét khoanh hiện dùng Google Gemini Flash; thay đổi giá hoặc hạn mức ảnh hưởng chi phí. Phần lớn mô phỏng và gia sư vẫn chạy khi không gọi AI (81,4% phiên gia sư không tốn token).</li>
+  <li><b>Nhận dạng chữ viết tay:</b> có thể nhầm ký tự; đã có cơ chế chạm để đổi, nhưng chất lượng vẫn phụ thuộc nét viết.</li>
+  <li><b>Bộ chặn không tuyệt đối:</b> đã chặn 98,1% lượt xin đáp án; học sinh có thể tìm cách lách mới, nhóm tiếp tục đo và vá.</li>
+  <li><b>Kho gợi mở:</b> phương án so khớp ngữ nghĩa bằng vector đang có phương án dự phòng so khớp từ khóa; cần mở rộng thư viện dạng bài.</li>
+  <li><b>Dữ liệu học sinh:</b> cần rà soát phân quyền, lưu trữ và sự đồng ý của phụ huynh trước khi mở rộng.</li>
+</ul>
+<h3>9.2. Hướng phát triển</h3>
+<ul>
+  <li><b>Ngắn hạn:</b> mở rộng thí điểm sang toàn khối 10–12 và thêm các trường THPT ở Hà Nội; đánh giá độc lập chất lượng học tập.</li>
+  <li><b>Trung hạn:</b> mở rộng thư viện chủ đề KHTN theo Chương trình GDPT 2018; bộ cài đặt và tài liệu hướng dẫn cho giáo viên.</li>
+  <li><b>Dài hạn:</b> chạy mô hình tại trường để không phụ thuộc mạng; gói gia sư ôn thi tại nhà.</li>
+</ul>
+
+<h2><span class="n">10</span>Đội ngũ và phân công</h2>
+<p>Nhóm IT-Hust gồm 4 sinh viên Đại học Bách khoa Hà Nội (Bảng B). Người đại diện: Phan Trọng Đạt.</p>
+<table style="page-break-inside:auto">
+  <tr><th style="width:17%">Thành viên</th><th style="width:25%">Lớp, mã số sinh viên, đơn vị đào tạo</th><th>Vai trò và công việc trực tiếp phụ trách</th></tr>
+  <tr><td><b>Phan Trọng Đạt</b></td><td>KHMT-05 – K68 · MSSV 20235033<br>Trường CNTT&amp;TT</td><td><b>Trưởng nhóm; kiến trúc AI và kiểm tra đại số.</b><ul style="margin:3pt 0 0;padding-left:13pt"><li>Định hình kiến trúc "AI là trình biên dịch" và điều phối nhóm.</li><li>Đường ống đọc nét khoanh: nhận dạng công thức viết tay và cơ chế chạm để đổi ký tự (Tap &amp; Swap).</li><li>Tầng kiểm tra SymPy (đại số, thứ nguyên) và bộ chặn xin đáp án của gia sư Socratic.</li><li>Điều phối thực nghiệm sư phạm (N = 86).</li></ul></td></tr>
+  <tr><td><b>Lê Trường Giang</b></td><td>KTMT-04 (IT2-04) – K68 · MSSV 20235317<br>Trường CNTT&amp;TT</td><td><b>Phụ trách bộ máy mô phỏng và đồ họa 3D.</b><ul style="margin:3pt 0 0;padding-left:13pt"><li>Bốn bộ máy mô phỏng tất định chạy 60 khung hình/giây: đồ thị và giải tích, động lực học, hóa học, sinh học.</li><li>Bộ giải Runge-Kutta bậc 4 cho không gian pha, giản đồ vector quay Fresnel của mạch RLC.</li><li>Mô hình phân tử và ADN 3D; gỡ lỗi thị giác hai chiều (đồng bộ giữa đại số và hình).</li></ul></td></tr>
+  <tr><td><b>Đỗ Đình Vũ</b></td><td>KTMT-04 – K68 · MSSV 20235460<br>Trường CNTT&amp;TT</td><td><b>Phụ trách bảng viết và tương tác.</b><ul style="margin:3pt 0 0;padding-left:13pt"><li>Lõi bảng viết độ trễ thấp (dưới 16 ms mỗi nét, không gọi AI) và bộ nhận dạng hình học $1 Unistroke chạy ngoại tuyến.</li><li>Magic Lasso: lọc nét theo thuật toán điểm-trong-đa-giác và xuất ảnh vùng khoanh nền trắng dưới 8 KB.</li><li>Giao diện sáng thống nhất và thanh trượt neo đáy, vệt mờ so sánh.</li></ul></td></tr>
+  <tr><td><b>Phạm Ngọc Tuyên</b></td><td>KTMT-04 – K68 · MSSV 20235455<br>Trường CNTT&amp;TT</td><td><b>Phụ trách dữ liệu, kho gợi mở và phân tích học tập.</b><ul style="margin:3pt 0 0;padding-left:13pt"><li>Kho câu hỏi gợi mở (ChromaDB, có phương án dự phòng so khớp từ khóa), góp phần để 81,4% phiên gia sư không tốn token.</li><li>Vở ghi QR đóng gói bài giảng và mô phỏng (dưới 5 KB).</li><li>Bản đồ nhiệt điểm nghẽn cho giáo viên và chỉ số kiên trì của học sinh.</li></ul></td></tr>
+</table>
+<p><b>Người hướng dẫn: Phùng Văn Kiệm</b>, giáo viên Tin học, Trường THPT Chuyên Vĩnh Phúc. Người hướng dẫn là cố vấn, không tính là thành viên dự thi.</p>
+<h3>Kế hoạch 3 tháng tới (11/2026 – 01/2027)</h3>
+<p>Kế hoạch dưới đây là <b>dự kiến</b>, bám các giới hạn đã nêu ở mục 9. Mỗi việc có người phụ trách theo phân công ở trên và có sản phẩm kiểm tra được.</p>
+<table style="page-break-inside:auto">
+  <tr><th style="width:15%">Giai đoạn</th><th style="width:25%">Mục tiêu</th><th>Việc chính (người phụ trách)</th><th style="width:24%">Sản phẩm kiểm tra được</th></tr>
+  <tr><td><b>Tháng 11/2026</b><br>Củng cố nền tảng</td><td>Khép các giới hạn kỹ thuật và lưu đủ bằng chứng</td><td><ul style="margin:0;padding-left:12pt"><li>Thay phương án dự phòng so khớp từ khóa của kho gợi mở bằng so khớp vector ChromaDB; đo lại tỷ lệ phiên không tốn token (Tuyên).</li><li>Đóng gói triển khai bằng Docker để một trường cài được bằng vài lệnh (Tuyên).</li><li>Chạy lại kiểm thử, sửa tài liệu cho khớp thực tế, lưu bằng chứng gốc đợt thí điểm 86 học sinh (Đạt).</li><li>Nếu vào chung kết: bản cắt video 3 phút, luyện hỏi đáp (cả nhóm).</li></ul></td><td>Bản cài đặt chạy trên máy sạch; báo cáo đo lại tỷ lệ phiên không tốn token; thư mục bằng chứng thí điểm</td></tr>
+  <tr><td><b>Tháng 12/2026</b><br>Mở rộng nội dung và thử ở nơi mới</td><td>Thêm chủ đề, đo độ chính xác nhận dạng, thử ở trường thứ hai</td><td><ul style="margin:0;padding-left:12pt"><li>Bổ sung chủ đề Toán 12 và Sinh 12 còn thiếu theo Chương trình GDPT 2018 và kiểm tra mô phỏng với giáo viên bộ môn (Giang).</li><li>Thu mẫu nét viết tay thật của giáo viên để đo tỷ lệ nhận nhầm ký tự, cải thiện cơ chế chạm để đổi, thử trên màn hình tương tác thật (Vũ).</li><li>Thử sản phẩm tại ít nhất một trường THPT khác; ưu tiên một trường ở Hà Nội (cả nhóm, nhờ người hướng dẫn kết nối).</li><li>Làm bộ khảo sát giáo viên và học sinh có cấu trúc, đưa kết quả lên bản đồ nhiệt (Tuyên).</li></ul></td><td>Danh sách chủ đề mới; bảng tỷ lệ nhận nhầm trước và sau; phản hồi từ trường thứ hai</td></tr>
+  <tr><td><b>Tháng 01/2027</b><br>Đánh giá và chuẩn bị phát triển</td><td>Có bằng chứng thứ hai và đánh giá bên ngoài</td><td><ul style="margin:0;padding-left:12pt"><li>Thiết kế và chạy đợt thí điểm thứ hai có nhóm đối chứng, dùng cùng thang đo để so sánh với đợt 1 (Đạt, phối hợp người hướng dẫn).</li><li>Nhờ giảng viên hoặc chuyên gia đánh giá độc lập chất lượng mô phỏng và gợi mở (cả nhóm).</li><li>Soạn tài liệu và video hướng dẫn cho giáo viên (Giang, Vũ).</li><li>Rà soát quyền riêng tư dữ liệu học sinh, mẫu đồng ý của phụ huynh; ước tính chi phí vận hành và chốt phương án cấp phép (Tuyên, Đạt).</li></ul></td><td>Báo cáo đợt 2; gói tài liệu hướng dẫn; bản ước tính chi phí và phương án cấp phép</td></tr>
+</table>
+<p style="font-size:10pt;color:#52525b">Rủi ro chính: lịch của trường thí điểm, hạn mức và giá của dịch vụ AI (Gemini), thời gian của sinh viên vào kỳ thi. Nhóm ưu tiên giữ chất lượng các việc của tháng 11 trước khi mở rộng.</p>
+
+<h2><span class="n">11</span>Kê khai việc sử dụng công cụ trí tuệ nhân tạo</h2>
+<p><b>Có sử dụng.</b></p>
+<ul>
+  <li><b>Trong sản phẩm:</b> Google Gemini Flash đọc nét chữ được khoanh và sinh dữ liệu mô phỏng, câu hỏi gợi mở; SymPy kiểm tra đại số và thứ nguyên; bộ nhận dạng nét $1 Unistroke chạy ngoại tuyến.</li>
+  <li><b>Trong quá trình phát triển và làm hồ sơ:</b> trợ lý lập trình AI (Claude Code) hỗ trợ viết mã, dựng slide, poster, video và soạn tài liệu hồ sơ.</li>
+  <li><b>Phần do thí sinh trực tiếp thực hiện:</b> Đạt: kiến trúc AI, đường ống đọc nét khoanh, tầng kiểm tra SymPy, bộ chặn xin đáp án. Giang: bốn bộ máy mô phỏng 60 FPS, bộ giải RK4, mô hình 3D, gỡ lỗi thị giác. Vũ: bảng viết độ trễ thấp, nhận dạng nét, Magic Lasso, giao diện. Tuyên: kho gợi mở, vở ghi QR, bản đồ nhiệt. Nhóm quyết định kiến trúc, thiết kế, kiểm thử và chịu trách nhiệm kết quả cuối cùng; công cụ AI chỉ hỗ trợ soạn mã và tài liệu.</li>
+  <li><b>Nguồn dữ liệu và tài liệu:</b> Chương trình GDPT 2018, cấu trúc đề thi tốt nghiệp THPT từ 2025, số liệu thí điểm 86 học sinh tại Trường THPT Chuyên Vĩnh Phúc (nêu ở mục 5).</li>
+</ul>
+
+</body>
+</html>

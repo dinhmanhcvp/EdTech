@@ -1,0 +1,208 @@
+1
+00:00:08,200 --> 00:00:18,030
+Theo FAO, năm 2023 thế giới mất 25,4 % rau
+quả sau thu hoạch.
+
+2
+00:00:18,430 --> 00:00:26,346
+Trong kho mát, một sọt xoài dập có thể lên
+men rồi lây ra cả pallet, dù nhiệt độ kho
+
+3
+00:00:26,346 --> 00:00:27,854
+vẫn bình thường.
+
+4
+00:00:28,254 --> 00:00:36,432
+Nhóm em khảo sát mười tám đơn vị: mười lăm
+nơi vẫn kiểm tra bằng mắt và mũi, tức là
+
+5
+00:00:36,432 --> 00:00:38,895
+chỉ thấy khi quả đã thối.
+
+6
+00:00:39,295 --> 00:00:47,005
+Nhìn và ngửi thì muộn, đo nhiệt ẩm thì
+không thấy lên men, máy đo khí cầm tay thì
+
+7
+00:00:47,005 --> 00:00:48,719
+phải đo từng điểm.
+
+8
+00:00:49,119 --> 00:00:56,922
+Chưa có cách nào vừa đo liên tục, vừa thấy
+lên men, vừa hợp túi tiền hợp tác xã.
+
+9
+00:00:57,322 --> 00:01:08,164
+Mục tiêu của nhóm em: phân loại đúng từ 85
+%, cảnh báo giả không quá 10 %, báo sớm
+
+10
+00:01:08,164 --> 00:01:11,205
+hơn mắt ít nhất 12 giờ.
+
+11
+00:01:11,605 --> 00:01:19,305
+Quả lên men tỏa ra hơi cồn. Cảm biến khí
+bán dẫn giống một chiếc mũi: gặp hơi cồn,
+
+12
+00:01:19,305 --> 00:01:21,841
+điện trở của nó giảm xuống.
+
+13
+00:01:22,241 --> 00:01:30,027
+Một cảm biến dễ nhầm, nên nhóm em ghép hai
+cảm biến khí với cảm biến nhiệt ẩm, rồi để
+
+14
+00:01:30,027 --> 00:01:33,692
+Random Forest nhận dạng cả mẫu tín hiệu.
+
+15
+00:01:34,092 --> 00:01:43,100
+Thí nghiệm có ba đợt, mỗi đợt ba buồng:
+quả lành, quả bị xước và quả nhiễm nấm, đo
+
+16
+00:01:43,100 --> 00:01:47,165
+ba mươi phút một lần, được 4.500 mẫu.
+
+17
+00:01:47,565 --> 00:01:54,962
+Mô hình học trên hai đợt đầu, rồi kiểm tra
+trên đợt ba mà nó chưa từng thấy.
+
+18
+00:01:55,362 --> 00:02:02,876
+Các Node gắn nam châm trên thành pallet,
+gửi dữ liệu qua sóng LoRa về một trạm đặt
+
+19
+00:02:02,876 --> 00:02:03,976
+gần cửa kho.
+
+20
+00:02:04,376 --> 00:02:12,224
+Mỗi Node có hai cảm biến khí, cảm biến
+nhiệt ẩm, vi điều khiển ESP32 và pin. Màng
+
+21
+00:02:12,224 --> 00:02:15,422
+chống nước giữ cảm biến luôn khô.
+
+22
+00:02:15,822 --> 00:02:23,639
+Trạm tô màu từng phân khu: xanh là ổn
+định, vàng cần theo dõi, đỏ là nguy cơ lên
+
+23
+00:02:23,639 --> 00:02:24,030
+men.
+
+24
+00:02:24,430 --> 00:02:33,134
+Đây là dữ liệu thật của đợt ba phát lại
+trên trạm: buồng nhiễm nấm và buồng xước
+
+25
+00:02:33,134 --> 00:02:38,030
+lần lượt chuyển đỏ, buồng đối chứng vẫn
+xanh.
+
+26
+00:02:38,430 --> 00:02:46,350
+Bản đầu sấy cảm biến liên tục nên pin cạn
+chưa tới một ngày. Nhóm em chuyển sang ba
+
+27
+00:02:46,350 --> 00:02:49,881
+mươi phút đo một lần rồi cho ngủ sâu.
+
+28
+00:02:50,281 --> 00:02:57,897
+Hơi nước còn đọng lên cảm biến làm tín
+hiệu tụt giả, nên nhóm em thêm màng chống
+
+29
+00:02:57,897 --> 00:02:59,705
+nước ở cửa lấy khí.
+
+30
+00:03:00,105 --> 00:03:08,831
+Bản hai còn báo đỏ giả theo chu kỳ, nghi
+do kho xả đá, nên nhóm em đưa nhiệt độ và
+
+31
+00:03:08,831 --> 00:03:10,746
+độ ẩm vào mô hình.
+
+32
+00:03:11,146 --> 00:03:16,922
+Nguyên mẫu hiện có một trạm và ba Node do
+nhóm em tự lắp.
+
+33
+00:03:17,322 --> 00:03:29,939
+Trên đợt kiểm tra, mô hình phân loại đúng
+87,5 %, nhận ra 498 trên 500 mẫu đang lên
+
+34
+00:03:29,939 --> 00:03:34,043
+men, và cảnh báo giả 6,2 %.
+
+35
+00:03:34,443 --> 00:03:42,702
+Khi quả lên men, tín hiệu của cả hai cảm
+biến cùng tụt xuống khoảng 0,3, còn quả
+
+36
+00:03:42,702 --> 00:03:45,489
+lành chỉ giảm nhẹ khi chín.
+
+37
+00:03:45,889 --> 00:03:54,159
+Ở cả sáu chuỗi quả hỏng, mức đỏ xuất hiện
+trước khi thấy vết thối trung bình khoảng
+
+38
+00:03:54,159 --> 00:03:57,746
+26 giờ, đủ để tách sọt trong một ca.
+
+39
+00:03:58,146 --> 00:04:04,327
+Một Node chạy hơn ba tuần mới phải sạc, đủ
+một chu kỳ lưu kho.
+
+40
+00:04:04,727 --> 00:04:13,125
+Hạn chế lớn nhất: lớp chín sinh lý mới
+nhận đúng 45 %, và mới thử trong phòng thí
+
+41
+00:04:13,125 --> 00:04:18,205
+nghiệm. Tiếp theo nhóm em sẽ thử tại hai
+kho mát.
+
+42
+00:04:18,605 --> 00:04:28,751
+Gói một trạm, tám Node giá 22 triệu đồng,
+trong mức chi của 13 trên 18 đơn vị khảo
+
+43
+00:04:28,751 --> 00:04:29,246
+sát.
+
+44
+00:04:29,646 --> 00:04:38,564
+Mũi điện tử giá thấp của nhóm em báo lên
+men sớm hơn mắt thường khoảng 26 giờ và
+
+45
+00:04:38,564 --> 00:04:46,368
+phân loại đúng 87,5 %, giúp kho tách sọt
+hỏng trước khi lây cả pallet.
+

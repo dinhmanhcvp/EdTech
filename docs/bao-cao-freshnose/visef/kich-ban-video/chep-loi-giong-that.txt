@@ -1,0 +1,52 @@
+=== 1.m4a
+[   0.27 ->    3.73] Các phương pháp kiểm tra hiện nay vẫn tồn tại những hạn chế nhất định,
+[   3.93 ->    7.67] quan sát bằng mắt hay người trực tiếp thường khó phát hiện hư hỏng ở gia đoạn sớm,
+[   7.71 ->   13.19] trong khi đó, nhiệt độ và độ ẩm chỉ phản ánh điều kiện môi trường chưa đủ để xác định tình trạng layman của quả.
+[  13.59 ->   17.19] Mày đau khí cầm tay cũng đòi hỏi người sử dụng phải kiểm tra từng vị trí dương biệt.
+[  17.69 ->   20.99] Rốt phát từ những hạn chế đó, nhà chục nên phát triển Fresno AI,
+[  20.99 ->   27.49] Hệ thống mối điện tử với chi phí thấp có khả năng giám sát liên tục và cảnh báo sứa nguy cơ layman của giao của quả sau thu hoành.
+[  28.05 ->   33.21] Về nguyên lý, khi giao quả bắt đầu layman, các hợp chất bay hơi, trong đó có cồn, sẽ thay đổi.
+[  33.61 ->   38.13] Hệ thống sử dụng hai cảm biến khí kết hợp với cảm biến nhiệt độ và độ ẩm để thu thập giữ liệu,
+[  38.45 ->   43.39] sau đó ứng dụng thuật tán run đến forest nhằm nhận diện đặc trưng tín hiệu và phân loại trạng thái của quả.
+[  43.39 ->   49.03] Thông qua đó, nhóm đả ra ba mục tiêu, độ chính xác phân loại đạt ít nhất 85%,
+[  49.03 ->   54.53] tỷ lệ cảnh báo giả không quá 10% và thời gian phát hiện sớm hơn bằng mắt thường ít nhất 12 giờ.
+=== 2.m4a
+[   0.66 ->    5.64] Trong quá trình nghiên cứu, nhằm không chỉ tập trung hoàn thiện nguyên lý hoạt động mà có liên tục thử nghiệm
+[   5.64 ->    7.74] để khắc phục những vấn đề phát sinh từ thực tế.
+[   8.32 ->   12.00] Ở phía bản đầu tiên, các cảm biến phở hạt động liên tục khiến pin nhanh chóng cạn,
+[  12.40 ->   13.86] chưa đầy một ngày đã cần sặc lại.
+[  14.22 ->   17.54] Để cải thiện, nhóm chuyển sang cơ chế đo định kỳ 30 phút một lần,
+[  17.90 ->   20.36] kết hợp chế độ ngủ sâu nhằm giả mức tiêu thụ năng lượng.
+[  20.92 ->   23.84] Một vấn đề khác xuất hiện khi hơi nức ngưng tụ trên cảm biến,
+[  23.84 ->   27.56] làm tín hiệu đó bị thay đổi và có nguy cơ gây ảnh hợp cảnh báo sai.
+[  28.14 ->   31.90] Nhóm đáp bổ sung mang chung nước tại cửa lây khí để hạn chế ảnh hưởng có độc ẩm.
+[  32.44 ->   36.24] Ngoài ra, thiết bị tùng ghi nhận hiện tượng cảnh báo đỏ giả theo Chu Kỳ,
+[  36.32 ->   38.72] được nghi ngờ có liên quan đến quá trình xảy đá của kho.
+[  39.18 ->   43.20] Vì vậy, nhóm tiếp tục bổ sung giữ liệu về nhiệt độ và độc ẩm và môi hình nhận ra
+[  43.20 ->   45.34] để cải thiện khả năng phân biệt tín hiệu.
+[  45.86 ->   49.60] Sau nhiều lần điều chỉnh, nguyên mẫu hiện tại đã hoàn thiện với một chạm trung tâm
+[  49.60 ->   51.78] và ba nút cảm biến do chính nhóm tự lấp dắt.
+=== 2.2.m4a
+[   0.56 ->    5.60] Trong quá trình nhiên cứu, nhóm không chỉ tập trung hoàn thiện nguyên lý hoạt động mà có liên tục thử nghiệm
+[   5.60 ->    7.58] để khóc phục những vấn đề phát sinh từ thực tế.
+[   8.14 ->   13.54] Ở phía bản đầu tiên, các cảm biến phò động liên tục khiến pin nhanh chóng cạn chưa đầy một ngày đã cần sạc lại.
+[  13.88 ->   20.22] Để cải thiện, nhóm chuyển sang cơ chế đau định kỳ 30 phút một lần kết hợp chế độ ngủ sâu nhằm giá mức tiêu thụ năng lượng.
+[  20.78 ->   26.88] Một vấn đề khắc xuất hiện khi hơn nước ngưng tụ trên cảm biến làm tín hiệu đo bị thay đổi và có nguy cơ gây cảnh báo sai,
+[  26.88 ->   31.06] nhóm đáp bố xung màn chống nước tại cửa lây khí để hạn chế ảnh hưởng của độ ẩm.
+[  31.60 ->   37.68] Ngoài ra, thiết bị từng khi nhận hiện tượng cảnh báo đỏ giả theo Chuky được nghi ngờ có liên quan đến quá trình xả đá của kho.
+[  38.12 ->   44.02] Vì vậy, nhóm tiếp tục bộ xung dư liệu về nhiệt độ và độ ẩm và mô hình nhận dạng để cải thiện khả năng phân biệt tín hiệu.
+[  44.48 ->   50.70] Sau nhiều lần điều chỉnh, nguyên máu hiện tại đã hoàn thiện với một trạng trung tâm và ba nốt cả biến do chính nhóm tự lấp giáp.
+=== 3.m4a
+[   0.75 ->    5.09] Bên cạnh những các quả đạt được, nhóm cũng thẳng thắng nhìn nhận một số hạn chế của sản phẩm.
+[   5.49 ->    8.47] Khả năng nhận diện nhóm quả chính sinh lý hiện mới đạt 45%
+[   8.47 ->   12.25] Tồng thời hệ thống vẫn ta trong giai đoạn kiểm trứng ở quy mô phòng thí nghiệm.
+[  12.63 ->   16.49] Trong giai đoạn tiếp theo, nhóm dự kiếm mở rộng thử nghiệm tại 2 khó mát thực tế
+[  16.49 ->   20.95] qua đó đánh giá đô ổn định và khả năng thích ứng của thiết bị trong điều kiện phận hành thực tế.
+[  21.57 ->   27.47] Về chi phí, phương án triển khai của 1 trạng trung tâm và 8 nóc cảm biến còn giá dự kiến 22 triệu đồng
+[  27.47 ->   31.99] mức chi phí này nằm trong khả năng đồ tư của 13 trên 18 đơn vị tham gia khảo sát.
+[  32.83 ->   37.21] Với độ chính xác 87,5% cùng khả năng cảnh báo sớm chung bình 26 giờ,
+[  37.65 ->   42.65] Fresno AI không chỉ hướng tới việc ứng dụ công nghệ và bảo quản nâu sản mà còn mong muốn mang đến
+[  42.65 ->   46.49] một giải pháp thiết thực giúp ngoài quản lý kho chủ động kiểm soát nguy cơ ưu hỏng,
+[  46.85 ->   50.39] giảm theo thất thoát và nâng cao hiệu quả bảo quản rau củ quả sau thu hoạch.
+=== 4.m4a
+[   0.40 ->    4.08] Fresh No AI, người thấy vi khí, giữ chọn vị tươi.

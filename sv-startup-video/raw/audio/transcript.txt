@@ -1,0 +1,22 @@
+﻿=== C:\Users\Admin\Desktop\AI\Edtech\sv-startup-video\raw\audio\11-Lam.m4a
+[   0.00 ->   13.00] Nơi hành trình tự học tiếp tục về giáo sự ảo socolatic, thay vì cho sân đậm án, hệ thống khoán lại các lối tắt, mở ra các công cụ trực quan và đặt câu hỏi vợ để học sinh tự mình tư duy.
+=== C:\Users\Admin\Desktop\AI\Edtech\sv-startup-video\raw\audio\13-SonCVP.m4a
+[   0.21 ->    2.21] Đa, hai, một.
+[   2.21 ->    5.97] Thất quả, nhóm thực nghiệm cao hơn lớp đôi chứng không vào 8-5 điểm
+[   5.97 ->    8.97] đến bọn đều đạn ở cả ba mô huyền trường học.
+=== C:\Users\Admin\Desktop\AI\Edtech\sv-startup-video\raw\audio\15-Nam.m4a
+[   0.91 ->    2.91] Bà này, 3, 2, 1.
+[   2.91 ->    8.41] Có tới 81,4% lượt tự học được xử lý cục bộ, không cần gọi đám ơi.
+[   8.41 ->   17.41] Chi phí AI tối đa chỉ 350 đồng môi tiết, đảm bảo biên lợi nhuận gột 89,5% và hòa vốn ngay vào tháng thứ 7.
+=== C:\Users\Admin\Desktop\AI\Edtech\sv-startup-video\raw\audio\7-SonHV.m4a
+[   1.04 ->   10.04] Giáo viên chỉ cần khoanh vùng, AI sẽ dịch ngay nét phần tính thành mô hình mô phòng triển động thực tế cho 4 môn, toán, lý, hóa, sinh.
+=== C:\Users\Admin\Desktop\AI\Edtech\sv-startup-video\raw\audio\8-Lam.m4a
+[   1.94 ->    6.18] Với môn toán, các phương trình được trực quan hóa thành công gian ba đe sinh động.
+[   6.18 ->   11.94] Với môn lý, hiện tượng con lắc đơn được mô phỏng cùng các thông số, thay đổi theo thế gian thực.
+[  11.94 ->   19.94] Ê ai còn hô trợ chấm bài, kiểm tra tứng bước và gọi ý dương gác giải, giúp giáo viên sẵn giải, hiệu quả hơn.
+[  19.94 ->   29.34] Ai còn hô trợ chấm bài, kiểm tra tứng bước và gọi ý các phương gác.
+[  30.34 ->   47.94] Kiểm tra, kiểm tra tứng bước, kiểm tra tứng bước và gọi ý phương pháp giải, giúp giáo viên giải, hiệu quả hơn.
+[  47.94 ->   81.18] Ê ai còn hô trợ chấm bài, kiểm tra tứng bước và gọi ý phương pháp giải, giúp giáo viên sẵn giải, hiệu quả hơn.
+[ 130.63 ->  133.63] để giải đáp thăng mắc ngay trên bảng.
+=== C:\Users\Admin\Desktop\AI\Edtech\sv-startup-video\raw\audio\9-Nhat.m4a
+[   1.10 ->    6.86] Không nhưng vậy, học sinh còn có thể quên máu và điện thoại để kết nối và tương tác của bệnh giản tại nhà.

@@ -1,0 +1,11 @@
+{
+  "name": "Bảng Học Thông Minh",
+  "short_name": "Bảng Toán",
+  "lang": "vi",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#ffffff",
+  "theme_color": "#7560bc"
+}

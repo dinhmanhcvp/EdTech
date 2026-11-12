@@ -1,0 +1,192 @@
+1
+00:00:09,000 --> 00:00:15,883
+Hàng nghìn phòng học có màn hình tương tác
+75–86 inch, nhưng phần lớn chỉ dùng để
+
+2
+00:00:15,883 --> 00:00:16,903
+chiếu slide.
+
+3
+00:00:17,203 --> 00:00:25,001
+Nhóm em khảo sát 12 trường THPT. Phần mềm
+mô phỏng hiện có nằm trong khung chữ nhật
+
+4
+00:00:25,001 --> 00:00:27,538
+đặc, che mất chữ thầy viết.
+
+5
+00:00:27,838 --> 00:00:33,714
+Đáp số hiện sẵn, nên học sinh chỉ ngồi xem
+mà không phải nghĩ.
+
+6
+00:00:34,014 --> 00:00:42,081
+PhET và GeoGebra rất tốt, nhưng làm cho
+một học sinh một máy, và chưa nhận nét
+
+7
+00:00:42,081 --> 00:00:43,943
+viết tay của thầy.
+
+8
+00:00:44,243 --> 00:00:52,686
+Nhóm em chưa thấy công cụ nào vừa nổi trên
+mặt bảng, vừa hiểu nét viết tay, vừa chạy
+
+9
+00:00:52,686 --> 00:00:56,605
+khi mạng yếu, vừa không đưa sẵn đáp số.
+
+10
+00:00:56,905 --> 00:01:05,808
+Mục tiêu: xử lý tại chỗ hơn 80 % biểu
+thức, và học sinh học tốt hơn có ý nghĩa
+
+11
+00:01:05,808 --> 00:01:06,835
+thống kê.
+
+12
+00:01:07,135 --> 00:01:15,042
+Cách hoạt động giống một người phiên dịch.
+Máy tách nét viết thành công thức, dựng
+
+13
+00:01:15,042 --> 00:01:19,092
+cây cú pháp, rồi so với 40 mô hình có sẵn.
+
+14
+00:01:19,392 --> 00:01:26,925
+Công thức quen thì SymPy giải ngay trên
+máy. Công thức lạ mới hỏi mô hình ngôn
+
+15
+00:01:26,925 --> 00:01:31,754
+ngữ, và mô hình đó bị chặn, không được nói
+đáp số.
+
+16
+00:01:32,054 --> 00:01:42,811
+Trong 8 tuần, nhóm em thử trên 412 học
+sinh lớp 11: 208 em học với hệ thống, 204
+
+17
+00:01:42,811 --> 00:01:46,038
+em học theo cách thường.
+
+18
+00:01:46,338 --> 00:01:53,933
+Thầy cứ viết tay như mọi ngày. Viết công
+thức ném xiên, khoanh lại, và mô hình hiện
+
+19
+00:01:53,933 --> 00:01:56,038
+nổi ngay trên mặt bảng.
+
+20
+00:01:56,338 --> 00:02:03,038
+Kéo góc ném, tầm xa đổi tức thì, bảng
+không phải gọi lại AI.
+
+21
+00:02:03,338 --> 00:02:12,674
+Với mạch RLC, kéo tần số qua điểm cộng
+hưởng, dòng điện đạt cực đại thì một câu
+
+22
+00:02:12,674 --> 00:02:15,038
+hỏi gợi mở hiện lên.
+
+23
+00:02:15,338 --> 00:02:22,917
+Hóa học và sinh học cũng vậy: thêm xúc tác
+thì đỉnh năng lượng hoạt hóa hạ xuống, kéo
+
+24
+00:02:22,917 --> 00:02:26,484
+thanh trượt thì enzim tách hai mạch ADN.
+
+25
+00:02:31,784 --> 00:02:39,917
+Khi học sinh tự học ở nhà, ứng dụng không
+đưa đáp số, mà khóa mờ các bước sau, mở
+
+26
+00:02:39,917 --> 00:02:42,930
+từng bước khi các em làm đúng.
+
+27
+00:02:43,230 --> 00:02:50,842
+Nếu làm sai, bốn công cụ trực quan cho các
+em thấy vì sao sai: cân bằng electron, đa
+
+28
+00:02:50,842 --> 00:02:54,376
+giác lực, tiếp tuyến và màng thẩm thấu.
+
+29
+00:02:54,676 --> 00:03:03,376
+Cuối tiết, bài giảng nén còn 1,8 MB, thay
+vì video 3 GB.
+
+30
+00:03:03,676 --> 00:03:11,978
+Tích phân bằng Euler thì sai số cộng dồn,
+quỹ đạo nở mãi, nên chọn Runge-Kutta
+
+31
+00:03:11,978 --> 00:03:18,470
+(RK4). Gán tọa độ tức thì thì giật, nên
+thêm lò xo giảm chấn.
+
+32
+00:03:18,770 --> 00:03:29,782
+Sau thực nghiệm, nhóm dùng hệ thống đạt
+7,32 điểm, nhóm học theo cách thường đạt
+
+33
+00:03:29,782 --> 00:03:30,470
+6,49.
+
+34
+00:03:30,770 --> 00:03:41,916
+Chênh lệch có ý nghĩa thống kê: p < 0,001,
+mức ảnh hưởng d = 0,51 (trung bình).
+
+35
+00:03:42,216 --> 00:03:51,916
+Phần Đúng/Sai: 66,4 % so với 51,4 %.
+
+36
+00:03:52,216 --> 00:04:04,116
+Về kỹ thuật, 81,3 % câu hỏi xử lý ngay
+trên máy, trong 12–25 ms, không tốn chi
+
+37
+00:04:04,116 --> 00:04:05,795
+phí gọi AI.
+
+38
+00:04:06,095 --> 00:04:15,795
+Vì phần lớn câu hỏi xử lý ngay trên máy,
+nơi mạng yếu vẫn dùng được.
+
+39
+00:04:16,095 --> 00:04:25,731
+Hạn chế: thử nghiệm mới ở lớp 11, hai môn
+Vật lý và Hóa học. Tiếp theo: mở rộng lên
+
+40
+00:04:25,731 --> 00:04:27,241
+100 mô phỏng.
+
+41
+00:04:27,541 --> 00:04:38,956
+Socratic Vision Board: 7,32 điểm so với
+6,49, và 81,3 % câu hỏi xử lý ngay trên
+
+42
+00:04:38,956 --> 00:04:43,146
+máy, mà không đưa sẵn đáp số.

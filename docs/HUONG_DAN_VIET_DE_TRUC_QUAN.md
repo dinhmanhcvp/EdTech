@@ -261,6 +261,18 @@ Không qua hologram: các nét tay thô được **nắn thẳng và nối lại
 - **Viết:** `chuyển động tròn đều` · `lực hướng tâm` · `gia tốc hướng tâm` · `vệ tinh nhân tạo`
 - **Chỉnh:** chọn mô hình; kéo thanh trượt Bán kính quỹ đạo; Chu kì quay; Khối lượng vật; Độ cao vệ tinh; nút Chạy/Dừng và thanh thời gian.
 
+### PHYS_EM_WAVE_3D — Sóng điện từ trong không gian: E vuông góc B vuông góc phương truyền
+- **Viết:** `sự lan truyền của sóng điện từ` · `sóng điện từ 3D` · `vectơ E vuông góc B` · `điện trường và từ trường biến thiên`
+- **Chỉnh:** kéo thanh trượt Bước sóng λ; Biên độ điện trường E₀; Xoay hình (ngang); Nhìn từ trên xuống; bật/tắt E, B và các mũi tên; nút Chạy/Dừng.
+
+### PHYS_EARTH_SEASONS — Trái Đất nghiêng 23,5°: ngày – đêm và các mùa
+- **Viết:** `Trái Đất nghiêng` · `ngày đêm và các mùa` · `độ dài ngày đêm` · `góc nghiêng của trục Trái Đất`
+- **Chỉnh:** kéo thanh trượt Ngày trong năm; Vĩ độ quan sát; Độ nghiêng trục (thử 0° để thấy không còn mùa); Xoay quỹ đạo.
+
+### PHYS_NEWTON_CRADLE — Con lắc Newton: bảo toàn động lượng và năng lượng
+- **Viết:** `quả lắc Newton` · `Newton cradle` · `các quả cầu treo va chạm` · `bộ quả cầu treo của Newton`
+- **Chỉnh:** kéo thanh trượt Số quả nâng lên; Góc nâng ban đầu; Chiều dài dây; Hao hụt năng lượng mỗi lần va chạm; Xoay hình; nút Chạy/Dừng.
+
 ### PHYS_SHM — Dao động điều hòa của con lắc lò xo
 - **Viết:** `con lắc lò xo` · `dao động tắt dần` · `cơ năng của dao động` · `li độ và vận tốc`
 - **Chỉnh:** kéo thanh trượt Biên độ A; Chu kì T; Pha ban đầu φ; Hệ số tắt dần; nút Chạy/Dừng và thanh thời gian.

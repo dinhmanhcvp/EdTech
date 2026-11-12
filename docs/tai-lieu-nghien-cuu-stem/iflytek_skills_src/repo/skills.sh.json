@@ -1,0 +1,47 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Voice & Speech",
+      "description": "Text-to-speech, voice cloning, and speech transcription powered by iFlytek.",
+      "skills": [
+        "iflytek-hyper-tts",
+        "iflytek-voiceclone-tts",
+        "iflytek-speed-transcription"
+      ]
+    },
+    {
+      "title": "Translation",
+      "description": "Machine translation for text and videos across multiple languages.",
+      "skills": [
+        "iflytek-translate",
+        "iflytek-video-translate"
+      ]
+    },
+    {
+      "title": "OCR & Vision",
+      "description": "OCR for invoices, PDFs, images, and general image understanding.",
+      "skills": [
+        "iflytek-ocr-invoice",
+        "iflytek-pdf-image-ocr",
+        "iflytek-image-understanding"
+      ]
+    },
+    {
+      "title": "Text & Document Intelligence",
+      "description": "Text proofreading and contract intelligence review.",
+      "skills": [
+        "iflytek-text-proofread",
+        "iflytek-contract-intelligence-review"
+      ]
+    },
+    {
+      "title": "Diagrams & Visualization",
+      "description": "Hand-drawn animated architecture and flow diagrams.",
+      "skills": [
+        "animated-sketch-diagram"
+      ]
+    }
+  ]
+}

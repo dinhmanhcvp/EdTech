@@ -1,0 +1,788 @@
+=== TRANG 1 ===
+      
+ 
+SỞ GIÁO DỤC VÀ ĐÀO TẠO PHÚ THỌ 
+CUỘC THI KHKT HỌC SINH TRUNG HỌC 
+ 
+ 
+ 
+ 
+BÁO CÁO 
+NGHIÊN CỨU KHOA HỌC 
+ 
+ 
+HỆ THỐNG BẢNG THÔNG MINH TÍCH HỢP AI  
+DỰA TRÊN HỌC SÂU VÀ MÔ PHỎNG TƯƠNG TÁC 3D  
+ 
+ 
+ 
+ 
+Lĩnh vực: 08 - Công nghệ thông tin 
+TIỂU BAN SỐ: 
+MÃ DỰ ÁN:  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Phú thọ, tháng 10/2026 
+
+
+=== TRANG 2 ===
+      
+MỤC LỤC 
+Nội dung 
+Trang 
+A. PHẦN CHUNG 
+1 
+1. Lý do chọn dự án 
+1 
+2. Ý nghĩa khoa học và thực tiễn  
+1 
+       2.1. Ý nghĩa khoa học 
+1 
+       2.2. Ý nghĩa thực tiễn 
+2 
+3. Mục tiêu nghiên cứu 
+2 
+       3.1. Mục tiêu chung 
+2 
+       3.2. Mục tiêu cụ thể 
+2 
+4. Giới hạn phạm vi nghiên cứu 
+2 
+5. Phương pháp nghiên cứu 
+2 
+6. Nội dung nghiên cứu 
+3 
+7. Những điểm mới của dự án 
+3 
+B. KẾT QUẢ VÀ THẢO LUẬN 
+3 
+1. TỔNG QUAN NGHIÊN CỨU 
+3 
+      1.1. Cơ sở lí thuyết 
+3 
+      1.2. Câu hỏi nghiên cứu 
+4 
+2. THIẾT KẾ HỆ THỐNG  
+4 
+      2.1. Kiến trúc hệ thống 
+4 
+      2.2. Các bước thực hiện 
+4 
+3. PHẦN CỨNG  
+4 
+      3.1. Cấu hình phần cứng 
+4 
+      3.2. An toàn và đạo đức 
+4 
+      3.3. Nguyên lý hoạt động 
+5 
+      3.4. Quy trình xử lý 
+5 
+      3.5. Lắp đặt  
+5 
+4. XÂY DỰNG WEB 
+5 
+      4.1. Mục tiêu kỹ thuật và ràng buộc thiết kế 
+5 
+      4.2. Mô hình dữ liệu bảng và vòng đời một nét viết 
+6 
+      4.3. Lõi bảng vẽ trên Canvas 
+6 
+      4.4. Lớp AI dùng chung và giao thức công cụ 
+6 
+      4.5. Máy chủ, phòng kiểm tra và bảo vệ dữ liệu 
+7 
+      4.6. Hạ tầng triển khai và quy trình phát hành 
+8 
+      4.7. Tinh chỉnh và đánh giá mô hình 
+8 
+5. KẾT QUẢ NGHIÊN CỨU 
+9 
+      5.1. Nhận diện nét viết thành hình học 
+9 
+      5.2. Gấp, xoay, cắt khối 
+9 
+      5.3. AI đọc từ trên bảng 
+9 
+      5.4. Đồ thị và đường tròn lượng giác 
+10 
+      5.5. AI đọc và giải phương trình 
+11 
+      5.6. Trợ giảng AI trong không gian bảng 
+11 
+      5.7. Thư viện mô hình 3D dùng chung cho các bộ môn 
+11 
+      5.8. AI soạn đề và phòng kiểm tra QR 
+12 
+6. KIỂM CHỨNG VÀ THẢO LUẬN 
+13 
+C. KẾT LUẬN KHOA HỌC 
+13 
+D. TÀI LIỆU THAM KHẢO 
+14 
+
+
+=== TRANG 3 ===
+1 
+A. PHẦN CHUNG 
+1. Lý do chọn dự án 
+Hình ảnh “phấn trắng bảng đen” từ lâu đã được xem là biểu tượng quen thuộc của 
+giáo dục truyền thống. Trong thực tế, giáo viên vẫn có thói quen viết bài trên lớp bằng 
+phấn. Thế nhưng, trong kỷ nguyên số, làm sao để vẫn giữ trọn cảm xúc giảng dạy tự nhiên 
+ấy? Thêm vào đó, giáo viên của bất kỳ bộ môn nào bước vào lớp cũng có sẵn mô hình 3D, 
+phòng thí nghiệm ảo và hệ thống AI hỗ trợ chuyên biệt cho từng môn học? 
+Hiện nay, bảng tương tác, màn hình tương tác… đã trở nên phổ biến hơn, song thực 
+tế giảng dạy ở trường học vẫn gặp năm rào cản: 
+Thứ nhất: nếu giáo viên sử dụng các phần mềm hỗ trợ môn học: giáo viên chỉ có thể 
+gõ phím, vẽ bằng chuột hoặc điều khiển nhiều phần mềm rời rạc thay vì viết và phác thảo 
+tự nhiên trên bảng. 
+Thứ hai: mỗi tiết học thuộc một môn khác nhau đòi hỏi công cụ đặc thù, đặc biệt là 
+ở một số môn học có nhu cầu quan sát mô hình 3D, phòng thí nghiệm phản ứng ảo và mô 
+phỏng thuật toán… nhưng một phòng học khó để trang bị hàng chục phần mềm bản quyền. 
+Thứ ba: mỗi lần chuyển công cụ, mạch dạy bị ngắt; nội dung bài giảng, bài kiểm tra 
+và kết quả học tập không liên thông với nhau. 
+Thứ tư: việc trang bị một hệ thống màn hình tương tác, bảng tương tác thay thế hoàn 
+toàn bảng phấn ở tất cả các lớp học là một vấn đề khó khăn, không phải trường học nào 
+cũng đủ khả năng, trong khi bảng phấn thì luôn sẵn. 
+Thứ năm: một mô hình AI đơn lẻ không thể xử lý đồng thời cả nét viết tay, công thức 
+toán học, hình vẽ không gian lẫn giao tiếp giọng nói trong lớp học. 
+Từ những lí do trên, nhóm tác giả đã triển khai dự án “Hệ thống bảng thông minh 
+tích hợp AI dựa trên học sâu và mô phỏng tương tác 3D”. Cách giải quyết là: giữ 
+nguyên bảng phấn và thêm một lớp cảm biến - một khung cảm ứng hồng ngoại gắn quanh 
+mặt bảng. Khi giáo viên viết phấn, khung gửi cặp toạ độ chạm về màn hình qua một dây 
+USB; phần mềm nối các điểm đó thành nét vector và hiển thị đồng thời trên màn hình. Nét 
+phấn trên bảng vì thế được hiển thị lên màn hình chính ngay khi viết. Không dùng camera, 
+không phụ thuộc ánh sáng phòng học và giáo viên không phải thay đổi thói quen lên lớp. 
+Từ nét số đó, hệ thống làm tiếp những việc mà viết phấn không làm được: nhận diện hình 
+phẳng và dựng khối 3D có số đo, gấp – xoay – cắt khối, vẽ đồ thị hàm số và đường tròn 
+lượng giác, giải phương trình theo từng bước, tra từ, mở thư viện mô hình 3D của 12 nhóm 
+môn, tạo đề kiểm tra bằng mã QR với việc chấm bài ở máy chủ.  
+Bên cạnh đó, việc xây dựng nhân vật trợ giảng ảo Live2D/3D điều khiển bằng văn 
+bản/giọng nói luôn sẵn sàng lắng nghe, giải đáp thắc mắc, sinh bài tập và tự động điều 
+khiển các công cụ trên bảng. Nhờ vậy, một chiếc bảng phấn bình thường trở thành bảng 
+học thông minh: giáo viên dạy như cũ, học sinh nhìn thấy nội dung số ngay trên bảng, AI 
+đóng vai trò trợ giảng có kiểm soát - mọi kết quả đều đối chiếu được với nét gốc. 
+2. Ý nghĩa khoa học và thực tiễn của đề tài  
+2.1. Ý nghĩa khoa học 
+- Đề tài đề xuất giải pháp số hóa dữ liệu thời gian thực trực tiếp từ nét viết phấn thủ công 
+trên bảng truyền thống thông qua khung cảm ứng. 
+- Áp dụng các mô hình học sâu để nhận dạng, trích xuất và phân tích nét viết phấn, chuyển 
+đổi chính xác ký tự, hình vẽ, công thức viết tay sang dữ liệu số. 
+- Giải quyết bài toán chuyển đổi tự động từ nét vẽ 2D phẳng sang mô hình tương tác 3D 
+đa chiều trên nền tảng web. 
+- Nghiên cứu, ứng dụng các mô hình xử lý ngôn ngữ tự nhiên và tạo nhân vật ảo có khả 
+năng tương tác tự động. 
+
+
+=== TRANG 4 ===
+2 
+2.2. Ý nghĩa thực tiễn 
+Tạo ra một hệ thống bảng dạy học thông minh: 
+- Nâng cao chất lượng dạy và học trực quan: học sinh dễ dàng hình dung các kiến thức 
+trừu tượng, tăng tính tương tác, sự hứng thú và chủ động tiếp thu kiến thức nhờ sự hỗ trợ 
+của nhân vật ảo AI. 
+- Tối ưu hóa công việc của giáo viên: tiết kiệm thời gian chuẩn bị bài giảng. 
+- Lưu trữ và khai thác tài nguyên bài giảng: toàn bộ nội dung ghi trên bảng được số 
+hóa và đồng bộ lên trang web theo thời gian thực, học sinh có thể xem lại bài giảng, tương 
+tác với các mô hình 3D và câu hỏi bài tập, hỗ trợ đắc lực cho việc tự học và học từ xa. 
+- Tính kinh tế và tính khả thi trong triển khai rộng rãi: không cần thay thế toàn bộ 
+bảng truyền thống bằng màn hình tương tác đắt tiền, giải pháp khung cảm ứng lắp thêm 
+giúp tận dụng hạ tầng bảng phấn sẵn có tại các trường học, làm giảm đáng kể chi phí đầu 
+tư công nghệ cho giáo dục, hướng tới việc thu hẹp khoảng cách tiếp cận công nghệ giữa 
+các vùng miền. 
+Kết quả của dự án còn có thể được dùng lại theo hai cách: giáo viên trích xuất bài 
+giảng số đã tạo trên bảng để chia sẻ trong tổ chuyên môn, và người phát triển khác kế thừa 
+thư viện mô hình để bổ sung môn học mới mà không phải viết lại phần bảng vẽ. 
+3. Mục tiêu nghiên cứu 
+3.1. Mục tiêu chung 
+Thiết kế và kiểm chứng một bảng học thông minh gồm: bảng phấn, khung cảm ứng 
+hồng ngoại và phần mềm web, biến nét phấn thành nội dung số dùng được ngay trong tiết 
+học với sự hỗ trợ có kiểm soát của AI. 
+3.2. Mục tiêu cụ thể 
+Mục tiêu 1: nhận toạ độ từ khung cảm ứng, dựng nét vector và hoàn thiện các thao tác 
+viết, tẩy, chọn, di chuyển, thu phóng, hoàn tác và nhiều trang bảng. 
+Mục tiêu 2: nhận diện nét vẽ tay thành hình phẳng và khối, dựng được số đỉnh - số mặt 
+khớp công thức. 
+Mục tiêu 3: xây thư viện mô hình 3D dùng chung cho nhiều bộ môn. 
+Mục tiêu 4: tích hợp AI vào bốn tác vụ - đọc vùng chọn, tra từ, giải bài tập và soạn đề 
+theo hướng giáo viên duyệt kết quả. 
+Mục tiêu 5: tổ chức phòng kiểm tra bằng mã 6 số và QR, chấm bài ở máy chủ, theo dõi 
+tiến độ và công bố bảng xếp hạng trong cùng cửa sổ. 
+Mục tiêu 6: đo được độ trễ các thao tác chính trên bản dựng production để khẳng định sản 
+phẩm dùng được trong tiết học (Bảng 1). 
+4. Giới hạn phạm vi nghiên cứu 
+Về cấu trúc: dự án gồm phần mềm và cụm phần cứng đã lắp thử: bảng phấn, khung cảm 
+ứng hồng ngoại 43 inch, phấn viết, máy tính và máy chiếu.  
+Về nội dung: thư viện chọn các chủ đề đại diện của 12 nhóm môn và nhiều mức học; 
+không đặt mục tiêu bao phủ đầy đủ chương trình phổ thông. Mức học ghi trên công cụ chỉ 
+là gợi ý để giáo viên chọn mức định tính hay định lượng phù hợp bài dạy. 
+Về mô hình: các cảnh 3D dùng công thức xác định hoặc sơ đồ giáo khoa, có ghi điều kiện 
+giới hạn trong cửa sổ. 
+Về AI và đánh giá: sản phẩm dùng dịch vụ mô hình có sẵn, không huấn luyện một mô 
+hình học sâu mới; chất lượng phụ thuộc đầu vào, kết nối và cấu hình dịch vụ. Kiểm thử 
+phần mềm không thay cho thực nghiệm sư phạm; số lớp thử còn nhỏ, chưa có nhóm đối 
+chứng nên báo cáo không kết luận về mức tăng kết quả học tập. 
+5. Phương pháp nghiên cứu 
+- Phương pháp nghiên cứu tài liệu. 
+- Phương pháp thiết kế kỹ thuật. 
+
+
+=== TRANG 5 ===
+3 
+- Phương pháp phát triển lặp. 
+- Phương pháp kiểm chứng định lượng. 
+- Phương pháp kiểm tra trình duyệt và phân tích giới hạn. 
+- Phương pháp đánh giá người dùng. 
+6. Nội dung nghiên cứu 
+Nội dung 1 - số hoá nét phấn: xác định luồng từ toạ độ khung cảm ứng đến nét vector, 
+cách lưu nét theo đối tượng (toạ độ, màu, độ dày, phép biến đổi) để chọn, di chuyển, thu 
+phóng, hoàn tác và mở lại bài giảng trên máy khác. 
+Nội dung 2 - nhận diện và dựng hình: phân loại nét gấp khúc và nét cong, ước lượng 
+đỉnh, kiểm tra độ thẳng và sai số đường tròn; từ bộ cạnh dựng khối, gấp – xoay – cắt khối 
+và hiển thị số đo. 
+Nội dung 3 - biểu diễn động: dựng đồ thị hàm số, đường tròn lượng giác, phương trình 
+có công thức LaTeX và lời giải từng bước. 
+Nội dung 4 - thư viện mô hình 3D dùng chung: tổ chức 374 công cụ theo 12 nhóm môn, 
+mỗi mô hình có tham số, thời gian, câu hỏi quan sát và giới hạn. 
+Nội dung 5 - trợ giảng AI và soạn đề: đọc vùng chọn, tra từ, giải thích lời giải, soạn đề 
+theo ma trận và xuất PDF không kèm đáp án; giáo viên duyệt trước khi dùng. 
+Nội dung 6 - phòng kiểm tra và đo lường: tạo phòng bằng mã 6 số và QR, chấm bài ở 
+máy chủ, theo dõi tiến độ, ghi nhận thao tác bất thường, công bố bảng xếp hạng; đo độ trễ 
+các thao tác chính và kiểm thử 13 nhóm chức năng. 
+7. Những điểm mới của dự án 
+- Về phần cứng: đơn giản, rẻ tiền và có thể tận dụng. 
+- Về cách thức sử dụng: đa dạng, sản phẩm thiết kế để hoạt động với một hệ thống. Tuy 
+nhiên, người dùng có thể sử dụng trên các thiết bị thông minh khác. Người dùng không 
+cần đăng ký hay tạo tài khoản, giao diện làm việc đơn giản, ngôn ngữ tiếng Việt. Sản phẩm 
+không cần sử dụng bút chuyên dụng: có thể viết phấn, vẽ bằng tay, bút từ,… 
+- Về chức năng: Tích hợp nhiều chức năng trong một hệ thống, tất cả trong một cửa sổ, 
+không phải mở thêm phần mềm. 
+- Về thư viện: xây dựng một thư viện phong phú cho nhiều môn học với các đặc trưng 
+riêng trong cùng một hệ thống duy nhất.  
+- Về đánh giá: đề gửi xuống máy học sinh đã lược đáp án và lời giải, việc chấm diễn ra ở 
+máy chủ, nhịp làm bài và 12 loại sự kiện bất thường được ghi nhận, bảng xếp hạng cập 
+nhật trong lúc làm bài mà không cần máy chủ socket. 
+- Về khả năng đo: các thao tác chính đã được đo trên bản dựng production (Bảng 1), nên 
+các nhận định về tốc độ trong báo cáo gắn với điều kiện đo cụ thể thay vì cảm nhận. 
+- Sản phẩm là một hướng đi mới trong giáo dục: là phương thức giúp người dạy và học 
+từng bước tiếp cận công nghệ và trí tuệ nhân tạo AI. 
+=> Sản phẩm hướng tới việc xây dựng một hệ sinh thái lớp học thông minh - nơi công 
+nghệ đóng vai trò là đòn bẩy giúp bài giảng trở nên trực quan, sinh động và cá nhân hóa 
+cho từng học sinh.  
+B. KẾT QUẢ VÀ THẢO LUẬN 
+ 
+1. TỔNG QUAN NGHIÊN CỨU 
+1.1. Cơ sở lí thuyết 
+Trong thời đại công nghệ số, việc phát triển cũng như sử dụng các thiết bị hỗ trợ dạy 
+học là một xu hướng tất yếu. Điều này giúp cho việc dạy học được chủ động hơn trong 
+mọi hoàn cảnh, đồng thời giúp cho bài học trở lên trực quan. Tuy nhiên, theo tìm hiểu của 
+nhóm tác giả, trên thị trường có một số thiết bị phổ biến như: 
+ 
+
+
+=== TRANG 6 ===
+4 
+Bảng viết điện tử 
+Bảng tương tác 
+Màn hình tương tác 
+ 
+ 
+ 
+- Chỉ hỗ trợ chuyển nét 
+viết trên bảng sang hiển 
+thị trên máy tính. 
+- phải dùng bút từ. 
+- Thao tác trực tiếp trên bảng. 
+- Để sử dụng cần phải có 
+thêm: máy chiếu, máy tính, 
+cài đặt phần mềm… 
+- Thao tác trực tiếp trên màn 
+hình. 
+- Giá thành quá cao, không 
+phù hợp với đa số trường học, 
+phải dùng bút chuyên dụng. 
+Những sản phẩm này đều có điểm chung là: Chỉ hiển thị hình ảnh dạng 2D của người 
+viết, không có chức năng nâng cao khác. 
+1.2. Câu hỏi nghiên cứu 
+Việc tạo ra sản phẩm “Hệ thống bảng thông minh tích hợp AI dựa trên học sâu và mô 
+phỏng tương tác 3D” cần trả lời được các câu hỏi sau: 
+- Câu 1: Nét viết tay có thể được số hoá và nhận diện thành hình – khối đủ chính xác để 
+dạy học không? 
+- Câu 2: Mô hình học sâu có đọc đúng chữ trên bảng, giải thích nghĩa - cách dùng - từ liên 
+quan, nhận đúng phương trình và giải đúng một bài đồ thị…một cách thông minh? 
+- Câu 3: sản phẩm có làm giảm số thao tác và phần mềm phải dùng trong một tiết học? 
+2. THIẾT KẾ HỆ THỐNG  
+2.1. Kiến trúc hệ thống 
+Hệ thống chia thành năm tầng. Mỗi tầng làm một việc, nhờ vậy có thể thay hoặc nâng 
+cấp mỗi tầng mà không phá vỡ phần còn lại. 
+ 
+Hình 1. Kiến trúc hệ thống 
+2.2. Các bước thực hiện 
+Bước 1: Khảo sát: trao đổi với giáo viên các bộ môn về thói quen viết bảng; đọc tài liệu 
+về bảng tương tác, học đa phương tiện và mô hình thị giác – ngôn ngữ. 
+Bước 2: Thiết kế: vẽ kiến trúc, chọn công nghệ web (Canvas, WebGL/Three.js) và dữ liệu 
+trao đổi với khung cảm ứng. 
+Bước 3: Hiện thực: xây từng mô - đun - bảng viết, nhận diện, hình học 3D, đồ thị, trợ 
+giảng AI, phòng kiểm tra - rồi ghép vào một cửa sổ. 
+Bước 4: Kiểm thử: chạy kịch bản trên trình duyệt, ghi kết quả, sửa lỗi; phần chưa có thiết 
+bị thì dùng đầu vào mô phỏng và ghi rõ. 
+3. PHẦN CỨNG  
+3.1. Cấu hình phần cứng 
+Bảng phấn, khung cảm ứng hồng ngoại, máy tính. Phần mềm chạy trong trình duyệt, 
+không phải cài cho từng máy; khung cảm ứng chỉ cần xuất toạ độ như một thiết bị trỏ. 
+3.2. An toàn và đạo đức 
+- An toàn vật lý: dây đi trong máng nhựa, ổ cắm tiếp địa, không vắt qua lối đi; khung đặt 
+cao hơn khay phấn và vệ sinh bằng khăn ẩm. 
+
+
+=== TRANG 7 ===
+5 
+- Lau bảng vật lý không xoá nét số, nên phần mềm có nút xoá riêng và nút hoàn tác. 
+- Dữ liệu và nội dung AI: không gửi họ tên, điểm số hay ảnh học sinh; giáo viên duyệt câu 
+trả lời trước khi chiếu cho lớp. 
+3.3. Nguyên lý hoạt động 
+Khung cảm ứng hồng ngoại được gắn quanh mặt bảng và nối với máy tính bằng một 
+dây USB; thiết bị gửi toạ độ chạm để phần mềm tạo nét số. Khung đã được lắp và thử viết 
+phấn trên bảng: nét hiện lên màn hình với độ trễ khoảng 20 ms, đúng vị trí, viết liền mạch 
+không bị đứt đoạn. 
+3.4. Quy trình xử lý 
+ 
+Hình 2. Quy trình xử lý  
+Khung không gửi ảnh, chỉ gửi cặp toạ độ. Nhờ vậy nét vẫn là vector, xử lý được ngay 
+trên máy của lớp và không phụ thuộc vào chất lượng camera hay ánh sáng phòng học. 
+3.5. Lắp đặt  
+Đo mép bảng, bắt bốn ke góc, đặt khung sát mặt bảng sao 
+cho viền không che phấn; đi dây USB theo máng xuống máy 
+tính, cắm như một chuột. Sau đó hiệu chuẩn bốn điểm và chỉnh 
+máy chiếu trùng khít vùng bảng. 
+Bản vẽ bên cho biết khung 43 inch rộng 979  mm và cao 
+565 mm - số đo cần thiết để chọn khung vừa bảng phụ trước khi 
+đặt mua. 
+Hình 3. Bản vẽ kích thước khung 43 inch . 
+Bảng phấn thực tế 
+Hệ thống bảng thông minh lắp đặt hoàn chỉnh 
+4. XÂY DỰNG WEB 
+4.1. Mục tiêu kỹ thuật và ràng buộc thiết kế 
+ 
+Nhóm chọn React 19 và TypeScript, Vite 
+7, Canvas 2D cho mặt bảng, Three.js và PixiJS 
+cho mô hình 3D và nhân vật Live2D, KaTeX 
+cho công thức, mathjs cho tính toán; trình duyệt 
+là môi trường duy nhất có mặt trên mọi máy của 
+trường và không cần quyền quản trị. Đường đi 
+từ khung cảm ứng tới dịch vụ ngoài được tóm 
+tắt ở Hình 4. 
+ 
+Hình 4. Kiến trúc triển khai 
+
+
+=== TRANG 8 ===
+6 
+4.2. Mô hình dữ liệu bảng và vòng đời một nét viết 
+Một bài giảng là tài liệu JSON gồm phiên bản, tiêu đề và danh sách trang; mỗi trang 
+là mảng đối tượng hình thuộc bảy loại - đoạn thẳng, đường tròn, nét tự do, tam giác, chữ 
+nhật, đa giác, nhóm nét. Toạ độ lưu trong hệ của mặt bảng, tách khỏi khung nhìn, nên thu 
+phóng chỉ đổi ba số của 
+khung nhìn mà không sửa 
+điểm nào của hình và số đo 
+vẫn đúng sau khi zoom. Mỗi 
+lần chạm đi qua bốn bước: 
+lấy mẫu điểm, gộp thành 
+nét, tạo đối tượng hình, ghi 
+vào trang. Tài liệu được 
+kiểm tra trước khi nạp (1–
+100 trang, 5.000 hình mỗi 
+trang, 200.000 điểm, màu 
+dạng #rrggbb, mọi số phải 
+hữu hạn); tệp sai bị từ chối 
+kèm thông điệp nêu đúng 
+trường lỗi (Hình 5).                      Hình 5. Mô hình dữ liệu bảng   
+4.3. Lõi bảng vẽ trên Canvas 
+Mặt bảng là một canvas duy nhất, chỉ vẽ lại khi có thay đổi; bitmap cấp theo tỉ lệ 
+điểm ảnh thiết bị, giới hạn ở mức 3. Bốn loại đầu vào - phấn viết qua khung cảm ứng, bút 
+cảm ứng, chuột, ngón tay - đi cùng một đường xử lý sự kiện con trỏ. Tẩy xoá theo khoảng 
+cách tới từng đoạn của nét chứ không theo hộp bao nên tẩy được một phần nét; mỗi thao 
+tác kéo chỉ sinh một mục hoàn tác tại lúc nhấc bút. Cửa sổ công cụ ghim vào toạ độ bảng 
+và quy đổi ra vị trí màn hình mỗi khung hình, nên khi kéo hoặc thu phóng bảng, cửa sổ 
+trôi theo đúng tỉ lệ như một tờ giấy dán trên mặt bảng. 
+4.4. Lớp AI dùng chung và giao thức công cụ 
+Toàn bộ chức năng AI đi qua bốn cổng cùng tên miền: chat và chuyển giọng nói 
+thành văn bản, phân tích ảnh vùng chọn, chép công thức từ ảnh và soạn đề. Trình duyệt 
+không giữ khoá dịch vụ; thiếu khoá thì cổng trả 503 kèm hướng dẫn cấu hình. Lớp công 
+cụ cho trợ giảng theo hình thức MCP(Giúp AI thao tác trên bảng), gồm 18 công cụ chia 
+bốn nhóm: tra cứu (list_tools, open_tool, close_tool, list_open_tools), tham số 
+(set_tool_values, read_tool_values), vẽ và ghi bảng (draw_function, draw_shapes, 
+solve_and_draw, 
+add_text) 
+và 
+điều 
+khiển 
+(list_commands, 
+run_command, 
+create_exercise, close_exercise, read_board, speak, clear_board, undo_board); cùng danh 
+sách này được đổi sang định dạng function calling (Hình 6). 
+ 
+Hình 6. Mã nguồn lớp AI 
+
+
+=== TRANG 9 ===
+7 
+Một lệnh của giáo viên được gửi tới /api/teacher-ai kèm 18 công cụ; mô hình trả về 
+một hoặc nhiều lời gọi kèm tham số JSON, trang chạy từng lời gọi qua callTool() rồi gọi 
+đúng hàm giao diện đã đăng ký - 
+cũng là hàm mà nút bấm gọi, nên 
+vẽ bằng câu lệnh và vẽ bằng nút 
+bấm đi qua cùng một đường mã. 
+Kết quả dạng {ok, text} được 
+đưa lại cho mô hình như một lượt 
+mới, vòng lặp tối đa bốn lượt. 
+Trợ giảng đề xuất, giáo viên 
+duyệt; chữ trong ảnh là dữ liệu 
+chứ không phải mệnh lệnh; 
+không gửi họ tên, điểm số hay 
+ảnh học sinh tới dịch vụ AI; các 
+ràng buộc này được chặn lần hai 
+ở lớp công cụ (Hình 7). 
+Hình 7. Mô hình một lệnh của giáo viên  
+4.5. Máy chủ, phòng kiểm tra và bảo vệ dữ liệu 
+Phần máy chủ là các hàm thuần nhận dữ liệu và biến môi trường, trả mã trạng thái 
+cùng JSON; adapter chỉ còn vài chục dòng mỗi môi trường nên hành vi giống nhau ở cả 
+ba nơi. Phòng kiểm tra dùng MongoDB Atlas với hai bộ sưu tập: phiên thi và người tham 
+gia; giáo viên tạo phòng, nhận mã sáu số và mã QR, khoá chủ phòng giữ trên máy giáo 
+viên. Đề gửi xuống máy học sinh đã lược đáp án, việc chấm diễn ra ở máy chủ; máy chủ 
+phục vụ 11 thao tác. Máy học sinh báo lên 12 loại sự kiện bất thường, máy chủ giữ nhật 
+ký 30 mục và đếm theo từng loại để giáo viên đối chiếu, không tự kết luận gian lận. Bảng 
+xếp hạng dùng truy vấn trạng thái thay cho socket nên chạy được trên hạ tầng serverless; 
+mọi cổng ghi kiểm tra Origin so với Host và trả 403 nếu khác (Hình 8). 
+ 
+Hình 8. Hạ tầng phòng kiểm tra 
+
+
+=== TRANG 10 ===
+8 
+4.6. Hạ tầng triển khai và quy trình phát hành 
+Bản dựng phát hành trên tên miền riêng của trường, chia ba tầng. Tầng biên là 
+Cloudflare: phân giải tên miền, TLS 1.3, tường lửa ứng dụng web và đệm tệp tĩnh ba mươi 
+ngày, riêng HTML  không đệm để bản mới tới lớp ngay. Tầng ứng dụng là máy chủ ảo 4 
+vCPU, 8 GB RAM, 80 GB NVMe ở Hà Nội, chạy Ubuntu 24.04 LTS, nginx 1.26 làm 
+proxy ngược và Node 22 LTS dưới 
+systemd; bốn cổng API được 
+esbuild gộp thành một tệp ESM 
+mỗi cổng. Tầng dữ liệu là 
+MongoDB Atlas gói nhỏ nhất, ba 
+nút ở Singapore, sao lưu tự động 
+hằng ngày. Ba tầng chọn theo hai 
+tiêu chí: chi phí nằm trong khả 
+năng của một đề tài học đường, và 
+mỗi tầng thay được mà không phải 
+sửa mã (Hình 9).  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Hình 9. Hạ tầng triển khai   
+4.7. Tinh chỉnh và đánh giá mô hình 
+Sản phẩm không huấn luyện một mô hình thị giác từ đầu vì một mô hình đủ tốt cần 
+hàng trăm nghìn ảnh có nhãn, trong khi nhóm chỉ có vài nghìn mẫu do giáo viên tạo ra. 
+Chất lượng được nâng theo ba lớp: dùng dịch vụ mô hình có sẵn, viết lời nhắc theo nghiệp 
+vụ sư phạm, và tinh chỉnh hẹp đúng một việc là chép công thức viết tay thành LaTeX. Dữ 
+liệu đến từ quá trình dạy thật: mỗi lần giáo viên bấm chép công thức, hệ thống lưu vùng 
+ảnh đã cắt và chuỗi LaTeX sau khi 
+sửa, nên phần sửa chính là nhãn đúng. 
+Sau khi bỏ ảnh trùng và chuẩn hoá về 
+768 điểm ảnh, tập còn 8.400 cặp, chia 
+70/15/15 theo phiên để một bài giảng 
+không nằm ở cả hai phía; lần chạy 
+dùng JSONL, ba epoch, lô tám, hệ số 
+học nhân 1,8 và dừng sớm theo lỗi tập 
+kiểm định (Hình 10). 
+                                                                    Hình 10. Quy trình tinh chỉnh   
+Trên 1.260 mẫu kiểm thử, lỗi ký tự 
+giảm từ 4,7% xuống 2,1%, tỉ lệ công thức 
+dùng được ngay tăng từ 62% lên 89%, thời 
+gian một lần chép giảm từ 1,9 giây xuống 
+1,4 giây; mức tăng tập trung ở phân số 
+lồng nhau và căn thức, còn nhóm yếu nhất 
+vẫn là tích phân – đạo hàm với 86%. Tập 
+kiểm thử chưa có ảnh chụp bảng thật ngoài 
+lớp nên chưa thể nói gì về nét phấn dưới 
+ánh sáng phòng học (Hình 11). 
+Hình 11. Bảng đánh giá mô hình 
+
+
+=== TRANG 11 ===
+9 
+5. KẾT QUẢ NGHIÊN CỨU 
+5.1. Nhận diện nét viết thành hình học 
+Nét viết được lưu dưới dạng vector, không phải ảnh. Nhờ vậy cùng một nét vừa hiện 
+trên bảng số, vừa được phân tích, chọn lại, đổi màu và chuyển thành hình học. 
+ 
+ 
+Hình 12. Một số nhóm hình phẳng và bốn khối dựng từ bộ cạnh 
+ 
+Bộ nhận diện xét hai họ nét: gấp khúc (đoạn, tam giác, 
+tứ giác, đa giác 5–8 cạnh) và cong (đường tròn). Với mỗi nét, 
+chương trình ước lượng số đỉnh, kiểm tra độ thẳng của cạnh, 
+so sánh tỉ lệ cạnh và sai số so với đường tròn mẫu. Nét không 
+thoả điều kiện nào được giữ nguyên là nét tự do - lựa chọn có 
+chủ ý, vì ép hình vẽ tay thành hình mẫu sẽ làm sai ý người vẽ. 
+Hình 13. Khối dựng từ bộ cạnh 
+Bốn bước của một lần nhận diện: tách nét và loại điểm nhiễu; đơn giản hoá nhưng 
+giữ điểm đổi hướng; phân loại theo mô hình cạnh và mô hình tròn; số hoá thành đối tượng 
+có đỉnh, cạnh, số đo. 
+5.2. Gấp, xoay, cắt khối 
+Một hình phẳng trên bảng có thể gấp theo trục để trở thành mặt của khối. Góc gấp 
+thay đổi liên tục, cho học sinh thấy mặt phẳng biến thành không gian. 
+\
+ 
+ 
+Hình 14. Gấp, xoay và cắt khối 
+5.3. AI đọc từ trên bảng 
+Chức năng tra từ được thiết kế cho hoạt động ngôn ngữ: giáo viên viết hoặc chọn 
+một từ rồi mở “Tra từ AI”. Kết quả nằm cạnh nội dung để đối chiếu. 
+
+
+=== TRANG 12 ===
+10 
+ 
+Hình 15. Tra từ trên bảng 
+- Từ và cách đọc: phiên âm IPA, từ loại. 
+- Nghĩa tiếng Việt, giải thích bằng câu ngắn. 
+- Ví dụ đặt câu kèm bản dịch. 
+- Từ đồng nghĩa và trái nghĩa, mỗi từ có nghĩa riêng. 
+- Từ đồng âm, kèm nghĩa để phân biệt. 
+Không cần gõ lại: AI nhận cả chữ đã số hoá lẫn ảnh nét mực. Hai đường đi cho ra cùng 
+một cấu trúc dữ liệu nên giao diện không đổi. 
+Đồng âm được xử lý riêng vì đây là lỗi học sinh hay gặp. Chức năng chỉ bật khi môn 
+đang dạy là Tiếng Anh hoặc Ngữ văn/Tiếng Việt; chuyển sang Toán hay Vật lí, nút biến 
+mất và hộp đang mở tự đóng. 
+5.4. Đồ thị và đường tròn lượng giác 
+Giáo viên viết hàm số hoặc nhập từ bàn phím; đồ thị hiện ngay trên bảng. Với lượng 
+giác, nhóm tác giả dùng 
+bảng đường tròn đơn vị: 
+kéo góc θ, bảng hiện sin, 
+cos, tan và vẽ sóng 
+tương ứng ngay bên 
+cạnh. 
+ 
+ 
+ 
+Hình 16. Đồ thị hàm số y = x² − 4x + 3; đường tròn lượng giác tại θ = 30° 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+                       Hình 17. Lời giải từng bước của trợ giảng của hàm đang chọn. 
+
+
+=== TRANG 13 ===
+11 
+5.5. AI đọc và giải phương trình 
+Ba dạng phương trình quen thuộc của cấp THPT: bậc nhất, bậc hai và lượng giác đi 
+cùng một đường: nét viết được số hoá thành LaTeX, bộ giải tìm nghiệm chính xác, trợ 
+giảng diễn giải từng bước. 
+ 
+Hình 18. Trợ giảng đọc đề bài từ vùng chọn (trái) và giải phương trình bậc hai bằng 
+công thức nghiệm, công thức được typeset bằng KaTeX ngay trong khung chat (phải). 
+5.6. Trợ giảng AI trong không gian bảng 
+Trợ giảng hiển thị trong không gian bảng và sử dụng các chức năng AI theo cấu hình. 
+Nhóm chức năng gồm đọc vùng chọn, tạo lời 
+giải, xử lý giọng nói và gọi công cụ; không 
+mặc định tương ứng với bốn mô hình do nhóm 
+tự huấn luyện. 
+–  Thị giác: đọc vùng nét được chọn, nhận chữ 
+viết tay, công thức và hình vẽ. 
+–  Ngôn ngữ và giọng nói: hiểu câu hỏi, soạn 
+lời giải, sinh bài tập tương tự, đọc lại câu trả 
+lời cho cả lớp nghe. 
+–  Điều khiển công cụ: 18 tác vụ khai báo để 
+AI mở đúng công cụ, đặt tham số, vẽ hình và 
+chèn nội dung. 
+ 
+Hình 19. Lời giải từng bước của trợ giảng cho đạo hàm và nguyên hàm của hàm đang 
+chọn; các con số do thư viện toán tính, AI chỉ diễn giải. 
+5.7. Thư viện mô hình 3D dùng chung cho các bộ môn 
+Thư viện 3D không dành riêng cho một môn. Bản dựng hiện có 374 công cụ thuộc 
+12 nhóm: 
+- Toán học (41): dựng khối từ nét vẽ, gấp – xoay – cắt khối, chóp, cầu, đồ thị hàm số, 
+đường tròn lượng giác, hình học phẳng có số đo. 
+- Vật lý (94): studio “Vẻ đẹp Vật lý” gồm 8 chương – 47 cảnh (cơ học cổ điển, điện học, 
+điện từ học, quang học, âm học, nhiệt học, nhiệt động lực học, lượng tử) cùng các công cụ 
+rời như giao thoa sóng, sóng dừng, lực đẩy Archimedes, mạch RC, quỹ đạo Kepler. 
+- Hoá học (39): phân tử và quy tắc VSEPR, liên kết, phản ứng, phòng thí nghiệm ảo; Sinh 
+học (22): ADN và cặp base, tế bào và bào quan, tim – ti thể. 
+- Các nhóm còn lại: Tin học 27, Ngoại ngữ 23, Địa lý 23, Ngữ văn 21, Lịch sử 21, Lớp 
+học 21, Âm nhạc 20, Tiện ích 22 công cụ. 
+Mỗi cảnh 3D có thanh thời gian 12s, tốc độ phát, nút chạy/tạm dừng, đổi góc nhìn 
+và bảng số liệu cập nhật theo tham số. Mô hình dùng công thức xác định hoặc sơ đồ giáo 
+khoa, có ghi rõ điều kiện giới hạn ngay trong cửa sổ, không phải bộ giải động lực học tổng 
+quát. 
+
+
+=== TRANG 14 ===
+12 
+ 
+Hình 20. Mô hình 3D của nhiều bộ môn trong cùng thư viện 
+Ví dụ với môn Vật lý, bộ 47 cảnh được tổ chức thành một studio tám chương: mỗi chương 
+có danh mục cảnh riêng, thanh chọn chương, chế độ trình chiếu tuần tự và bảng thông số 
+đi kèm. Hình 21 tóm tắt tám chương này, mỗi khung là một cảnh đang dựng bằng WebGL. 
+ 
+ 
+ 
+ 
+ 
+                      
+ 
+ 
+Hình 21. Vật lý dưới góc nhìn 3D 
+5.8. AI soạn đề và phòng kiểm tra QR 
+Sau khi giảng, giáo viên tạo bài kiểm tra ngay trong cùng cửa sổ: tải tài liệu hoặc 
+nhập yêu cầu, AI soạn câu hỏi kèm đáp án và lời giải, thầy cô duyệt lại rồi mở phòng bằng 
+mã QR cho học sinh vào bằng điện thoại. 
+ 
+Hình 22. Ví dụ về Exam Studio và phòng kiểm tra 
+
+
+=== TRANG 15 ===
+13 
+Đã thử tới đâu: Mã phòng 560460 và một tài khoản học sinh vào phòng chờ là minh chứng 
+cho luồng tạo phòng – tham gia. Thử với hơn 10 thiết bị, chạy ổn không lỗi. 
+6. KIỂM CHỨNG VÀ THẢO LUẬN 
+Kết quả kiểm thử 
+Bảng 1. Thời gian phản hồi các tác vụ chính, đo trên bản dựng production bằng 
+Chromium trên Windows và trên hệ thống đã lắp khung cảm ứng 
+Tác vụ 
+Cách đo 
+Thời 
+gian 
+Nét phấn hiện lên màn hình (khung 
+cảm ứng → tivi) 
+Viết liên tục trên bảng đã lắp 
+khung, đo độ trễ hiển thị 
+20 ms 
+Tải và dựng giao diện bảng lần đầu (7 
+tệp JS, 2,2 MB; CSS 244 KB) 
+Điều hướng → DOM sẵn sàng 
+290 ms 
+Mở trung tâm công cụ (dựng danh 
+mục 374 công cụ) 
+Bấm nút → danh mục hiện, 5 lần 
+97 ms 
+Mở một công cụ 3D (tải gói theo nhu 
+cầu và dựng cảnh WebGL) 
+Bấm công cụ → khung hình 3D 
+đầu tiên 
+266 ms 
+Nhận diện nét vẽ thành hình học kèm 
+số đo 
+Vẽ → hình và số đo xuất hiện 
+60 ms 
+Dựng đồ thị hàm số và đường tròn 
+lượng giác 
+Nhập hàm → đồ thị hiện 
+45 ms 
+Thêm trang bảng mới 
+Bấm nút → trang trắng sẵn sàng, 
+5 lần 
+10 ms 
+Chấm 10 câu trắc nghiệm ở máy chủ 
+Nộp bài → điểm và lời giải trả về 180 ms 
+Trợ giảng AI trả lời một câu hỏi 
+Gửi câu hỏi → lời giải hiện trong 
+khung chat 
+2,4 s 
+ 
+C. KẾT LUẬN KHOA HỌC 
+1. Kết luận 
+Sau quá trình nghiên cứu, phát triển và thử nghiệm, dự án đã hoàn thành các mục tiêu 
+đặt ra: 
+Nhận diện hình học: hệ thống nhận đúng đoạn thẳng, tam giác, tứ giác, đa giác 5–8 cạnh 
+và đường tròn; dựng được khối 3D từ bộ cạnh với số đỉnh, số mặt khớp công thức; gấp, 
+xoay, cắt khối thực hiện được ngay trên nét vẽ. đạt khi bộ thử 90 mẫu hình phẳng cho kết 
+quả đúng và các khối dựng lại đúng số cạnh, số mặt. 
+Nhận diện công thức: nét viết công thức được chuyển thành LaTeX; phương trình bậc 
+nhất, bậc hai và lượng giác cơ bản được giải đúng; đồ thị hàm số và đường tròn lượng giác 
+hiện ngay khi viết. 
+Trợ giảng AI: AI đọc được nội dung vùng chọn, giải thích, ra bài tương tự, đọc to câu trả 
+lời và mở đúng công cụ theo yêu cầu; phòng kiểm tra mở bằng mã QR đã chạy được luồng 
+tạo phòng - tham gia. 
+Tốc độ: giao diện phản hồi dưới 100 ms, nhận diện dưới 500 ms, câu trả lời của AI dưới 
+3 giây - đủ nhanh để dùng trong một tiết học. 
+Nét viết phấn trên bảng thật đã được số hoá, nhận diện và khai thác ngay trong tiết 
+học; giáo viên giữ nguyên thói quen viết bảng mà vẫn có hình học 3D, đồ thị và trợ giảng 
+AI trên cùng một cửa sổ. 
+2. Hướng phát triển của dự án 
+- Bổ sung thêm một số công cụ đặc trưng cho từng môn học.  
+- Xây dựng thêm nhân vật ảo phù hợp với đặc điểm vùng miền (hình dáng, giọng nói,…) 
+nhằm tăng sự lựa chọn cho người dùng. 
+
+
+=== TRANG 16 ===
+14 
+D. TÀI LIỆU THAM KHẢO 
+ 
+[1] Ainsworth, S. (2006). DeFT: A conceptual framework for considering learning with 
+multiple representations. Learning and Instruction, 16(3), 183–198. 
+[2] GreenTouch (2025). Infrared Touch Frame 53 inch TB series — thông số và bản vẽ 
+kích thước. https://www.greentouch.com.tw 
+[3] Higgins, S., Beauchamp, G., & Miller, D. (2007). Reviewing the literature on 
+interactive whiteboards. Learning, Media and Technology, 32(3), 213–225. 
+[4] KaTeX (2026). KaTeX Documentation — fast math typesetting for the web. 
+https://katex.org/docs 
+[5] Mayer, R. E. (2009). Multimedia Learning (2nd ed.). Cambridge University Press, 
+New York. 
+[6] 
+Mozilla 
+Developer 
+Network 
+(2026). 
+Canvas 
+API 
+và 
+Pointer 
+Events. 
+https://developer.mozilla.org 
+[7] NASA. What Is Earth? (Grades 5–8): Earth rotation, day and night. 
+https://www.nasa.gov/learning-resources/for-kids-and-students/what-is-earth-grades-5-8/ 
+(truy cập 30/10/2026). 
+[8] Papert, S. (1980). Mindstorms: Children, Computers, and Powerful Ideas. Basic Books, 
+New York. 
+[9] OpenAI (2026). API Reference: vision, function calling, speech-to-text. 
+https://platform.openai.com/docs 
+[10] OpenStax. University Physics, Volume 1: 14.4 Archimedes’ Principle and 
+Buoyancy; 15.5 Damped Oscillations; 16.5 Interference of Waves; 16.6 Standing Waves 
+and Resonance. https://openstax.org/details/books/university-physics-volume-1 (truy cập 
+30/10/2026). 
+[11] OpenStax. University Physics, Volume 2: 10.5 RC Circuits; 11.3 Motion of a 
+Charged Particle in a Magnetic Field. https://openstax.org/details/books/university-
+physics-volume-2 (truy cập 30/10/2026). 
+[12] OpenStax. University Physics, Volume 1: 13.5 Kepler’s Laws of Planetary Motion. 
+https://openstax.org/books/university-physics-volume-1/pages/13-5-keplers-laws-of-
+planetary-motion (truy cập 30/10/2026). 

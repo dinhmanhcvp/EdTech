@@ -1,0 +1,3565 @@
+{
+  "content": {
+    "id": "content",
+    "title": "Nội dung & hình vẽ",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "text": {
+    "id": "text",
+    "title": "Chữ & công thức",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "shapes": {
+    "id": "shapes",
+    "title": "Hình & đồ thị",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "materials": {
+    "id": "materials",
+    "title": "Học liệu & bố cục",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "classroom": {
+    "id": "classroom",
+    "title": "Đứng lớp",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "board-tools": {
+    "id": "board-tools",
+    "title": "Dụng cụ trên bảng",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "time": {
+    "id": "time",
+    "title": "Thời gian",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "interact": {
+    "id": "interact",
+    "title": "Tương tác lớp",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "pages": {
+    "id": "pages",
+    "title": "Trang & lưu bài",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "page-nav": {
+    "id": "page-nav",
+    "title": "Trang",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "save-export": {
+    "id": "save-export",
+    "title": "Lưu & xuất",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "subjects": {
+    "id": "subjects",
+    "title": "Môn học & kiến thức",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "modules": {
+    "id": "modules",
+    "title": "Công cụ theo môn",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "simulation3d": {
+    "id": "simulation3d",
+    "title": "Mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "library": {
+    "id": "library",
+    "title": "Thư viện & trợ giảng",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "controls": {
+    "id": "controls",
+    "title": "Điều khiển",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "settings": {
+    "id": "settings",
+    "title": "Thiết lập & điều khiển",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "pen": {
+    "id": "pen",
+    "title": "Bút & nền",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "view": {
+    "id": "view",
+    "title": "Hiển thị bảng",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "app": {
+    "id": "app",
+    "title": "Ứng dụng",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.equation": {
+    "id": "math.equation",
+    "title": "Giải phương trình",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.statistics": {
+    "id": "math.statistics",
+    "title": "Thống kê dữ liệu",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.numbertheory": {
+    "id": "math.numbertheory",
+    "title": "Lý thuyết số",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.matrix": {
+    "id": "math.matrix",
+    "title": "Ma trận & định thức",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.complex": {
+    "id": "math.complex",
+    "title": "Số phức",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.vectors": {
+    "id": "math.vectors",
+    "title": "Vectơ 2D & 3D",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.probability": {
+    "id": "math.probability",
+    "title": "Xác suất & tổ hợp",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.fractions": {
+    "id": "math.fractions",
+    "title": "Phân số",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.sequences": {
+    "id": "math.sequences",
+    "title": "Cấp số & dãy số",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.trig": {
+    "id": "math.trig",
+    "title": "Lượng giác & đường tròn",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.geometry": {
+    "id": "math.geometry",
+    "title": "Hình học toạ độ",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phys.projectile": {
+    "id": "phys.projectile",
+    "title": "Mô phỏng ném xiên",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phys.pendulum": {
+    "id": "phys.pendulum",
+    "title": "Con lắc đơn",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phys.circuit": {
+    "id": "phys.circuit",
+    "title": "Mạch điện & định luật Ohm",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phys.energy": {
+    "id": "phys.energy",
+    "title": "Năng lượng & công suất",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phys.waves": {
+    "id": "phys.waves",
+    "title": "Sóng & âm thanh",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phys.optics": {
+    "id": "phys.optics",
+    "title": "Quang học & thấu kính",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phys.freefall": {
+    "id": "phys.freefall",
+    "title": "Chuyển động & rơi tự do",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "chem.periodic": {
+    "id": "chem.periodic",
+    "title": "Bảng tuần hoàn",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "chem.balance": {
+    "id": "chem.balance",
+    "title": "Cân bằng phương trình",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "chem.redox": {
+    "id": "chem.redox",
+    "title": "Số oxi hoá & phản ứng oxi hoá - khử",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "chem.mole": {
+    "id": "chem.mole",
+    "title": "Mol & nồng độ dung dịch",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "bio.punnett": {
+    "id": "bio.punnett",
+    "title": "Lai & sơ đồ Punnett",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "cs.sorting": {
+    "id": "cs.sorting",
+    "title": "Mô phỏng thuật toán sắp xếp",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "cs.base": {
+    "id": "cs.base",
+    "title": "Cơ số & mã hoá",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "music.piano": {
+    "id": "music.piano",
+    "title": "Đàn piano ảo",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "hist.timeline": {
+    "id": "hist.timeline",
+    "title": "Dòng thời gian lịch sử",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "geo.coords": {
+    "id": "geo.coords",
+    "title": "Toạ độ & khoảng cách",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "lang.flashcards": {
+    "id": "lang.flashcards",
+    "title": "Thẻ từ vựng",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "tools.casio": {
+    "id": "tools.casio",
+    "title": "Máy tính Casio FX",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "tools.units": {
+    "id": "tools.units",
+    "title": "Đổi đơn vị",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "tools.formulas": {
+    "id": "tools.formulas",
+    "title": "Sổ tay công thức",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "class.quiz": {
+    "id": "class.quiz",
+    "title": "Tạo & chấm trắc nghiệm",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "class.timer": {
+    "id": "class.timer",
+    "title": "Đồng hồ tính giờ thi",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "class.scoreboard": {
+    "id": "class.scoreboard",
+    "title": "Bảng điểm thi đua",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.inequality": {
+    "id": "math.inequality",
+    "title": "Bất phương trình",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.functionexplorer": {
+    "id": "math.functionexplorer",
+    "title": "Khám phá hàm số",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.conic": {
+    "id": "math.conic",
+    "title": "Đường conic",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phys.collision": {
+    "id": "phys.collision",
+    "title": "Va chạm đàn hồi",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phys.gravity": {
+    "id": "phys.gravity",
+    "title": "Lực hấp dẫn",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phys.magnetism": {
+    "id": "phys.magnetism",
+    "title": "Lực từ",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phys.thermo": {
+    "id": "phys.thermo",
+    "title": "Nhiệt lượng & cân bằng",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phys.doppler": {
+    "id": "phys.doppler",
+    "title": "Hiệu ứng Doppler",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "chem.gas": {
+    "id": "chem.gas",
+    "title": "Khí lý tưởng",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "chem.titration": {
+    "id": "chem.titration",
+    "title": "Chuẩn độ",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "chem.organic": {
+    "id": "chem.organic",
+    "title": "Nhóm chức hữu cơ",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "chem.spectrum": {
+    "id": "chem.spectrum",
+    "title": "Quang phổ & bước sóng",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "bio.dna": {
+    "id": "bio.dna",
+    "title": "ADN & mạch bổ sung",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "bio.heart": {
+    "id": "bio.heart",
+    "title": "Tim & tuần hoàn",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "cs.binarytree": {
+    "id": "cs.binarytree",
+    "title": "Cây nhị phân",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "cs.graph": {
+    "id": "cs.graph",
+    "title": "Duyệt đồ thị",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "cs.automaton": {
+    "id": "cs.automaton",
+    "title": "Máy trạng thái",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "cs.recursion": {
+    "id": "cs.recursion",
+    "title": "Đệ quy",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "geo.climate": {
+    "id": "geo.climate",
+    "title": "Khí hậu theo mùa",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "geo.population": {
+    "id": "geo.population",
+    "title": "Dân số & tăng trưởng",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "hist.hanoi": {
+    "id": "hist.hanoi",
+    "title": "Hà Nội qua các thời kỳ",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "lang.pos": {
+    "id": "lang.pos",
+    "title": "Từ loại trong câu",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "music.chord": {
+    "id": "music.chord",
+    "title": "Hợp âm & quãng",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "tools.percentage": {
+    "id": "tools.percentage",
+    "title": "Phần trăm",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "tools.finance": {
+    "id": "tools.finance",
+    "title": "Lãi suất kép",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "class.attendance": {
+    "id": "class.attendance",
+    "title": "Điểm danh",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "ruler": {
+    "id": "ruler",
+    "title": "Thước kẻ",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "protractor": {
+    "id": "protractor",
+    "title": "Thước đo góc",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "curtain": {
+    "id": "curtain",
+    "title": "Che đáp án",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "timer": {
+    "id": "timer",
+    "title": "Đếm ngược",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "stopwatch": {
+    "id": "stopwatch",
+    "title": "Bấm giờ",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "calculator": {
+    "id": "calculator",
+    "title": "Máy tính",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "picker": {
+    "id": "picker",
+    "title": "Bốc tên & chia nhóm",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "gpt-4.1-mini": {
+    "id": "gpt-4.1-mini",
+    "title": "GPT-4.1 mini (Khuyên dùng — nhanh, rẻ, đủ thông minh)",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "gpt-4.1": {
+    "id": "gpt-4.1",
+    "title": "GPT-4.1 (Thông minh nhất)",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "gpt-4o-mini": {
+    "id": "gpt-4o-mini",
+    "title": "GPT-4o mini (Siêu nhẹ)",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "far_field": {
+    "id": "far_field",
+    "title": "Xa mic · lớp học (mặc định)",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "near_field": {
+    "id": "near_field",
+    "title": "Gần mic · tai nghe",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "off": {
+    "id": "off",
+    "title": "Tắt khử ồn",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "high": {
+    "id": "high",
+    "title": "Nhạy · nhận cả giọng nhỏ",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "normal": {
+    "id": "normal",
+    "title": "Vừa (mặc định)",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "low": {
+    "id": "low",
+    "title": "Chắc · ít nhận nhầm tiếng ồn",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "coral": {
+    "id": "coral",
+    "title": "Coral · nữ ấm (mặc định)",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "nova": {
+    "id": "nova",
+    "title": "Nova · nữ trẻ, nhanh",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "shimmer": {
+    "id": "shimmer",
+    "title": "Shimmer · nữ nhẹ, trong",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "sage": {
+    "id": "sage",
+    "title": "Sage · nữ điềm tĩnh",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "alloy": {
+    "id": "alloy",
+    "title": "Alloy · trung tính",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "echo": {
+    "id": "echo",
+    "title": "Echo · nam ấm",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "ash": {
+    "id": "ash",
+    "title": "Ash · nam trầm",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "onyx": {
+    "id": "onyx",
+    "title": "Onyx · nam sâu",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.quadratic": {
+    "id": "math.quadratic",
+    "title": "Công thức nghiệm bậc hai",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.vieta": {
+    "id": "math.vieta",
+    "title": "Định lý Vi-ét",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.sum-ap": {
+    "id": "math.sum-ap",
+    "title": "Cấp số cộng (tổng n số hạng)",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.sum-gp": {
+    "id": "math.sum-gp",
+    "title": "Cấp số nhân (tổng n số hạng)",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.combin": {
+    "id": "math.combin",
+    "title": "Hoán vị — Chỉnh hợp — Tổ hợp",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.prob-cond": {
+    "id": "math.prob-cond",
+    "title": "Xác suất có điều kiện & Bayes",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.deriv-basic": {
+    "id": "math.deriv-basic",
+    "title": "Đạo hàm cơ bản",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.integral-power": {
+    "id": "math.integral-power",
+    "title": "Nguyên hàm lũy thừa",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.log": {
+    "id": "math.log",
+    "title": "Công thức lôgarit",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.trig-fund": {
+    "id": "math.trig-fund",
+    "title": "Hệ thức lượng giác cơ bản",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.distance": {
+    "id": "math.distance",
+    "title": "Khoảng cách và trung điểm",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "math.heron": {
+    "id": "math.heron",
+    "title": "Công thức Heron (diện tích tam giác)",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phy.kinematics": {
+    "id": "phy.kinematics",
+    "title": "Chuyển động thẳng biến đổi đều",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phy.newton2": {
+    "id": "phy.newton2",
+    "title": "Định luật II Newton",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phy.work-power": {
+    "id": "phy.work-power",
+    "title": "Công và công suất",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phy.ke-pe": {
+    "id": "phy.ke-pe",
+    "title": "Động năng — Thế năng",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phy.ohm": {
+    "id": "phy.ohm",
+    "title": "Định luật Ohm & công suất điện",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phy.wave": {
+    "id": "phy.wave",
+    "title": "Bước sóng và tần số",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phy.gravity": {
+    "id": "phy.gravity",
+    "title": "Định luật vạn vật hấp dẫn",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "phy.refraction": {
+    "id": "phy.refraction",
+    "title": "Công thức thấu kính",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "chem.conc": {
+    "id": "chem.conc",
+    "title": "Nồng độ mol & pha loãng",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "chem.ph": {
+    "id": "chem.ph",
+    "title": "pH của dung dịch",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "bio.pop-growth": {
+    "id": "bio.pop-growth",
+    "title": "Tăng trưởng quần thể",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "bio.cardiac": {
+    "id": "bio.cardiac",
+    "title": "Cung lượng tim",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "bio.dna-length": {
+    "id": "bio.dna-length",
+    "title": "Chiều dài & liên kết hiđrô của ADN",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "cs.complexity": {
+    "id": "cs.complexity",
+    "title": "Độ phức tạp thuật toán",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "cs.binary": {
+    "id": "cs.binary",
+    "title": "Đổi cơ số & bit",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "cs.prob-sum": {
+    "id": "cs.prob-sum",
+    "title": "Quy tắc đếm & xác suất rời rạc",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "eco.compound": {
+    "id": "eco.compound",
+    "title": "Lãi suất kép",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "geo.distance": {
+    "id": "geo.distance",
+    "title": "Khoảng cách trên bề mặt Trái Đất",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "mus.interval": {
+    "id": "mus.interval",
+    "title": "Quãng nhạc & tần số",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "stats.mean": {
+    "id": "stats.mean",
+    "title": "Số trung bình & độ lệch chuẩn",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "eng.sentence": {
+    "id": "eng.sentence",
+    "title": "Cấu trúc câu tiếng Anh",
+    "category": "",
+    "desc": "",
+    "file": "index-D5yZyPdH.js"
+  },
+  "bio.cells3d": {
+    "id": "bio.cells3d",
+    "title": "Tế bào động vật/thực vật/vi khuẩn/nấm · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Biology3D-DBHxU58-.js"
+  },
+  "bio.organelles3d": {
+    "id": "bio.organelles3d",
+    "title": "Ti thể & lục lạp · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Biology3D-DBHxU58-.js"
+  },
+  "bio.membrane3d": {
+    "id": "bio.membrane3d",
+    "title": "Màng sinh chất động vật · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Biology3D-DBHxU58-.js"
+  },
+  "bio.dna3d": {
+    "id": "bio.dna3d",
+    "title": "DNA & cặp base bổ sung · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Biology3D-DBHxU58-.js"
+  },
+  "bio.division3d": {
+    "id": "bio.division3d",
+    "title": "Nguyên phân & giảm phân · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Biology3D-DBHxU58-.js"
+  },
+  "chem.atom3d": {
+    "id": "chem.atom3d",
+    "title": "Nguyên tử, ion & đồng vị · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Chemistry3D-tVelMiQ9.js"
+  },
+  "chem.orbital3d": {
+    "id": "chem.orbital3d",
+    "title": "Electron & orbital · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Chemistry3D-tVelMiQ9.js"
+  },
+  "chem.molecule3d": {
+    "id": "chem.molecule3d",
+    "title": "Phân tử & VSEPR · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Chemistry3D-tVelMiQ9.js"
+  },
+  "chem.hydrocarbon3d": {
+    "id": "chem.hydrocarbon3d",
+    "title": "Dãy hydrocarbon · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Chemistry3D-tVelMiQ9.js"
+  },
+  "chem.crystal3d": {
+    "id": "chem.crystal3d",
+    "title": "Mạng tinh thể & ô mạng · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Chemistry3D-tVelMiQ9.js"
+  },
+  "chem.gas3d": {
+    "id": "chem.gas3d",
+    "title": "Khí lý tưởng & chuyển động hạt · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Chemistry3D-tVelMiQ9.js"
+  },
+  "chem.energy3d": {
+    "id": "chem.energy3d",
+    "title": "Mặt năng lượng giáo khoa · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Chemistry3D-tVelMiQ9.js"
+  },
+  "chem.redox3d": {
+    "id": "chem.redox3d",
+    "title": "Oxi hóa–khử & chuyển electron · mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "ChemistryWorkbench3D-Dhu-Dreo.js"
+  },
+  "bio.photosynthesis": {
+    "id": "bio.photosynthesis",
+    "title": "Quang hợp",
+    "category": "",
+    "desc": "",
+    "file": "extraBioC-86p0PwVI.js"
+  },
+  "bio.respiration": {
+    "id": "bio.respiration",
+    "title": "Hô hấp tế bào",
+    "category": "",
+    "desc": "",
+    "file": "extraBioC-86p0PwVI.js"
+  },
+  "bio.bloodgroup": {
+    "id": "bio.bloodgroup",
+    "title": "Nhóm máu ABO & Rh",
+    "category": "",
+    "desc": "",
+    "file": "extraBioC-86p0PwVI.js"
+  },
+  "bio.codon": {
+    "id": "bio.codon",
+    "title": "Mã di truyền & dịch mã",
+    "category": "",
+    "desc": "",
+    "file": "extraBioC-86p0PwVI.js"
+  },
+  "bio.microscope": {
+    "id": "bio.microscope",
+    "title": "Kính hiển vi",
+    "category": "",
+    "desc": "",
+    "file": "extraBioC-86p0PwVI.js"
+  },
+  "bio.enzyme": {
+    "id": "bio.enzyme",
+    "title": "Hoạt tính enzyme",
+    "category": "",
+    "desc": "",
+    "file": "extraBioC-86p0PwVI.js"
+  },
+  "bio.mutation": {
+    "id": "bio.mutation",
+    "title": "Đột biến gen",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "bio.hardyweinberg": {
+    "id": "bio.hardyweinberg",
+    "title": "Cân bằng Hardy – Weinberg",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "bio.breeding2": {
+    "id": "bio.breeding2",
+    "title": "Lai hai cặp tính trạng",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "bio.throphyramid": {
+    "id": "bio.throphyramid",
+    "title": "Tháp sinh thái & dòng năng lượng",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "bio.bloodflow": {
+    "id": "bio.bloodflow",
+    "title": "Vận chuyển máu",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "bio.nutrient": {
+    "id": "bio.nutrient",
+    "title": "Khẩu phần dinh dưỡng",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "bio.popgrowth": {
+    "id": "bio.popgrowth",
+    "title": "Tăng trưởng quần thể (logistic)",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "bio.ecosystembalance": {
+    "id": "bio.ecosystembalance",
+    "title": "Cân bằng hệ sinh thái",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "grass": {
+    "id": "grass",
+    "title": "Cỏ (sản xuất)",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "insect": {
+    "id": "insect",
+    "title": "Châu chấu",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "frog": {
+    "id": "frog",
+    "title": "Ếch",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "snake": {
+    "id": "snake",
+    "title": "Rắn",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "eagle": {
+    "id": "eagle",
+    "title": "Đại bàng",
+    "category": "",
+    "desc": "",
+    "file": "extraBioD-CtXpuLXE.js"
+  },
+  "chem.stoichiometry": {
+    "id": "chem.stoichiometry",
+    "title": "Tính theo phương trình hoá học",
+    "category": "",
+    "desc": "",
+    "file": "extraChemC-CLP7AGu4.js"
+  },
+  "chem.electronconfig": {
+    "id": "chem.electronconfig",
+    "title": "Cấu hình electron",
+    "category": "",
+    "desc": "",
+    "file": "extraChemC-CLP7AGu4.js"
+  },
+  "chem.empirical": {
+    "id": "chem.empirical",
+    "title": "Công thức đơn giản nhất",
+    "category": "",
+    "desc": "",
+    "file": "extraChemC-CLP7AGu4.js"
+  },
+  "chem.alkane": {
+    "id": "chem.alkane",
+    "title": "Dãy đồng đẳng hiđrocacbon",
+    "category": "",
+    "desc": "",
+    "file": "extraChemC-CLP7AGu4.js"
+  },
+  "chem.electrolysis": {
+    "id": "chem.electrolysis",
+    "title": "Điện phân & định luật Faraday",
+    "category": "",
+    "desc": "",
+    "file": "extraChemC-CLP7AGu4.js"
+  },
+  "chem.heat": {
+    "id": "chem.heat",
+    "title": "Nhiệt phản ứng ΔH",
+    "category": "",
+    "desc": "",
+    "file": "extraChemC-CLP7AGu4.js"
+  },
+  "chem.yield": {
+    "id": "chem.yield",
+    "title": "Hiệu suất phản ứng",
+    "category": "",
+    "desc": "",
+    "file": "extraChemC-CLP7AGu4.js"
+  },
+  "chem.oxidationrules": {
+    "id": "chem.oxidationrules",
+    "title": "Quy tắc số oxi hoá",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "chem.molaritymix": {
+    "id": "chem.molaritymix",
+    "title": "Trộn & pha dung dịch",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "chem.limiting": {
+    "id": "chem.limiting",
+    "title": "Chất hạn chế",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "chem.periodictrend": {
+    "id": "chem.periodictrend",
+    "title": "Xu hướng tuần hoàn",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "chem.solubility": {
+    "id": "chem.solubility",
+    "title": "Độ tan & kết tinh",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "chem.polymer": {
+    "id": "chem.polymer",
+    "title": "Polime & trùng hợp",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "chem.galvanic": {
+    "id": "chem.galvanic",
+    "title": "Pin điện hoá",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "chem.phcurve": {
+    "id": "chem.phcurve",
+    "title": "Đường cong chuẩn độ",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "chem.isotope": {
+    "id": "chem.isotope",
+    "title": "Đồng vị & nguyên tử khối",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "chem.kc": {
+    "id": "chem.kc",
+    "title": "Hằng số cân bằng Kc",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "chem.esterification": {
+    "id": "chem.esterification",
+    "title": "Hiệu suất este hoá",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "chem.concentrationconv": {
+    "id": "chem.concentrationconv",
+    "title": "Đổi nồng độ dung dịch",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "chem.energyprofile": {
+    "id": "chem.energyprofile",
+    "title": "Giản đồ năng lượng phản ứng",
+    "category": "",
+    "desc": "",
+    "file": "extraChemD-BBixSLig.js"
+  },
+  "class.seating": {
+    "id": "class.seating",
+    "title": "Sơ đồ chỗ ngồi",
+    "category": "",
+    "desc": "",
+    "file": "extraClassC-C6v9bHPX.js"
+  },
+  "class.gradebook": {
+    "id": "class.gradebook",
+    "title": "Sổ điểm cá nhân",
+    "category": "",
+    "desc": "",
+    "file": "extraClassC-C6v9bHPX.js"
+  },
+  "class.gradecurve": {
+    "id": "class.gradecurve",
+    "title": "Phổ điểm của lớp",
+    "category": "",
+    "desc": "",
+    "file": "extraClassC-C6v9bHPX.js"
+  },
+  "class.behavior": {
+    "id": "class.behavior",
+    "title": "Nhận xét nhanh",
+    "category": "",
+    "desc": "",
+    "file": "extraClassC-C6v9bHPX.js"
+  },
+  "class.parentnote": {
+    "id": "class.parentnote",
+    "title": "Phiếu liên lạc phụ huynh",
+    "category": "",
+    "desc": "",
+    "file": "extraClassC-C6v9bHPX.js"
+  },
+  "class.timetable": {
+    "id": "class.timetable",
+    "title": "Thời khoá biểu tuần",
+    "category": "",
+    "desc": "",
+    "file": "extraClassC-C6v9bHPX.js"
+  },
+  "class.objectives": {
+    "id": "class.objectives",
+    "title": "Mục tiêu bài học theo thang Bloom",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "class.lessonplan": {
+    "id": "class.lessonplan",
+    "title": "Giáo án nhanh theo hoạt động",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "class.warmup": {
+    "id": "class.warmup",
+    "title": "Kho hoạt động khởi động",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "class.grouproles": {
+    "id": "class.grouproles",
+    "title": "Chia nhóm & phân vai",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "class.rubricgroup": {
+    "id": "class.rubricgroup",
+    "title": "Thang điểm làm việc nhóm",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "class.exitticket": {
+    "id": "class.exitticket",
+    "title": "Phiếu cuối tiết",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "class.callorder": {
+    "id": "class.callorder",
+    "title": "Thứ tự gọi công bằng",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "class.homework": {
+    "id": "class.homework",
+    "title": "Theo dõi nộp bài",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "class.parentsms": {
+    "id": "class.parentsms",
+    "title": "Mẫu tin nhắn phụ huynh",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "class.reward": {
+    "id": "class.reward",
+    "title": "Thi đua theo tuần",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "class.plandist": {
+    "id": "class.plandist",
+    "title": "Phân phối chương trình",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "nhanbiet": {
+    "id": "nhanbiet",
+    "title": "Nhận biết",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "thonghieu": {
+    "id": "thonghieu",
+    "title": "Thông hiểu",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "vandung": {
+    "id": "vandung",
+    "title": "Vận dụng",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "vandungcao": {
+    "id": "vandungcao",
+    "title": "Vận dụng cao",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w1": {
+    "id": "w1",
+    "title": "Một phút suy nghĩ – chia sẻ – trình bày",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w2": {
+    "id": "w2",
+    "title": "Đoán từ khoá trên bảng",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w3": {
+    "id": "w3",
+    "title": "Bài toán 60 giây",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w4": {
+    "id": "w4",
+    "title": "Dự đoán hiện tượng",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w5": {
+    "id": "w5",
+    "title": "Gọi tên nhanh theo hàng",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w6": {
+    "id": "w6",
+    "title": "Mảnh ghép còn thiếu",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w7": {
+    "id": "w7",
+    "title": "Đúng hay sai",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w8": {
+    "id": "w8",
+    "title": "Xếp thứ tự sự kiện",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w9": {
+    "id": "w9",
+    "title": "Tìm điểm vô lí trên hình",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w10": {
+    "id": "w10",
+    "title": "Liệt kê tiếp sức",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w11": {
+    "id": "w11",
+    "title": "Câu hỏi ngược",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w12": {
+    "id": "w12",
+    "title": "Đoán nhanh con số",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w13": {
+    "id": "w13",
+    "title": "Một câu hỏi – một bức vẽ",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "w14": {
+    "id": "w14",
+    "title": "Ôn nhanh bằng trò chơi nhịp",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "c1": {
+    "id": "c1",
+    "title": "Hoàn thành nhiệm vụ",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "c2": {
+    "id": "c2",
+    "title": "Hợp tác & lắng nghe",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "c3": {
+    "id": "c3",
+    "title": "Trình bày kết quả",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "c4": {
+    "id": "c4",
+    "title": "Quản lí thời gian",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "c5": {
+    "id": "c5",
+    "title": "Sáng tạo",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "khen": {
+    "id": "khen",
+    "title": "Khen ngợi tiến bộ",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "nhac": {
+    "id": "nhac",
+    "title": "Nhắc nhở bài tập",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "hoc": {
+    "id": "hoc",
+    "title": "Mời họp phụ huynh",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "kiemtra": {
+    "id": "kiemtra",
+    "title": "Thông báo kiểm tra",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "vang": {
+    "id": "vang",
+    "title": "Nhắc chuyên cần",
+    "category": "",
+    "desc": "",
+    "file": "extraClassD-D0nJKUhh.js"
+  },
+  "cs.truthtable": {
+    "id": "cs.truthtable",
+    "title": "Bảng chân trị logic",
+    "category": "",
+    "desc": "",
+    "file": "extraCsC-J3S8G6I0.js"
+  },
+  "cs.cipher": {
+    "id": "cs.cipher",
+    "title": "Mã hoá cổ điển",
+    "category": "",
+    "desc": "",
+    "file": "extraCsC-J3S8G6I0.js"
+  },
+  "cs.search": {
+    "id": "cs.search",
+    "title": "Tìm kiếm tuần tự & nhị phân",
+    "category": "",
+    "desc": "",
+    "file": "extraCsC-J3S8G6I0.js"
+  },
+  "cs.stackqueue": {
+    "id": "cs.stackqueue",
+    "title": "Ngăn xếp & hàng đợi",
+    "category": "",
+    "desc": "",
+    "file": "extraCsC-J3S8G6I0.js"
+  },
+  "cs.subnet": {
+    "id": "cs.subnet",
+    "title": "Chia mạng IPv4",
+    "category": "",
+    "desc": "",
+    "file": "extraCsC-J3S8G6I0.js"
+  },
+  "cs.robot": {
+    "id": "cs.robot",
+    "title": "Robot trên lưới",
+    "category": "",
+    "desc": "",
+    "file": "extraCsC-J3S8G6I0.js"
+  },
+  "cs.adjacencymatrix": {
+    "id": "cs.adjacencymatrix",
+    "title": "Ma trận kề đồ thị",
+    "category": "",
+    "desc": "",
+    "file": "extraCsC-J3S8G6I0.js"
+  },
+  "cs.arrayops": {
+    "id": "cs.arrayops",
+    "title": "Xử lý mảng số",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "cs.stringops": {
+    "id": "cs.stringops",
+    "title": "Xử lý xâu ký tự",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "cs.primesieve": {
+    "id": "cs.primesieve",
+    "title": "Sàng số nguyên tố",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "cs.bigsum": {
+    "id": "cs.bigsum",
+    "title": "Số nguyên siêu dài",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "cs.queueSim": {
+    "id": "cs.queueSim",
+    "title": "Mô phỏng hàng đợi phục vụ",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "cs.coinchange": {
+    "id": "cs.coinchange",
+    "title": "Bài toán đổi tiền",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "cs.knapsack": {
+    "id": "cs.knapsack",
+    "title": "Ba lô 0/1",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "cs.dijkstra": {
+    "id": "cs.dijkstra",
+    "title": "Đường đi ngắn nhất",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "cs.sortsim": {
+    "id": "cs.sortsim",
+    "title": "So sánh ba thuật toán sắp xếp",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "cs.heap": {
+    "id": "cs.heap",
+    "title": "Vun đống & hàng đợi ưu tiên",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "cs.graycode": {
+    "id": "cs.graycode",
+    "title": "Mã Gray",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "cs.hamming": {
+    "id": "cs.hamming",
+    "title": "Mã sửa lỗi Hamming(7,4)",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "cs.csv": {
+    "id": "cs.csv",
+    "title": "Xử lý bảng dữ liệu",
+    "category": "",
+    "desc": "",
+    "file": "extraCsD-BpWbd-V8.js"
+  },
+  "geo.heritage": {
+    "id": "geo.heritage",
+    "title": "Di sản thế giới của Việt Nam",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoC-BzJ7d7Rk.js"
+  },
+  "geo.mapscale": {
+    "id": "geo.mapscale",
+    "title": "Tỉ lệ bản đồ & khoảng cách",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoC-BzJ7d7Rk.js"
+  },
+  "geo.slope": {
+    "id": "geo.slope",
+    "title": "Độ dốc địa hình",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoC-BzJ7d7Rk.js"
+  },
+  "geo.riverflow": {
+    "id": "geo.riverflow",
+    "title": "Lưu lượng dòng sông",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoC-BzJ7d7Rk.js"
+  },
+  "geo.solarangle": {
+    "id": "geo.solarangle",
+    "title": "Góc nhập xạ Mặt Trời",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoC-BzJ7d7Rk.js"
+  },
+  "geo.timezone": {
+    "id": "geo.timezone",
+    "title": "Múi giờ các thành phố",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoC-BzJ7d7Rk.js"
+  },
+  "geo.cropyield": {
+    "id": "geo.cropyield",
+    "title": "Năng suất & sản lượng nông nghiệp",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoC-BzJ7d7Rk.js"
+  },
+  "geo.terrain": {
+    "id": "geo.terrain",
+    "title": "Mặt cắt địa hình",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoC-BzJ7d7Rk.js"
+  },
+  "geo.rainfallchart": {
+    "id": "geo.rainfallchart",
+    "title": "Biểu đồ khí hậu 12 tháng",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoD-CtSg056j.js"
+  },
+  "geo.wind": {
+    "id": "geo.wind",
+    "title": "Gió mùa & hoàn lưu",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoD-CtSg056j.js"
+  },
+  "geo.soil": {
+    "id": "geo.soil",
+    "title": "Các nhóm đất chính",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoD-CtSg056j.js"
+  },
+  "geo.urban": {
+    "id": "geo.urban",
+    "title": "Đô thị hoá",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoD-CtSg056j.js"
+  },
+  "geo.trade": {
+    "id": "geo.trade",
+    "title": "Cán cân thương mại",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoD-CtSg056j.js"
+  },
+  "geo.energy": {
+    "id": "geo.energy",
+    "title": "Cơ cấu nguồn điện & phát thải",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoD-CtSg056j.js"
+  },
+  "geo.fishery": {
+    "id": "geo.fishery",
+    "title": "Thuỷ sản: khai thác & nuôi trồng",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoD-CtSg056j.js"
+  },
+  "geo.sealevel": {
+    "id": "geo.sealevel",
+    "title": "Mực nước biển dâng",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoD-CtSg056j.js"
+  },
+  "geo.seaisland": {
+    "id": "geo.seaisland",
+    "title": "Các vùng biển & đảo",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoD-CtSg056j.js"
+  },
+  "geo.atlas": {
+    "id": "geo.atlas",
+    "title": "Đọc Atlat & so sánh vùng",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoD-CtSg056j.js"
+  },
+  "geo.disaster": {
+    "id": "geo.disaster",
+    "title": "Thiên tai & chỉ số rủi ro",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoD-CtSg056j.js"
+  },
+  "geo.project": {
+    "id": "geo.project",
+    "title": "Phép chiếu bản đồ & sai số",
+    "category": "",
+    "desc": "",
+    "file": "extraGeoD-CtSg056j.js"
+  },
+  "hist.dynasty": {
+    "id": "hist.dynasty",
+    "title": "Các triều đại Việt Nam",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryC-DBmoulh6.js"
+  },
+  "hist.period": {
+    "id": "hist.period",
+    "title": "Các thời kỳ lịch sử Việt Nam",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryC-DBmoulh6.js"
+  },
+  "hist.figure": {
+    "id": "hist.figure",
+    "title": "Nhân vật lịch sử",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryC-DBmoulh6.js"
+  },
+  "hist.chrono": {
+    "id": "hist.chrono",
+    "title": "Luyện sắp xếp mốc lịch sử",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryC-DBmoulh6.js"
+  },
+  "hist.treaty": {
+    "id": "hist.treaty",
+    "title": "Tuyên ngôn & hiệp định",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryC-DBmoulh6.js"
+  },
+  "hist.world": {
+    "id": "hist.world",
+    "title": "Mốc lịch sử thế giới",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryC-DBmoulh6.js"
+  },
+  "hist.modern": {
+    "id": "hist.modern",
+    "title": "Việt Nam hiện đại 1858 → nay",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryC-DBmoulh6.js"
+  },
+  "land": {
+    "id": "land",
+    "title": "Con đường tơ lụa trên bộ (thế kỷ II TCN – thế kỷ XV)",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "sea": {
+    "id": "sea",
+    "title": "Con đường tơ lụa trên biển và vai trò của Việt Nam",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "hist.campaign": {
+    "id": "hist.campaign",
+    "title": "Chiến dịch quân sự lớn",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "hist.constitution": {
+    "id": "hist.constitution",
+    "title": "Năm bản hiến pháp Việt Nam",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "hist.partycongress": {
+    "id": "hist.partycongress",
+    "title": "Các kỳ Đại hội Đảng",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "hist.colonial": {
+    "id": "hist.colonial",
+    "title": "Phong trào chống Pháp",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "hist.worldwar": {
+    "id": "hist.worldwar",
+    "title": "Hai cuộc chiến tranh thế giới",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "hist.coldwar": {
+    "id": "hist.coldwar",
+    "title": "Chiến tranh lạnh 1947 – 1991",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "hist.culture": {
+    "id": "hist.culture",
+    "title": "Văn hoá – văn minh Đại Việt",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "hist.silkroad": {
+    "id": "hist.silkroad",
+    "title": "Con đường tơ lụa",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "hist.compare": {
+    "id": "hist.compare",
+    "title": "So sánh hai sự kiện",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "hist.border": {
+    "id": "hist.border",
+    "title": "Biên giới và biển đảo sau 1975",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "hist.quizyear": {
+    "id": "hist.quizyear",
+    "title": "Luyện đoán năm sự kiện",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "hist.figureperiod": {
+    "id": "hist.figureperiod",
+    "title": "Nhân vật thuộc thời kỳ nào",
+    "category": "",
+    "desc": "",
+    "file": "extraHistoryD-rRc8JUft.js"
+  },
+  "lang.irregular": {
+    "id": "lang.irregular",
+    "title": "Động từ bất quy tắc",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "lang.tenses": {
+    "id": "lang.tenses",
+    "title": "12 thì tiếng Anh",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "lang.wordform": {
+    "id": "lang.wordform",
+    "title": "Cấu tạo từ & họ từ",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "lang.pronunciation": {
+    "id": "lang.pronunciation",
+    "title": "Phát âm -s/-es và -ed",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "lang.sentencebuild": {
+    "id": "lang.sentencebuild",
+    "title": "Sắp xếp từ thành câu",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "lang.numberreading": {
+    "id": "lang.numberreading",
+    "title": "Đọc số, ngày, giờ",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "lang.articles": {
+    "id": "lang.articles",
+    "title": "Mạo từ a / an / the",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "lang.conditional": {
+    "id": "lang.conditional",
+    "title": "Câu điều kiện",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "present-simple": {
+    "id": "present-simple",
+    "title": "Hiện tại đơn",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "present-continuous": {
+    "id": "present-continuous",
+    "title": "Hiện tại tiếp diễn",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "present-perfect": {
+    "id": "present-perfect",
+    "title": "Hiện tại hoàn thành",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "present-perfect-continuous": {
+    "id": "present-perfect-continuous",
+    "title": "Hiện tại hoàn thành tiếp diễn",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "past-simple": {
+    "id": "past-simple",
+    "title": "Quá khứ đơn",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "past-continuous": {
+    "id": "past-continuous",
+    "title": "Quá khứ tiếp diễn",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "past-perfect": {
+    "id": "past-perfect",
+    "title": "Quá khứ hoàn thành",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "past-perfect-continuous": {
+    "id": "past-perfect-continuous",
+    "title": "Quá khứ hoàn thành tiếp diễn",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "near-future": {
+    "id": "near-future",
+    "title": "Tương lai gần (be going to)",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "future-simple": {
+    "id": "future-simple",
+    "title": "Tương lai đơn",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "future-continuous": {
+    "id": "future-continuous",
+    "title": "Tương lai tiếp diễn",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "future-perfect": {
+    "id": "future-perfect",
+    "title": "Tương lai hoàn thành",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "zero": {
+    "id": "zero",
+    "title": "Loại 0 — sự thật hiển nhiên",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "one": {
+    "id": "one",
+    "title": "Loại 1 — có thể xảy ra ở tương lai",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "two": {
+    "id": "two",
+    "title": "Loại 2 — không có thật ở hiện tại",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "three": {
+    "id": "three",
+    "title": "Loại 3 — không có thật trong quá khứ",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "mixed": {
+    "id": "mixed",
+    "title": "Hỗn hợp (quá khứ → hiện tại)",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "mixed2": {
+    "id": "mixed2",
+    "title": "Hỗn hợp (hiện tại → quá khứ)",
+    "category": "",
+    "desc": "",
+    "file": "extraLangC-BGdHQxMv.js"
+  },
+  "lang.phrasalverbs": {
+    "id": "lang.phrasalverbs",
+    "title": "Cụm động từ (phrasal verbs)",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lang.reported": {
+    "id": "lang.reported",
+    "title": "Câu tường thuật",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lang.passive": {
+    "id": "lang.passive",
+    "title": "Câu bị động",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lang.relative": {
+    "id": "lang.relative",
+    "title": "Mệnh đề quan hệ",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lang.connectors": {
+    "id": "lang.connectors",
+    "title": "Từ nối viết đoạn",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lang.spelling": {
+    "id": "lang.spelling",
+    "title": "Luyện chính tả tiếng Anh",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lang.readingcomp": {
+    "id": "lang.readingcomp",
+    "title": "Khung câu hỏi đọc hiểu",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lang.grammarquiz": {
+    "id": "lang.grammarquiz",
+    "title": "Trắc nghiệm ngữ pháp",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lang.essaystruct": {
+    "id": "lang.essaystruct",
+    "title": "Cấu trúc bài luận",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lang.stress": {
+    "id": "lang.stress",
+    "title": "Trọng âm từ",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lang.mixedtenses": {
+    "id": "lang.mixedtenses",
+    "title": "Trộn thì trong đoạn văn",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lang.prepositions": {
+    "id": "lang.prepositions",
+    "title": "Giới từ",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lang.translatebuild": {
+    "id": "lang.translatebuild",
+    "title": "Ghép cụm thành câu",
+    "category": "",
+    "desc": "",
+    "file": "extraLangD-CKDcHJcE.js"
+  },
+  "lit.rhetoric": {
+    "id": "lit.rhetoric",
+    "title": "Biện pháp tu từ",
+    "category": "",
+    "desc": "",
+    "file": "extraLit-CnqZ7p05.js"
+  },
+  "lit.poemform": {
+    "id": "lit.poemform",
+    "title": "Nhận dạng thể thơ",
+    "category": "",
+    "desc": "",
+    "file": "extraLit-CnqZ7p05.js"
+  },
+  "lit.spelling": {
+    "id": "lit.spelling",
+    "title": "Chính tả dễ sai",
+    "category": "",
+    "desc": "",
+    "file": "extraLit-CnqZ7p05.js"
+  },
+  "lit.outline": {
+    "id": "lit.outline",
+    "title": "Dàn ý theo thể loại",
+    "category": "",
+    "desc": "",
+    "file": "extraLit-CnqZ7p05.js"
+  },
+  "lit.sentence": {
+    "id": "lit.sentence",
+    "title": "Phân tích câu",
+    "category": "",
+    "desc": "",
+    "file": "extraLit-CnqZ7p05.js"
+  },
+  "lit.textstats": {
+    "id": "lit.textstats",
+    "title": "Thống kê văn bản",
+    "category": "",
+    "desc": "",
+    "file": "extraLit-CnqZ7p05.js"
+  },
+  "lit.idiom": {
+    "id": "lit.idiom",
+    "title": "Thành ngữ – tục ngữ",
+    "category": "",
+    "desc": "",
+    "file": "extraLit-CnqZ7p05.js"
+  },
+  "lit.authors": {
+    "id": "lit.authors",
+    "title": "Tác giả – tác phẩm",
+    "category": "",
+    "desc": "",
+    "file": "extraLit-CnqZ7p05.js"
+  },
+  "lit.storyarc": {
+    "id": "lit.storyarc",
+    "title": "Cốt truyện & đường cong căng thẳng",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "lit.argument": {
+    "id": "lit.argument",
+    "title": "Kiểm tra lập luận",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "lit.comparetext": {
+    "id": "lit.comparetext",
+    "title": "So sánh hai đoạn văn",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "lit.figurative": {
+    "id": "lit.figurative",
+    "title": "Phân biệt biện pháp tu từ",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "lit.summarize": {
+    "id": "lit.summarize",
+    "title": "Tóm tắt văn bản",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "lit.vocab": {
+    "id": "lit.vocab",
+    "title": "Từ Hán Việt",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "lit.punctuation": {
+    "id": "lit.punctuation",
+    "title": "Kiểm tra dấu câu",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "lit.narrator": {
+    "id": "lit.narrator",
+    "title": "Ngôi kể & điểm nhìn",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "lit.style": {
+    "id": "lit.style",
+    "title": "Phong cách ngôn ngữ",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "lit.readingquiz": {
+    "id": "lit.readingquiz",
+    "title": "Sinh câu hỏi đọc hiểu",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "lit.essayrubric": {
+    "id": "lit.essayrubric",
+    "title": "Chấm bài văn theo tiêu chí",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "lit.quotes": {
+    "id": "lit.quotes",
+    "title": "Trích dẫn & ghi nguồn",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "lit.wordfamily": {
+    "id": "lit.wordfamily",
+    "title": "Trường nghĩa & mạng từ",
+    "category": "",
+    "desc": "",
+    "file": "extraLitD-BsXPTCiu.js"
+  },
+  "math.polynomialfactor": {
+    "id": "math.polynomialfactor",
+    "title": "Phân tích đa thức thành nhân tử",
+    "category": "",
+    "desc": "",
+    "file": "extraMathC-BBBUSpqa.js"
+  },
+  "math.logequation": {
+    "id": "math.logequation",
+    "title": "Phương trình mũ & logarit",
+    "category": "",
+    "desc": "",
+    "file": "extraMathC-BBBUSpqa.js"
+  },
+  "math.trigequation": {
+    "id": "math.trigequation",
+    "title": "Phương trình lượng giác cơ bản",
+    "category": "",
+    "desc": "",
+    "file": "extraMathC-BBBUSpqa.js"
+  },
+  "math.limits": {
+    "id": "math.limits",
+    "title": "Giới hạn hàm số",
+    "category": "",
+    "desc": "",
+    "file": "extraMathC-BBBUSpqa.js"
+  },
+  "math.similartriangles": {
+    "id": "math.similartriangles",
+    "title": "Tam giác đồng dạng & Thales",
+    "category": "",
+    "desc": "",
+    "file": "extraMathC-BBBUSpqa.js"
+  },
+  "math.circlegeo": {
+    "id": "math.circlegeo",
+    "title": "Đường tròn: dây, tiếp tuyến, cung",
+    "category": "",
+    "desc": "",
+    "file": "extraMathC-BBBUSpqa.js"
+  },
+  "math.area3d": {
+    "id": "math.area3d",
+    "title": "Diện tích & thể tích khối không gian",
+    "category": "",
+    "desc": "",
+    "file": "extraMathC-BBBUSpqa.js"
+  },
+  "math.proportion": {
+    "id": "math.proportion",
+    "title": "Tỉ lệ thức & chia theo tỉ lệ",
+    "category": "",
+    "desc": "",
+    "file": "extraMathC-BBBUSpqa.js"
+  },
+  "math.pythagoras": {
+    "id": "math.pythagoras",
+    "title": "Định lý Pythagore & kiểm tra tam giác vuông",
+    "category": "",
+    "desc": "",
+    "file": "extraMathD-h3-xuWcO.js"
+  },
+  "math.circleline": {
+    "id": "math.circleline",
+    "title": "Đường thẳng và đường tròn",
+    "category": "",
+    "desc": "",
+    "file": "extraMathD-h3-xuWcO.js"
+  },
+  "math.radical": {
+    "id": "math.radical",
+    "title": "Rút gọn và so sánh căn thức",
+    "category": "",
+    "desc": "",
+    "file": "extraMathD-h3-xuWcO.js"
+  },
+  "math.monotonic": {
+    "id": "math.monotonic",
+    "title": "Đơn điệu & cực trị hàm đa thức",
+    "category": "",
+    "desc": "",
+    "file": "extraMathD-h3-xuWcO.js"
+  },
+  "math.angleshape": {
+    "id": "math.angleshape",
+    "title": "Đa giác đều",
+    "category": "",
+    "desc": "",
+    "file": "extraMathD-h3-xuWcO.js"
+  },
+  "math.areaplane": {
+    "id": "math.areaplane",
+    "title": "Chu vi & diện tích hình phẳng",
+    "category": "",
+    "desc": "",
+    "file": "extraMathD-h3-xuWcO.js"
+  },
+  "math.combinatorics2": {
+    "id": "math.combinatorics2",
+    "title": "Nhị thức Newton",
+    "category": "",
+    "desc": "",
+    "file": "extraMathD-h3-xuWcO.js"
+  },
+  "math.placement": {
+    "id": "math.placement",
+    "title": "Lấy có hoàn lại & biến ngẫu nhiên",
+    "category": "",
+    "desc": "",
+    "file": "extraMathD-h3-xuWcO.js"
+  },
+  "math.arithmeticword": {
+    "id": "math.arithmeticword",
+    "title": "Giải bài toán đố từng bước",
+    "category": "",
+    "desc": "",
+    "file": "extraMathD-h3-xuWcO.js"
+  },
+  "math.mathtext": {
+    "id": "math.mathtext",
+    "title": "Đọc số bằng chữ tiếng Việt",
+    "category": "",
+    "desc": "",
+    "file": "extraMathD-h3-xuWcO.js"
+  },
+  "math.golden": {
+    "id": "math.golden",
+    "title": "Đo chiều cao gián tiếp",
+    "category": "",
+    "desc": "",
+    "file": "extraMathD-h3-xuWcO.js"
+  },
+  "math.numbersets": {
+    "id": "math.numbersets",
+    "title": "Tập hợp số & trục số",
+    "category": "",
+    "desc": "",
+    "file": "extraMathVideo-CywJui9G.js"
+  },
+  "math.linear": {
+    "id": "math.linear",
+    "title": "Hàm bậc nhất y = ax + b",
+    "category": "",
+    "desc": "",
+    "file": "extraMathVideo-CywJui9G.js"
+  },
+  "math.expnum": {
+    "id": "math.expnum",
+    "title": "Mũ, số e & logarit",
+    "category": "",
+    "desc": "",
+    "file": "extraMathVideo-CywJui9G.js"
+  },
+  "math.tangent": {
+    "id": "math.tangent",
+    "title": "Đạo hàm & tiếp tuyến",
+    "category": "",
+    "desc": "",
+    "file": "extraMathVideo-CywJui9G.js"
+  },
+  "math.solidrev": {
+    "id": "math.solidrev",
+    "title": "Diện tích & thể tích tròn xoay",
+    "category": "",
+    "desc": "",
+    "file": "extraMathVideo-CywJui9G.js"
+  },
+  "math.galton": {
+    "id": "math.galton",
+    "title": "Bảng Galton & phân phối chuẩn",
+    "category": "",
+    "desc": "",
+    "file": "extraMathVideo-CywJui9G.js"
+  },
+  "math.lineparabola": {
+    "id": "math.lineparabola",
+    "title": "Đường thẳng cắt parabol",
+    "category": "",
+    "desc": "",
+    "file": "extraMathVideo-CywJui9G.js"
+  },
+  "math.eulerformula": {
+    "id": "math.eulerformula",
+    "title": "Công thức Euler e^(iθ)",
+    "category": "",
+    "desc": "",
+    "file": "extraMathVideo-CywJui9G.js"
+  },
+  "music.pitch": {
+    "id": "music.pitch",
+    "title": "Tần số nốt nhạc",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicC-BwsexH3C.js"
+  },
+  "music.scale": {
+    "id": "music.scale",
+    "title": "Âm giai trưởng & thứ",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicC-BwsexH3C.js"
+  },
+  "music.interval": {
+    "id": "music.interval",
+    "title": "Quãng giữa hai nốt",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicC-BwsexH3C.js"
+  },
+  "music.rhythm": {
+    "id": "music.rhythm",
+    "title": "Nhịp & trường độ",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicC-BwsexH3C.js"
+  },
+  "music.transpose": {
+    "id": "music.transpose",
+    "title": "Dịch giọng",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicC-BwsexH3C.js"
+  },
+  "music.notereader": {
+    "id": "music.notereader",
+    "title": "Đọc nốt khoá Sol",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicC-BwsexH3C.js"
+  },
+  "music.tempo": {
+    "id": "music.tempo",
+    "title": "Nhịp độ & thời lượng",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "music.keysignature": {
+    "id": "music.keysignature",
+    "title": "Giọng & dấu hoá",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "music.modes": {
+    "id": "music.modes",
+    "title": "Trưởng, thứ song song & cùng tên",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "music.chordprogress": {
+    "id": "music.chordprogress",
+    "title": "Vòng hợp âm đệm hát",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "music.inversion": {
+    "id": "music.inversion",
+    "title": "Thể đảo hợp âm",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "music.cadence": {
+    "id": "music.cadence",
+    "title": "Kết câu nhạc",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "music.rhythmpattern": {
+    "id": "music.rhythmpattern",
+    "title": "Mẫu tiết tấu 16 ô",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "music.dynamics": {
+    "id": "music.dynamics",
+    "title": "Sắc thái & ký hiệu",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "music.songform": {
+    "id": "music.songform",
+    "title": "Cấu trúc bài hát",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "music.drum": {
+    "id": "music.drum",
+    "title": "Mẫu trống cho lớp",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "music.range": {
+    "id": "music.range",
+    "title": "Âm vực nhạc cụ & giọng hát",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "music.listenmap": {
+    "id": "music.listenmap",
+    "title": "Bản đồ nghe bài hát",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "authentic": {
+    "id": "authentic",
+    "title": "Kết hoàn toàn (V – I)",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "plagal": {
+    "id": "plagal",
+    "title": "Kết biến cách (IV – I)",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "half": {
+    "id": "half",
+    "title": "Kết nửa (I – V)",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "deceptive": {
+    "id": "deceptive",
+    "title": "Kết tránh (V – vi)",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "pop": {
+    "id": "pop",
+    "title": "I – V – vi – IV (vòng phổ biến)",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "ii-v-i": {
+    "id": "ii-v-i",
+    "title": "ii – V – I (vòng jazz/bolero)",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "vi-iv-i-v": {
+    "id": "vi-iv-i-v",
+    "title": "vi – IV – I – V",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "blues": {
+    "id": "blues",
+    "title": "12 ô nhịp blues",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "circle": {
+    "id": "circle",
+    "title": "Vòng quãng năm (vi – ii – V – I)",
+    "category": "",
+    "desc": "",
+    "file": "extraMusicD-DsUwcK4s.js"
+  },
+  "phys.electricfield": {
+    "id": "phys.electricfield",
+    "title": "Điện trường & lực Coulomb",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsC-CQWYRDy7.js"
+  },
+  "phys.resistivity": {
+    "id": "phys.resistivity",
+    "title": "Điện trở dây dẫn",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsC-CQWYRDy7.js"
+  },
+  "phys.pressure": {
+    "id": "phys.pressure",
+    "title": "Áp suất & lực đẩy Ác-si-mét",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsC-CQWYRDy7.js"
+  },
+  "phys.momentum": {
+    "id": "phys.momentum",
+    "title": "Động lượng & va chạm",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsC-CQWYRDy7.js"
+  },
+  "phys.circularmotion": {
+    "id": "phys.circularmotion",
+    "title": "Chuyển động tròn đều",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsC-CQWYRDy7.js"
+  },
+  "phys.simplemachine": {
+    "id": "phys.simplemachine",
+    "title": "Máy cơ đơn giản",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsC-CQWYRDy7.js"
+  },
+  "phys.soundlevel": {
+    "id": "phys.soundlevel",
+    "title": "Mức cường độ âm (dB)",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsC-CQWYRDy7.js"
+  },
+  "phys.radioactive": {
+    "id": "phys.radioactive",
+    "title": "Phóng xạ & chu kỳ bán rã",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsC-CQWYRDy7.js"
+  },
+  "phys.coulombforce": {
+    "id": "phys.coulombforce",
+    "title": "Hợp lực ba điện tích",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.capacitor": {
+    "id": "phys.capacitor",
+    "title": "Tụ điện & ghép tụ",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.kirchhoff": {
+    "id": "phys.kirchhoff",
+    "title": "Mạch hai nguồn — Kirchhoff",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.powerbill": {
+    "id": "phys.powerbill",
+    "title": "Điện năng & tiền điện",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.lensdraw": {
+    "id": "phys.lensdraw",
+    "title": "Dựng ảnh qua thấu kính",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.projected": {
+    "id": "phys.projected",
+    "title": "Ném ngang từ độ cao",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.incline": {
+    "id": "phys.incline",
+    "title": "Mặt phẳng nghiêng có ma sát",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.buoyancy": {
+    "id": "phys.buoyancy",
+    "title": "Khinh khí cầu — Ác-si-mét trong không khí",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.springpendulum": {
+    "id": "phys.springpendulum",
+    "title": "Con lắc lò xo",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.interference": {
+    "id": "phys.interference",
+    "title": "Giao thoa ánh sáng (khe Young)",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.photoelectric": {
+    "id": "phys.photoelectric",
+    "title": "Hiện tượng quang điện",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.acpower": {
+    "id": "phys.acpower",
+    "title": "Mạch RLC xoay chiều",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.thermaltemp": {
+    "id": "phys.thermaltemp",
+    "title": "Thang nhiệt độ & giãn nở",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "phys.orbitsat": {
+    "id": "phys.orbitsat",
+    "title": "Vệ tinh quỹ đạo tròn",
+    "category": "",
+    "desc": "",
+    "file": "extraPhysicsD-Dj3-ZcUN.js"
+  },
+  "tools.roman": {
+    "id": "tools.roman",
+    "title": "Số La Mã",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsC-DBbSKRGp.js"
+  },
+  "tools.duration": {
+    "id": "tools.duration",
+    "title": "Cộng trừ thời lượng",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsC-DBbSKRGp.js"
+  },
+  "tools.bmi": {
+    "id": "tools.bmi",
+    "title": "BMI & nhu cầu năng lượng",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsC-DBbSKRGp.js"
+  },
+  "tools.si": {
+    "id": "tools.si",
+    "title": "Tiền tố SI",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsC-DBbSKRGp.js"
+  },
+  "tools.text": {
+    "id": "tools.text",
+    "title": "Xử lý văn bản",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsC-DBbSKRGp.js"
+  },
+  "tools.gpa": {
+    "id": "tools.gpa",
+    "title": "Quy đổi điểm & GPA",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsC-DBbSKRGp.js"
+  },
+  "tools.datecalc": {
+    "id": "tools.datecalc",
+    "title": "Ngày tháng & tuần dạy",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsD-C9aWuAB-.js"
+  },
+  "tools.salary": {
+    "id": "tools.salary",
+    "title": "Thu nhập giáo viên",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsD-C9aWuAB-.js"
+  },
+  "tools.rank": {
+    "id": "tools.rank",
+    "title": "Xếp hạng theo điểm",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsD-C9aWuAB-.js"
+  },
+  "tools.examshuffle": {
+    "id": "tools.examshuffle",
+    "title": "Trộn đề và đáp án",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsD-C9aWuAB-.js"
+  },
+  "tools.imgsize": {
+    "id": "tools.imgsize",
+    "title": "Kích thước ảnh & in ấn",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsD-C9aWuAB-.js"
+  },
+  "tools.filesize": {
+    "id": "tools.filesize",
+    "title": "Dung lượng tệp & lưu trữ",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsD-C9aWuAB-.js"
+  },
+  "tools.printpages": {
+    "id": "tools.printpages",
+    "title": "Số trang in khi thu nhỏ",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsD-C9aWuAB-.js"
+  },
+  "tools.lessonclock": {
+    "id": "tools.lessonclock",
+    "title": "Kế hoạch thời gian tiết học",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsD-C9aWuAB-.js"
+  },
+  "tools.webcolor": {
+    "id": "tools.webcolor",
+    "title": "Màu & độ tương phản cho trình chiếu",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsD-C9aWuAB-.js"
+  },
+  "tools.currency": {
+    "id": "tools.currency",
+    "title": "Đổi tiền theo tỉ giá",
+    "category": "",
+    "desc": "",
+    "file": "extraToolsD-C9aWuAB-.js"
+  },
+  "phys.3d.water-interference": {
+    "id": "phys.3d.water-interference",
+    "title": "Giao thoa sóng mặt nước · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.standing-wave": {
+    "id": "phys.3d.standing-wave",
+    "title": "Sóng dừng trên dây · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.projectile3d": {
+    "id": "phys.3d.projectile3d",
+    "title": "Chuyển động ném xiên · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.freefall3d": {
+    "id": "phys.3d.freefall3d",
+    "title": "Rơi tự do · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.spring3d": {
+    "id": "phys.3d.spring3d",
+    "title": "Con lắc lò xo có tắt dần · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.buoyancy3d": {
+    "id": "phys.3d.buoyancy3d",
+    "title": "Lực đẩy Archimedes · nổi và chìm · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.pressure3d": {
+    "id": "phys.3d.pressure3d",
+    "title": "Áp suất chất lỏng theo độ sâu · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.pulley3d": {
+    "id": "phys.3d.pulley3d",
+    "title": "Ròng rọc cố định và ròng rọc động · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.longitudinal3d": {
+    "id": "phys.3d.longitudinal3d",
+    "title": "Sóng âm dọc trong không khí · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.daynight3d": {
+    "id": "phys.3d.daynight3d",
+    "title": "Ngày và đêm do Trái Đất tự quay · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.magnetic-particle3d": {
+    "id": "phys.3d.magnetic-particle3d",
+    "title": "Hạt tích điện trong từ trường đều · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.rc3d": {
+    "id": "phys.3d.rc3d",
+    "title": "Nạp và xả tụ điện RC · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.orbit3d": {
+    "id": "phys.3d.orbit3d",
+    "title": "Quỹ đạo elip · định luật Kepler · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.kinematics": {
+    "id": "phys.3d.kinematics",
+    "title": "Động học chất điểm · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.newton": {
+    "id": "phys.3d.newton",
+    "title": "Ba định luật Newton · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.energy": {
+    "id": "phys.3d.energy",
+    "title": "Năng lượng & đường ray · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.torque": {
+    "id": "phys.3d.torque",
+    "title": "Mômen lực & cân bằng · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.collision": {
+    "id": "phys.3d.collision",
+    "title": "Va chạm đàn hồi xiên · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.cradle": {
+    "id": "phys.3d.cradle",
+    "title": "Con lắc Newton · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.oscillation": {
+    "id": "phys.3d.oscillation",
+    "title": "Dao động điều hòa · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.mechanical-wave": {
+    "id": "phys.3d.mechanical-wave",
+    "title": "Sóng cơ · dãy con lắc · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.atom": {
+    "id": "phys.3d.atom",
+    "title": "Nguyên tử & điện tích · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.charge": {
+    "id": "phys.3d.charge",
+    "title": "Lượng tử hóa điện tích · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.coulomb": {
+    "id": "phys.3d.coulomb",
+    "title": "Định luật Coulomb · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.ohm": {
+    "id": "phys.3d.ohm",
+    "title": "Định luật Ohm · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.circuit": {
+    "id": "phys.3d.circuit",
+    "title": "Mạch điện & công suất · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.electric-field": {
+    "id": "phys.3d.electric-field",
+    "title": "Điện trường · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.potential": {
+    "id": "phys.3d.potential",
+    "title": "Điện thế · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.magnet": {
+    "id": "phys.3d.magnet",
+    "title": "Từ trường nam châm · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.wire": {
+    "id": "phys.3d.wire",
+    "title": "Dòng điện sinh từ trường · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.induction": {
+    "id": "phys.3d.induction",
+    "title": "Cảm ứng điện từ · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.em-wave": {
+    "id": "phys.3d.em-wave",
+    "title": "Sóng điện từ · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.reflection": {
+    "id": "phys.3d.reflection",
+    "title": "Phản xạ ánh sáng · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.refraction": {
+    "id": "phys.3d.refraction",
+    "title": "Khúc xạ · định luật Snell · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.tir": {
+    "id": "phys.3d.tir",
+    "title": "Phản xạ toàn phần · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.dispersion": {
+    "id": "phys.3d.dispersion",
+    "title": "Tán sắc & tán xạ · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.lens": {
+    "id": "phys.3d.lens",
+    "title": "Thấu kính hội tụ & phân kỳ · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.diffraction": {
+    "id": "phys.3d.diffraction",
+    "title": "Nhiễu xạ một khe · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.interference": {
+    "id": "phys.3d.interference",
+    "title": "Giao thoa hai khe · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.sound-speed": {
+    "id": "phys.3d.sound-speed",
+    "title": "Tốc độ âm · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.hearing": {
+    "id": "phys.3d.hearing",
+    "title": "Ngưỡng nghe · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.beats": {
+    "id": "phys.3d.beats",
+    "title": "Giao thoa âm · phách · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.modulation": {
+    "id": "phys.3d.modulation",
+    "title": "Điều biên AM · điều tần FM · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.broadcast": {
+    "id": "phys.3d.broadcast",
+    "title": "Phát sóng & anten · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.temperature": {
+    "id": "phys.3d.temperature",
+    "title": "Nhiệt độ · K · °C · °F · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.phases": {
+    "id": "phys.3d.phases",
+    "title": "Ba thể của vật chất · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.ideal-gas": {
+    "id": "phys.3d.ideal-gas",
+    "title": "Khí lý tưởng · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.zeroth": {
+    "id": "phys.3d.zeroth",
+    "title": "Định luật 0 · cân bằng nhiệt · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.first-law": {
+    "id": "phys.3d.first-law",
+    "title": "Định luật I · bảo toàn năng lượng · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.carnot": {
+    "id": "phys.3d.carnot",
+    "title": "Chu trình Carnot · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.engine": {
+    "id": "phys.3d.engine",
+    "title": "Động cơ nhiệt · bốn kỳ · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.entropy": {
+    "id": "phys.3d.entropy",
+    "title": "Định luật II · entropy · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.third-law": {
+    "id": "phys.3d.third-law",
+    "title": "Định luật III · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.duality": {
+    "id": "phys.3d.duality",
+    "title": "Lưỡng tính sóng–hạt · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.levels": {
+    "id": "phys.3d.levels",
+    "title": "Lượng tử hóa năng lượng · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.superposition": {
+    "id": "phys.3d.superposition",
+    "title": "Chồng chập · cầu Bloch · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.entanglement": {
+    "id": "phys.3d.entanglement",
+    "title": "Vướng víu lượng tử · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.uncertainty": {
+    "id": "phys.3d.uncertainty",
+    "title": "Nguyên lý bất định · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.tunneling": {
+    "id": "phys.3d.tunneling",
+    "title": "Hiệu ứng đường hầm · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "phys.3d.schrodinger": {
+    "id": "phys.3d.schrodinger",
+    "title": "Phương trình Schrödinger · 3D",
+    "category": "",
+    "desc": "",
+    "file": "PhysicsVideoStudio-DuymtRvQ.js"
+  },
+  "tools.simulation3d": {
+    "id": "tools.simulation3d",
+    "title": "Mô phỏng 3D",
+    "category": "",
+    "desc": "",
+    "file": "Simulation3D-B7ODzI4P.js"
+  }
+}

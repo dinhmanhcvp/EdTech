@@ -1,0 +1,182 @@
+def hero_square(src, dst):
+    """Cắt ảnh Node lắp ráp thành hình vuông trắng đủ rộng để lọt trong vòng tròn (không cắt mất ăng-ten)."""
+    im = Image.open(os.path.join(A, src)).convert("RGB")
+    x0, y0, x1, y1 = ImageChops.difference(im, Image.new("RGB", im.size, (255, 255, 255))).point(lambda v: 255 if v > 10 else 0).getbbox()
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    r = max(((x - cx) ** 2 + (y - cy) ** 2) ** 0.5 for x in (x0, x1) for y in (y0, y1)) * 1.06
+    side = int(2 * r)
+    c = Image.new("RGB", (side, side), (255, 255, 255)); c.paste(im.crop((x0, y0, x1, y1)), (int(side / 2 - (x1 - x0) / 2), int(side / 2 - (y1 - y0) / 2)))
+    c.save(os.path.join(A, dst))
+
+
+hero_square("node_hero.png", "node_hero_sq.png")
+
+
+def ban(n, title):
+    return f'<div class="ban"><div class="num">{n}</div><h2>{title}</h2></div>'
+
+
+def sec(n, title, inner, id_, cls=""):
+    return f'<section class="sec {cls}" id="{id_}">{ban(n, title)}<div class="cnt {cls}">{inner}</div></section>'
+
+
+def n_(k):
+    return f'<span class="n">{k}</span>'
+
+
+K = 1.2   # hệ số phóng chữ so với khổ tham chiếu 100×150 cm của prompt
+EXTRA_CSS = ".src .dot{width:.55cm;height:.55cm;border-width:2pt}.pair .g:before{content:none}.pair .g{padding-left:0}.pair .h{margin-bottom:.3cm}"
+
+
+def page(W, H, body, title):
+    html = f'<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>{title}</title><style>{CSS % {"W": W, "H": H}}{EXTRA_CSS}</style></head><body>{body}{MEASURE}</body></html>'
+    html = re.sub(r"font-size:([\d.]+)pt", lambda m: f"font-size:{float(m.group(1)) * K:.1f}pt", html)
+    return html.replace("height:4.6cm;background:#0E6B47", "height:5.2cm;background:#0E6B47").replace(".num{width:2.9cm;height:2.9cm", ".num{width:3.3cm;height:3.3cm")
+
+
+ICON = {
+    "sensor": '<svg viewBox="0 0 48 48"><circle cx="24" cy="32" r="5"/><path d="M13 24 A16 16 0 0 1 35 24"/><path d="M7 17 A24 24 0 0 1 41 17"/></svg>',
+    "chip": '<svg viewBox="0 0 48 48"><rect x="14" y="14" width="20" height="20" rx="2"/><path d="M19 8v6M29 8v6M19 34v6M29 34v6M8 19h6M8 29h6M34 19h6M34 29h6"/></svg>',
+    "radio": '<svg viewBox="0 0 48 48"><circle cx="24" cy="30" r="3"/><path d="M24 33v10M15 22 A13 13 0 0 1 33 22M9 16 A21 21 0 0 1 39 16"/></svg>',
+    "tree": '<svg viewBox="0 0 48 48"><circle cx="24" cy="10" r="4"/><circle cx="11" cy="36" r="4"/><circle cx="37" cy="36" r="4"/><circle cx="24" cy="26" r="3"/><path d="M24 14v9M22 28 13 33M26 28 35 33"/></svg>',
+    "screen": '<svg viewBox="0 0 48 48"><rect x="7" y="10" width="34" height="22" rx="2"/><path d="M17 40h14M24 32v8M13 26l6-6 5 4 8-8"/></svg>',
+}
+flow = lambda ic, h, t, extra="": f'<div class="box fl" style="padding:.4cm .7cm"><div class="ic">{ICON[ic]}</div><div class="tx"><h4>{h}</h4>{t}{extra}</div></div>'
+
+# ================================================================ TẤM TRÁI 60×120 (①②③)
+kvrow = lambda big, d, mb=".6cm": f'<div class="kv" style="margin-bottom:{mb}"><div class="big" style="width:22cm">{big}</div><div class="d">{d}</div></div>'
+Y, N = '<span class="dot yes"></span>', '<span class="dot no"></span>'
+card = lambda ch, q, th: f'<div class="card"><div class="ch">{ch}</div><div class="q">{q}</div><div class="th">{th}</div></div>'
+left = '<div class="col">' + (
+    sec(1, "Lý do chọn đề tài",
+        kvrow("25,4&nbsp;%", 'rau quả toàn cầu mất sau thu hoạch <span class="src">(FAO, 2025)</span>')
+        + kvrow("7,12<small>&nbsp;tỷ USD</small>", 'xuất khẩu rau quả Việt Nam 2024 <span class="src">(Bộ Công Thương, 2024)</span>')
+        + kvrow("14/18", 'HTX, kho mát từng bị thối lây cả pallet <span class="src">(khảo sát nhóm, n = 18)</span>', "1cm")
+        + '<div class="ttl">Một sọt thối lây sang sọt kế bên</div>'
+        + '<img src="assets/bd_lay_lan.png" style="width:54cm;height:10cm">'
+        + '<div class="src" style="margin:.1cm 0 .9cm">Sơ đồ minh họa của nhóm tác giả, không phải số đo.</div>'
+        + '<div class="ttl">Rau quả mất gần gấp đôi thực phẩm nói chung</div>'
+        + '<img src="assets/bd_ton_that.png" style="width:54cm;height:10cm">'
+        + '<div class="src">Tổn thất sau thu hoạch (FAO, 2025; Đại học Cần Thơ, 2021). Biểu đồ: nhóm tác giả.</div>', "b1")
+    + sec(2, "Thực trạng, khoảng trống",
+          '<div class="ttl">15/18 đơn vị vẫn kiểm tra bằng mắt và mũi</div>'
+          + '<img src="assets/bd_khao_sat.png" style="width:54cm;height:12cm">'
+          + '<div class="src" style="margin:.1cm 0 1cm">Khảo sát nhóm tác giả: 18 đơn vị, 4 tỉnh.</div>'
+          + f'<table><tr><th>Giải pháp</th><th>Liên tục</th><th>Đo lên men</th><th>Hạn chế</th></tr>'
+          + f'<tr><td>Nhiệt ẩm</td><td>{Y}</td><td>{N}</td><td>Không thấy lên men</td></tr>'
+          + f'<tr><td>Máy đo khí cầm tay</td><td>{N}</td><td>{Y}</td><td>Đo từng điểm</td></tr>'
+          + f'<tr><td>IoT khí cho kho lớn</td><td>{Y}</td><td>{Y}</td><td>Cho kho công nghiệp</td></tr>'
+          + f'<tr class="me"><td>FreshNose AI</td><td>{Y}</td><td>{Y}</td><td>Mới thử ở phòng thí nghiệm</td></tr></table>'
+          + f'<div class="src" style="margin:.2cm 0 .9cm">{Y} có &nbsp; {N} không. Nguồn: nhóm tác giả tổng hợp.</div>'
+          + '<p class="t"><b>Chưa giải pháp nào vừa đo liên tục, vừa chỉ ra vùng cần kiểm tra, vừa hợp kho 20–200 tấn.</b></p>', "b2")
+    + sec(3, "Câu hỏi nghiên cứu",
+          card("CH1", "Phân loại đúng ba trạng thái bao nhiêu phần trăm?", "≥ 85 %")
+          + card("CH2", "Báo lên men sớm hơn mắt thường bao nhiêu giờ, cảnh báo giả bao nhiêu?", "≥ 12 giờ<br>≤ 10 %")
+          + card("CH3", "Node chạy bao lâu trên pin 6.000 mAh, gói thiết bị giá bao nhiêu?", "≥ 20 ngày<br>≤ 22 triệu"), "b3")
+) + '</div>'
+
+# ================================================================ TẤM GIỮA 120×150 (tên dự án, ④–⑦)
+legend_node = ["Lưới inox, nắp vỏ", "Màng lọc PTFE kỵ nước", "Cảm biến TGS2602 (VOC)", "Cảm biến TGS822 (ethanol)", "Cảm biến SHT31 (nhiệt, ẩm)",
+               "Vi điều khiển ESP32-S3", "Module LoRa AS923", "Pin LiFePO4 6.000 mAh", "Vỏ IP66, đế nam châm", "Ăng-ten LoRa"]
+legend_hub = ["Raspberry Pi 4 (Random Forest)", "Bộ thu LoRa AS923", "Màn hình 7 inch"]
+nw = 24.0; nh = round(nw * node_wh[1] / node_wh[0], 1)
+hw = 21.0; hh = round(hw * hub_wh[1] / hub_wh[0], 1)
+
+title_band = (
+    '<div data-sec="title" style="background:linear-gradient(115deg,#0B4F37 0%,#0E6B47 60%,#1C66C2 100%);height:28cm;padding:2.6cm 3cm 0;color:#fff;display:flex;gap:2cm;align-items:flex-start">'
+    + '<div style="flex:1">'
+    + '<div style="font-size:38pt;color:#CFE8D9;line-height:1.2">Cuộc thi Khoa học kỹ thuật dành cho học sinh trung học, năm học 2026–2027</div>'
+    + '<div style="font-size:120pt;font-weight:900;line-height:1;letter-spacing:-2pt;margin-top:.8cm">FRESHNOSE AI</div>'
+    + '<div style="font-size:60pt;font-weight:700;line-height:1.12;margin-top:.8cm;text-transform:uppercase">Hệ thống mũi điện tử thông minh cảnh báo sớm hư hỏng &amp; tối ưu thời gian lưu kho nông sản xuất khẩu</div>'
+    + '<div style="font-size:42pt;color:#CFE8D9;margin-top:.8cm">Lĩnh vực: Thống kê</div>'
+    + '<div style="display:flex;gap:.8cm;margin-top:1cm">'+''.join(f'<div style="background:rgba(255,255,255,.14);border:3pt solid {c};border-radius:.6cm;padding:.35cm .8cm"><div style="font-size:54pt;font-weight:900;color:{c};line-height:1">{a}</div><div style="font-size:26pt;line-height:1.1">{t}</div></div>' for a,t,c in (('87,5 %','chính xác ba trạng thái','#F2A31B'),('6,2 %','cảnh báo giả','#8CCBA9'),('26,3 giờ','báo sớm hơn mắt thường','#FFFFFF')))+'</div>'
+    + '</div>'
+    + '<div style="flex:none;width:24cm;height:24cm;border-radius:50%;background:#fff;overflow:hidden;margin-top:.6cm;border:.6cm solid #F2A31B"><img src="assets/node_hero_sq.png" style="width:24cm;height:24cm"></div></div>'
+)
+step = lambda n, t, i: f'<div class="step"><div class="c">{n}</div><div><div class="x">{t}</div><div class="i">{i}</div></div></div>'
+mid = '<div class="col">' + title_band + (
+    '<div class="grid2">'
+    + sec(4, "Phương pháp nghiên cứu",
+          '<div style="display:flex;gap:1cm;margin-bottom:.7cm">'
+          + ''.join(f'<div style="flex:1"><div class="big" style="font-size:80pt">{a}</div><div class="cap" style="color:#1A1A1A;font-size:27pt">{b}</div></div>' for a, b in (("4.500", "mẫu chuỗi thời gian"), ("3 × 3", "đợt × chuỗi đo"), ("1.500", "mẫu kiểm tra")))
+          + '</div><ul class="t" style="list-style:none;font-size:31pt;line-height:1.27">'
+          + '<li style="margin-bottom:.5cm">• Đối chứng ba nhóm quả, đo mỗi 30 phút; phân loại bằng Random Forest.</li></ul>'
+          + '<div class="ttl" style="font-size:29pt;margin-bottom:.1cm">Mỗi chuỗi 500 mẫu; đợt 3 dùng để kiểm tra</div>'
+          + '<img src="assets/bd_thiet_ke_tn.png" style="width:54cm;height:11.5cm">'
+          + '<div class="src">Thí nghiệm 1–21/6/2026, các đợt chồng nhau 5 ngày. Biểu đồ: nhóm tác giả.</div>', "b4", "l")
+    + sec(5, "Quy trình nghiên cứu",
+          step(1, "Ý tưởng, khảo sát", "3–4/2026")
+          + step(2, "Chế tạo nguyên mẫu v1 → v2; thí nghiệm 3 đợt", "5–8/2026")
+          + step(3, "Phân tích, đối chiếu tiêu chí", "8–10/2026")
+          + step(4, "Pilot tại 2 kho mát", "từ 10/2026, chưa có kết quả")
+          + '<div class="ttl" style="font-size:29pt;margin:.4cm 0 .1cm">Cải tiến: pin Node từ 18–19 giờ lên 23,5 ngày</div>'
+          + '<img src="assets/bd_pin.png" style="width:54cm;height:6.5cm">'
+          + '<div class="src">Nhật ký đo v1, v2: nhóm tác giả.</div>', "b5", "r")
+    + '</div>'
+    + '<div class="grid2">'
+    + sec(6, "Sơ đồ cấu tạo",
+          f'<div style="display:flex;gap:1cm"><img src="assets/node_3d_crop.png" style="width:{nw}cm;height:{nh}cm;flex:none">'
+          + '<div class="leg" style="margin-top:.8cm">' + ''.join(f'<div>{n_(i)}<span>{t}</span></div>' for i, t in enumerate(legend_node, 1)) + '</div></div>'
+          + '<div style="height:.6cm"></div>'
+          + f'<div style="display:flex;gap:1cm;align-items:center"><img src="assets/hub_3d_crop.png" style="width:{hw}cm;height:{hh}cm;flex:none">'
+          + '<div class="leg">' + ''.join(f'<div>{n_(i)}<span>{t}</span></div>' for i, t in enumerate(legend_hub, 11)) + '</div></div>'
+          + '<div class="src" style="margin-top:.4cm">Hình: mô hình dựng 3D theo thiết kế của nhóm tác giả, chưa phải ảnh chụp nguyên mẫu.</div>', "b6", "l")
+    + sec(7, "Nguyên lý hoạt động",
+          f'<p class="t" style="font-size:31pt;line-height:1.28;margin-bottom:.5cm">Quả lên men sinh ethanol, acetaldehyde (Berna, 2010) nên {RS} giảm (nhiễm nấm: TGS2602 0,93 → 0,33; TGS822 0,93 → 0,29); nhiệt, ẩm đo kèm để bù trôi.</p>'
+          + '<img src="assets/kho_voc.png" style="width:54cm;height:15cm;object-fit:cover;object-position:50% 55%;border-radius:.6cm;margin:.2cm 0 .1cm">'
+          + '<div class="src" style="margin-bottom:.6cm">Hình 3D minh họa: khí bay lên từ sọt xoài bắt đầu hỏng, Node ở thanh kệ phía trên. Nhóm tác giả.</div>'
+          + '<div class="ttl" style="font-size:29pt;margin-bottom:.2cm">Tín hiệu giảm trước khi thấy vết thối (nhiễm nấm, đợt 3)</div><img src="assets/bd_tin_hieu.png" style="width:54cm;height:15cm">'
+          + '<div class="src" style="margin:.1cm 0 .6cm">Biểu đồ: nhóm tác giả, dữ liệu thực nghiệm 2026.</div>'
+          + flow("sensor", f"ĐO · Node {n_(3)} {n_(4)} {n_(5)}", "Mỗi 30 phút: sấy 120 giây, đọc 30 giây, ngủ sâu.") + ARROW
+          + flow("chip", f"XỬ LÝ · Node {n_(6)}", "ESP32-S3 lọc nhiễu, bù nhiệt ẩm.") + ARROW
+          + flow("radio", f"TRUYỀN {n_(7)} {n_(10)} → {n_(12)}", "LoRa AS923 về Hub.") + ARROW
+          + flow("tree", f"PHÂN LOẠI · Hub {n_(11)}", "Random Forest chia ba trạng thái.") + ARROW
+          + flow("screen", f"CẢNH BÁO · màn hình {n_(13)}", "", '<div class="lv" style="margin-top:.2cm"><div class="a"><b>Mức 1</b>An toàn</div><div class="b"><b>Mức 2</b>Chín sinh lý</div><div class="c"><b>Mức 3</b>Nguy cơ lên men</div></div><div style="margin-top:.25cm">Mức 3: tách sọt dập, thông gió, xuất trước (FEFO).</div>'), "b7", "r")
+    + '</div>'
+    + '<div class="cnt" data-sec="foot"><div class="src">Số liệu: nhóm tác giả, 2026. Danh mục tài liệu đầy đủ trong báo cáo.</div></div>'
+) + '</div>'
+
+# ================================================================ TẤM PHẢI 60×120 (⑧⑨)
+right = '<div class="col">' + (
+    sec(8, "Kết quả thực nghiệm",
+        '<div class="ttl">Đối chiếu năm tiêu chí thiết kế</div>'
+        + '<img src="assets/bd_tieu_chi.png" style="width:54cm;height:18cm">'
+        + '<div class="src" style="margin:.1cm 0 .9cm">Vạch đen = ngưỡng; giá bán gói đúng bằng ngưỡng. Biểu đồ: nhóm tác giả.</div>'
+        + '<div class="ttl">Cả 6 chuỗi đều báo sớm hơn mắt thường 18,5–35,5 giờ</div>'
+        + '<img src="assets/bd_som_hon.png" style="width:54cm;height:24cm">'
+        + '<div class="src" style="margin:.1cm 0 .9cm">Mốc mức đỏ lấy từ nhãn; đợt 3 theo dự đoán mô hình: 36,0 và 27,5 giờ. Biểu đồ: nhóm tác giả.</div>'
+        + '<div class="ttl">Nhận đúng 498/500 mẫu lên men, nhưng chỉ 99/220 mẫu chín sinh lý</div>'
+        + '<img src="assets/bd_do_nhay.png" style="width:54cm;height:11cm">'
+        + '<div class="src" style="margin:.1cm 0 .6cm">Độ nhạy trên đợt kiểm tra 1.500 mẫu. Biểu đồ: nhóm tác giả.</div>'
+        + '<div class="concl">Có: cảm biến khí giá thấp báo xoài, chuối lên men sớm hơn mắt thường 26,3 ± 6,4 giờ, độ chính xác 87,5 %, cảnh báo giả 6,2 % (phòng thí nghiệm).</div>', "b8")
+    + sec(9, "Hạn chế, hướng phát triển",
+          '<div class="pair"><div class="h"><span class="chip g">Hạn chế</span>Tập kiểm tra chỉ 3 chuỗi (đợt 3), chung mã buồng với dữ liệu huấn luyện.</div><div class="g"><span class="chip b">Hướng</span>Thêm đợt với buồng, Node độc lập; lưu dự đoán từng mẫu.</div></div>'
+          + '<div class="pair"><div class="h"><span class="chip g">Hạn chế</span>Lớp chín sinh lý chỉ đúng 45,0 %; chưa kiểm chứng chỉ ra từng dãy kệ.</div><div class="g"><span class="chip b">Hướng</span>Nhiều Node trong buồng nhiều dãy kệ; đối chiếu bằng đo ethylene; thử tại 2 kho.</div></div>'
+          + '<div class="ttl">Thiết kế dự kiến: mỗi dãy kệ một Node</div>'
+          + '<img src="assets/kho_tong_quan.png" style="width:54cm;height:7cm;object-fit:cover;object-position:50% 45%;border-radius:.6cm;margin-bottom:.1cm">'
+          + '<div class="src" style="margin-bottom:.4cm">Kho mát dựng 3D, minh họa của nhóm tác giả.</div>'
+          + '<img src="assets/bd_kho_dang_ke.png" style="width:54cm;height:10.5cm">'
+          + '<div class="src">Sơ đồ minh họa của nhóm tác giả, chưa kiểm chứng.</div>', "b9")
+) + '</div>'
+
+panels = {"tam-trai": (60, 120, left, "Tấm trái"), "tam-giua": (120, 150, mid, "Tấm giữa"), "tam-phai": (60, 120, right, "Tấm phải")}
+out = {}
+for name, (W, H, body, t) in panels.items():
+    html = os.path.join(HERE, f"{name}.html"); pdf = os.path.join(HERE, f"{name}.pdf")
+    open(html, "w", encoding="utf8").write(page(W, H, body, t))
+    url = "file:///" + html.replace("\\", "/")
+    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer", f"--print-to-pdf={pdf}", "--virtual-time-budget=4000", url], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    dom = subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--dump-dom", "--virtual-time-budget=4000", f"--window-size={int(W * 37.8)},{int(H * 37.8)}", url], capture_output=True, text=True, encoding="utf8").stdout
+    m = re.search(r"data-m='([^']*)'|data-m=\"([^\"]*)\"", dom)
+    out[name] = json.loads((m.group(1) or m.group(2)).replace("&quot;", '"')) if m else None
+    txt = re.sub(r"<script.*?</script>|<style.*?</style>|<[^>]+>", " ", open(html, encoding="utf8").read(), flags=re.S)
+    toks = re.sub(r"&nbsp;|&amp;", " ", txt).split()
+    out[name + "_words"] = len([x for x in toks if re.search(r"[A-Za-zÀ-ỹ]", x)])
+json.dump(out, open(os.path.join(HERE, "kiem_tra.json"), "w", encoding="utf8"), ensure_ascii=False, indent=1)
+tot = 0
+for k, v in out.items():
+    if isinstance(v, dict):
+        print(k, "imgPct", v["imgPct"], [(b["id"], b["usedH"], b["boxH"], "TRÀN" if b["over"] else "ok") for b in v["blocks"]])
+    else:
+        print(k, v); tot += v
+print("TỔNG CHỮ (token có chữ cái, không tính chữ trong ảnh):", tot)

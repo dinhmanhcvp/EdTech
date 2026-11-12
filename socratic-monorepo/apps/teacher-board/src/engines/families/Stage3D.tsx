@@ -85,6 +85,8 @@ export function setLine(o: FatLine, pts: number[]): void {
  * kéo để xoay, lăn để phóng, nhãn HTML bám điểm 3D. Mỗi cảnh chỉ khai báo vật thể và hàm cập nhật theo (tham số, thời gian).
  * Không tạo được WebGL thì gọi `onFail` để SceneLab quay về bản SVG.
  */
+/** chất lượng đồ họa dùng chung trong phiên: 0 = theo màn hình (tối đa 2×); hạ dần khi máy không theo kịp 30 khung/giây */
+const QUALITY = {ratio: 0, shadows: true};
 export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPick?: (id: string | null) => void; onSet?: (key: string, value: number | string) => void; fill?: boolean}> = ({def, p, t, s, onFail, onPick, onSet, fill}) => {
   const box = useRef<HTMLDivElement>(null);
   const cap = useRef<HTMLDivElement>(null);
@@ -107,8 +109,8 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       onFail();
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.shadowMap.enabled = true;
+    renderer.setPixelRatio(QUALITY.ratio || Math.min(window.devicePixelRatio || 1, 2));
+    renderer.shadowMap.enabled = QUALITY.shadows;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:none';
@@ -335,8 +337,35 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
     let lastEl = NaN;
     const v = new THREE.Vector3();
     let raf = 0;
+    // chất lượng thích nghi: máy yếu (màn hình lớp học, laptop cũ) chạy dưới ~30 khung/giây thì hạ độ phân giải từng bậc rồi tắt bóng đổ;
+    // lựa chọn nhớ cho các cảnh sau trong phiên. Khung hình quá dài (tab ẩn / bị trình duyệt hãm) không tính.
+    let lastFrameAt = performance.now();
+    let avgMs = 16;
+    let sampled = 0;
+    const degrade = () => {
+      const cur = renderer.getPixelRatio();
+      if (cur > 1.01) QUALITY.ratio = Math.max(1, cur > 1.5 ? 1.5 : 1);
+      else if (cur > 0.8) QUALITY.ratio = 0.75;
+      else if (QUALITY.shadows) {
+        QUALITY.shadows = false;
+        renderer.shadowMap.enabled = false;
+        scene.traverse((o) => ((o as THREE.Mesh).material && (((o as THREE.Mesh).material as THREE.Material).needsUpdate = true)));
+      } else return;
+      renderer.setPixelRatio(QUALITY.ratio);
+      resize();
+    };
     const frame = () => {
       raf = requestAnimationFrame(frame);
+      const tnow = performance.now();
+      const ft = tnow - lastFrameAt;
+      lastFrameAt = tnow;
+      if (ft < 250) {
+        avgMs += (ft - avgMs) * 0.05;
+        if (++sampled >= 150) {
+          sampled = 0;
+          if (avgMs > 32) degrade();
+        }
+      }
       const {p: q, t: t0, s: s0, at} = live.current;
       // SceneLab đổi t mỗi 50 ms: nội suy tiếp giữa hai nhịp để chuyển động mượt 60 khung/giây
       const dt = (performance.now() - at) / 1000;

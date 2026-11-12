@@ -7,7 +7,7 @@ import {padRate} from '../../utils/lab/hands/handTracker';
 import {mishapFx, mishapSound} from './mishapFx';
 import {handPointers, labRoom, type HandsInput} from './handsKit';
 import {V, solid} from './handsModels';
-import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {assetUrl, gltfLoader} from './labParts';
 import {Stage3D, type Kit, type SceneDef} from './Stage3D';
 
 /** Trạng thái bài cân dòng điện dùng chung giữa bảng điều khiển React và cảnh 3D. */
@@ -58,7 +58,7 @@ function makeDef(input: HandsInput, live: BalanceLive): SceneDef {
       type Mat = THREE.MeshStandardMaterial;
       type Rig = Record<'beam' | 'frame' | 'needleM' | 'needleI' | 'knobM' | 'knobI' | 'swK' | 'swI' | 'swB' | 'marker' | 'spring', THREE.Object3D> & {poles: Mat[]; lamp: Mat; edge: Mat; page: Mat; arrows: {o: THREE.Object3D; m: Mat}[]};
       let rig: Rig | null = null;
-      new GLTFLoader().load('/models/current-balance.glb', (g) => {
+      gltfLoader().load(assetUrl('/models/current-balance.glb'), (g) => {
         g.scene.traverse((o) => {
           const m = o as THREE.Mesh;
           if (!m.isMesh) return;

@@ -1,7 +1,8 @@
 'use client';
 
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import QRCode from 'qrcode';
+// thư viện mã QR (~70 kB) chỉ nạp khi thật sự cần tạo mã, không nằm trong gói tải lần đầu
+const QRCode = {toDataURL: async (text: string, options?: import('qrcode').QRCodeToDataURLOptions): Promise<string> => (await import('qrcode')).default.toDataURL(text, options)};
 import {ChevronLeft, ChevronRight, LayoutPanelTop, Maximize2, Minus, PenLine, Plus, QrCode, X} from 'lucide-react';
 import {fitTo, focusBox, panBy, toPage, zoomAt, type Size, type View} from '../../utils/viewport';
 import {BoardHubError, hubBoard, type InkStroke, type Progress, type ResourceDetail, type RunInfo} from '../../utils/hubBoard';

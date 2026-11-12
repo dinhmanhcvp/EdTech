@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader.js';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 /**
@@ -6,10 +7,19 @@ import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
  * Cảnh dựng trước các vật thay thế bằng hình khối (để tương tác chạy ngay), khi thư viện về thì "mặc" mô hình thật lên.
  */
 const cache = new Map<string, Promise<THREE.Group>>();
+/** mã phiên bản tài nguyên (mỗi lần deploy một giá trị): gắn vào địa chỉ mô hình để trình duyệt / CDN giữ bản cũ lâu mà vẫn lấy bản mới sau khi deploy */
+const ASSET_V = process.env.NEXT_PUBLIC_ASSET_V || 'dev';
+export const assetUrl = (url: string): string => `${url}?v=${ASSET_V}`;
+let draco: DRACOLoader | null = null;
+/** GLTFLoader có giải nén Draco (mô hình Blender được nén hình học; bộ giải nén nằm ở `public/draco`, cùng nguồn với trang) */
+export function gltfLoader(): GLTFLoader {
+  draco ??= new DRACOLoader().setDecoderPath('/draco/');
+  return new GLTFLoader().setDRACOLoader(draco);
+}
 export function loadModel(url: string): Promise<THREE.Group> {
   let p = cache.get(url);
   if (!p) {
-    p = new Promise<THREE.Group>((resolve, reject) => new GLTFLoader().load(url, (g) => resolve(g.scene), undefined, reject));
+    p = new Promise<THREE.Group>((resolve, reject) => gltfLoader().load(assetUrl(url), (g) => resolve(g.scene), undefined, reject));
     cache.set(url, p);
   }
   return p;

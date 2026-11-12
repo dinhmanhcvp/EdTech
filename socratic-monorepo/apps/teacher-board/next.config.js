@@ -19,7 +19,11 @@ const nextConfig = {
   transpilePackages: ['@socratic/types', '@socratic/ui'],
   // Trình duyệt gọi THẲNG máy chủ AI (một chặng, không qua proxy của Vercel, không bị giới hạn 30 giây của rewrite);
   // Lớp học BYOD dùng WebSocket nên bắt buộc nối thẳng (Vercel không chuyển tiếp WebSocket).
-  env: { NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '' },
+  // NEXT_PUBLIC_ASSET_V: mã phiên bản gắn vào địa chỉ mô hình 3D (`?v=`) để CDN và trình duyệt giữ mô hình lâu (immutable) mà vẫn lấy bản mới sau mỗi lần deploy.
+  env: {
+    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '',
+    NEXT_PUBLIC_ASSET_V: (process.env.VERCEL_GIT_COMMIT_SHA || 'dev').slice(0, 8),
+  },
   // Rewrite chỉ còn là đường dự phòng khi gọi thẳng thất bại (ví dụ người dùng chặn tên miền lạ).
   async rewrites() {
     return [

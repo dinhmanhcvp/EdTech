@@ -46,8 +46,9 @@ import { toBoardStrokes, type Submission } from '../../utils/submissionInk';
 import { PairPanel } from './PairPanel';
 import { ResourcePanel } from '../resources/ResourcePanel';
 import { PrepPanel } from './PrepPanel';
-import { isPreset } from '../../engines/families';
-import { makePresetBlueprint } from '../../utils/presets';
+import { PRESETS, makePresetBlueprint } from '../../utils/presets';
+// chỉ cần biết mã có phải mẫu có sẵn hay không: không nạp cả bộ giao diện các họ mẫu (nặng) vào gói tải lần đầu
+const isPreset = (templateId: string): boolean => Object.prototype.hasOwnProperty.call(PRESETS, templateId);
 import { ResourceViewer } from '../resources/ResourceViewer';
 import { insertPageStrokes, pastedImageStroke, type PageRef } from '../../utils/boardImage';
 import { firstImage, fitOnBoard, loadImageFile } from '../../utils/imageIntake';

@@ -21,6 +21,14 @@ Những thay đổi đã làm để bản web không chậm hơn local:
 - **WebSocket Lớp học chạy được**: `requirements.txt` trước đây chỉ có `uvicorn` trơn nên WebSocket trả 404 trên Render; nay dùng `uvicorn[standard]`.
 - **Region Singapore** cho cả Render (`render.yaml`) lẫn hàm của Vercel (`vercel.json`).
 
+Tối ưu tải cho phòng thực hành `/lab` (3D):
+
+- **Mô hình Blender nén Draco**: 13 tệp `public/models/*.glb` từ 25 MB còn 6,7 MB (nhỏ hơn 73 %). `kit.export_glb` (`tools/lab-models/kit.py`) tự nén; muốn xuất không nén để gỡ lỗi: `NO_DRACO=1`. Cảnh giải nén bằng `DRACOLoader` với bộ giải nén ở `public/draco` (cùng nguồn, không phụ thuộc CDN ngoài). Dựng lại mô hình: chạy các kịch bản trong `tools/lab-models/` như hướng dẫn ở đầu từng tệp.
+- **Cache dài hạn**: `/models/*` và `/draco/*` gửi `Cache-Control: immutable` (1 năm); địa chỉ mô hình có `?v=<mã commit>` (`NEXT_PUBLIC_ASSET_V` lấy từ `VERCEL_GIT_COMMIT_SHA`), nên mỗi lần deploy trình duyệt tải bản mới, các lần mở sau thì lấy từ bộ nhớ đệm.
+- **Chất lượng thích nghi** (`Stage3D.tsx`): máy chạy dưới ~30 khung/giây thì tự hạ độ phân giải từng bậc rồi tắt bóng đổ; lựa chọn nhớ trong phiên.
+- **Camera**: `Permissions-Policy` của bảng giáo viên cho phép `camera=(self)` (trước đó `camera=()` chặn camera tay trên bản deploy). Camera chỉ chạy trên `https` (Vercel có sẵn) hoặc `localhost`.
+- Kích thước đã đo (`next build`): `/lab` 431 kB, bảng `/` 965 kB tải lần đầu (gần như toàn mã bảng; chia nhỏ tiếp cần lazy-load các panel trong `SmartboardCanvas.tsx`, nhiều bài test dựa vào việc chúng hiện đồng bộ nên chưa làm).
+
 Đã kiểm chứng trong môi trường Python **sạch chỉ cài `requirements.txt`** (giả lập Render, chạy `APP_ENV=production`, không có tệp `.env`): khởi động tới `/health` trong 1,7 giây; đồ thị lần đầu 0,22 giây; gzip hoạt động; CORS cho `*.vercel.app` và chặn tên miền lạ; ghi khóa AI qua API bị tắt; giới hạn tần suất trả 429 đúng; tạo phòng và nối WebSocket giáo viên thành công. Đây là giả lập trên máy bạn, **chưa phải bản chạy thật trên Render/Vercel**: hãy làm bước 4 (kiểm tra) sau khi deploy.
 
 ---

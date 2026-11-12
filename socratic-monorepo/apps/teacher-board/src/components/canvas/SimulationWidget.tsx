@@ -4,20 +4,10 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { SimulationBlueprint, SimParamConfig, CurriculumLevel } from '@socratic/types';
 import { RotateCcw, FileText, CheckCircle2, Sparkles } from 'lucide-react';
-import { MathPlotEngine } from '../../engines/MathPlotEngine';
-import { GraphEngine } from '../../engines/GraphEngine';
-import { GeometryEngine } from '../../engines/GeometryEngine';
-import { PunnettEngine, HardyWeinbergEngine, LinearProgrammingEngine, CobwebEngine } from '../../engines/StemModelEngines';
-import { VseprEngine, LeChatelierEngine, DaniellEngine } from '../../engines/ChemEngines';
-import { StomataEngine, OsmosisEngine, OperonLacEngine, BoxplotEngine, VariationTableEngine } from '../../engines/MoreStemEngines';
-import { GasEngine, DoublePendulumEngine, CoriolisEngine, FraunhoferEngine } from '../../engines/PhysEngines';
-import { ADVANCED_ENGINES } from '../../engines/AdvancedStemEngines';
-import { PresetEngine } from '../../engines/families';
+// các engine nạp theo nhu cầu (mỗi engine một gói), tách khỏi gói tải lần đầu của bảng
+import { MathPlotEngine, GraphEngine, GeometryEngine, PunnettEngine, HardyWeinbergEngine, LinearProgrammingEngine, CobwebEngine, VseprEngine, LeChatelierEngine, DaniellEngine, StomataEngine, OsmosisEngine, OperonLacEngine, BoxplotEngine, VariationTableEngine, GasEngine, DoublePendulumEngine, CoriolisEngine, FraunhoferEngine, PhysicsSandboxEngine, ChemistryLabEngine, BioSystemEngine, PresetEngine, AdvancedEngineById } from '../../engines/lazyEngines';
 import { PRESETS } from '../../utils/presets';
 import { ADVANCED_TEMPLATES, type AdvancedId } from '../../utils/advancedStemModels';
-import { PhysicsSandboxEngine } from '../../engines/PhysicsSandboxEngine';
-import { ChemistryLabEngine } from '../../engines/ChemistryLabEngine';
-import { BioSystemEngine } from '../../engines/BioSystemEngine';
 import { AIGeneratedVisualEngine } from './AIGeneratedVisualEngine';
 import { TapAndSwapOCR } from './TapAndSwapOCR';
 import { MathView } from '../common/MathView';
@@ -352,7 +342,7 @@ function getTopicDisplayName(blueprint: SimulationBlueprint): string {
 /** Engine tự vẽ thanh điều khiển riêng (hàm, tham số, bật/tắt) nên không dùng thanh trượt macro. */
 const PHYS_OWN = ['PHYS_GAS_STATE_PV', 'PHYS_DOUBLE_PENDULUM', 'PHYS_CORIOLIS_FORCE', 'PHYS_FRAUNHOFER_DIFF'];
 const SELF_CONTROLLED = new Set(['PHYS_GAS_STATE_PV', 'PHYS_DOUBLE_PENDULUM', 'PHYS_CORIOLIS_FORCE', 'PHYS_FRAUNHOFER_DIFF','MATH_GRAPH', 'GEO_SOLID', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE', 'BIO_STOMATA_GAS', 'BIO_OSMOSIS_CELL', 'BIO_OPERON_LAC', 'CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL']);
-Object.keys(ADVANCED_ENGINES).forEach((id) => SELF_CONTROLLED.add(id));
+Object.keys(ADVANCED_TEMPLATES).forEach((id) => SELF_CONTROLLED.add(id));
 Object.keys(PRESETS).forEach((id) => SELF_CONTROLLED.add(id));
 
 /** Câu hỏi gợi mở rút gọn cho thanh quan sát: tới dấu hỏi đầu tiên nếu không quá dài, nếu không cắt ở khoảng 150 ký tự. */
@@ -381,7 +371,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   onGripPointerUp,
 }) => {
   const isHolo = displayMode === 'HOLOGRAM';
-  const AdvancedEngine = Object.prototype.hasOwnProperty.call(ADVANCED_ENGINES, blueprint.templateId) ? ADVANCED_ENGINES[blueprint.templateId] : undefined;
+  const AdvancedEngine = Object.prototype.hasOwnProperty.call(ADVANCED_TEMPLATES, blueprint.templateId);
   const isPresetTemplate = Object.prototype.hasOwnProperty.call(PRESETS, blueprint.templateId);
   const [engineRevision, setEngineRevision] = useState(0);
   const [activeFormula, setActiveFormula] = useState<string>(blueprint.recognizedLatex);
@@ -976,7 +966,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             svgContent={blueprint.custom_interactive_svg}
           />
         ) : (
-          <>
+          <React.Suspense fallback={<div data-testid="engine-loading" className="flex min-h-[200px] items-center justify-center text-xs text-[#4B473D]">Đang tải mô phỏng…</div>}>
             {blueprint.engine === 'MATH' && blueprint.templateId === 'MATH_GRAPH' && (
               <GraphEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} isHologram={isHolo} />
             )}
@@ -992,7 +982,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.templateId === 'CHEM_GALVANIC_DANIELL' && <DaniellEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {blueprint.templateId === 'MATH_STAT_BOXPLOT' && <BoxplotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {blueprint.templateId === 'MATH_VARIATION_TABLE' && <VariationTableEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
-            {AdvancedEngine && <AdvancedEngine key={`${blueprint.templateId}-${engineRevision}`} blueprint={activeBlueprint} />}
+            {AdvancedEngine && <AdvancedEngineById key={`${blueprint.templateId}-${engineRevision}`} id={blueprint.templateId} blueprint={activeBlueprint} />}
             {isPresetTemplate && <PresetEngine key={`${blueprint.templateId}-${engineRevision}`} blueprint={activeBlueprint} />}
             {blueprint.engine === 'MATH' && !AdvancedEngine && !isPresetTemplate && !['MATH_GRAPH', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE'].includes(blueprint.templateId) && (
               <MathPlotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} isHologram={isHolo} />
@@ -1013,7 +1003,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.engine === 'BIOLOGY' && !isPresetTemplate && !['BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG', 'BIO_STOMATA_GAS', 'BIO_OSMOSIS_CELL', 'BIO_OPERON_LAC'].includes(blueprint.templateId) && (
               <BioSystemEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
-          </>
+          </React.Suspense>
         )}
       </div>
 

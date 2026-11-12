@@ -228,7 +228,10 @@ def join(name, objs):
 
 def export_glb(filename):
     path = OUT.rstrip('/').rstrip(chr(92)) + '/' + filename
-    bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', export_apply=True, export_yup=True)
+    import os as _os
+    # nén hình học bằng Draco (nhỏ hơn 5–10 lần, tải nhanh trên Vercel); cảnh giải nén bằng DRACOLoader (public/draco). NO_DRACO=1 để xuất không nén khi cần gỡ lỗi.
+    draco = not _os.environ.get('NO_DRACO')
+    bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', export_apply=True, export_yup=True, export_draco_mesh_compression_enable=draco, export_draco_mesh_compression_level=7, export_draco_position_quantization=13, export_draco_normal_quantization=9, export_draco_texcoord_quantization=11)
     print('GLB', path)
 
 

@@ -197,3 +197,31 @@ def test_coach_mode_without_ai_returns_empty_so_the_board_uses_offline_coach(cli
     monkeypatch.setattr(bq, "_llm_json", lambda *a, **k: None)
     j = client.post("/api/v1/canvas/ask-board", json={"question": "gợi ý", "context": GEO_CTX, "mode": "coach"}).json()
     assert j["source"] == "offline" and j["answer"]["actions"] == []
+
+
+SOLVE_CTX = {"problem": "Giải phương trình 2x^2 - 5x + 3 = 0", "problem_type": "Phương trình", "stage": "① Tìm hiểu đề", "items": []}
+
+
+def test_solve_mode_uses_general_socratic_prompt_and_only_keeps_questions(client, monkeypatch):
+    fake = _fake_llm({"headline": "Em thấy phương trình này thuộc dạng nào và có điều kiện xác định gì không?", "steps": ["Em nhân đôi hai vế rồi sao?", "Vậy x = 1 hoặc x = 3/2."], "actions": []})
+    monkeypatch.setattr(bq, "_llm_json", fake)
+    j = client.post("/api/v1/canvas/ask-board", json={"question": "Gợi ý giúp em", "context": SOLVE_CTX, "mode": "solve", "hint_level": 2, "subject_hint": "MATH"}).json()
+    assert "mọi môn" in fake.calls[0][0].lower() or "MỌI MÔN" in fake.calls[0][0]
+    assert "hint_level: 2" in fake.calls[0][1] and "Giải phương trình" in fake.calls[0][1]
+    assert j["answer"]["steps"] == ["Em nhân đôi hai vế rồi sao?"]  # câu khẳng định lộ đáp số bị bỏ
+
+
+def test_solve_mode_drops_leaked_solution_but_level5_is_allowed_on_student_request(client, monkeypatch):
+    monkeypatch.setattr(bq, "_llm_json", _fake_llm({"headline": "Nghiệm là x = 1 và x = 3/2.", "steps": []}))
+    j = client.post("/api/v1/canvas/ask-board", json={"question": "giải", "context": SOLVE_CTX, "mode": "solve", "hint_level": 3}).json()
+    assert j["source"] == "offline" and j["answer"]["headline"] == ""
+    monkeypatch.setattr(bq, "_llm_json", _fake_llm({"headline": "Em thử tự làm lại với 3x^2 - 7x + 2 = 0 nhé?", "steps": ["Bước 1: Tính Δ = 25 - 24 = 1 vì cần biết số nghiệm.", "Bước 2: x = (5 ± 1)/4."]}))
+    j5 = client.post("/api/v1/canvas/ask-board", json={"question": "cho em xem lời giải", "context": SOLVE_CTX, "mode": "solve", "hint_level": 5}).json()
+    assert j5["source"] == "gemini" and len(j5["answer"]["steps"]) == 2
+
+
+def test_coach_mode_still_caps_level_at_4(client, monkeypatch):
+    fake = _fake_llm({"headline": "Em thử nối AM xem?", "steps": [], "actions": []})
+    monkeypatch.setattr(bq, "_llm_json", fake)
+    client.post("/api/v1/canvas/ask-board", json={"question": "g", "context": GEO_CTX, "mode": "coach", "hint_level": 5})
+    assert "hint_level: 4" in fake.calls[0][1]

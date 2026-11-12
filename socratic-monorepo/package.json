@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit",
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:ai": "cd services/ai-engine && python main.py",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "docker:up": "docker-compose up -d",

@@ -945,6 +945,27 @@
   "question": "Ánh sáng đi qua những cấu trúc nào của mắt trước khi tạo ảnh trên võng mạc? Thể thủy tinh thay đổi thế nào khi nhìn vật gần và vật xa?"
  },
  {
+  "id": "PHYS_EM_WAVE_3D",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Sóng điện từ trong không gian: E vuông góc B vuông góc phương truyền",
+  "question": "Điện trường và từ trường của sóng điện từ dao động trong những mặt phẳng nào so với phương truyền? Khi E đạt cực đại thì B đang ở đâu, và nếu giảm bước sóng thì tần số đổi ra sao?"
+ },
+ {
+  "id": "PHYS_EARTH_SEASONS",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Trái Đất nghiêng 23,5°: ngày – đêm và các mùa",
+  "question": "Vì sao cùng một ngày mà nơi ngày dài, nơi ngày ngắn? Nếu trục Trái Đất không nghiêng thì còn có mùa không, và độ dài ngày ở xích đạo thay đổi thế nào quanh năm?"
+ },
+ {
+  "id": "PHYS_NEWTON_CRADLE",
+  "engine": "PHYSICS",
+  "family": "SCENE_LAB",
+  "title": "Con lắc Newton: bảo toàn động lượng và năng lượng",
+  "question": "Nâng hai quả cầu lên rồi thả, vì sao đúng hai quả bên kia bật ra mà không phải một quả bay nhanh hơn? Nếu có hao hụt năng lượng thì điều gì thay đổi sau mỗi lần va chạm?"
+ },
+ {
   "id": "PHYS_KINEMATICS_1D",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",

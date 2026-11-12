@@ -6,6 +6,41 @@
 
 ---
 
+## ▶️ Chạy local (clone về là chạy)
+
+Cần: **Node ≥ 18 (khuyên dùng 20+)**, **Python ≥ 3.11**. Mọi lệnh Node chạy trong thư mục `socratic-monorepo/`.
+
+```bash
+cd socratic-monorepo
+npm install                                  # cài cho cả monorepo (workspaces)
+cp apps/teacher-board/.env.example apps/teacher-board/.env.local
+cp apps/student-app/.env.example  apps/student-app/.env.local
+npm run dev                                  # 3 ứng dụng Next.js cùng lúc
+```
+
+| Tab | Địa chỉ | Ghi chú |
+|---|---|---|
+| Teacher Board (bảng) | http://localhost:3001 | bảng viết, mô phỏng Lý/Hóa/Sinh, hỏi đáp trên bảng |
+| **Lab (phòng thực hành ảo)** | http://localhost:3001/lab | là một trang của Teacher Board, không phải app riêng; 37 bài, điều khiển bằng tay qua camera hoặc chuột |
+| Student App | http://localhost:3002 | ứng dụng học sinh |
+| Teacher Console | http://localhost:3003 | bảng điều khiển giáo viên |
+
+**AI Engine (tùy chọn, cần cho hỏi đáp AI, nhận diện, gia sư):**
+
+```bash
+cd services/ai-engine
+pip install -r requirements.txt
+python main.py                               # http://localhost:8000  (docs tại /docs)
+```
+
+Khóa AI **không nằm trong repo**: đặt `GEMINI_API_KEY` (và/hoặc `OPENROUTER_API_KEY`) trong biến môi trường của AI Engine, hoặc nhập trong hộp thoại cấu hình AI của Teacher Board. Không có khóa thì bảng vẫn chạy bằng bộ gợi ý và nhận diện ngoại tuyến.
+
+Lưu ý cho **Lab**: camera tay chỉ bật được trên `localhost` hoặc `https`; lần bật đầu cần mạng (MediaPipe tải từ CDN). Không có camera thì dùng chuột (nhấn giữ = chụm). Dùng Chrome hoặc Edge.
+
+Kiểm tra: `npm test` (vitest, toàn bộ) và `python -m pytest services/ai-engine/tests -q`.
+
+---
+
 ## 🎯 3 Triết lý Cốt lõi (Core Philosophies)
 
 1. **"On-Demand Magic Lasso"**:

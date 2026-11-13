@@ -42,7 +42,7 @@ export const CURVE_PRESETS: Record<string, PresetSpec> = {
         {key: 'tmax', label: 'Điểm gây chết trên', unit: '°C', min: 40, max: 50, step: 1, value: 42},
       ],
       curves: [
-        {id: 'a', label: 'Loài A (chỉnh bằng thanh trượt)', color: '#2563EB', fn: (x, p) => 100 * toleranceCurve(x, p.tmin, p.topt, p.tmax)},
+        {id: 'a', label: 'Loài A (chỉnh được)', color: '#2563EB', fn: (x, p) => 100 * toleranceCurve(x, p.tmin, p.topt, p.tmax)},
         {id: 'b', label: 'Loài B (giới hạn hẹp, cố định)', color: '#E11D48', dashed: true, fn: (x) => 100 * toleranceCurve(x, 20, 27, 33)},
       ],
       readouts: [

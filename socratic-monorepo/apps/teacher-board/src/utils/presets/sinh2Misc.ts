@@ -13,23 +13,23 @@ export const MENDEL_THEORY: Record<string, {labels: string[]; probs: (f: number)
     const y = r() < 0.5 ? 1 : 0;
     return x + y === 2 ? 0 : x + y === 1 ? 1 : 2;
   }},
-  codominance: {name: 'Đồng trội IᴬIᴮ × ii (hệ nhóm máu ABO)', labels: ['Nhóm máu A', 'Nhóm máu B'], probs: () => [0.5, 0.5], draw: (r) => (r() < 0.5 ? 0 : 1)},
+  codominance: {name: 'Đồng trội IᴬIᴮ × ii (nhóm máu)', labels: ['Nhóm máu A', 'Nhóm máu B'], probs: () => [0.5, 0.5], draw: (r) => (r() < 0.5 ? 0 : 1)},
   abo: {name: 'Nhóm máu IᴬIᴮ × IᴬIᴮ (AB × AB)', labels: ['Nhóm A', 'Nhóm AB', 'Nhóm B'], probs: () => [0.25, 0.5, 0.25], draw: (r) => {
     const x = r() < 0.5 ? 1 : 0;
     const y = r() < 0.5 ? 1 : 0;
     return x + y === 2 ? 0 : x + y === 1 ? 1 : 2;
   }},
-  dihybrid: {name: 'Hai cặp gene phân li độc lập AaBb × AaBb', labels: ['Trội–Trội (A-B-)', 'Trội–lặn (A-bb)', 'lặn–Trội (aaB-)', 'lặn–lặn (aabb)'], probs: () => [9 / 16, 3 / 16, 3 / 16, 1 / 16], draw: (r) => {
+  dihybrid: {name: 'Phân li độc lập AaBb × AaBb', labels: ['Trội–Trội (A-B-)', 'Trội–lặn (A-bb)', 'lặn–Trội (aaB-)', 'lặn–lặn (aabb)'], probs: () => [9 / 16, 3 / 16, 3 / 16, 1 / 16], draw: (r) => {
     const a = r() < 0.75;
     const b = r() < 0.75;
     return a && b ? 0 : a ? 1 : b ? 2 : 3;
   }},
-  linked: {name: 'Hai gene liên kết, lai phân tích AB/ab × ab/ab (hoán vị f)', labels: ['AB (kiểu hình bố mẹ)', 'ab (kiểu hình bố mẹ)', 'Ab (tái tổ hợp)', 'aB (tái tổ hợp)'], probs: (f) => testcrossFreq(f), draw: (r, f) => {
+  linked: {name: 'Hoán vị f: AB/ab × ab/ab', labels: ['AB (kiểu hình bố mẹ)', 'ab (kiểu hình bố mẹ)', 'Ab (tái tổ hợp)', 'aB (tái tổ hợp)'], probs: (f) => testcrossFreq(f), draw: (r, f) => {
     const u = r();
     const p = testcrossFreq(f);
     return u < p[0] ? 0 : u < p[0] + p[1] ? 1 : u < p[0] + p[1] + p[2] ? 2 : 3;
   }},
-  xlinked: {name: 'Liên kết giới tính XᴬXᵃ × XᴬY (tính trạng lặn ở con trai)', labels: ['Con gái bình thường', 'Con trai bình thường', 'Con trai mắc bệnh'], probs: () => [0.5, 0.25, 0.25], draw: (r) => {
+  xlinked: {name: 'Liên kết X: XᴬXᵃ × XᴬY', labels: ['Con gái bình thường', 'Con trai bình thường', 'Con trai mắc bệnh'], probs: () => [0.5, 0.25, 0.25], draw: (r) => {
     const u = r();
     return u < 0.5 ? 0 : u < 0.75 ? 1 : 2;
   }},
@@ -140,7 +140,7 @@ export const SINH2_MISC_PRESETS: Record<string, PresetSpec> = {
         box('poly', 130, 150, 190, 70, '#FDBA74', 'protein, RNA', 2),
         box('proto', 350, 150, 200, 70, '#FBCFE8', 'tế bào sơ khai (màng lipid)', 2),
         txt('cyan', 'quang hợp → O₂', [{at: 3, x: 320, y: 255}], '#166534'),
-        txt('endo', 'nuốt vi khuẩn → ti thể, lục lạp', [{at: 4, x: 320, y: 255}], '#9A3412'),
+        txt('endo', 'nội cộng sinh → ti thể, lục lạp', [{at: 4, x: 320, y: 255}], '#9A3412'),
       ],
       note: 'Bằng chứng nội cộng sinh: ti thể và lục lạp có màng kép, DNA vòng riêng, ribosome 70S giống vi khuẩn và tự nhân đôi. Loài người (Homo sapiens) xuất hiện cách đây khoảng 300 000 năm.',
     },
@@ -169,7 +169,7 @@ export const SINH2_MISC_PRESETS: Record<string, PresetSpec> = {
         box('plant', 440, 120, 160, 50, '#86EFAC', 'Thực vật, động vật', 2),
         box('amm', 240, 210, 160, 50, '#FDBA74', 'Amon hóa (xác, chất thải)', 3),
         box('den', 440, 210, 160, 50, '#FCA5A5', 'Phản nitrate hóa → N₂', 4),
-        txt('dien', 'Diễn thế: quần xã biến đổi tuần tự đến quần xã đỉnh cực', [{at: 4, x: 320, y: 290}], '#9A3412'),
+        txt('dien', 'Diễn thế → quần xã đỉnh cực', [{at: 4, x: 320, y: 290}], '#9A3412'),
       ],
       note: 'Diễn thế nguyên sinh: từ môi trường trống (đá trần) → địa y → rêu → cỏ → cây bụi → rừng (quần xã đỉnh cực). Phú dưỡng do dư N, P làm tảo nở hoa, thiếu O₂ khi tảo chết và bị phân hủy.',
     },

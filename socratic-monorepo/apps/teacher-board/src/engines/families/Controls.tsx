@@ -3,6 +3,7 @@
 import React from 'react';
 import type {Controls, P, S} from '../../utils/presets/types';
 import {Slider} from '../StemModelEngines';
+import {QLabel} from '../LabelMode';
 
 export const initialP = (c: Controls): P => ({
   ...Object.fromEntries((c.sliders ?? []).map((q) => [q.key, q.value])),
@@ -25,7 +26,7 @@ export const Readouts: React.FC<{prefix: string; items: [string, React.ReactNode
   <ul className="flex flex-wrap gap-1.5" data-testid={`${prefix}-readouts`}>
     {items.map(([label, value], i) => (
       <li key={label} className="rounded-lg border border-[#1D1B16]/10 bg-white px-2.5 py-1.5 text-[11px] leading-tight text-[#5A5548]">
-        {label}
+        <QLabel text={label} />
         <b data-testid={`${prefix}-readout-${i}`} className="block font-mono text-xs font-semibold tabular-nums text-[#1D1B16]">{value}</b>
       </li>
     ))}

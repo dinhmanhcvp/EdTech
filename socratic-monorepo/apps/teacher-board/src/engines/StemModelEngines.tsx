@@ -5,6 +5,7 @@ import {SimulationBlueprint, CurriculumLevel} from '@socratic/types';
 import {fmtNum, compileExpr} from '../utils/mathExpr';
 import {defaultParam} from '../utils/graphModel';
 import {CHART_BG, CurvePath, RANGE_CLASS, rangeFill} from './visualKit';
+import {QLabel} from './LabelMode';
 import {punnett, hardyWeinberg, parseLP, solveLP, cobweb, parseRecurrence, type GenotypeFreqs} from '../utils/stemModels';
 
 interface Props {
@@ -18,7 +19,7 @@ const pct = (v: number) => `${fmtNum(v * 100, 3)}%`;
 
 export const Slider: React.FC<{label: React.ReactNode; value: number; min: number; max: number; step: number; onChange: (v: number) => void; testid: string; fmt?: (v: number) => string}> = ({label, value, min, max, step, onChange, testid, fmt}) => (
   <label className="flex items-center gap-3 text-xs text-stone-700">
-    <span className="w-28 shrink-0 font-medium">{label}</span>
+    <span className="w-28 shrink-0 font-medium">{typeof label === 'string' ? <QLabel text={label} /> : label}</span>
     <input data-testid={testid} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className={`flex-1 ${RANGE_CLASS}`} style={rangeFill(value, min, max)} />
     <span className="w-16 text-right font-mono tabular-nums text-[#1D1B16] font-semibold">{fmt ? fmt(value) : fmtNum(value, 3)}</span>
   </label>

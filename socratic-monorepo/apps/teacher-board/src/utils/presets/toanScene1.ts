@@ -146,7 +146,7 @@ export const TOAN_SCENE1_PRESETS: Record<string, PresetSpec> = {
     examples: ['giải tam giác', 'định lí cosin và định lí sin', 'công thức Heron tính diện tích'],
     data: {
       viewBox: [560, 320],
-      choices: [{key: 'mode', label: 'Cho biết', value: 'sas', options: [['sas', 'Hai cạnh b, c và góc A kẹp giữa'], ['ssa', 'Cạnh a, b và góc A đối diện a']]}],
+      choices: [{key: 'mode', label: 'Cho biết', value: 'sas', options: [['sas', 'b, c và góc A xen giữa'], ['ssa', 'Cạnh a, b và góc A đối diện a']]}],
       sliders: [
         {key: 'a', label: 'Cạnh a (chỉ khi cho a, b, A)', min: 1, max: 10, step: 0.1, value: 6, when: ['mode', ['ssa']]},
         {key: 'b', label: 'Cạnh b', min: 1, max: 10, step: 0.1, value: 8},

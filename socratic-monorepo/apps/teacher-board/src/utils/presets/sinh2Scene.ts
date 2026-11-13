@@ -103,11 +103,11 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
         out.push({t: 'path', d: 'M50 150 a70 45 0 1 0 140 0 a70 45 0 1 0 -140 0 Z', fill: '#FEF3C7', stroke: '#A16207', w: 3});
         out.push({t: 'path', d: 'M90 140 q10 -18 22 0 t24 0 q-8 18 -22 6 t-24 -6 Z', fill: 'none', stroke: C.purple, w: 2.4}, ring(150, 168, 7, C.blue, 2), txt(120, 125, 'vùng nhân', {size: 10, fill: C.purple}), txt(150, 190, 'plasmid', {size: 10, fill: C.blue}));
         for (let i = 0; i < 8; i++) out.push(dot(75 + (i % 4) * 28, 160 + Math.floor(i / 4) * 16, 3, C.green));
-        out.push(ln(52, 150, 20, 175, {stroke: C.ink, w: 2}), txt(120, 230, 'NHÂN SƠ: 1–5 µm, chưa có màng nhân, ít bào quan, ribosome 70S', {size: 11, bold: true}));
+        out.push(ln(52, 150, 20, 175, {stroke: C.ink, w: 2}), txt(120, 230, 'NHÂN SƠ 1–5 µm · chưa có màng nhân · 70S', {size: 11, bold: true}));
         // nhân thực
         out.push({t: 'circle', cx: 400, cy: 150, r: 85, fill: '#DCFCE7', stroke: '#15803D', w: 3}, {t: 'circle', cx: 400, cy: 140, r: 32, fill: '#E9D5FF', stroke: C.purple, w: 2.5}, txt(400, 144, 'nhân', {size: 11, fill: C.purple, bold: true}));
         [[350, 190], [440, 195], [445, 110], [360, 105]].forEach(([x, y], i) => out.push({t: 'path', d: `M${x - 14} ${y} a14 8 0 1 0 28 0 a14 8 0 1 0 -28 0 Z`, fill: i % 2 ? '#FCA5A5' : '#FDBA74', stroke: C.ink, w: 1.4}));
-        out.push(txt(400, 255, 'NHÂN THỰC: 10–100 µm, có màng nhân và nhiều bào quan có màng', {size: 11, bold: true}), txt(400, 275, 'ribosome 80S', {size: 10, fill: C.grey}));
+        out.push(txt(400, 255, 'NHÂN THỰC 10–100 µm · có màng nhân', {size: 11, bold: true}), txt(400, 275, 'ribosome 80S', {size: 10, fill: C.grey}));
         return out;
       },
       readouts: [
@@ -159,7 +159,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
           if (lvl === 1) for (let i = 0; i < 14; i++) out.push(ln(60 + i * 30, 150, 90 + i * 30, 150, {stroke: C.grey, w: 2}), dot(60 + i * 30, 150, 11, ['#FCA5A5', '#93C5FD', '#FDE68A', '#86EFAC'][i % 4]));
           if (lvl === 2) {
             const pts: [number, number][] = Array.from({length: 120}, (_, i) => [60 + i * 3.8, 150 + 38 * Math.sin(i / 3.2)]);
-            out.push(poly(pts, {stroke: C.blue, w: 5, close: false}), txt(280, 230, 'xoắn α (liên kết hydrogen giữa các nhóm –CO và –NH)', {size: 11}));
+            out.push(poly(pts, {stroke: C.blue, w: 5, close: false}), txt(280, 230, 'xoắn α (liên kết H: –CO···HN–)', {size: 11}));
           }
           if (lvl === 3) {
             const pts: [number, number][] = Array.from({length: 160}, (_, i) => [280 + (60 + i * 0.4) * Math.cos(i / 6) * 0.9, 150 + (40 + i * 0.3) * Math.sin(i / 6) * 0.9]);
@@ -259,7 +259,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
       viewBox: [560, 320],
       choices: [{key: 'mode', label: 'Kích thích', value: 'photo', options: [['photo', 'Ánh sáng một phía'], ['grav', 'Trọng lực (đặt nằm ngang)']]}],
       sliders: [{key: 'ang', label: 'Hướng ánh sáng (so với phương thẳng đứng)', unit: '°', min: -80, max: 80, step: 5, value: 60}],
-      toggles: [{key: 'tip', label: 'Còn đỉnh sinh trưởng (nơi tạo auxin)', value: true}],
+      toggles: [{key: 'tip', label: 'Còn đỉnh ngọn (tạo auxin)', value: true}],
       time: {max: 8, label: 'Thời gian sinh trưởng', unit: 'ngày'},
       draw: (p, t, s) => {
         const out: Shape[] = [];
@@ -445,7 +445,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
           if (sex === 'son') out.push(box(x, y, 34, 34, filled ? '#1C1917' : '#FFFFFF', C.ink));
           else out.push({t: 'circle', cx: x + 17, cy: y + 17, r: 17, fill: filled ? '#1C1917' : '#FFFFFF', stroke: C.ink, w: 1.8});
         }
-        out.push(txt(160, 225, 'con trai (hình vuông)', {size: 11}), txt(360, 225, 'con gái (hình tròn)', {size: 11}), txt(280, 262, 'tô đen = mắc bệnh (số hình tô theo xác suất, minh họa 4 con mỗi giới)', {size: 11, fill: C.grey}));
+        out.push(txt(160, 225, 'con trai (hình vuông)', {size: 11}), txt(360, 225, 'con gái (hình tròn)', {size: 11}), txt(280, 262, 'tô đen = mắc bệnh (4 con mỗi giới)', {size: 11, fill: C.grey}));
         return out;
       },
       readouts: [
@@ -513,7 +513,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
         {key: 'e0', label: 'Năng lượng của sinh vật sản xuất', unit: 'kcal', min: 1000, max: 100000, step: 1000, value: 10000},
         {key: 'eff', label: 'Hiệu suất chuyển hóa giữa hai bậc', unit: '%', min: 5, max: 20, step: 1, value: 10},
       ],
-      toggles: [{key: 'ddt', label: 'Hiện nồng độ DDT (phóng đại ×10 mỗi bậc)', value: false}],
+      toggles: [{key: 'ddt', label: 'Hiện DDT (×10 mỗi bậc)', value: false}],
       draw: (p) => {
         const names = ['Sinh vật sản xuất', 'Tiêu thụ bậc 1', 'Tiêu thụ bậc 2', 'Tiêu thụ bậc 3', 'Tiêu thụ bậc 4'];
         const out: Shape[] = [];
@@ -524,7 +524,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
           out.push(box(280 - w / 2, y, w, 40, ['#86EFAC', '#BEF264', '#FDE68A', '#FDBA74', '#FCA5A5'][i], C.ink), txt(280, y + 16, names[i], {size: 11, bold: true}), txt(280, y + 31, `${e >= 100 ? Math.round(e).toLocaleString('vi-VN') : f1(e)} kcal`, {size: 11}));
           if (p.ddt === 1) out.push(txt(500, y + 25, `${f2(bioAccumulation(0.04, i))} ppm`, {size: 11, fill: C.red, bold: true}));
         }
-        out.push(txt(280, 24, 'chiều rộng tỉ lệ căn bậc 3,5 của năng lượng (để nhìn được cả 5 bậc)', {size: 10, fill: C.grey}));
+        out.push(txt(280, 24, 'bề rộng ∝ năng lượng (thang nén)', {size: 10, fill: C.grey}));
         return out;
       },
       readouts: [

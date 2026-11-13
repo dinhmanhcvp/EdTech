@@ -48,8 +48,8 @@ export const SINH_FEEDBACK_PRESETS: Record<string, PresetSpec> = {
       variable: {label: 'Áp suất thẩm thấu máu', unit: 'mOsm/L', setpoint: OSM_SET, band: [290, 310], yRange: [260, 340]},
       params: [{key: 'loss', label: 'Thay đổi gây ra (+ mất nước, − uống quá nhiều nước)', unit: 'mOsm/L', min: -30, max: 60, step: 1, value: 30}],
       toggles: [
-        {key: 'loop', label: 'Điều hòa ngược (ADH + thận) hoạt động', value: true},
-        {key: 'alcohol', label: 'Uống rượu bia (ức chế tiết ADH)', value: false},
+        {key: 'loop', label: 'Điều hòa ngược ADH + thận', value: true},
+        {key: 'alcohol', label: 'Rượu bia (ức chế ADH)', value: false},
       ],
       tMax: 240,
       dt: 1,
@@ -79,8 +79,8 @@ export const SINH_FEEDBACK_PRESETS: Record<string, PresetSpec> = {
       variable: {label: 'Huyết áp tâm thu', unit: 'mmHg', setpoint: BP_SET, band: [110, 120], yRange: [60, 170]},
       params: [{key: 'shock', label: 'Biến động đột ngột (− mất máu/đứng dậy nhanh, + căng thẳng)', unit: 'mmHg', min: -50, max: 50, step: 1, value: -40}],
       toggles: [
-        {key: 'loop', label: 'Phản xạ điều hòa tim mạch hoạt động', value: true},
-        {key: 'weak', label: 'Đáp ứng yếu (ví dụ thành mạch kém đàn hồi)', value: false},
+        {key: 'loop', label: 'Phản xạ điều hòa tim mạch', value: true},
+        {key: 'weak', label: 'Đáp ứng yếu (mạch kém đàn hồi)', value: false},
       ],
       tMax: 240,
       dt: 1,

@@ -174,7 +174,7 @@ export const HOA_SCENE1_PRESETS: Record<string, PresetSpec> = {
     data: {
       viewBox: [560, 330],
       sliders: [{key: 'z', label: 'Số hiệu nguyên tử Z', min: 1, max: 36, step: 1, value: 26}],
-      toggles: [{key: 'orb', label: 'Bản 3D: hiện orbital s, p lớp ngoài cùng', value: false}],
+      toggles: [{key: 'orb', label: '3D: orbital s, p ngoài cùng', value: false}],
       draw: (p) => {
         const z = Math.round(p.z);
         const cfg = configuration(z);

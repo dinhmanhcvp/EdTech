@@ -6,6 +6,7 @@ import { SimulationBlueprint, SimParamConfig, CurriculumLevel } from '@socratic/
 import { RotateCcw, FileText, CheckCircle2, Sparkles } from 'lucide-react';
 // các engine nạp theo nhu cầu (mỗi engine một gói), tách khỏi gói tải lần đầu của bảng
 import { MathPlotEngine, GraphEngine, GeometryEngine, PunnettEngine, HardyWeinbergEngine, LinearProgrammingEngine, CobwebEngine, VseprEngine, LeChatelierEngine, DaniellEngine, StomataEngine, OsmosisEngine, OperonLacEngine, BoxplotEngine, VariationTableEngine, GasEngine, DoublePendulumEngine, CoriolisEngine, FraunhoferEngine, PhysicsSandboxEngine, ChemistryLabEngine, BioSystemEngine, PresetEngine, AdvancedEngineById } from '../../engines/lazyEngines';
+import { LabelModeProvider } from '../../engines/LabelMode';
 import { PRESETS } from '../../utils/presets';
 import { ADVANCED_TEMPLATES, type AdvancedId } from '../../utils/advancedStemModels';
 import { AIGeneratedVisualEngine } from './AIGeneratedVisualEngine';
@@ -966,6 +967,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             svgContent={blueprint.custom_interactive_svg}
           />
         ) : (
+          <LabelModeProvider subject={blueprint.engine}>
           <React.Suspense fallback={<div data-testid="engine-loading" className="flex min-h-[200px] items-center justify-center text-xs text-[#4B473D]">Đang tải mô phỏng…</div>}>
             {blueprint.engine === 'MATH' && blueprint.templateId === 'MATH_GRAPH' && (
               <GraphEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} isHologram={isHolo} />
@@ -1004,6 +1006,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
               <BioSystemEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
           </React.Suspense>
+          </LabelModeProvider>
         )}
       </div>
 

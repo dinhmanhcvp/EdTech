@@ -44,8 +44,8 @@ export const SINH_CURVE_PRESETS: Record<string, PresetSpec> = {
         {key: 'tden', label: 'Nhiệt độ làm enzyme A biến tính', unit: '°C', min: 45, max: 85, step: 1, value: 55},
       ],
       curves: [
-        {id: 'a', label: 'Enzyme A (chỉnh bằng thanh trượt)', color: '#2563EB', fn: (x, p) => 100 * toleranceCurve(x, 0, p.topt, Math.max(p.tden, p.topt + 3))},
-        {id: 'b', label: 'Enzyme B của vi khuẩn chịu nhiệt', color: '#E11D48', dashed: true, fn: (x) => 100 * toleranceCurve(x, 20, 70, 85)},
+        {id: 'a', label: 'Enzyme A (chỉnh được)', color: '#2563EB', fn: (x, p) => 100 * toleranceCurve(x, 0, p.topt, Math.max(p.tden, p.topt + 3))},
+        {id: 'b', label: 'Enzyme B (vi khuẩn chịu nhiệt)', color: '#E11D48', dashed: true, fn: (x) => 100 * toleranceCurve(x, 20, 70, 85)},
       ],
       readouts: [
         {label: 'Nhiệt độ tối ưu của A', value: (p: P) => `${f1(p.topt)} °C`},
@@ -66,7 +66,7 @@ export const SINH_CURVE_PRESETS: Record<string, PresetSpec> = {
     examples: ['điểm bù ánh sáng', 'điểm bão hòa ánh sáng', 'thực vật C3 và C4'],
     data: {
       xLabel: 'cường độ ánh sáng (% ánh sáng ngày nắng)',
-      yLabel: 'cường độ quang hợp thực (đơn vị tương đối)',
+      yLabel: 'quang hợp thực (tương đối)',
       xRange: [0, 100],
       yRange: [-8, 40],
       params: [
@@ -97,7 +97,7 @@ export const SINH_CURVE_PRESETS: Record<string, PresetSpec> = {
     examples: ['đáp ứng miễn dịch thứ phát', 'tiêm nhắc lại vaccine', 'miễn dịch nguyên phát'],
     data: {
       xLabel: 'thời gian (ngày)',
-      yLabel: 'nồng độ kháng thể (đơn vị tương đối)',
+      yLabel: 'kháng thể (tương đối)',
       xRange: [0, 90],
       yRange: [0, 12],
       params: [
@@ -166,7 +166,7 @@ export const SINH_CURVE_PRESETS: Record<string, PresetSpec> = {
         {key: 'N0', label: 'Kích thước ban đầu N₀', unit: 'cá thể', min: 1, max: 50, step: 1, value: 10},
       ],
       curves: [
-        {id: 'j', label: 'Chữ J (điều kiện lí tưởng, N₀·e^(rt))', color: '#E11D48', dashed: true, fn: (x, p) => p.N0 * Math.exp(p.r * x)},
+        {id: 'j', label: 'Chữ J: N = N₀·eʳᵗ', color: '#E11D48', dashed: true, fn: (x, p) => p.N0 * Math.exp(p.r * x)},
         {id: 's', label: 'Chữ S (có giới hạn nguồn sống)', color: '#2563EB', fn: (x, p) => p.K / (1 + ((p.K - p.N0) / p.N0) * Math.exp(-p.r * x))},
         {id: 'k', label: 'Sức chứa K', color: '#78716C', dashed: true, fn: (_x, p) => p.K},
       ],

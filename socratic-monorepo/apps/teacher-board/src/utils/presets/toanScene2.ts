@@ -118,10 +118,10 @@ export const distSkew = (p1: number[], d1: number[], p2: number[], d2: number[])
 export const CUBE: Record<string, V3> = {A: [0, 0, 0], B: [1, 0, 0], C: [1, 1, 0], D: [0, 1, 0], A1: [0, 0, 1], B1: [1, 0, 1], C1: [1, 1, 1], D1: [0, 1, 1]};
 export const CUBE_EDGES: [string, string][] = [['A', 'B'], ['B', 'C'], ['C', 'D'], ['D', 'A'], ['A1', 'B1'], ['B1', 'C1'], ['C1', 'D1'], ['D1', 'A1'], ['A', 'A1'], ['B', 'B1'], ['C', 'C1'], ['D', 'D1']];
 export const CUBE_QUESTIONS: Record<string, {label: string; value: (a: number) => number; unit: string; text: string}> = {
-  lineplane: {label: 'Góc giữa AC′ và mặt phẳng (ABCD)', value: () => angleLinePlane(sub3(CUBE.C1, CUBE.A), [0, 0, 1]), unit: '°', text: 'tan φ = AA′ / AC = 1/√2'},
-  planes: {label: 'Góc giữa hai mặt phẳng (A′BD) và (ABCD)', value: () => anglePlanes(cross3(sub3(CUBE.B, CUBE.A1), sub3(CUBE.D, CUBE.A1)), [0, 0, 1]), unit: '°', text: 'Nhị diện cạnh BD: tan φ = AA′ / (AC/2) = √2'},
+  lineplane: {label: 'Góc (AC′, (ABCD))', value: () => angleLinePlane(sub3(CUBE.C1, CUBE.A), [0, 0, 1]), unit: '°', text: 'tan φ = AA′ / AC = 1/√2'},
+  planes: {label: 'Góc ((A′BD), (ABCD))', value: () => anglePlanes(cross3(sub3(CUBE.B, CUBE.A1), sub3(CUBE.D, CUBE.A1)), [0, 0, 1]), unit: '°', text: 'Nhị diện cạnh BD: tan φ = AA′ / (AC/2) = √2'},
   pointplane: {label: 'Khoảng cách từ A đến (BDD′B′)', value: (a) => a * distPointPlane(CUBE.A, CUBE.B, cross3(sub3(CUBE.D, CUBE.B), [0, 0, 1])), unit: '', text: 'AC ⟂ (BDD′B′) nên d = AC/2 = a√2/2'},
-  skew: {label: 'Khoảng cách hai đường chéo nhau AC và BD′', value: (a) => a * distSkew(CUBE.A, sub3(CUBE.C, CUBE.A), CUBE.B, sub3(CUBE.D1, CUBE.B)), unit: '', text: 'd = |[AC, BD′]·AB| / |[AC, BD′]| = a/√6'},
+  skew: {label: 'd(AC, BD′)', value: (a) => a * distSkew(CUBE.A, sub3(CUBE.C, CUBE.A), CUBE.B, sub3(CUBE.D1, CUBE.B)), unit: '', text: 'd = |[AC, BD′]·AB| / |[AC, BD′]| = a/√6'},
 };
 export const CUBE_HIGHLIGHT: Record<string, {lines: [string, string][]; planePts: string[]; col: string}> = {
   lineplane: {lines: [['A', 'C1'], ['A', 'C']], planePts: ['A', 'B', 'C', 'D'], col: C.blue},
@@ -137,7 +137,7 @@ export const SURFACES: Record<string, {label: string; fn: Surf; u: [number, numb
   hyper1: {label: 'Hypeboloit một tầng', fn: (u, v) => [Math.sqrt(1 + u * u) * Math.cos(v) * 1.4, Math.sqrt(1 + u * u) * Math.sin(v) * 1.4, u * 1.4], u: [-1.4, 1.4], v: [0, 2 * Math.PI], eq: 'x²/a² + y²/b² − z²/c² = 1'},
   cone: {label: 'Mặt nón', fn: (u, v) => [u * Math.cos(v) * 1.2, u * Math.sin(v) * 1.2, u * 1.4], u: [-1.5, 1.5], v: [0, 2 * Math.PI], eq: 'x²/a² + y²/b² = z²/c²'},
   paraboloid: {label: 'Paraboloit elip', fn: (u, v) => [u * Math.cos(v) * 1.5, u * Math.sin(v) * 1.5, u * u * 1.2 - 1.2], u: [0, 1.5], v: [0, 2 * Math.PI], eq: 'z = x²/a² + y²/b²'},
-  saddle: {label: 'Paraboloit hypebolic (yên ngựa)', fn: (u, v) => [u * 1.6, v * 1.6, (u * u - v * v) * 0.9], u: [-1.4, 1.4], v: [-1.4, 1.4], eq: 'z = x²/a² − y²/b²'},
+  saddle: {label: 'Paraboloit hypebolic', fn: (u, v) => [u * 1.6, v * 1.6, (u * u - v * v) * 0.9], u: [-1.4, 1.4], v: [-1.4, 1.4], eq: 'z = x²/a² − y²/b²'},
   mobius: {label: 'Dải Möbius (một mặt)', fn: (u, v) => [(1.7 + v * Math.cos(u / 2)) * Math.cos(u), (1.7 + v * Math.cos(u / 2)) * Math.sin(u), v * Math.sin(u / 2)], u: [0, 2 * Math.PI], v: [-0.6, 0.6], eq: 'dải một mặt, một mép'},
 };
 

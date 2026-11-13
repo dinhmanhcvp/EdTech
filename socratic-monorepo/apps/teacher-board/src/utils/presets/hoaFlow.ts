@@ -53,7 +53,7 @@ export const HOA_FLOW_PRESETS: Record<string, PresetSpec> = {
       ],
       items: [
         txt('main', 'CH₃–CH=CH₂ + H–Br', [{at: 0, x: 320, y: 70}, {at: 1, x: 320, y: 70, label: 'CH₃–CH=CH₂ + H⁺ + Br⁻'}, {at: 2, x: 320, y: 70, label: 'CH₃–C⁺H–CH₃  (bậc II, bền hơn)'}, {at: 3, x: 320, y: 70, label: 'CH₃–CHBr–CH₃  (2-bromopropane)'}, {at: 4, x: 320, y: 70, label: 'sản phẩm chính: 2-bromopropane'}]),
-        rect('major', 90, 130, 200, 70, '#BBF7D0', 'cation bậc II (nhiều nhóm alkyl)', 1, {frames: [{at: 1, x: 90, y: 130}, {at: 3, x: 90, y: 130, fill: '#86EFAC'}]}),
+        rect('major', 90, 130, 200, 70, '#BBF7D0', 'cation bậc II', 1, {frames: [{at: 1, x: 90, y: 130}, {at: 3, x: 90, y: 130, fill: '#86EFAC'}]}),
         rect('minor', 350, 130, 200, 70, '#FECACA', 'cation bậc I (kém bền)', 1, {frames: [{at: 1, x: 350, y: 130}, {at: 3, x: 350, y: 130, o: 0.25}]}),
         txt('arrow-major', '→ sản phẩm chính ~ 90 %', [{at: 3, x: 190, y: 235}], '#166534'),
         txt('arrow-minor', '→ 1-bromopropane (phụ)', [{at: 3, x: 450, y: 235, o: 0.4}], '#991B1B'),

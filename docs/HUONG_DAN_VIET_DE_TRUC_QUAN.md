@@ -17,6 +17,16 @@ Các điểm cần nhớ:
 - **Khóa có hạn mức:** khi Gemini hết lượt, bảng chạy bằng bộ nhận dạng offline; công thức đơn giản vẫn đọc được, chữ tay tiếng Việt thì không.
 - **Quay video:** thêm `?clean=1` vào địa chỉ trang (`http://localhost:3001/?clean=1`) để ẩn thanh chẩn đoán ở góc phải.
 
+### Nhãn đại lượng: Kí hiệu hay Chữ
+
+Mỗi mô phỏng có nút **Kí hiệu / Chữ** ngay dưới bảng điều khiển (nhớ lựa chọn trên máy):
+
+- **Kí hiệu** (mặc định): nhãn dài được rút gọn bằng kí hiệu SGK, ví dụ "Khối lượng riêng chất lỏng" → *ρ* chất lỏng, "Lực đẩy Archimedes…" → *Fₐ*, "Vận tốc ban đầu" → *v₀*. Dòng chú giải bên dưới ghi nghĩa từng kí hiệu (*ρ*: khối lượng riêng · *Fₐ*: lực đẩy Archimedes). Rê chuột lên nhãn luôn thấy tên đầy đủ.
+- **Chữ**: hiện nguyên văn, không rút gọn.
+- Kí hiệu theo **môn**: Vật lý và Hóa dùng kí hiệu SGK; Sinh chỉ đổi N, K, r của quần thể (vì "tần số" ở Sinh là tần số alen); Toán giữ chữ.
+- **Phân biệt được kí hiệu giống nhau:** trong cùng một mô phỏng, hai đại lượng trùng kí hiệu (*P* trọng lượng và *P* công suất, *T* nhiệt độ và *T* chu kì…) tự giữ chữ; hai nhãn rút gọn ra cùng chuỗi cũng giữ nguyên văn.
+- Muốn thêm kí hiệu cho môn mới: sửa bảng trong `utils/quantityLabel.ts`; nhãn dài đặc biệt có bản gọn viết tay ở `utils/quantityLabelOverrides.ts`.
+
 ## 2. Hình học: vẽ nháp, bảng thay bằng hình chuẩn tại chỗ
 
 Không qua hologram: các nét tay thô được **nắn thẳng và nối lại tại đúng các đỉnh bạn vẽ**, ngay vị trí vẽ. Hình giữ nguyên dáng và tỉ lệ của bạn (hộp dẹt vẫn dẹt, tam giác lệch vẫn lệch); bảng **không** thay bằng một hình mẫu có sẵn.
@@ -28,6 +38,18 @@ Không qua hologram: các nét tay thô được **nắn thẳng và nối lại
 - **Tự động:** Dock → **Hình** → **Trực quan hình học**: vẽ xong chờ khoảng 1 giây, hình tự chuyển, khỏi khoanh.
 - Trên mỗi hình: ⠿ di chuyển, ⤢ mở mô phỏng đầy đủ (khai triển, cắt thiết diện, mặt cầu, đường cao), ✕ xóa.
 - Cũng có thể **gõ tên khối** (xem `GEO_SOLID` bên dưới).
+
+### Vẽ hình từ đề dài (hình phẳng và đường tròn)
+
+Dán hoặc gõ nguyên đề (kể cả đề chép từ PDF bị ngắt dòng giữa câu, có ký hiệu ⊥, góc, △), khoanh rồi **Trực quan hóa**. Bộ dựng đọc theo từng câu và dựng đủ điểm:
+
+- **Đường tròn:** điểm trên cung ("lấy điểm M bất kì trên cung nhỏ AB", "C thuộc nửa đường tròn"), điểm chính giữa cung, dây, đường kính ("kẻ đường kính AK", "qua N kẻ đường kính CD"), dây vuông góc đường kính, cát tuyến, tiếp tuyến tại một điểm hoặc kẻ từ điểm ngoài, giao điểm thứ hai của đường thẳng với đường tròn, "tam giác ABC nội tiếp (O)" (đường tròn ngoại tiếp, O là tâm).
+- **Đường phụ:** đường cao hàng loạt ("AD, BE, CF là ba đường cao"), chân vuông góc, trung điểm, phân giác cắt cạnh, đường qua một điểm song song hoặc vuông góc với đoạn khác, điểm đối xứng, điểm trên tia với AD = AB.
+- **Chia phần a), b), c) hoặc 1., 2., 3. (cả `a/ b/ c/`):** nút từng phần ngay dưới hình. **Bấm một nút = vẽ hình tới phần đó**; bấm lại phần cuối đang hiện thì lùi một phần; giữ **Shift** khi bấm để bật/tắt riêng từng phần.
+- **Kéo đỉnh vẫn giữ tính chất:** tứ giác nội tiếp, tam giác nội tiếp, hình có đường kính, vuông góc, song song; điểm dựng thêm (giao điểm, chân đường vuông góc, hình bình hành…) tự đi theo.
+- **Chữ tên đỉnh:** tự nằm vào khe trống giữa các nét (không đè lên cạnh). Có thể **kéo chữ** dời đi, nhưng chỉ trong khoảng gần đỉnh (có nét chấm nối về đỉnh); bấm đúp để về chỗ cũ.
+- **Gợi ý vẽ thêm để giải:** mở **Dụng cụ → Gợi ý**, chọn phần của đề; bộ gợi ý hỏi theo bước và đề xuất đường phụ (vẽ đường tròn qua ba điểm, nối hai điểm, trung điểm…). Đọc được các yêu cầu: vuông góc, song song, bằng nhau, tỉ số, tích hai đoạn (AH·AP = AI·AB), tứ giác nội tiếp, đồng dạng, trung điểm, tiếp tuyến, hình bình hành, tam giác cân hoặc vuông.
+- **Giới hạn:** điều kiện số liệu ("AH = R√2", "AB < AC", "góc 60°") không ép lên hình; hình chỉ có đường tròn mà không có đường kính hoặc tam giác là hình tĩnh (điểm trên đó không kéo được). Đề có lỗi chính tả ("tiểp", "cẳt") có thể bị bỏ sót.
 
 ## 3. Toán
 

@@ -317,7 +317,7 @@ export const LY_SCENE2_PRESETS: Record<string, PresetSpec> = {
     examples: ['lực Lorentz', 'từ trường của dòng điện thẳng', 'quy tắc bàn tay phải', 'đường sức từ'],
     data: {
       viewBox: [560, 320],
-      choices: [{key: 'mode', label: 'Hiện tượng', value: 'lorentz', options: [['lorentz', 'Electron bay trong từ trường đều'], ['wire', 'Hai dây thẳng song song']]}],
+      choices: [{key: 'mode', label: 'Hiện tượng', value: 'lorentz', options: [['lorentz', 'e⁻ trong từ trường đều'], ['wire', 'Hai dây thẳng song song']]}],
       sliders: [
         {key: 'v', label: 'Tốc độ electron', unit: '10⁶ m/s', min: 0.5, max: 5, step: 0.5, value: 1, when: ['mode', ['lorentz']]},
         {key: 'B', label: 'Cảm ứng từ B', unit: 'mT', min: 1, max: 50, step: 1, value: 1, when: ['mode', ['lorentz']]},
@@ -421,7 +421,7 @@ export const LY_SCENE2_PRESETS: Record<string, PresetSpec> = {
         {key: 'Z', label: 'Số proton của bia (Z)', min: 2, max: 82, step: 1, value: 79},
         {key: 'E', label: 'Động năng hạt α', unit: 'MeV', min: 2, max: 10, step: 0.5, value: 5},
       ],
-      toggles: [{key: 'thomson', label: 'Mẫu Thomson (điện tích trải đều)', value: false}],
+      toggles: [{key: 'thomson', label: 'Mẫu Thomson (bánh pudding)', value: false}],
       draw: (p) => {
         const d0 = p.thomson === 1 ? 0.04 : closestApproach(p.Z, p.E);
         const k = 1.8;

@@ -159,7 +159,7 @@ const tankScene: SceneDef = {
       tProbe(V(1.4, py - 0.3, 0), undefined, `h = ${f1(p.h)} m`);
       tGauge(V(1.85, 5.5, 0), undefined, `${f1(kpa)} kPa`);
       k.caption(`p = p₀ + ρgh = ${f1(kpa)} kPa
-Mũi tên xanh: lực đẩy Archimedes · đỏ: trọng lực`);
+xanh: Fₐ (lực đẩy Archimedes) · đỏ: P (trọng lực)`);
     };
   },
 };

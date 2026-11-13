@@ -80,7 +80,7 @@ export const HOA_CURVE_PRESETS: Record<string, PresetSpec> = {
     examples: ['thuyết va chạm', 'hệ số nhiệt độ Van’t Hoff', 'hằng số tốc độ k', 'chu kì bán hủy của phản ứng'],
     data: {
       xLabel: 'thời gian t (s)',
-      yLabel: 'nồng độ chất đầu (% so với ban đầu)',
+      yLabel: '[chất đầu] (% ban đầu)',
       xRange: (p: P) => [0, 5 / arrhenius(p.Ea - p.cat, p.T)],
       yRange: [0, 105],
       params: [
@@ -90,7 +90,7 @@ export const HOA_CURVE_PRESETS: Record<string, PresetSpec> = {
       ],
       curves: [
         {id: 'now', label: 'Điều kiện đang chọn', color: '#2563EB', fn: (t, p) => 100 * Math.exp(-arrhenius(p.Ea - p.cat, p.T) * t)},
-        {id: 'ref', label: 'Chuẩn (300 K, Ea = 50, không xúc tác)', color: '#A8A29E', dashed: true, fn: (t, p) => 100 * Math.exp(-arrhenius(50, 300) * t)},
+        {id: 'ref', label: 'Chuẩn: 300 K, Eₐ = 50', color: '#A8A29E', dashed: true, fn: (t, p) => 100 * Math.exp(-arrhenius(50, 300) * t)},
       ],
       readouts: [
         {label: 'Hằng số tốc độ k', value: (p: P) => `${arrhenius(p.Ea - p.cat, p.T).toExponential(2)} s⁻¹`},
@@ -110,7 +110,7 @@ export const HOA_CURVE_PRESETS: Record<string, PresetSpec> = {
     examples: ['hằng số cân bằng', 'thương số phản ứng Q', 'quá trình Haber tổng hợp ammonia'],
     data: {
       xLabel: 'thời gian (đơn vị tùy ý)',
-      yLabel: 'lg Q (đường xanh) và lg K (đường đứt)',
+      yLabel: 'lg Q (liền) · lg K (đứt)',
       xRange: [0, 15],
       yRange: [-3, 3],
       params: [

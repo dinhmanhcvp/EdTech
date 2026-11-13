@@ -3,6 +3,14 @@
 import React, {Suspense, useEffect, useId, useMemo, useRef, useState} from 'react';
 import type {SceneData, Shape} from '../../utils/presets/types';
 import {BTN, ControlPanel, PANEL, Readouts, initialP, initialS} from './Controls';
+import {LabelFooter, LabelSet} from '../LabelMode';
+
+/** mọi nhãn đại lượng của một mô phỏng (thanh trượt kèm đơn vị, số đọc): rút gọn cùng nhau để không trùng kí hiệu */
+const labelsOf = (d: {sliders?: {label: string; unit?: string}[]; readouts?: {label: string}[]; time?: {label?: string}}): string[] => [
+  ...(d.sliders ?? []).map((q) => `${q.label}${q.unit ? ` (${q.unit})` : ''}`),
+  ...(d.readouts ?? []).map((r) => r.label),
+  ...(d.time?.label ? [d.time.label] : []),
+];
 import {Slider} from '../StemModelEngines';
 
 const INK = '#2B2823';
@@ -303,8 +311,11 @@ export const SceneLab: React.FC<{id: string; data: SceneData}> = ({id, data}) =>
             </div>
           </div>
         )}
-        <ControlPanel prefix="scene" c={data} p={p} s={s} setP={(k, v) => setPs((x) => ({...x, [k]: v}))} setS={(k, v) => setSs((x) => ({...x, [k]: v}))} />
-        {data.readouts && <Readouts prefix="scene" items={data.readouts.map((r) => [r.label, r.value(p, t, s)])} />}
+        <LabelSet labels={labelsOf(data)}>
+          <ControlPanel prefix="scene" c={data} p={p} s={s} setP={(k, v) => setPs((x) => ({...x, [k]: v}))} setS={(k, v) => setSs((x) => ({...x, [k]: v}))} />
+          {data.readouts && <Readouts prefix="scene" items={data.readouts.map((r) => [r.label, r.value(p, t, s)])} />}
+          <LabelFooter labels={labelsOf(data)} />
+        </LabelSet>
       </div>
     </div>
   );

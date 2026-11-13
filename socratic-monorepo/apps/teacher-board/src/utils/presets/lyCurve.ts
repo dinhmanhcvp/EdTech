@@ -224,12 +224,12 @@ export const LY_CURVE_PRESETS: Record<string, PresetSpec> = {
     examples: ['năng lượng liên kết riêng', 'độ hụt khối', 'phản ứng nhiệt hạch', 'độ bền vững của hạt nhân'],
     data: {
       xLabel: 'số khối A',
-      yLabel: 'năng lượng liên kết riêng (MeV/nucleon)',
+      yLabel: 'ε (MeV/nucleon)',
       xRange: [1, 240],
       yRange: [0, 10],
       params: [],
       curves: [
-        {id: 'be', label: 'ε(A) theo công thức bán thực nghiệm', color: '#2563EB', fn: (a) => bindingPerNucleon(a)},
+        {id: 'be', label: 'ε(A) bán thực nghiệm', color: '#2563EB', fn: (a) => bindingPerNucleon(a)},
         {id: 'fe', label: 'Đỉnh gần Fe-56 (≈ 8,8 MeV)', color: '#A8A29E', dashed: true, fn: () => 8.8},
       ],
       readouts: [

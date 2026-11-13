@@ -1,3 +1,10 @@
+# 2026-11-13 — Chuẩn bị bảo vệ ViSEF: kịch bản 5 phút + cẩm nang học sinh (không sửa mã)
+- `docs/KICH_BAN_THUYET_TRINH_KHAC_BIET.md`: kịch bản 5 phút bám poster GTTP2026 (khối 01–07), câu trả lời "hơn BC178.08/iFLYTEK ở đâu".
+- Cẩm nang cho học sinh (thuật toán, số liệu, thuyết trình, 20 câu phản biện) là Claude Doc: https://claude.ai/artifact/Sv352oVi6aJKNaMihwwpPH — đã đối chiếu với mã (`inkRecognizer.ts`, `socratic_guard.py`, `sympy_verifier.py`, `bktEngine.ts`, `handTracker.ts`).
+- **Mở, cần thầy chốt:** (1) bộ số thực nghiệm lệch giữa poster (N = 86, 4 tuần, d = 0,88) và báo cáo/sổ tay (412 HS, 8 tuần, d = 0,73); (2) tỷ lệ 54,2/27,2/18,6 (81,4%) trong `BENCHMARK_DO_TRE...md` đến từ cách chọn bộ thử 100 câu, chưa chắc là đo từ nhật ký lớp; (3) dòng "+1,32 điểm" trên poster không khớp 7,74 − 6,85; (4) kiểm thứ nguyên SymPy vẫn chạy cho MATH (`routers/companion.py` gọi `verify_algebraic_equivalence` cho MATH|PHYS); (5) tầng 2 mặc định so khớp từ khóa, ChromaDB tắt (`ENABLE_HEAVY_LOCAL_MODELS`).
+
+---
+
 # 2026-11-12 (10) — Bóc tách Chi tiết Toàn bộ 458 Học liệu, 8 Bộ môn & 229 Thí nghiệm Mô phỏng 3D trên think.pro.vn
 - **Dữ liệu thực chứng:** Đã crawl toàn bộ cơ sở dữ liệu 458 học liệu từ API `think.pro.vn` và lưu trữ tại `docs/tai-lieu-nghien-cuu-stem/think_community_full_458.json` (24 trang API).
 - **Thống kê ma trận toàn diện:**
@@ -2099,3 +2106,11 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 - Test: `geoPdfProblems.test.ts` (30 đề nguyên văn từ PDF: đủ điểm + mệnh đề đúng + kéo đỉnh); `geoNotation.test.ts` cập nhật (M trên nửa đường tròn nay được vẽ). tsc sạch cả hai app; vitest teacher-board 3143/3143.
 - Giới hạn đã biết: (1) hình CHỈ có đường tròn không kèm đường kính/tam giác (vd. bài tiếp tuyến từ điểm ngoài, cát tuyến) là hình tĩnh, điểm trên đó không kéo được; hình có đường kính hoặc tam giác nội tiếp thì kéo được, vẫn giữ tính chất. (2) Điều kiện số liệu (AH = R√2, AB < AC, góc = 60°) KHÔNG ép lên hình nên mệnh đề chỉ đúng khi có điều kiện đó (bài 38c) sẽ không đúng trên hình. (3) Vài điểm xa (E, P ở bài 2 và 14) vì tính chất hình học của đề, không thu gọn được. (4) Chưa xem trên bảng thật; đã vẽ thử 9 bài ra ảnh bằng matplotlib thấy đúng hình.
 - Việc còn mở: chữ sai chính tả của đề PDF ("tiểp", "cẳt") chưa được dung thứ; bài 17c (quỹ tích) và các câu "tìm vị trí" chỉ vẽ hình, không giải.
+
+## 2026-11-13 · Rà toàn bộ nhãn của 215 template mô phỏng: hai chế độ "Kí hiệu / Chữ", phân biệt kí hiệu trùng
+- Yêu cầu người dùng: nhãn quá dài (vd. "Lực đẩy Archimedes…"), cần trực quan cả bằng công thức lẫn chữ; các đại lượng có kí hiệu giống/tựa nhau phải phân biệt được.
+- `utils/quantityLabel.ts`: `compactLabel` thay cụm chữ dài ĐẦU nhãn bằng kí hiệu SGK theo MÔN (Vật lý: Fₐ, ρ, v₀, U, I, λ, μ…; Hóa: C, n, K + chung; Sinh chỉ N, K, r quần thể; Toán không đổi), giữ phần chữ còn lại; nhãn ≤ 20 kí tự để nguyên; "Tên: công thức" → chỉ công thức; bỏ ngoặc giải thích (không bỏ ngoặc có số/công thức). Không đổi khi nhãn tự nêu kí hiệu khác ("Biên độ E₀") hoặc là danh sách ("A · B · C"). `compactLabels` cho cả bộ nhãn một mô phỏng: kí hiệu trùng giữa hai đại lượng khác nhau (P trọng lượng/P công suất, T nhiệt độ/T chu kì, f tần số/f tiêu cự) hoặc rút gọn ra cùng chuỗi thì các nhãn đó giữ chữ.
+- `utils/quantityLabelOverrides.ts`: 86 bản gọn viết tay cho nhãn thanh trượt/số đọc dài (rà từng nhãn); dữ liệu template GIỮ nguyên văn để chế độ "Chữ" hiện đủ. 44 chuỗi không qua bộ nhãn (chữ trong hình SVG, công tắc, lựa chọn, mục quy trình, đường cong, trục y) được viết gọn thẳng trong `utils/presets/*`.
+- `engines/LabelMode.tsx`: `LabelModeProvider` (môn theo `blueprint.engine`, chế độ nhớ ở localStorage `svb.labelMode`, mặc định Kí hiệu) bọc engine trong `SimulationWidget`; `QLabel` (kí hiệu in nghiêng, tooltip tên đầy đủ) dùng trong `Slider` (mọi engine) và `Readouts`; `LabelSet` + `LabelFooter` (nút Kí hiệu/Chữ + dòng "ρ: khối lượng riêng · Fₐ: lực đẩy Archimedes") trong SceneLab và CurveLab.
+- Test `quantityLabel.test.tsx` (gồm kiểm tra cả 215 template: nhãn sau rút gọn ≤ 34 kí tự, trừ công thức), `vitest` 3148/3148, tsc sạch. Xem trên bảng thật (3001): template áp suất chất lỏng hiện ρ chất lỏng, ρ vật, Fₐ (khối 1 L ngập hẳn), đổi Chữ hiện nguyên văn.
+- Chưa làm: chú thích 2 dòng trong cảnh 3D (`k.caption`) chỉ sửa cảnh Archimedes; các engine viết tay (PhysEngines, ChemEngines…) chỉ được rút gọn nhãn thanh trượt (số đọc của chúng là JSX riêng, nhãn vốn đã ngắn).

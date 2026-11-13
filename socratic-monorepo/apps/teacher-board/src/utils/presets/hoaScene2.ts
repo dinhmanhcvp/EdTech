@@ -148,7 +148,7 @@ export const HOA_SCENE2_PRESETS: Record<string, PresetSpec> = {
           out.push(ln(x, y, x + 14 * Math.cos(a), y + 14 * Math.sin(a), {stroke: C.ink, w: 2}), dot(x, y, 4.5, C.blue));
         }
         if (p.hard === 1) for (let i = 0; i < 6; i++) out.push(dot(70 + i * 80, 285 - (i % 2) * 14, 9, '#9CA3AF'), txt(70 + i * 80, 289 - (i % 2) * 14, 'Ca²⁺', {size: 8}));
-        out.push(txt(280, 24, 'đầu ưa nước (xanh) hướng ra nước · đuôi kị nước hướng vào dầu', {size: 11, fill: C.grey}));
+        out.push(txt(280, 24, 'đầu ưa nước → nước · đuôi kị nước → dầu', {size: 11, fill: C.grey}));
         return out;
       },
       readouts: [

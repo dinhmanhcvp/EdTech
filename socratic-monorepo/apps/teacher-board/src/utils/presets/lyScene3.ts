@@ -131,7 +131,7 @@ export const LY_SCENE3_PRESETS: Record<string, PresetSpec> = {
         const eTip = project([x0 + 1.2, amp, 0], cam);
         const bTip = project([x0 + 2.4, 0, amp], cam);
         if (p.showE) out.push(...callout(eTip.x, eTip.y, 30, 20, 'Điện trường E: dao động theo phương đứng', C.red));
-        if (p.showB) out.push(...callout(bTip.x, bTip.y, 30, 48, 'Từ trường B: dao động theo phương ngang, vuông góc E', '#6C8CFF'));
+        if (p.showB) out.push(...callout(bTip.x, bTip.y, 30, 48, 'B: dao động ngang, ⊥ E', '#6C8CFF'));
         return out;
       },
       readouts: [

@@ -210,7 +210,7 @@ export const SINH2_CURVE_PRESETS: Record<string, PresetSpec> = {
     examples: ['phản xạ có điều kiện', 'thí nghiệm Pavlov', 'tập tính của động vật', 'học tập ở động vật', 'pheromone'],
     data: {
       xLabel: 'số lần ghép cặp chuông – thức ăn',
-      yLabel: 'tỉ lệ chó tiết nước bọt khi chỉ có chuông (%)',
+      yLabel: 'tiết nước bọt khi chỉ có chuông (%)',
       xRange: [0, 40],
       yRange: [0, 105],
       params: [

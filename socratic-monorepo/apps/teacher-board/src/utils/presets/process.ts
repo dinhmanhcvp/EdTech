@@ -31,7 +31,7 @@ export const PROCESS_PRESETS: Record<string, PresetSpec> = {
         {id: 'prod1', kind: 'circle', r: 9, fill: '#EF4444', frames: [{at: 4, x: 430, y: 160}]},
         {id: 'prod2', kind: 'circle', r: 9, fill: '#EF4444', frames: [{at: 4, x: 560, y: 150}]},
         {id: 'prod3', kind: 'circle', r: 9, fill: '#EF4444', frames: [{at: 4, x: 520, y: 100}]},
-        {id: 'prod-label', kind: 'text', fill: '#B91C1C', label: 'protein (insulin) do gene chuyển tạo ra', frames: [{at: 4, x: 360, y: 290}]},
+        {id: 'prod-label', kind: 'text', fill: '#B91C1C', label: 'insulin (protein của gene chuyển)', frames: [{at: 4, x: 360, y: 290}]},
       ],
       note: 'Bấm "Bước tiếp" hoặc ▶ để chạy quy trình; chạm một bước để nhảy tới.',
     },

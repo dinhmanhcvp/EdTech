@@ -42,7 +42,7 @@ export const FEEDBACK_PRESETS: Record<string, PresetSpec> = {
         {key: 'sens', label: 'Độ nhạy của tế bào với insulin', unit: '', min: 0.2, max: 3, step: 0.1, value: 1},
       ],
       toggles: [
-        {key: 'loop', label: 'Điều hòa ngược insulin–glucagon hoạt động', value: true},
+        {key: 'loop', label: 'Điều hòa ngược insulin–glucagon', value: true},
         {key: 'exercise', label: 'Chạy bộ (phút 120–150)', value: false},
       ],
       tMax: 240,

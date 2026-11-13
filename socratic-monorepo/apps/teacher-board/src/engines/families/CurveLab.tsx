@@ -6,6 +6,7 @@ import type {CurveData, P} from '../../utils/presets/types';
 import {CHART_BG, CurvePath} from '../visualKit';
 import {Slider} from '../StemModelEngines';
 import {Readouts} from './Controls';
+import {LabelFooter, LabelSet} from '../LabelMode';
 
 const W = 560;
 const H = 300;
@@ -88,6 +89,7 @@ export const CurveLab: React.FC<{id: string; data: CurveData}> = ({id, data}) =>
       </div>
 
       <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3.5 flex-[2_1_260px] min-w-0 flex flex-col gap-2.5">
+        <LabelSet labels={[data.xLabel, ...data.params.map((q) => `${q.label}${q.unit ? ` (${q.unit})` : ''}`), ...(data.readouts ?? []).map((r) => r.label)]}>
         <Slider testid="curve-cursor" label={data.xLabel} value={cur} min={0} max={1} step={0.005} onChange={setCur} fmt={() => fmt(xc, 4)} />
         {data.params.map((q) => (
           <Slider
@@ -102,6 +104,8 @@ export const CurveLab: React.FC<{id: string; data: CurveData}> = ({id, data}) =>
           />
         ))}
         {data.readouts && <Readouts prefix="curve" items={data.readouts.map((r) => [r.label, r.value(vals)])} />}
+        <LabelFooter labels={[data.xLabel, ...data.params.map((q) => `${q.label}${q.unit ? ` (${q.unit})` : ''}`), ...(data.readouts ?? []).map((r) => r.label)]} />
+        </LabelSet>
         {data.note && <p className="text-[11px] leading-relaxed text-[#5A5548]">{data.note}</p>}
       </div>
     </div>

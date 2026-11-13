@@ -45,19 +45,19 @@ describe('nút a), b), c) ngay dưới hình: bật/tắt từng phần, giữ n
   it('các phần độc lập: bật b không làm mất M của a; bật c tự bật các phần nó cần', async () => {
     render(<SmartboardCanvas initialStrokes={[figure()]} />);
     await act(async () => {
-      fireEvent.click(await screen.findByTestId('geo-part-1'));
+      fireEvent.click(await screen.findByTestId('geo-part-1'), {shiftKey: true});
     });
     await act(async () => {
-      fireEvent.click(screen.getByTestId('geo-part-2'));
+      fireEvent.click(screen.getByTestId('geo-part-2'), {shiftKey: true});
     });
     expect(labels()).toEqual(expect.arrayContaining(['M', 'O']));
     await act(async () => {
-      fireEvent.click(screen.getByTestId('geo-part-1')); // tắt a: M mất, O (b) còn
+      fireEvent.click(screen.getByTestId('geo-part-1'), {shiftKey: true}); // tắt a: M mất, O (b) còn
     });
     expect(labels()).toContain('O');
     expect(labels()).not.toContain('M');
     await act(async () => {
-      fireEvent.click(screen.getByTestId('geo-part-3')); // bật c: kéo theo a
+      fireEvent.click(screen.getByTestId('geo-part-3'), {shiftKey: true}); // bật c: kéo theo a
     });
     expect(screen.getByTestId('geo-part-1').getAttribute('aria-pressed')).toBe('true');
     expect(screen.getAllByTestId('geo-section').length).toBe(1);

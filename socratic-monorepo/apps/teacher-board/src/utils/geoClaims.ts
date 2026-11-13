@@ -15,7 +15,11 @@ export type Claim =
   | {k: 'par'; a: Seg; b: Seg}
   | {k: 'col'; pts: string[]}
   | {k: 'cyc'; pts: string[]}
-  | {k: 'ang'; a: [string, string, string]; b: [string, string, string]};
+  | {k: 'ang'; a: [string, string, string]; b: [string, string, string]}
+  /** hai tam giác đồng dạng (ba góc đôi một bằng nhau, không phân biệt thứ tự đỉnh) */
+  | {k: 'sim'; a: [string, string, string]; b: [string, string, string]}
+  /** a² = b·c (phương tích / tiếp tuyến), vd BK² = KI·KD */
+  | {k: 'pow'; a: Seg; b: Seg; c: Seg};
 
 type P = Record<string, number[]>;
 const EPS = 1e-5;
@@ -58,6 +62,21 @@ export function parseClaim(raw: string): Claim | null {
     const n = names(m[1]);
     return n.length >= 4 ? {k: 'cyc', pts: n} : null;
   }
+  m = t.match(/^(?:hai\s*)?tam\s*giác\s*([A-Z'\s]+?)\s*(?:và|,)\s*(?:tam\s*giác\s*)?([A-Z'\s]+?)\s*đồng\s*dạng$/iu);
+  if (m) {
+    const [a, b] = [tri(m[1]), tri(m[2])];
+    return a && b ? {k: 'sim', a, b} : null;
+  }
+  m = t.match(/^tứ\s*giác\s*((?:[A-Z]'?\s*){4,5}?)\s*nội\s*tiếp(?:\s*(?:được\s*)?(?:một\s*)?đường\s*tròn)?$/iu);
+  if (m) {
+    const n = names(m[1]);
+    return n.length >= 4 ? {k: 'cyc', pts: n} : null;
+  }
+  m = t.match(/^([A-Z]'?\s*[A-Z]'?)\s*(?:\^\s*)?(?:2|²)\s*=\s*([A-Z]'?\s*[A-Z]'?)\s*(?:[*⋅·.×]|nhân)?\s*([A-Z]'?\s*[A-Z]'?)$/u);
+  if (m) {
+    const [a, b, c] = [seg(m[1]), seg(m[2]), seg(m[3])];
+    return a && b && c ? {k: 'pow', a, b, c} : null;
+  }
   m = t.match(/^(.+?)\s*⊥\s*(.+)$/u);
   if (m) {
     const a = seg(m[1]);
@@ -96,7 +115,7 @@ export function parseClaim(raw: string): Claim | null {
   return null;
 }
 
-const claimPoints = (c: Claim): string[] => (c.k === 'col' || c.k === 'cyc' ? c.pts : c.k === 'ang' ? [...c.a, ...c.b] : c.k === 'ratio' ? [...c.a, ...c.b, ...c.c, ...c.d] : [...c.a, ...c.b]);
+const claimPoints = (c: Claim): string[] => (c.k === 'col' || c.k === 'cyc' ? c.pts : c.k === 'ang' || c.k === 'sim' ? [...c.a, ...c.b] : c.k === 'pow' ? [...c.a, ...c.b, ...c.c] : c.k === 'ratio' ? [...c.a, ...c.b, ...c.c, ...c.d] : [...c.a, ...c.b]);
 
 /** Đo mệnh đề trên một bộ tọa độ: sai số (0 = đúng tuyệt đối); null nếu thiếu điểm. */
 export function claimError(p: P, c: Claim): number | null {
@@ -130,6 +149,13 @@ export function claimError(p: P, c: Claim): number | null {
     }
     case 'ang':
       return Math.abs(ang(p, ...c.a) - ang(p, ...c.b)) / Math.PI;
+    case 'sim': {
+      const angs = (t: [string, string, string]) => [ang(p, t[1], t[0], t[2]), ang(p, t[0], t[1], t[2]), ang(p, t[0], t[2], t[1])].sort((x, y) => x - y);
+      const [u, w] = [angs(c.a), angs(c.b)];
+      return Math.max(...u.map((x, i) => Math.abs(x - w[i]))) / Math.PI;
+    }
+    case 'pow':
+      return rel(d2(p, ...c.a) ** 2, d2(p, ...c.b) * d2(p, ...c.c));
   }
 }
 

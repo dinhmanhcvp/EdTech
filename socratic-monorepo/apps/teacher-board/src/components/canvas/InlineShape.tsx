@@ -6,6 +6,7 @@ import type {ShapeMeta, Stroke} from '../../utils/lassoGeometry';
 import {VERTEX_LABELS, planeStats, solidWire, triangleCenters, type P2} from '../../utils/inlineShape';
 import type {SolidKind} from '../../utils/localRouter';
 import {DEFAULT_ORBIT} from '../../utils/geometryProblem';
+import {LABEL_R, clampLabelOffset, defaultLabelOffset} from '../../utils/geoLabels';
 import {BUNDLES, KIND_COLOR, KIND_LABEL, addConstructs, arcPath, distToPolygon, evalConstructs, hasConstruct, nearestSide, polygonBundles, toggleConstruct, type ConstructKind, type PlaneConstruct} from '../../utils/planeConstruct';
 
 interface Props {
@@ -31,7 +32,11 @@ interface Props {
   rotation?: {yaw: number; pitch: number} | null;
   /** nút a, b, c… của hình dựng từ đề: bật/tắt từng phần ngay trên bảng */
   partChips?: {index: number; label: string; text: string; shown: boolean}[];
-  onTogglePart?: (index: number) => void;
+  /** `single` = bật/tắt riêng phần đó (giữ Shift); mặc định: vẽ hình tới phần đó */
+  onTogglePart?: (index: number, single?: boolean) => void;
+  /** chữ tên đỉnh kéo được (trong bán kính nhỏ quanh đỉnh): độ lệch đã lưu và hàm lưu (null = về chỗ mặc định) */
+  labelOff?: Record<string, {x: number; y: number}>;
+  onMoveLabel?: (name: string, off: {x: number; y: number} | null) => void;
   /** điểm kéo trượt được trên cạnh (hình động): tên điểm và hai đầu cạnh */
   dragPoints?: {name: string; a: string; b: string}[];
   onDragPoint?: (name: string, t: number, done: boolean) => void;
@@ -47,7 +52,7 @@ const midOf = (a: P2, b: P2): P2 => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
 const planePts = (vs: {x: number; y: number}[]): Record<string, P2g> => Object.fromEntries(vs.map((v, i) => [`v${i}`, [v.x, v.y] as P2g]));
 const ringEdges = (n: number): [string, string][] => Array.from({length: n}, (_, i) => [`v${i}`, `v${(i + 1) % n}`]);
 
-export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onPlace, onOpenTools, onRotate, rotation, partChips, onTogglePart, dragPoints, onDragPoint, freePts, onDragFree}) => {
+export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onPlace, onOpenTools, onRotate, rotation, partChips, onTogglePart, labelOff, onMoveLabel, dragPoints, onDragPoint, freePts, onDragFree}) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const s = stroke.shape!;
   const t = stroke.typeset!;
@@ -56,6 +61,9 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
   const ink = stroke.color;
   const ptDrag = useRef<{name: string; a: number; b: number; t: number} | null>(null);
   const freeDrag = useRef<{name: string; x: number; y: number; dx: number; dy: number} | null>(null);
+  const labelDrag = useRef<{name: string; sx: number; sy: number; base: {x: number; y: number}} | null>(null);
+  const [labelLive, setLabelLive] = useState<{name: string; off: {x: number; y: number}} | null>(null);
+  const labelLiveRef = useRef<{name: string; off: {x: number; y: number}} | null>(null);
   const rotDrag = useRef<{sx: number; sy: number; yaw: number; pitch: number; started: boolean} | null>(null);
   const drag = useRef<{kind: 'vertex' | 'rotate'; i: number; sx: number; sy: number; ox: number; oy: number; started: boolean; cons?: Cons[]} | null>(null);
 
@@ -162,9 +170,9 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
                 type="button"
                 data-testid={`geo-part-${c.index}`}
                 aria-pressed={c.shown}
-                title={`${c.shown ? 'Ẩn' : 'Vẽ'} phần ${c.label} ${c.text.slice(0, 80)}`}
+                title={`Vẽ hình tới phần ${c.label} (giữ Shift: bật/tắt riêng) ${c.text.slice(0, 80)}`}
                 onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => onTogglePart(c.index)}
+                onClick={(e) => onTogglePart(c.index, e.shiftKey)}
                 className={`min-w-[30px] px-2.5 py-1 rounded-full text-[12px] font-semibold border transition-all duration-150 cursor-pointer select-none ${
                   c.shown ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white/60 border-dashed border-stone-400 text-stone-500 opacity-60 hover:opacity-100 hover:text-stone-800'
                 }`}
@@ -561,11 +569,66 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
               {(sk.marks ?? []).map((k) => (
                 <circle key={`mk${k}`} cx={sk.verts[k].x} cy={sk.verts[k].y} r={3.6} fill="#2563EB" />
               ))}
-              {sk.verts.map((p, i) => (
+              {sk.verts.map((p, i) => {
+                // hình dựng từ đề: chữ đặt vào khe trống giữa các nét (không đè lên cạnh), kéo được trong bán kính nhỏ quanh đỉnh
+                const nm = sk.fixed ? sk.names?.[i] : undefined;
+                const off = nm && sk.labels[i] ? (labelLive?.name === nm ? labelLive.off : labelOff?.[nm]) ?? defaultLabelOffset(sk.verts, sk.edges, i, sk.curves ?? []) : null;
+                return (
                 <g key={i}>
-                  <text x={p.x + 7} y={p.y - 6} fontSize={15} fontWeight={700} fill={(sk.marks ?? []).includes(i) ? '#1D4ED8' : ink} fontFamily="'Times New Roman', serif" fontStyle="italic">
+                  {off && Math.hypot(off.x, off.y) > LABEL_R * 1.7 && <line x1={p.x} y1={p.y} x2={p.x + off.x * 0.7} y2={p.y + off.y * 0.7} stroke={ink} strokeWidth={0.8} strokeDasharray="2 2" opacity={0.6} style={{pointerEvents: 'none'}} />}
+                  <text
+                    x={off ? p.x + off.x : p.x + 7}
+                    y={off ? p.y + off.y : p.y - 6}
+                    textAnchor={off ? 'middle' : undefined}
+                    dominantBaseline={off ? 'central' : undefined}
+                    fontSize={15}
+                    fontWeight={700}
+                    fill={(sk.marks ?? []).includes(i) ? '#1D4ED8' : ink}
+                    fontFamily="'Times New Roman', serif"
+                    fontStyle="italic"
+                    style={{pointerEvents: 'none'}}
+                  >
                     {sk.labels[i] ?? ''}
                   </text>
+                  {off && nm && onMoveLabel && (pickMode === null || pickMode === undefined) && (
+                    <circle
+                      data-testid="geo-label-drag"
+                      data-name={nm}
+                      cx={p.x + off.x}
+                      cy={p.y + off.y}
+                      r={10}
+                      fill="transparent"
+                      style={{pointerEvents: 'auto', cursor: 'move', touchAction: 'none'}}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+                        onInteractStart();
+                        labelDrag.current = {name: nm, sx: e.clientX, sy: e.clientY, base: off};
+                      }}
+                      onPointerMove={(e) => {
+                        const d = labelDrag.current;
+                        if (!d) return;
+                        labelLiveRef.current = {name: d.name, off: clampLabelOffset({x: d.base.x + (e.clientX - d.sx) / boardScale, y: d.base.y + (e.clientY - d.sy) / boardScale})};
+                        setLabelLive(labelLiveRef.current);
+                      }}
+                      onPointerUp={() => {
+                        const d = labelDrag.current;
+                        labelDrag.current = null;
+                        const live = labelLiveRef.current;
+                        if (d && live?.name === d.name) onMoveLabel(d.name, live.off);
+                        labelLiveRef.current = null;
+                        setLabelLive(null);
+                      }}
+                      onPointerCancel={() => {
+                        labelDrag.current = null;
+                        labelLiveRef.current = null;
+                        setLabelLive(null);
+                      }}
+                      onDoubleClick={() => onMoveLabel(nm, null)}
+                    >
+                      <title>Kéo để dời chữ (gần đỉnh thôi); bấm đúp để về chỗ cũ</title>
+                    </circle>
+                  )}
                   {sk.fixed ? (
                     pickMode === 'point' && (
                       <circle
@@ -603,7 +666,8 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
                     />
                   )}
                 </g>
-              ))}
+                );
+              })}
             </g>
           )}
           {s.kind === 'solid' && wire && (

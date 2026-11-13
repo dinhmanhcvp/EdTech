@@ -8,7 +8,8 @@ export type P2 = [number, number];
 export type Cons =
   | {k: 'perp'; a: string; v: string; c: string} // góc a-v-c = 90°
   | {k: 'eq'; a: string; b: string; c: string; d: string} // |ab| = |cd|
-  | {k: 'par'; a: string; b: string; c: string; d: string}; // ab ∥ cd
+  | {k: 'par'; a: string; b: string; c: string; d: string} // ab ∥ cd
+  | {k: 'cyc'; a: string; b: string; c: string; d: string}; // bốn điểm cùng thuộc một đường tròn
 
 const names = (c: Cons): string[] => (c.k === 'perp' ? [c.a, c.v, c.c] : [c.a, c.b, c.c, c.d]);
 
@@ -17,6 +18,14 @@ const val = (c: Cons, p: Record<string, P2>): number => {
     const u = [p[c.a][0] - p[c.v][0], p[c.a][1] - p[c.v][1]];
     const w = [p[c.c][0] - p[c.v][0], p[c.c][1] - p[c.v][1]];
     return (u[0] * w[0] + u[1] * w[1]) / (Math.hypot(u[0], u[1]) * Math.hypot(w[0], w[1]) || 1);
+  }
+  if (c.k === 'cyc') {
+    // định thức đồng viên (tịnh tiến a về gốc), chia cho bình phương tổng bình phương khoảng cách để không phụ thuộc cỡ hình
+    const q = [c.b, c.c, c.d].map((n) => [p[n][0] - p[c.a][0], p[n][1] - p[c.a][1]]);
+    const s = q.map((v) => v[0] * v[0] + v[1] * v[1]);
+    const det = q[0][0] * (q[1][1] * s[2] - q[2][1] * s[1]) - q[0][1] * (q[1][0] * s[2] - q[2][0] * s[1]) + s[0] * (q[1][0] * q[2][1] - q[2][0] * q[1][1]);
+    const sc = s[0] + s[1] + s[2];
+    return det / (sc * sc || 1);
   }
   const u = [p[c.b][0] - p[c.a][0], p[c.b][1] - p[c.a][1]];
   const w = [p[c.d][0] - p[c.c][0], p[c.d][1] - p[c.c][1]];

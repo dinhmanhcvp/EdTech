@@ -107,9 +107,9 @@ describe('bảng dụng cụ / hộp thoại vẽ từ đề', () => {
     act(() => ctl!.next());
     expect(onApply.mock.calls[onApply.mock.calls.length - 1][0].hiddenParts).toEqual([]);
     expect(ctl!.shownParts).toBe(2);
-    act(() => ctl!.togglePart(1));
+    act(() => ctl!.togglePart(1, true)); // true = bật/tắt riêng (Shift)
     expect(onApply.mock.calls[onApply.mock.calls.length - 1][0].hiddenParts).toEqual([1]);
-    act(() => ctl!.togglePart(1));
+    act(() => ctl!.togglePart(1, true)); // true = bật/tắt riêng (Shift)
     // thêm yêu cầu bằng lời (từ chữ viết khoanh trên bảng): vào chính hình này
     let res: ReturnType<GeoController['addRequirementText']> | null = null;
     act(() => {

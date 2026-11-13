@@ -4,8 +4,9 @@
  * Điểm/đường mới gắn vào `part` đang hiển thị nên bật/tắt từng phần của đề vẫn đúng.
  */
 import {add, cross, dot, len, mul, sub, type V3} from './solids';
-import {inferCons, solveDragNatural, type P2} from './geoConstraints';
+import {inferCons, solveDragNatural, type Cons, type P2} from './geoConstraints';
 import {appendPart, lineIntersect, modelFromScene, partShown, renderScene, sceneFromModel, type GeoDef, type GeoScene} from './geometryProblem';
+import {clampLabelOffset} from './geoLabels';
 import type {ShapeMeta} from './lassoGeometry';
 import {snapPlane, type PlaneConstraintKind} from './planeConstraints';
 
@@ -168,6 +169,27 @@ export function setPartShown(sc: GeoScene, i: number, show: boolean): GeoScene {
 
 export const togglePart = (sc: GeoScene, i: number) => setPartShown(sc, i, (sc.hiddenParts ?? []).includes(i));
 
+/**
+ * Bấm nút phần i = "vẽ hình tới phần đó": hiện mọi phần từ đầu đến i (các phần sau ẩn đi).
+ * Bấm lại đúng phần đang là phần cuối đang hiện thì lùi một phần (ẩn nó). Giữ Shift khi bấm để bật/tắt riêng từng phần (xem `togglePart`).
+ */
+export function selectPartUpTo(sc: GeoScene, i: number): GeoScene {
+  const chips = partChips(sc);
+  const shown = chips.filter((c) => c.shown);
+  if (shown.length > 0 && shown[shown.length - 1].index === i) {
+    const before = chips.filter((c) => c.index < i);
+    return {...sc, hiddenParts: sc.parts.map((_, k) => k).filter((k) => k > (before.length ? before[before.length - 1].index : 0))};
+  }
+  return {...sc, hiddenParts: sc.parts.map((_, k) => k).filter((k) => k > i)};
+}
+
+/** Đặt chữ tên đỉnh lệch `off` so với đỉnh (null = về chỗ mặc định). Bị chặn trong bán kính MAX_LABEL_DRIFT. */
+export function setLabelOffset(sc: GeoScene, name: string, off: {x: number; y: number} | null): GeoScene {
+  const rest = Object.fromEntries(Object.entries(sc.labelOff ?? {}).filter(([k]) => k !== name));
+  const next = off ? {...rest, [name]: clampLabelOffset(off)} : rest;
+  return {...sc, labelOff: Object.keys(next).length ? next : undefined};
+}
+
 /** Chỉ hiện các phần 0..k (kiểu cũ: vẽ đến hết phần k). */
 export const showUpTo = (sc: GeoScene, k: number): GeoScene => ({...sc, hiddenParts: sc.parts.map((_, i) => i).filter((i) => i > k)});
 
@@ -281,6 +303,17 @@ function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
     const v: V3 = [-u[1], u[0], 0];
     return add(O, mul(add(mul(u, Math.cos(al)), mul(v, d.w * Math.sin(al))), r)) as V3;
   }
+  if (d.k === 'll') {
+    const [P, A, B, Q, C, D] = [g(d.p), g(d.a), g(d.b), g(d.q), g(d.c), g(d.d)];
+    if (!P || !A || !B || !Q || !C || !D) return null;
+    const dir = (u: V3, v: V3, r: 'par' | 'perp'): V3 => (r === 'par' ? (sub(v, u) as V3) : ([-(v[1] - u[1]), v[0] - u[0], 0] as V3));
+    return lineIntersect(P, add(P, dir(A, B, d.r)) as V3, Q, add(Q, dir(C, D, d.s)) as V3);
+  }
+  if (d.k === 'tanx') {
+    const [O, T, C, D] = [g(d.o), g(d.t), g(d.c), g(d.d)];
+    if (!O || !T || !C || !D) return null;
+    return lineIntersect(T, [T[0] - (T[1] - O[1]), T[1] + (T[0] - O[0]), T[2]], C, D);
+  }
   if (d.k === 'vec') {
     const P = g(d.p);
     return P ? ([P[0] + d.dx, P[1] + d.dy, P[2]] as V3) : null;
@@ -314,7 +347,7 @@ function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
 
 /** Các điểm mà công thức `d` dựa vào. */
 export const defDeps = (d: GeoDef): string[] =>
-  d.k === 'seg' ? [d.a, d.b] : d.k === 'vec' ? [d.p] : d.k === 'foot' || d.k === 'refl' || d.k === 'off' || d.k === 'trans' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.k === 'refp' || d.k === 'rot' || d.k === 'dil' ? [d.p, d.o] : d.k === 'tan' ? [d.p, d.o, d.q] : d.n;
+  d.k === 'seg' ? [d.a, d.b] : d.k === 'vec' ? [d.p] : d.k === 'foot' || d.k === 'refl' || d.k === 'off' || d.k === 'trans' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.k === 'll' ? [d.p, d.a, d.b, d.q, d.c, d.d] : d.k === 'tanx' ? [d.o, d.t, d.c, d.d] : d.k === 'refp' || d.k === 'rot' || d.k === 'dil' ? [d.p, d.o] : d.k === 'tan' ? [d.p, d.o, d.q] : d.n;
 
 /** Tính lại mọi điểm xác định theo điểm khác (điểm trên cạnh, chân đường vuông góc, trọng tâm, giao điểm…) và đường tròn gắn với chúng, theo thứ tự tạo ra. */
 export function applyDefs(sc: GeoScene): GeoScene {
@@ -360,13 +393,24 @@ export function freePoints(sc: GeoScene): string[] {
   return sc.order.filter((n) => !sc.defs?.[n] && onEdge.has(n));
 }
 
+/** Các điểm tự do cùng nằm trên một đường tròn của hình (vd. tứ giác nội tiếp, điểm trên cung) → ràng buộc đồng viên, để kéo đỉnh không làm chúng rời đường tròn. */
+export function inferCyclic(sc: GeoScene, live: string[]): Cons[] {
+  const out: Cons[] = [];
+  for (const c of sc.circles ?? []) {
+    if (c.kind === 'sphere' || c.arc) continue;
+    const on = live.filter((n) => Math.abs(len(sub(sc.pts[n], c.center)) - c.r) < 1e-4 * Math.max(c.r, 1e-9));
+    for (let i = 3; i < on.length; i++) out.push({k: 'cyc', a: on[0], b: on[1], c: on[2], d: on[i]});
+  }
+  return out;
+}
+
 /** Kéo điểm tự do `name` tới `to`; các điểm khác của hình tự chỉnh để giữ vuông góc / bằng nhau / song song. Không giữ được tính chất thì trả cảnh cũ. */
 export function moveFreePoint(sc: GeoScene, name: string, to: V3): GeoScene {
   const free = freePoints(sc);
   if (!free.includes(name)) return sc;
   const p2: Record<string, P2> = Object.fromEntries(free.map((n) => [n, [sc.pts[n][0], sc.pts[n][1]] as P2]));
   const live = new Set(free);
-  const cons = (sc.cons ?? inferCons(p2, sc.edges.filter(([a, b]) => live.has(a) && live.has(b)))).filter((c) =>
+  const cons = (sc.cons ?? [...inferCons(p2, sc.edges.filter(([a, b]) => live.has(a) && live.has(b))), ...inferCyclic(sc, [...live])]).filter((c) =>
     (c.k === 'perp' ? [c.a, c.v, c.c] : [c.a, c.b, c.c, c.d]).every((n) => live.has(n)),
   );
   const ring = sc.faces[0] ?? sc.polys[0]?.names ?? [];

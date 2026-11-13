@@ -5,7 +5,7 @@ import {Eraser, Redo2, Undo2, X} from 'lucide-react';
 import {buildScene, type GeoScene} from '../../utils/geometryProblem';
 import type {V3} from '../../utils/solids';
 import {canUnfold, polygonStats, sliceSection} from '../../utils/netUnfold';
-import {addFreePoint, addSector, addSegmentLen, addSemicircle, toggleHidden, addBisector, addCircleOf, addLineAB, addPolygon, addRegularPolygon, addTangentsFrom, addTransform, addVector, toggleLabel, addFoot, addIntersection, addLineThrough, addMidline, addPerpBisector, addReflection, addTangent, measurePolygon, addMidpoint, moveFreePoint, removePoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, setPointT, solidStats, toTikz, togglePart, visibleNames, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane} from '../../utils/geoTools';
+import {addFreePoint, addSector, addSegmentLen, addSemicircle, toggleHidden, addBisector, addCircleOf, addLineAB, addPolygon, addRegularPolygon, addTangentsFrom, addTransform, addVector, toggleLabel, addFoot, addIntersection, addLineThrough, addMidline, addPerpBisector, addReflection, addTangent, measurePolygon, addMidpoint, moveFreePoint, removePoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, setPointT, solidStats, toTikz, togglePart, selectPartUpTo, setLabelOffset, visibleNames, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane} from '../../utils/geoTools';
 
 export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'midline' | 'delete' | 'perpbis' | 'bisector' | 'parallel' | 'perpline' | 'inter' | 'circle' | 'circle3' | 'tangent' | 'reflline' | 'reflpt' | 'line' | 'ray' | 'vector' | 'polygon' | 'reg4' | 'reg5' | 'reg6' | 'regn' | 'compass' | 'tangents' | 'translate' | 'rot90' | 'rot60' | 'dil2' | 'dilhalf' | 'label' | 'point' | 'hide' | 'seglen' | 'circlecr' | 'semi' | 'sector' | 'rotate' | 'dilate' | 'area' | 'perim' | 'dist' | 'angle' | 'dpl' | 'dln' | 'alp' | 'dih';
 
@@ -31,7 +31,9 @@ export interface GeoController {
   /** số phần (a, b, c…) đang hiện / tổng số phần có nét vẽ */
   shownParts: number;
   togglableParts: number;
-  togglePart: (i: number) => void;
+  togglePart: (i: number, single?: boolean) => void;
+  /** kéo chữ tên đỉnh (null = về chỗ mặc định) */
+  setLabelOff?: (name: string, off: {x: number; y: number} | null) => void;
   /** đang ẩn hẳn nét khuất (mặc định nét đứt chuẩn SGK) */
   hideHidden: boolean;
   toggleHidden: () => void;
@@ -447,7 +449,8 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       },
       shownParts: partChips(cur.scene).filter((c) => c.shown).length,
       togglableParts: partChips(cur.scene).length,
-      togglePart: (i) => patchScene({hiddenParts: togglePart(cur.scene, i).hiddenParts}),
+      setLabelOff: (name, off) => patchScene({labelOff: setLabelOffset(cur.scene, name, off).labelOff}),
+      togglePart: (i, single) => patchScene({hiddenParts: (single ? togglePart : selectPartUpTo)(cur.scene, i).hiddenParts}),
       next: () => {
         const nxt = partChips(cur.scene).find((c) => !c.shown);
         if (nxt) patchScene({hiddenParts: setPartShown(cur.scene, nxt.index, true).hiddenParts});

@@ -35,7 +35,7 @@ export function goalOf(text: string): {claim: Claim; text: string} | null {
   return null;
 }
 
-const claimNames = (c: Claim): string[] => [...new Set(c.k === 'col' || c.k === 'cyc' ? c.pts : c.k === 'ang' ? [...c.a, ...c.b] : c.k === 'ratio' ? [...c.a, ...c.b, ...c.c, ...c.d] : [...c.a, ...c.b])];
+const claimNames = (c: Claim): string[] => [...new Set(c.k === 'col' || c.k === 'cyc' ? c.pts : c.k === 'ang' || c.k === 'sim' ? [...c.a, ...c.b] : c.k === 'pow' ? [...c.a, ...c.b, ...c.c] : c.k === 'ratio' ? [...c.a, ...c.b, ...c.c, ...c.d] : [...c.a, ...c.b])];
 const segsOf = (c: Claim): [string, string][] => (c.k === 'eq' || c.k === 'perp' || c.k === 'par' ? [c.a, c.b] : c.k === 'ratio' ? [c.a, c.b, c.c, c.d] : c.k === 'ang' ? [[c.a[0], c.a[1]], [c.a[1], c.a[2]], [c.b[0], c.b[1]], [c.b[1], c.b[2]]] : []);
 
 /** Đường phụ có thể gợi ý, theo thứ tự hợp lý; chỉ những cái dùng điểm có thật và chưa có trên hình. */
@@ -48,6 +48,15 @@ export function auxIdeas(sc: GeoScene, claim: Claim): AuxIdea[] {
   if (claim.k === 'cyc' && claim.pts.length >= 4 && ok(...claim.pts.slice(0, 3)) && !(sc.circles ?? []).some((c) => c.of?.f === 'circum' && c.of.n.join() === claim.pts.slice(0, 3).join())) {
     const [a, b, c, d] = claim.pts;
     out.push({tool: 'circle3', names: [a, b, c], label: `Đường tròn qua ${a}, ${b}, ${c}`, question: `Nếu vẽ đường tròn đi qua ${a}, ${b}, ${c}, điểm ${d} nằm ở đâu so với nó? Em dự đoán rồi thử.`});
+  }
+  // a² = b·c: đoạn bình phương là tiếp tuyến của đường tròn qua đầu mút còn lại và hai điểm thẳng hàng với đỉnh chung (BK² = KI·KD → đường tròn qua B, I, D)
+  if (claim.k === 'pow') {
+    const k = claim.b.find((n) => claim.c.includes(n));
+    const [t0] = claim.a.filter((n) => n !== k);
+    const rest = [...claim.b, ...claim.c].filter((n) => n !== k);
+    if (k && t0 && rest.length === 2 && ok(t0, ...rest) && !(sc.circles ?? []).some((c) => c.of?.f === 'circum' && [t0, ...rest].every((n) => c.of!.n.includes(n)))) {
+      out.push({tool: 'circle3', names: [t0, ...rest], label: `Đường tròn qua ${t0}, ${rest.join(', ')}`, question: `Thử vẽ đường tròn đi qua ${t0}, ${rest.join(', ')}. Đường thẳng ${k}${t0} có quan hệ gì với đường tròn này? Hệ thức ${claim.a.join('')}² = ${claim.b.join('')}·${claim.c.join('')} nhắc em đến định lí nào?`});
+    }
   }
   // nối hai điểm của mệnh đề mà trên hình chưa có đoạn nối
   for (let i = 0; i < ns.length; i++)
@@ -76,6 +85,8 @@ const KIND_QUESTION: Record<Claim['k'], string> = {
   par: 'Hai đường song song thường đến từ cặp góc so le trong / đồng vị bằng nhau, hoặc cùng vuông góc với một đường thứ ba. Em thấy khả năng nào?',
   col: 'Ba điểm thẳng hàng thường chứng minh bằng hai góc kề bù, hoặc hai đoạn cùng song song/vuông góc với một đường. Em chọn hướng nào?',
   cyc: 'Tứ giác nội tiếp khi hai góc đối bù nhau, hoặc hai đỉnh cùng nhìn một cạnh dưới hai góc bằng nhau. Em thử so sánh những góc nào?',
+  sim: 'Hai tam giác đồng dạng khi có hai cặp góc bằng nhau (g.g) hoặc các cạnh tương ứng tỉ lệ. Em tìm những cặp góc nào bằng nhau (góc chung, đối đỉnh, cùng chắn một cung, tiếp tuyến–dây cung)?',
+  pow: 'Hệ thức dạng a² = b·c thường đến từ hai tam giác đồng dạng (chung một góc), hoặc từ tiếp tuyến và cát tuyến của một đường tròn. Em thấy đường tròn nào ở đây?',
   ang: 'Hai góc này nằm trong những tam giác nào, hoặc cùng chắn một cung nào? Có liên hệ nào qua tam giác đồng dạng hay góc nội tiếp không?',
 };
 

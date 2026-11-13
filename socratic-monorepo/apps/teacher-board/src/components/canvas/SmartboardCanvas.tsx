@@ -14,7 +14,7 @@ import { looksLikeWords, matchViName } from '../../utils/viKeywords';
 import { InlineShape } from './InlineShape';
 import { GeometryProblemPanel, type GeoPickConfig, type GeoController } from './GeometryProblemPanel';
 import { buildScene, parseGeometryProblem, parseRichestGeometry, type GeoScene } from '../../utils/geometryProblem';
-import { draggablePoints, freePoints, layoutGeo, partChips, planeTextWithCoords, problemTextForSolid, showUpTo, togglePart } from '../../utils/geoTools';
+import { draggablePoints, freePoints, layoutGeo, partChips, planeTextWithCoords, problemTextForSolid, selectPartUpTo, setLabelOffset, showUpTo, togglePart } from '../../utils/geoTools';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -3740,11 +3740,20 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   freePts={geoPanel?.mode === 'edit' && geoPanel.id === s.id && s.shape?.geo ? freePoints(s.shape.geo.scene) : undefined}
                   onDragFree={geoPanel?.mode === 'edit' && geoPanel.id === s.id && geoCtl?.figureId === s.id ? (name, dx, dy, done, start) => geoCtl.moveFree(name, dx, dy, done, start) : undefined}
                   partChips={s.shape?.geo ? partChips(s.shape.geo.scene) : undefined}
+                  labelOff={s.shape?.geo?.scene.labelOff}
+                  onMoveLabel={
+                    s.shape?.geo
+                      ? (name, off) => {
+                          if (geoPanel?.mode === 'edit' && geoPanel.id === s.id && geoCtl?.figureId === s.id) geoCtl.setLabelOff?.(name, off);
+                          else applyGeo(s.id, setLabelOffset(s.shape!.geo!.scene, name, off), s.shape!.geo!.upTo);
+                        }
+                      : undefined
+                  }
                   onTogglePart={
                     s.shape?.geo
-                      ? (i) => {
-                          if (geoPanel?.mode === 'edit' && geoPanel.id === s.id && geoCtl?.figureId === s.id) geoCtl.togglePart(i);
-                          else applyGeo(s.id, togglePart(s.shape!.geo!.scene, i), s.shape!.geo!.upTo);
+                      ? (i, single) => {
+                          if (geoPanel?.mode === 'edit' && geoPanel.id === s.id && geoCtl?.figureId === s.id) geoCtl.togglePart(i, single);
+                          else applyGeo(s.id, (single ? togglePart : selectPartUpTo)(s.shape!.geo!.scene, i), s.shape!.geo!.upTo);
                         }
                       : undefined
                   }

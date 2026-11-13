@@ -19,7 +19,19 @@ export type Claim =
   /** hai tam giác đồng dạng (ba góc đôi một bằng nhau, không phân biệt thứ tự đỉnh) */
   | {k: 'sim'; a: [string, string, string]; b: [string, string, string]}
   /** a² = b·c (phương tích / tiếp tuyến), vd BK² = KI·KD */
-  | {k: 'pow'; a: Seg; b: Seg; c: Seg};
+  | {k: 'pow'; a: Seg; b: Seg; c: Seg}
+  /** a·b = c·d (tích hai đoạn), vd AH·AP = AI·AB */
+  | {k: 'prod'; a: Seg; b: Seg; c: Seg; d: Seg}
+  /** M là trung điểm đoạn a */
+  | {k: 'mid'; m: string; a: Seg}
+  /** đường thẳng a là tiếp tuyến của đường tròn tâm o (tiếp điểm là một đầu mút của a) */
+  | {k: 'tang'; a: Seg; o: string}
+  /** tứ giác v (theo thứ tự đỉnh) là hình bình hành */
+  | {k: 'par4'; v: [string, string, string, string]}
+  /** tam giác (apex, a, b) cân tại apex */
+  | {k: 'iso'; apex: string; a: string; b: string}
+  /** tam giác (a, v, b) vuông tại v */
+  | {k: 'right'; v: string; a: string; b: string};
 
 type P = Record<string, number[]>;
 const EPS = 1e-5;
@@ -47,27 +59,29 @@ export function parseClaim(raw: string): Claim | null {
     .replace(/(?:Chứng minh(?: rằng)?|CM|Cmr|Tính|Tìm)\s*/giu, ' ')
     .replace(/⊥|\\perp|vuông\s*góc(?:\s*với)?/giu, '⊥')
     .replace(/∥|\/\/|\\parallel|song\s*song(?:\s*với)?/giu, '∥')
+    .replace(/[△Δ∆]/gu, ' tam giác ')
     .replace(/[∠̂̃]|\\widehat|\\angle|\bgóc\b/giu, '∠')
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/[.;]$/, '');
   t = t.replace(/\(([A-Z])\)/g, '$1');
-  let m = t.match(/^(.+?)\s*thẳng\s*hàng$/iu);
+  t = t.replace(/\/\s*\//g, '∥');
+  let m = t.match(/^(?:(?:ba|3)\s*điểm\s*)?(.+?)\s*thẳng\s*hàng$/iu);
   if (m) {
     const n = names(m[1]);
     return n.length >= 3 ? {k: 'col', pts: n} : null;
   }
-  m = t.match(/^(?:các\s*điểm\s*)?(.+?)\s*(?:cùng\s*(?:nằm\s*)?(?:thuộc|trên)(?:\s*một)?\s*đường\s*tròn|đồng\s*viên|nằm\s*trên\s*(?:một\s*)?đường\s*tròn)$/iu);
+  m = t.match(/^(?:(?:các|bốn|4|năm|5)\s*điểm\s*)?(.+?)\s*(?:cùng\s*(?:nằm\s*)?(?:thuộc|trên)(?:\s*(?:một|1))?\s*đường\s*tròn|đồng\s*viên|nằm\s*trên\s*(?:cùng\s*)?(?:một|1)?\s*đường\s*tròn)$/iu);
   if (m) {
     const n = names(m[1]);
     return n.length >= 4 ? {k: 'cyc', pts: n} : null;
   }
-  m = t.match(/^(?:hai\s*)?tam\s*giác\s*([A-Z'\s]+?)\s*(?:và|,)\s*(?:tam\s*giác\s*)?([A-Z'\s]+?)\s*đồng\s*dạng$/iu);
+  m = t.match(/^(?:hai\s*)?tam\s*giác\s*([A-Z'\s]+?)\s*(?:và|,)\s*(?:tam\s*giác\s*)?([A-Z'\s]+?)\s*đồng\s*dạng$/iu) ?? t.match(/^tam\s*giác\s*([A-Z'\s]+?)\s*đồng\s*dạng\s*(?:với\s*)?tam\s*giác\s*([A-Z'\s]+?)$/iu);
   if (m) {
     const [a, b] = [tri(m[1]), tri(m[2])];
     return a && b ? {k: 'sim', a, b} : null;
   }
-  m = t.match(/^tứ\s*giác\s*((?:[A-Z]'?\s*){4,5}?)\s*nội\s*tiếp(?:\s*(?:được\s*)?(?:một\s*)?đường\s*tròn)?$/iu);
+  m = t.match(/^(?:tứ\s*giác\s*)?((?:[A-Z]'?\s*){4,5}?)\s*(?:là\s*tứ\s*giác\s*)?nội\s*tiếp(?:\s*(?:được\s*)?(?:trong\s*)?(?:một|1)?\s*đường\s*tròn)?$/iu);
   if (m) {
     const n = names(m[1]);
     return n.length >= 4 ? {k: 'cyc', pts: n} : null;
@@ -76,6 +90,36 @@ export function parseClaim(raw: string): Claim | null {
   if (m) {
     const [a, b, c] = [seg(m[1]), seg(m[2]), seg(m[3])];
     return a && b && c ? {k: 'pow', a, b, c} : null;
+  }
+  m = t.match(/^([A-Z]'?)\s*là\s*trung\s*điểm\s*(?:của\s*)?(?:đoạn\s*thẳng\s*|dây\s*|cạnh\s*)?([A-Z]'?\s*[A-Z]'?)$/u);
+  if (m) {
+    const a = seg(m[2]);
+    return a ? {k: 'mid', m: m[1], a} : null;
+  }
+  m = t.match(/^([A-Z]'?\s*[A-Z]'?)\s*là\s*tiếp\s*tuyến\s*của\s*(?:nửa\s*)?(?:đường\s*tròn\s*)?([A-Z])$/u);
+  if (m) {
+    const a = seg(m[1]);
+    return a ? {k: 'tang', a, o: m[2]} : null;
+  }
+  m = t.match(/^(?:tứ\s*giác\s*)?((?:[A-Z]'?\s*){4})\s*là\s*hình\s*bình\s*hành$/u);
+  if (m) {
+    const v = names(m[1]);
+    return v.length === 4 ? {k: 'par4', v: v as [string, string, string, string]} : null;
+  }
+  m = t.match(/^tam\s*giác\s*([A-Z])([A-Z])([A-Z])\s*cân\s*(?:tại|ở)\s*([A-Z])$/u);
+  if (m && [m[1], m[2], m[3]].includes(m[4])) {
+    const o = [m[1], m[2], m[3]].filter((n) => n !== m![4]);
+    return {k: 'iso', apex: m[4], a: o[0], b: o[1]};
+  }
+  m = t.match(/^tam\s*giác\s*([A-Z])([A-Z])([A-Z])\s*vuông\s*(?:tại|ở)\s*([A-Z])$/u);
+  if (m && [m[1], m[2], m[3]].includes(m[4])) {
+    const o = [m[1], m[2], m[3]].filter((n) => n !== m![4]);
+    return {k: 'right', v: m[4], a: o[0], b: o[1]};
+  }
+  m = t.match(/^([A-Z]'?\s*[A-Z]'?)\s*[*⋅·.×]\s*([A-Z]'?\s*[A-Z]'?)\s*=\s*([A-Z]'?\s*[A-Z]'?)\s*[*⋅·.×]\s*([A-Z]'?\s*[A-Z]'?)$/u);
+  if (m) {
+    const [a, b, c, d] = [seg(m[1]), seg(m[2]), seg(m[3]), seg(m[4])];
+    return a && b && c && d ? {k: 'prod', a, b, c, d} : null;
   }
   m = t.match(/^(.+?)\s*⊥\s*(.+)$/u);
   if (m) {
@@ -115,7 +159,33 @@ export function parseClaim(raw: string): Claim | null {
   return null;
 }
 
-const claimPoints = (c: Claim): string[] => (c.k === 'col' || c.k === 'cyc' ? c.pts : c.k === 'ang' || c.k === 'sim' ? [...c.a, ...c.b] : c.k === 'pow' ? [...c.a, ...c.b, ...c.c] : c.k === 'ratio' ? [...c.a, ...c.b, ...c.c, ...c.d] : [...c.a, ...c.b]);
+export const claimPoints = (c: Claim): string[] => {
+  switch (c.k) {
+    case 'col':
+    case 'cyc':
+      return c.pts;
+    case 'ang':
+    case 'sim':
+      return [...c.a, ...c.b];
+    case 'pow':
+      return [...c.a, ...c.b, ...c.c];
+    case 'prod':
+    case 'ratio':
+      return [...c.a, ...c.b, ...c.c, ...c.d];
+    case 'mid':
+      return [c.m, ...c.a];
+    case 'tang':
+      return [...c.a, c.o];
+    case 'par4':
+      return c.v;
+    case 'iso':
+      return [c.apex, c.a, c.b];
+    case 'right':
+      return [c.v, c.a, c.b];
+    default:
+      return [...c.a, ...c.b];
+  }
+};
 
 /** Đo mệnh đề trên một bộ tọa độ: sai số (0 = đúng tuyệt đối); null nếu thiếu điểm. */
 export function claimError(p: P, c: Claim): number | null {
@@ -154,6 +224,22 @@ export function claimError(p: P, c: Claim): number | null {
       const [u, w] = [angs(c.a), angs(c.b)];
       return Math.max(...u.map((x, i) => Math.abs(x - w[i]))) / Math.PI;
     }
+    case 'mid':
+      return Math.hypot(p[c.m][0] - (p[c.a[0]][0] + p[c.a[1]][0]) / 2, p[c.m][1] - (p[c.a[0]][1] + p[c.a[1]][1]) / 2) / (d2(p, ...c.a) || 1);
+    case 'tang': {
+      const e = (x: string, y: string) => Math.abs(dt(vec(p, c.o, x), vec(p, x, y))) / ((d2(p, c.o, x) * d2(p, x, y)) || 1);
+      return Math.min(e(c.a[0], c.a[1]), e(c.a[1], c.a[0]));
+    }
+    case 'par4': {
+      const [a, b, cc, d] = c.v;
+      return Math.hypot(p[a][0] + p[cc][0] - p[b][0] - p[d][0], p[a][1] + p[cc][1] - p[b][1] - p[d][1]) / ((d2(p, a, cc) + d2(p, b, d)) / 2 || 1);
+    }
+    case 'iso':
+      return rel(d2(p, c.apex, c.a), d2(p, c.apex, c.b));
+    case 'right':
+      return Math.abs(dt(vec(p, c.v, c.a), vec(p, c.v, c.b))) / ((d2(p, c.v, c.a) * d2(p, c.v, c.b)) || 1);
+    case 'prod':
+      return rel(d2(p, ...c.a) * d2(p, ...c.b), d2(p, ...c.c) * d2(p, ...c.d));
     case 'pow':
       return rel(d2(p, ...c.a) ** 2, d2(p, ...c.b) * d2(p, ...c.c));
   }

@@ -5,7 +5,7 @@
  */
 import type {GeoScene} from './geometryProblem';
 import type {GeoTool} from '../components/canvas/GeometryProblemPanel';
-import {detectFacts, parseClaim, verifyClaim, type Claim} from './geoClaims';
+import {claimPoints, detectFacts, parseClaim, verifyClaim, type Claim} from './geoClaims';
 
 export interface AuxIdea {
   tool: GeoTool;
@@ -35,7 +35,7 @@ export function goalOf(text: string): {claim: Claim; text: string} | null {
   return null;
 }
 
-const claimNames = (c: Claim): string[] => [...new Set(c.k === 'col' || c.k === 'cyc' ? c.pts : c.k === 'ang' || c.k === 'sim' ? [...c.a, ...c.b] : c.k === 'pow' ? [...c.a, ...c.b, ...c.c] : c.k === 'ratio' ? [...c.a, ...c.b, ...c.c, ...c.d] : [...c.a, ...c.b])];
+const claimNames = (c: Claim): string[] => [...new Set(claimPoints(c))];
 const segsOf = (c: Claim): [string, string][] => (c.k === 'eq' || c.k === 'perp' || c.k === 'par' ? [c.a, c.b] : c.k === 'ratio' ? [c.a, c.b, c.c, c.d] : c.k === 'ang' ? [[c.a[0], c.a[1]], [c.a[1], c.a[2]], [c.b[0], c.b[1]], [c.b[1], c.b[2]]] : []);
 
 /** Đường phụ có thể gợi ý, theo thứ tự hợp lý; chỉ những cái dùng điểm có thật và chưa có trên hình. */
@@ -86,6 +86,12 @@ const KIND_QUESTION: Record<Claim['k'], string> = {
   col: 'Ba điểm thẳng hàng thường chứng minh bằng hai góc kề bù, hoặc hai đoạn cùng song song/vuông góc với một đường. Em chọn hướng nào?',
   cyc: 'Tứ giác nội tiếp khi hai góc đối bù nhau, hoặc hai đỉnh cùng nhìn một cạnh dưới hai góc bằng nhau. Em thử so sánh những góc nào?',
   sim: 'Hai tam giác đồng dạng khi có hai cặp góc bằng nhau (g.g) hoặc các cạnh tương ứng tỉ lệ. Em tìm những cặp góc nào bằng nhau (góc chung, đối đỉnh, cùng chắn một cung, tiếp tuyến–dây cung)?',
+  mid: 'Trung điểm gợi nhớ đến đường trung bình, đường trung tuyến, hoặc tính chất "đường kính vuông góc dây thì chia đôi dây". Em thấy tính chất nào dùng được?',
+  tang: 'Đường thẳng là tiếp tuyến khi vuông góc với bán kính tại tiếp điểm, hoặc khi góc giữa tiếp tuyến và dây bằng góc nội tiếp chắn cung đó. Em chọn cách nào?',
+  par4: 'Tứ giác là hình bình hành khi hai cặp cạnh đối song song, hoặc hai đường chéo cắt nhau tại trung điểm mỗi đường. Em chứng minh được điều nào trước?',
+  iso: 'Tam giác cân khi có hai cạnh bằng nhau hoặc hai góc ở đáy bằng nhau. Em so sánh được cặp cạnh hay cặp góc nào?',
+  right: 'Tam giác vuông khi có một góc 90°: góc nội tiếp chắn nửa đường tròn, trung tuyến bằng nửa cạnh huyền, hoặc Pythagore đảo. Em chọn hướng nào?',
+  prod: 'Tích hai đoạn bằng tích hai đoạn khác thường đến từ hai tam giác đồng dạng (tỉ số cạnh), hoặc phương tích của một điểm đối với đường tròn. Em tìm hai tam giác (hoặc hai cát tuyến) liên quan chưa?',
   pow: 'Hệ thức dạng a² = b·c thường đến từ hai tam giác đồng dạng (chung một góc), hoặc từ tiếp tuyến và cát tuyến của một đường tròn. Em thấy đường tròn nào ở đây?',
   ang: 'Hai góc này nằm trong những tam giác nào, hoặc cùng chắn một cung nào? Có liên hệ nào qua tam giác đồng dạng hay góc nội tiếp không?',
 };

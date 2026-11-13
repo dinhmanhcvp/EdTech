@@ -116,7 +116,7 @@ describe('đề dài, nhiều câu', () => {
     const seg = sceneOf('Cho đoạn thẳng AB = 6 cm. Gọi M là trung điểm của AB. Vẽ đường tròn tâm M bán kính 3 cm.');
     expect(Object.keys(seg.pts).sort().join('')).toBe('ABM');
     expect(seg.circles![0].r).toBeCloseTo(3, 6);
-    expect(pts('Cho nửa đường tròn tâm O đường kính AB. Lấy điểm M trên nửa đường tròn.')).toBe('ABO');
+    expect(pts('Cho nửa đường tròn tâm O đường kính AB. Lấy điểm M trên nửa đường tròn.')).toBe('ABMO'); // M nay được vẽ trên nửa đường tròn
     const tg = sceneOf('Cho đường tròn (O; R) và điểm A nằm ngoài đường tròn. Kẻ hai tiếp tuyến AB, AC với đường tròn (B, C là các tiếp điểm).');
     expect(Object.keys(tg.pts).sort().join('')).toBe('ABCO');
     expect(tg.ignored).toEqual([]);

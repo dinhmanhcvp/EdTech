@@ -3,7 +3,7 @@
  * chân đường vuông góc, thiết diện, và "thêm yêu cầu" bằng lời. Mọi hàm trả CẢNH MỚI (không sửa cảnh cũ) để hoàn tác được.
  * Điểm/đường mới gắn vào `part` đang hiển thị nên bật/tắt từng phần của đề vẫn đúng.
  */
-import {add, cross, dot, len, mul, sub, type V3} from './solids';
+import {add, cross, dot, len, mul, norm, sub, type V3} from './solids';
 import {inferCons, solveDragNatural, type Cons, type P2} from './geoConstraints';
 import {appendPart, lineIntersect, modelFromScene, partShown, renderScene, sceneFromModel, type GeoDef, type GeoScene} from './geometryProblem';
 import {clampLabelOffset} from './geoLabels';
@@ -314,6 +314,71 @@ function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
     if (!O || !T || !C || !D) return null;
     return lineIntersect(T, [T[0] - (T[1] - O[1]), T[1] + (T[0] - O[0]), T[2]], C, D);
   }
+  if (d.k === 'rad' || d.k === 'chd' || d.k === 'lcint' || d.k === 'lcx' || d.k === 'tanpt') {
+    const O = g(d.o);
+    if (!O) return null;
+    const Q = d.q ? g(d.q) : undefined;
+    const R = d.q ? (Q ? len(sub(Q, O)) : NaN) : d.r ?? NaN;
+    if (!(R > 1e-9)) return null;
+    const unit = (v: V3): V3 | null => {
+      const l = Math.hypot(v[0], v[1]);
+      return l < 1e-12 ? null : ([v[0] / l, v[1] / l, 0] as V3);
+    };
+    if (d.k === 'rad') {
+      const [A, B] = [g(d.a), g(d.b)];
+      if (!A) return null;
+      const u = d.mode === 'to' ? unit(sub(A, O) as V3) : d.mode === 'mid' ? (B ? unit(sub(mul(add(A, B), 0.5), O) as V3) : null) : B ? unit([-(B[1] - A[1]), B[0] - A[0], 0]) : null;
+      return u ? ([O[0] + u[0] * R * d.f, O[1] + u[1] * R * d.f, 0] as V3) : null;
+    }
+    if (d.k === 'chd') {
+      const u = g(d.a) && g(d.b) ? unit(sub(g(d.b)!, g(d.a)!) as V3) : null;
+      if (!u) return null;
+      const h = [O[0] + u[0] * d.d * R, O[1] + u[1] * d.d * R];
+      const half = Math.sqrt(Math.max(0, R * R * (1 - d.d * d.d)));
+      return [h[0] - u[1] * half * d.f, h[1] + u[0] * half * d.f, 0] as V3;
+    }
+    if (d.k === 'tanpt') {
+      const T = g(d.t);
+      const u = T ? unit(sub(T, O) as V3) : null;
+      return T && u ? ([T[0] - u[1] * R * d.f, T[1] + u[0] * R * d.f, 0] as V3) : null;
+    }
+    // lcint / lcx: đường thẳng qua a
+    const [A, B] = [g(d.a), g(d.b)];
+    if (!A || !B) return null;
+    let dir = unit(sub(B, A) as V3);
+    if (!dir) return null;
+    if (d.k === 'lcint') {
+      const t = (d.deg * Math.PI) / 180;
+      dir = [dir[0] * Math.cos(t) - dir[1] * Math.sin(t), dir[0] * Math.sin(t) + dir[1] * Math.cos(t), 0];
+    }
+    const f = [A[0] - O[0], A[1] - O[1]];
+    const bb = 2 * (f[0] * dir[0] + f[1] * dir[1]);
+    const disc = bb * bb - 4 * (f[0] * f[0] + f[1] * f[1] - R * R);
+    if (disc < 0) return null;
+    const roots = [(-bb - Math.sqrt(disc)) / 2, (-bb + Math.sqrt(disc)) / 2].map((t) => [A[0] + dir![0] * t, A[1] + dir![1] * t, 0] as V3);
+    if (d.k === 'lcint') return d.w === 1 ? roots[0] : roots[1];
+    const near = d.ex.startsWith('~');
+    const E = d.ex ? g(near ? d.ex.slice(1) : d.ex) : undefined;
+    return E ? ((len(sub(roots[0], E)) > len(sub(roots[1], E))) !== near ? roots[0] : roots[1]) : roots[0];
+  }
+  if (d.k === 'bisx') {
+    const [V, A, C, P, Q] = [g(d.v), g(d.a), g(d.c), g(d.p), g(d.q)];
+    if (!V || !A || !C || !P || !Q) return null;
+    const ua = norm(sub(A, V));
+    const uc = norm(sub(C, V));
+    return lineIntersect(V, add(V, add(ua, uc)) as V3, P, Q);
+  }
+  if (d.k === 'tt') {
+    const [O, T, U] = [g(d.o), g(d.t), g(d.u)];
+    if (!O || !T || !U) return null;
+    const tx = (X: V3): V3 => [X[0] - (X[1] - O[1]), X[1] + (X[0] - O[0]), X[2]];
+    return lineIntersect(T, tx(T), U, tx(U));
+  }
+  if (d.k === 'pdist') {
+    const [A, C, R0, S0] = [g(d.a), g(d.c), g(d.r), g(d.s)];
+    if (!A || !C || !R0 || !S0) return null;
+    return add(A, mul(norm(sub(C, A)), len(sub(R0, S0)))) as V3;
+  }
   if (d.k === 'vec') {
     const P = g(d.p);
     return P ? ([P[0] + d.dx, P[1] + d.dy, P[2]] as V3) : null;
@@ -347,7 +412,7 @@ function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
 
 /** Các điểm mà công thức `d` dựa vào. */
 export const defDeps = (d: GeoDef): string[] =>
-  d.k === 'seg' ? [d.a, d.b] : d.k === 'vec' ? [d.p] : d.k === 'foot' || d.k === 'refl' || d.k === 'off' || d.k === 'trans' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.k === 'll' ? [d.p, d.a, d.b, d.q, d.c, d.d] : d.k === 'tanx' ? [d.o, d.t, d.c, d.d] : d.k === 'refp' || d.k === 'rot' || d.k === 'dil' ? [d.p, d.o] : d.k === 'tan' ? [d.p, d.o, d.q] : d.n;
+  d.k === 'seg' ? [d.a, d.b] : d.k === 'vec' ? [d.p] : d.k === 'foot' || d.k === 'refl' || d.k === 'off' || d.k === 'trans' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.k === 'll' ? [d.p, d.a, d.b, d.q, d.c, d.d] : d.k === 'rad' ? [d.o, ...(d.q ? [d.q] : []), d.a, ...(d.b ? [d.b] : [])] : d.k === 'chd' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcint' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcx' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b, ...(d.ex ? [d.ex.replace('~', '')] : [])] : d.k === 'bisx' ? [d.v, d.a, d.c, d.p, d.q] : d.k === 'tt' ? [d.o, d.t, d.u] : d.k === 'tanpt' ? [d.o, d.t, ...(d.q ? [d.q] : [])] : d.k === 'pdist' ? [d.a, d.c, d.r, d.s] : d.k === 'tanx' ? [d.o, d.t, d.c, d.d] : d.k === 'refp' || d.k === 'rot' || d.k === 'dil' ? [d.p, d.o] : d.k === 'tan' ? [d.p, d.o, d.q] : d.n;
 
 /** Tính lại mọi điểm xác định theo điểm khác (điểm trên cạnh, chân đường vuông góc, trọng tâm, giao điểm…) và đường tròn gắn với chúng, theo thứ tự tạo ra. */
 export function applyDefs(sc: GeoScene): GeoScene {
@@ -397,6 +462,13 @@ export function freePoints(sc: GeoScene): string[] {
 export function inferCyclic(sc: GeoScene, live: string[]): Cons[] {
   const out: Cons[] = [];
   for (const c of sc.circles ?? []) {
+    // đường tròn đường kính AB: mọi điểm P của hình trên đường tròn thì góc APB = 90°
+    if (c.of && (c.of.f === 'diam' || c.of.f === 'semi')) {
+      const [a, b] = c.of.n;
+      if (live.includes(a) && live.includes(b))
+        for (const n of live) if (n !== a && n !== b && Math.abs(len(sub(sc.pts[n], c.center)) - c.r) < 1e-4 * Math.max(c.r, 1e-9)) out.push({k: 'perp', a, v: n, c: b});
+      continue;
+    }
     if (c.kind === 'sphere' || c.arc) continue;
     const on = live.filter((n) => Math.abs(len(sub(sc.pts[n], c.center)) - c.r) < 1e-4 * Math.max(c.r, 1e-9));
     for (let i = 3; i < on.length; i++) out.push({k: 'cyc', a: on[0], b: on[1], c: on[2], d: on[i]});

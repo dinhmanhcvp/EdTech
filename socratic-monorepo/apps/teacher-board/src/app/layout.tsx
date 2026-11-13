@@ -18,13 +18,13 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <head>
-        {BACKEND && (
+        {BACKEND ? (
           <>
             <link rel="preconnect" href={BACKEND} crossOrigin="anonymous" />
             <link rel="dns-prefetch" href={BACKEND} />
             <script dangerouslySetInnerHTML={{__html: WARM}} />
           </>
-        )}
+        ) : null}
       </head>
       <body className="bg-[#F8F7F4] text-[#18181B] min-h-screen antialiased selection:bg-blue-100 selection:text-blue-900">
         {children}

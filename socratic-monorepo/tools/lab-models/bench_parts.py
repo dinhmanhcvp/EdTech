@@ -103,26 +103,38 @@ def stand(x, z, h=2.0, arm=0.5):
     return o
 
 
+def needle(x, z, tint=RED):
+    """kim của đồng hồ đo (phần động, gốc ở chân kim: quay quanh z)"""
+    return [B(0.012, 0.22, 0.006, x, 0.31, z + 0.13, tint, 0)]
+
+
+def swhand(x, z):
+    """kim đồng hồ bấm giây (phần động, quay quanh y)"""
+    return [B(0.012, 0.005, 0.11, x, 0.066, z - 0.04, INK, 0)]
+
+
 def meter(x, z, sym='V', tint=RED, lean=0.0):
     return [
         B(0.62, 0.5, 0.24, x, 0.25, z, BAKELITE, 0.02),
         B(0.52, 0.3, 0.012, x, 0.3, z + 0.121, CREAM, 0),
-        B(0.012, 0.22, 0.006, x + lean * 0.1, 0.31, z + 0.13, tint, 0, rz=-lean * 0.6),
         TX(sym, 0.11, x, 0.19, z + 0.13),
         C(0.03, 0.07, x - 0.2, 0.53, z, RED), C(0.03, 0.07, x + 0.2, 0.53, z, INK),
     ]
 
 
-def digital(x, z, txt='0.000', w=0.8, pan=False):
-    """đồng hồ / cân hiện số"""
-    o = [B(w, 0.22, 0.5, x, 0.11, z, CASE, 0.02), B(w * 0.7, 0.13, 0.012, x, 0.12, z + 0.251, DARK, 0), TX(txt, 0.09, x, 0.12, z + 0.26, LED)]
+def digital(x, z, txt='0.000', w=0.8, pan=False, live=True):
+    """đồng hồ / cân hiện số (live: không in chữ, mã vẽ số đo thật lên mặt hiển thị)"""
+    o = [B(w, 0.22, 0.5, x, 0.11, z, CASE, 0.02), B(w * 0.7, 0.13, 0.012, x, 0.12, z + 0.251, DARK, 0)]
+    if not live:
+        o.append(TX(txt, 0.09, x, 0.12, z + 0.26, LED))
     if pan:
         o += [C(w * 0.42, 0.03, x, 0.245, z, STEEL)]
     return o
 
 
-def stopwatch(x, z):
-    return [C(0.16, 0.05, x, 0.03, z, CHROME), C(0.135, 0.01, x, 0.058, z, CREAM), B(0.012, 0.005, 0.11, x, 0.066, z - 0.04, INK, 0), C(0.03, 0.06, x, 0.03, z - 0.19, CHROME, 'z')]
+def stopwatch(x, z, hand=True):
+    o = [C(0.16, 0.05, x, 0.03, z, CHROME), C(0.135, 0.01, x, 0.058, z, CREAM), C(0.03, 0.06, x, 0.03, z - 0.19, CHROME, 'z')]
+    return o + swhand(x, z) if hand else o
 
 
 def battery(x, z):
@@ -131,7 +143,7 @@ def battery(x, z):
 
 def psu(x, z, txt='6.0 V'):
     return [
-        B(0.9, 0.5, 0.6, x, 0.25, z, CASE, 0.02), B(0.5, 0.16, 0.012, x - 0.1, 0.34, z + 0.301, DARK, 0), TX(txt, 0.1, x - 0.1, 0.34, z + 0.31, LED),
+        B(0.9, 0.5, 0.6, x, 0.25, z, CASE, 0.02), B(0.5, 0.16, 0.012, x - 0.1, 0.34, z + 0.301, DARK, 0),
         C(0.06, 0.05, x + 0.3, 0.34, z + 0.32, BAKELITE, 'z'), C(0.03, 0.06, x - 0.2, 0.12, z + 0.32, RED, 'z'), C(0.03, 0.06, x + 0.1, 0.12, z + 0.32, INK, 'z'),
     ]
 
@@ -346,20 +358,23 @@ def phys():
 
     # ERROR_MEASURE: thanh kim loại, thước thẳng, thước kẹp
     o = [B(1.6, 0.12, 0.12, 0, 0.06, -0.3, STEEL, 0.01)] + ruler(-1.2, 1.2, 0.05)
-    o += [B(1.8, 0.03, 0.12, 0, 0.015, 0.55, CHROME, 0.004), B(0.06, 0.03, 0.4, -0.87, 0.015, 0.41, CHROME, 0.004), B(0.06, 0.03, 0.4, -0.2, 0.015, 0.41, CHROME, 0.004), B(0.3, 0.05, 0.16, -0.08, 0.025, 0.55, STEEL, 0.006)]
+    o += [B(1.8, 0.03, 0.12, 0, 0.015, 0.55, CHROME, 0.004), B(0.06, 0.03, 0.4, -0.87, 0.015, 0.41, CHROME, 0.004), ]
     o += [B(0.004, 0.002, 0.04, -0.8 + i * 0.1, 0.032, 0.52, INK, 0) for i in range(16)]
     part('Set_ERROR_MEASURE', o)
+    part('Mov_ERROR_MEASURE_1', [B(0.06, 0.03, 0.4, -0.2, 0.015, 0.41, CHROME, 0.004), B(0.3, 0.05, 0.16, -0.08, 0.025, 0.55, STEEL, 0.006)], pivot=(-0.2, 0.015, 0.41))
 
     # SPEED: đường ray, xe, hai cổng quang (cổng 2 động), đồng hồ hiện số
-    o = track(-2.6, 2.6, 0) + cart(-2.0, 0) + gate(-1.2, 0) + digital(1.8, 0.75, '0.482')
+    o = track(-2.6, 2.6, 0) + gate(-1.2, 0) + digital(1.8, 0.75, '0.482')
     o += [wire((-1.2, 0.84, -0.26), (1.5, 0.2, 0.75), INK, -0.3)]
     part('Set_SPEED', o)
     part('Mov_SPEED_1', gate(0, 0), pivot=(0, 0, 0))
+    part('Mov_SPEED_2', cart(-2.0, 0), pivot=(-2.0, 0.34, 0))
 
     # FREE_FALL_G: giá, nam châm điện, trụ thép, cổng quang (động theo h), đồng hồ, thước đứng
-    o = stand(-0.6, -0.2, 2.3, 0.6) + [C(0.1, 0.16, 0, 2.2, -0.2, COPPER), C(0.06, 0.06, 0, 2.1, -0.2, IRON), C(0.04, 0.12, 0, 2.0, -0.2, STEEL)] + ruler(0.35, 2.55, -0.25, vertical=True, at=0.05)
+    o = stand(-0.6, -0.2, 2.3, 0.6) + [C(0.1, 0.16, 0, 2.2, -0.2, COPPER), C(0.06, 0.06, 0, 2.1, -0.2, IRON), C(0.015, 0.06, 0, 2.03, -0.2, IRON)] + ruler(0.35, 2.55, -0.25, vertical=True, at=0.05)
     o += digital(1.6, 0.4, '0.319') + [B(0.5, 0.1, 0.5, 0, 0.05, -0.2, FOAM, 0.02)]
     part('Set_FREE_FALL_G', o)
+    part('Mov_FREE_FALL_G_2', [S(0.05, 0, 1.95, -0.2, STEEL)], pivot=(0, 1.95, -0.2))
     part('Mov_FREE_FALL_G_1', [B(0.5, 0.06, 0.06, 0, 0, -0.2, INK, 0.008), B(0.06, 0.06, 0.3, -0.22, 0, -0.08, INK, 0.008), B(0.06, 0.06, 0.3, 0.22, 0, -0.08, INK, 0.008), S(0.02, 0.19, 0, 0.05, LED), C(0.02, 0.5, -0.4, 0, -0.2, CHROME, 'x')], pivot=(0, 0, 0))
 
     # FORCE_COMPOSITION: bảng từ, ba lực kế, vòng nhẫn, thước đo góc
@@ -372,11 +387,13 @@ def phys():
     part('Set_FORCE_COMPOSITION', o)
 
     # SOUND_FREQUENCY: âm thoa trên hộp cộng hưởng, micro, dao động kí
-    o = [B(0.9, 0.3, 0.4, -1.8, 0.15, 0, WOOD, 0.01), C(0.02, 0.25, -1.8, 0.42, 0, CHROME), B(0.03, 0.6, 0.04, -1.87, 0.85, 0, CHROME, 0.006), B(0.03, 0.6, 0.04, -1.73, 0.85, 0, CHROME, 0.006), B(0.17, 0.04, 0.04, -1.8, 0.55, 0, CHROME, 0.006)]
+    o = [B(0.9, 0.3, 0.4, -1.8, 0.15, 0, WOOD, 0.01), C(0.02, 0.25, -1.8, 0.42, 0, CHROME), B(0.17, 0.04, 0.04, -1.8, 0.55, 0, CHROME, 0.006)]
     o += [C(0.14, 0.03, -0.6, 0.015, 0, IRON), C(0.015, 0.6, -0.6, 0.3, 0, CHROME), C(0.05, 0.22, -0.72, 0.62, 0, BAKELITE, 'x'), S(0.07, -0.85, 0.62, 0, STEEL)]
-    o += [B(1.4, 0.9, 0.7, 1.4, 0.45, -0.2, CASE, 0.03), B(0.8, 0.6, 0.012, 1.15, 0.5, 0.151, SCREEN, 0), TB([(0.78 + i * 0.03, 0.5 + 0.2 * math.sin(i * 0.75), 0.165) for i in range(26)], 0.008, TRACE)]
+    o += [B(1.4, 0.9, 0.7, 1.4, 0.45, -0.2, CASE, 0.03), B(0.8, 0.6, 0.012, 1.15, 0.5, 0.151, SCREEN, 0)]
     o += [C(0.05, 0.04, 1.85, 0.7 - i * 0.2, 0.16, BAKELITE, 'z') for i in range(3)] + [wire((-0.6, 0.05, 0), (1.0, 0.1, 0.16), INK, 0.4)]
     part('Set_SOUND_FREQUENCY', o)
+    part('Mov_SOUND_FREQUENCY_1', [B(0.03, 0.6, 0.04, -1.87, 0.85, 0, CHROME, 0.006)], pivot=(-1.87, 0.55, 0))
+    part('Mov_SOUND_FREQUENCY_2', [B(0.03, 0.6, 0.04, -1.73, 0.85, 0, CHROME, 0.006)], pivot=(-1.73, 0.55, 0))
 
     # SOUND_SPEED: ống cộng hưởng có pit-tông, loa, thước, nhiệt kế
     o = [C(0.2, 3.2, 0.2, 0.45, 0, GLASS, 'x', seg=28), C(0.19, 0.12, 0.9, 0.45, 0, RUBBER, 'x'), C(0.02, 1.4, 1.6, 0.45, 0, CHROME, 'x'), C(0.08, 0.04, 2.3, 0.45, 0, BAKELITE, 'x')]
@@ -393,19 +410,24 @@ def phys():
     o += [C(0.102, 0.012, 1.1 + i * 0.05, 0.2, 0.3, COPPER, 'x') for i in range(25)]
     o += [wire((-2.3, 0.46, 0.2), (-2.08, 0.1, -0.6)), wire((-2.32, 0.1, -0.6), (-1.1, 0.56, -0.5)), wire((-0.7, 0.56, -0.5), (0.95, 0.4, 0.3), INK), wire((0, 0.56, -0.5), (2.45, 0.4, 0.3), BLUE, -0.2)]
     part('Set_EMF_INTERNAL_R', o)
+    part('Mov_EMF_INTERNAL_R_2', needle(-0.9, -0.5, RED), pivot=(-0.9, 0.2, -0.37))
+    part('Mov_EMF_INTERNAL_R_3', needle(0.2, -0.5, BLUE), pivot=(0.2, 0.2, -0.37))
     part('Mov_EMF_INTERNAL_R_1', [B(0.12, 0.14, 0.16, 0, 0.42, 0.3, RED, 0.01), B(0.03, 0.14, 0.03, 0, 0.3, 0.3, COPPER, 0)], pivot=(0, 0, 0))
 
     # NEWTON2: đường ray, xe, ròng rọc, quả cân treo (động), cổng quang
-    o = track(-2.6, 2.2, 0, 0.9) + cart(-1.6, 0, 0.94) + gate(0.4, 0, 0.94) + [C(0.14, 0.04, 2.3, 1.1, 0, ALU, 'z'), B(0.2, 0.06, 0.06, 2.25, 1.0, -0.05, IRON, 0.008), TB([(-1.35, 1.1, 0), (2.3, 1.24, 0)], 0.005, INK, False), TB([(2.44, 1.1, 0), (2.44, 0.55, 0)], 0.005, INK, False)]
+    o = track(-2.6, 2.2, 0, 0.9) + gate(0.4, 0, 0.94) + [C(0.14, 0.04, 2.3, 1.1, 0, ALU, 'z'), B(0.2, 0.06, 0.06, 2.25, 1.0, -0.05, IRON, 0.008), TB([(-1.35, 1.1, 0), (2.3, 1.24, 0)], 0.005, INK, False), TB([(2.44, 1.1, 0), (2.44, 0.55, 0)], 0.005, INK, False)]
     o += [B(0.5, 0.9, 0.6, -2.3, 0.45, 0, WOOD, 0.01), B(0.5, 0.9, 0.6, 1.9, 0.45, 0, WOOD, 0.01)] + digital(0.4, 0.8, '1.25')
     part('Set_NEWTON2', o)
+    part('Mov_NEWTON2_2', cart(-1.6, 0, 0.94), pivot=(-1.6, 0.94, 0))
     part('Mov_NEWTON2_1', weight(2.44, 0.3, 0, 0.1, 0.25), pivot=(2.44, 0.55, 0))
 
     # FRICTION: tấm bề mặt, khối gỗ, quả cân (động), lực kế kéo ngang
-    o = [B(3.6, 0.06, 0.9, 0, 0.03, 0, WOOD, 0.01), B(1.1, 0.012, 0.8, -1.9, 0.07, 0.95, GLASS, 0), B(1.1, 0.03, 0.8, -0.6, 0.02, 0.95, RUBBER, 0.004), B(0.7, 0.3, 0.45, -0.8, 0.21, 0, WOOD, 0.015), C(0.02, 0.04, -0.44, 0.21, 0, CHROME, 'x')]
-    o += [TB([(-0.42, 0.21, 0), (0.3, 0.21, 0)], 0.005, INK, False), C(0.06, 0.7, 0.65, 0.21, 0, mat('sbody', hexc('#F4EEDD'), rough=0.4), 'x'), C(0.02, 0.3, 1.1, 0.21, 0, CHROME, 'x'), LA([(0.03, 0), (0.045, 0), (0.045, 0.012), (0.03, 0.012)], 1.3, 0.21, 0, CHROME)]
+    o = [B(3.6, 0.06, 0.9, 0, 0.03, 0, WOOD, 0.01), B(1.1, 0.012, 0.8, -1.9, 0.07, 0.95, GLASS, 0), B(1.1, 0.03, 0.8, -0.6, 0.02, 0.95, RUBBER, 0.004), ]
+    o += [C(0.06, 0.7, 0.65, 0.21, 0, mat('sbody', hexc('#F4EEDD'), rough=0.4), 'x'), C(0.02, 0.3, 1.1, 0.21, 0, CHROME, 'x'), LA([(0.03, 0), (0.045, 0), (0.045, 0.012), (0.03, 0.012)], 1.3, 0.21, 0, CHROME)]
     o += [B(0.004, 0.125, 0.004, 0.4 + i * 0.05, 0.21, 0.0, INK, 0) for i in range(11)]
     part('Set_FRICTION', o)
+    part('Mov_FRICTION_2', [B(0.7, 0.3, 0.45, -0.8, 0.21, 0, WOOD, 0.015), C(0.02, 0.04, -0.44, 0.21, 0, CHROME, 'x')], pivot=(-0.8, 0.21, 0))
+    part('Mov_FRICTION_3', [TB([(-0.42, 0.21, 0), (0.3, 0.21, 0)], 0.005, INK, False)], pivot=(0.3, 0.21, 0))
     part('Mov_FRICTION_1', weight(-0.9, 0.36, 0, 0.12, 0.1) + weight(-0.65, 0.36, 0, 0.12, 0.1), pivot=(-0.8, 0.36, 0))
 
     # HOOKE: giá treo, lò xo (co giãn), quả cân (động), thước milimét
@@ -416,9 +438,10 @@ def phys():
     part('Mov_HOOKE_2', [C(0.008, 0.14, 0, 1.33, -0.2, CHROME), B(0.1, 0.006, 0.006, 0.05, 1.3, -0.2, RED, 0)] + weight(0, 1.14, -0.2, 0.1, 0.12), pivot=(0, 1.4, -0.2))
 
     # PENDULUM_G: giá treo, dây (co giãn), quả nặng (động), đồng hồ bấm giây, thước
-    o = stand(-0.7, -0.2, 2.4, 0.7) + [B(0.1, 0.06, 0.1, 0, 2.4, -0.2, IRON, 0.008)] + stopwatch(1.5, 0.5) + ruler(-0.9, 0.9, 0.75)
+    o = stand(-0.7, -0.2, 2.4, 0.7) + [B(0.1, 0.06, 0.1, 0, 2.4, -0.2, IRON, 0.008)] + stopwatch(1.5, 0.5, False) + ruler(-0.9, 0.9, 0.75)
     o += [C(0.5, 0.006, 0, 1.2, -0.45, mat('arc', hexc('#F4EEDD'), rough=0.8, alpha=0.5), 'z', seg=40)]
     part('Set_PENDULUM_G', o)
+    part('Mov_PENDULUM_G_3', swhand(1.5, 0.5), pivot=(1.5, 0.066, 0.5))
     part('Mov_PENDULUM_G_1', [C(0.005, 1.0, 0, 1.87, -0.2, INK, seg=6)], pivot=(0, 2.37, -0.2))
     part('Mov_PENDULUM_G_2', [S(0.11, 0, 1.3, -0.2, BRASS), C(0.012, 0.06, 0, 1.42, -0.2, CHROME)], pivot=(0, 1.37, -0.2))
 
@@ -433,11 +456,14 @@ def phys():
     o = psu(-2.2, -0.2, '5.0 V') + resistor(-0.4, 0.5) + resistor(-0.4, 0.95, BLUE) + meter(0.7, -0.4, 'A', RED, 0.2) + meter(1.9, -0.4, 'V', BLUE, 0.4)
     o += [wire((-2.4, 0.12, 0.14), (-0.6, 0.14, 0.5)), wire((-0.2, 0.14, 0.5), (0.5, 0.56, -0.4), RED, 0.15), wire((0.9, 0.56, -0.4), (-2.1, 0.12, 0.14), INK, 0.5), wire((-0.6, 0.14, 0.5), (1.7, 0.56, -0.4), BLUE, -0.5), wire((-0.2, 0.14, 0.5), (2.1, 0.56, -0.4), BLUE, 0.6)]
     part('Set_OHM_LAW', o)
+    part('Mov_OHM_LAW_1', needle(0.7, -0.4, RED), pivot=(0.7, 0.2, -0.27))
+    part('Mov_OHM_LAW_2', needle(1.9, -0.4, BLUE), pivot=(1.9, 0.2, -0.27))
 
     # SPECIFIC_HEAT: nhiệt lượng kế, nguồn nung, nhiệt kế, đồng hồ, cân
-    o = calorimeter(-0.4, 0) + psu(-2.1, -0.2, '40 W') + stopwatch(1.0, 0.6) + digital(2.1, -0.1, '200.0 g', 0.9, True) + up(beaker(2.1, -0.1, 0.2, 0.3), 0.26)
+    o = calorimeter(-0.4, 0) + psu(-2.1, -0.2, '40 W') + stopwatch(1.0, 0.6, False) + digital(2.1, -0.1, '200.0 g', 0.9, True) + up(beaker(2.1, -0.1, 0.2, 0.3), 0.26)
     o += [wire((-2.3, 0.12, 0.14), (-0.5, 0.62, 0), RED, 0.3), wire((-2.0, 0.12, 0.14), (-0.3, 0.62, 0.05), INK, 0.45)]
     part('Set_SPECIFIC_HEAT', o)
+    part('Mov_SPECIFIC_HEAT_1', swhand(1.0, 0.6), pivot=(1.0, 0.066, 0.6))
 
     # CHARLES: bình khí trong cốc nước nóng trên bếp, xi lanh ngang (pit-tông động), nhiệt kế
     o = [B(0.9, 0.16, 0.8, -1.4, 0.08, 0, CASE, 0.02), C(0.3, 0.02, -1.4, 0.17, 0, IRON)] + up(beaker(-1.4, 0, 0.36, 0.6, 0.7, liq('hot', '#E8A07F', 0.4)), 0.18)
@@ -451,6 +477,7 @@ def phys():
     o = [B(1.0, 0.06, 0.8, -0.6, 0.03, 0, PANEL, 0.01), C(0.36, 0.7, -0.6, 0.5, 0, COPPER, 'x', seg=36), C(0.4, 0.04, -0.97, 0.5, 0, BAKELITE, 'x', seg=36), C(0.4, 0.04, -0.23, 0.5, 0, BAKELITE, 'x', seg=36), B(0.3, 0.14, 0.5, -0.6, 0.1, 0, WOOD, 0.01)]
     o += meter(1.9, -0.4, 'mV', BLUE, 0.3) + [wire((-0.9, 0.2, 0.3), (1.7, 0.56, -0.4), RED, 0.5), wire((-0.3, 0.2, 0.3), (2.1, 0.56, -0.4), INK, 0.3)]
     part('Set_EM_INDUCTION', o)
+    part('Mov_EM_INDUCTION_2', needle(1.9, -0.4, BLUE), pivot=(1.9, 0.2, -0.27))
     part('Mov_EM_INDUCTION_1', [B(0.45, 0.14, 0.14, -0.225, 0.5, 0, RED, 0.01), B(0.45, 0.14, 0.14, 0.225, 0.5, 0, BLUE, 0.01), TX('N', 0.1, -0.22, 0.5, 0.075, WHITE), TX('S', 0.1, 0.22, 0.5, 0.075, WHITE)], pivot=(0, 0, 0))
 
     # WAVE_INTERFERENCE: khay nước, cần rung hai mũi nhọn, đèn hoạt nghiệm, thước
@@ -459,21 +486,22 @@ def phys():
         for dz in (-0.7, 0.7):
             o.append(C(0.03, 0.5, dx, 0.25, dz, CHROME))
     for sx in (-0.3, 0.3):
-        o += [C(0.012, 0.3, sx, 0.75, -0.3, CHROME, seg=8)] + [LA([(r, 0), (r + 0.012, 0), (r + 0.012, 0.006), (r, 0.006)], sx, 0.6, -0.3, mat('ring%d' % int(r * 10), hexc('#FFFFFF'), rough=0.2, alpha=0.5)) for r in (0.2, 0.4, 0.6)]
+        o += [C(0.012, 0.3, sx, 0.75, -0.3, CHROME, seg=8)]
     o += [B(0.9, 0.06, 0.06, 0, 0.9, -0.3, IRON, 0.008), B(0.3, 0.2, 0.2, -0.7, 0.9, -0.3, BAKELITE, 0.02)] + stand(-1.9, -0.3, 0.9, 1.1) + lamp(2.0, -0.6, 1.9, -1) + ruler(-1.0, 1.0, 1.0)
     o += [B(2.4, 0.01, 1.4, 0, 0.012, 0, PAPER, 0)]
     part('Set_WAVE_INTERFERENCE', o)
 
     # STANDING_WAVE: máy phát dao động, sợi dây có sóng dừng, ròng rọc, quả cân, thước
     o = [B(0.7, 0.5, 0.5, -2.3, 0.25, 0, CASE, 0.02), C(0.05, 0.04, -2.5, 0.35, 0.26, BAKELITE, 'z'), B(0.3, 0.1, 0.012, -2.2, 0.35, 0.255, DARK, 0), C(0.03, 0.3, -1.9, 0.62, 0, CHROME), B(0.2, 0.06, 0.1, -1.9, 0.52, 0, IRON, 0.008)]
-    o += [TB([(-1.9 + i * 0.05, 0.78 + 0.16 * math.sin(i * 0.05 * math.pi * 3 / 3.8), 0) for i in range(77)], 0.008, ORANGE), TB([(-1.9 + i * 0.05, 0.78 - 0.16 * math.sin(i * 0.05 * math.pi * 3 / 3.8), 0) for i in range(77)], 0.004, mat('ghost', hexc('#D9481C'), alpha=0.35))]
     o += stand(2.1, -0.3, 0.78, 0.0) + [C(0.12, 0.04, 2.0, 0.66, 0, ALU, 'z'), TB([(2.12, 0.66, 0), (2.12, 0.3, 0)], 0.005, INK, False)] + weight(2.12, 0.08, 0, 0.1, 0.2) + ruler(-1.9, 1.9, 0.6)
     part('Set_STANDING_WAVE', o)
 
     # CAPACITOR_RC: bảng mạch có tụ và điện trở, nguồn 6 V, vôn kế, đồng hồ bấm giây, khóa
     o = [B(1.4, 0.05, 0.9, -0.5, 0.025, 0.1, GREENM, 0.01), C(0.14, 0.4, -0.8, 0.25, 0, BLUE), C(0.142, 0.05, -0.8, 0.4, 0, CHROME), TX('100 µF', 0.07, -0.8, 0.22, 0.145, WHITE)] + resistor(-0.2, 0.3) + switch(-0.5, -0.25)
-    o += psu(-2.3, -0.2, '6.0 V') + meter(1.2, -0.4, 'V', BLUE, 0.1) + stopwatch(2.3, 0.5) + [wire((-2.5, 0.12, 0.14), (-0.62, 0.1, -0.25)), wire((-0.38, 0.1, -0.25), (-0.4, 0.14, 0.3), RED, 0.1), wire((-0.8, 0.46, 0), (1.0, 0.56, -0.4), BLUE, 0.5), wire((-2.2, 0.12, 0.14), (1.4, 0.56, -0.4), INK, 0.9)]
+    o += psu(-2.3, -0.2, '6.0 V') + meter(1.2, -0.4, 'V', BLUE, 0.1) + stopwatch(2.3, 0.5, False) + [wire((-2.5, 0.12, 0.14), (-0.62, 0.1, -0.25)), wire((-0.38, 0.1, -0.25), (-0.4, 0.14, 0.3), RED, 0.1), wire((-0.8, 0.46, 0), (1.0, 0.56, -0.4), BLUE, 0.5), wire((-2.2, 0.12, 0.14), (1.4, 0.56, -0.4), INK, 0.9)]
     part('Set_CAPACITOR_RC', o)
+    part('Mov_CAPACITOR_RC_1', needle(1.2, -0.4, BLUE), pivot=(1.2, 0.2, -0.27))
+    part('Mov_CAPACITOR_RC_2', swhand(2.3, 0.5), pivot=(2.3, 0.066, 0.5))
 
     # LATENT_HEAT_FUSION: nhiệt lượng kế, đĩa nước đá, cốc nước ấm, cân
     o = calorimeter(-1.0, 0) + petri(0.4, 0.5) + [B(0.1, 0.1, 0.1, 0.33 + i * 0.12, 0.07, 0.45 + (i % 2) * 0.12, mat('ice%d' % i, (0.85, 0.94, 1.0), rough=0.1, alpha=0.6), 0.015) for i in range(3)]
@@ -481,16 +509,19 @@ def phys():
     part('Set_LATENT_HEAT_FUSION', o)
 
     # LEVER_MOMENT: thanh có trục quay, quả cân trái (động theo d₁), quả cân phải, thước
-    o = stand(0, -0.35, 1.5, 0.0) + [C(0.03, 0.4, 0, 1.5, -0.15, CHROME, 'z'), B(3.6, 0.08, 0.05, 0, 1.5, 0, ALU, 0.01)] + [C(0.02, 0.06, -1.6 + i * 0.4, 1.5, 0, INK, 'z') for i in range(9)]
-    o += [TB([(1.2, 1.46, 0), (1.2, 1.2, 0)], 0.005, INK, False)] + weight(1.2, 0.95, 0, 0.11, 0.25) + ruler(-1.8, 1.8, 0.6) + weight(2.4, 0, 0.5) + weight(2.65, 0, 0.5)
+    o = stand(0, -0.35, 1.5, 0.0) + [C(0.03, 0.4, 0, 1.5, -0.15, CHROME, 'z')]
+    o += ruler(-1.8, 1.8, 0.6) + weight(2.4, 0, 0.5) + weight(2.65, 0, 0.5)
     part('Set_LEVER_MOMENT', o)
+    part('Mov_LEVER_MOMENT_2', [B(3.6, 0.08, 0.05, 0, 1.5, 0, ALU, 0.01)] + [C(0.02, 0.06, -1.6 + i * 0.4, 1.5, 0, INK, 'z') for i in range(9)], pivot=(0, 1.5, 0))
+    part('Mov_LEVER_MOMENT_3', [TB([(1.2, 1.46, 0), (1.2, 1.2, 0)], 0.005, INK, False)] + weight(1.2, 0.95, 0, 0.11, 0.25), pivot=(1.2, 1.5, 0))
     part('Mov_LEVER_MOMENT_1', [TB([(0, 1.46, 0), (0, 1.2, 0)], 0.005, INK, False)] + weight(0, 0.95, 0, 0.11, 0.25), pivot=(0, 0, 0))
 
     # PROJECTILE_HORIZONTAL: máng ném trên bệ (động theo h), bi thép, giấy than, thước
     o = [B(2.2, 0.01, 0.9, 1.3, 0.006, 0, PAPER, 0), B(2.0, 0.006, 0.8, 1.3, 0.014, 0, mat('carbon', hexc('#2A2E33'), rough=0.8), 0)] + ruler(0.2, 2.6, 0.6)
     o += [S(0.035, 0.3 + 0.35 * i, 1.4 - 0.2 * i * i * 0.55, 0, mat('trail%d' % i, (0.6, 0.62, 0.65), metallic=1, rough=0.3, alpha=0.35 + 0.1 * i)) for i in range(1, 5)] + [C(0.03, 1.6, -0.9, 0.8, -0.4, CHROME), B(0.6, 0.06, 0.5, -1.0, 0.03, -0.3, IRON, 0.015)]
     part('Set_PROJECTILE_HORIZONTAL', o)
-    part('Mov_PROJECTILE_HORIZONTAL_1', [B(1.2, 0.06, 0.4, -0.8, -0.05, 0, WOOD, 0.01), B(1.0, 0.04, 0.12, -1.0, 0.22, 0, ALU, 0.006, rz=0.45), B(0.5, 0.04, 0.12, -0.35, 0.0, 0, ALU, 0.006), S(0.05, -0.2, 0.07, 0, STEEL), B(0.1, 0.1, 0.1, -0.9, -0.05, -0.4, IRON, 0.01)], pivot=(0, 0, 0))
+    part('Mov_PROJECTILE_HORIZONTAL_1', [B(1.2, 0.06, 0.4, -0.8, -0.05, 0, WOOD, 0.01), B(1.0, 0.04, 0.12, -1.0, 0.22, 0, ALU, 0.006, rz=0.45), B(0.5, 0.04, 0.12, -0.35, 0.0, 0, ALU, 0.006), B(0.1, 0.1, 0.1, -0.9, -0.05, -0.4, IRON, 0.01)], pivot=(0, 0, 0))
+    part('Mov_PROJECTILE_HORIZONTAL_2', [S(0.05, -0.2, 0.07, 0, STEEL)], pivot=(-0.2, 0.07, 0))
 
     # TRANSFORMER: lõi sắt chữ U, hai cuộn dây, nguồn xoay chiều, hai vôn kế
     o = [B(0.3, 0.9, 0.3, -0.5, 0.6, 0, IRON, 0.01), B(0.3, 0.9, 0.3, 0.5, 0.6, 0, IRON, 0.01), B(1.3, 0.3, 0.3, 0, 0.15, 0, IRON, 0.01), B(1.3, 0.25, 0.3, 0, 1.17, 0, IRON, 0.01)]
@@ -498,6 +529,8 @@ def phys():
     o += [C(0.3, 0.5, -0.5, 0.6, 0, COPPER, seg=32), C(0.34, 0.03, -0.5, 0.86, 0, BAKELITE, seg=32), C(0.34, 0.03, -0.5, 0.34, 0, BAKELITE, seg=32), C(0.3, 0.5, 0.5, 0.6, 0, BLUE, seg=32), C(0.34, 0.03, 0.5, 0.86, 0, BAKELITE, seg=32), C(0.34, 0.03, 0.5, 0.34, 0, BAKELITE, seg=32)]
     o += psu(-2.3, -0.1, '6 V ~') + meter(-1.3, 0.7, 'V~', RED, 0.1) + meter(1.9, -0.1, 'V~', BLUE, 0.5) + [wire((-2.5, 0.12, 0.24), (-0.8, 0.5, 0.2)), wire((-2.2, 0.12, 0.24), (-0.8, 0.7, 0.2), INK, 0.4), wire((0.8, 0.5, 0.2), (1.7, 0.56, -0.1), BLUE), wire((0.8, 0.7, 0.2), (2.1, 0.56, -0.1), BLUE, 0.4)]
     part('Set_TRANSFORMER', o)
+    part('Mov_TRANSFORMER_1', needle(-1.3, 0.7, RED), pivot=(-1.3, 0.2, 0.83))
+    part('Mov_TRANSFORMER_2', needle(1.9, -0.1, BLUE), pivot=(1.9, 0.2, 0.03))
 
 
 # ================================================================== SINH HỌC
@@ -545,7 +578,7 @@ def bio():
     part('Set_VIRUS_SURVEY', o)
 
     # TRANSPIRATION: chậu cây bọc túi trên cân, đèn (động), lọ vaseline
-    o = digital(-0.6, 0, '352.18 g', 1.0, True) + up(plant(-0.6, 0, 0.8, 8, r=0.24), 0.26) + bottle(1.9, 0.5, mat('vas', hexc('#F1E7B5'), rough=0.5), BLUE, 0.14, 0.18)
+    o = digital(-0.6, 0, '352.18 g', 1.0, True, False) + up(plant(-0.6, 0, 0.8, 8, r=0.24), 0.26) + bottle(1.9, 0.5, mat('vas', hexc('#F1E7B5'), rough=0.5), BLUE, 0.14, 0.18)
     o += [LA([(0.27, 0), (0.3, 0.2), (0.27, 0.38), (0.26, 0.38), (0.29, 0.2), (0.26, 0)], -0.6, 0.27, 0, mat('bag', (0.95, 0.97, 1), rough=0.1, alpha=0.3))]
     part('Set_TRANSPIRATION', o)
     part('Mov_TRANSPIRATION_1', lamp(0, -0.2, 1.7, -1), pivot=(0, 0, 0))

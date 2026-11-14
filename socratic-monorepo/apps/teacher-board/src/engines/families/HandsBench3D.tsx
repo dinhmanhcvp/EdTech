@@ -3,6 +3,7 @@
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {BENCH_MOVES, dragT, grabOf, type BenchMove} from '../../utils/lab/hands/benchMoves';
+import {BENCH_FX, FX_PARTS} from './benchMotion';
 import {handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {glassify, loadModel, partOf} from './labParts';
@@ -141,6 +142,8 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       root.scale.setScalar(1.25); // bộ dụng cụ dựng theo bàn rộng 6: phóng cho vừa bàn 8,4 và dễ nhìn từ máy quay
       k.scene.add(root);
       const movers: {obj: THREE.Object3D; base: THREE.Vector3; m: (typeof BENCH_MOVES)[string][number]}[] = [];
+      /** mọi phần động theo số thứ tự (kể cả phần chạy tự do không gắn thanh trượt) để hiệu ứng chuyển động ghi đè */
+      const byN = new Map<number, {obj: THREE.Object3D; base: THREE.Vector3; free: boolean}>();
       void loadModel(`/models/bench-${live.file}.glb`)
         .then((lib) => {
           const set = partOf(lib, `Set_${e.id}`);
@@ -157,6 +160,18 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             sk.obj.position.copy(src.position);
             root.add(sk.obj);
             movers.push({obj: sk.obj, base: src.position.clone(), m});
+            byN.set(m.n, {obj: sk.obj, base: src.position.clone(), free: false});
+          }
+          for (const n of FX_PARTS[e.id] ?? []) {
+            if (byN.has(n)) continue;
+            const name = `Mov_${e.id}_${n}`;
+            const src = lib.getObjectByName(name);
+            const sk = partOf(lib, name);
+            if (!src || !sk) continue;
+            glassify(sk.obj);
+            sk.obj.position.copy(src.position);
+            root.add(sk.obj);
+            byN.set(n, {obj: sk.obj, base: src.position.clone(), free: true});
           }
         })
         .catch(() => undefined);
@@ -204,22 +219,58 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         () => movers.filter((mv) => mv.m.what && grabOf(e.id, mv.m.param)?.n === mv.m.n).map((mv) => ({obj: mv.obj, m: mv.m, read: () => unit(mv.m.param), write: (t: number) => setParam(mv.m.param, t), text: () => unitText(mv.m.param)})),
         root.scale.x,
       );
-      P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny));
+      // chạm (chụm / nhấn) vào dụng cụ đang chuyển động (xe, bi, khối gỗ, con lắc…) = cho thí nghiệm chạy lại từ đầu
+      const pokeRay = new THREE.Raycaster();
+      const pokeV = new THREE.Vector2();
+      let pokes = 0;
+      const onMover = (nx: number, ny: number) => {
+        pokeRay.setFromCamera(pokeV.set(nx, ny), k.camera);
+        return [...byN.values()].some((q) => q.free && pokeRay.intersectObject(q.obj, true).length > 0);
+      };
+      P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny) || onMover(nx, ny));
 
+      // chuyển động của bài: dụng cụ chạy theo quy luật vật lí của bài (benchMotion.ts)
+      const fx = BENCH_FX[e.id]?.({
+        e,
+        root,
+        part: (n) => byN.get(n)?.obj,
+        choiceNum: (key, dflt = 1) => {
+          const label = e.choices?.find((c) => c.key === key)?.options.find((o) => o[0] === live.st.s[key])?.[1] ?? '';
+          const m = /-?\d+(?:[.,]\d+)?/.exec(label);
+          return m ? parseFloat(m[0].replace(',', '.')) : dflt;
+        },
+      });
+      let elapsed = 0;
       let last = performance.now();
       return () => {
         const now = performance.now();
         const dt = Math.min((now - last) / 1000, 0.05);
         last = now;
+        elapsed += dt;
         P.step(1 - Math.exp(-dt * 28));
         sliders.step(Object.fromEntries(e.sliders.map((p) => [p.key, unit(p.key)])));
         buttons.step(dt);
         grabs.step();
+        // mỗi khung hình đặt lại phần động về trạng thái theo thanh trượt, rồi hiệu ứng chuyển động ghi đè lên đó
         for (const {obj, base, m} of movers) {
           const x = m.a + (m.b - m.a) * unit(m.param);
+          obj.position.copy(base);
+          obj.rotation.set(0, 0, 0);
           if (m.axis === 's') obj.scale.setScalar(x);
-          else if (m.axis === 'sy') obj.scale.y = x;
+          else if (m.axis === 'sy') obj.scale.set(1, x, 1);
           else obj.position[m.axis] = base[m.axis] + x;
+        }
+        for (const q of byN.values()) {
+          if (!q.free) continue;
+          q.obj.position.copy(q.base);
+          q.obj.rotation.set(0, 0, 0);
+          q.obj.scale.set(1, 1, 1);
+        }
+        if (fx) {
+          P.ptrs.forEach((ptr) => {
+            if (ptr.pressed && ptr.active && onMover(ptr.ndc.x, ptr.ndc.y)) pokes++;
+          });
+          fx(dt, {p: live.st.p, s: live.st.s, rows: live.st.rows.length + pokes * 1000}, elapsed);
         }
         const row = live.st.rows[live.st.rows.length - 1];
         k.caption(row ? `Lần đo ${live.st.rows.length}: ${e.columns.map((c) => `${c.label} = ${fmt(row[c.key], c.digits ?? 2)}${c.unit ? ` ${c.unit}` : ''}`).join(' · ')}

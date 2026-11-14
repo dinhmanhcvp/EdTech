@@ -74,6 +74,7 @@ export function benchManual(presetId: string): Manual | null {
           : `Con trượt "${p.label}" (ray ở mép bàn bên trái): chụm vào con trượt màu vàng và kéo dọc ray; ${range}.`;
       }),
       ...(e.choices ?? []).map((c) => `Nút tròn "${c.label}" (mép bàn bên phải): chụm một lần để đổi sang lựa chọn kế tiếp (${c.options.map((o) => o[1]).join(', ')}).`),
+      ...(b.file === 'phys' ? ['Dụng cụ tự chuyển động đúng theo quy luật của bài (xe lăn, bi rơi, con lắc đung đưa, dòng điện chạy, sóng lan…): chạm (chụm) vào vật đang chuyển động hoặc bấm ĐO để cho chạy lại từ đầu; kéo thanh trượt thì chuyển động đổi theo ngay.'] : []),
       ...(e.columns.length ? ['Nút ĐO màu cam (mép trước bàn, dưới các nút tròn): chụm một lần = một lần đo, số đo ghi vào bảng ở tab Thao tác.'] : []),
     ],
     steps: e.steps.map((s) => ({do: s.text, why: ''})),

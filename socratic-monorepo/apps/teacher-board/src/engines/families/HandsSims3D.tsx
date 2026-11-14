@@ -144,8 +144,13 @@ const ligo: Scene = ({k, live}) => {
   const thr = k.line('#FF3B3B', 2, [X0, 0.1, rows[2] - THRESHOLD * 0.025, X1, 0.1, rows[2] - THRESHOLD * 0.025]);
   k.scene.add(thr);
   k.label('ngưỡng ρ = 8')(new THREE.Vector3(X1 + 0.5, 0.1, rows[2] - THRESHOLD * 0.025));
+  // vạch quét chạy ngang ba dải theo thời gian: dữ liệu đang được lọc từ đầu tới cuối
+  const scan = k.line('#FFFFFF', 2, [X0, 0.12, rows[0] - 0.5, X0, 0.12, rows[2] + 0.5]);
+  k.scene.add(scan);
   let key = '';
-  return () => {
+  return (now) => {
+    const sx = X0 + ((now / 7000) % 1) * (X1 - X0);
+    setLine(scan, [sx, 0.12, rows[0] - 0.5, sx, 0.12, rows[2] + 0.5]);
     const sig = `${live.v.m1}|${live.v.m2}|${live.v.n}`;
     if (sig === key) return rowText;
     key = sig;

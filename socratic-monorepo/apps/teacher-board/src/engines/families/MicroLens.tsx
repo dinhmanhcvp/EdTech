@@ -2,6 +2,7 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 import type {MicroView} from '../../utils/lab/hands/sims/micro';
+import {StageShift} from './Stage3D';
 
 interface Atom {
   g: string;
@@ -21,6 +22,7 @@ export const MicroLens: React.FC<{view: MicroView}> = ({view}) => {
   const cv = useRef<HTMLCanvasElement>(null);
   const live = useRef(view);
   live.current = view;
+  const shift = React.useContext(StageShift);
   const [open, setOpen] = useState(true);
 
   useEffect(() => {
@@ -117,7 +119,8 @@ export const MicroLens: React.FC<{view: MicroView}> = ({view}) => {
   }, [open]);
 
   return (
-    <div data-testid="micro-lens" className="absolute bottom-6 right-[372px] z-10 flex w-[216px] flex-col items-center gap-1.5 text-[11px] text-[#E8E6F5]">
+    // sát mép phải khi bảng điều khiển thu gọn, lùi sang trái bảng khi bảng mở; thu nhỏ để không che dụng cụ
+    <div data-testid="micro-lens" style={{right: shift ? 372 : 16}} className="absolute bottom-6 z-10 flex w-[216px] origin-bottom-right scale-[.8] flex-col items-center gap-1.5 text-[11px] text-[#E8E6F5]">
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="min-h-[44px] rounded-full border border-white/25 bg-[#11143A]/85 px-4 font-medium backdrop-blur hover:bg-white/15">
         <i className="mr-1.5 inline-block h-2 w-2 rounded-full bg-[#FFB35C] align-middle" />
         Kính hiển vi · {view.title}

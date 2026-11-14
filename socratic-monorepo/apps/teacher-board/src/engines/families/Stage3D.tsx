@@ -92,7 +92,14 @@ export function setLine(o: FatLine, pts: number[]): void {
  */
 /** chất lượng đồ họa dùng chung trong phiên: 0 = theo màn hình (tối đa 2×); hạ dần khi máy không theo kịp 30 khung/giây */
 const QUALITY = {ratio: 0, shadows: true};
+/** Bề rộng (px) bên phải bị bảng điều khiển che: cảnh được thu nhỏ vào phần còn trống bên trái để không dụng cụ nào nằm dưới bảng. */
+export const StageShift = React.createContext(0);
+
 export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPick?: (id: string | null) => void; onSet?: (key: string, value: number | string) => void; fill?: boolean}> = ({def, p, t, s, onFail, onPick, onSet, fill}) => {
+  const shiftRef = useRef(0);
+  const redoRef = useRef<(() => void) | null>(null);
+  shiftRef.current = React.useContext(StageShift);
+  useEffect(() => redoRef.current?.(), [shiftRef.current]);
   const box = useRef<HTMLDivElement>(null);
   const cap = useRef<HTMLDivElement>(null);
   const pickAt = useRef<((x: number, y: number) => string | null) | null>(null);
@@ -307,12 +314,19 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       const h = el.clientHeight || 340;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
+      // thu cảnh vào phần còn trống bên trái bảng điều khiển (k < 1) và căn giữa theo chiều dọc: không bị cắt mép như khi chỉ dời ảnh
+      const free = w - Math.min(shiftRef.current, w * 0.45);
+      if (free < w) {
+        const k = free / w;
+        camera.setViewOffset(w * k, h * k, 0, -(h - h * k) / 2, w, h); // cửa sổ lớn hơn ảnh đầy đủ nên thấy cảnh nhỏ lại, nằm sát trái
+      } else camera.clearViewOffset();
       // phòng thực hành phủ kín màn hình: màn hình hẹp hơn tỉ lệ thiết kế thì mở rộng góc nhìn để vẫn thấy trọn bề ngang bàn
       if (def.room) camera.fov = (360 / Math.PI) * Math.atan(Math.tan(Math.PI / 8) * Math.max(1, 1.647 / camera.aspect));
       camera.updateProjectionMatrix();
     };
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resize) : null;
     ro?.observe(el);
+    redoRef.current = resize;
     resize();
 
     pickAt.current = (cx, cy) => {
@@ -470,7 +484,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       onWheel={(e) => e.stopPropagation()}
       className={`relative w-full overflow-hidden cursor-grab active:cursor-grabbing ${fill ? 'h-full' : 'aspect-[560/340] rounded-2xl border'} ${dark ? 'border-[#1B1B4B] text-[#E8E6F5]' : 'border-[#1D1B16]/15 text-[#1D1B16]'}`}
     >
-      <div ref={cap} className={`pointer-events-none absolute max-w-[70%] ${fill ? 'bottom-6 left-6 origin-bottom-left scale-125 rounded-xl bg-[#11143A]/85 font-mono tabular-nums px-3 py-2 empty:hidden' : 'left-4 top-3'}`} />
+      <div ref={cap} className={`pointer-events-none absolute max-w-[70%] ${fill ? 'bottom-4 left-4 origin-bottom-left rounded-xl bg-[#11143A]/85 font-mono tabular-nums px-3 py-2 empty:hidden' : 'left-4 top-3'}`} />
       <span className="pointer-events-none absolute bottom-2 right-3 text-[10px] opacity-70">Kéo nền để xoay · lăn để phóng · kéo vật có chấm cam để thao tác</span>
     </div>
   );

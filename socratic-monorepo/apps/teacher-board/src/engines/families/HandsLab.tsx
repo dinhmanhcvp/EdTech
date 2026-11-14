@@ -29,6 +29,7 @@ import type {OpticsLive} from './HandsOptics3D';
 import type {TweezersLive} from './HandsTweezers3D';
 import type {HandsLive} from './HandsThreePhase3D';
 import {newInput, type HandsInput} from './handsKit';
+import {StageShift} from './Stage3D';
 import {BalanceLab} from './HandsBalanceLab';
 import {IncidentCard} from './Incident';
 import {MISHAPS, mishapOf} from '../../utils/lab/hands/mishap';
@@ -312,7 +313,8 @@ const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: ()
   const [camId, setCamId] = useState('');
   const [flipX, setFlipX] = useState(false);
   const [flipY, setFlipY] = useState(false);
-  const [open, setOpen] = useState(true);
+  // mặc định THU GỌN để cảnh thí nghiệm không bị che; nhớ lựa chọn của người dùng
+  const [open, setOpen] = useState(false);
   const labId = useContext(LabIdContext);
   const [tab, setTab] = useState<'do' | 'guide'>('do');
   const [bones, setBones] = useState(false);
@@ -334,6 +336,7 @@ const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: ()
   useEffect(() => {
     if (canWebGL()) setGl(true);
     // đọc cài đặt đã lưu SAU khi hydrate: đọc trong useState làm bản dựng phía máy chủ và phía trình duyệt lệch nhau
+    setOpen(stored('panel'));
     setFlipX(stored('flipX'));
     setFlipY(stored('flipY'));
     setSizeState(storedNum('size', 0.6));
@@ -476,16 +479,18 @@ const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: ()
           onPointerCancel={() => Object.assign(input.mouse, {down: false, active: false, queue: []})}
           onPointerLeave={() => (input.mouse.active = false)}
         >
-          <Suspense fallback={null}>{render(input, () => setGl(false))}</Suspense>
+          <StageShift.Provider value={open ? 360 : 0}>
+            <Suspense fallback={null}>{render(input, () => setGl(false))}</Suspense>
+          </StageShift.Provider>
         </div>
       ) : (
         <p className="absolute left-6 top-24 max-w-md rounded-2xl border border-white/20 bg-white/10 px-4 py-6 text-xs leading-relaxed text-[#E8E6F5]">Thiết bị này không dựng được cảnh 3D (cần WebGL 2). Vẫn có thể làm bài bằng các nút bên cạnh để xem kết quả.<button type="button" data-testid="gl-retry" onClick={() => setGl(canWebGL())} className="mt-3 block min-h-[44px] rounded-full border border-white/40 px-5 font-semibold text-[#FBF9F4]">Thử lại</button><span className="mt-2 block opacity-70">Nếu vẫn không được: đóng bớt tab đang dùng 3D, bật tăng tốc phần cứng của trình duyệt (Cài đặt → Hệ thống), rồi tải lại trang.</span></p>
       )}
 
-      {hud && <div className="pointer-events-none absolute left-1/2 top-16 z-10 flex w-[min(720px,calc(100vw-420px))] -translate-x-1/2 flex-wrap justify-center gap-1.5">{hud}</div>}
+      {hud && <div className="pointer-events-none absolute left-1/2 top-3 z-10 flex w-[min(640px,calc(100vw-520px))] -translate-x-1/2 flex-wrap justify-center gap-1">{hud}</div>}
       {lens}
       <aside className="absolute right-4 top-4 z-10 flex max-h-[calc(100vh-2rem)] w-[min(340px,calc(100vw-2rem))] flex-col gap-2.5 overflow-y-auto rounded-2xl border border-white/30 bg-[#FBF9F4]/90 p-3.5 text-xs tabular-nums text-[#1D1B16] shadow-2xl backdrop-blur [&_button]:min-h-[44px] [&_input[type=range]]:h-7">
-        <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="self-end rounded-full border border-[#1D1B16]/20 bg-white px-4 font-medium hover:bg-[#F3EFE6]">
+        <button type="button" data-testid="lab-panel-toggle" aria-expanded={open} onClick={() => { setOpen(!open); remember('panel', open ? '0' : '1'); }} className="self-end rounded-full border border-[#1D1B16]/20 bg-white px-4 font-medium hover:bg-[#F3EFE6]">
           {open ? 'Thu gọn bảng ▴' : 'Mở bảng điều khiển ▾'}
         </button>
         <div className={open ? 'flex flex-col gap-2.5' : 'hidden'}>

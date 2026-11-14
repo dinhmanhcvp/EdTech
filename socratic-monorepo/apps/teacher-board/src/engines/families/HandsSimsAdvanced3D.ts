@@ -227,6 +227,7 @@ const shockScene: Scene = ({k, live}) => {
   const waves = [path(k, '#FF9A4D', 3, 41), path(k, '#5E7A9A', 1.5, 3)];
   k.scene.add(wedge);
   const flow = cloud(k, 120, '#BFD8E8', 3);
+  const pulses = cloud(k, 18, '#FFE3A3', 7);
   const p = rnd(240);
   k.label('Dòng khí →')(V(-3, 0.1, Z - 1.6));
   return (now) => {
@@ -243,6 +244,12 @@ const shockScene: Scene = ({k, live}) => {
       pts.push(clamp(x, -3.4, 3.4), 0.09, Z + (M <= 1 ? 0 : w));
     }
     setLine(waves[0], pts);
+    // xung chạy dọc mặt sóng xung kích: thấy sóng đang lan chứ không đứng yên
+    for (let q = 0; q < 18; q++) {
+      const idx = Math.floor(((now / 1500 + q / 18) % 1) * 40);
+      pulses.pos.set([pts[idx * 3], pts[idx * 3 + 1] + 0.03, pts[idx * 3 + 2]], q * 3);
+    }
+    pulses.flush();
     const mu = M > 1 ? s.mu : Math.PI / 2;
     setLine(waves[1], [AX - 2 + 1.3 / Math.tan(mu), 0.08, Z - 1.3, AX - 2, 0.08, Z, AX - 2 + 1.3 / Math.tan(mu), 0.08, Z + 1.3].map((x, i) => (i % 3 === 0 ? clamp(x, -3.4, 3.4) : x)));
     for (let i = 0; i < 120; i++) flow.pos.set([-3.4 + ((p[i * 2] + (now / 4000) * M) % 1) * 6.8, 0.06, Z + (p[i * 2 + 1] - 0.5) * 2.7], i * 3);

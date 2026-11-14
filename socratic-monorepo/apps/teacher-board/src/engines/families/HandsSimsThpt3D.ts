@@ -124,9 +124,18 @@ const thomson: Scene = ({k, live}) => {
     .catch(() => undefined);
   const spot = glow(k, new THREE.SphereGeometry(0.07, 12, 8), '#7FFFB0');
   const ray = path(k, '#7FFFB0', 3, 40);
+  const beamPts: number[] = [];
+  const electrons = cloud(k, 28, '#E8FFF0', 7); // electron chạy dọc chùm tia: thấy hạt thật sự bị lệch
   let key = '';
   let text = '';
-  return () => {
+  return (now) => {
+    if (beamPts.length) {
+      for (let q = 0; q < 28; q++) {
+        const idx = Math.min(39, Math.floor((((now / 1800 + q / 28) % 1) * 39)));
+        electrons.pos.set([beamPts[idx * 3], beamPts[idx * 3 + 1], beamPts[idx * 3 + 2]], q * 3);
+      }
+      electrons.flush();
+    }
     if (sig(live) === key) return text;
     key = sig(live);
     const b = beam(live.v.U, live.v.I, live.v.Ua);
@@ -140,6 +149,8 @@ const thomson: Scene = ({k, live}) => {
       pts.push(x, Y + y, Z);
     }
     setLine(ray, pts);
+    beamPts.length = 0;
+    beamPts.push(...pts);
     spot.position.set(2.96, Y + y, Z);
     coils.forEach((c) => c.material.emissive.set('#FF7A3D').multiplyScalar(live.v.I / 4));
     copper.forEach((m) => m.emissive.set('#FF7A3D').multiplyScalar(live.v.I / 4));
@@ -255,6 +266,8 @@ const rutherford: Scene = ({k, live}) => {
   const N = 240;
   const main = path(k, '#FF9A4D', 4, N);
   const fan = [-3, -2, -1, 1, 2, 3].map(() => path(k, '#5E7A9A', 1.5, N));
+  const tracks: number[][] = []; // quỹ đạo đang vẽ (hạt của bạn + 6 hạt ở xa); hạt α chạy dọc theo chúng
+  const alphas = cloud(k, 7 * 3, '#FFE3A3', 7);
   /** quỹ đạo trong lực đẩy Coulomb, đơn vị fm, vận tốc đầu 1: a = (d/2)·r̂/r² */
   const trace = (b: number, d: number, X: number, s: number) => {
     const out: number[] = [];
@@ -276,15 +289,25 @@ const rutherford: Scene = ({k, live}) => {
   };
   let key = '';
   let text = '';
-  return () => {
+  return (now) => {
+    // 3 hạt α trên mỗi quỹ đạo, chạy liên tục từ trái sang phải; quỹ đạo là chuỗi điểm đã tính (N điểm)
+    tracks.forEach((tr, ti) => {
+      if (!tr) return;
+      for (let q = 0; q < 3; q++) {
+        const idx = Math.min(tr.length / 3 - 1, Math.floor((((now / 2600 + q / 3 + ti * 0.13) % 1) * (tr.length / 3 - 1))));
+        alphas.pos.set([tr[idx * 3], tr[idx * 3 + 1] + 0.03, tr[idx * 3 + 2]], (ti * 3 + q) * 3);
+      }
+    });
+    alphas.flush(tracks.filter(Boolean).length * 3);
     if (sig(live) === key) return text;
     key = sig(live);
     const Zn = Math.round(live.v.Z);
     const d = closest(Zn, live.v.Ek);
     const m = Math.max(live.v.b, d);
     const s = 1.3 / (4 * m); // khung nhìn tự co giãn: nửa chiều cao = 4·max(b, d)
-    setLine(main, trace(live.v.b, d, 3.6 / s, s));
-    fan.forEach((l, i) => setLine(l, trace([-3, -2, -1, 1, 2, 3][i] * m * 1.2, d, 3.6 / s, s)));
+    tracks[0] = trace(live.v.b, d, 3.6 / s, s);
+    setLine(main, tracks[0]);
+    fan.forEach((l, i) => setLine(l, (tracks[i + 1] = trace([-3, -2, -1, 1, 2, 3][i] * m * 1.2, d, 3.6 / s, s))));
     text = `Lệch ${scatterAngle(Zn, live.v.Ek, live.v.b).toFixed(1)}° · khung nhìn cao ${(8 * m).toFixed(0)} fm (nguyên tử rộng 100 000 fm)\nĐường cam là hạt của bạn; các đường xanh bay xa hạt nhân hơn nên gần như đi thẳng`;
     return text;
   };

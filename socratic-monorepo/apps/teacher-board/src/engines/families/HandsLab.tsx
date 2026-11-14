@@ -34,6 +34,9 @@ import {IncidentCard} from './Incident';
 import {MISHAPS, mishapOf} from '../../utils/lab/hands/mishap';
 import {LabIdContext, LabManual} from './LabManual';
 import {canWebGL} from './SceneLab';
+import {benchOf} from '../../utils/lab/hands/benchMoves';
+import type {Bench3DLive} from './HandsBench3D';
+import {PhysBench} from './PhysBench';
 
 const ThreePhase3D = React.lazy(() => import('./HandsThreePhase3D'));
 const Assembly3D = React.lazy(() => import('./HandsAssembly3D'));
@@ -42,6 +45,7 @@ const Tweezers3D = React.lazy(() => import('./HandsTweezers3D'));
 const CartPole3D = React.lazy(() => import('./HandsCartPole3D'));
 const Sims3D = React.lazy(() => import('./HandsSims3D'));
 const Chem3D = React.lazy(() => import('./HandsChem3D'));
+const Bench3D = React.lazy(() => import('./HandsBench3D'));
 export const EXPERIMENTS = [
   ['three-phase', 'Đấu điện 3 pha'],
   ['motor', 'Tháo lắp động cơ'],
@@ -481,8 +485,8 @@ const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: ()
       {hud && <div className="pointer-events-none absolute left-1/2 top-16 z-10 flex w-[min(720px,calc(100vw-420px))] -translate-x-1/2 flex-wrap justify-center gap-1.5">{hud}</div>}
       {lens}
       <aside className="absolute right-4 top-4 z-10 flex max-h-[calc(100vh-2rem)] w-[min(340px,calc(100vw-2rem))] flex-col gap-2.5 overflow-y-auto rounded-2xl border border-white/30 bg-[#FBF9F4]/90 p-3.5 text-xs tabular-nums text-[#1D1B16] shadow-2xl backdrop-blur [&_button]:min-h-[44px] [&_input[type=range]]:h-7">
-        <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="self-end font-medium underline-offset-2 hover:underline">
-          {open ? 'Thu gọn bảng' : 'Mở bảng điều khiển'}
+        <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="self-end rounded-full border border-[#1D1B16]/20 bg-white px-4 font-medium hover:bg-[#F3EFE6]">
+          {open ? 'Thu gọn bảng ▴' : 'Mở bảng điều khiển ▾'}
         </button>
         <div className={open ? 'flex flex-col gap-2.5' : 'hidden'}>
         <div role="tablist" className="grid grid-cols-2 gap-1 rounded-full bg-[#1D1B16]/[.07] p-1">
@@ -1111,10 +1115,21 @@ const SimLab: React.FC<{id: string}> = ({id}) => {
 
 // ------------------------------------------------------------------ bàn hóa học tự do (toàn bộ chất, dụng cụ và 33 bài của CSDL phản ứng)
 const RULE_BY_ID = new Map(RULES.map((r) => [r.id, r]));
-const ChemLab: React.FC = () => {
+// ------------------------------------------------------------------ bài thực hành SGK Vật lí / Sinh học: dụng cụ Blender trên bàn 3D, đo đạc bằng tay
+const BenchLab: React.FC<{id: string}> = ({id}) => {
+  const b = benchOf(id)!;
+  const live = useRef({file: b.file} as Bench3DLive).current;
+  return (
+    <HandsShell hint="Chụm vào con trượt vàng ở mép bàn bên trái rồi kéo để đổi thông số. Chụm một lần vào nút tròn bên phải để đổi lựa chọn, vào nút cam lớn để đo. Bảng số liệu, đồ thị và câu hỏi nằm ở bảng bên phải." render={(input, onFail) => <Bench3D input={input} live={live} onFail={onFail} />}>
+      <PhysBench id={id} experiment={b.e.id} compact live={live} />
+    </HandsShell>
+  );
+};
+
+const ChemLab: React.FC<{initial?: string}> = ({initial = ''}) => {
   const [lab, dispatch] = useReducer(labReducer, undefined, newLab);
   const [group, setGroup] = useState<string>('Acid');
-  const [exp, setExp] = useState('');
+  const [exp, setExp] = useState(initial);
   const [active, setActive] = useState(0);
   const [scale, setScale] = useState(10);
   const [amounts, setAmounts] = useState<Record<string, number>>({});
@@ -1346,9 +1361,27 @@ const ChemLab: React.FC = () => {
   );
 };
 
-/** Phòng thực hành ảo điều khiển bằng hai bàn tay thật (camera nhìn từ trên xuống) hoặc chuột / cảm ứng. */
-export const HandsLab: React.FC<{experiment?: Experiment}> = ({experiment = 'three-phase'}) => (
+/**
+ * Phòng thực hành ảo điều khiển bằng hai bàn tay thật (camera nhìn từ trên xuống) hoặc chuột / cảm ứng.
+ * `experiment`: id bài tay, hoặc mã bài thực hành SGK: `PHYS_LAB_<MÃ>` / `BIO_LAB_<MÃ>` (bàn đo 3D), `CHEM_LAB_<MÃ>` (bàn hóa học 3D mở sẵn bài đó).
+ */
+export const HandsLab: React.FC<{experiment?: string}> = ({experiment = 'three-phase'}) => {
+  const chem = /^CHEM_LAB_(.+)$/.exec(experiment)?.[1];
+  if (chem && EXPERIMENT_BY_ID[chem])
+    return (
+      <LabIdContext.Provider value="chem">
+        <ChemLab key={chem} initial={chem} />
+      </LabIdContext.Provider>
+    );
+  if (benchOf(experiment))
+    return (
+      <LabIdContext.Provider value={experiment}>
+        <BenchLab key={experiment} id={experiment} />
+      </LabIdContext.Provider>
+    );
+  return (
   <LabIdContext.Provider value={experiment}>
     {experiment in SIM_BY_ID ? <SimLab key={experiment} id={experiment} /> : experiment === 'chem' ? <ChemLab /> : experiment === 'balance' ? <BalanceLab Shell={HandsShell} /> : experiment === 'three-phase' ? <ThreePhaseLab /> : experiment === 'optics' ? <OpticsLab /> : experiment === 'tweezers' ? <TweezersLab /> : experiment === 'cartpole' ? <CartPoleLab /> : <AssemblyLab key={experiment} kind={experiment as AssemblyKind} />}
   </LabIdContext.Provider>
-);
+  );
+};

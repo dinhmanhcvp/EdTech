@@ -1,12 +1,12 @@
 import React from 'react';
 import {describe, it, expect, afterEach} from 'vitest';
 import {render, cleanup, fireEvent} from '@testing-library/react';
-import {SimulationWidget} from '../components/canvas/SimulationWidget';
+import {PresetEngine} from '../engines/families';
 import {makePresetBlueprint, PRESETS} from '../utils/presets';
 import {PHYS_EXPERIMENTS} from '../utils/lab/phys/experiments';
 
 afterEach(cleanup);
-const mount = (id: string) => render(<SimulationWidget blueprint={makePresetBlueprint(id)} />);
+const mount = (id: string) => render(<PresetEngine lab blueprint={makePresetBlueprint(id)} />);
 
 describe('Phòng thực hành Vật lí ảo (giao diện)', () => {
   it('mỗi bài có preset riêng và có preset phòng thực hành tự do', () => {

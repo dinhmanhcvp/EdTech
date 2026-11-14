@@ -1,7 +1,7 @@
 import React from 'react';
 import {describe, it, expect, afterEach} from 'vitest';
 import {render, cleanup, fireEvent} from '@testing-library/react';
-import {SimulationWidget} from '../components/canvas/SimulationWidget';
+import {PresetEngine} from '../engines/families';
 import {makePresetBlueprint, matchPresetId, PRESETS} from '../utils/presets';
 import {BIO_EXPERIMENTS} from '../utils/lab/bio/experiments';
 import {PHYS_BY_ID} from '../utils/lab/phys/experiments';
@@ -84,7 +84,7 @@ describe('Phòng thực hành Sinh: kết quả có ý nghĩa sinh học', () =>
 describe('Phòng thực hành Sinh (giao diện)', () => {
   for (const e of BIO_EXPERIMENTS) {
     it(`${e.id}: "Xem thao tác mẫu" hoàn thành mọi bước; kiểm tra kết quả đạt`, () => {
-      const r = render(<SimulationWidget blueprint={makePresetBlueprint(`BIO_LAB_${e.id}`)} />);
+      const r = render(<PresetEngine lab blueprint={makePresetBlueprint(`BIO_LAB_${e.id}`)} />);
       expect(r.getByTestId('phys-bench').getAttribute('data-experiment')).toBe(e.id);
       fireEvent.click(r.getByTestId('phys-sample'));
       for (let i = 0; i < e.steps.length; i++) expect(r.getByTestId(`phys-step-${i}`).getAttribute('data-done'), e.steps[i].text).toBe('1');
@@ -94,7 +94,7 @@ describe('Phòng thực hành Sinh (giao diện)', () => {
   }
 
   it('danh sách bài chỉ gồm bài Sinh; đổi bài thì xóa số liệu', () => {
-    const r = render(<SimulationWidget blueprint={makePresetBlueprint('BIO_LAB_BENCH')} />);
+    const r = render(<PresetEngine lab blueprint={makePresetBlueprint('BIO_LAB_BENCH')} />);
     const opts = Array.from((r.getByTestId('phys-experiment') as HTMLSelectElement).options).map((o) => o.value);
     expect(opts).toEqual(BIO_EXPERIMENTS.map((e) => e.id));
     fireEvent.click(r.getByTestId('phys-measure'));

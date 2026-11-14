@@ -10,7 +10,8 @@ import {aminoCharge, arrhenius, bufferPH, boilingPoint, energyProfile, isoelectr
 import {SERIES, cellEmf} from '../utils/presets/hoaTable';
 
 afterEach(cleanup);
-const mount = (id: string) => render(<SimulationWidget blueprint={makePresetBlueprint(id)} />);
+// `lab`: hai bài ống nghiệm ảo chỉ dựng thật ở /lab
+const mount = (id: string) => render(<SimulationWidget lab blueprint={makePresetBlueprint(id)} />);
 const ro = (r: ReturnType<typeof mount>, i: number) => r.getByTestId(`scene-readout-${i}`).textContent!;
 
 describe('Hóa: dữ liệu và công thức lõi', () => {

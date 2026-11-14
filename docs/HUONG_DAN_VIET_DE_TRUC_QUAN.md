@@ -10,6 +10,8 @@ Tài liệu này dành cho giáo viên và người thao tác bảng. Mỗi mụ
 
 Các điểm cần nhớ:
 
+- Bài **thực hành / thí nghiệm** (mã `CHEM_LAB_…`, `PHYS_LAB_…`, `BIO_LAB_…`, cùng `CHEM_HALOGEN_LAB`, `CHEM_VIRTUAL_TESTTUBE`, `CHEM_EQUILIBRIUM_TITRATION`) không dựng trên bảng: bảng hiện thẻ có nút **Mở trong Phòng thực hành**, bài mở ở trang `/lab` dưới dạng thí nghiệm 3D điều khiển bằng tay (cũng chọn được từ danh sách bài của `/lab`, nhóm "Thực hành theo sách giáo khoa"). Mã trùng nội dung được gộp: ví dụ chuẩn độ mở bài "Chuẩn độ acid – base", lực từ mở bài "Cân dòng điện đo B".
+
 - **Chữ tiếng Việt** ("khí khổng", "con lắc kép"): bộ nhận dạng chữ tay offline chỉ đọc ký hiệu toán. Muốn viết tay tiếng Việt thì phải có khóa Gemini (hoặc OpenRouter) còn hạn mức. Nếu không, hãy **gõ** bằng Chèn chữ hoặc vào ô công thức.
 - **Không cần đúng dấu.** Tên mô phỏng được so khớp gần đúng: "con lac kep", "thau kinh" vẫn mở đúng. Câu càng dài và càng cụ thể thì càng chắc.
 - **Dạng toán** gõ kiểu thường (`x^2`) hoặc LaTeX (`x^{2}`) đều được, dấu chấm cuối câu hay `\text{...}` cũng được bỏ qua. Chữ viết tay được đọc ra LaTeX có ngoặc nhọn nên bảng chuẩn hóa trước khi tra.

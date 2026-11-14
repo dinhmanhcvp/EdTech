@@ -48,7 +48,15 @@ const Chart: React.FC<{e: PhysExperiment; st: PhysState}> = ({e, st}) => {
 const BY_ID = {...PHYS_BY_ID, ...BIO_BY_ID};
 
 /** Phòng thực hành Vật lí (và Sinh học, cùng khung đo đạc): dụng cụ, số đo có nhiễu và sai số dụng cụ, bảng ghi, đồ thị, kết quả và nhận xét. */
-export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, experiment}) => {
+/** Cầu nối sang cảnh 3D của /lab: cảnh đọc trạng thái và gửi thao tác (kéo con trượt, bấm nút đo bằng tay) qua đây. */
+export interface BenchLive {
+  e: PhysExperiment;
+  st: PhysState;
+  dispatch: (a: PhysAction) => void;
+}
+
+/** `compact` + `live`: dùng làm bảng điều khiển của bài tay 3D trong /lab (bỏ hình 2D và ô chọn bài, một cột; cảnh 3D đọc/ghi qua `live`). */
+export const PhysBench: React.FC<{id: string; experiment: string; compact?: boolean; live?: BenchLive}> = ({id, experiment, compact, live}) => {
   const list = BIO_BY_ID[experiment] ? BIO_EXPERIMENTS : PHYS_EXPERIMENTS;
   const [exp, setExp] = useState(BY_ID[experiment] ? experiment : list[0].id);
   const e = BY_ID[exp];
@@ -62,6 +70,7 @@ export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, exper
   const verdict = useMemo(() => (checked ? e.verdict(ctx) : null), [checked, e, ctx]);
   const correct = e.questions.filter((q, i) => answers[`${e.id}:${i}`] === q.answer).length;
   const controls = {sliders: e.sliders, choices: e.choices};
+  if (live) Object.assign(live, {e, st, dispatch});
 
   const switchTo = (next: string) => {
     setExp(next);
@@ -76,13 +85,15 @@ export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, exper
   };
 
   return (
-    <div className="p-4 flex flex-col gap-3" data-testid="phys-bench" data-preset={id} data-experiment={exp}>
+    <div className={`${compact ? '' : 'p-4 '}flex flex-col gap-3`} data-testid="phys-bench" data-preset={id} data-experiment={exp}>
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <select data-testid="phys-experiment" value={exp} onChange={(ev) => switchTo(ev.target.value)} className="rounded-md border border-stone-300 bg-white px-2 py-1 max-w-full">
-          {list.map((x) => (
-            <option key={x.id} value={x.id}>{x.lesson}: {x.title}</option>
-          ))}
-        </select>
+        {!compact && (
+          <select data-testid="phys-experiment" value={exp} onChange={(ev) => switchTo(ev.target.value)} className="rounded-md border border-stone-300 bg-white px-2 py-1 max-w-full">
+            {list.map((x) => (
+              <option key={x.id} value={x.id}>{x.lesson}: {x.title}</option>
+            ))}
+          </select>
+        )}
         <button type="button" data-testid="phys-sample" onClick={sample} className="inline-flex items-center justify-center min-h-[32px] rounded-[10px] border border-[#1D1B16]/25 bg-white px-3.5 py-1 font-medium text-[#1D1B16]">Xem thao tác mẫu</button>
       </div>
 
@@ -94,10 +105,12 @@ export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, exper
         {e.hazards.length > 0 && <p className="mt-1 text-rose-700">An toàn: {e.hazards.join('; ')}.</p>}
       </div>
 
-      <svg viewBox={`0 0 ${e.viewBox[0]} ${e.viewBox[1]}`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="phys-scene">
-        <StageBackdrop vw={e.viewBox[0]} vh={e.viewBox[1]} night={false} id={`pbs${id.replace(/\W/g, '')}`} />
-        <SceneShapes shapes={e.scene(st.p, st.s, last)} id={`pb${id.replace(/\W/g, '')}`} vw={e.viewBox[0]} vh={e.viewBox[1]} />
-      </svg>
+      {!compact && (
+        <svg viewBox={`0 0 ${e.viewBox[0]} ${e.viewBox[1]}`} className={`w-full rounded-2xl border border-[#1D1B16]/15 ${CHART_BG}`} data-testid="phys-scene">
+          <StageBackdrop vw={e.viewBox[0]} vh={e.viewBox[1]} night={false} id={`pbs${id.replace(/\W/g, '')}`} />
+          <SceneShapes shapes={e.scene(st.p, st.s, last)} id={`pb${id.replace(/\W/g, '')}`} vw={e.viewBox[0]} vh={e.viewBox[1]} />
+        </svg>
+      )}
 
       <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 flex flex-col gap-2">
         <ControlPanel prefix="phys" c={controls} p={st.p} s={st.s} setP={(k, v) => dispatch({type: 'set', key: k, value: v})} setS={(k, v) => dispatch({type: 'choose', key: k, value: v})} />
@@ -152,7 +165,7 @@ export const PhysBench: React.FC<{id: string; experiment: string}> = ({id, exper
         </ul>
       )}
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className={`grid gap-3 ${compact ? '' : 'md:grid-cols-2'}`}>
         <div className="rounded-2xl bg-[#FBF9F4] border border-[#1D1B16]/15 p-3 text-xs" data-testid="phys-steps">
           <b className="text-stone-900">Các bước ({done.filter(Boolean).length}/{e.steps.length})</b>
           <ul className="mt-1 space-y-1">

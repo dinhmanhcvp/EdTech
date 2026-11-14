@@ -98,3 +98,12 @@ export function matchPreset(text: string): SimulationBlueprint | null {
   const id = matchPresetId(text);
   return id ? makePresetBlueprint(id) : null;
 }
+
+/** Mô phỏng Hóa kiểu làm thí nghiệm (ống nghiệm ảo, chuẩn độ) cũng thuộc /lab dù không phải họ bench; chuẩn độ là template lõi, không phải preset. */
+const LAB_EXTRA = new Set(['CHEM_HALOGEN_LAB', 'CHEM_VIRTUAL_TESTTUBE', 'CHEM_EQUILIBRIUM_TITRATION']);
+/** Bài thực hành / thí nghiệm thuộc phòng thực hành `/lab`, không dựng trên bảng. */
+export const isLabTemplate = (templateId: string): boolean => {
+  const f = Object.prototype.hasOwnProperty.call(PRESETS, templateId) ? PRESETS[templateId].family : null;
+  return f === 'CHEM_BENCH' || f === 'PHYS_BENCH' || LAB_EXTRA.has(templateId);
+};
+export const labHref = (templateId: string): string => `/lab?bai=${encodeURIComponent(templateId)}`;

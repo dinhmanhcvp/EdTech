@@ -7,7 +7,8 @@ import { RotateCcw, FileText, CheckCircle2, Sparkles } from 'lucide-react';
 // các engine nạp theo nhu cầu (mỗi engine một gói), tách khỏi gói tải lần đầu của bảng
 import { MathPlotEngine, GraphEngine, GeometryEngine, PunnettEngine, HardyWeinbergEngine, LinearProgrammingEngine, CobwebEngine, VseprEngine, LeChatelierEngine, DaniellEngine, StomataEngine, OsmosisEngine, OperonLacEngine, BoxplotEngine, VariationTableEngine, GasEngine, DoublePendulumEngine, CoriolisEngine, FraunhoferEngine, PhysicsSandboxEngine, ChemistryLabEngine, BioSystemEngine, PresetEngine, AdvancedEngineById } from '../../engines/lazyEngines';
 import { LabelModeProvider } from '../../engines/LabelMode';
-import { PRESETS } from '../../utils/presets';
+import { PRESETS, isLabTemplate } from '../../utils/presets';
+import { LabMoved } from '../../engines/LabMoved';
 import { ADVANCED_TEMPLATES, type AdvancedId } from '../../utils/advancedStemModels';
 import { AIGeneratedVisualEngine } from './AIGeneratedVisualEngine';
 import { TapAndSwapOCR } from './TapAndSwapOCR';
@@ -24,6 +25,8 @@ export interface SimulationWidgetProps {
   onFormulaChange?: (newFormula: string) => void;
   /** tham số do nơi khác (giáo viên / học sinh được giao quyền) đẩy tới qua phòng học */
   remoteParams?: Record<string, number>;
+  /** đang ở trang /lab: bài thực hành dựng thật; trên bảng chúng chỉ là thẻ dẫn sang /lab */
+  lab?: boolean;
   /** khóa thanh trượt (học sinh chưa được giao quyền) */
   locked?: boolean;
   isSplitView?: boolean;
@@ -360,6 +363,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   onParamChange,
   onFormulaChange,
   remoteParams,
+  lab = false,
   locked = false,
   isSplitView = false,
   onToggleSplitView,
@@ -374,6 +378,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
   const isHolo = displayMode === 'HOLOGRAM';
   const AdvancedEngine = Object.prototype.hasOwnProperty.call(ADVANCED_TEMPLATES, blueprint.templateId);
   const isPresetTemplate = Object.prototype.hasOwnProperty.call(PRESETS, blueprint.templateId);
+  const movedToLab = !lab && isLabTemplate(blueprint.templateId);
   const [engineRevision, setEngineRevision] = useState(0);
   const [activeFormula, setActiveFormula] = useState<string>(blueprint.recognizedLatex);
   const [renderMode, setRenderMode] = useState<'ENGINE' | 'AI_VISUAL'>(
@@ -985,7 +990,8 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.templateId === 'MATH_STAT_BOXPLOT' && <BoxplotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {blueprint.templateId === 'MATH_VARIATION_TABLE' && <VariationTableEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />}
             {AdvancedEngine && <AdvancedEngineById key={`${blueprint.templateId}-${engineRevision}`} id={blueprint.templateId} blueprint={activeBlueprint} />}
-            {isPresetTemplate && <PresetEngine key={`${blueprint.templateId}-${engineRevision}`} blueprint={activeBlueprint} />}
+            {isPresetTemplate && <PresetEngine key={`${blueprint.templateId}-${engineRevision}`} lab={lab} blueprint={activeBlueprint} />}
+            {movedToLab && !isPresetTemplate && <LabMoved id={blueprint.templateId} title="Chuẩn độ axit – bazơ" />}
             {blueprint.engine === 'MATH' && !AdvancedEngine && !isPresetTemplate && !['MATH_GRAPH', 'MATH_LINEAR_PROGRAMMING', 'MATH_COBWEB_CHAOS', 'MATH_STAT_BOXPLOT', 'MATH_VARIATION_TABLE'].includes(blueprint.templateId) && (
               <MathPlotEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} isHologram={isHolo} />
             )}
@@ -999,7 +1005,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
             {blueprint.engine === 'PHYSICS' && !isPresetTemplate && !PHYS_OWN.includes(blueprint.templateId) && (
               <PhysicsSandboxEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} isHologram={isHolo} />
             )}
-            {blueprint.engine === 'CHEMISTRY' && !AdvancedEngine && !isPresetTemplate && !['CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL'].includes(blueprint.templateId) && (
+            {blueprint.engine === 'CHEMISTRY' && !movedToLab && !AdvancedEngine && !isPresetTemplate && !['CHEM_MOLECULE_3D', 'CHEM_LE_CHATELIER_GAS', 'CHEM_GALVANIC_DANIELL'].includes(blueprint.templateId) && (
               <ChemistryLabEngine blueprint={activeBlueprint} params={params} curriculumLevel={curriculumLevel} />
             )}
             {blueprint.engine === 'BIOLOGY' && !isPresetTemplate && !['BIO_PUNNETT_SQUARE', 'BIO_HARDY_WEINBERG', 'BIO_STOMATA_GAS', 'BIO_OSMOSIS_CELL', 'BIO_OPERON_LAC'].includes(blueprint.templateId) && (
@@ -1016,7 +1022,7 @@ export const SimulationWidget: React.FC<SimulationWidgetProps> = ({
           isHolo
             ? 'p-1 pt-0.5 bg-transparent border-0 flex flex-wrap justify-center gap-1.5'
             : `p-4 bg-[#FCFBF9] border-t border-[#E6E4DD] grid gap-3 ${classroom ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-2'}`
-        } ${SELF_CONTROLLED.has(blueprint.templateId) ? 'hidden' : ''} ${locked ? 'pointer-events-none opacity-60' : ''}`}
+        } ${SELF_CONTROLLED.has(blueprint.templateId) || movedToLab ? 'hidden' : ''} ${locked ? 'pointer-events-none opacity-60' : ''}`}
         data-locked={locked}
         data-testid="macro-sliders-container"
       >

@@ -3,6 +3,7 @@
 import React, {useState} from 'react';
 import {BASICS, MANUAL, toolsOf} from '../../utils/lab/hands/manual';
 import {SUBJECT_OF} from '../../utils/lab/hands/sims/catalog';
+import {benchManual} from '../../utils/lab/hands/benchMoves';
 
 /** id của bài đang mở: khung chung của mọi bài đọc để hiện đúng hướng dẫn */
 export const LabIdContext = React.createContext('');
@@ -11,11 +12,11 @@ export const LabIdContext = React.createContext('');
  * Tab "Hướng dẫn": mục tiêu, từng bước (làm gì + vì sao) và kết luận. Bài HÓA chỉ hiện thao tác từng bước: tính chất của chất, hiện tượng và phương trình
  * hiện ngay trên chất và trên chính phản ứng trong cảnh 3D (thẻ trên chai, thẻ trên ống), không nằm trong tab này. Bước đang làm mở rộng, các bước khác thu gọn còn một dòng. */
 export const LabManual: React.FC<{id: string}> = ({id}) => {
-  const m = MANUAL[id];
+  const m = MANUAL[id] ?? benchManual(id);
   const [at, setAt] = useState(0);
   if (!m) return <p className="text-[#4B473D]">Bài này chưa có hướng dẫn.</p>;
   const last = at >= m.steps.length - 1;
-  const tools = toolsOf(id);
+  const tools = m.tools ?? toolsOf(id);
   const inScene = SUBJECT_OF[id] === 'hoa';
   return (
     <div data-testid="lab-manual" className="flex flex-col gap-2 leading-relaxed">
@@ -73,7 +74,7 @@ export const LabManual: React.FC<{id: string}> = ({id}) => {
                     {s.see}
                   </p>
                 )}
-                {!inScene && (
+                {!inScene && s.why && (
                   <p>
                     <b className="font-semibold text-[#D9481C]">Giải thích: </b>
                     {s.why}

@@ -34,6 +34,8 @@ interface Props {
   partChips?: {index: number; label: string; text: string; shown: boolean}[];
   /** `single` = bật/tắt riêng phần đó (giữ Shift); mặc định: vẽ hình tới phần đó */
   onTogglePart?: (index: number, single?: boolean) => void;
+  /** mở gợi ý Socratic (câu hỏi dẫn, đường phụ cần kẻ) của hình dựng từ đề */
+  onCoach?: () => void;
   /** chữ tên đỉnh kéo được (trong bán kính nhỏ quanh đỉnh): độ lệch đã lưu và hàm lưu (null = về chỗ mặc định) */
   labelOff?: Record<string, {x: number; y: number}>;
   onMoveLabel?: (name: string, off: {x: number; y: number} | null) => void;
@@ -52,7 +54,7 @@ const midOf = (a: P2, b: P2): P2 => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
 const planePts = (vs: {x: number; y: number}[]): Record<string, P2g> => Object.fromEntries(vs.map((v, i) => [`v${i}`, [v.x, v.y] as P2g]));
 const ringEdges = (n: number): [string, string][] => Array.from({length: n}, (_, i) => [`v${i}`, `v${(i + 1) % n}`]);
 
-export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onPlace, onOpenTools, onRotate, rotation, partChips, onTogglePart, labelOff, onMoveLabel, dragPoints, onDragPoint, freePts, onDragFree}) => {
+export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChange, onDelete, onOpenFull, onMoveStart, onMove, onMoveEnd, onInteractStart, pickMode, pickedNames, onPickPoint, onPickEdge, onPlace, onOpenTools, onRotate, rotation, partChips, onTogglePart, onCoach, labelOff, onMoveLabel, dragPoints, onDragPoint, freePts, onDragFree}) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const s = stroke.shape!;
   const t = stroke.typeset!;
@@ -162,9 +164,22 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
     >
       <div className="absolute" style={{left: `${(stroke.points[0].x / 1200) * 100}%`, top: `${(stroke.points[0].y / 675) * 100}%`, width: w * boardScale, height: h * boardScale}}>
         {picked && <div className="absolute -inset-1.5 rounded-md border-2 border-blue-500/80 pointer-events-none" />}
-        {partChips && partChips.length > 0 && onTogglePart && (
-          <div data-testid="geo-part-chips" className="absolute left-0 flex items-center gap-1.5" style={{top: '100%', marginTop: 8, pointerEvents: 'auto'}}>
-            {partChips.map((c) => (
+        {((partChips && partChips.length > 0 && onTogglePart) || onCoach) && (
+          <div data-testid="geo-part-chips" className="absolute left-0 flex items-center gap-1.5" style={{top: '100%', marginTop: 8, pointerEvents: 'auto', whiteSpace: 'nowrap'}}>
+            {partChips && partChips.length > 0 && onTogglePart && <span className="text-[11px] text-stone-500 select-none">Vẽ từng phần:</span>}
+            {onCoach && (
+              <button
+                type="button"
+                data-testid="geo-coach-open"
+                title="Gợi ý Socratic: câu hỏi dẫn dắt, đường phụ cần kẻ"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={onCoach}
+                className="px-2.5 py-1 rounded-full text-[12px] font-semibold border border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100 cursor-pointer select-none"
+              >
+                💡 Gợi ý đường phụ
+              </button>
+            )}
+            {(onTogglePart ? partChips ?? [] : []).map((c) => (
               <button
                 key={c.index}
                 type="button"
@@ -172,7 +187,7 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
                 aria-pressed={c.shown}
                 title={`Vẽ hình tới phần ${c.label} (giữ Shift: bật/tắt riêng) ${c.text.slice(0, 80)}`}
                 onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => onTogglePart(c.index, e.shiftKey)}
+                onClick={(e) => onTogglePart?.(c.index, e.shiftKey)}
                 className={`min-w-[30px] px-2.5 py-1 rounded-full text-[12px] font-semibold border transition-all duration-150 cursor-pointer select-none ${
                   c.shown ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white/60 border-dashed border-stone-400 text-stone-500 opacity-60 hover:opacity-100 hover:text-stone-800'
                 }`}
@@ -840,7 +855,7 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
           </div>
         )}
         {s.kind === 'solid' && (
-          <div className="absolute left-0 text-[10px] font-mono text-stone-500 pointer-events-none" style={{top: h * boardScale + (partChips && partChips.length > 0 ? 46 : 26), whiteSpace: 'nowrap'}}>
+          <div className="absolute left-0 text-[10px] font-mono text-stone-500 pointer-events-none" style={{top: h * boardScale + ((partChips && partChips.length > 0) || onCoach ? 46 : 26), whiteSpace: 'nowrap'}}>
             {sk?.fixed ? (pickMode ? (pickMode === 'edge' ? 'Chạm vào cạnh để đặt điểm' : pickMode === 'place' ? 'Chạm vào chỗ trống để đặt điểm' : 'Chạm vào điểm để chọn') : 'Hình dựng từ đề · mở dụng cụ vẽ để thêm điểm, đoạn, thiết diện') : sk ? 'Hình giữ đúng nét bạn vẽ · nét đứt: cạnh khuất · kéo đỉnh để chỉnh · ⤢ mở mô hình 3D để xoay' : 'Nét liền: cạnh thấy · nét đứt: cạnh khuất · kéo vòng xoay để xoay khối'}
           </div>
         )}

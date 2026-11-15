@@ -3740,6 +3740,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   freePts={geoPanel?.mode === 'edit' && geoPanel.id === s.id && s.shape?.geo ? freePoints(s.shape.geo.scene) : undefined}
                   onDragFree={geoPanel?.mode === 'edit' && geoPanel.id === s.id && geoCtl?.figureId === s.id ? (name, dx, dy, done, start) => geoCtl.moveFree(name, dx, dy, done, start) : undefined}
                   partChips={s.shape?.geo ? partChips(s.shape.geo.scene) : undefined}
+                  onCoach={s.shape?.geo && s.shape.geo.scene.dim === 2 ? () => { setGeoPanel({ mode: 'edit', id: s.id }); setGeoCoachOpen(true); } : undefined}
                   labelOff={s.shape?.geo?.scene.labelOff}
                   onMoveLabel={
                     s.shape?.geo

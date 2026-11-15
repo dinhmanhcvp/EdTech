@@ -78,6 +78,72 @@ export function auxIdeas(sc: GeoScene, claim: Claim): AuxIdea[] {
   return out.filter((o) => (seen.has(o.tool + o.names.join()) ? false : (seen.add(o.tool + o.names.join()), true)));
 }
 
+/**
+ * Đường phụ gợi ý từ CHÍNH HÌNH (không cần đọc điều phải chứng minh): mỗi ý nêu dấu hiệu em nhìn thấy trên hình rồi hỏi, không nói đường phụ này dùng chứng minh bước nào.
+ * Các thủ thuật kinh điển: nối tâm với tiếp điểm / trung điểm dây / đầu dây, nối điểm trên đường tròn với hai đầu đường kính, gấp đôi trung tuyến, vẽ hai đường chéo của tứ giác nội tiếp.
+ */
+export function figureAuxIdeas(sc: GeoScene): AuxIdea[] {
+  if (sc.dim !== 2) return [];
+  const has = (a: string, b: string) => [...sc.edges, ...sc.aux.map(([x, y]) => [x, y] as [string, string])].some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+  const real = (n: string) => !n.startsWith('#') && !!sc.pts[n];
+  const dist = (a: number[], b: number[]) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  const out: AuxIdea[] = [];
+  const add = (i: AuxIdea) => out.push(i);
+  const defs = Object.entries(sc.defs ?? {});
+  for (const c of sc.circles ?? []) {
+    if (c.kind === 'sphere') continue;
+    const tol = 1e-5 * Math.max(1, c.r);
+    const o = sc.order.find((n) => real(n) && dist(sc.pts[n], c.center) < tol);
+    const onC = (n: string) => real(n) && Math.abs(dist(sc.pts[n], c.center) - c.r) < tol * 10;
+    const ring = sc.order.filter(onC);
+    if (o) {
+      // tiếp điểm: nối tâm với tiếp điểm
+      for (const [t, d] of defs) {
+        const tp = d.k === 'tan' && d.o === o ? d.p : '';
+        if (tp && real(t) && !has(o, t)) add({tool: 'segment', names: [o, t], label: `Nối ${o}${t}`, question: `${tp}${t} tiếp xúc với đường tròn tâm ${o} tại ${t}. Bán kính ${o}${t} và ${tp}${t} có quan hệ gì? Nếu chưa thấy ${o}${t} trên hình, em thử nối ${o} với ${t}.`});
+        if (d.k === 'tanx' && d.o === o && real(d.t) && !has(o, d.t)) add({tool: 'segment', names: [o, d.t], label: `Nối ${o}${d.t}`, question: `Tiếp tuyến tại ${d.t} của đường tròn tâm ${o}. Bán kính ${o}${d.t} có quan hệ gì với tiếp tuyến? Em thử nối ${o} với ${d.t}.`});
+      }
+      // trung điểm của dây: nối tâm với trung điểm
+      for (const [m, d] of defs) {
+        const ends = d.k === 'calc' && d.f === 'mid' ? d.n : d.k === 'seg' && Math.abs(d.t - 0.5) < 1e-9 ? [d.a, d.b] : [];
+        if (ends.length === 2 && real(m) && ends.every(onC) && !onC(m) && !has(o, m)) add({tool: 'segment', names: [o, m], label: `Nối ${o}${m}`, question: `${m} là trung điểm của dây ${ends.join('')}. Đường nối tâm ${o} với trung điểm của một dây có tính chất gì? Em thử nối ${o}${m} và xem góc tạo với ${ends.join('')}.`});
+      }
+      // dây cung đã vẽ mà chưa nối tâm với đầu dây
+      for (const [a, b] of [...sc.edges, ...sc.aux.map(([x, y]) => [x, y] as [string, string])]) {
+        if (onC(a) && onC(b) && !has(o, a) && out.length < 8) add({tool: 'segment', names: [o, a], label: `Nối ${o}${a}`, question: `${a}${b} là một dây của đường tròn tâm ${o}. Nối ${o} với ${a} (và ${b}) thì xuất hiện tam giác gì, có gì đặc biệt về hai cạnh ${o}${a}, ${o}${b}?`});
+      }
+    }
+    // đường kính AB và điểm C trên đường tròn: nối C với hai đầu đường kính
+    const pair = c.of?.f === 'diam' || c.of?.f === 'semi' ? c.of.n : ring.length >= 3 ? ring.flatMap((n) => ring.filter((k) => k > n && Math.abs(dist(sc.pts[n], sc.pts[k]) - 2 * c.r) < tol * 10 && has(n, k)).map((k) => [n, k])).find(Boolean) ?? [] : [];
+    const diam = pair as string[];
+    if (diam.length === 2) {
+      const [a, b] = diam;
+      for (const x of ring) if (x !== a && x !== b && (!has(x, a) || !has(x, b))) {
+        add({tool: 'segment', names: [x, has(x, a) ? b : a], label: `Nối ${x}${has(x, a) ? b : a}`, question: `${a}${b} là đường kính và ${x} nằm trên đường tròn. Góc ${a}${x}${b} nhìn đường kính dưới góc bao nhiêu? Em thử nối ${x} với ${has(x, a) ? b : a}.`});
+        break;
+      }
+    }
+    // tứ giác nội tiếp: hai đường chéo
+    if (ring.length === 4) {
+      const ordered = [...ring].sort((u, v) => Math.atan2(sc.pts[u][1] - c.center[1], sc.pts[u][0] - c.center[0]) - Math.atan2(sc.pts[v][1] - c.center[1], sc.pts[v][0] - c.center[0]));
+      if (has(ordered[0], ordered[1]) && has(ordered[1], ordered[2]) && has(ordered[2], ordered[3]) && !has(ordered[0], ordered[2]))
+        add({tool: 'segment', names: [ordered[0], ordered[2]], label: `Nối ${ordered[0]}${ordered[2]}`, question: `Tứ giác ${ordered.join('')} nội tiếp đường tròn. Vẽ đường chéo ${ordered[0]}${ordered[2]}: những góc nào cùng chắn một cung, hoặc hai góc đối nào bù nhau?`});
+    }
+  }
+  // trung điểm M của BC mà A nối với M: gấp đôi trung tuyến (lấy D đối xứng A qua M)
+  for (const [m, d] of defs) {
+    if (d.k !== 'calc' || d.f !== 'mid' || !real(m)) continue;
+    const [b, c] = d.n;
+    const a = sc.order.find((n) => real(n) && n !== b && n !== c && n !== m && has(n, m) && has(n, b) && has(n, c));
+    if (!a) continue;
+    if (!(sc.defs && Object.values(sc.defs).some((x) => x.k === 'refp' && x.p === a && x.o === m)))
+      add({tool: 'reflpt', names: [a, m], label: `D đối xứng ${a} qua ${m}`, question: `${m} là trung điểm ${b}${c}. Lấy điểm D đối xứng với ${a} qua ${m} (kéo dài ${a}${m} một đoạn bằng chính nó). Tứ giác ${a}${b}D${c} là hình gì, vì sao?`});
+  }
+  const seen = new Set<string>();
+  const rank = (o: AuxIdea) => (o.label.startsWith('Nối') && o.question.startsWith('Tứ giác') ? 0 : o.tool === 'reflpt' ? 1 : o.question.includes('đường kính') || o.question.includes('tiếp xúc') || o.question.includes('trung điểm của dây') ? 2 : 3);
+  return out.filter((o) => (seen.has(o.tool + o.names.join()) ? false : (seen.add(o.tool + o.names.join()), true))).sort((a, b) => rank(a) - rank(b)).slice(0, 4);
+}
+
 const KIND_QUESTION: Record<Claim['k'], string> = {
   eq: 'Hai đoạn này có thể là hai cạnh tương ứng của hai tam giác bằng nhau (hoặc cùng bằng một đoạn thứ ba) không? Em thử tìm hai tam giác đó.',
   ratio: 'Hai tỉ số này có thể là tỉ số các cạnh tương ứng của hai tam giác đồng dạng, hay là hệ quả của đường thẳng song song (định lí Thales) không?',
@@ -106,7 +172,8 @@ export function coachHint(sc: GeoScene, statement: string, level: 1 | 2 | 3 | 4,
   const facts = detectFacts(sc, 60).filter((f) => names.some((n) => new RegExp(`(^|[^A-Z])${n}([^A-Z']|$)`).test(f))).slice(0, 3);
   if (level === 2)
     return {level, title: '② Lập kế hoạch', question: `${goal ? KIND_QUESTION[goal.claim.k] : 'Trong các điều kiện đã cho, điều nào liên quan trực tiếp đến điều cần chứng minh?'}${facts.length ? ` Hình đang có: ${facts.join('; ')}. Quan hệ nào trong số này có ích?` : ''}`};
-  const ideas = goal ? auxIdeas(sc, goal.claim) : [];
+  const claimIdeas = goal ? auxIdeas(sc, goal.claim) : [];
+  const ideas = [...claimIdeas, ...figureAuxIdeas(sc).filter((f) => !claimIdeas.some((c) => c.tool === f.tool && c.names.join() === f.names.join()))];
   if (level === 3) {
     const aux = ideas.length ? ideas[auxIndex % ideas.length] : undefined;
     return aux

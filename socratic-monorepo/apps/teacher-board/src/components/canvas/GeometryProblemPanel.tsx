@@ -505,7 +505,7 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
             {built.scene ? (
               <>
                 <div className="font-semibold">{built.scene.title}</div>
-                <div className="text-stone-600">Các phần: {built.scene.parts.map((p) => p.label).join(' · ')}</div>
+                <div className="text-stone-600">Các phần: {built.scene.parts.map((p) => p.label).join(' · ')}{built.scene.parts.length > 1 ? ' — vẽ lần lượt bằng các nút dưới hình' : ''}</div>
                 {built.notes.slice(0, 6).map((n, i) => (
                   <div key={i} className="text-emerald-700">✓ {n}</div>
                 ))}

@@ -293,9 +293,9 @@ function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
     return P && O ? (add(O, mul(sub(P, O), d.f)) as V3) : null;
   }
   if (d.k === 'tan') {
-    const [P, O, Q] = [g(d.p), g(d.o), g(d.q)];
-    if (!P || !O || !Q) return null;
-    const r = len(sub(Q, O));
+    const [P, O, Q] = [g(d.p), g(d.o), d.q ? g(d.q) : undefined];
+    if (!P || !O || (d.q && !Q)) return null;
+    const r = Q ? len(sub(Q, O)) : d.r ?? 0;
     const dd = len(sub(P, O));
     if (dd <= r + 1e-9 || r < 1e-9) return null;
     const u = mul(sub(P, O), 1 / dd);
@@ -412,7 +412,7 @@ function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
 
 /** Các điểm mà công thức `d` dựa vào. */
 export const defDeps = (d: GeoDef): string[] =>
-  d.k === 'seg' ? [d.a, d.b] : d.k === 'vec' ? [d.p] : d.k === 'foot' || d.k === 'refl' || d.k === 'off' || d.k === 'trans' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.k === 'll' ? [d.p, d.a, d.b, d.q, d.c, d.d] : d.k === 'rad' ? [d.o, ...(d.q ? [d.q] : []), d.a, ...(d.b ? [d.b] : [])] : d.k === 'chd' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcint' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcx' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b, ...(d.ex ? [d.ex.replace('~', '')] : [])] : d.k === 'bisx' ? [d.v, d.a, d.c, d.p, d.q] : d.k === 'tt' ? [d.o, d.t, d.u] : d.k === 'tanpt' ? [d.o, d.t, ...(d.q ? [d.q] : [])] : d.k === 'pdist' ? [d.a, d.c, d.r, d.s] : d.k === 'tanx' ? [d.o, d.t, d.c, d.d] : d.k === 'refp' || d.k === 'rot' || d.k === 'dil' ? [d.p, d.o] : d.k === 'tan' ? [d.p, d.o, d.q] : d.n;
+  d.k === 'seg' ? [d.a, d.b] : d.k === 'vec' ? [d.p] : d.k === 'foot' || d.k === 'refl' || d.k === 'off' || d.k === 'trans' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.k === 'll' ? [d.p, d.a, d.b, d.q, d.c, d.d] : d.k === 'rad' ? [d.o, ...(d.q ? [d.q] : []), d.a, ...(d.b ? [d.b] : [])] : d.k === 'chd' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcint' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcx' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b, ...(d.ex ? [d.ex.replace('~', '')] : [])] : d.k === 'bisx' ? [d.v, d.a, d.c, d.p, d.q] : d.k === 'tt' ? [d.o, d.t, d.u] : d.k === 'tanpt' ? [d.o, d.t, ...(d.q ? [d.q] : [])] : d.k === 'pdist' ? [d.a, d.c, d.r, d.s] : d.k === 'tanx' ? [d.o, d.t, d.c, d.d] : d.k === 'refp' || d.k === 'rot' || d.k === 'dil' ? [d.p, d.o] : d.k === 'tan' ? [d.p, d.o, ...(d.q ? [d.q] : [])] : d.n;
 
 /** Tính lại mọi điểm xác định theo điểm khác (điểm trên cạnh, chân đường vuông góc, trọng tâm, giao điểm…) và đường tròn gắn với chúng, theo thứ tự tạo ra. */
 export function applyDefs(sc: GeoScene): GeoScene {
@@ -455,6 +455,11 @@ export function applyDefs(sc: GeoScene): GeoScene {
 export function freePoints(sc: GeoScene): string[] {
   if (sc.dim !== 2) return [];
   const onEdge = new Set([...sc.edges.flat(), ...(sc.loose ?? [])]);
+  // điểm ngoài đường tròn mà từ đó kẻ tiếp tuyến / cát tuyến: kéo được (tiếp điểm, giao điểm, trung điểm dây… tự theo)
+  for (const d of Object.values(sc.defs ?? {})) {
+    if (d.k === 'tan') onEdge.add(d.p);
+    else if ((d.k === 'lcint' || d.k === 'lcx') && d.a !== d.o) onEdge.add(d.a);
+  }
   return sc.order.filter((n) => !sc.defs?.[n] && onEdge.has(n));
 }
 

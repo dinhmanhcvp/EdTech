@@ -44,11 +44,11 @@ export const FX_PARTS: Record<string, number[]> = {
 };
 
 // ------------------------------------------------------------------ dụng cụ vẽ nhỏ
-const mat = (color: string, o: {emissive?: number; opacity?: number; metal?: number} = {}) =>
+export const mat = (color: string, o: {emissive?: number; opacity?: number; metal?: number} = {}) =>
   new THREE.MeshStandardMaterial({color, emissive: color, emissiveIntensity: o.emissive ?? 0.25, transparent: o.opacity !== undefined, opacity: o.opacity ?? 1, metalness: o.metal ?? 0.1, roughness: 0.4});
 
 /** đàn hạt nhỏ (InstancedMesh): `put(i, x, y, z)` đặt từng hạt */
-function dots(root: THREE.Object3D, n: number, r: number, color: string, glow = 0.5) {
+export function dots(root: THREE.Object3D, n: number, r: number, color: string, glow = 0.5) {
   const mesh = new THREE.InstancedMesh(new THREE.SphereGeometry(r, 10, 8), mat(color, {emissive: glow}), n);
   mesh.frustumCulled = false;
   root.add(mesh);
@@ -65,7 +65,7 @@ function dots(root: THREE.Object3D, n: number, r: number, color: string, glow = 
     },
   };
 }
-const glow = (root: THREE.Object3D, x: number, y: number, z: number, r: number, color: string) => {
+export const glow = (root: THREE.Object3D, x: number, y: number, z: number, r: number, color: string) => {
   const g = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat(color, {emissive: 1, opacity: 0.0}));
   g.position.set(x, y, z);
   root.add(g);
@@ -77,7 +77,7 @@ const glow = (root: THREE.Object3D, x: number, y: number, z: number, r: number, 
   return set;
 };
 /** mặt hiển thị số: bản vẽ chữ lên canvas rồi dán lên mặt đồng hồ/cân/nguồn của dụng cụ */
-function display(root: THREE.Object3D, x: number, y: number, z: number, w: number, h: number, color = '#7CFFB2') {
+export function display(root: THREE.Object3D, x: number, y: number, z: number, w: number, h: number, color = '#7CFFB2') {
   const cv = document.createElement('canvas');
   cv.width = 256;
   cv.height = Math.max(32, Math.round((256 * h) / w));
@@ -124,7 +124,7 @@ function flow(root: THREE.Object3D, path: [number, number, number][], n: number,
   };
 }
 /** vòng sóng phẳng nằm trên mặt nước, lớn dần rồi mờ đi */
-function rippleRing(root: THREE.Object3D, color: string) {
+export function rippleRing(root: THREE.Object3D, color: string) {
   const m = new THREE.Mesh(new THREE.RingGeometry(0.97, 1, 72).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({color, transparent: true, opacity: 0, side: THREE.DoubleSide}));
   root.add(m);
   return (x: number, y: number, z: number, r: number, a: number) => {
@@ -133,7 +133,7 @@ function rippleRing(root: THREE.Object3D, color: string) {
     (m.material as THREE.MeshBasicMaterial).opacity = Math.max(0, a);
   };
 }
-const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+export const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 /** kim đồng hồ đo: lệch dần tới số đo (có quán tính) và run nhẹ như kim thật */
 const needle = (o: THREE.Object3D | undefined, frac: number) => {
   if (!o) return;
@@ -142,11 +142,11 @@ const needle = (o: THREE.Object3D | undefined, frac: number) => {
   u.k = (u.k ?? 0) + 1;
   o.rotation.z = -(u.v + 0.006 * Math.sin(u.k * 0.7)) * 0.9;
 };
-const fix = (v: number, d: number) => v.toFixed(d).replace('.', ',');
+export const fix = (v: number, d: number) => v.toFixed(d).replace('.', ',');
 /** chu kì lặp: trả về pha 0..1 trong chu kì dài `T` giây */
-const cyc = (t: number, T: number) => (t % T) / T;
+export const cyc = (t: number, T: number) => (t % T) / T;
 /** khi bấm ĐO (thêm dòng vào bảng số liệu) thì chạy lại từ đầu */
-const restart = () => {
+export const restart = () => {
   let rows = -1;
   let t0 = 0;
   return (L: FxLive, T: number) => {

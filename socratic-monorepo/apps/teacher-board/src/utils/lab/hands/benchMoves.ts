@@ -37,6 +37,9 @@ export const BENCH_MOVES: Record<string, BenchMove[]> = {
   EM_INDUCTION: [mv(1, 'v', 'x', 0.9, -0.2, 'nam châm')], // nam châm đưa vào lòng cuộn dây
   LEVER_MOMENT: [mv(1, 'd1', 'x', -0.4, -1.6, 'quả cân bên trái')], // quả cân trái: mỗi lỗ 10 cm
   PROJECTILE_HORIZONTAL: [mv(1, 'h', 'y', 0.5, 1.5, 'bệ máng ném')], // bệ máng ném
+  ENZYME: [mv(1, 'T', 'x', -1.1, -0.2, 'cần gạt nhiệt độ bể')],
+  YOGURT: [mv(1, 'T', 'x', -0.14, 0.34, 'cần gạt nhiệt độ ủ')],
+  SEED_RESPIRATION: [mv(1, 'T', 'x', -1.55, -0.45, 'cần gạt nhiệt độ bể')],
   CELL_OBSERVE: [mv(1, 'focus', 'y', 0.44, 0.56, 'bàn kính')], // bàn kính
   TRANSPIRATION: [mv(1, 'L', 'x', 2.2, 0.6, 'đèn')], // đèn lại gần cây
   TREE_AGE: [mv(1, 'D', 's', 0.4, 1.5, 'lát cắt thân cây')], // lát cắt thân cây

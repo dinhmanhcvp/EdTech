@@ -541,6 +541,7 @@ def bio():
         o += bottle(0.1 + i * 0.35, 0.5, m, c)
     o += burner(0.4, -0.4) + up(beaker(1.9, -0.1, 0.32, 0.5, 0.6) + ttube(1.85, 0.06, -0.1, L_BRICK), 0.14) + [B(0.9, 0.14, 0.8, 1.9, 0.07, -0.1, CASE, 0.02)]
     part('Set_BIOMOLECULES', o)
+    part('Mov_BIOMOLECULES_1', [C(0.014, 0.3, 0, 0.17, 0, GLASS, seg=10), LA([(0, 0), (0.012, 0.02), (0.012, 0.04), (0, 0.04)], 0, 0, 0, GLASS), S(0.045, 0, 0.35, 0, RUBBER)])
 
     # CELL_OBSERVE: kính hiển vi (bàn kính động theo núm chỉnh nét), lam kính, củ hành, xanh methylene
     o = microscope(-0.6, 0) + slide(0.6, 0.5) + slide(1.0, 0.6, L_BLUE) + [S(0.2, 1.6, 0.2, -0.3, PURPLE), C(0.03, 0.1, 1.6, 0.43, -0.3, LEAF2), B(0.5, 0.3, 0.3, 2.3, 0.15, 0.4, WOOD, 0.01)] + bottle(0.5, -0.5, L_BLUE, BLUE) + [C(0.012, 0.4, 1.3, 0.012, 0.75, CHROME, 'x', seg=6)]
@@ -553,11 +554,12 @@ def bio():
     part('Set_PLASMOLYSIS', o)
 
     # ENZYME: bể ổn nhiệt có giá ống, nhiệt kế, đồng hồ, iodine, dung dịch đệm
-    o = tank(-0.9, 0, 1.6, 0.5, 0.8, 0.75, WATER, 0.12) + [B(1.7, 0.12, 0.9, -0.9, 0.06, 0, CASE, 0.02), B(0.3, 0.1, 0.012, -1.4, 0.06, 0.451, DARK, 0), TX('37 °C', 0.06, -1.4, 0.06, 0.46, LED)]
+    o = tank(-0.9, 0, 1.6, 0.5, 0.8, 0.75, WATER, 0.12) + [B(1.7, 0.12, 0.9, -0.9, 0.06, 0, CASE, 0.02), B(0.3, 0.1, 0.012, -1.4, 0.06, 0.451, DARK, 0), B(0.95, 0.03, 0.012, -0.65, 0.06, 0.452, INK, 0)]
     for i in range(5):
         o += ttube(-1.4 + i * 0.25, 0.2, 0, [liq('e%d' % i, h, 0.8) for h in ('#2A2E66', '#4A3A7A', '#8A6A5A', '#C9A66A', '#E3D9A0')][i])
     o += thermometer(-0.3, 0.3, 0.2, 0.8, 0.1) + stopwatch(0.6, 0.6) + bottle(0.9, -0.3) + [q for i in range(3) for q in bottle(1.5 + i * 0.35, -0.3, [L_RED, L_YELLOW, L_BLUE][i], WHITE)] + [TX('pH', 0.1, 1.85, 0.5, -0.3)]
     part('Set_ENZYME', o)
+    part('Mov_ENZYME_1', [B(0.08, 0.1, 0.07, 0, 0.06, 0.48, ORANGE, 0.01)])
 
     # MITOSIS_SLIDE: kính hiển vi, hành mọc rễ trên cốc, đĩa đầu rễ, thuốc nhuộm, HCl, đèn cồn
     o = microscope(-1.4, 0) + stage(-1.4, 0) + beaker(0.2, -0.3, 0.2, 0.4, 0.8) + [S(0.22, 0.2, 0.55, -0.3, CREAM)] + [C(0.008, 0.25, 0.2 + dx, 0.3, -0.3 + dz, WHITE, seg=6) for dx, dz in ((0.05, 0), (-0.06, 0.04), (0, -0.07), (0.03, 0.06))]
@@ -569,16 +571,18 @@ def bio():
     for dx, dz in ((-0.28, -0.28), (0.28, -0.28), (-0.28, 0.28), (0.28, 0.28)):
         o += [LA([(0, 0), (0.2, 0), (0.2, 0.36), (0.19, 0.36), (0.19, 0.01), (0, 0.01)], -1.0 + dx, 0.09, dz, GLASS), C(0.185, 0.28, -1.0 + dx, 0.24, dz, L_MILK), C(0.21, 0.03, -1.0 + dx, 0.47, dz, RED)]
     o += thermometer(-1.0, 0.2, 0, 0.9) + [B(0.3, 0.6, 0.2, 2.0, 0.3, 0.3, WHITE, 0.01), B(0.3, 0.2, 0.2, 2.0, 0.5, 0.301, BLUE, 0.01), B(0.16, 0.5, 0.06, 1.2, 0.03, 0.7, YELLOW, 0.01, rz=0), C(0.02, 0.2, 1.2, 0.03, 0.36, GLASS, 'z'), B(0.1, 0.1, 0.012, 1.2, 0.062, 0.8, DARK, 0)]
+    o += [B(0.7, 0.2, 0.3, 0.1, 0.1, 0.78, CASE, 0.02), B(0.52, 0.012, 0.03, 0.1, 0.203, 0.78, INK, 0)]
     part('Set_YOGURT', o)
+    part('Mov_YOGURT_1', [B(0.07, 0.09, 0.14, 0, 0.24, 0.78, ORANGE, 0.01)])
 
     # VIRUS_SURVEY: phiếu khảo sát, bút, máy tính bảng có biểu đồ, áp phích tuyên truyền
     o = clipboard(-1.6, 0.3) + clipboard(-0.8, 0.4, 0.2) + [C(0.02, 0.5, -1.1, 0.05, 0.9, BLUE, 'x', seg=8)]
-    o += [B(1.4, 0.03, 1.0, 0.7, 0.015, 0.2, DARK, 0.02)] + [B(0.14, 0.012, h * 2.4, 0.25 + i * 0.22, 0.036, 0.6 - h * 1.2, [RED, ORANGE, BLUE, GREENM, YELLOW][i], 0) for i, h in enumerate((0.25, 0.14, 0.3, 0.1, 0.2))]
+    o += [B(1.4, 0.03, 1.0, 0.7, 0.015, 0.2, DARK, 0.02)]
     o += [C(0.02, 1.6, 2.4, 0.8, -0.5, CHROME), C(0.2, 0.04, 2.4, 0.02, -0.5, IRON), B(1.0, 1.3, 0.03, 2.4, 1.2, -0.48, PAPER, 0.004), B(0.8, 0.2, 0.01, 2.4, 1.6, -0.46, RED, 0), S(0.18, 2.4, 1.15, -0.44, GREENM)] + [C(0.02, 0.12, 2.4 + 0.22 * math.cos(a), 1.15 + 0.22 * math.sin(a), -0.44, GREENM, 'z', seg=6) for a in [i * 0.785 for i in range(8)]]
     part('Set_VIRUS_SURVEY', o)
 
     # TRANSPIRATION: chậu cây bọc túi trên cân, đèn (động), lọ vaseline
-    o = digital(-0.6, 0, '352.18 g', 1.0, True, False) + up(plant(-0.6, 0, 0.8, 8, r=0.24), 0.26) + bottle(1.9, 0.5, mat('vas', hexc('#F1E7B5'), rough=0.5), BLUE, 0.14, 0.18)
+    o = digital(-0.6, 0, '352.18 g', 1.0, True) + up(plant(-0.6, 0, 0.8, 8, r=0.24), 0.26) + bottle(1.9, 0.5, mat('vas', hexc('#F1E7B5'), rough=0.5), BLUE, 0.14, 0.18)
     o += [LA([(0.27, 0), (0.3, 0.2), (0.27, 0.38), (0.26, 0.38), (0.29, 0.2), (0.26, 0)], -0.6, 0.27, 0, mat('bag', (0.95, 0.97, 1), rough=0.1, alpha=0.3))]
     part('Set_TRANSPIRATION', o)
     part('Mov_TRANSPIRATION_1', lamp(0, -0.2, 1.7, -1), pivot=(0, 0, 0))
@@ -586,15 +590,13 @@ def bio():
     # PIGMENT: cối chày, lá, ống đong có giấy sắc kí với các vạch sắc tố, acetone, thước
     o = mortar(-1.7, 0.2) + [B(0.4, 0.012, 0.2, -1.0, 0.01, 0.6, LEAF, 0.004, ry=0.5), B(0.35, 0.012, 0.18, -0.7, 0.01, 0.35, LEAF, 0.004, ry=-0.3)] + bottle(-0.6, -0.4, WATER, RED, 0.13, 0.4)
     o += [LA([(0, 0), (0.22, 0), (0.24, 0.03), (0.16, 0.05), (0.16, 1.2), (0.15, 1.2), (0.15, 0.06), (0, 0.06)], 0.8, 0, 0, GLASS), C(0.145, 0.12, 0.8, 0.12, 0, liq('solv', '#E8E0B0', 0.5), seg=20), C(0.17, 0.04, 0.8, 1.22, 0, RUBBER), B(0.2, 1.05, 0.006, 0.8, 0.65, 0, PAPER, 0)]
-    for y, m in ((1.0, mat('car', hexc('#E8922A'))), (0.8, YELLOW), (0.55, mat('chla', hexc('#2E7D5B'))), (0.42, LEAF2)):
-        o.append(B(0.19, 0.035, 0.008, 0.8, y, 0.002, m, 0))
     o += ruler(1.3, 2.5, 0, vertical=True, at=0.0) + [B(0.3, 0.04, 0.3, 1.3, 0.02, 0, IRON, 0.01)] + ttube(-0.1, 0, 0.3, L_GREEN) + [B(0.2, 0.06, 0.2, -0.1, 0.03, 0.3, WOOD, 0.01)]
     part('Set_PIGMENT', o)
 
     # LEAF_STARCH: chậu cây có lá bọc giấy bạc, đèn, cốc cồn cách thủy, đĩa petri thử iodine
     o = plant(-1.9, 0, 0.8, 7, r=0.24) + [B(0.3, 0.02, 0.16, -1.62, 0.95, 0.05, FOIL, 0.004, ry=0.4)] + lamp(-0.9, -0.5, 1.7, -1)
     o += [B(0.9, 0.14, 0.8, 0.5, 0.07, 0, CASE, 0.02)] + up(beaker(0.5, 0, 0.34, 0.5, 0.6) + beaker(0.5, 0, 0.18, 0.5, 0.5, L_GREEN), 0.14)
-    o += petri(1.7, 0.4, L_BROWN) + [B(0.26, 0.012, 0.14, 1.7, 0.03, 0.4, mat('blk', hexc('#1B1D3A')), 0.004)] + bottle(2.3, -0.2) + petri(1.7, -0.3) + [B(0.26, 0.012, 0.14, 1.7, 0.03, -0.3, mat('pale', hexc('#E8E3C2')), 0.004)]
+    o += petri(1.7, 0.4, L_BROWN) + bottle(2.3, -0.2) + petri(1.7, -0.3) + [B(0.26, 0.012, 0.14, 1.7, 0.03, -0.3, mat('pale', hexc('#E8E3C2')), 0.004)]
     part('Set_LEAF_STARCH', o)
 
     # SEED_RESPIRATION: hai bình kín (hạt sống / hạt luộc) nối ống sang nước vôi trong, bể ổn nhiệt, cảm biến CO₂
@@ -602,26 +604,30 @@ def bio():
     for i, (sx, m) in enumerate(((-1.5, LEAF2), (-0.5, mat('boiled', hexc('#B59A6A'))))):
         o += [LA([(0, 0), (0.28, 0), (0.3, 0.3), (0.12, 0.5), (0.12, 0.62), (0, 0.62)], sx, 0.16, 0, GLASS), C(0.13, 0.06, sx, 0.8, 0, RUBBER)] + [S(0.05, sx + 0.12 * math.cos(k * 1.1), 0.22 + 0.04 * (k % 3), 0.12 * math.sin(k * 1.1), m) for k in range(12)]
         o += [TB([(sx, 0.82, 0), (sx, 1.1, 0), (sx + 0.3, 1.2, 0.3), (1.0 + i * 0.5, 1.0, 0.3), (1.0 + i * 0.5, 0.3, 0.3)], 0.015, GLASS)] + ttube(1.0 + i * 0.5, 0.05, 0.3, liq('lime%d' % i, '#F4F4F0' if i == 0 else '#CFE3F0', 0.8 if i == 0 else 0.4), 0.6)
-    o += [B(0.9, 0.06, 0.4, 1.25, 0.03, 0.3, WOOD, 0.01), B(0.7, 0.4, 0.3, 2.3, 0.2, -0.3, CASE, 0.02), B(0.4, 0.14, 0.012, 2.3, 0.24, -0.149, DARK, 0), TX('CO2', 0.08, 2.3, 0.24, -0.14, LED)]
+    o += [B(0.9, 0.06, 0.4, 1.25, 0.03, 0.3, WOOD, 0.01), B(0.7, 0.4, 0.3, 2.3, 0.2, -0.3, CASE, 0.02), B(0.4, 0.14, 0.012, 2.3, 0.24, -0.149, DARK, 0), B(1.2, 0.03, 0.012, -1.0, 0.06, 0.502, INK, 0)]
     part('Set_SEED_RESPIRATION', o)
+    part('Mov_SEED_RESPIRATION_1', [B(0.08, 0.1, 0.07, 0, 0.06, 0.53, ORANGE, 0.01)])
 
     # CIRCULATION: cánh tay mô hình trên gối, vòng bít, máy đo huyết áp, đồng hồ bấm giây
     o = [B(1.8, 0.14, 0.7, -0.9, 0.07, 0, BLUE, 0.05), C(0.16, 1.7, -0.9, 0.3, 0, SKIN, 'x', r2=0.12, seg=24), S(0.17, 0.05, 0.3, 0, SKIN), C(0.19, 0.5, -1.3, 0.3, 0, INK, 'x', seg=24)]
-    o += [TB([(-1.3, 0.3, 0.19), (-0.8, 0.1, 0.7), (0.8, 0.1, 0.7), (1.4, 0.2, 0.2)], 0.02, RUBBER), B(0.9, 0.5, 0.6, 1.7, 0.25, 0, WHITE, 0.04), B(0.6, 0.3, 0.012, 1.7, 0.3, 0.301, DARK, 0), TX('118/76', 0.1, 1.7, 0.34, 0.31, LED), TX('72', 0.08, 1.7, 0.22, 0.31, LED)] + stopwatch(0.6, 0.75)
+    o += [TB([(-1.3, 0.3, 0.19), (-0.8, 0.1, 0.7), (0.8, 0.1, 0.7), (1.4, 0.2, 0.2)], 0.02, RUBBER), B(0.9, 0.5, 0.6, 1.7, 0.25, 0, WHITE, 0.04), B(0.6, 0.3, 0.012, 1.7, 0.3, 0.301, DARK, 0)] + stopwatch(0.6, 0.75)
     part('Set_CIRCULATION', o)
 
     # TROPISM: hộp có khe sáng với cây mầm bên trong, clinostat, khay mùn cưa ẩm, thước đo góc, đèn
     o = [B(1.0, 0.03, 0.8, -1.9, 0.015, 0, INK, 0), B(1.0, 0.9, 0.03, -1.9, 0.45, -0.4, INK, 0), B(0.03, 0.9, 0.8, -2.4, 0.45, 0, INK, 0), B(1.0, 0.03, 0.8, -1.9, 0.9, 0, INK, 0), B(0.03, 0.35, 0.8, -1.4, 0.2, 0, INK, 0), B(0.03, 0.35, 0.8, -1.4, 0.72, 0, INK, 0)]
-    o += [TB([(-2.1 + i * 0.25, 0.05, 0), (-2.1 + i * 0.25, 0.35, 0), (-1.95 + i * 0.25, 0.6, 0)], 0.012, LEAF2) for i in range(3)] + lamp(-0.5, -0.4, 0.9, -1)
-    o += [B(0.5, 0.4, 0.4, 0.7, 0.2, -0.3, CASE, 0.02), C(0.03, 0.2, 0.7, 0.4, -0.05, CHROME, 'z'), C(0.35, 0.04, 0.7, 0.4, 0.08, WOOD, 'z', seg=28)] + [TB([(0.7 + 0.2 * math.cos(a), 0.4 + 0.2 * math.sin(a), 0.1), (0.7 + 0.2 * math.cos(a), 0.4 + 0.2 * math.sin(a), 0.3)], 0.012, LEAF2, False) for a in (0, 2.1, 4.2)]
+    o += lamp(-0.5, -0.4, 0.9, -1)
+    o += [B(0.5, 0.4, 0.4, 0.7, 0.2, -0.3, CASE, 0.02), C(0.03, 0.2, 0.7, 0.4, -0.05, CHROME, 'z')]
     o += [B(1.0, 0.1, 0.6, 2.2, 0.05, 0.3, mat('tray', hexc('#7A5C3A'), rough=0.95), 0.02)] + [TB([(1.9 + i * 0.2, 0.1, 0.3), (1.9 + i * 0.2, 0.3, 0.3)], 0.01, LEAF2, False) for i in range(4)] + [C(0.3, 0.008, 0.9, 0.006, 0.8, mat('prot2', hexc('#E3B341'), rough=0.3, alpha=0.6), seg=32)]
     part('Set_TROPISM', o)
+    part('Mov_TROPISM_1', [C(0.35, 0.04, 0.7, 0.4, 0.08, WOOD, 'z', seg=28), B(0.06, 0.06, 0.012, 0.98, 0.4, 0.105, ORANGE, 0)] + [TB([(0.7 + 0.2 * math.cos(a), 0.4 + 0.2 * math.sin(a), 0.1), (0.7 + 0.2 * math.cos(a), 0.4 + 0.2 * math.sin(a), 0.3)], 0.012, LEAF2, False) for a in (0, 2.1, 4.2)], pivot=(0.7, 0.4, 0.08))
 
     # APICAL_DOMINANCE: hai chậu cây (để nguyên ngọn / đã bấm ngọn mọc cành bên), kéo, thước
     o = plant(-1.3, 0, 1.3, 6, r=0.26) + plant(0.7, 0, 0.7, 4, r=0.26)
-    o += [TB([(0.7, 0.8, 0), (0.7 + sx * 0.3, 1.0, 0.05), (0.7 + sx * 0.45, 1.25, 0.05)], 0.014, LEAF2) for sx in (-1, 1)] + [B(0.24, 0.012, 0.12, 0.7 + sx * 0.5, 1.28, 0.05, LEAF, 0.004, ry=0.5 * sx) for sx in (-1, 1)] + [B(0.2, 0.012, 0.1, 0.7 + sx * 0.3, 1.05, 0.12, LEAF, 0.004) for sx in (-1, 1)]
+    side = [TB([(0.7, 0.8, 0), (0.7 + sx * 0.3, 1.0, 0.05), (0.7 + sx * 0.45, 1.25, 0.05)], 0.014, LEAF2) for sx in (-1, 1)] + [B(0.24, 0.012, 0.12, 0.7 + sx * 0.5, 1.28, 0.05, LEAF, 0.004, ry=0.5 * sx) for sx in (-1, 1)] + [B(0.2, 0.012, 0.1, 0.7 + sx * 0.3, 1.05, 0.12, LEAF, 0.004) for sx in (-1, 1)]
     o += ruler(-0.2, 1.4, -0.3, vertical=True, at=0.0) + [B(0.3, 0.04, 0.3, -0.2, 0.02, -0.3, IRON, 0.01), B(0.5, 0.012, 0.04, 1.9, 0.01, 0.55, CHROME, 0.002, ry=0.2), B(0.5, 0.012, 0.04, 1.9, 0.016, 0.55, CHROME, 0.002, ry=-0.2), LA([(0.05, 0), (0.07, 0), (0.07, 0.012), (0.05, 0.012)], 2.2, 0, 0.47, ORANGE), LA([(0.05, 0), (0.07, 0), (0.07, 0.012), (0.05, 0.012)], 2.2, 0, 0.63, ORANGE)]
     part('Set_APICAL_DOMINANCE', o)
+    part('Mov_APICAL_DOMINANCE_1', side, pivot=(0.7, 0.8, 0))
+    part('Mov_APICAL_DOMINANCE_2', [C(0.016, 0.5, -1.3, 0.25, 0, LEAF2, seg=8), B(0.24, 0.012, 0.12, -1.2, 0.45, 0.02, LEAF, 0.004, ry=0.4), B(0.24, 0.012, 0.12, -1.4, 0.3, -0.02, LEAF, 0.004, ry=2.6)], pivot=(-1.3, 0, 0))
 
     # TREE_AGE: lát cắt thân cây có vòng gỗ (lớn nhỏ theo đường kính), kính lúp, thước
     def slice_(x, z, r):
@@ -633,13 +639,15 @@ def bio():
 
     # METAMORPHOSIS: bể nuôi nòng nọc, hộp nuôi sâu, kính lúp, thước
     o = tank(-1.4, 0, 1.6, 0.6, 0.8, 0.6, WATER) + [B(1.5, 0.04, 0.7, -1.4, 0.05, 0, SAND, 0)]
+    tad = []
     for i, (dx, dz) in enumerate(((-0.5, 0.1), (-0.1, -0.2), (0.3, 0.15))):
-        o += [S(0.05 + 0.01 * i, -1.4 + dx, 0.2, dz, INK), TB([(-1.4 + dx, 0.2, dz), (-1.4 + dx - 0.12, 0.2, dz + 0.03), (-1.4 + dx - 0.22, 0.2, dz)], 0.012, INK)]
+        tad += [S(0.05 + 0.01 * i, -1.4 + dx, 0.2, dz, INK), TB([(-1.4 + dx, 0.2, dz), (-1.4 + dx - 0.12, 0.2, dz + 0.03), (-1.4 + dx - 0.22, 0.2, dz)], 0.012, INK)]
     o += [S(0.09, -0.85, 0.42, 0.2, GREENM), S(0.04, -0.8, 0.5, 0.24, GREENM), B(0.3, 0.03, 0.3, -0.85, 0.34, 0.2, mat('rock', hexc('#7A7468'), rough=0.9), 0.02)]
     o += [B(1.0, 0.03, 0.7, 0.7, 0.015, 0, WOOD, 0.01)] + [C(0.012, 0.7, 0.7 + dx, 0.38, dz, WOOD, seg=6) for dx in (-0.48, 0.48) for dz in (-0.33, 0.33)] + [B(1.0, 0.7, 0.008, 0.7, 0.38, sz * 0.34, mat('mesh', (0.9, 0.9, 0.9), alpha=0.18), 0) for sz in (-1, 1)] + [B(1.0, 0.03, 0.7, 0.7, 0.74, 0, WOOD, 0.01)]
     o += [TB([(0.4, 0.03, 0), (0.45, 0.4, 0.05), (0.6, 0.55, 0)], 0.015, mat('twig', hexc('#5A3A1E'))), B(0.3, 0.012, 0.16, 0.7, 0.55, 0, LEAF, 0.004), TB([(0.6, 0.57, 0), (0.7, 0.6, 0), (0.8, 0.57, 0)], 0.025, LEAF2), LA([(0, 0), (0.04, 0.03), (0.045, 0.12), (0, 0.2)], 0.95, 0.3, 0.1, mat('pupa', hexc('#8A9A3A')))]
     o += magnifier(2.0, 0.5) + ruler(1.5, 2.7, -0.4)
     part('Set_METAMORPHOSIS', o)
+    part('Mov_METAMORPHOSIS_1', tad, pivot=(-1.5, 0.2, 0))
 
     # PROPAGATION: chậu giâm cành, cành chiết bọc bầu, dao ghép, dây buộc, auxin, bút lông, hoa bao túi
     o = []
@@ -651,43 +659,47 @@ def bio():
     part('Set_PROPAGATION', o)
 
     # DNA_EXTRACT: cối chày, cốc dịch nghiền, phễu lọc trên giá, cồn lạnh trong xô đá, ống có sợi DNA + que thủy tinh, muối, nước rửa chén
-    o = mortar(-2.2, 0.2, mat('liver', hexc('#7A3A2A'), rough=0.5)) + beaker(-1.4, -0.3, 0.2, 0.36, 0.5, liq('mash', '#9A5A3A', 0.9)) + stand(-0.9, -0.3, 1.0, 0.45) + [LA([(0.02, 0), (0.03, 0), (0.03, 0.2), (0.22, 0.42), (0.21, 0.42), (0.02, 0.2)], -0.45, 0.62, -0.3, GLASS), LA([(0.02, 0), (0.19, 0.2), (0.185, 0.2), (0.02, 0.01)], -0.45, 0.83, -0.3, PAPER)]
+    mo = mortar(-2.2, 0.2, mat('liver', hexc('#7A3A2A'), rough=0.5))
+    o = mo[:2] + beaker(-1.4, -0.3, 0.2, 0.36, 0.5, liq('mash', '#9A5A3A', 0.9)) + stand(-0.9, -0.3, 1.0, 0.45) + [LA([(0.02, 0), (0.03, 0), (0.03, 0.2), (0.22, 0.42), (0.21, 0.42), (0.02, 0.2)], -0.45, 0.62, -0.3, GLASS), LA([(0.02, 0), (0.19, 0.2), (0.185, 0.2), (0.02, 0.01)], -0.45, 0.83, -0.3, PAPER)]
     o += beaker(-0.45, -0.3, 0.2, 0.36, 0.3, liq('filt', '#C9A07A', 0.6)) + [LA([(0, 0), (0.3, 0), (0.36, 0.4), (0.34, 0.4), (0.28, 0.03), (0, 0.03)], 0.7, 0, 0.2, BLUE)] + [B(0.09, 0.09, 0.09, 0.55 + (i % 3) * 0.14, 0.3, 0.1 + (i // 3) * 0.16, mat('icd%d' % i, (0.85, 0.94, 1.0), rough=0.1, alpha=0.6), 0.015) for i in range(6)] + bottle(0.7, 0.2, WATER, BLUE, 0.1, 0.5)
     o += rack(1.9, 0, [liq('dnaliq', '#D9C7A8', 0.5), None]) + [TB([(1.79, 0.38, 0), (1.77, 0.46, 0.01), (1.81, 0.52, -0.01), (1.79, 0.58, 0)], 0.01, WHITE), C(0.008, 0.6, 1.79, 0.6, 0, GLASS, seg=6)] + [C(0.08, 0.2, 2.6, 0.1, 0.5, WHITE), C(0.085, 0.03, 2.6, 0.21, 0.5, BLUE)] + bottle(2.6, -0.3, L_GREEN, WHITE, 0.11, 0.4)
     part('Set_DNA_EXTRACT', o)
+    part('Mov_DNA_EXTRACT_1', mo[2:], pivot=(-2.2, 0.06, 0.2))
 
     # CHROMOSOME_MUTATION: kính hiển vi, khay 4 tiêu bản, màn hình hiển thị bộ nhiễm sắc thể
     o = microscope(-1.6, 0) + stage(-1.6, 0) + [B(1.1, 0.04, 0.5, -0.2, 0.02, 0.5, WOOD, 0.01)] + [q for i in range(4) for q in slide(-0.2, 0.33 + i * 0.11, [L_VIOLET, L_RED, L_BLUE, PURPLE][i])]
     o += [B(1.5, 1.0, 0.06, 1.6, 0.75, -0.3, BAKELITE, 0.02), B(1.36, 0.86, 0.01, 1.6, 0.75, -0.268, mat('scr2', hexc('#F4EEDD'), rough=0.4), 0), B(0.3, 0.2, 0.3, 1.6, 0.1, -0.3, BAKELITE, 0.02), B(0.6, 0.04, 0.4, 1.6, 0.02, -0.3, BAKELITE, 0.02)]
-    rng = np.random.default_rng(3)
-    o += [B(0.035, 0.1 + rng.random() * 0.08, 0.008, 1.1 + (i % 8) * 0.14, 0.95 - (i // 8) * 0.22, -0.26, PURPLE, 0.006, rz=(rng.random() - 0.5) * 1.2) for i in range(24)]
     o += [wire((-1.6, 1.38, 0.08), (1.6, 0.1, -0.2), INK, 0.6)]
     part('Set_CHROMOSOME_MUTATION', o)
 
     # MODIFICATION: hai hàng chậu (giống A, giống B) cao dần theo lượng đạm, bao phân, cân
     o = []
+    rows = [[], []]
     for row, (z, lf) in enumerate(((-0.35, LEAF), (0.45, LEAF2))):
         for i in range(4):
-            o += plant(-2.3 + i * 0.6, z, 0.3 + i * (0.22 if row == 0 else 0.1), 3 + i, r=0.17, leaf=lf)
+            o += plant(-2.3 + i * 0.6, z, 0.3, 3, r=0.17, leaf=lf)[:2]
+            rows[row] += up(plant(-2.3 + i * 0.6, z, 0.7, 5, pot=False, leaf=lf), 0.272)
     o += [TX('A', 0.2, -2.75, 0.2, -0.35, WHITE), TX('B', 0.2, -2.75, 0.2, 0.45, WHITE), LA([(0, 0), (0.3, 0), (0.34, 0.25), (0.3, 0.6), (0.12, 0.72), (0, 0.72)], 0.9, 0, -0.2, WHITE), TX('N', 0.25, 0.9, 0.35, 0.14, BLUE)] + digital(2.2, 0.1, '48.6 g', 0.9, True) + [C(0.03, 0.2, 2.1, 0.03, 0.75, CHROME, 'x', r2=0.05, seg=8)]
     part('Set_MODIFICATION', o)
+    part('Mov_MODIFICATION_1', rows[0], pivot=(0, 0.272, -0.35))
+    part('Mov_MODIFICATION_2', rows[1], pivot=(0, 0.272, 0.45))
 
     # QUADRAT: thảm cỏ, khung ô 1 m × 1 m, cọc, thước dây, phiếu ghi
-    o = patch(-0.6, 0, 3.4, 1.9, 5, 2) + quadrat(-0.8, 0, 1.2) + [C(0.02, 0.4, -0.8 + sx * 1.5, 0.2, sz * 0.85, ORANGE, seg=8) for sx in (-1, 1) for sz in (-1, 1)]
+    o = patch(-0.6, 0, 3.4, 1.9, 5, 2) + [C(0.02, 0.4, -0.8 + sx * 1.5, 0.2, sz * 0.85, ORANGE, seg=8) for sx in (-1, 1) for sz in (-1, 1)]
     o += clipboard(2.2, 0.3, -0.2) + [C(0.16, 0.08, 2.1, 0.04, -0.6, YELLOW, seg=24), B(0.5, 0.004, 0.06, 2.45, 0.02, -0.6, WHITE, 0)]
     part('Set_QUADRAT', o)
+    part('Mov_QUADRAT_1', quadrat(0, 0, 0.9))
 
     # COMMUNITY: thảm thực vật nhiều loài, khung ô, khóa định loại, phiếu ghi
-    o = patch(-0.6, 0, 3.6, 1.9, 9, 5) + quadrat(-0.6, 0, 1.4) + [C(0.03, 0.5, -1.9, 0.3, -0.6, mat('trunk', hexc('#5A3A1E'), rough=0.9), seg=8), S(0.28, -1.9, 0.7, -0.6, LEAF), C(0.03, 0.4, 0.9, 0.25, 0.6, mat('trunk2', hexc('#5A3A1E'), rough=0.9), seg=8), S(0.22, 0.9, 0.55, 0.6, LEAF2)]
+    o = patch(-0.6, 0, 3.6, 1.9, 9, 5) + [C(0.03, 0.5, -1.9, 0.3, -0.6, mat('trunk', hexc('#5A3A1E'), rough=0.9), seg=8), S(0.28, -1.9, 0.7, -0.6, LEAF), C(0.03, 0.4, 0.9, 0.25, 0.6, mat('trunk2', hexc('#5A3A1E'), rough=0.9), seg=8), S(0.22, 0.9, 0.55, 0.6, LEAF2)]
     o += clipboard(2.3, 0.4, -0.2) + [B(0.5, 0.05, 0.7, 2.2, 0.025, -0.5, GREENM, 0.01), B(0.46, 0.006, 0.66, 2.2, 0.052, -0.5, PAPER, 0)]
     part('Set_COMMUNITY', o)
+    part('Mov_COMMUNITY_1', quadrat(0, 0, 1.0))
 
     # MINI_ECOSYSTEM: bể kính có cát, cây thủy sinh (động theo số cây), cá, ốc, đèn, máy đo oxygen hòa tan
-    o = tank(-0.5, 0, 2.4, 0.9, 1.0, 0.8, WATER) + [B(2.3, 0.08, 0.9, -0.5, 0.07, 0, SAND, 0)] + fish(-1.0, 0.45, 0.1, ORANGE) + fish(-0.3, 0.55, -0.15, RED, 0.8) + fish(0.2, 0.35, 0.2, YELLOW, 0.7)
-    for q in o[-6:]:
-        q.rotation_euler = (0, R90, 0)
+    o = tank(-0.5, 0, 2.4, 0.9, 1.0, 0.8, WATER) + [B(2.3, 0.08, 0.9, -0.5, 0.07, 0, SAND, 0)]
     o += [S(0.06, 0.4, 0.15, 0.3, mat('snail', hexc('#7A5C3A'))), C(0.02, 1.0, -0.5, 1.2, -0.55, CHROME, 'x'), B(1.6, 0.06, 0.2, -0.5, 1.15, -0.2, BAKELITE, 0.02), B(1.5, 0.01, 0.16, -0.5, 1.115, -0.2, mat('glow', hexc('#FFF3C4'), emit=2.0), 0)] + [C(0.015, 0.25, -0.5 + sx * 0.75, 1.03, -0.5, CHROME) for sx in (-1, 1)]
-    o += [B(0.5, 0.26, 0.2, 1.7, 0.13, 0.4, CASE, 0.02), B(0.3, 0.12, 0.012, 1.7, 0.15, 0.501, DARK, 0), TX('6.8', 0.08, 1.7, 0.15, 0.51, LED), TB([(1.5, 0.2, 0.4), (1.2, 1.0, 0.3), (0.5, 1.0, 0.2), (0.45, 0.5, 0.2)], 0.012, INK), C(0.03, 0.2, 0.45, 0.45, 0.2, STEEL)]
+    o += [B(0.5, 0.26, 0.2, 1.7, 0.13, 0.4, CASE, 0.02), B(0.3, 0.12, 0.012, 1.7, 0.15, 0.501, DARK, 0), TB([(1.5, 0.2, 0.4), (1.2, 1.0, 0.3), (0.5, 1.0, 0.2), (0.45, 0.5, 0.2)], 0.012, INK), C(0.03, 0.2, 0.45, 0.45, 0.2, STEEL)]
     part('Set_MINI_ECOSYSTEM', o)
     weeds = []
     for i, (dx, dz) in enumerate(((-1.3, -0.2), (-0.8, 0.25), (-0.2, -0.3), (0.3, 0.1), (-1.1, 0.3))):

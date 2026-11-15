@@ -4,6 +4,7 @@ import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {BENCH_MOVES, dragT, grabOf, type BenchMove} from '../../utils/lab/hands/benchMoves';
 import {BENCH_FX, FX_PARTS} from './benchMotion';
+import {BIO_FX, BIO_FX_PARTS} from './benchMotionBio';
 import {handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {glassify, loadModel, partOf} from './labParts';
@@ -162,7 +163,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             movers.push({obj: sk.obj, base: src.position.clone(), m});
             byN.set(m.n, {obj: sk.obj, base: src.position.clone(), free: false});
           }
-          for (const n of FX_PARTS[e.id] ?? []) {
+          for (const n of FX_PARTS[e.id] ?? BIO_FX_PARTS[e.id] ?? []) {
             if (byN.has(n)) continue;
             const name = `Mov_${e.id}_${n}`;
             const src = lib.getObjectByName(name);
@@ -230,7 +231,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny) || onMover(nx, ny));
 
       // chuyển động của bài: dụng cụ chạy theo quy luật vật lí của bài (benchMotion.ts)
-      const fx = BENCH_FX[e.id]?.({
+      const fx = (BENCH_FX[e.id] ?? BIO_FX[e.id])?.({
         e,
         root,
         part: (n) => byN.get(n)?.obj,

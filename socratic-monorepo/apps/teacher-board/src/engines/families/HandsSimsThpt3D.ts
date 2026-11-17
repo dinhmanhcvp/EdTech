@@ -3,7 +3,7 @@ import {GEL_LEN, LANES, alkali, bleach, cross, migrate, no2, titrationPH} from '
 import {PID_HZ, balance, beam, closest, collide, differential, fallPos, fallTime, photoCurrent, scatterAngle, stopU, terminal} from '../../utils/lab/hands/sims/thptPhys';
 import type {Scene, SimLive} from './HandsSims3D';
 import {V, solid, xCyl} from './handsModels';
-import {dress, loadModel, partOf, place, type Skin} from './labParts';
+import {dress, glassMaterial, loadModel, partOf, place, type Skin} from './labParts';
 import {setLine, type Kit} from './Stage3D';
 
 /** Cảnh 3D của 13 bài THPT (`sims/thptPhys.ts`, `sims/thptChemBio.ts`). Mặt bàn ở y = 0; vùng dựng cảnh x ∈ [−3,5; 3,5], z ∈ [−2,6; 0,4]. */
@@ -18,7 +18,7 @@ export const box = (x: number, y: number, z: number) => new THREE.BoxGeometry(x,
 export const yCyl = (r1: number, r2: number, h: number, open = false) => new THREE.CylinderGeometry(r1, r2, h, 32, 1, open);
 export const board = (k: Kit, x: number, z: number, w: number, d: number, color = '#15171B') => solid(k.scene, box(w, 0.04, d), color, {rough: 0.7, x, y: 0.02, z});
 export function glass(k: Kit, geo: THREE.BufferGeometry, color: string, opacity: number, x: number, y: number, z: number) {
-  const m = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({color, transparent: true, opacity, roughness: 0.06, ior: 1.458, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.5, depthWrite: false, side: THREE.DoubleSide}));
+  const m = new THREE.Mesh(geo, glassMaterial(color, opacity * 0.6));
   m.position.set(x, y, z);
   k.scene.add(m);
   return m;

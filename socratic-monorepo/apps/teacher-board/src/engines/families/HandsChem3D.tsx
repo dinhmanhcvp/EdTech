@@ -11,16 +11,20 @@ import {solid} from './handsModels';
 import {tiltFor} from '../../utils/lab/hands/handTracker';
 import {MISHAPS, chemMishapOf, spillOf} from '../../utils/lab/hands/mishap';
 import {mishapFx, mishapSound} from './mishapFx';
-import {labelBottle, loadModel, partOf} from './labParts';
+import {glassMaterial, labelBottle, loadModel, partOf} from './labParts';
 import {Stage3D, setLine, type SceneDef} from './Stage3D';
 
 export const CHEM_GROUPS = ['Acid', 'Base', 'Muối', 'Halogen', 'Kim loại', 'Chất rắn', 'Hữu cơ', 'Chỉ thị'] as const;
+/** nhóm kệ riêng của bài đang làm: chỉ bày đúng các hóa chất bài cần */
+export const LESSON_GROUP = 'Bài này';
 /** Trạng thái bàn hóa học dùng chung giữa bảng điều khiển React và cảnh 3D (cảnh chỉ đọc `lab`, ghi qua `dispatch`). */
 export interface ChemLive {
   lab: LabState;
   dispatch: (a: Action) => void;
   group: string;
   setGroup: (g: string) => void;
+  /** hóa chất của bài đang làm (id); có thì kệ có thêm nhóm `LESSON_GROUP` */
+  only?: string[];
   /** lượng mỗi lần cho thêm của một chất (mL hoặc g) */
   amountOf: (id: string) => number;
   /** hệ số tua nhanh thời gian phản ứng */
@@ -66,7 +70,7 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
         live.report?.(id);
       };
       const v3 = new THREE.Vector3();
-      const glassMat = (color: string, opacity: number) => new THREE.MeshPhysicalMaterial({color, transparent: true, opacity, roughness: 0.06, ior: 1.458, clearcoat: 1, clearcoatRoughness: 0.03, depthWrite: false, side: THREE.DoubleSide});
+      const glassMat = glassMaterial;
 
       // ---- giá ống nghiệm, thùng thải, kính bảo hộ
       const rackBox = solid(k.scene, new THREE.BoxGeometry(3.4, 0.1, 0.7), '#7A5C3A', {rough: 0.8, x: -1.7, y: 0.05, z: VZ});
@@ -138,8 +142,9 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
       const bottleCard = k.card('#E3B341');
       const bottleRows = new Map<string, Row[]>();
       const place = () => {
-        const mine = bottles.filter((b) => b.s.group === live.group);
-        bottles.forEach((b) => (b.g.visible = b.s.group === live.group));
+        const inGroup = (b: (typeof bottles)[number]) => (live.group === LESSON_GROUP ? !!live.only?.includes(b.s.id) : b.s.group === live.group);
+        const mine = bottles.filter(inGroup);
+        bottles.forEach((b) => (b.g.visible = inGroup(b)));
         mine.forEach((b, i) => {
           const [x, z] = slot(i);
           b.home.set(x, 0.1, z);
@@ -147,9 +152,12 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
         });
       };
       let shownGroup = '';
-      const tabs = CHEM_GROUPS.map((gname, i) => {
-        const m = solid(k.scene, new THREE.BoxGeometry(0.88, 0.1, 0.3), GROUP_COLOR[gname], {rough: 0.5, x: -3.5 + i * 1.0, y: 0.06, z: TAB_Z});
-        k.label(gname)(new THREE.Vector3(-3.5 + i * 1.0, 0.12, TAB_Z + 0.32));
+      // bài SGK: thêm ô "Bài này" ở đầu dãy, kệ mở sẵn đúng hóa chất của bài
+      const tabNames: string[] = live.only?.length ? [LESSON_GROUP, ...CHEM_GROUPS] : [...CHEM_GROUPS];
+      const tabs = tabNames.map((gname, i) => {
+        const tx = tabNames.length > 8 ? -3.95 + i * 0.94 : -3.5 + i * 1.0;
+        const m = solid(k.scene, new THREE.BoxGeometry(tabNames.length > 8 ? 0.82 : 0.88, 0.1, 0.3), GROUP_COLOR[gname] ?? '#E3B341', {rough: 0.5, x: tx, y: 0.06, z: TAB_Z});
+        k.label(gname)(new THREE.Vector3(tx, 0.12, TAB_Z + 0.32));
         return {gname, m, pos: m.position};
       });
 
@@ -161,7 +169,7 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
             o.traverse((c) => {
               const m = c as THREE.Mesh;
               if (!m.isMesh || (m.material as THREE.Material).name !== 'glass') return;
-              m.material = glassMat('#DDEBF7', 0.2);
+              m.material = glassMat('#DDEBF7', 0.1);
               m.castShadow = false;
             });
           const put = (name: string, x: number, z: number, plain: THREE.Object3D) => {

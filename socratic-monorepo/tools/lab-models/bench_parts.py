@@ -141,11 +141,18 @@ def battery(x, z):
     return [C(0.11, 0.42, x, 0.21, z, INK), C(0.112, 0.2, x, 0.3, z, ORANGE), C(0.035, 0.05, x, 0.44, z, BRASS)]
 
 
-def psu(x, z, txt='6.0 V'):
-    return [
+def psu(x, z, txt='6.0 V', knob=True):
+    """bộ nguồn; knob=False: núm chỉnh là phần động riêng (hàm knob), học sinh cầm vặn"""
+    o = [
         B(0.9, 0.5, 0.6, x, 0.25, z, CASE, 0.02), B(0.5, 0.16, 0.012, x - 0.1, 0.34, z + 0.301, DARK, 0),
-        C(0.06, 0.05, x + 0.3, 0.34, z + 0.32, BAKELITE, 'z'), C(0.03, 0.06, x - 0.2, 0.12, z + 0.32, RED, 'z'), C(0.03, 0.06, x + 0.1, 0.12, z + 0.32, INK, 'z'),
+        C(0.03, 0.06, x - 0.2, 0.12, z + 0.32, RED, 'z'), C(0.03, 0.06, x + 0.1, 0.12, z + 0.32, INK, 'z'),
     ]
+    return o + [C(0.06, 0.05, x + 0.3, 0.34, z + 0.32, BAKELITE, 'z')] if knob else o
+
+
+def knob(x, y, z, r=0.06):
+    """núm vặn quay mặt về người nhìn (phần động, quay quanh z), vạch trắng chỉ lên"""
+    return [C(r, 0.06, x, y, z, BAKELITE, 'z', bevel=0.008, seg=28), B(0.014, r * 0.8, 0.006, x, y + r * 0.5, z + 0.031, WHITE, 0)]
 
 
 def resistor(x, z, m=CREAM):
@@ -390,8 +397,9 @@ def phys():
     o = [B(0.9, 0.3, 0.4, -1.8, 0.15, 0, WOOD, 0.01), C(0.02, 0.25, -1.8, 0.42, 0, CHROME), B(0.17, 0.04, 0.04, -1.8, 0.55, 0, CHROME, 0.006)]
     o += [C(0.14, 0.03, -0.6, 0.015, 0, IRON), C(0.015, 0.6, -0.6, 0.3, 0, CHROME), C(0.05, 0.22, -0.72, 0.62, 0, BAKELITE, 'x'), S(0.07, -0.85, 0.62, 0, STEEL)]
     o += [B(1.4, 0.9, 0.7, 1.4, 0.45, -0.2, CASE, 0.03), B(0.8, 0.6, 0.012, 1.15, 0.5, 0.151, SCREEN, 0)]
-    o += [C(0.05, 0.04, 1.85, 0.7 - i * 0.2, 0.16, BAKELITE, 'z') for i in range(3)] + [wire((-0.6, 0.05, 0), (1.0, 0.1, 0.16), INK, 0.4)]
+    o += [C(0.05, 0.04, 1.85, 0.7 - i * 0.2, 0.16, BAKELITE, 'z') for i in range(1, 3)] + [wire((-0.6, 0.05, 0), (1.0, 0.1, 0.16), INK, 0.4)]
     part('Set_SOUND_FREQUENCY', o)
+    part('Mov_SOUND_FREQUENCY_9', knob(1.85, 0.7, 0.17, 0.05), pivot=(1.85, 0.7, 0.17))
     part('Mov_SOUND_FREQUENCY_1', [B(0.03, 0.6, 0.04, -1.87, 0.85, 0, CHROME, 0.006)], pivot=(-1.87, 0.55, 0))
     part('Mov_SOUND_FREQUENCY_2', [B(0.03, 0.6, 0.04, -1.73, 0.85, 0, CHROME, 0.006)], pivot=(-1.73, 0.55, 0))
 
@@ -453,9 +461,10 @@ def phys():
     part('Mov_BOYLE_1', [C(0.245, 0.1, 0, 0, 0, RUBBER, seg=32), C(0.03, 1.2, 0, 0.6, 0, CHROME), C(0.2, 0.04, 0, 1.22, 0, BAKELITE)], pivot=(0, 0, 0))
 
     # OHM_LAW: nguồn chỉnh được, điện trở, ampe kế, vôn kế
-    o = psu(-2.2, -0.2, '5.0 V') + resistor(-0.4, 0.5) + resistor(-0.4, 0.95, BLUE) + meter(0.7, -0.4, 'A', RED, 0.2) + meter(1.9, -0.4, 'V', BLUE, 0.4)
+    o = psu(-2.2, -0.2, '5.0 V', knob=False) + resistor(-0.4, 0.5) + resistor(-0.4, 0.95, BLUE) + meter(0.7, -0.4, 'A', RED, 0.2) + meter(1.9, -0.4, 'V', BLUE, 0.4)
     o += [wire((-2.4, 0.12, 0.14), (-0.6, 0.14, 0.5)), wire((-0.2, 0.14, 0.5), (0.5, 0.56, -0.4), RED, 0.15), wire((0.9, 0.56, -0.4), (-2.1, 0.12, 0.14), INK, 0.5), wire((-0.6, 0.14, 0.5), (1.7, 0.56, -0.4), BLUE, -0.5), wire((-0.2, 0.14, 0.5), (2.1, 0.56, -0.4), BLUE, 0.6)]
     part('Set_OHM_LAW', o)
+    part('Mov_OHM_LAW_9', knob(-1.9, 0.34, 0.13), pivot=(-1.9, 0.34, 0.13))
     part('Mov_OHM_LAW_1', needle(0.7, -0.4, RED), pivot=(0.7, 0.2, -0.27))
     part('Mov_OHM_LAW_2', needle(1.9, -0.4, BLUE), pivot=(1.9, 0.2, -0.27))
 
@@ -490,6 +499,7 @@ def phys():
     o += [B(0.9, 0.06, 0.06, 0, 0.9, -0.3, IRON, 0.008), B(0.3, 0.2, 0.2, -0.7, 0.9, -0.3, BAKELITE, 0.02)] + stand(-1.9, -0.3, 0.9, 1.1) + lamp(2.0, -0.6, 1.9, -1) + ruler(-1.0, 1.0, 1.0)
     o += [B(2.4, 0.01, 1.4, 0, 0.012, 0, PAPER, 0)]
     part('Set_WAVE_INTERFERENCE', o)
+    part('Mov_WAVE_INTERFERENCE_9', knob(-0.7, 0.9, -0.17, 0.05), pivot=(-0.7, 0.9, -0.17))
 
     # STANDING_WAVE: máy phát dao động, sợi dây có sóng dừng, ròng rọc, quả cân, thước
     o = [B(0.7, 0.5, 0.5, -2.3, 0.25, 0, CASE, 0.02), C(0.05, 0.04, -2.5, 0.35, 0.26, BAKELITE, 'z'), B(0.3, 0.1, 0.012, -2.2, 0.35, 0.255, DARK, 0), C(0.03, 0.3, -1.9, 0.62, 0, CHROME), B(0.2, 0.06, 0.1, -1.9, 0.52, 0, IRON, 0.008)]
@@ -527,8 +537,9 @@ def phys():
     o = [B(0.3, 0.9, 0.3, -0.5, 0.6, 0, IRON, 0.01), B(0.3, 0.9, 0.3, 0.5, 0.6, 0, IRON, 0.01), B(1.3, 0.3, 0.3, 0, 0.15, 0, IRON, 0.01), B(1.3, 0.25, 0.3, 0, 1.17, 0, IRON, 0.01)]
     o += [B(0.31, 0.004, 0.31, sx, 0.2 + i * 0.1, 0, STEEL, 0) for sx in (-0.5, 0.5) for i in range(9)]
     o += [C(0.3, 0.5, -0.5, 0.6, 0, COPPER, seg=32), C(0.34, 0.03, -0.5, 0.86, 0, BAKELITE, seg=32), C(0.34, 0.03, -0.5, 0.34, 0, BAKELITE, seg=32), C(0.3, 0.5, 0.5, 0.6, 0, BLUE, seg=32), C(0.34, 0.03, 0.5, 0.86, 0, BAKELITE, seg=32), C(0.34, 0.03, 0.5, 0.34, 0, BAKELITE, seg=32)]
-    o += psu(-2.3, -0.1, '6 V ~') + meter(-1.3, 0.7, 'V~', RED, 0.1) + meter(1.9, -0.1, 'V~', BLUE, 0.5) + [wire((-2.5, 0.12, 0.24), (-0.8, 0.5, 0.2)), wire((-2.2, 0.12, 0.24), (-0.8, 0.7, 0.2), INK, 0.4), wire((0.8, 0.5, 0.2), (1.7, 0.56, -0.1), BLUE), wire((0.8, 0.7, 0.2), (2.1, 0.56, -0.1), BLUE, 0.4)]
+    o += psu(-2.3, -0.1, '6 V ~', knob=False) + meter(-1.3, 0.7, 'V~', RED, 0.1) + meter(1.9, -0.1, 'V~', BLUE, 0.5) + [wire((-2.5, 0.12, 0.24), (-0.8, 0.5, 0.2)), wire((-2.2, 0.12, 0.24), (-0.8, 0.7, 0.2), INK, 0.4), wire((0.8, 0.5, 0.2), (1.7, 0.56, -0.1), BLUE), wire((0.8, 0.7, 0.2), (2.1, 0.56, -0.1), BLUE, 0.4)]
     part('Set_TRANSFORMER', o)
+    part('Mov_TRANSFORMER_9', knob(-2.0, 0.34, 0.23), pivot=(-2.0, 0.34, 0.23))
     part('Mov_TRANSFORMER_1', needle(-1.3, 0.7, RED), pivot=(-1.3, 0.2, 0.83))
     part('Mov_TRANSFORMER_2', needle(1.9, -0.1, BLUE), pivot=(1.9, 0.2, 0.03))
 

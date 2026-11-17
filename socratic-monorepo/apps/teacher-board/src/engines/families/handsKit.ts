@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {TILT_START, glide, oneEuro, palmRoll, steadyRoll, wrapAngle, type Pt} from '../../utils/lab/hands/handTracker';
+import {dress, loadModel, partOf, type Skin} from './labParts';
 import {setLine, type Kit} from './Stage3D';
 
 /** Đầu vào tay / chuột dùng chung cho mọi bài thực hành tay; React ghi, cảnh 3D đọc mỗi khung hình (không gây render lại). */
@@ -223,8 +224,17 @@ export function handSliders(
     const rail = solid3(k, new THREE.BoxGeometry(LEN + 0.3, 0.05, 0.1), '#3A3E7A', origin[0] + LEN / 2, 0.06, z);
     const handle = solid3(k, new THREE.CylinderGeometry(0.11, 0.11, 0.14, 24), '#E3B341', origin[0], 0.13, z);
     const tag = k.label(p.label);
-    return {id: p.id, z, rail, handle, tag};
+    return {id: p.id, z, rail, handle, tag, skin: null as Skin | null};
   });
+  // con trượt chia vạch dựng bằng Blender (thanh dẫn, thang chia, con chạy có kim chỉ); tải lỗi thì giữ hình khối
+  void loadModel('/models/lab-parts.glb')
+    .then((lib) =>
+      rigs.forEach((r) => {
+        dress(r.rail, partOf(lib, 'SlideRail'));
+        r.skin = dress(r.handle, partOf(lib, 'SlideKnob'));
+      }),
+    )
+    .catch(() => undefined);
   const pos = new THREE.Vector3();
   const held: (string | null)[] = P.ptrs.map(() => null);
   const slid = P.ptrs.map((p) => p.slide);
@@ -261,6 +271,7 @@ export function handSliders(
       });
       for (const r of rigs) {
         r.handle.material.color.set(r.id === sel ? '#D9481C' : '#E3B341');
+        r.skin?.mats.find((m) => m.name === 'tint')?.color.set(r.id === sel ? '#D9481C' : '#E3B341');
         r.handle.position.x = origin[0] + (t[r.id] ?? 0) * LEN;
         r.tag(v3.set(origin[0] + LEN + 1.1, 0.1, r.z + 0.12), undefined, `${params.find((p) => p.id === r.id)!.label}: ${text(r.id)}`);
       }

@@ -19,6 +19,32 @@ ALCOHOL = mat('alcohol', hexc('#5FA8E8'), rough=0.1, alpha=0.55)
 PLASTIC = mat('plastic', hexc('#3A3E7A'), rough=0.5)
 
 
+def glass(name, outer, t, closed=True, rot=(0, 0, 0), loc=None):
+    """thủy tinh CÓ BỀ DÀY: biên dạng ngoài [(bán kính, cao)] từ đáy lên miệng + vách trong lùi vào t, miệng bo tròn.
+    closed: đáy kín (điểm đầu ở trục); ống hở hai đầu thì closed=False."""
+    y0 = outer[0][1]
+    inner = [(max(r - t, 0.0), max(y, y0 + t) if closed else y) for r, y in outer]
+    rt, yt = outer[-1]
+    prof = list(outer) + [(rt - t / 2, yt + t * 0.45)] + inner[::-1]
+    if not closed:
+        prof.append(outer[0])
+    return lathe(name, prof, loc or T(0, 0, 0), GLASS, rot=rot)
+
+
+def drill(o, holes, r):
+    """khoan lỗ đứng (trục cao) xuyên vật o tại các điểm holes (toạ độ Blender)"""
+    for loc in holes:
+        bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=1, location=loc, vertices=32)
+        c = bpy.context.object
+        m = o.modifiers.new('hole', 'BOOLEAN')
+        m.object = c
+        m.operation = 'DIFFERENCE'
+        bpy.context.view_layer.objects.active = o
+        bpy.ops.object.modifier_apply(modifier=m.name)
+        bpy.data.objects.remove(c)
+    return o
+
+
 def part(name, objs, show):
     o = join(name, objs)
     o.location = T(*show)
@@ -26,10 +52,17 @@ def part(name, objs, show):
 
 
 # ---- ống nghiệm (bán kính 0,17, cao 1): đáy bo, miệng loe
-part('TestTube', [lathe('tube', [(0, 0), (0.12, 0.0), (0.158, 0.025), (0.17, 0.08), (0.17, 0.95), (0.178, 0.985), (0.195, 1.0)], T(0, 0, 0), GLASS)], (-2.6, 0, 0))
+part('TestTube', [glass('tube', [(0, 0), (0.1, 0.006), (0.15, 0.03), (0.167, 0.075), (0.17, 0.12), (0.17, 0.955), (0.182, 0.985), (0.19, 1.0)], 0.012)], (-2.6, 0, 0))
 
 # ---- cốc thủy tinh (bán kính 0,55, cao 0,85) có vạch chia và mỏ rót
-beaker = [lathe('wall', [(0, 0), (0.5, 0), (0.54, 0.025), (0.55, 0.08), (0.55, 0.8), (0.565, 0.835), (0.59, 0.85)], T(0, 0, 0), GLASS)]
+wall = glass('wall', [(0, 0), (0.5, 0), (0.54, 0.025), (0.55, 0.08), (0.55, 0.79), (0.565, 0.83), (0.59, 0.85)], 0.03)
+for v in wall.data.vertices:  # mỏ rót: kéo miệng cốc ra về phía +x
+    w = max(0.0, 1 - abs(math.atan2(v.co.y, v.co.x)) / 0.34) * max(0.0, (v.co.z - 0.7) / 0.15)
+    v.co.x += 0.1 * w
+    v.co.z -= 0.015 * w
+beaker = [wall]
+for y, n in ((0.2, '50'), (0.44, '100'), (0.68, '150')):
+    beaker.append(text('num', n, 0.05, T(math.sin(-0.2) * 0.556, y, math.cos(-0.2) * 0.556), WHITE, rot=(math.radians(90), 0, -0.2)))
 for i, y in enumerate((0.2, 0.32, 0.44, 0.56, 0.68)):
     a = -0.5
     for j in range(5 if i % 2 == 0 else 3):  # vạch dài / vạch ngắn uốn theo thành cốc
@@ -42,8 +75,9 @@ part('Beaker', beaker, (-1.5, 0, 0))
 rack = [box('plank', (3.4, 0.7, 0.1), T(0, 0.05, 0), WOOD, bevel=0.02)]
 for sx in (-1, 1):
     rack.append(box('post', (0.09, 0.62, 0.62), T(sx * 1.63, 0.4, 0), WOOD, bevel=0.015))
-for sz in (-1, 1):
-    rack.append(box('rail', (3.3, 0.05, 0.06), T(0, 0.66, sz * 0.27), WOOD, bevel=0.012))
+rack.append(drill(box('top', (3.3, 0.62, 0.05), T(0, 0.64, 0), WOOD, bevel=0), [T(x, 0.64, 0) for x in (-1.2, -0.8, -0.4, 0.0, 0.4, 0.8, 1.2)], 0.21))
+for x in (-1.2, -0.4, 0.4, 1.2):  # hõm đỡ đáy ống trên mặt đế
+    rack.append(lathe('seat', [(0.2, 0.101), (0.21, 0.106), (0.17, 0.106), (0.16, 0.101)], T(x, 0, 0), PANEL))
 for sx in (-1, 1):
     for sz in (-1, 1):
         rack.append(lathe('peg', [(0, 0.012), (0.025, 0.012), (0.03, 0)], T(sx * 1.63, 0.71, sz * 0.27), BRASS))
@@ -51,15 +85,16 @@ part('Rack', rack, (0.6, 0, -1.6))
 
 # ---- chai hóa chất: thân thủy tinh, chất bên trong, nhãn giấy, nút mài
 part('Bottle', [
-    lathe('body', [(0, 0), (0.13, 0), (0.15, 0.02), (0.15, 0.34), (0.125, 0.42), (0.07, 0.46), (0.07, 0.54), (0.088, 0.56)], T(0, 0, 0), GLASS),
+    glass('body', [(0, 0), (0.135, 0), (0.15, 0.015), (0.15, 0.33), (0.143, 0.375), (0.115, 0.42), (0.076, 0.45), (0.068, 0.47), (0.068, 0.53), (0.086, 0.545), (0.086, 0.562)], 0.012),
     lathe('content', [(0, 0.016), (0.134, 0.02), (0.134, 0.3), (0, 0.3)], T(0, 0, 0), LIQUID),
     lathe('label', [(0.1515, 0.1), (0.1515, 0.27)], T(0, 0, 0), CREAM),
-    lathe('stopper', [(0, 0.67), (0.045, 0.67), (0.078, 0.63), (0.078, 0.585), (0.058, 0.575), (0.052, 0.5), (0, 0.5)], T(0, 0, 0), CAP),
+    lathe('stopper', [(0, 0.69), (0.072, 0.69), (0.086, 0.678), (0.086, 0.652), (0.072, 0.638), (0.036, 0.622), (0.036, 0.6), (0.052, 0.578), (0.054, 0.5), (0, 0.5)], T(0, 0, 0), CAP),
 ], (-0.4, 0, 0))
 
 # ---- đèn cồn: bầu thủy tinh, cồn, cổ đồng, bấc
 part('Lamp', [
-    lathe('font', [(0, 0), (0.2, 0), (0.28, 0.045), (0.3, 0.13), (0.25, 0.25), (0.11, 0.32), (0.085, 0.345)], T(0, 0, 0), GLASS),
+    glass('font', [(0, 0), (0.2, 0), (0.28, 0.045), (0.3, 0.13), (0.25, 0.25), (0.11, 0.32), (0.085, 0.345)], 0.015),
+    lathe('holder', [(0.03, 0.34), (0.11, 0.34), (0.115, 0.355), (0.1, 0.365)], T(0, 0, 0), WHITE),
     lathe('spirit', [(0, 0.02), (0.255, 0.055), (0.275, 0.13), (0.25, 0.2), (0, 0.2)], T(0, 0, 0), ALCOHOL),
     cyl('collar', 0.095, 0.07, T(0, 0.375, 0), BRASS),
     cyl('wick', 0.028, 0.1, T(0, 0.45, 0), CREAM, bevel=0),
@@ -71,18 +106,25 @@ part('Bin', [lathe('bucket', [(0, 0), (0.36, 0), (0.4, 0.03), (0.46, 0.5), (0.49
 # ================================================================== dụng cụ cho các bài hóa có thao tác (chuẩn độ, NO₂, clo, kim loại kiềm)
 XAXIS = (0, math.radians(90), 0)
 ZAXIS = (math.radians(90), 0, 0)
+CORK = mat('cork', hexc('#B98A55'), rough=0.95)
 STEEL_C = mat('steelc', (0.55, 0.57, 0.6), metallic=1, rough=0.35)
 
 # ---- bình tam giác: đáy r 0,5, cao 0,95
-part('Erlenmeyer', [lathe('wall', [(0, 0), (0.46, 0), (0.5, 0.03), (0.5, 0.07), (0.17, 0.72), (0.15, 0.78), (0.15, 0.92), (0.175, 0.95)], T(0, 0, 0), GLASS)], (-2.6, 0, 1.4))
+erl = [glass('wall', [(0, 0), (0.45, 0), (0.49, 0.015), (0.5, 0.05), (0.5, 0.08), (0.19, 0.7), (0.16, 0.76), (0.155, 0.9), (0.17, 0.93), (0.185, 0.95)], 0.018)]
+for i, y in enumerate((0.2, 0.32, 0.44)):  # vạch chia trên thành nghiêng (bán kính giảm dần theo chiều cao)
+    rr = 0.5 - (y - 0.08) * 0.5 + 0.004
+    for j in range(4 if i % 2 == 0 else 2):
+        b = -0.5 + j * 0.05
+        erl.append(box('mark', (0.026, 0.004, 0.008), T(math.sin(b) * rr, y, math.cos(b) * rr), WHITE, bevel=0, rot=(0, 0, -b)))
+part('Erlenmeyer', erl, (-2.6, 0, 1.4))
 
 # ---- buret: gốc ở đầu vòi; thân chia vạch từ y = 0,5 tới 2,4; khóa ở y = 0,36
-bur = [lathe('tip', [(0.012, 0), (0.02, 0), (0.035, 0.22), (0.035, 0.3)], T(0, 0, 0), GLASS), lathe('body', [(0.035, 0.42), (0.085, 0.5), (0.085, 2.4), (0.1, 2.45)], T(0, 0, 0), GLASS), cyl('cockBody', 0.055, 0.2, T(0, 0.36, 0), WHITE, rot=ZAXIS, bevel=0.004)]
+bur = [glass('tip', [(0.02, 0), (0.035, 0.22), (0.035, 0.3)], 0.008, closed=False), glass('body', [(0.035, 0.42), (0.085, 0.5), (0.085, 2.4), (0.1, 2.45)], 0.012, closed=False), cyl('cockBody', 0.055, 0.2, T(0, 0.36, 0), GLASS, rot=ZAXIS, bevel=0.004), cyl('cockNut', 0.04, 0.03, T(0, 0.36, -0.115), WHITE, rot=ZAXIS, bevel=0.004)]
 for i in range(21):
     bur.append(box('mark', (0.07 if i % 5 == 0 else 0.04, 0.004, 0.006), T(0, 0.6 + i * 0.085, 0.086), INK, bevel=0))
 part('Burette', bur, (-1.7, 0, 1.4))
 # Stopcock: khóa buret (tay vặn), gốc trên trục khóa; cảnh quay quanh trục z để mở
-part('Stopcock', [box('key', (0.05, 0.03, 0.22), T(0, 0, 0.14), BLUE, bevel=0.008), cyl('stem', 0.02, 0.1, T(0, 0, 0.08), BLUE, rot=ZAXIS, bevel=0)], (-1.3, 0.36, 1.4))
+part('Stopcock', [box('key', (0.05, 0.03, 0.22), T(0, 0, 0.16), BLUE, bevel=0.012), cyl('hub', 0.04, 0.05, T(0, 0, 0.125), BLUE, rot=ZAXIS, bevel=0.006), cyl('stem', 0.03, 0.24, T(0, 0, 0.0), WHITE, rot=ZAXIS, bevel=0, r2=0.022)], (-1.3, 0.36, 1.4))
 
 # ---- giá sắt có hai kẹp: gốc ở mặt bàn ngay dưới trục dụng cụ được kẹp; cọc ở x = −0,6
 rs = [box('base', (1.2, 0.75, 0.06), T(-0.3, 0.03, 0), IRON, bevel=0.02), cyl('rod', 0.035, 3.4, T(-0.6, 1.73, 0), CHROME)]
@@ -91,15 +133,17 @@ for y in (1.3, 2.5):
     rs.append(box('arm', (0.42, 0.045, 0.045), T(-0.36, y, 0), STEEL_C, bevel=0.008))
     for z in (-0.1, 0.1):
         rs.append(box('jaw', (0.24, 0.03, 0.045), T(-0.04, y, z), STEEL_C, bevel=0.006))
+        rs.append(box('pad', (0.16, 0.012, 0.05), T(0.0, y, z * 0.82), CORK, bevel=0.003))
+    rs.append(lathe('jawScrew', [(0, 0.09), (0.035, 0.09), (0.04, 0.07), (0.012, 0.06), (0.012, 0.0)], T(-0.12, y, 0.115), BRASS, rot=ZAXIS))
     rs.append(lathe('thumb', [(0, 0.1), (0.04, 0.1), (0.05, 0.07), (0.02, 0.06), (0.02, 0.0)], T(-0.6, y, 0.09), BRASS, rot=ZAXIS))
 part('RetortStand', rs, (-0.7, 0, 1.4))
 
 # ---- bình thu khí có tấm kính đậy: r 0,55, cao 1,8
-part('GasJar', [lathe('wall', [(0, 0), (0.5, 0), (0.55, 0.04), (0.55, 1.7), (0.6, 1.74), (0.62, 1.78)], T(0, 0, 0), GLASS), cyl('lid', 0.72, 0.03, T(0, 1.8, 0), GLASS, bevel=0.004)], (0.4, 0, 1.4))
+part('GasJar', [glass('wall', [(0, 0), (0.5, 0), (0.55, 0.04), (0.55, 1.7), (0.6, 1.74), (0.64, 1.755), (0.64, 1.775)], 0.03), cyl('lid', 0.72, 0.03, T(0, 1.8, 0), GLASS, bevel=0.004)], (0.4, 0, 1.4))
 
 # ---- bình rửa khí: chất lỏng mang vật liệu `liquid`, hai ống thủy tinh (dài: khí vào, ngắn: khí ra)
 part('WashBottle', [
-    lathe('body', [(0, 0), (0.34, 0), (0.38, 0.04), (0.38, 0.6), (0.2, 0.78), (0.16, 0.82), (0.16, 0.95)], T(0, 0, 0), GLASS),
+    glass('body', [(0, 0), (0.34, 0), (0.38, 0.04), (0.38, 0.6), (0.2, 0.78), (0.16, 0.82), (0.16, 0.93), (0.18, 0.95)], 0.02),
     lathe('content', [(0, 0.02), (0.35, 0.05), (0.35, 0.4), (0, 0.4)], T(0, 0, 0), LIQUID),
     cyl('stopper', 0.165, 0.12, T(0, 0.98, 0), mat('rubberc', hexc('#3A2A20'), rough=0.9), bevel=0.01),
     cyl('inTube', 0.022, 1.3, T(-0.07, 0.77, 0), GLASS, bevel=0),
@@ -127,9 +171,10 @@ part('Tank', tank, (0.4, 0, -2.4))
 
 # ---- bình điều chế khí: bình tam giác + nút + phễu nhỏ giọt + ống dẫn ra
 part('Generator', [
-    lathe('flask', [(0, 0), (0.46, 0), (0.5, 0.03), (0.5, 0.07), (0.17, 0.72), (0.15, 0.78), (0.15, 0.92), (0.175, 0.95)], T(0, 0, 0), GLASS),
+    glass('flask', [(0, 0), (0.45, 0), (0.49, 0.015), (0.5, 0.05), (0.5, 0.08), (0.19, 0.7), (0.16, 0.76), (0.155, 0.9), (0.17, 0.93), (0.185, 0.95)], 0.018),
     cyl('plug', 0.15, 0.1, T(0, 0.97, 0), mat('rubberg', hexc('#3A2A20'), rough=0.9), bevel=0.01),
-    lathe('funnel', [(0.02, 0.35), (0.02, 1.4), (0.2, 1.55), (0.22, 1.9), (0.2, 1.95)], T(-0.05, 0, 0), GLASS),
+    glass('funnel', [(0.022, 0.35), (0.022, 1.3), (0.035, 1.36), (0.15, 1.48), (0.2, 1.64), (0.16, 1.82), (0.075, 1.9), (0.07, 1.96), (0.085, 1.98)], 0.01, closed=False, loc=T(-0.05, 0, 0)),
+    lathe('funnelStopper', [(0, 2.06), (0.06, 2.06), (0.085, 2.04), (0.085, 2.01), (0.058, 1.99), (0.055, 1.93), (0, 1.93)], T(-0.05, 0, 0), GLASS),
     box('funnelCock', (0.16, 0.03, 0.04), T(-0.05, 1.25, 0.03), BLUE, bevel=0.006),
     tube('outlet', [T(0.08, 0.9, 0), T(0.08, 1.3, 0), T(0.2, 1.42, 0), T(0.7, 1.42, 0)], 0.022, GLASS),
 ], (-3.4, 0, -0.2))

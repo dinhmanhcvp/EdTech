@@ -85,5 +85,33 @@ part('PullHandle', [
     lathe('knob', [(0, 0.1), (0.06, 0.095), (0.095, 0.05), (0.09, 0.0), (0.05, -0.03), (0, -0.03)], T(0, 0.06, 0), TINT),
 ], (2.6, 0.17, -0.6))
 
+# ---- con trượt chia vạch (thay thanh ray trơn của handSliders): gốc ở tâm thanh ray (cao 0,06 trên mặt bàn), hành trình x từ −1,3 tới 1,3
+XROT = (0, math.radians(90), 0)
+sr = [box('bed', (2.9, 0.16, 0.03), T(0, -0.045, 0), ALU, bevel=0.008), box('scale', (2.7, 0.07, 0.004), T(0, -0.028, 0.04), CREAM, bevel=0), cyl('rod', 0.02, 2.76, T(0, 0.05, -0.02), CHROME, bevel=0, rot=XROT)]
+for i in range(27):
+    long = i % 5 == 0
+    sr.append(box('tick', (0.008 if long else 0.005, 0.055 if long else 0.03, 0.002), T(-1.3 + i * 0.1, -0.025, 0.045 if long else 0.055), INK, bevel=0))
+for sx in (-1, 1):
+    sr.append(box('end', (0.07, 0.16, 0.14), T(sx * 1.415, 0.01, 0), IRON, bevel=0.012))
+part('SlideRail', sr, (0, 0.06, 1.2))
+# con chạy: gốc ở tâm vật thay thế (cao 0,13), bàn trượt đồng ôm thanh dẫn, kim đỏ chỉ xuống thang chia, núm cầm nhuộm màu
+part('SlideKnob', [
+    box('carriage', (0.14, 0.12, 0.08), T(0, -0.02, -0.02), BRASS, bevel=0.012),
+    box('pointer', (0.012, 0.09, 0.006), T(0, -0.09, 0.05), RED, bevel=0),
+    lathe('grip', [(0, 0.14), (0.05, 0.135), (0.075, 0.1), (0.07, 0.06), (0.04, 0.03), (0.04, 0.02), (0, 0.02)], T(0, 0, -0.02), TINT),
+], (0, 0.13, 1.2))
+
+# ---- công tắc xoay chọn nấc (thay nút tròn chọn lựa chọn): đế có 9 vạch nấc cách nhau 0,3 rad, núm mỏ vịt chỉ về −z khi ở giữa
+sb = [lathe('plate', [(0, 0.0), (0.3, 0.0), (0.32, -0.015), (0.32, -0.03), (0, -0.03)], T(0, 0, 0), INDIGO)]
+for j in range(9):
+    a = (j - 4) * 0.3
+    sb.append(box('notch', (0.014, 0.05, 0.004), T(math.sin(a) * 0.25, 0.002, -math.cos(a) * 0.25), CREAM, bevel=0, rot=(0, 0, -a)))
+part('SelectorBase', sb, (1.6, 0.03, 1.2))
+part('SelectorKnob', [
+    lathe('skirt', [(0, 0.06), (0.09, 0.06), (0.11, 0.045), (0.13, -0.04), (0.15, -0.05), (0, -0.05)], T(0, 0, 0), BAKELITE),
+    box('wing', (0.05, 0.26, 0.06), T(0, 0.07, -0.04), BAKELITE, bevel=0.015),
+    box('line', (0.012, 0.12, 0.004), T(0, 0.101, -0.1), WHITE, bevel=0),
+], (1.6, 0.1, 1.2))
+
 export_glb('lab-parts.glb')
 preview((0.3, 2.6, 3.6), (0.1, 0.1, -0.1), lens=50)

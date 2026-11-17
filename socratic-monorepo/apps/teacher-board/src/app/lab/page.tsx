@@ -52,7 +52,7 @@ export default function LabPage() {
 
       {open && <button type="button" aria-label="Đóng danh sách bài" tabIndex={-1} onClick={() => setOpen(false)} className="fixed inset-0 z-20 cursor-default bg-[#0E1030]/50" />}
       <nav data-avoid-labels className="fixed left-4 top-4 z-20 pointer-events-none flex max-h-[calc(100vh-2rem)] w-[min(600px,calc(100vw-2rem))] flex-col items-start gap-2 [&>*]:pointer-events-auto" aria-label="Chọn bài thực hành">
-        <button type="button" data-testid="lab-menu" aria-expanded={open} aria-controls="lab-picker" onClick={toggle} className={`flex min-h-[48px] max-w-full items-center gap-2.5 rounded-full border border-white bg-white py-1 pl-4 pr-3 text-left text-[#0E1030] shadow-lg hover:bg-[#F3EFE6] ${FOCUS}`}>
+        <button type="button" data-testid="lab-menu" title={cur.name} aria-expanded={open} aria-controls="lab-picker" onClick={toggle} className={`flex min-h-[48px] ${open ? 'max-w-full' : 'max-w-[min(340px,100%)]'} items-center gap-2.5 rounded-full border border-white bg-white py-1 pl-4 pr-3 text-left text-[#0E1030] shadow-lg hover:bg-[#F3EFE6] ${FOCUS}`}>
           <i className="h-3 w-3 shrink-0 rounded-full" style={{background: color(cur.subject)}} />
           <span className="flex min-w-0 flex-col leading-tight">
             <span className="text-[10px] font-semibold uppercase tracking-wide text-[#0E1030]/60">{SUBJECTS.find((s) => s.id === cur.subject)!.label}</span>

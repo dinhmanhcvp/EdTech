@@ -20,7 +20,7 @@ import {RULES} from '../../utils/lab/chem/rules';
 import {propertiesOf} from '../../utils/lab/chem/properties';
 import {SUBSTANCES, SUB_BY_ID} from '../../utils/lab/chem/species';
 import type {ChemLive} from './HandsChem3D';
-import {CHEM_GROUPS} from './HandsChem3D';
+import {CHEM_GROUPS, LESSON_GROUP} from './HandsChem3D';
 import {MicroLens} from './MicroLens';
 import {fmt, fromUnit, initial, toUnit, type SimParam} from '../../utils/lab/hands/sims/types';
 import type {CartLive} from './HandsCartPole3D';
@@ -1158,6 +1158,10 @@ const ChemLab: React.FC<{initial?: string}> = ({initial = ''}) => {
   const [epoch, setEpoch] = useState(0); // đặt lại: dựng lại cảnh 3D để xoá vũng axit, bọt, vị trí chai và ống
   live.current.report = setIncident;
   const e = exp ? EXPERIMENT_BY_ID[exp] : undefined;
+  // hóa chất của bài (theo thao tác mẫu + kệ khai báo): kệ 3D bày sẵn đúng các chai này trong nhóm "Bài này"
+  const only = useMemo(() => (e ? [...new Set([...(e.shelf ?? []), ...e.script.flatMap((a) => (a.type === 'add' && a.sub ? [a.sub] : []))])] : undefined), [e]);
+  live.current.only = only;
+  useEffect(() => setGroup(only?.length ? LESSON_GROUP : 'Acid'), [only]);
   const ds = useMemo(() => lab.vessels.map(derive), [lab]);
   const done = useMemo(() => (e ? stepsDone(e, lab) : []), [e, lab]);
   const equations = useMemo(() => {
@@ -1204,7 +1208,7 @@ const ChemLab: React.FC<{initial?: string}> = ({initial = ''}) => {
       </label>
       {e && e.hazards.length > 0 && <p className="text-[#C4261A]">An toàn: {e.hazards.join('; ')}.</p>}
       <div className="flex flex-wrap gap-1.5">
-        {CHEM_GROUPS.map((g) => (
+        {[...(only?.length ? [LESSON_GROUP] : []), ...CHEM_GROUPS].map((g) => (
           <button key={g} type="button" data-testid={`chem3d-group-${g}`} aria-pressed={group === g} onClick={() => setGroup(g)} className={PILL(group === g)}>
             {g}
           </button>
@@ -1212,7 +1216,7 @@ const ChemLab: React.FC<{initial?: string}> = ({initial = ''}) => {
       </div>
       <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[#1D1B16]/15 bg-white p-2">
         <select data-testid="chem3d-sub" value={sub} onChange={(ev) => setSub(ev.target.value)} className="min-h-[44px] w-full rounded-[10px] border border-[#1D1B16]/25 bg-white px-2">
-          {SUBSTANCES.filter((s) => s.group === group).map((s) => (
+          {SUBSTANCES.filter((s) => (group === LESSON_GROUP ? only?.includes(s.id) : s.group === group)).map((s) => (
             <option key={s.id} value={s.id}>
               {s.label}
             </option>

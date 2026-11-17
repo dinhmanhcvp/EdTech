@@ -85,6 +85,11 @@ describe('/lab: bài thực hành SGK là thí nghiệm 3D điều khiển bằn
     expect(dragT(boyle, 0.1, -5)).toBe(0);
     // thang đảo chiều (cổng quang hạ thấp khi quãng rơi dài): kéo xuống = tăng
     expect(dragT(grabOf('FREE_FALL_G', 'h')!, 0.2, -0.55)).toBeCloseTo(0.7);
+    // núm vặn trên bộ nguồn: kéo ngang 1,1 đơn vị = nửa thang, sang phải là tăng và núm quay theo chiều kim đồng hồ (góc giảm)
+    const knob = grabOf('OHM_LAW', 'U')!;
+    expect(knob.axis).toBe('rz');
+    expect(dragT(knob, 0, 1.1)).toBeCloseTo(0.5);
+    expect(knob.b).toBeLessThan(knob.a);
     // bộ phận chỉ phóng to: 2,2 đơn vị ngang = cả thang
     expect(dragT(grabOf('NEWTON2', 'F')!, 0.25, 1.1)).toBeCloseTo(0.75);
     // quả cân treo của lò xo là bộ phận cầm được; chính lò xo (co giãn) thì không
@@ -94,7 +99,8 @@ describe('/lab: bài thực hành SGK là thí nghiệm 3D điều khiển bằn
   it('hướng dẫn nói rõ dụng cụ nào cầm kéo được, thông số khác vẫn dùng con trượt', () => {
     const t = benchManual('PHYS_LAB_BOYLE')!.tools!.join(' ');
     expect(t).toContain('Pit-tông: chụm vào chính dụng cụ');
-    expect(benchManual('PHYS_LAB_OHM_LAW')!.tools!.join(' ')).toContain('Con trượt');
+    expect(benchManual('PHYS_LAB_OHM_LAW')!.tools!.join(' ')).toContain('Núm chỉnh điện áp của bộ nguồn: chụm vào chính dụng cụ');
+    expect(benchManual('PHYS_LAB_NEWTON2')!.tools!.join(' ')).toContain('Con trượt');
   });
 
   it('mọi bài có phép đo đều có thao tác LÀM thí nghiệm (chạm vào dụng cụ), và hướng dẫn nêu đúng thao tác đó', () => {

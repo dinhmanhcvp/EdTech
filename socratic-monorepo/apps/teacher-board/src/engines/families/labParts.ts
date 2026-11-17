@@ -43,12 +43,24 @@ export function partOf(lib: THREE.Object3D, name: string): Skin | null {
   });
   return {obj, mats};
 }
-/** thủy tinh của mô hình (vật liệu tên `glass`) dùng vật liệu thủy tinh vật lí của cảnh: khúc xạ, lớp phủ bóng, không đổ bóng */
-export function glassify(o: THREE.Object3D, opacity = 0.2): void {
+/**
+ * Vật liệu thủy tinh dùng chung: nhìn thẳng thì gần như trong suốt, nhìn xiên (mép, miệng, thành cong) thì đục dần và sáng lên như thủy tinh thật (Fresnel).
+ * Không dùng `transmission` (tốn thêm một lượt vẽ cả cảnh); chỉ sửa độ trong ngay trước khi xuất màu.
+ */
+export function glassMaterial(color = '#DDEBF7', opacity = 0.1): THREE.MeshPhysicalMaterial {
+  const m = new THREE.MeshPhysicalMaterial({color, transparent: true, opacity, roughness: 0.05, ior: 1.458, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.6, depthWrite: false, side: THREE.DoubleSide});
+  m.onBeforeCompile = (s) => {
+    s.fragmentShader = s.fragmentShader.replace('#include <opaque_fragment>', 'float glassEdge = pow(1.0 - abs(dot(normalize(vViewPosition), normal)), 2.5);\ndiffuseColor.a = mix(diffuseColor.a, 0.85, glassEdge);\noutgoingLight += glassEdge * 0.16;\n#include <opaque_fragment>');
+  };
+  m.customProgramCacheKey = () => 'lab-glass';
+  return m;
+}
+/** thủy tinh của mô hình (vật liệu tên `glass`) dùng vật liệu thủy tinh của cảnh, không đổ bóng */
+export function glassify(o: THREE.Object3D, opacity = 0.1): void {
   o.traverse((c) => {
     const m = c as THREE.Mesh;
     if (!m.isMesh || (m.material as THREE.Material).name !== 'glass') return;
-    m.material = new THREE.MeshPhysicalMaterial({color: '#DDEBF7', transparent: true, opacity, roughness: 0.06, ior: 1.458, clearcoat: 1, clearcoatRoughness: 0.03, depthWrite: false, side: THREE.DoubleSide});
+    m.material = glassMaterial('#DDEBF7', opacity);
     m.castShadow = false;
   });
 }

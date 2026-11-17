@@ -11,7 +11,8 @@ import type {Manual} from './manual';
 export interface BenchMove {
   n: number;
   param: string;
-  axis: 'x' | 'y' | 'z' | 'sy' | 's';
+  /** `rz`: núm vặn quay quanh trục hướng về người nhìn (rad); kéo ngang để vặn */
+  axis: 'x' | 'y' | 'z' | 'sy' | 's' | 'rz';
   a: number;
   b: number;
   /** tên bộ phận để học sinh CẦM và kéo trực tiếp (chụm vào rồi di chuyển); bỏ trống = bộ phận chỉ chạy theo, không cầm được */
@@ -21,11 +22,16 @@ const mv = (n: number, param: string, axis: BenchMove['axis'], a: number, b: num
 
 /** Kéo bộ phận một quãng `d` (đơn vị cảnh, đã chia tỉ lệ phóng) từ lúc cầm (`startT` ∈ 0..1 của thanh trượt) → `t` mới. Bộ phận chỉ phóng to/co: 2,2 đơn vị = cả thang. */
 export function dragT(m: BenchMove, startT: number, d: number): number {
-  const dt = m.axis === 's' || m.axis === 'sy' ? d / 2.2 : d / (m.b - m.a);
+  const dt = m.axis === 's' || m.axis === 'sy' || m.axis === 'rz' ? d / 2.2 : d / (m.b - m.a);
   return Math.min(1, Math.max(0, startT + dt));
 }
 export const BENCH_MOVES: Record<string, BenchMove[]> = {
-  SPEED: [mv(1, 's', 'x', -0.6, 2.2, 'cổng quang thứ hai')], // cổng quang thứ hai
+  SPEED: [mv(1, 's', 'x', -0.6, 2.2, 'cổng quang thứ hai')],
+  // núm vặn thật trên máy (kéo ngang sang phải = vặn theo chiều kim đồng hồ = tăng)
+  OHM_LAW: [mv(9, 'U', 'rz', 2.3, -2.3, 'núm chỉnh điện áp của bộ nguồn')],
+  TRANSFORMER: [mv(9, 'U1', 'rz', 2.3, -2.3, 'núm chỉnh điện áp của bộ nguồn')],
+  WAVE_INTERFERENCE: [mv(9, 'f', 'rz', 2.3, -2.3, 'núm tần số của cần rung')],
+  SOUND_FREQUENCY: [mv(9, 'td', 'rz', 2.3, -2.3, 'núm thang thời gian của dao động kí')], // cổng quang thứ hai
   FREE_FALL_G: [mv(1, 'h', 'y', 1.55, 0.45, 'cổng quang')], // cổng quang hạ thấp khi quãng rơi dài hơn
   EMF_INTERNAL_R: [mv(1, 'R', 'x', 1.15, 2.3, 'con chạy biến trở')], // con chạy biến trở
   NEWTON2: [mv(1, 'F', 's', 0.6, 1.4, 'quả cân treo')], // quả cân treo
@@ -185,9 +191,9 @@ export function benchManual(presetId: string): Manual | null {
         const range = `từ ${p.min} đến ${p.max}${p.unit ? ` ${p.unit}` : ''}`;
         return g
           ? `${g.what[0].toUpperCase()}${g.what.slice(1)}: chụm vào chính dụng cụ này rồi kéo để đổi "${p.label}" (${range}); vòng con trỏ chuyển cam khi chạm đúng.`
-          : `Con trượt "${p.label}" (ray ở mép bàn bên trái): chụm vào con trượt màu vàng và kéo dọc ray; ${range}.`;
+          : `Con trượt chia vạch "${p.label}" (mép bàn bên trái): chụm vào con chạy và kéo dọc thanh dẫn, kim đỏ chỉ trên thang chia; ${range}.`;
       }),
-      ...(e.choices ?? []).map((c) => `Nút tròn "${c.label}" (mép bàn bên phải): chụm một lần để đổi sang lựa chọn kế tiếp (${c.options.map((o) => o[1]).join(', ')}).`),
+      ...(e.choices ?? []).map((c) => `Công tắc xoay "${c.label}" (mép bàn bên phải): chụm một lần để vặn sang nấc kế tiếp (${c.options.map((o) => o[1]).join(', ')}).`),
       ...(b.file === 'phys' ? ['Dụng cụ tự chuyển động đúng theo quy luật của bài (xe lăn, bi rơi, con lắc đung đưa, dòng điện chạy, sóng lan…): chạm (chụm) vào vật đang chuyển động hoặc bấm ĐO để cho chạy lại từ đầu; kéo thanh trượt thì chuyển động đổi theo ngay.'] : []),
       ...((BENCH_SETUP[e.id] ?? []).length ? [`CHUẨN BỊ (làm một lần, theo thứ tự): ${(BENCH_SETUP[e.id] ?? []).map((s, i) => `${i + 1}. ${s.label}`).join('; ')}. Mỗi bước là một vòng cam trên dụng cụ: chạm (chụm một lần) vào vòng đó để làm, xong bước này vòng sang bước kế.`] : []),
       ...(e.columns.length ? [`LÀM thí nghiệm (sau khi chuẩn bị xong): chạm (chụm một lần) vào chính dụng cụ có nhãn xanh "${BENCH_ACTION[e.id] ?? 'Đo'}"; thí nghiệm chạy và một dòng số đo được ghi vào bảng ở tab Thao tác. Không với tới thì bấm nút cam ở mép bàn bên phải (mỗi lần bấm làm một bước).`] : []),

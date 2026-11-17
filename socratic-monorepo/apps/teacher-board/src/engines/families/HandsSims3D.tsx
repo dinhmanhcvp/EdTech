@@ -275,7 +275,9 @@ function makeDef(input: HandsInput, live: SimLive): SceneDef {
         // bài thao tác trực tiếp trên dụng cụ (va chạm, bốn bài hóa, ba bài kĩ thuật): không qua núm hay ổ lắp
         const lab = custom({k, P, live});
         // dải nút − / + ở mép trước bàn cho mọi tham số liên tục (va chạm đã có thao tác riêng cho khối lượng và đệm)
-        const bank = padBank(k, P, spec, () => live.v, (id, x) => live.set(id, x), live.id === 'collision' ? ['m1', 'm2', 'e'] : []);
+        // chỉ còn ở 7 bài kĩ thuật dùng núm xoay (ENG2: núm khó vặn bằng tay qua webcam). Va chạm, 5 bài hóa và 3 bài ENG đã có thao tác thật
+        // trên dụng cụ cho MỌI tham số (khóa buret, pít-tông, cần ga, vô lăng…) nên không đặt nút bấm thừa trên bàn.
+        const bank = padBank(k, P, spec, () => live.v, (id, x) => live.set(id, x), ENG2_LABS[live.id] ? [] : spec.params.map((p) => p.id));
         P.grabWhen((nx, ny) => lab.grab(nx, ny) || bank.grab(nx, ny));
         let t0 = performance.now();
         return () => {

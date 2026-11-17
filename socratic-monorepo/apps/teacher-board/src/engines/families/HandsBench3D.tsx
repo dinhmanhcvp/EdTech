@@ -7,7 +7,7 @@ import {BENCH_FX, FX_PARTS} from './benchMotion';
 import {BIO_FX, BIO_FX_PARTS} from './benchMotionBio';
 import {handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
-import {glassify, loadModel, partOf} from './labParts';
+import {dress, glassify, loadModel, partOf} from './labParts';
 import type {BenchLive} from './PhysBench';
 import {Stage3D, type Kit, type SceneDef} from './Stage3D';
 
@@ -105,13 +105,23 @@ function partGrabs(k: Kit, P: ReturnType<typeof handPointers>, parts: () => Grab
 const fmt = (v: number, d = 2) => (Number.isFinite(v) ? v.toLocaleString('vi-VN', {maximumFractionDigits: d}) : '—');
 
 /** Nút bấm tròn trên mặt bàn: chụm (hoặc nhấn chuột) vào nút = một lần bấm. */
-function pads(k: Kit, P: ReturnType<typeof handPointers>, defs: {at: [number, number]; color: string; r: number; side?: boolean; text: () => string; press: () => void}[]) {
+function pads(k: Kit, P: ReturnType<typeof handPointers>, defs: {at: [number, number]; color: string; r: number; side?: boolean; text: () => string; press: () => void; notch?: () => [number, number]}[]) {
   const v3 = new THREE.Vector3();
   const rigs = defs.map((d) => {
-    solid(k.scene, new THREE.CylinderGeometry(d.r + 0.05, d.r + 0.07, 0.06, 28), '#2A2E66', {x: d.at[0], y: 0.03, z: d.at[1]});
+    const base = solid(k.scene, new THREE.CylinderGeometry(d.r + 0.05, d.r + 0.07, 0.06, 28), '#2A2E66', {x: d.at[0], y: 0.03, z: d.at[1]});
     const cap = solid(k.scene, new THREE.CylinderGeometry(d.r, d.r, 0.1, 28), d.color, {x: d.at[0], y: 0.1, z: d.at[1], rough: 0.4});
-    return {d, cap, tag: k.label(d.text()), down: 0};
+    return {d, base, cap, tag: k.label(d.text()), down: 0};
   });
+  // lựa chọn (có `notch`) là CÔNG TẮC XOAY chọn nấc dựng bằng Blender: mỗi lần chụm, núm vặn sang nấc kế tiếp
+  void loadModel('/models/lab-parts.glb')
+    .then((lib) =>
+      rigs.forEach((r) => {
+        if (!r.d.notch) return;
+        dress(r.base, partOf(lib, 'SelectorBase'));
+        dress(r.cap, partOf(lib, 'SelectorKnob'));
+      }),
+    )
+    .catch(() => undefined);
   const near = (nx: number, ny: number, reach: number) => {
     let best = -1;
     let bd = reach;
@@ -139,6 +149,10 @@ function pads(k: Kit, P: ReturnType<typeof handPointers>, defs: {at: [number, nu
       for (const r of rigs) {
         r.down = Math.max(0, r.down - dt);
         r.cap.position.y = r.down > 0 ? 0.06 : 0.1; // nút lún xuống một nhịp khi bấm
+        if (r.d.notch) {
+          const [i, n] = r.d.notch();
+          r.cap.rotation.y += (-(i - (n - 1) / 2) * 0.3 - r.cap.rotation.y) * Math.min(1, dt * 12); // núm xoay êm tới nấc đang chọn
+        }
         r.tag(r.d.side ? v3.set(r.d.at[0] + 1.25, 0.1, r.d.at[1]) : v3.set(r.d.at[0], 0.1, r.d.at[1] + r.d.r + 0.3), undefined, r.d.text());
       }
     },
@@ -256,6 +270,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           color: '#E3B341',
           r: 0.16,
           side: true,
+          notch: (): [number, number] => [Math.max(0, c.options.findIndex((o) => o[0] === live.st.s[c.key])), c.options.length],
           text: () => `${c.label}: ${c.options.find((o) => o[0] === live.st.s[c.key])?.[1] ?? ''}`,
           press: () => {
             const at = c.options.findIndex((o) => o[0] === live.st.s[c.key]);
@@ -318,6 +333,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           obj.rotation.set(0, 0, 0);
           if (m.axis === 's') obj.scale.setScalar(x);
           else if (m.axis === 'sy') obj.scale.set(1, x, 1);
+          else if (m.axis === 'rz') obj.rotation.z = x;
           else obj.position[m.axis] = base[m.axis] + x;
         }
         for (const q of byN.values()) {
@@ -355,7 +371,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         const row = live.st.rows[live.st.rows.length - 1];
         k.caption(!setupDone() ? `${e.lesson}\nChuẩn bị ${stage + 1}/${setup.length}: ${setup[stage].label} · chạm vào vòng cam trên dụng cụ` : row ? `Lần đo ${live.st.rows.length}: ${e.columns.map((c) => `${c.label} = ${fmt(row[c.key], c.digits ?? 2)}${c.unit ? ` ${c.unit}` : ''}`).join(' · ')}
 Đổi điều kiện rồi làm lại để có lần đo tiếp` : `${e.lesson}
-Kéo bộ phận có vòng cam để chỉnh · nút tròn vàng để chọn${e.columns.length ? ` · chạm vào dụng cụ có nhãn xanh để ${action.toLowerCase()} và ghi số đo` : ''}`);
+Kéo bộ phận có vòng cam để chỉnh · vặn công tắc xoay để chọn${e.columns.length ? ` · chạm vào dụng cụ có nhãn xanh để ${action.toLowerCase()} và ghi số đo` : ''}`);
       };
     },
   };

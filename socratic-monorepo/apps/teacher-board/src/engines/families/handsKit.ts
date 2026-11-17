@@ -71,6 +71,16 @@ const BONES = [0, 1, 1, 2, 2, 3, 3, 4, 0, 5, 5, 6, 6, 7, 7, 8, 5, 9, 9, 10, 10, 
  */
 export const WRIST_ROLL = false;
 
+/** vùng chết quanh tâm của núm / van / vô-lăng khi vặn bằng cách đưa tay vòng quanh: sát tâm thì góc nhảy loạn theo rung của tay (≈ 23 px trên màn hình 768) */
+export const DEAD_WORLD = 0.12; // đơn vị cảnh (núm bán kính 0,2)
+export const DEAD_NDC = 0.06; // theo chiều cao màn hình, cho vật tính trên màn hình (vô-lăng)
+/** góc quay giữa hai lần đo (qua mốc ±π); 0 khi một trong hai đang ở vùng chết (NaN) */
+export function turnDelta(prev: number, a: number): number {
+  if (Number.isNaN(prev) || Number.isNaN(a)) return 0;
+  const da = a - prev;
+  return da - Math.round(da / (2 * Math.PI)) * 2 * Math.PI;
+}
+
 export function handPointers(k: Kit, input: HandsInput, h: number) {
   const overlay = {depthTest: false, transparent: true};
   const ray = new THREE.Raycaster();

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import {BAL, force, range, reading, type BalState} from '../../utils/lab/hands/currentBalance';
 import {padRate} from '../../utils/lab/hands/handTracker';
 import {mishapFx, mishapSound} from './mishapFx';
-import {handPointers, labRoom, type HandsInput} from './handsKit';
+import {DEAD_WORLD, handPointers, labRoom, turnDelta, type HandsInput} from './handsKit';
 import {V, solid} from './handsModels';
 import {assetUrl, gltfLoader} from './labParts';
 import {Stage3D, type Kit, type SceneDef} from './Stage3D';
@@ -147,6 +147,7 @@ function makeDef(input: HandsInput, live: BalanceLive): SceneDef {
         return best;
       };
       P.grabWhen((nx, ny) => hit(nx, ny, 0.07) !== null || pads.some((pd) => P.distAt(nx, ny, pd.at) < 0.08));
+      const ringAngle = (dz: number, dx: number) => (Math.hypot(dz, dx) < DEAD_WORLD ? NaN : Math.atan2(dz, dx));
       const held: ({i: number; a: number} | null)[] = P.ptrs.map(() => null);
       const slid = P.ptrs.map((p) => p.slide);
       let sel = 1;
@@ -187,7 +188,7 @@ function makeDef(input: HandsInput, live: BalanceLive): SceneDef {
           if (ptr.pressed && h) {
             if (h.kind === 'knob') {
               const at = P.onPlane(ptr.ndc.x, ptr.ndc.y, PANEL + 0.2, v3);
-              held[n] = {i: h.i, a: Math.atan2(at.z - FRONT, at.x - knobs[h.i].x)};
+              held[n] = {i: h.i, a: ringAngle(at.z - FRONT, at.x - knobs[h.i].x)};
               sel = h.i;
             } else if (h.kind === 'K') live.set({K: !s.K});
             else if (h.kind === 'revI') live.set({revI: !s.revI});
@@ -204,11 +205,9 @@ function makeDef(input: HandsInput, live: BalanceLive): SceneDef {
           if (cur) {
             // đưa tay vòng quanh núm: góc quay của tay là góc quay của núm
             const at = P.onPlane(ptr.ndc.x, ptr.ndc.y, PANEL + 0.2, v3);
-            const a = Math.atan2(at.z - FRONT, at.x - knobs[cur.i].x);
-            let da = a - cur.a;
-            da -= Math.round(da / (2 * Math.PI)) * 2 * Math.PI;
+            const a = ringAngle(at.z - FRONT, at.x - knobs[cur.i].x);
+            turn(cur.i, turnDelta(cur.a, a) / SWEEP);
             cur.a = a;
-            turn(cur.i, da / SWEEP);
           } else if (d) turn(sel, d); // miết ngón cái dọc ngón trỏ: chỉnh tinh núm vừa cầm
           ptr.hot = !!(cur ?? h) || d !== 0;
         });

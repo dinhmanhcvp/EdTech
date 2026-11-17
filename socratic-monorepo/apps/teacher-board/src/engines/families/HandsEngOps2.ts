@@ -6,7 +6,7 @@ import {grips, type Grip, type Lab} from './HandsChemOps3D';
 import type {SimLive} from './HandsSims3D';
 import {ADVANCED_SCENES} from './HandsSimsAdvanced3D';
 import {THPT_SCENES, Z, clamp} from './HandsSimsThpt3D';
-import type {handPointers} from './handsKit';
+import {DEAD_WORLD, turnDelta, type handPointers} from './handsKit';
 import {V, solid} from './handsModels';
 import {dress, loadModel, partOf, place} from './labParts';
 import type {Kit} from './Stage3D';
@@ -56,7 +56,7 @@ function controls(k: Kit, P: Hands, live: SimLive) {
     });
     const angle = (ptr: {ndc: THREE.Vector2}) => {
       const at = P.onPlane(ptr.ndc.x, ptr.ndc.y, 0.2, v3);
-      return Math.atan2(at.z - z, at.x - x);
+      return Math.hypot(at.z - z, at.x - x) < DEAD_WORLD ? NaN : Math.atan2(at.z - z, at.x - x);
     };
     let a0 = 0;
     list.push({
@@ -64,8 +64,7 @@ function controls(k: Kit, P: Hands, live: SimLive) {
       down: (ptr) => (a0 = angle(ptr)),
       hold: (ptr) => {
         const a = angle(ptr);
-        let da = a - a0;
-        da -= Math.round(da / (2 * Math.PI)) * 2 * Math.PI;
+        const da = turnDelta(a0, a);
         a0 = a;
         live.set(id, fromUnit(p, clamp(toUnit(p, live.v[id]) + da / SWEEP, 0, 1)));
       },

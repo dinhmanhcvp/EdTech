@@ -69,7 +69,7 @@ function partGrabs(k: Kit, P: ReturnType<typeof handPointers>, parts: () => Grab
     return ray.ray.intersectPlane(plane, new THREE.Vector3()) ?? ref.clone();
   };
   return {
-    grab: (nx: number, ny: number) => near(nx, ny, 0.09) !== null,
+    grab: (nx: number, ny: number, reach = 0.09) => near(nx, ny, reach) !== null,
     step() {
       let shown: Grabbable | null = null;
       P.ptrs.forEach((ptr, n) => {
@@ -135,7 +135,7 @@ function pads(k: Kit, P: ReturnType<typeof handPointers>, defs: {at: [number, nu
     return best;
   };
   return {
-    grab: (nx: number, ny: number) => near(nx, ny, 0.07) >= 0,
+    grab: (nx: number, ny: number, reach = 0.07) => near(nx, ny, reach) >= 0,
     step(dt: number) {
       P.ptrs.forEach((ptr) => {
         const i = ptr.active ? near(ptr.ndc.x, ptr.ndc.y, ptr.reach) : -1;
@@ -331,9 +331,15 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         const free = [...byN.values()].filter((q) => q.free).map((q) => q.obj);
         return free.length ? free : setObj ? [setObj] : [];
       };
-      const onMover = (nx: number, ny: number) => {
-        pokeRay.setFromCamera(pokeV.set(nx, ny), k.camera);
-        return targets().some((o) => pokeRay.intersectObject(o, true).length > 0);
+      // `reach` > 0 (bàn tay): trúng nếu tia ở tâm HOẶC một trong 8 tia quanh đó trong tầm với chạm vật, vì ngón chụm trên webcam khó trúng đúng vật nhỏ (bi, quả lắc)
+      const ringAt = Array.from({length: 8}, (_, i) => [Math.cos((i * Math.PI) / 4), Math.sin((i * Math.PI) / 4)]);
+      const onMover = (nx: number, ny: number, reach = 0) => {
+        const objs = targets();
+        const hitAt = (x: number, y: number) => {
+          pokeRay.setFromCamera(pokeV.set(x, y), k.camera);
+          return objs.some((o) => pokeRay.intersectObject(o, true).length > 0);
+        };
+        return hitAt(nx, ny) || (reach > 0 && ringAt.some(([c, s]) => hitAt(nx + (c * reach * 0.8) / k.camera.aspect, ny + s * reach * 0.8)));
       };
       const doTag = k.label('', '#1F7A4D');
       const doBox = new THREE.Box3();
@@ -388,12 +394,13 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         }
         P.ptrs.forEach((ptr) => {
           const {x, y} = ptr.ndc;
-          if (ptr.pressed && ptr.active && nearMark(x, y, 0.1)) {
+          const r = Math.max(0.09, ptr.reach); // cùng tầm với của con trỏ: chụm gần núm / nút thì vặn núm, không làm thí nghiệm
+          if (ptr.pressed && ptr.active && nearMark(x, y, Math.max(0.1, ptr.reach))) {
             stage++;
             flash = 0.5;
             return;
           }
-          if (!ptr.pressed || !ptr.active || !setupDone() || grabs.grab(x, y) || timerGrabs.grab(x, y) || sliders.grab(x, y) || buttons.grab(x, y) || !onMover(x, y)) return;
+          if (!ptr.pressed || !ptr.active || !setupDone() || grabs.grab(x, y, r) || timerGrabs.grab(x, y, r) || sliders.grab(x, y) || buttons.grab(x, y, r) || !onMover(x, y, ptr.hand ? ptr.reach : 0)) return;
           if (e.columns.length) live.dispatch({type: 'measure'});
           else pokes++;
         });

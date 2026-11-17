@@ -6,6 +6,7 @@ import {Z, board, box, clamp, glow, path, yCyl} from './HandsSimsThpt3D';
 import {V, solid, xCyl} from './handsModels';
 import {glassify, loadModel, partOf} from './labParts';
 import {setLine} from './Stage3D';
+import {DEAD_NDC, DEAD_WORLD, turnDelta} from './handsKit';
 
 /**
  * Ba bài Kĩ thuật có CẤU TẠO MÁY dựng bằng Blender (`eng-parts.glb`, kịch bản `tools/lab-models/eng_parts.py`) và điều khiển bằng
@@ -94,7 +95,9 @@ const differentialLab: Lab = ({k, P, live}) => {
   const steerOf = () => clamp(Math.log(live.v.R / 100) / LOG, 0, 1);
   const angleAt = (ptr: {ndc: THREE.Vector2}) => {
     v3.copy(WHEEL).project(k.camera);
-    return Math.atan2(ptr.ndc.y - v3.y, (ptr.ndc.x - v3.x) * k.camera.aspect);
+    const dy = ptr.ndc.y - v3.y;
+    const dx = (ptr.ndc.x - v3.x) * k.camera.aspect;
+    return Math.hypot(dx, dy) < DEAD_NDC ? NaN : Math.atan2(dy, dx);
   };
   let a0 = 0;
   const steerGrip: Grip = {
@@ -102,8 +105,7 @@ const differentialLab: Lab = ({k, P, live}) => {
     down: (ptr) => (a0 = angleAt(ptr)),
     hold: (ptr) => {
       const a = angleAt(ptr);
-      let da = a - a0;
-      da -= Math.round(da / (2 * Math.PI)) * 2 * Math.PI;
+      const da = turnDelta(a0, a);
       a0 = a;
       live.set('R', Math.round(100 * Math.exp(LOG * clamp(steerOf() + da / 2.4, 0, 1))));
     },
@@ -214,15 +216,14 @@ const turbineLab: Lab = ({k, P, live}) => {
   let a0 = 0;
   const angleAt = (ptr: {ndc: THREE.Vector2}) => {
     const at = P.onPlane(ptr.ndc.x, ptr.ndc.y, VALVE.y, v3);
-    return Math.atan2(at.z - VALVE.z, at.x - VALVE.x);
+    return Math.hypot(at.z - VALVE.z, at.x - VALVE.x) < DEAD_WORLD ? NaN : Math.atan2(at.z - VALVE.z, at.x - VALVE.x);
   };
   const valveGrip: Grip = {
     at: () => VALVE,
     down: (ptr) => (a0 = angleAt(ptr)),
     hold: (ptr) => {
       const a = angleAt(ptr);
-      let da = a - a0;
-      da -= Math.round(da / (2 * Math.PI)) * 2 * Math.PI;
+      const da = turnDelta(a0, a);
       a0 = a;
       live.set('far', Math.round(clamp(live.v.far - (da / (3 * Math.PI)) * 29, 6, 35) * 10) / 10); // vặn ngược chiều kim đồng hồ (nhìn từ trên) để mở, hai vòng rưỡi hết cỡ
     },

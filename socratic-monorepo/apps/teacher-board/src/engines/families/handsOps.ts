@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {OPS, knobParams, nearestOption, type ActionDef, type OpsDef} from '../../utils/lab/hands/sims/ops';
 import {fmt, fromUnit, toUnit, type SimSpec} from '../../utils/lab/hands/sims/types';
 import {padRate} from '../../utils/lab/hands/handTracker';
-import {handPointers} from './handsKit';
+import {DEAD_WORLD, handPointers, turnDelta} from './handsKit';
 import {dress, loadModel, partOf, type Skin} from './labParts';
 import type {Kit} from './Stage3D';
 
@@ -149,6 +149,8 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
 
   const pos = new THREE.Vector3();
   const v3 = new THREE.Vector3();
+  /** góc của con trỏ quanh tâm núm; NaN khi con trỏ nằm trong vùng chết quanh tâm (rung tay làm góc không xác định) */
+  const knobAngle = (at: THREE.Vector3, kx: number): number => (Math.hypot(at.z - KNOB_Z, at.x - kx) < DEAD_WORLD ? NaN : Math.atan2(at.z - KNOB_Z, at.x - kx));
   type Hit = {kind: 'knob'; i: number} | {kind: 'tok'; g: number; i: number} | {kind: 'lever'} | {kind: 'pull'; i: number};
   const hit = (nx: number, ny: number, reach: number): Hit | null => {
     let best: Hit | null = null;
@@ -196,7 +198,7 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
         if (ptr.pressed && h) {
           if (h.kind === 'knob') {
             const at = P.onPlane(ptr.ndc.x, ptr.ndc.y, 0.2, v3);
-            held[n] = {kind: 'knob', i: h.i, a: Math.atan2(at.z - KNOB_Z, at.x - knobs[h.i].x)};
+            held[n] = {kind: 'knob', i: h.i, a: knobAngle(at, knobs[h.i].x)};
             sel = h.i;
           } else if (h.kind === 'tok') held[n] = {kind: 'tok', g: h.g, i: h.i, x: ptr.ndc.x, y: ptr.ndc.y, moved: false};
           else held[n] = h.kind === 'lever' ? {kind: 'lever'} : {kind: 'pull', i: h.i};
@@ -228,11 +230,10 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
         };
         if (now?.kind === 'knob') {
           const at = P.onPlane(ptr.ndc.x, ptr.ndc.y, 0.2, v3);
-          const a = Math.atan2(at.z - KNOB_Z, at.x - knobs[now.i].x);
-          let da = a - now.a;
-          da -= Math.round(da / (2 * Math.PI)) * 2 * Math.PI;
+          const a = knobAngle(at, knobs[now.i].x);
+          // sát tâm núm góc nhảy loạn theo rung nhẹ của tay: chỉ vặn khi con trỏ đã ra khỏi vùng chết, góc đầu tiên sau đó là mốc
+          adjust(now.i, turnDelta(now.a, a) / SWEEP);
           now.a = a;
-          adjust(now.i, da / SWEEP);
         } else if (now?.kind === 'tok') {
           if (Math.hypot(ptr.ndc.x - now.x, ptr.ndc.y - now.y) > 0.03) now.moved = true;
         } else if (now?.kind === 'lever') {

@@ -306,6 +306,8 @@ const OUTLINE = '2px solid #D9481C';
  */
 const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: () => void) => React.ReactNode; children: React.ReactNode; hud?: React.ReactNode; lens?: React.ReactNode}> = ({hint, render, children, hud, lens}) => {
   const input = useRef(newInput()).current;
+  // chỉ khi phát triển: cho phép máy dò trình duyệt quét chỗ cầm được trên màn hình (`window.__handsInput.grab`)
+  if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') (window as unknown as {__handsInput?: HandsInput}).__handsInput = input;
   const [gl, setGl] = useState(false);
   const [cam, setCam] = useState<'off' | 'loading' | 'on'>('off');
   const [camError, setCamError] = useState('');

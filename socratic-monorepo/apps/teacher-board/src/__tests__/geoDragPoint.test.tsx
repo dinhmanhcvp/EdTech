@@ -6,7 +6,7 @@ import type {Stroke} from '../utils/lassoGeometry';
 import {buildScene} from '../utils/geometryProblem';
 import {layoutGeo} from '../utils/geoTools';
 
-const PYR = 'Cho hình chóp S.ABCD đáy ABCD là hình vuông cạnh a, SA vuông góc với đáy, SA = a√2. Gọi M là trung điểm SB.';
+const PYR = 'Cho hình chóp S.ABCD đáy ABCD là hình vuông cạnh a, SA vuông góc với đáy, SA = a√2. Lấy điểm M thuộc cạnh SB.';
 const figure = (): Stroke => {
   const scene = buildScene(PYR).scene!;
   const origin = {x: 450, y: 170};

@@ -9,8 +9,11 @@ const PYR = 'Cho hình chóp S.ABCD đáy ABCD là hình vuông cạnh a, SA vu�
 const dist = (p: number[], q: number[]) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
 
 describe('điểm kéo được trên cạnh: hình động', () => {
-  it('điểm từ "M là trung điểm SB" kéo được; M trượt dọc SB', () => {
-    const sc = buildScene(`${PYR} Gọi M là trung điểm SB.`).scene!;
+  it('trung điểm giữ là trung điểm (không trượt); điểm "M thuộc cạnh SB" kéo được, M trượt dọc SB', () => {
+    const mid = buildScene(`${PYR} Gọi M là trung điểm SB.`).scene!;
+    expect(draggablePoints(mid)).toEqual([]);
+    expect(setPointT(mid, 'M', 0.25)).toBe(mid);
+    const sc = buildScene(`${PYR} Lấy điểm M thuộc cạnh SB.`).scene!;
     expect(draggablePoints(sc).map((d) => d.name)).toEqual(['M']);
     const moved = setPointT(sc, 'M', 0.25);
     const t = dist(moved.pts.S, moved.pts.M) / dist(moved.pts.S, moved.pts.B);
@@ -22,7 +25,7 @@ describe('điểm kéo được trên cạnh: hình động', () => {
     expect(Math.hypot(...c)).toBeLessThan(1e-9);
   });
   it('kéo giới hạn trong (0,1), không ra ngoài cạnh', () => {
-    const sc = buildScene(`${PYR} Gọi M là trung điểm SB.`).scene!;
+    const sc = buildScene(`${PYR} Lấy điểm M thuộc cạnh SB.`).scene!;
     expect(setPointT(sc, 'M', -5).defs!.M).toMatchObject({t: 0.02});
     expect(setPointT(sc, 'M', 9).defs!.M).toMatchObject({t: 0.98});
   });
@@ -61,9 +64,10 @@ describe('điểm kéo được trên cạnh: hình động', () => {
     expect(hits.length).toBeGreaterThanOrEqual(3);
     expect(polygonStats(hits).area).toBeGreaterThan(0);
   });
-  it('applyDefs không đổi gì khi chưa có điểm kéo được', () => {
+  it('applyDefs không đổi gì khi chưa kéo (đỉnh S có công thức theo đáy nhưng tính lại ra đúng chỗ cũ)', () => {
     const sc = buildScene(PYR).scene!;
-    expect(applyDefs(sc)).toBe(sc);
+    const t = applyDefs(sc);
+    for (const n of Object.keys(sc.pts)) expect(dist(t.pts[n], sc.pts[n])).toBeLessThan(1e-12);
   });
   it('mỗi lần dựng cùng cho cùng kết quả (kéo rồi trả t cũ về y như cũ)', () => {
     const sc = buildScene(`${PYR} Gọi M là trung điểm SB.`).scene!;

@@ -409,7 +409,7 @@ export interface SketchPlaneShape {
  * từ 1 đến 4 nét bút. Trả về tọa độ đỉnh chuẩn hóa để dựng ngay vào hình học động tương tác.
  */
 export function detectPlaneShapeFromStrokes(strokes: SketchStrokeLike[]): SketchPlaneShape | null {
-  if (!strokes.length || strokes.length > 4) return null;
+  if (!strokes.length || strokes.length > 8) return null;
   const built = buildGraph(strokes, 3);
   if (!built) return null;
   const {graph: g, D} = built;
@@ -471,9 +471,9 @@ export function detectPlaneShapeFromStrokes(strokes: SketchStrokeLike[]): Sketch
       Math.abs(sides[1] - sides[2]) / maxS,
       Math.abs(sides[2] - sides[0]) / maxS,
     ];
-    const hasRightAngle = angles.some((a) => Math.abs(a - 90) <= 11);
-    const isEquilateral = (maxS - minS) / maxS <= 0.14 && angles.every((a) => Math.abs(a - 60) <= 12);
-    const isIsosceles = sideDiffs.some((d) => d <= 0.13);
+    const hasRightAngle = angles.some((a) => Math.abs(a - 90) <= 7);
+    const isEquilateral = (maxS - minS) / maxS <= 0.08 && angles.every((a) => Math.abs(a - 60) <= 7);
+    const isIsosceles = sideDiffs.some((d) => d <= 0.08);
 
     let kind: PlaneShapeKind = 'triangle_scalene';
     let title = 'Tam giác ABC';
@@ -576,5 +576,144 @@ export function frameStrokes<T extends {points: {x: number; y: number}[]}>(ink: 
   const side = (q: T) => Math.max(Math.max(...q.points.map((p) => p.x)) - Math.min(...q.points.map((p) => p.x)), Math.max(...q.points.map((p) => p.y)) - Math.min(...q.points.map((p) => p.y)));
   const span = Math.max(1, ...ink.map(side));
   const big = ink.filter((q) => side(q) >= span * ratio);
-  return big.length > 0 ? big : ink;
+  if (big.length === 0) return ink;
+  // cạnh NGẮN của hình (cạnh bên hình hộp dẹt, cạnh đáy chóp vẽ xa): nét gần thẳng, hai đầu chạm vào khung → vẫn là cạnh, không phải nhãn
+  const near = (p: SketchPt, qs: T[]) => qs.some((q) => q.points.some((r) => dist(p, r) < 0.1 * span));
+  const keep = new Set(big);
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const q of ink) {
+      if (keep.has(q) || side(q) < 0.12 * span || q.points.length < 2) continue;
+      const [a, b] = [q.points[0], q.points[q.points.length - 1]];
+      const straight = pathLength(q.points) <= 1.15 * dist(a, b);
+      const frame = [...keep];
+      if (straight && near(a, frame) && near(b, frame)) {
+        keep.add(q);
+        changed = true;
+      }
+    }
+  }
+  return ink.filter((q) => keep.has(q));
+}
+
+/** Đường tròn của công cụ Hình: khép kín (điểm cuối trùng điểm đầu). */
+export function circleStrokePoints(cx: number, cy: number, r: number): SketchPt[] {
+  const n = Math.max(24, Math.ceil(r / 4));
+  return Array.from({length: n + 1}, (_, i) => ({x: cx + Math.cos((2 * Math.PI * i) / n) * r, y: cy + Math.sin((2 * Math.PI * i) / n) * r}));
+}
+
+/** Mũi tên của công cụ Hình: thân rồi hai cánh ở đầu, trong MỘT nét (đầu mũi tên không mất khi lưu). */
+export function arrowStrokePoints(x1: number, y1: number, x2: number, y2: number, head = 14): SketchPt[] {
+  const a = Math.atan2(y2 - y1, x2 - x1);
+  const h = Math.min(head, Math.hypot(x2 - x1, y2 - y1) * 0.45);
+  const wing = (s: number) => ({x: x2 - h * Math.cos(a + s * (Math.PI / 7)), y: y2 - h * Math.sin(a + s * (Math.PI / 7))});
+  return [{x: x1, y: y1}, {x: x2, y: y2}, wing(1), {x: x2, y: y2}, wing(-1)];
+}
+
+/**
+ * Cụm nét của hình VỪA vẽ: bắt đầu từ nét cuối, gom các nét có khung chạm/gần (≤ 12% cỡ cụm) nét đã gom.
+ * Chữ viết, hình khác ở xa trên bảng không bị nhận nhầm vào hình (và không bị xóa khi thay bằng hình dựng).
+ */
+export function recentShapeCluster<T extends {points: SketchPt[]}>(strokes: T[]): T[] {
+  if (strokes.length === 0) return [];
+  const box = (q: T) => {
+    const xs = q.points.map((p) => p.x);
+    const ys = q.points.map((p) => p.y);
+    return {x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys)};
+  };
+  const boxes = new Map(strokes.map((q) => [q, box(q)]));
+  const out = [strokes[strokes.length - 1]];
+  for (let grew = true; grew; ) {
+    grew = false;
+    const bs = out.map((q) => boxes.get(q)!);
+    const all = {x0: Math.min(...bs.map((b) => b.x0)), x1: Math.max(...bs.map((b) => b.x1)), y0: Math.min(...bs.map((b) => b.y0)), y1: Math.max(...bs.map((b) => b.y1))};
+    const pad = 0.12 * Math.max(40, all.x1 - all.x0, all.y1 - all.y0);
+    for (const q of strokes) {
+      if (out.includes(q)) continue;
+      const b = boxes.get(q)!;
+      if (b.x0 <= all.x1 + pad && b.x1 >= all.x0 - pad && b.y0 <= all.y1 + pad && b.y1 >= all.y0 - pad && bs.some((c) => b.x0 <= c.x1 + pad && b.x1 >= c.x0 - pad && b.y0 <= c.y1 + pad && b.y1 >= c.y0 - pad)) {
+        out.push(q);
+        grew = true;
+      }
+    }
+  }
+  return strokes.filter((q) => out.includes(q));
+}
+
+/** Hình vuông kéo từ góc (x1, y1): cạnh = cạnh lớn hơn của khung kéo, theo đúng hướng kéo. */
+export function squareStrokePoints(x1: number, y1: number, x2: number, y2: number): SketchPt[] {
+  const s = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
+  const [ex, ey] = [x1 + Math.sign(x2 - x1 || 1) * s, y1 + Math.sign(y2 - y1 || 1) * s];
+  return [{x: x1, y: y1}, {x: ex, y: y1}, {x: ex, y: ey}, {x: x1, y: ey}, {x: x1, y: y1}];
+}
+
+/** Tam giác cân trong khung kéo: đỉnh ở giữa cạnh phía điểm bắt đầu, đáy ở phía điểm thả. */
+export function triangleStrokePoints(x1: number, y1: number, x2: number, y2: number): SketchPt[] {
+  return [{x: (x1 + x2) / 2, y: y1}, {x: x2, y: y2}, {x: x1, y: y2}, {x: (x1 + x2) / 2, y: y1}];
+}
+
+/** Nét do công cụ Hình tạo (id `shape-…`): vẽ nối thẳng các đỉnh, không làm mượt như nét bút. */
+export const isShapeToolStroke = (s: {id?: string}) => !!s.id?.startsWith('shape-');
+
+export interface SketchCircle {
+  cx: number;
+  cy: number;
+  r: number;
+  /** nét làm thành đường tròn */
+  circle: number[];
+  /** các nét còn lại (đa giác nội tiếp, đường kính…) */
+  rest: number[];
+}
+
+/** Đường tròn khớp nhất (bình phương tối thiểu, Kåsa) với các điểm; null nếu suy biến. */
+export function fitCircle(pts: SketchPt[]): {cx: number; cy: number; r: number; rms: number; cover: number} | null {
+  if (pts.length < 6) return null;
+  // hệ chuẩn cho x² + y² + Dx + Ey + F = 0 (dời gốc về trọng tâm cho ổn định số)
+  const mx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+  const my = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+  let [sxx, sxy, syy, sx, sy, sxz, syz, sz, n] = [0, 0, 0, 0, 0, 0, 0, 0, pts.length];
+  for (const p of pts) {
+    const [x, y] = [p.x - mx, p.y - my];
+    const z = x * x + y * y;
+    sxx += x * x; sxy += x * y; syy += y * y; sx += x; sy += y; sxz += x * z; syz += y * z; sz += z;
+  }
+  const A = [[sxx, sxy, sx], [sxy, syy, sy], [sx, sy, n]];
+  const b = [-sxz, -syz, -sz];
+  const det = (m: number[][]) => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+  const d0 = det(A);
+  if (Math.abs(d0) < 1e-9) return null;
+  const col = (k: number) => A.map((row, i) => row.map((v, j) => (j === k ? b[i] : v)));
+  const [D, E, F] = [det(col(0)) / d0, det(col(1)) / d0, det(col(2)) / d0];
+  const [cx, cy] = [-D / 2, -E / 2];
+  const r2 = cx * cx + cy * cy - F;
+  if (!(r2 > 0)) return null;
+  const r = Math.sqrt(r2);
+  const rms = Math.sqrt(pts.reduce((s, p) => s + (Math.hypot(p.x - mx - cx, p.y - my - cy) - r) ** 2, 0) / pts.length);
+  // độ phủ góc: số ô 10° có điểm rơi vào
+  const bins = new Set(pts.map((p) => Math.floor(((Math.atan2(p.y - my - cy, p.x - mx - cx) + Math.PI) / (2 * Math.PI)) * 36) % 36));
+  return {cx: cx + mx, cy: cy + my, r, rms, cover: (bins.size / 36) * 360};
+}
+
+/**
+ * Đường tròn vẽ tay (một nét, hoặc vài cung nối lại): nét CONG (Douglas–Peucker giữ ≥ 8 đỉnh, không có góc gãy như đa giác),
+ * sai lệch bán kính ≤ 9% và phủ ≥ 300°. Hình vuông/đa giác vẽ một nét không bị nhận là tròn.
+ */
+export function detectCircleSketch(strokes: SketchStrokeLike[]): SketchCircle | null {
+  const round = (pts: SketchPt[]) => {
+    const f = fitCircle(pts);
+    if (!f || f.r < 15 || f.rms > 0.09 * f.r || f.cover < 300) return null;
+    return simplify(pts, 0.04 * 2 * f.r).length >= 8 ? f : null;
+  };
+  const curved = (pts: SketchPt[]) => pts.length >= 6 && pathLength(pts) > 1.25 * dist(pts[0], pts[pts.length - 1]) && simplify(pts, 0.04 * pathLength(pts) / 3).length >= 5;
+  for (let i = 0; i < strokes.length; i++) {
+    const f = round(strokes[i].points);
+    if (f) return {cx: f.cx, cy: f.cy, r: f.r, circle: [i], rest: strokes.map((_, k) => k).filter((k) => k !== i)};
+  }
+  // vài cung (nhấc bút giữa chừng): gộp các nét cong
+  const cur = strokes.map((s, i) => (curved(s.points) ? i : -1)).filter((i) => i >= 0);
+  if (cur.length >= 2) {
+    const f = round(cur.flatMap((i) => strokes[i].points));
+    if (f) return {cx: f.cx, cy: f.cy, r: f.r, circle: cur, rest: strokes.map((_, k) => k).filter((k) => !cur.includes(k))};
+  }
+  return null;
 }

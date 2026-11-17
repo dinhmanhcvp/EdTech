@@ -7,6 +7,7 @@
  * 5. Export as image/png base64 data URL.
  * Tên hàm giữ "Webp" vì nhiều nơi gọi, nhưng ảnh xuất ra là PNG (nét đen trên nền trắng nén tốt, giữ nét sắc cho OCR).
  */
+import {isShapeToolStroke} from './sketchSolid';
 import { Stroke, Point } from './lassoGeometry';
 
 export interface IsolatedExportResult {
@@ -103,7 +104,7 @@ export async function exportIsolatedWebp(
     // Quadratic curve smoothing between points for ultra-clean edges
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
-    if (typeof ctx.quadraticCurveTo === 'function') {
+    if (typeof ctx.quadraticCurveTo === 'function' && !isShapeToolStroke(stroke)) {
       for (let i = 1; i < pts.length - 1; i++) {
         const xc = (pts[i].x + pts[i + 1].x) / 2;
         const yc = (pts[i].y + pts[i + 1].y) / 2;

@@ -230,7 +230,7 @@ describe('AI hub phân tầng cho chức năng Vẽ hình', () => {
     fireEvent.click(screen.getByTestId('ai-fab-draw'));
     fireEvent.click(screen.getByTestId('ai-fab-draw-tools'));
     expect(tier()).toBe('draw/tools');
-    expect(ids().filter((i) => i?.startsWith('ai-fab-draw-'))).toHaveLength(7);
+    expect(ids().filter((i) => i?.startsWith('ai-fab-draw-'))).toHaveLength(9); // + Điểm trên tròn, Giao đường–tròn
     fireEvent.click(screen.getByTestId('ai-fab-draw-midpoint'));
     expect(g.setTool).toHaveBeenCalledWith('midpoint');
     expect(screen.getByTestId('ai-fab-menu').getAttribute('aria-hidden')).toBe('true');

@@ -5,10 +5,11 @@
  */
 import {add, cross, dot, len, mul, norm, sub, type V3} from './solids';
 import {inferCons, solveDragNatural, type Cons, type P2} from './geoConstraints';
-import {appendPart, lineIntersect, modelFromScene, partShown, renderScene, sceneFromModel, type GeoDef, type GeoScene} from './geometryProblem';
+import {appendPart, buildScene, lineIntersect, makeProjector, modelFromScene, partShown, renderScene, sceneFromModel, type GeoDef, type GeoScene} from './geometryProblem';
 import {clampLabelOffset} from './geoLabels';
 import type {ShapeMeta} from './lassoGeometry';
 import {snapPlane, type PlaneConstraintKind} from './planeConstraints';
+import {detectCircleSketch, detectPlaneShapeFromStrokes, fitCircle, frameStrokes, type SketchStrokeLike} from './sketchSolid';
 
 const NAMES = 'MNPQRTUVWXYZHKIJEFGL'.split('');
 
@@ -39,16 +40,16 @@ export function addSegment(sc: GeoScene, a: string, b: string, part: number): Ge
   return n;
 }
 
-export function addPointOnSegment(sc: GeoScene, a: string, b: string, t: number, part: number, name?: string): {scene: GeoScene; name: string} {
+export function addPointOnSegment(sc: GeoScene, a: string, b: string, t: number, part: number, name?: string, fix?: true): {scene: GeoScene; name: string} {
   const n = clone(sc);
   const nm = name ?? nextName(n);
   const tt = Math.min(0.95, Math.max(0.05, t));
   addPoint(n, nm, add(n.pts[a], mul(sub(n.pts[b], n.pts[a]), tt)) as V3, part);
-  n.defs = {...(n.defs ?? {}), [nm]: {k: 'seg', a, b, t: tt}};
+  n.defs = {...(n.defs ?? {}), [nm]: fix ? {k: 'seg', a, b, t: tt, fix} : {k: 'seg', a, b, t: tt}};
   return {scene: n, name: nm};
 }
 
-export const addMidpoint = (sc: GeoScene, a: string, b: string, part: number) => addPointOnSegment(sc, a, b, 0.5, part);
+export const addMidpoint = (sc: GeoScene, a: string, b: string, part: number) => addPointOnSegment(sc, a, b, 0.5, part, undefined, true);
 
 /** Chân đường vuông góc hạ từ `p` xuống đường thẳng ab, kèm đoạn nối. */
 export function addFoot(sc: GeoScene, p: string, a: string, b: string, part: number): {scene: GeoScene; name: string} {
@@ -387,6 +388,55 @@ function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
     const [P, O] = [g(d.p), g(d.o)];
     return P && O ? (sub(mul(O, 2), P) as V3) : null;
   }
+  if (d.k === 'aff') {
+    const [O, A, B] = [g(d.o), g(d.a), g(d.b)];
+    if (!O || !A || !B) return null;
+    const u = sub(A, O);
+    const w = sub(B, O);
+    const n = cross(u, w);
+    if (len(n) < 1e-12) return null;
+    return add(add(O, add(mul(u, d.s), mul(w, d.t))), mul(n, (d.h * len(u)) / len(n))) as V3;
+  }
+  if (d.k === 'onc') {
+    const [O, Q] = [g(d.o), g(d.q)];
+    if (!O || !Q) return null;
+    const r = len(sub(Q, O));
+    return [O[0] + r * Math.cos(d.ang), O[1] + r * Math.sin(d.ang), O[2]] as V3;
+  }
+  if (d.k === 'pp') {
+    const A = d.a.map(g);
+    const B = d.b.map(g);
+    if (A.some((x) => !x) || B.some((x) => !x)) return null;
+    const [a0, a1, a2] = A as V3[];
+    const [b0, b1, b2] = B as V3[];
+    const n1 = cross(sub(a1, a0), sub(a2, a0));
+    const n2 = cross(sub(b1, b0), sub(b2, b0));
+    const dir = cross(n1, n2);
+    if (len(dir) < 1e-9 * len(n1) * len(n2)) return null;
+    const dd = norm(dir);
+    const [u1, u2] = [norm(n1), norm(n2)];
+    const det = dot(u1, cross(u2, dd));
+    if (Math.abs(det) < 1e-12) return null;
+    const x0 = mul(add(mul(cross(u2, dd), dot(u1, a0)), mul(cross(dd, u1), dot(u2, b0))), 1 / det);
+    const ref = mul((([...A, ...B] as V3[]).reduce((s0, p) => add(s0, p) as V3, [0, 0, 0] as V3)), 1 / (A.length + B.length));
+    const c = add(x0, mul(dd, dot(sub(ref, x0), dd)));
+    return add(c, mul(dd, d.w * len(sub(a1, a0)))) as V3;
+  }
+  if (d.k === 'fpl' || d.k === 'lpl') {
+    const [A, B, C] = (d.k === 'fpl' ? [d.a, d.b, d.c] : [d.c, d.d, d.e]).map(g);
+    if (!A || !B || !C) return null;
+    const n = cross(sub(B, A), sub(C, A));
+    const nn = dot(n, n);
+    if (nn < 1e-12) return null;
+    if (d.k === 'fpl') {
+      const P = g(d.p);
+      return P ? (sub(P, mul(n, dot(sub(P, A), n) / nn)) as V3) : null;
+    }
+    const [X, Y] = [g(d.a), g(d.b)];
+    if (!X || !Y) return null;
+    const den = dot(n, sub(Y, X));
+    return Math.abs(den) > 1e-12 ? (add(X, mul(sub(Y, X), dot(n, sub(A, X)) / den)) as V3) : null;
+  }
   const ps = d.n.map(g);
   if (ps.some((p) => !p)) return null;
   const [A, B, C] = ps as V3[];
@@ -412,7 +462,7 @@ function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
 
 /** Các điểm mà công thức `d` dựa vào. */
 export const defDeps = (d: GeoDef): string[] =>
-  d.k === 'seg' ? [d.a, d.b] : d.k === 'vec' ? [d.p] : d.k === 'foot' || d.k === 'refl' || d.k === 'off' || d.k === 'trans' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.k === 'll' ? [d.p, d.a, d.b, d.q, d.c, d.d] : d.k === 'rad' ? [d.o, ...(d.q ? [d.q] : []), d.a, ...(d.b ? [d.b] : [])] : d.k === 'chd' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcint' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcx' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b, ...(d.ex ? [d.ex.replace('~', '')] : [])] : d.k === 'bisx' ? [d.v, d.a, d.c, d.p, d.q] : d.k === 'tt' ? [d.o, d.t, d.u] : d.k === 'tanpt' ? [d.o, d.t, ...(d.q ? [d.q] : [])] : d.k === 'pdist' ? [d.a, d.c, d.r, d.s] : d.k === 'tanx' ? [d.o, d.t, d.c, d.d] : d.k === 'refp' || d.k === 'rot' || d.k === 'dil' ? [d.p, d.o] : d.k === 'tan' ? [d.p, d.o, ...(d.q ? [d.q] : [])] : d.n;
+  d.k === 'seg' ? [d.a, d.b] : d.k === 'vec' ? [d.p] : d.k === 'foot' || d.k === 'refl' || d.k === 'off' || d.k === 'trans' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.k === 'll' ? [d.p, d.a, d.b, d.q, d.c, d.d] : d.k === 'rad' ? [d.o, ...(d.q ? [d.q] : []), d.a, ...(d.b ? [d.b] : [])] : d.k === 'chd' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcint' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcx' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b, ...(d.ex ? [d.ex.replace('~', '')] : [])] : d.k === 'bisx' ? [d.v, d.a, d.c, d.p, d.q] : d.k === 'tt' ? [d.o, d.t, d.u] : d.k === 'tanpt' ? [d.o, d.t, ...(d.q ? [d.q] : [])] : d.k === 'pdist' ? [d.a, d.c, d.r, d.s] : d.k === 'tanx' ? [d.o, d.t, d.c, d.d] : d.k === 'refp' || d.k === 'rot' || d.k === 'dil' ? [d.p, d.o] : d.k === 'tan' ? [d.p, d.o, ...(d.q ? [d.q] : [])] : d.k === 'aff' ? [d.o, d.a, d.b] : d.k === 'fpl' ? [d.p, d.a, d.b, d.c] : d.k === 'lpl' ? [d.a, d.b, d.c, d.d, d.e] : d.k === 'pp' ? [...d.a, ...d.b] : d.k === 'onc' ? [d.o, d.q] : d.n;
 
 /** Tính lại mọi điểm xác định theo điểm khác (điểm trên cạnh, chân đường vuông góc, trọng tâm, giao điểm…) và đường tròn gắn với chúng, theo thứ tự tạo ra. */
 export function applyDefs(sc: GeoScene): GeoScene {
@@ -453,7 +503,10 @@ export function applyDefs(sc: GeoScene): GeoScene {
 
 /** Điểm kéo TỰ DO được (hình phẳng): đỉnh không phụ thuộc điểm nào và nằm trên một cạnh của hình. Kéo đi thì tính chất của hình được giữ. */
 export function freePoints(sc: GeoScene): string[] {
+  if (sc.dim === 3) return freePoints3(sc);
   if (sc.dim !== 2) return [];
+  const onc = sc.order.filter((n) => sc.defs?.[n]?.k === 'onc');
+  if (onc.length) return [...freePoints({...sc, defs: Object.fromEntries(Object.entries(sc.defs ?? {}).filter(([, d]) => d.k !== 'onc'))}).filter((n) => !onc.includes(n)), ...onc];
   const onEdge = new Set([...sc.edges.flat(), ...(sc.loose ?? [])]);
   // điểm ngoài đường tròn mà từ đó kẻ tiếp tuyến / cát tuyến: kéo được (tiếp điểm, giao điểm, trung điểm dây… tự theo)
   for (const d of Object.values(sc.defs ?? {})) {
@@ -483,6 +536,13 @@ export function inferCyclic(sc: GeoScene, live: string[]): Cons[] {
 
 /** Kéo điểm tự do `name` tới `to`; các điểm khác của hình tự chỉnh để giữ vuông góc / bằng nhau / song song. Không giữ được tính chất thì trả cảnh cũ. */
 export function moveFreePoint(sc: GeoScene, name: string, to: V3): GeoScene {
+  if (sc.dim === 3) return moveFree3(sc, name, to);
+  const oc = sc.defs?.[name];
+  if (oc?.k === 'onc') {
+    // điểm trên đường tròn: trượt theo đường tròn (góc theo hướng con trỏ nhìn từ tâm)
+    const O = sc.pts[oc.o];
+    return applyDefs({...sc, defs: {...sc.defs, [name]: {...oc, ang: Math.atan2(to[1] - O[1], to[0] - O[0])}}});
+  }
   const free = freePoints(sc);
   if (!free.includes(name)) return sc;
   const p2: Record<string, P2> = Object.fromEntries(free.map((n) => [n, [sc.pts[n][0], sc.pts[n][1]] as P2]));
@@ -748,15 +808,16 @@ export function addMidline(sc: GeoScene, a: string, b: string, c: string, part: 
 /** Các điểm kéo được trên cạnh: tên, hai đầu cạnh. */
 export function draggablePoints(sc: GeoScene): {name: string; a: string; b: string}[] {
   return Object.entries(sc.defs ?? {})
-    .filter(([n, d]) => d.k === 'seg' && !!sc.pts[n] && sc.order.includes(n))
+    .filter(([n, d]) => d.k === 'seg' && !d.fix && !!sc.pts[n] && sc.order.includes(n))
     .map(([n, d]) => ({name: n, a: (d as Extract<GeoDef, {k: 'seg'}>).a, b: (d as Extract<GeoDef, {k: 'seg'}>).b}));
 }
 
 /** Đặt vị trí điểm trên cạnh (t ∈ (0,1)) và tính lại các điểm phụ thuộc (chân đường vuông góc, thiết diện tự theo khi vẽ). */
 export function setPointT(sc: GeoScene, name: string, t: number): GeoScene {
   const d = sc.defs?.[name];
-  if (!d || d.k !== 'seg') return sc;
-  const tt = Math.min(0.98, Math.max(0.02, t));
+  if (!d || d.k !== 'seg' || d.fix) return sc;
+  // điểm trên tia đối (t > 1, vd. "trên tia đối của tia BA lấy C") vẫn ở ngoài đoạn khi kéo
+  const tt = d.t > 1 ? Math.min(6, Math.max(1.05, t)) : d.t < 0 ? Math.max(-5, Math.min(-0.05, t)) : Math.min(0.98, Math.max(0.02, t));
   return applyDefs({...sc, defs: {...sc.defs, [name]: {...d, t: tt}}});
 }
 
@@ -825,7 +886,9 @@ export function toTikz(sc: GeoScene, upTo: number): string {
 const fmtDim = (v: number | undefined, d = 2) => `${+(v && v > 0 ? v : d).toFixed(1)}`;
 
 /** Khối nhận dạng từ nét vẽ tay → câu mô tả mà bộ dựng hình hiểu; null nếu chưa có hình dựng tương ứng (bát diện, lăng trụ lục giác…). */
-export function problemTextForSolid(kind: string, dims: {a?: number; b?: number; c?: number; h?: number} = {}): string | null {
+export function problemTextForSolid(kind: string, dims: {a?: number; b?: number; c?: number; h?: number} = {}, wire?: {verts: {x: number; y: number}[]; edges: [number, number][]}): string | null {
+  const drawn = wire ? solidTextFromWire(kind, wire) : null;
+  if (drawn) return drawn;
   switch (kind) {
     case 'cube':
       return "hình lập phương ABCD.A'B'C'D' cạnh a";
@@ -840,6 +903,50 @@ export function problemTextForSolid(kind: string, dims: {a?: number; b?: number;
     default:
       return null;
   }
+}
+
+/**
+ * Chóp / lăng trụ vẽ tay → đề GIỮ dáng người vẽ (không thay bằng hình mẫu "đều"): đỉnh chóp vẽ thẳng đứng trên một đỉnh đáy → cạnh bên
+ * vuông góc đáy tại đỉnh đó; chiều cao (chóp, lăng trụ) theo tỉ lệ với cạnh đáy trên hình vẽ. Tọa độ màn hình: y hướng xuống.
+ */
+function solidTextFromWire(kind: string, w: {verts: {x: number; y: number}[]; edges: [number, number][]}): string | null {
+  const V = w.verts;
+  const deg = V.map((_, i) => w.edges.filter((e) => e.includes(i)).length);
+  const r1 = (x: number) => `${+x.toFixed(1)}`.replace('.', ',');
+  if (kind === 'pyramid4' || kind === 'pyramid3') {
+    const nb = kind === 'pyramid4' ? 4 : 3;
+    if (V.length !== nb + 1) return null;
+    // đỉnh chóp: bậc lớn nhất, hòa thì điểm cao nhất
+    const apex = V.map((_, i) => i).sort((i, j) => deg[j] - deg[i] || V[i].y - V[j].y)[0];
+    const base = V.map((_, i) => i).filter((i) => i !== apex);
+    const xs = base.map((i) => V[i].x);
+    const width = Math.max(...xs) - Math.min(...xs);
+    const baseY = Math.max(...base.map((i) => V[i].y));
+    const top = V[apex];
+    if (width < 1e-6 || top.y >= Math.min(...base.map((i) => V[i].y))) return null;
+    // đỉnh đáy ngay dưới đỉnh chóp (nét gần thẳng đứng) → SA ⊥ đáy
+    const under = base.filter((i) => w.edges.some((e) => e.includes(i) && e.includes(apex)) && Math.abs(V[i].x - top.x) < 0.08 * width).sort((i, j) => V[j].y - V[i].y)[0];
+    const a = 2;
+    if (under !== undefined) {
+      const h = ((V[under].y - top.y) / width) * a;
+      const bn = kind === 'pyramid4' ? 'ABCD' : 'ABC';
+      return `hình chóp S.${bn} có đáy ${bn} là ${kind === 'pyramid4' ? 'hình vuông' : 'tam giác đều'} cạnh ${a}, SA vuông góc với đáy, SA = ${r1(Math.min(6, Math.max(0.6, h)))}`;
+    }
+    const h = Math.min(6, Math.max(0.6, ((baseY - top.y) / width) * a * 0.9));
+    return kind === 'pyramid4' ? `hình chóp tứ giác đều S.ABCD cạnh đáy ${a}, chiều cao ${r1(h)}` : `hình chóp tam giác đều S.ABC cạnh đáy ${a}, chiều cao ${r1(h)}`;
+  }
+  if (kind === 'prism3' && V.length === 6) {
+    // cạnh bên: 3 cạnh gần song song cùng hướng (dài nhất theo phương chung); chiều cao theo tỉ lệ với bề ngang đáy
+    const ys = V.map((p) => p.y);
+    const xs = V.map((p) => p.x);
+    const sorted = [...V].sort((p, q) => p.y - q.y);
+    const hDraw = (sorted[3].y + sorted[4].y + sorted[5].y) / 3 - (sorted[0].y + sorted[1].y + sorted[2].y) / 3;
+    const width = Math.max(...xs) - Math.min(...xs);
+    if (width < 1e-6 || Math.max(...ys) - Math.min(...ys) < 1e-6) return null;
+    const h = Math.min(6, Math.max(0.6, (hDraw / width) * 2));
+    return `lăng trụ đứng ABC.A'B'C' có đáy là tam giác đều cạnh 2, AA' = ${r1(h)}`;
+  }
+  return null;
 }
 
 /** Hình phẳng nhận dạng từ nét vẽ tay → câu mô tả. */
@@ -1060,4 +1167,235 @@ export function measurePolygon(sc: GeoScene, names: string[], what: 'area' | 'pe
   const area = len(sum) / 2;
   const per = q.reduce((s2, p, i) => s2 + Math.hypot(p[0] - q[(i + 1) % q.length][0], p[1] - q[(i + 1) % q.length][1]), 0);
   return what === 'area' ? `S(${names.join('')}) = ${+area.toFixed(3)}a²` : `Chu vi ${names.join('')} = ${fmtLen(per)} (≈ ${+per.toFixed(3)}a)`;
+}
+
+// ------------------------------------------------------------------ kéo đỉnh hình không gian
+/**
+ * Hình không gian (chóp, lăng trụ, hộp, lập phương, tứ diện): kéo được các đỉnh của mặt đáy (`faces[0]`, giữ dạng đáy: vuông, chữ nhật,
+ * tam giác đều/vuông… nhờ cùng bộ giải ràng buộc của hình phẳng) và đỉnh có công thức `aff` (đỉnh chóp, đỉnh trên: đổi chiều cao, chân
+ * đường cao giữ nguyên). Chỉ khi MỌI điểm khác đều có công thức, để không điểm nào đứng yên sai chỗ. Khối tròn xoay không kéo.
+ */
+function freePoints3(sc: GeoScene): string[] {
+  const root = sc.faces[0] ?? [];
+  if (root.length < 3 || (sc.circles?.length ?? 0) > 0 || sc.net) return [];
+  if (Object.keys(sc.pts).some((n) => !root.includes(n) && !sc.defs?.[n])) return [];
+  return [...root.filter((n) => !sc.defs?.[n]), ...sc.order.filter((n) => {
+    const d = sc.defs?.[n];
+    return d?.k === 'aff' && !d.lock;
+  })];
+}
+
+/** Khung của mặt đáy: gốc, hai trục trong mặt, pháp tuyến. */
+function baseFrame(sc: GeoScene) {
+  const root = sc.faces[0];
+  const o = sc.pts[root[0]];
+  const e1 = norm(sub(sc.pts[root[1]], o)) as V3;
+  const n = norm(cross(sub(sc.pts[root[1]], o), sub(sc.pts[root[root.length - 1]], o))) as V3;
+  const e2 = cross(n, e1) as V3;
+  return {root, o, e1, e2, n};
+}
+
+function moveFree3(sc: GeoScene, name: string, to: V3): GeoScene {
+  if (!freePoints3(sc).includes(name)) return sc;
+  const d = sc.defs?.[name];
+  if (d?.k === 'aff') {
+    // đỉnh chóp / đỉnh trên: chỉ đổi chiều cao (tỉ lệ với cạnh đáy), không đổi phía, không bẹp
+    const [O, A, B] = [sc.pts[d.o], sc.pts[d.a], sc.pts[d.b]];
+    const u = sub(A, O);
+    const w = sub(B, O);
+    const n = norm(cross(u, w));
+    const foot = add(O, add(mul(u, d.s), mul(w, d.t)));
+    const h = dot(sub(to, foot), n) / len(u);
+    const sg = Math.sign(d.h || 1);
+    const hh = sg * Math.min(6, Math.max(0.15, sg * h));
+    return applyDefs({...sc, defs: {...sc.defs, [name]: {...d, h: hh}}});
+  }
+  // đỉnh đáy: kéo trong mặt đáy, các đỉnh đáy khác tự chỉnh để giữ vuông góc / bằng nhau / song song
+  const {root, o, e1, e2} = baseFrame(sc);
+  const to2 = (p: number[]): P2 => [dot(sub(p as V3, o), e1), dot(sub(p as V3, o), e2)];
+  const p2: Record<string, P2> = Object.fromEntries(root.map((n) => [n, to2(sc.pts[n])]));
+  const ring = root.map((n, i) => [n, root[(i + 1) % root.length]] as [string, string]);
+  const cons = sc.cons ?? inferCons(p2, ring);
+  const out = solveDragNatural(p2, cons, name, to2(to), root);
+  if (!out) return sc;
+  const pts = {...sc.pts};
+  for (const n of root) pts[n] = add(o, add(mul(e1, out[n][0]), mul(e2, out[n][1]))) as V3;
+  return applyDefs({...sc, pts, cons});
+}
+
+/**
+ * Đổi độ dời của chuột (dx, dy theo đơn vị khung vẽ) khi kéo đỉnh `name` của hình không gian thành điểm đích trong không gian:
+ * đỉnh đáy dời trong mặt đáy, đỉnh có công thức `aff` dời theo pháp tuyến đáy (phép chiếu là affine nên giải hệ tuyến tính).
+ */
+export function dragTarget3(sc: GeoScene, name: string, dx: number, dy: number): V3 {
+  const P = sc.pts[name];
+  const {pv} = makeProjector(sc);
+  const {e1, e2, n, o} = baseFrame(sc);
+  const step = Math.max(1e-6, len(sub(sc.pts[sc.faces[0][1]], o)));
+  const p0 = pv(P);
+  const J = (v: V3) => {
+    const q = pv(add(P, mul(v, step)) as V3);
+    return [(q.x - p0.x) / step, (q.y - p0.y) / step];
+  };
+  if (sc.defs?.[name]?.k === 'aff') {
+    const jn = J(n);
+    const nn = jn[0] * jn[0] + jn[1] * jn[1];
+    return nn < 1e-9 ? P : (add(P, mul(n, (jn[0] * dx + jn[1] * dy) / nn)) as V3);
+  }
+  const [a, b] = [J(e1), J(e2)];
+  const det = a[0] * b[1] - a[1] * b[0];
+  if (Math.abs(det) < 1e-9) return P; // nhìn ngang mặt đáy: không kéo được trong mặt đáy
+  const s = (dx * b[1] - dy * b[0]) / det;
+  const t = (a[0] * dy - a[1] * dx) / det;
+  return add(P, add(mul(e1, s), mul(e2, t))) as V3;
+}
+
+// ------------------------------------------------------------------ dựng hình tự do (kiểu GeoGebra)
+/** Trang dựng hình trắng: hai điểm tự do A, B (kéo đi đâu cũng được) để bắt đầu dựng bằng các dụng cụ; xóa được khi không cần. */
+export function blankConstruction(): GeoScene {
+  const sc = buildScene('A(0;0), B(4;0)').scene!;
+  return {...sc, title: 'Dựng hình tự do', loose: ['A', 'B']};
+}
+
+/** Cung tròn tâm O từ A tới B (ngược chiều kim đồng hồ), không kẻ hai bán kính như hình quạt. */
+export function addArc(sc: GeoScene, o: string, a: string, b: string, part: number): GeoScene | null {
+  const c = addCircleOf(sc, 'sector', [o, a, b], part);
+  if (!c) return null;
+  const last = c.circles![c.circles!.length - 1];
+  c.circles![c.circles!.length - 1] = {...last, label: `cung ${a}${b} tâm ${o}`};
+  return c;
+}
+
+/** Giao của đường thẳng AB với đường tròn tâm O đi qua Q: hai giao điểm (theo thứ tự trên tia AB), tính lại khi kéo. */
+export function addLineCircle(sc: GeoScene, a: string, b: string, o: string, q: string, part: number): {scene: GeoScene; names: string[]} | null {
+  if (!plane(sc, [a, b, o, q]) || a === b || o === q) return null;
+  const n = clone(sc);
+  const names: string[] = [];
+  for (const w of [1, 2] as const) {
+    const d: GeoDef = {k: 'lcint', o, q, a, b, deg: 0, w};
+    const p = calcDef(d, n.pts);
+    if (p) names.push(addDerived(n, p, d, part));
+  }
+  if (!names.length) return null;
+  n.aux.push([a, b, part]);
+  return {scene: n, names};
+}
+
+/** Điểm trên đường tròn tâm O đi qua Q (đặt ở góc 60° so với OQ), kéo được trượt trên đường tròn. */
+export function addPointOnCircle(sc: GeoScene, o: string, q: string, part: number): {scene: GeoScene; name: string} | null {
+  if (!plane(sc, [o, q]) || o === q) return null;
+  const n = clone(sc);
+  const [O, Q] = [n.pts[o], n.pts[q]];
+  const d: GeoDef = {k: 'onc', o, q, ang: Math.atan2(Q[1] - O[1], Q[0] - O[0]) + Math.PI / 3};
+  return {scene: n, name: addDerived(n, calcDef(d, n.pts)!, d, part)};
+}
+
+// ------------------------------------------------------------------ đường tròn vẽ tay → hình dựng
+/**
+ * Nét vẽ tay có đường tròn → đề kèm tọa độ (y hướng lên), giữ đúng chỗ người vẽ:
+ * chỉ đường tròn · tròn + đường kính (nét thẳng qua tâm) · tròn + bán kính · đa giác có đỉnh trên đường tròn (nội tiếp) ·
+ * tam giác có đường tròn nằm trong tiếp xúc ba cạnh (đường tròn nội tiếp). Không khớp kiểu nào thì vẫn trả đường tròn.
+ */
+export function circleFigureText(strokes: SketchStrokeLike[]): string | null {
+  const c = detectCircleSketch(strokes);
+  if (!c) return semicircleFigureText(strokes);
+  // chữ O / số 0 nhỏ viết cạnh hình (tên tâm, nhãn) không phải đường tròn của hình
+  const allP = strokes.flatMap((s) => s.points);
+  const ext = Math.max(Math.max(...allP.map((p) => p.x)) - Math.min(...allP.map((p) => p.x)), Math.max(...allP.map((p) => p.y)) - Math.min(...allP.map((p) => p.y)));
+  if (c.r < 30 || 2 * c.r < 0.3 * ext) return null;
+  const rest = c.rest.map((i) => strokes[i]).filter((s) => s.points.length >= 2);
+  const k = 2 / c.r; // bán kính quy về 2
+  const xy = (p: {x: number; y: number}) => [(p.x - c.cx) * k, -(p.y - c.cy) * k];
+  const fmt = (nm: string, p: {x: number; y: number}) => `${nm}(${xy(p).map((v) => +v.toFixed(3)).join(';')})`;
+  const circle = 'Cho đường tròn (O; 2)';
+  if (rest.length === 0) return circle;
+  // một nét thẳng: đường kính (qua tâm, hai đầu trên đường tròn) hoặc bán kính (một đầu ở tâm)
+  if (rest.length === 1) {
+    const pts = rest[0].points;
+    const [a, b] = [pts[0], pts[pts.length - 1]];
+    const L = Math.hypot(b.x - a.x, b.y - a.y);
+    const straight = pts.reduce((s, p, i) => (i ? s + Math.hypot(p.x - pts[i - 1].x, p.y - pts[i - 1].y) : 0), 0) <= 1.12 * L;
+    const onC = (p: {x: number; y: number}) => Math.abs(Math.hypot(p.x - c.cx, p.y - c.cy) - c.r) < 0.18 * c.r;
+    const atO = (p: {x: number; y: number}) => Math.hypot(p.x - c.cx, p.y - c.cy) < 0.18 * c.r;
+    if (straight && onC(a) && onC(b) && L > 1.6 * c.r) {
+      // hai đầu đối xứng qua tâm (đường kính); lấy hướng nét vẽ
+      const u = {x: (b.x - a.x) / L, y: (b.y - a.y) / L};
+      const A = {x: c.cx - u.x * c.r, y: c.cy - u.y * c.r};
+      const B = {x: c.cx + u.x * c.r, y: c.cy + u.y * c.r};
+      return `Cho đường tròn (O) đường kính AB, ${fmt('A', A)}, ${fmt('B', B)}`;
+    }
+    if (straight && (atO(a) || atO(b)) && onC(atO(a) ? b : a)) {
+      const e = atO(a) ? b : a;
+      const L2 = Math.hypot(e.x - c.cx, e.y - c.cy);
+      return `${circle}. Lấy điểm A thuộc (O), kẻ bán kính OA, ${fmt('A', {x: c.cx + ((e.x - c.cx) / L2) * c.r, y: c.cy + ((e.y - c.cy) / L2) * c.r})}`;
+    }
+  }
+  const pl = detectPlaneShapeFromStrokes(frameStrokes(rest));
+  if (pl) {
+    const letters = 'ABCDEFGH'.slice(0, pl.vertices2D.length);
+    // vertices2D: tọa độ chuẩn hóa quanh trọng tâm, y hướng lên → đổi về tọa độ màn hình theo khung các nét còn lại
+    const all = rest.flatMap((s) => s.points);
+    const [x0, x1, y0, y1] = [Math.min(...all.map((p) => p.x)), Math.max(...all.map((p) => p.x)), Math.min(...all.map((p) => p.y)), Math.max(...all.map((p) => p.y))];
+    const vx = pl.vertices2D.map((v) => v[0]);
+    const vy = pl.vertices2D.map((v) => v[1]);
+    const sx = (x1 - x0) / Math.max(1e-9, Math.max(...vx) - Math.min(...vx));
+    const sy = (y1 - y0) / Math.max(1e-9, Math.max(...vy) - Math.min(...vy));
+    const scr = pl.vertices2D.map(([x, y]) => ({x: x0 + (x - Math.min(...vx)) * sx, y: y0 + (Math.max(...vy) - y) * sy}));
+    const dR = scr.map((p) => Math.hypot(p.x - c.cx, p.y - c.cy) / c.r);
+    const name = ['tam giác', 'tứ giác', 'ngũ giác', 'lục giác', 'thất giác', 'bát giác'][scr.length - 3] ?? 'đa giác';
+    if (dR.every((q) => Math.abs(q - 1) < 0.15)) {
+      // đỉnh nằm trên đường tròn: kéo đúng lên đường tròn
+      const on = scr.map((p, i) => ({x: c.cx + ((p.x - c.cx) / dR[i]) * 1, y: c.cy + ((p.y - c.cy) / dR[i]) * 1}));
+      return `${name} ${letters} nội tiếp đường tròn (O), ${on.map((p, i) => fmt(letters[i], p)).join(', ')}`;
+    }
+    if (scr.length === 3) {
+      // đường tròn nằm trong tam giác, gần tiếp xúc ba cạnh → đường tròn nội tiếp
+      const dl = (p: {x: number; y: number}, a: {x: number; y: number}, b: {x: number; y: number}) => Math.abs((b.x - a.x) * (a.y - p.y) - (a.x - p.x) * (b.y - a.y)) / Math.hypot(b.x - a.x, b.y - a.y);
+      const O = {x: c.cx, y: c.cy};
+      if ([0, 1, 2].every((i) => Math.abs(dl(O, scr[i], scr[(i + 1) % 3]) / c.r - 1) < 0.2)) return `tam giác ABC, ${scr.map((p, i) => fmt(letters[i], p)).join(', ')}. Đường tròn (I) nội tiếp tam giác ABC`;
+    }
+  }
+  return circle;
+}
+
+/** Đổi tỉ lệ khung vẽ của cảnh để hình dựng có cỡ bằng khung `w × h` (px bảng) của nét vẽ tay; giữ nguyên tỉ lệ hình. */
+export function fitSceneToBox(sc: GeoScene, w: number, h: number): GeoScene {
+  if (!(w > 20 || h > 20) || sc.rot) return sc;
+  const f = renderScene(sc);
+  const xs = [...f.verts.map((v) => v.x), ...f.curves.flatMap((c) => c.pts.map((p) => p.x))];
+  const ys = [...f.verts.map((v) => v.y), ...f.curves.flatMap((c) => c.pts.map((p) => p.y))];
+  const [fw, fh] = [Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)];
+  const s = Math.min(fw > 1 ? w / fw : Infinity, fh > 1 ? h / fh : Infinity);
+  if (!Number.isFinite(s) || s <= 0) return sc;
+  const k = Math.min(3, Math.max(0.35, s));
+  return {...sc, view: {...sc.view, k: (sc.view.k || 1) * k}};
+}
+
+/**
+ * Nửa đường tròn vẽ tay: một nét CUNG (phủ 140°–230°) và một nét THẲNG nối hai đầu cung (đường kính) → "nửa đường tròn (O) đường kính AB",
+ * cung nằm đúng phía người vẽ (trên/dưới, trái/phải).
+ */
+export function semicircleFigureText(strokes: SketchStrokeLike[]): string | null {
+  if (strokes.length !== 2) return null;
+  for (const [ai, li] of [[0, 1], [1, 0]]) {
+    const arc = strokes[ai].points;
+    const ln = strokes[li].points;
+    const f = fitCircle(arc);
+    if (!f || f.r < 30 || f.rms > 0.09 * f.r || f.cover < 140 || f.cover > 230) continue;
+    const [a, b] = [ln[0], ln[ln.length - 1]];
+    const L = Math.hypot(b.x - a.x, b.y - a.y);
+    const len = ln.reduce((t, p, i) => (i ? t + Math.hypot(p.x - ln[i - 1].x, p.y - ln[i - 1].y) : 0), 0);
+    if (len > 1.12 * L || Math.abs(L / (2 * f.r) - 1) > 0.2) continue;
+    // tâm = trung điểm đường kính; cung ở phía nào của AB (theo điểm giữa nét cung)
+    const O = {x: (a.x + b.x) / 2, y: (a.y + b.y) / 2};
+    const mid = arc[Math.floor(arc.length / 2)];
+    const r = L / 2;
+    const k = 2 / r;
+    const xy = (p: {x: number; y: number}) => `(${+((p.x - O.x) * k).toFixed(3)};${+(-(p.y - O.y) * k).toFixed(3)})`;
+    // nửa đường tròn đường kính AB vẽ từ A ngược chiều kim đồng hồ (tọa độ y lên) tới B: đặt tên sao cho cung đi qua phía đã vẽ
+    const side = (b.x - a.x) * -(mid.y - a.y) - -(b.y - a.y) * (mid.x - a.x); // > 0: cung bên trái AB (y lên)
+    const [A, B] = side > 0 ? [a, b] : [b, a];
+    return `Cho nửa đường tròn (O) đường kính AB, A${xy(A)}, B${xy(B)}`;
+  }
+  return null;
 }

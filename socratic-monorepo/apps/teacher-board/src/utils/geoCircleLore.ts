@@ -85,6 +85,8 @@ export function expandLore(t0: string): string {
 interface State {
   slot: number;
   lower: number;
+  /** số lần đã hoãn đặt điểm trên cung vì đầu cung chưa dựng (đề định nghĩa đầu cung ở câu sau) */
+  wait?: Record<string, number>;
 }
 
 /** Chạy một vòng dựng trên các câu; trả về số điểm mới tạo ra. */
@@ -126,6 +128,13 @@ export function runCircleLore(api: LoreApi, sentences: string[], st: State): num
       const ARC = String.raw`(?:cung\s*(nhỏ|lớn)?\s*([A-Z])([A-Z])\s*(nhỏ|lớn)?|nửa\s*đường tròn|đường tròn)`;
       const place = (X: string, arc: RegExpExecArray | null, off: number) => {
         if (has(X) || diaEnds.has(X)) return;
+        // "K bất kì trên cung nhỏ BM" khi M (đầu dây) dựng ở câu sau: đợi vài vòng thay vì đặt tạm ở chỗ bất kì (sẽ lệch khỏi cung khi kéo)
+        const ends = arc ? [arc[off + 1], arc[off + 2]].filter(Boolean) : [];
+        if (ends.some((e) => !has(e))) {
+          const w = (st.wait ??= {});
+          w[X] = (w[X] ?? 0) + 1;
+          if (w[X] <= 6) return;
+        }
         const XN = X;
         const [kind, e1, e2, kind2] = arc ? [arc[off], arc[off + 1], arc[off + 2], arc[off + 3]] : [undefined, undefined, undefined, undefined];
         const k = (kind ?? kind2) as string | undefined;
@@ -251,11 +260,19 @@ export function runCircleLore(api: LoreApi, sentences: string[], st: State): num
       const a1 = /[Dd]ây(?:\s*cung)?\s*([A-Z])([A-Z])\s*vuông góc\s*(?:với\s*)?(?:đường kính\s*)?([A-Z])([A-Z])(?:\s*(?:tại|ở)\s*(?:điểm\s*)?([A-Z]'?))?/u.exec(s);
       const a2 = /đường kính\s*([A-Z])([A-Z])\s*vuông góc\s*(?:với\s*)?[Dd]ây(?:\s*cung)?\s*([A-Z])([A-Z])(?:\s*(?:tại|ở)\s*(?:điểm\s*)?([A-Z]'?))?/u.exec(s);
       const g = a1 ? {x: a1[1], y: a1[2], u: a1[3], v: a1[4], z: a1[5]} : a2 ? {x: a2[3], y: a2[4], u: a2[1], v: a2[2], z: a2[5]} : null;
-      if (g && has(g.u) && has(g.v) && !has(g.x) && !has(g.y)) {
+      // "Qua C kẻ dây MN vuông góc với AB": dây đi qua điểm C có sẵn (đợi C được dựng nếu đề định nghĩa C ở câu khác)
+      const thru = g && /[Qq]ua\s*(?:điểm\s*)?([A-Z]'?)\s*,?\s*(?:kẻ|vẽ|dựng)\s*[Dd]ây/u.exec(s)?.[1];
+      if (g && thru && !g.z) g.z = thru;
+      const waitZ = !!g?.z && !has(g.z) && sentences.some((x) => x !== s0 && new RegExp(`(?<![\\p{L}'])${g.z}(?![\\p{L}'])`, 'u').test(x));
+      if (g && has(g.u) && has(g.v) && !has(g.x) && !has(g.y) && !waitZ) {
         const bt = /([A-Z]'?)\s*nằm\s*giữa\s*([A-Z]'?)\s*và\s*([A-Z]'?)/u.exec(s);
         let dd = -0.4;
         if (bt) dd = [bt[2], bt[3]].includes(g.u) ? -0.45 : [bt[2], bt[3]].includes(g.v) ? 0.45 : -0.4;
         const u = norm(sub(P(g.v)!, P(g.u)!));
+        if (g.z && has(g.z)) {
+          const w = sub(P(g.z)!, oP);
+          dd = Math.max(-0.97, Math.min(0.97, (w[0] * u[0] + w[1] * u[1]) / c.r));
+        }
         const h = add(oP, mul(u, dd * c.r));
         const half = Math.sqrt(Math.max(0, c.r * c.r * (1 - dd * dd)));
         const nrm: V3 = [-u[1], u[0], 0];
@@ -387,6 +404,13 @@ export function runCircleLore(api: LoreApi, sentences: string[], st: State): num
         if (has(r[3])) {
           addAux(a, b);
           addAux(ex === a ? b : a, r[3]);
+        }
+        // "BO cắt (O) tại M và N" (B ở ngoài): N là giao điểm còn lại, xa B hơn
+        const second = new RegExp(`${r[3]}\\s*(?:,|và)\\s*(?:điểm\\s*)?([A-Z]'?)(?![\\p{L}'])`, 'u').exec(s.slice(r.index + r[0].length - r[3].length))?.[1];
+        if (second && !has(second) && near && has(r[3])) {
+          const far = ts.find((p) => p !== pick)!;
+          mk(second, far, `${second} là giao điểm còn lại của ${a}${b} với đường tròn`, {k: 'lcx', o, q, r: rr, a, b, ex: ex.slice(1)});
+          if (has(second)) addAux(r[3], second);
         }
       }
     }

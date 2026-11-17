@@ -204,6 +204,8 @@ type BaseKind = 'tri' | 'tri_obtuse' | 'tri_right' | 'tri_iso' | 'tri_eq' | 'squ
 interface BaseDesc {
   kind: BaseKind;
   at?: string;
+  /** lời đề (hình thang vuông: đọc "vuông tại A và B") */
+  text?: string;
 }
 type P2 = [number, number];
 
@@ -218,7 +220,7 @@ function describeBase(text: string, names: string[]): BaseDesc {
     if (word === 'chữ nhật') return {kind: 'rect'};
     if (word === 'bình hành') return {kind: 'para'};
     if (word === 'thoi') return {kind: 'rhombus'};
-    if (word === 'thang vuông') return {kind: 'trap_right'};
+    if (word === 'thang vuông') return {kind: 'trap_right', text};
     if (word === 'thang cân') return {kind: 'trap_iso'};
     if (word === 'thang') return {kind: 'trap'};
     return {kind: /hình vuông/.test(text) ? 'square' : /hình chữ nhật/.test(text) ? 'rect' : 'para'};
@@ -325,6 +327,13 @@ function baseCoords(desc: BaseDesc, names: string[], L: (a: string, b: string) =
       case 'trap':
       case 'trap_right':
       case 'trap_iso': {
+        // "hình thang vuông tại A và B": hai đáy là AD, BC (vuông góc AB), chiều cao AB
+        const rr = new RegExp(`vuông\\s*tại\\s*(${PT})\\s*(?:và|,)\\s*(${PT})`).exec(desc.text ?? '');
+        if (desc.kind === 'trap_right' && rr && [rr[1], rr[2]].sort().join() === [A, B].sort().join()) {
+          const hgt = ab ?? 1.4;
+          Object.assign(out, {[A]: [0, 0], [B]: [hgt, 0], [C]: [hgt, L(B, C) ?? 1.2], [D]: [0, ad ?? 2.4]});
+          return out;
+        }
         const big = ab ?? 2.4;
         const small = L(C, D) ?? big * 0.5;
         const h = (L(A, D) && desc.kind === 'trap_right' ? L(A, D)! : undefined) ?? big * 0.5;
@@ -353,7 +362,8 @@ function baseCoords(desc: BaseDesc, names: string[], L: (a: string, b: string) =
 // ------------------------------------------------------------------ mô hình hình học
 /** Điểm xác định theo điểm khác (kéo được / tự cập nhật khi điểm gốc đổi). */
 export type GeoDef =
-  | {k: 'seg'; a: string; b: string; t: number}
+  /** điểm trên đoạn ab ở vị trí t; fix = tỉ lệ do đề quy định (trung điểm, AM = 2MB): không cho trượt khi kéo */
+  | {k: 'seg'; a: string; b: string; t: number; fix?: true}
   | {k: 'foot'; p: string; a: string; b: string}
   /** điểm tính từ các điểm gốc: trọng tâm/ngoại tâm/nội tâm/trực tâm của tam giác n, chân phân giác (n = [A,B,D]), trung điểm (n = [B,D]) */
   | {k: 'calc'; f: 'centroid' | 'circum' | 'in' | 'ortho' | 'bis' | 'mid'; n: string[]}
@@ -391,7 +401,32 @@ export type GeoDef =
   /** điểm trên tiếp tuyến tại t, cách t một đoạn f·R */
   | {k: 'tanpt'; o: string; t: string; f: number; q: string; r?: number}
   /** X = a + (c − a)/|ac| · |rs| (điểm trên tia ac cách a đoạn bằng rs) */
-  | {k: 'pdist'; a: string; c: string; r: string; s: string};
+  | {k: 'pdist'; a: string; c: string; r: string; s: string}
+  /** hình không gian: X = o + s·(a − o) + t·(b − o) + h·|a − o|·n, n = pháp tuyến đơn vị của mặt (o, a, b) — đỉnh chóp, đỉnh trên lăng trụ theo đáy (chiều cao tỉ lệ cạnh đáy) */
+  | {k: 'aff'; o: string; a: string; b: string; s: number; t: number; h: number; lock?: true}
+  /** hình chiếu vuông góc của p lên mặt phẳng (abc) */
+  | {k: 'fpl'; p: string; a: string; b: string; c: string}
+  /** giao của đường thẳng ab với mặt phẳng (cde) */
+  | {k: 'lpl'; a: string; b: string; c: string; d: string; e: string}
+  /** đầu mút vẽ của giao tuyến hai mặt phẳng (a), (b): cách điểm gần trọng tâm các đỉnh một đoạn w·|a₁ − a₀| dọc giao tuyến */
+  | {k: 'pp'; a: string[]; b: string[]; w: number}
+  /** điểm trên đường tròn tâm o đi qua q, ở góc `ang` (radian, đo từ trục Ox) — kéo được trượt trên đường tròn */
+  | {k: 'onc'; o: string; q: string; ang: number};
+
+/** Công thức `aff` của điểm P theo mặt (o, a, b): để P đi theo khi kéo các đỉnh đáy. */
+const SOLID_DEFS = new Set<GeoDef['k']>(['seg', 'foot', 'inter', 'calc', 'trans', 'refp', 'dil', 'aff', 'fpl', 'lpl', 'pp']);
+
+export function affDef(o: string, a: string, b: string, O: V3, A: V3, B: V3, P: V3): GeoDef {
+  const u = sub(A, O);
+  const w = sub(B, O);
+  const n = norm(cross(u, w));
+  const r = sub(P, O);
+  const hn = dot(r, n);
+  const q = sub(r, mul(n, hn));
+  const [uu, uw, ww, qu, qw] = [dot(u, u), dot(u, w), dot(w, w), dot(q, u), dot(q, w)];
+  const det = uu * ww - uw * uw;
+  return {k: 'aff', o, a, b, s: (qu * ww - qw * uw) / det, t: (qw * uu - qu * uw) / det, h: hn / len(u)};
+}
 
 
 /** Thiết diện cắt bởi mặt phẳng qua ba điểm: tính lại lúc vẽ nên theo kịp khi kéo điểm. */
@@ -456,8 +491,10 @@ function baseTo3D(c: Record<string, P2>): Record<string, V3> {
   return o;
 }
 
-function lenTable(text: string): {get: (a: string, b: string) => number | undefined; all: number | undefined; angle?: number} {
+function lenTable(text0: string): {get: (a: string, b: string) => number | undefined; all: number | undefined; angle?: number; side?: number} {
   const m = new Map<string, number>();
+  // "AB = AC = AD = a" → AB = a, AC = a, AD = a
+  const text = text0.replace(/((?:[A-Z]'?[A-Z]'?\s*=\s*){2,})([^;,=<>]+?)(?=$|[;,]|\.(?:\s|$)|\s+và)/gu, (_w: string, segs: string, v: string) => (segs.match(/[A-Z]'?[A-Z]'?/g) ?? []).map((sg) => `${sg} = ${v}`).join(', '));
   const re = /([A-Z]'?[A-Z]'?)\s*=\s*([^;,=<>]+?)(?=$|[;,]|\.(?:\s|$)|\s+(?:và|,)|\s+[A-Z]'?[A-Z]'?\s*=)/g;
   let r: RegExpExecArray | null;
   while ((r = re.exec(text))) {
@@ -468,7 +505,10 @@ function lenTable(text: string): {get: (a: string, b: string) => number | undefi
   const allM = /cạnh\s*(?:đáy\s*)?(?:bằng|=)?\s*([a0-9√][^;,\s]*(?:\s*[√/*]\s*[0-9a()]+)*)/.exec(text);
   const all = allM ? evalLength(allM[1].replace(/[.,;:]+$/, '')) ?? undefined : undefined;
   const ang = /góc\s*(?:[A-Z]{1,3}\s*)?(?:=|bằng)\s*(\d+(?:[.,]\d+)?)\s*°/.exec(text);
-  return {get: (a, b) => m.get(key2(a, b)), all, angle: ang ? parseFloat(ang[1].replace(',', '.')) : undefined};
+  // "cạnh bên bằng a√2" (chóp đều, lăng trụ): độ dài cạnh bên
+  const sideM = /cạnh bên\s*(?:đều\s*)?(?:bằng|=)\s*([a0-9√][^;,\s]*(?:\s*[√/*]\s*[0-9a()]+)*)/u.exec(text);
+  const side = sideM ? evalLength(sideM[1].replace(/[.,;:]+$/, '')) ?? undefined : undefined;
+  return {get: (a, b) => m.get(key2(a, b)), all, angle: ang ? parseFloat(ang[1].replace(',', '.')) : undefined, side};
 }
 
 function buildFigure(text: string, notes: string[]): Model | null {
@@ -481,6 +521,16 @@ function buildFigure(text: string, notes: string[]): Model | null {
     m.ptPart.set(name, 0);
   };
   const cycle = (names: string[]): [string, string][] => names.map((n, i) => [n, names[(i + 1) % names.length]]);
+  // công thức cho các đỉnh không thuộc mặt đáy: kéo đỉnh đáy thì đỉnh chóp / mặt trên đi theo, giữ chân đường cao và tỉ lệ chiều cao
+  const lift = (m: Model, base: string[], n: string) => {
+    const [o, a, b] = [base[0], base[1], base[base.length - 1]];
+    m.defs.set(n, affDef(o, a, b, m.pts.get(o)!, m.pts.get(a)!, m.pts.get(b)!, m.pts.get(n)!));
+  };
+  const liftTops = (m: Model, base: string[], top: string[], lock = false) => {
+    lift(m, base, top[0]);
+    if (lock) m.defs.set(top[0], {...(m.defs.get(top[0]) as Extract<GeoDef, {k: 'aff'}>), lock: true}); // lập phương: chiều cao = cạnh, không kéo riêng
+    top.slice(1).forEach((t, i) => m.defs.set(t, {k: 'trans', p: base[i + 1], a: base[0], b: top[0]}));
+  };
 
   // ---- hình nón, hình trụ, hình cầu (khối tròn xoay): dựng bằng điểm, đường sinh và các đường tròn
   const roundKind = /(?:hình|khối|mặt)\s*(nón|trụ|cầu)(?![\p{L}])/u.exec(text);
@@ -585,6 +635,7 @@ function buildFigure(text: string, notes: string[]): Model | null {
     });
     m.edges.push(...cycle(base), ...cycle(top), ...base.map((n, i) => [n, top[i]] as [string, string]));
     m.faces.push(base, top, ...base.map((n, i) => [n, base[(i + 1) % 4], top[(i + 1) % 4], top[i]]));
+    liftTops(m, base, top, isCube);
     return m;
   }
 
@@ -599,14 +650,29 @@ function buildFigure(text: string, notes: string[]): Model | null {
       const c3 = baseTo3D(c);
       const ext = Math.max(...Object.values(c).map((p) => Math.hypot(p[0], p[1])), 1);
       const h = L(base[0], top[0]) ?? (/chiều cao\s*(?:bằng|=)\s*([^;,]+)/.exec(text) ? evalLength(/chiều cao\s*(?:bằng|=)\s*([^;,]+)/.exec(text)![1]) ?? undefined : undefined) ?? ext * 1.1;
-      const upright = /lăng trụ\s*(?:tam giác\s*|tứ giác\s*)?(?:đứng|đều)|vuông góc\s*(?:với\s*)?(?:\(?\s*[A-Z]{3,4}\s*\)?|đáy)/.test(text) || /đều/.test(text);
+      // lăng trụ xiên: "hình chiếu (vuông góc) của A' lên (ABC) là trung điểm (H của) BC / trọng tâm tam giác ABC / điểm X"
+      const pj = new RegExp(`hình chiếu(?:\\s*vuông góc)?\\s*của\\s*(${PT})\\s*(?:lên|trên|xuống)\\s*(?:mặt phẳng\\s*)?(?:\\(?\\s*[A-Z]{3,4}\\s*\\)?|đáy)\\s*(?:là|trùng với)\\s*(?:trung điểm\\s*(?:${PT}\\s*)?(?:của\\s*)?(${PT}${PT})|trọng tâm\\s*(?:${PT}\\s*)?(?:của\\s*)?(?:tam giác\\s*)?((?:${PT}){3})|(?:điểm\\s*)?(${PT})(?![\\p{L}A-Z']))`, 'u').exec(text);
+      const ti = pj ? top.indexOf(pj[1]) : -1;
+      let shift: V3 | null = null;
+      if (pj && ti >= 0) {
+        const ns = pj[2] ? pointsIn(pj[2]) : pj[3] ? pointsIn(pj[3]) : pj[4] && c3[pj[4]] ? [pj[4]] : [];
+        if (ns.length && ns.every((n) => c3[n])) {
+          const foot = centroid(ns.map((n) => c3[n]));
+          const off = sub(foot, c3[base[ti]]);
+          const lat = L(base[ti], top[ti]) ?? T.side;
+          const hh = lat !== undefined && lat > len(off) + 1e-9 ? Math.sqrt(lat * lat - dot(off, off)) : ext * 1.1;
+          shift = add(off, [0, hh, 0]);
+        }
+      }
+      const upright = !shift && (/lăng trụ\s*(?:tam giác\s*|tứ giác\s*)?(?:đứng|đều)|vuông góc\s*(?:với\s*)?(?:\(?\s*[A-Z]{3,4}\s*\)?|đáy)/.test(text) || /đều/.test(text));
       const m = model(`Lăng trụ ${base.join('')}.${top.join('')}`, 3);
       base.forEach((n, i) => {
         put(m, n, c3[n]);
-        put(m, top[i], add(c3[n], upright ? [0, h, 0] : [0.5, h, -0.2]));
+        put(m, top[i], add(c3[n], shift ?? (upright ? [0, h, 0] : [0.5, h, -0.2])));
       });
       m.edges.push(...cycle(base), ...cycle(top), ...base.map((n, i) => [n, top[i]] as [string, string]));
       m.faces.push(base, top, ...base.map((n, i) => [n, base[(i + 1) % base.length], top[(i + 1) % base.length], top[i]]));
+      liftTops(m, base, top);
       return m;
     }
   }
@@ -638,9 +704,12 @@ function buildFigure(text: string, notes: string[]): Model | null {
       put(m, base[2], [0, lc, 0]);
       m.edges.push(...base.map((n) => [apex, n] as [string, string]), ...cycle(base));
       m.faces.push(...cycle(base).map(([p, q]) => [apex, p, q]), base);
+      lift(m, [apex, base[0], base[1]], base[2]); // cạnh thứ ba luôn vuông góc mặt (apex, b0, b1)
       return m;
     }
-    const desc = regularTetra || (py && /chóp\s*(?:tam giác\s*|tứ giác\s*)?đều/.test(text) && base.length === 3) ? {kind: 'tri_eq' as BaseKind} : describeBase(text, base);
+    const regPy = !!py && /chóp\s*(?:tam giác\s*|tứ giác\s*)?đều/.test(text);
+    // chóp tứ giác đều: đáy là hình vuông (đề thường không nhắc lại)
+    const desc = regularTetra || (regPy && base.length === 3) ? {kind: 'tri_eq' as BaseKind} : regPy && base.length === 4 ? {kind: 'square' as BaseKind} : describeBase(text, base);
     const c = baseCoords(desc, base, L, T.all, T.angle);
     const c3 = baseTo3D(c);
     base.forEach((n) => put(m, n, c3[n]));
@@ -687,7 +756,7 @@ function buildFigure(text: string, notes: string[]): Model | null {
     if (hm) h = evalLength(hm[1]) ?? undefined;
     if (h === undefined) {
       for (const n of base) {
-        const l = L(apex, n);
+        const l = L(apex, n) ?? T.side;
         if (l !== undefined) {
           const dd = len(sub(foot, c3[n]));
           if (l > dd + 1e-6) {
@@ -708,6 +777,8 @@ function buildFigure(text: string, notes: string[]): Model | null {
     put(m, apex, add(foot, [0, hh, 0]));
     m.edges.push(...cycle(base), ...base.map((n) => [apex, n] as [string, string]));
     m.faces.push(base, ...cycle(base).map(([p, q]) => [apex, p, q]));
+    lift(m, base, apex);
+    if (regularTetra) m.defs.set(apex, {...(m.defs.get(apex) as Extract<GeoDef, {k: 'aff'}>), lock: true}); // tứ diện đều: chiều cao theo cạnh
     return m;
   }
 
@@ -776,6 +847,20 @@ function buildFigure(text: string, notes: string[]): Model | null {
         : describeBase(text, names);
     const c = baseCoords(desc, names, L, T.all, T.angle);
     const m = model(useQuad ? `${quad![1][0].toUpperCase()}${quad![1].slice(1)} ${names.join('')}` : `Tam giác ${names.join('')}`, 2);
+    names.forEach((n) => put(m, n, [c[n][0], c[n][1], 0]));
+    m.edges.push(...cycle(names));
+    return m;
+  }
+  // ---- tứ giác thường, ngũ/lục/thất/bát giác (đều hoặc không): "ngũ giác ABCDE" (nét vẽ tay kèm tọa độ), "lục giác đều ABCDEF"
+  const pg = /(tứ giác|ngũ giác|lục giác|thất giác|bát giác|đa giác)(\s*đều)?\s*((?:[A-Z]){4,8})(?![A-Z'])/u.exec(text);
+  if (pg && !circFirst && !/nội tiếp/.test(text.slice(pg.index, pg.index + 40))) {
+    const names = pointsIn(pg[3]);
+    const m = model(`${pg[1][0].toUpperCase()}${pg[1].slice(1)}${pg[2] ?? ''} ${names.join('')}`, 2);
+    // tứ giác thường: lồi, không có cạnh song song; n ≥ 5: đa giác đều (tọa độ người vẽ, nếu có, sẽ đặt lại sau)
+    const c: Record<string, P2> =
+      names.length === 4
+        ? Object.fromEntries(names.map((n, i) => [n, ([[0, 0], [3.2, -0.3], [3.6, 2.1], [0.6, 2.5]] as P2[])[i]]))
+        : Object.fromEntries(names.map((n, i) => [n, [2 * Math.cos(-Math.PI / 2 - Math.PI / names.length + (2 * Math.PI * i) / names.length), 2 * Math.sin(-Math.PI / 2 - Math.PI / names.length + (2 * Math.PI * i) / names.length)] as P2]));
     names.forEach((n) => put(m, n, [c[n][0], c[n][1], 0]));
     m.edges.push(...cycle(names));
     return m;
@@ -976,7 +1061,8 @@ function addExtras(m: Model, text0: string): void {
   };
   /** gắn công thức cho điểm vừa tạo (không gắn nếu điểm bị gộp vào điểm có sẵn) để nó tự theo khi kéo điểm gốc */
   const setDef = (name: string, d: GeoDef) => {
-    if (m.dim === 2 && m.pts.has(name) && !m.defs.has(name)) m.defs.set(name, d);
+    // hình không gian: chỉ các công thức đúng trong 3D (các công thức đường tròn/quay tính trong mặt phẳng Oxy)
+    if ((m.dim === 2 || SOLID_DEFS.has(d.k)) && m.pts.has(name) && !m.defs.has(name)) m.defs.set(name, d);
   };
 
   // ---- yêu cầu bằng lời trên hình đang có: đường tròn ngoại/nội tiếp, đường tròn đường kính, tâm, trực tâm, trung tuyến, phân giác
@@ -1082,7 +1168,7 @@ function addExtras(m: Model, text0: string): void {
         addCircle(P(r[1])!, [0, 0, 1], len(sub(P(r[2])!, P(r[1])!)), `đường tròn tâm ${r[1]} qua ${r[2]}`, {f: 'cp', n: [r[1], r[2]]});
       }
       // "tam giác ABC nội tiếp đường tròn (O)": ĐA GIÁC nội tiếp đường tròn = đường tròn NGOẠI tiếp đa giác (khác "đường tròn nội tiếp tam giác ABC")
-      if ((r = /(?:tam giác(?:\s*(?:đều|cân|vuông|nhọn|tù))?|[Tt]ứ giác)\s*((?:[A-Z]'?){3,4})(?:\s*(?:cân|vuông|nhọn)\s*(?:tại\s*[A-Z]'?)?)?(?:\s*\([^()]*\))?(?:\s+(?:(?!đường tròn)[^.;]){0,34}?)?\s*nội tiếp\s*(?:trong\s*)?(?:đường tròn\s*)?(?:tâm\s*)?(?:\(\s*([A-Z]'?)\s*\)|(?<![A-Za-z'])([A-Z])(?![A-Za-z']))?/u.exec(c)) && !/đường tròn\s*(?:ngoại|nội)/.test(c) && !/chứng minh|cm rằng|c\/m/i.test(c)) {
+      if ((r = /(?:tam giác(?:\s*(?:đều|cân|vuông|nhọn|tù))?|[Tt]ứ giác)\s*((?:[A-Z]'?){3,4})(?:\s*(?:cân|vuông|nhọn)\s*(?:tại\s*[A-Z]'?)?)?(?:\s*\([^()]*\))?(?:\s+(?:(?!đường tròn)[^.;]){0,34}?)?\s*nội tiếp\s*(?:trong\s*)?(?:đường tròn\s*)?(?:tâm\s*)?(?:\(\s*([A-Z]'?)\s*(?:[;,][^()]*)?\)|(?<![A-Za-z'])([A-Z])(?![A-Za-z']))?/u.exec(c)) && !/đường tròn\s*(?:ngoại|nội)/.test(c) && !/chứng minh|cm rằng|c\/m/i.test(c)) {
         const ns = pointsIn(r[1]);
         const ci = circumOf(ns);
         if (ci) {
@@ -1203,7 +1289,7 @@ function addExtras(m: Model, text0: string): void {
         if (s && P(s[0]) && P(s[1])) {
           const fresh = !has(r[1]);
           define(r[1], mul(add(P(s[0])!, P(s[1])!), 0.5), `${r[1]} là trung điểm ${r[2]}`);
-          if (fresh && has(r[1])) m.defs.set(r[1], {k: 'seg', a: s[0], b: s[1], t: 0.5});
+          if (fresh && has(r[1])) m.defs.set(r[1], {k: 'seg', a: s[0], b: s[1], t: 0.5, fix: true});
           continue;
         }
       }
@@ -1224,6 +1310,7 @@ function addExtras(m: Model, text0: string): void {
         const baseNames = quadNames.length === 4 ? quadNames : m.faces[0]?.length === 4 ? m.faces[0] : m.order.slice(0, 4);
         if (baseNames.length === 4 && baseNames.every(has)) {
           define(r[1], mul(add(P(baseNames[0])!, P(baseNames[2])!), 0.5), `${r[1]} là tâm ${baseNames.join('')}`);
+          setDef(r[1], {k: 'calc', f: 'mid', n: [baseNames[0], baseNames[2]]});
           addAux(baseNames[0], baseNames[2]);
           addAux(baseNames[1], baseNames[3]);
           continue;
@@ -1232,10 +1319,38 @@ function addExtras(m: Model, text0: string): void {
       // điểm thuộc cạnh
       if ((r = /([A-Z]'?)\s*thuộc\s*(?:cạnh\s*|đoạn(?: thẳng)?\s*|dây(?: cung)?\s*)?([A-Z]'?[A-Z]'?)/.exec(c)) && !has(r[1]) && !new RegExp(`[A-Z]'?${r[1]}\\s*vuông góc`).test(c) && !new RegExp(`(?:đường cao|phân giác|trung tuyến)(?:\\s*trong)?\\s*[A-Z]'?${r[1]}`).test(text)) {
         const s = segOf(r[2]);
+        // "N thuộc CD sao cho góc MAN = 45°": N = giao của CD với tia AM quay 45° (công thức quay + giao nên kéo M thì góc vẫn đúng)
+        const ag = s && m.dim === 2 ? new RegExp(`góc\\s*(?:${r[1]}([A-Z]'?)([A-Z]'?)|([A-Z]'?)([A-Z]'?)${r[1]})\\s*=\\s*(\\d+(?:[.,]\\d+)?)\\s*(?:°|độ|o\\b)?`, 'u').exec(c) : null;
+        if (s && ag && P(s[0]) && P(s[1])) {
+          const [v, o] = ag[1] ? [ag[1], ag[2]] : [ag[4], ag[3]];
+          const deg0 = parseFloat(ag[5].replace(',', '.'));
+          if (has(v) && has(o) && deg0 > 0 && deg0 < 180) {
+            for (const sg of [1, -1]) {
+              const u = sub(P(o)!, P(v)!);
+              const t0 = (sg * deg0 * Math.PI) / 180;
+              const rp: V3 = [P(v)![0] + u[0] * Math.cos(t0) - u[1] * Math.sin(t0), P(v)![1] + u[0] * Math.sin(t0) + u[1] * Math.cos(t0), 0];
+              const X = lineIntersect(P(v)!, rp, P(s[0])!, P(s[1])!);
+              const d = sub(P(s[1])!, P(s[0])!);
+              const tt = X ? dot(sub(X, P(s[0])!), d) / dot(d, d) : -1;
+              // giao phải nằm trong đoạn và cùng phía tia (không lấy giao của đường thẳng phía sau đỉnh góc)
+              if (!X || tt < 0 || tt > 1 || dot(sub(X, P(v)!), sub(rp, P(v)!)) <= 0) continue;
+              const hid = `#r${r[1]}`;
+              m.pts.set(hid, rp);
+              m.defs.set(hid, {k: 'rot', p: o, o: v, deg: sg * deg0});
+              define(r[1], X, `${r[1]} thuộc ${r[2]}, góc ${v} = ${deg0}°`);
+              if (m.order.includes(r[1])) m.defs.set(r[1], {k: 'inter', a: v, b: hid, c: s[0], d: s[1]});
+              addAux(v, r[1]);
+              addAux(v, o);
+              break;
+            }
+            if (has(r[1])) continue;
+          }
+        }
         if (s && P(s[0]) && P(s[1])) {
-          const tt = ratioOnSegment(c, s[0], s[1], r[1]) ?? 1 / 3;
+          const ratio = ratioOnSegment(c, s[0], s[1], r[1]);
+          const tt = ratio ?? 1 / 3;
           const fresh2 = !has(r[1]);
-          if (fresh2) m.defs.set(r[1], {k: 'seg', a: s[0], b: s[1], t: tt});
+          if (fresh2) m.defs.set(r[1], ratio === null ? {k: 'seg', a: s[0], b: s[1], t: tt} : {k: 'seg', a: s[0], b: s[1], t: tt, fix: true});
           define(r[1], add(P(s[0])!, mul(sub(P(s[1])!, P(s[0])!), tt)), `${r[1]} thuộc ${r[2]}${tt !== 1 / 3 ? ` (tỉ lệ ${+tt.toFixed(3)})` : ''}`);
           if (!has(r[1])) m.defs.delete(r[1]);
           continue;
@@ -1249,12 +1364,14 @@ function addExtras(m: Model, text0: string): void {
           define(r[1], footOnLine(src, P(tgt[0])!, P(tgt[1])!), `${r[1]} là hình chiếu của ${r[2]} lên ${tgt.join('')}`);
           setDef(r[1], {k: 'foot', p: r[2], a: tgt[0], b: tgt[1]});
           addAux(r[2], r[1]);
+          addAux(tgt[0], tgt[1]); // "hình chiếu của A trên SM": vẽ cả SM
           continue;
         }
         if (src && tgt.length >= 3 && tgt.every(has)) {
           const pl = planeOf(P(tgt[0])!, P(tgt[1])!, P(tgt[2])!);
           if (pl) {
             define(r[1], footOnPlane(src, pl), `${r[1]} là hình chiếu của ${r[2]} lên (${tgt.join('')})`);
+            setDef(r[1], {k: 'fpl', p: r[2], a: tgt[0], b: tgt[1], c: tgt[2]});
             addAux(r[2], r[1]);
             continue;
           }
@@ -1323,7 +1440,9 @@ function addExtras(m: Model, text0: string): void {
             const t = (pl.d - dot(pl.n, P(s1[0])!)) / den;
             const X = add(P(s1[0])!, mul(d, t));
             define(lp[3], X, `${lp[3]} là giao của ${lp[1]} với (${lp[2]})`);
-            addAux(t < 0 ? s1[0] : s1[1], lp[3]);
+            setDef(lp[3], {k: 'lpl', a: s1[0], b: s1[1], c: pn[0], d: pn[1], e: pn[2]});
+            // giao nằm ngay trên một cạnh có sẵn (I trên SC): không tô đè đoạn IC lên cạnh
+            if (t < 0 || t > 1 || !m.edges.some(([u, v]) => key2(u, v) === key2(s1[0], s1[1]))) addAux(t < 0 ? s1[0] : s1[1], lp[3]);
             addAux(s1[0], s1[1]);
             continue;
           }
@@ -1341,8 +1460,13 @@ function addExtras(m: Model, text0: string): void {
           const den = pl ? dot(pl.n, d) : 0;
           if (pl && Math.abs(den) > 1e-9) {
             const t = (pl.d - dot(pl.n, P(s1[0])!)) / den;
-            define(nm, add(P(s1[0])!, mul(d, t)), `${nm} là giao của ${lp2[1]} với (${lp2[2]})`);
-            addAux(t < 0 ? s1[0] : s1[1], nm);
+            const X = add(P(s1[0])!, mul(d, t));
+            // đề không đặt tên: giao điểm đã dựng ở vòng trước thì thôi (không đặt thêm tên I, J, H… trùng chỗ)
+            if (!lp2[3] && [...m.pts.values()].some((q) => near(q, X))) continue;
+            define(nm, X, `${nm} là giao của ${lp2[1]} với (${lp2[2]})`);
+            setDef(nm, {k: 'lpl', a: s1[0], b: s1[1], c: pn[0], d: pn[1], e: pn[2]});
+            // giao nằm ngay trên một cạnh có sẵn (I trên SC): không tô đè đoạn IC lên cạnh
+            if (t < 0 || t > 1 || !m.edges.some(([u, v]) => key2(u, v) === key2(s1[0], s1[1]))) addAux(t < 0 ? s1[0] : s1[1], nm);
             addAux(s1[0], s1[1]);
             continue;
           }
@@ -1417,7 +1541,7 @@ function addExtras(m: Model, text0: string): void {
       nm.forEach((n, i) => {
         const [u, v] = ends[i];
         define(n, mul(add(P(u)!, P(v)!), 0.5), `${n} là trung điểm ${u}${v}`);
-        if (m.pts.has(n) && !m.defs.has(n)) m.defs.set(n, {k: 'seg', a: u, b: v, t: 0.5});
+        if (m.pts.has(n) && !m.defs.has(n)) m.defs.set(n, {k: 'seg', a: u, b: v, t: 0.5, fix: true});
       });
       if (has(nm[0]) && has(nm[1])) {
         addAux(nm[0], nm[1]);
@@ -1571,6 +1695,8 @@ function addExtras(m: Model, text0: string): void {
           const e2 = add(c, mul(dd, ext * 1.1));
           m.pts.set(`#${nm}1`, e1);
           m.pts.set(`#${nm}2`, e2);
+          const sc0 = len(sub(m.pts.get(a[1])!, m.pts.get(a[0])!)) || 1;
+          if (m.dim === 3) [1, 2].forEach((k) => m.defs.set(`#${nm}${k}`, {k: 'pp', a: a.slice(0, 3), b: b.slice(0, 3), w: ((k === 1 ? -1 : 1) * ext * 1.1) / sc0}));
           m.order.push(`#${nm}1`, `#${nm}2`);
           m.ptPart.set(`#${nm}1`, m.cur);
           m.ptPart.set(`#${nm}2`, m.cur);
@@ -1760,6 +1886,37 @@ export const modelFromScene = (sc: GeoScene): Model => ({
 export const sceneFromModel = toScene;
 
 // ------------------------------------------------------------------ chiếu xuống bảng
+/** Phép chiếu điểm của cảnh xuống khung vẽ (cùng phép với `renderScene`): dùng cho vẽ và để đổi độ dời của chuột thành độ dời trong không gian khi kéo đỉnh. */
+export function makeProjector(sc: GeoScene, m: Model = modelFromScene(sc)) {
+  const v = m.view ?? {k: 1, bx: 0, by: 0};
+  const rot = sc.rot && m.dim === 3 ? sc.rot : null;
+  const baseSet = new Set(m.edges.length > 0 ? m.edges.flat() : [...m.pts.keys()]);
+  const basePts = [...m.pts.entries()].filter(([n]) => baseSet.has(n)).map(([, p]) => p);
+  const cen0 = centroid(basePts);
+  const R0 = Math.max(1e-6, ...basePts.map((p) => len(sub(p, cen0))), ...m.circles.filter((c) => c.own).flatMap((c) => circleSamples(c, 24).map((p) => len(sub(p, cen0)))));
+  // xoay tự do: quay quanh trục đứng (yaw) rồi trục ngang (pitch); +z hướng về phía người xem
+  const rotate = (p: V3): V3 => {
+    if (!rot) return p;
+    const cy = Math.cos(rot.yaw);
+    const sy = Math.sin(rot.yaw);
+    const cp = Math.cos(rot.pitch);
+    const sp = Math.sin(rot.pitch);
+    const x1 = p[0] * cy + p[2] * sy;
+    const z1 = -p[0] * sy + p[2] * cy;
+    return [x1, p[1] * cp - z1 * sp, p[1] * sp + z1 * cp];
+  };
+  const pv = (p: V3) => {
+    if (rot) {
+      const q = rotate(sub(p, cen0));
+      const k = 300 / (2.2 * R0);
+      return {x: Math.round((150 + k * q[0]) * 10) / 10, y: Math.round((150 - k * q[1]) * 10) / 10};
+    }
+    const r = rawProject(m, p);
+    return {x: Math.round((r.x - v.bx) * v.k * 10) / 10, y: Math.round((r.y - v.by) * v.k * 10) / 10};
+  };
+  return {pv, cen0, basePts, rot, rotate, R0};
+}
+
 /** Vẽ cảnh đến hết phần `upTo` (mặc định tất cả). Tọa độ theo khung cố định của hình gốc (có thể âm với phần vẽ thêm ra ngoài). */
 /** Quay quanh trục đứng (yaw) rồi trục ngang (pitch); +z hướng về phía người xem. */
 function rotYP(p: V3, yaw: number, pitch: number): V3 {
@@ -1823,32 +1980,8 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
   const included = (n: string) => partShown(sc, m.ptPart.get(n) ?? 0, upTo) && !sc.hiddenPts?.includes(n);
   const names = m.order.filter(included);
   const idx = new Map(names.map((n, i) => [n, i]));
+  const {pv, cen0, basePts, rot, rotate, R0} = makeProjector(sc, m);
   const v = m.view ?? {k: 1, bx: 0, by: 0};
-  const rot = sc.rot && m.dim === 3 ? sc.rot : null;
-  const baseSet = new Set(m.edges.length > 0 ? m.edges.flat() : [...m.pts.keys()]);
-  const basePts = [...m.pts.entries()].filter(([n]) => baseSet.has(n)).map(([, p]) => p);
-  const cen0 = centroid(basePts);
-  const R0 = Math.max(1e-6, ...basePts.map((p) => len(sub(p, cen0))), ...m.circles.filter((c) => c.own).flatMap((c) => circleSamples(c, 24).map((p) => len(sub(p, cen0)))));
-  // xoay tự do: quay quanh trục đứng (yaw) rồi trục ngang (pitch); +z hướng về phía người xem
-  const rotate = (p: V3): V3 => {
-    if (!rot) return p;
-    const cy = Math.cos(rot.yaw);
-    const sy = Math.sin(rot.yaw);
-    const cp = Math.cos(rot.pitch);
-    const sp = Math.sin(rot.pitch);
-    const x1 = p[0] * cy + p[2] * sy;
-    const z1 = -p[0] * sy + p[2] * cy;
-    return [x1, p[1] * cp - z1 * sp, p[1] * sp + z1 * cp];
-  };
-  const pv = (p: V3) => {
-    if (rot) {
-      const q = rotate(sub(p, cen0));
-      const k = 300 / (2.2 * R0);
-      return {x: Math.round((150 + k * q[0]) * 10) / 10, y: Math.round((150 - k * q[1]) * 10) / 10};
-    }
-    const r = rawProject(m, p);
-    return {x: Math.round((r.x - v.bx) * v.k * 10) / 10, y: Math.round((r.y - v.by) * v.k * 10) / 10};
-  };
   const verts = names.map((n) => pv(m.pts.get(n)!));
 
   // mặt thấy được: nhìn theo r = (KX, KY, 1) (phía sau là z âm)
@@ -2079,6 +2212,33 @@ export function parseCoords(raw: string): Map<string, V3> {
 /** Có ít nhất một điểm cho bằng ba tọa độ → hệ Oxyz. */
 const coordsAre3D = (raw: string) => /(?<![A-Za-z'])[A-Z]'?\s*\(\s*-?\d+(?:[.,]\d+)?\s*[;,]\s*-?\d+(?:[.,]\d+)?\s*[;,]\s*-?\d+(?:[.,]\d+)?\s*\)/.test(raw);
 
+/**
+ * Đoạn thẳng được nhắc trong lời một phần (tứ giác BCEF, IM ⊥ EF, AB.AC = AD.AK, góc COD…) mà hình chưa có: kẻ thêm vào phần đó,
+ * như học sinh vẽ khi làm câu ấy (nên phần chỉ có lời chứng minh vẫn có nút vẽ riêng). Không vẽ đường tròn phụ (lộ lời giải).
+ */
+function drawNamedSegments(m: Model, text: string): void {
+  const on = (n: string, p: string, q: string) => {
+    const [X, A, B] = [m.pts.get(n)!, m.pts.get(p)!, m.pts.get(q)!];
+    return len(cross(sub(B, A), sub(X, A))) < 1e-6 * Math.max(1e-9, len(sub(B, A)) ** 2);
+  };
+  const seg = (a: string, b: string) => {
+    if (a === b || !m.pts.has(a) || !m.pts.has(b) || a.startsWith('#') || b.startsWith('#')) return;
+    // nằm trên một đường đã vẽ (AE với E thuộc cạnh AC, KB với K trên đường BC): không kẻ chồng
+    if ([...m.edges, ...m.aux].some(([p, q]) => m.pts.has(p) && m.pts.has(q) && on(a, p, q) && on(b, p, q))) return;
+    m.aux.push([a, b]);
+    m.auxPart.push(m.cur);
+  };
+  // hình không gian: mặt phẳng ba điểm "(AHK)", "(AB'D')" là tam giác học sinh kẻ ra; mặt có sẵn (ABCD) thì cạnh đã có
+  if (m.dim === 3) for (const r of text.matchAll(/\(\s*((?:[A-Z]'?){3})\s*\)/gu)) pointsIn(r[1]).forEach((n, k, ns) => seg(n, ns[(k + 1) % 3]));
+  const t = text.replace(/\([^()]*\)/g, ' ').replace(/(?<![\p{L}])(?:CM|Cm|cm)(?=\s*(?:rằng|:|$))/gu, ' ');
+  for (const r of t.matchAll(/(tam giác|tứ giác|hình\s+(?:bình hành|chữ nhật|vuông|thoi|thang(?:\s*cân|\s*vuông)?)|góc)?\s*(?<![\p{L}'])((?:[A-Z]'?){2,4})(?![\p{L}'])/gu)) {
+    const ns = pointsIn(r[2]);
+    if (ns.length === 2) seg(ns[0], ns[1]);
+    else if (r[1] === 'góc' && ns.length === 3) [0, 2].forEach((k) => seg(ns[1], ns[k]));
+    else if (r[1] && r[1] !== 'góc') ns.forEach((n, k) => seg(n, ns[(k + 1) % ns.length]));
+  }
+}
+
 export function buildScene(raw0: string): SceneBuild {
   let raw = cleanHandwritten(raw0);
   // dán nhiều bài một lúc ("Bài 1 … Bài 2 …"): vẽ bài đầu, báo rõ số bài còn lại (nếu trộn lại sẽ ra hình sai)
@@ -2100,6 +2260,29 @@ export function buildScene(raw0: string): SceneBuild {
     const is3D = coordsAre3D(raw);
     if (m && (m.dim === 3) === is3D) {
       for (const [n, p] of coords) if (m.pts.has(n)) m.pts.set(n, p);
+      // đường tròn của hình gốc dựng theo đường kính: tính lại theo tọa độ cho sẵn (nếu không, đề vẽ thêm "đường tròn đường kính AB" sẽ ra hai đường tròn lệch nhau)
+      for (const c of m.circles) {
+        if ((c.of?.f !== 'diam' && c.of?.f !== 'circum') || !c.of.n.every((n) => m!.pts.has(n))) continue;
+        const ps = c.of.n.map((n) => m!.pts.get(n)!);
+        let cen: V3 = mul(add(ps[0], ps[1]), 0.5);
+        if (c.of.f === 'circum') {
+          // tâm đường tròn qua ba điểm (cùng công thức với circumOf)
+          const [A, B, C] = ps;
+          const [ca, cb] = [sub(A, C), sub(B, C)];
+          const n0 = cross(ca, cb);
+          const nn = dot(n0, n0);
+          if (nn < 1e-12) continue;
+          cen = add(C, mul(cross(sub(mul(cb, dot(ca, ca)), mul(ca, dot(cb, cb))), n0), 1 / (2 * nn)));
+        }
+        // điểm đặt tên ở tâm cũ (O) mà đề không cho tọa độ: dời theo tâm mới
+        for (const n of m.order) {
+          if (coords.has(n) || c.of.n.includes(n)) continue;
+          const d = m.defs.get(n);
+          if ((d?.k === 'calc' && d.n.join() === c.of.n.join()) || (!d && near(m.pts.get(n)!, c.center))) m.pts.set(n, cen);
+        }
+        c.center = cen;
+        c.r = len(sub(ps[0], cen));
+      }
       m.notes.push(`đặt tọa độ ${[...coords.keys()].filter((n) => m!.pts.has(n)).join(', ')}`);
     } else if (!m && coords.size >= 2) {
       const bare: Model = {pts: new Map(), order: [], edges: [], aux: [], faces: [], marks: new Set(), polys: [], merged: new Map(), cur: 0, ptPart: new Map(), auxPart: [], polyPart: [], mergedPart: new Map(), circles: [], sections: [], defs: new Map(), dim: is3D ? 3 : 2, title: is3D ? 'Hình trong không gian Oxyz' : 'Hình trong mặt phẳng Oxy', notes, ignored: []};
@@ -2124,6 +2307,7 @@ export function buildScene(raw0: string): SceneBuild {
     if (i === 0) return;
     m!.cur = i;
     addExtras(m!, normalizeProblem(pt.text));
+    drawNamedSegments(m!, pt.text);
   });
   m.ignored = [...new Set(m.ignored)];
   m.notes = [...new Set(m.notes)];

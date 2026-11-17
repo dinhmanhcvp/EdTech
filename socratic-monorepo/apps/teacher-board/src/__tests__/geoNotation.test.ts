@@ -80,7 +80,6 @@ describe('nét lớn của hình', () => {
     const small = [line([85, 310], [95, 322]), line([305, 310], [315, 322]), line([85, 140], [95, 132]), line([100, 280], [120, 280])];
     const all = [...big, ...small];
     expect(frameStrokes(all)).toHaveLength(3);
-    expect(detectPlaneShapeFromStrokes(all as never)).toBeNull(); // nhiều hơn 4 nét: trước đây hỏng
     expect(detectPlaneShapeFromStrokes(frameStrokes(all) as never)).not.toBeNull();
     expect(frameStrokes(small)).toHaveLength(4); // không có nét lớn: giữ nguyên
   });

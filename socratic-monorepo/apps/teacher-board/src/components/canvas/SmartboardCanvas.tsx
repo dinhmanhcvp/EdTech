@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
 import { routeLocally, matchStemModel, makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES, type SolidKind } from '../../utils/localRouter';
-import { detectSolidSketch, detectPlaneShapeFromStrokes, frameStrokes, type SketchWireGraph } from '../../utils/sketchSolid';
+import { detectSolidSketch, detectPlaneShapeFromStrokes, frameStrokes, detectCircleSketch, isShapeToolStroke, arrowStrokePoints, circleStrokePoints, recentShapeCluster, squareStrokePoints, triangleStrokePoints, type SketchWireGraph } from '../../utils/sketchSolid';
 import { buildSketchWire } from '../../utils/sketchWire';
 import { shapeFromBlueprint, solidWire, planeStats, VERTEX_LABELS } from '../../utils/inlineShape';
 import { drawConstructsOnCtx, evalConstructs } from '../../utils/planeConstruct';
@@ -14,7 +14,7 @@ import { looksLikeWords, matchViName } from '../../utils/viKeywords';
 import { InlineShape } from './InlineShape';
 import { GeometryProblemPanel, type GeoPickConfig, type GeoController } from './GeometryProblemPanel';
 import { buildScene, parseGeometryProblem, parseRichestGeometry, type GeoScene } from '../../utils/geometryProblem';
-import { draggablePoints, freePoints, layoutGeo, partChips, planeTextWithCoords, problemTextForSolid, selectPartUpTo, setLabelOffset, showUpTo, togglePart } from '../../utils/geoTools';
+import { blankConstruction, circleFigureText, fitSceneToBox, draggablePoints, freePoints, layoutGeo, partChips, planeTextWithCoords, problemTextForSolid, selectPartUpTo, setLabelOffset, showUpTo, togglePart } from '../../utils/geoTools';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -101,7 +101,7 @@ import { studentAppUrl } from '../../utils/apiBase';
 
 
 export type CanvasTool = 'PEN' | 'HIGHLIGHTER' | 'SHAPE' | 'LASSO' | 'ERASER' | 'PAN' | 'TEXT';
-export type ShapeType = 'CIRCLE' | 'LINE' | 'ARROW' | 'RECTANGLE';
+export type ShapeType = 'CIRCLE' | 'LINE' | 'ARROW' | 'RECTANGLE' | 'SQUARE' | 'TRIANGLE';
 export type GridPattern = 'DOTS' | 'GRID' | 'BLANK';
 
 export interface SmartboardCanvasProps {
@@ -798,8 +798,15 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         const textHit = looksLikeWords(localLatex) && !!matchViName(localLatex);
         const frame = frameStrokes(src); // bỏ nhãn đỉnh/dấu góc vuông viết kèm
         const solidSk = !textHit && (detectSolidSketch(src) ?? (frame.length < src.length ? detectSolidSketch(frame) : null));
-        const planeSk = !textHit && !solidSk && frame.length >= 1 && frame.length <= 4 ? detectPlaneShapeFromStrokes(frame) : null;
-        if (solidSk && solidSk.confidence >= 0.72) {
+        const planeSk = !textHit && !solidSk && frame.length >= 1 && frame.length <= 8 ? detectPlaneShapeFromStrokes(frame) : null;
+        // đường tròn vẽ tay đủ lớn (chữ O, số 0 viết tay thì nhỏ): là hình, không đọc thành chữ
+        const circSk = !textHit && !solidSk && !planeSk ? detectCircleSketch(frame) : null;
+        if (circSk && circSk.r >= 45) {
+          if (alive) {
+            setInstantResult(null);
+            setFormulaInput((prev) => (!prev.trim() ? 'Đường tròn' : prev));
+          }
+        } else if (solidSk && solidSk.confidence >= 0.72) {
           if (alive) {
             setInstantResult(null);
             setFormulaInput((prev) => (!prev.trim() ? SOLID_TITLES[solidSk.kind] : prev));
@@ -852,7 +859,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           const isGeo =
             (detectSolidSketch(src)?.confidence ?? 0) >= 0.72 ||
             (detectSolidSketch(frameStrokes(src))?.confidence ?? 0) >= 0.72 ||
-            (frameStrokes(src).length >= 1 && frameStrokes(src).length <= 4 && (detectPlaneShapeFromStrokes(frameStrokes(src))?.confidence ?? 0) >= 0.78);
+            (frameStrokes(src).length >= 1 && frameStrokes(src).length <= 8 && (detectPlaneShapeFromStrokes(frameStrokes(src))?.confidence ?? 0) >= 0.78) ||
+            (detectCircleSketch(frameStrokes(src))?.r ?? 0) >= 45;
           if (!aiRes || aiRes.lines.length === 0) {
             // Vision không dùng được (không khóa, hết hạn mức, lỗi mạng): dùng bản đọc cục bộ và nói rõ lý do
             if (lastAiFailure) flashError(`Đang dùng nhận diện cục bộ. ${lastAiFailure}`, 7000);
@@ -892,7 +900,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   }, [selectedStrokes]);
 
   // ---- Vẽ nét: làm mượt bằng đường cong bậc 2 qua trung điểm; có áp lực bút thì đổi độ dày theo từng đoạn ----
-  const paintStroke = (ctx: CanvasRenderingContext2D, pts: Point[], color: string, width: number) => {
+  // straight: nét của công cụ Hình (chữ nhật, vuông, tam giác, mũi tên, tròn) nối thẳng các đỉnh; làm mượt như nét bút sẽ bo tròn góc thành hình giọt nước
+  const paintStroke = (ctx: CanvasRenderingContext2D, pts: Point[], color: string, width: number, straight = false) => {
     if (pts.length < 2) return;
     ctx.strokeStyle = color;
     ctx.lineCap = 'round';
@@ -914,8 +923,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     ctx.lineWidth = width;
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
-    if (pts.length === 2) {
-      ctx.lineTo(pts[1].x, pts[1].y);
+    if (pts.length === 2 || straight) {
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
     } else {
       for (let i = 1; i < pts.length - 1; i++) {
         const mx = (pts[i].x + pts[i + 1].x) / 2;
@@ -1028,7 +1037,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       for (const stroke of strokes) {
         if (stroke.typeset || stroke.points.length < 2) continue;
         const isSelected = selIds.has(stroke.id);
-        paintStroke(ctx, stroke.points, isSelected ? '#2563EB' : stroke.color, stroke.width + (isSelected ? 2 : 0));
+        paintStroke(ctx, stroke.points, isSelected ? '#2563EB' : stroke.color, stroke.width + (isSelected ? 2 : 0), isShapeToolStroke(stroke));
       }
       return base;
     },
@@ -1107,6 +1116,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       } else if (selectedShape === 'RECTANGLE') {
         ctx.beginPath();
         ctx.strokeRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+      } else if (selectedShape === 'SQUARE' || selectedShape === 'TRIANGLE') {
+        const q = selectedShape === 'SQUARE' ? squareStrokePoints(x1, y1, x2, y2) : triangleStrokePoints(x1, y1, x2, y2);
+        ctx.beginPath();
+        q.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        ctx.stroke();
       } else if (selectedShape === 'LINE') {
         ctx.beginPath();
         ctx.moveTo(x1, y1);
@@ -1565,12 +1579,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
     }
-    commitPointer(cancelled);
+    // công cụ Hình: lấy đúng chỗ THẢ tay (lần di chuột cuối có thể chưa kịp cập nhật state → hình ngắn hơn chỗ thả)
+    commitPointer(cancelled, tool === 'SHAPE' && !cancelled ? toBoard(e.currentTarget, e.clientX, e.clientY) : undefined);
   };
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => endPointer(e, false);
   const handlePointerCancel = (e: React.PointerEvent<HTMLCanvasElement>) => endPointer(e, true);
 
-  const commitPointer = (cancelled: boolean) => {
+  const commitPointer = (cancelled: boolean, shapeEnd?: Point) => {
     if (!isDrawingRef.current) return;
     isDrawingRef.current = false;
 
@@ -1592,28 +1607,33 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     livePointsRef.current = [];
 
     // 1. Commit Shape
-    if (tool === 'SHAPE' && shapeStart && shapeCurrent) {
+    if (tool === 'SHAPE' && shapeStart && (shapeEnd ?? shapeCurrent)) {
+      const end = shapeEnd ?? shapeCurrent!;
       const x1 = shapeStart.x;
       const y1 = shapeStart.y;
-      const x2 = shapeCurrent.x;
-      const y2 = shapeCurrent.y;
+      const x2 = end.x;
+      const y2 = end.y;
       const dist = Math.hypot(x2 - x1, y2 - y1);
 
       if (!cancelled && dist > 8) {
         let pts: Point[] = [];
         if (selectedShape === 'CIRCLE') {
-          const r = dist;
-          for (let a = 0; a <= Math.PI * 2; a += 0.12) {
-            pts.push({ x: x1 + Math.cos(a) * r, y: y1 + Math.sin(a) * r });
-          }
+          // khép kín đúng điểm đầu (bước cũ 0,12 rad dừng ở 6,24 → hở một khe)
+          pts = circleStrokePoints(x1, y1, dist);
         } else if (selectedShape === 'RECTANGLE') {
           pts = [
             { x: x1, y: y1 }, { x: x2, y: y1 },
             { x: x2, y: y2 }, { x: x1, y: y2 },
             { x: x1, y: y1 }
           ];
+        } else if (selectedShape === 'SQUARE') {
+          pts = squareStrokePoints(x1, y1, x2, y2);
+        } else if (selectedShape === 'TRIANGLE') {
+          pts = triangleStrokePoints(x1, y1, x2, y2);
+        } else if (selectedShape === 'ARROW') {
+          // mũi tên: giữ cả đầu mũi tên khi thả tay (trước đây chỉ còn đoạn thẳng)
+          pts = arrowStrokePoints(x1, y1, x2, y2, Math.max(14, strokeWidth * 3));
         } else {
-          // Line or Arrow
           pts = [{ x: x1, y: y1 }, { x: x2, y: y2 }];
         }
 
@@ -1668,7 +1688,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         autoGeoTimerRef.current = setTimeout(() => {
           const allCur = strokesRef.current;
           if (allCur.length >= 1) {
-            const recent = allCur.slice(-12).filter((s) => !s.typeset);
+            // chỉ cụm nét vừa vẽ (chạm/gần nét cuối), không gom chữ viết cũ ở chỗ khác rồi xóa mất khi thay bằng hình
+            const recent = recentShapeCluster(allCur.slice(-12).filter((s) => !s.typeset));
             // cùng đường nhận dạng với "Vẽ hình" của AI hub → hình giữ tính chất khi tương tác
             if (recent.length >= 1) liveConvertRef.current?.(recent);
           }
@@ -2757,21 +2778,25 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     const bb = bboxOfStrokes(replaced);
     const ids = new Set(replaced.map((q) => q.id));
     const put = (text: string | null | undefined): boolean => {
-      const built = text ? buildScene(text).scene : null;
-      if (!built) return false;
+      const built0 = text ? buildScene(text).scene : null;
+      if (!built0) return false;
+      const built = fitSceneToBox(built0, bb.x1 - bb.x0, bb.y1 - bb.y0); // giữ đúng cỡ hình người vẽ
       insertGeoFigure(built, built.parts.length > 1 ? 0 : built.parts.length - 1, text!, { x: Math.max(10, bb.x0), y: Math.max(10, bb.y0) }, ids);
       setFormulaInput('');
       setIsLoading(false);
       return true;
     };
+    // đường tròn vẽ tay (kèm đường kính / bán kính / đa giác nội tiếp / tam giác ngoại tiếp): trước đây không nhận ra
+    const circ = circleFigureText(shapeInk);
+    if (circ && put(circ)) return true;
     if (ink.length >= 1) {
       const sk = detectSolidSketch(shapeInk);
       if (sk && sk.confidence >= 0.7) {
-        if (!put(problemTextForSolid(sk.kind, sk.dims))) transformStrokesToGeometryInPlace(ink, makeSolidBlueprint(sk.kind, sk.dims, sk.wire));
+        if (!put(problemTextForSolid(sk.kind, sk.dims, sk.wire))) transformStrokesToGeometryInPlace(ink, makeSolidBlueprint(sk.kind, sk.dims, sk.wire));
         return true;
       }
     }
-    if (shapeInk.length >= 1 && shapeInk.length <= 4) {
+    if (shapeInk.length >= 1 && shapeInk.length <= 8) {
       const pl = detectPlaneShapeFromStrokes(shapeInk);
       if (pl && pl.confidence >= 0.78) {
         if (!put(planeTextWithCoords(pl.kind, pl.vertices2D))) transformStrokesToGeometryInPlace(ink, makePlaneGeometryBlueprint(pl));
@@ -2939,7 +2964,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         const sk = detectSolidSketch(inkSelected);
         isGeometry = !!sk && sk.confidence >= 0.7;
       }
-      if (!isGeometry && !typesetHint && !namedWords && inkSelected.length >= 1 && inkSelected.length <= 4) {
+      if (!isGeometry && !typesetHint && !namedWords && inkSelected.length >= 1 && inkSelected.length <= 8) {
         const pl = detectPlaneShapeFromStrokes(inkSelected);
         isGeometry = !!pl && pl.confidence >= 0.78;
       }
@@ -4131,6 +4156,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         customSlotCount={Object.values(hasCustomSlots).filter(Boolean).length}
         isGeometryLiveMode={isGeometryLiveMode}
         onToggleGeometryLiveMode={() => setIsGeometryLiveMode((o) => !o)}
+        onGeoConstruct={() => insertGeoFigure(blankConstruction(), 0, '', { x: 380, y: 220 })}
         scenes={AUTO_INK_SCENES.map((sc, i) => ({ id: sc.id, shortLabel: sc.shortLabel, hotkey: i + 1, active: activeAutoScene === sc.id, custom: !!hasCustomSlots[sc.id] }))}
         onScene={triggerAutoInk}
         busyLabel={isAutoInking ? 'Đang viết thư pháp…' : isCompilingShimmer ? 'AI đang biên dịch…' : null}

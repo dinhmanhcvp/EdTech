@@ -11,6 +11,9 @@ import {
   Shapes,
   Circle,
   Square,
+  RectangleHorizontal,
+  Triangle,
+  Crosshair,
   ArrowRight,
   Minus,
   MousePointer2,
@@ -103,6 +106,8 @@ export interface SmartboardDockProps {
   customSlotCount: number;
   isGeometryLiveMode?: boolean;
   onToggleGeometryLiveMode?: () => void;
+  /** mở trang dựng hình tự do (điểm, đường, tròn, đo, biến hình… như GeoGebra) */
+  onGeoConstruct?: () => void;
   scenes: DockScene[];
   onScene: (id: string) => void;
   busyLabel: string | null;
@@ -120,7 +125,9 @@ const ShapeIcon: Record<ShapeType, React.ReactNode> = {
   CIRCLE: <Circle className="w-5 h-5" />,
   LINE: <Minus className="w-5 h-5" />,
   ARROW: <ArrowRight className="w-5 h-5" />,
-  RECTANGLE: <Square className="w-5 h-5" />,
+  RECTANGLE: <RectangleHorizontal className="w-5 h-5" />,
+  SQUARE: <Square className="w-5 h-5" />,
+  TRIANGLE: <Triangle className="w-5 h-5" />,
 };
 
 /** Thanh tác vụ duy nhất của bảng thông minh: các chức năng chuẩn, tùy chọn con mở bằng bảng nhỏ phía trên. */
@@ -208,7 +215,7 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
 
       {/* Bảng nhỏ: hình */}
       <div data-testid="shape-popover" className={`${popCls('shape')} left-[250px] flex-wrap items-center gap-1 max-w-[min(560px,calc(100vw-110px))]`}>
-        {([['CIRCLE', 'tool-circle', 'Hình tròn'], ['LINE', 'tool-line', 'Đoạn thẳng'], ['ARROW', 'tool-arrow', 'Mũi tên'], ['RECTANGLE', 'tool-rect', 'Chữ nhật']] as [ShapeType, string, string][]).map(([s, id, label]) => (
+        {([['CIRCLE', 'tool-circle', 'Hình tròn'], ['LINE', 'tool-line', 'Đoạn thẳng'], ['ARROW', 'tool-arrow', 'Mũi tên'], ['RECTANGLE', 'tool-rect', 'Chữ nhật'], ['SQUARE', 'tool-square', 'Hình vuông'], ['TRIANGLE', 'tool-triangle', 'Tam giác']] as [ShapeType, string, string][]).map(([s, id, label]) => (
           <button
             key={s}
             data-testid={id}
@@ -223,6 +230,20 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
             {label}
           </button>
         ))}
+        {p.onGeoConstruct && (
+          <button
+            data-testid="tool-geo-construct"
+            onClick={() => {
+              p.onGeoConstruct?.();
+              setPop(null);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ml-1 bg-white border-[#DCD9D0] text-emerald-700 hover:bg-emerald-50"
+            title="Tự dựng hình như GeoGebra: điểm, đoạn, đường thẳng, tia, véctơ, vuông góc, song song, trung trực, phân giác, tiếp tuyến, đa giác, đường tròn, cung, quạt, đo, đối xứng, quay, tịnh tiến, vị tự. Kéo điểm gốc thì hình giữ tính chất."
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>Dựng hình (như GeoGebra)</span>
+          </button>
+        )}
         {p.onToggleGeometryLiveMode && (
           <button
             data-testid="tool-geo-live-mode-toggle"
@@ -487,6 +508,9 @@ export const GEO_TOOL_ICONS: Record<GeoTool, React.ReactNode> = {
   circlecr: <CircleDot className="w-4 h-4" />,
   semi: <CircleDot className="w-4 h-4" />,
   sector: <CircleDot className="w-4 h-4" />,
+  arc: <CircleDot className="w-4 h-4" />,
+  oncircle: <CircleDot className="w-4 h-4" />,
+  lcircle: <Crosshair className="w-4 h-4" />,
   rotate: <Copy className="w-4 h-4" />,
   dilate: <Layers className="w-4 h-4" />,
   line: <Minus className="w-4 h-4" />,

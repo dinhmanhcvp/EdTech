@@ -5,9 +5,9 @@ import {Eraser, Redo2, Undo2, X} from 'lucide-react';
 import {buildScene, type GeoScene} from '../../utils/geometryProblem';
 import type {V3} from '../../utils/solids';
 import {canUnfold, polygonStats, sliceSection} from '../../utils/netUnfold';
-import {addFreePoint, addSector, addSegmentLen, addSemicircle, toggleHidden, addBisector, addCircleOf, addLineAB, addPolygon, addRegularPolygon, addTangentsFrom, addTransform, addVector, toggleLabel, addFoot, addIntersection, addLineThrough, addMidline, addPerpBisector, addReflection, addTangent, measurePolygon, addMidpoint, moveFreePoint, removePoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, setPointT, solidStats, toTikz, togglePart, selectPartUpTo, setLabelOffset, visibleNames, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane} from '../../utils/geoTools';
+import {dragTarget3, addArc, addLineCircle, addPointOnCircle, addFreePoint, addSector, addSegmentLen, addSemicircle, toggleHidden, addBisector, addCircleOf, addLineAB, addPolygon, addRegularPolygon, addTangentsFrom, addTransform, addVector, toggleLabel, addFoot, addIntersection, addLineThrough, addMidline, addPerpBisector, addReflection, addTangent, measurePolygon, addMidpoint, moveFreePoint, removePoint, addPointOnSegment, addRequirement, addSection, addSegment, measureAngle, measureDistance, partChips, sceneGrew, setPartShown, showUpTo, setPointT, solidStats, toTikz, togglePart, selectPartUpTo, setLabelOffset, visibleNames, measureAngleLinePlane, measureDihedral, measureDistPointLine, measureDistPointPlane} from '../../utils/geoTools';
 
-export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'midline' | 'delete' | 'perpbis' | 'bisector' | 'parallel' | 'perpline' | 'inter' | 'circle' | 'circle3' | 'tangent' | 'reflline' | 'reflpt' | 'line' | 'ray' | 'vector' | 'polygon' | 'reg4' | 'reg5' | 'reg6' | 'regn' | 'compass' | 'tangents' | 'translate' | 'rot90' | 'rot60' | 'dil2' | 'dilhalf' | 'label' | 'point' | 'hide' | 'seglen' | 'circlecr' | 'semi' | 'sector' | 'rotate' | 'dilate' | 'area' | 'perim' | 'dist' | 'angle' | 'dpl' | 'dln' | 'alp' | 'dih';
+export type GeoTool = 'segment' | 'midpoint' | 'onEdge' | 'foot' | 'section' | 'midline' | 'delete' | 'perpbis' | 'bisector' | 'parallel' | 'perpline' | 'inter' | 'circle' | 'circle3' | 'tangent' | 'reflline' | 'reflpt' | 'line' | 'ray' | 'vector' | 'polygon' | 'reg4' | 'reg5' | 'reg6' | 'regn' | 'compass' | 'tangents' | 'translate' | 'rot90' | 'rot60' | 'dil2' | 'dilhalf' | 'label' | 'point' | 'hide' | 'seglen' | 'circlecr' | 'semi' | 'sector' | 'rotate' | 'dilate' | 'area' | 'perim' | 'dist' | 'angle' | 'dpl' | 'dln' | 'alp' | 'dih' | 'arc' | 'lcircle' | 'oncircle';
 
 export interface GeoPickConfig {
   pickMode: 'point' | 'edge' | 'place' | null;
@@ -102,6 +102,8 @@ export const GEO_TOOLS: GeoToolSpec[] = [
   {id: 'segment', label: 'Đoạn nối', need: 2, hint: 'Chạm 2 điểm để nối thành đoạn thẳng'},
   {id: 'midpoint', label: 'Trung điểm', need: 2, hint: 'Chạm 2 điểm để lấy trung điểm'},
   {id: 'onEdge', label: 'Điểm trên cạnh', need: 1, hint: 'Chạm vào một cạnh để đặt điểm tại chỗ chạm'},
+  {id: 'oncircle', label: 'Điểm trên tròn', need: 2, hint: 'Chạm tâm O, rồi một điểm Q trên đường tròn: thêm điểm nằm trên đường tròn đó (kéo được trượt trên đường tròn)'},
+  {id: 'lcircle', label: 'Giao đường–tròn', need: 4, hint: 'Chạm 2 điểm A, B của đường thẳng, rồi tâm O, rồi một điểm Q trên đường tròn: các giao điểm'},
   {id: 'foot', label: 'Chân vuông góc', need: 3, hint: 'Chạm điểm cần hạ, rồi 2 điểm của đường thẳng'},
   {id: 'midline', label: 'Đường trung bình', need: 3, hint: 'Chạm đỉnh chung của hai cạnh, rồi 2 đỉnh còn lại: nối trung điểm hai cạnh đó (song song và bằng nửa cạnh thứ ba)'},
   {id: 'delete', label: 'Xóa điểm', need: 1, hint: 'Chạm một điểm đã thêm để xóa nó cùng các đoạn nối và điểm phụ thuộc'},
@@ -141,6 +143,7 @@ export const GEO_CURVES: GeoToolSpec[] = [
   {id: 'circlecr', label: 'Tròn bán kính', need: 1, param: {label: 'R', def: 2}, hint: 'Chạm tâm O rồi nhập bán kính R'},
   {id: 'semi', label: 'Nửa đường tròn', need: 2, hint: 'Chạm 2 điểm A, B: nửa đường tròn đường kính AB (từ A sang B ngược chiều kim đồng hồ)'},
   {id: 'sector', label: 'Hình quạt', need: 3, hint: 'Chạm tâm O, rồi A, rồi B: hình quạt từ OA tới OB ngược chiều kim đồng hồ'},
+  {id: 'arc', label: 'Cung tròn', need: 3, hint: 'Chạm tâm O, rồi A, rồi B: cung tròn từ A tới B ngược chiều kim đồng hồ'},
   {id: 'circle3', label: 'Tròn 3 điểm', need: 3, hint: 'Chạm 3 điểm: đường tròn đi qua cả ba'},
   {id: 'compass', label: 'Compa', need: 3, hint: 'Chạm 2 điểm A, B (bán kính AB), rồi tâm C: đường tròn tâm C bán kính AB'},
   {id: 'tangent', label: 'Tiếp tuyến', need: 2, hint: 'Chạm tâm O, rồi điểm P trên đường tròn: tiếp tuyến tại P'},
@@ -318,6 +321,9 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
       : t === 'circlecr' ? addCircleOf(sc, 'cr', [names[0]], part, argOf(t))
       : t === 'semi' ? addSemicircle(sc, names[0], names[1], part)
       : t === 'sector' ? addSector(sc, names[0], names[1], names[2], part)
+      : t === 'arc' ? addArc(sc, names[0], names[1], names[2], part)
+      : t === 'oncircle' ? addPointOnCircle(sc, names[0], names[1], part)?.scene ?? null
+      : t === 'lcircle' ? addLineCircle(sc, names[0], names[1], names[2], names[3], part)?.scene ?? null
       : t === 'rotate' ? addTransform(sc, names[0], {k: 'rot', o: names[1], deg: argOf(t)}, part)
       : t === 'dilate' ? addTransform(sc, names[0], {k: 'dil', o: names[1], f: argOf(t)}, part)
       : undefined;
@@ -413,7 +419,8 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
         const b = freeBase.current;
         if (!b || b.name !== name) return;
         const k = b.scene.view.k || 1;
-        const next = moveFreePoint(c0.scene, name, [b.at[0] + dx / k, b.at[1] - dy / k, b.at[2]]);
+        // hình không gian: đổi độ dời trên màn hình thành độ dời trong mặt đáy (hoặc theo chiều cao) theo phép chiếu lúc bắt đầu kéo
+        const next = moveFreePoint(c0.scene, name, b.scene.dim === 3 ? dragTarget3(b.scene, name, dx, dy) : [b.at[0] + dx / k, b.at[1] - dy / k, b.at[2]]);
         setInfo('');
         if (done) {
           freeBase.current = null;
@@ -422,7 +429,7 @@ export const GeometryProblemPanel: React.FC<Props> = ({mode, scene, upTo, initia
           setHist(h);
           setAt(h.length - 1);
           onApply?.(next, c0.upTo);
-        } else patchScene({pts: next.pts, circles: next.circles, cons: next.cons});
+        } else patchScene({pts: next.pts, circles: next.circles, cons: next.cons, defs: next.defs});
       },
       hasHidden: (cur.scene.hiddenPts?.length ?? 0) > 0,
       showHidden: () => commit({...cur.scene, hiddenPts: []}, cur.upTo),

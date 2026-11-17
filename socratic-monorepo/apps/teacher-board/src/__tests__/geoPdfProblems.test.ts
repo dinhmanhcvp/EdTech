@@ -69,6 +69,6 @@ describe('đề trong chuyên đề hình học lớp 10 (PDF)', () => {
         const v = verifyClaim(sc, c);
         expect(v.verdict, `${c}: ${v.detail}`).not.toBe('fails');
       }
-    });
+    }, 30000); // vài đề (C27) kiểm nhiều lần kéo, quá 5 giây khi chạy song song cả bộ
   }
 });

@@ -24,7 +24,7 @@ import {
 } from '../utils/geoTools';
 
 /**
- * Dựng hình tự do kiểu GeoGebra (nút Hình → "Dựng hình"): bắt đầu từ trang trắng, dựng bằng các dụng cụ; kéo điểm gốc thì MỌI đối tượng
+ * Dựng hình tự do (nút Hình → "Dựng hình tự do"): bắt đầu từ trang trắng, dựng bằng các dụng cụ; kéo điểm gốc thì MỌI đối tượng
  * phụ thuộc vẫn giữ tính chất (trung điểm, trung trực, phân giác, giao điểm, đối xứng, quay, vị tự, tịnh tiến, điểm trên đường tròn, giao đường–tròn).
  */
 type V = number[];
@@ -89,7 +89,7 @@ const check = (x: ReturnType<typeof construct>, s: GeoScene) => {
   }
 };
 
-describe('dựng hình tự do (như GeoGebra)', () => {
+describe('dựng hình tự do', () => {
   it('trang trắng có hai điểm tự do A, B kéo đi đâu cũng được', () => {
     const s = blankConstruction();
     expect(s.dim).toBe(2);

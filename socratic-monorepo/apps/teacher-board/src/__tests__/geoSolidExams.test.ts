@@ -128,7 +128,7 @@ const KEEP: Record<string, (s: GeoScene) => void> = {
   },
 };
 
-/** Số liệu của đề: đúng trên hình vừa dựng (kéo thì số đo đổi, như trên GeoGebra). */
+/** Số liệu của đề: đúng trên hình vừa dựng (kéo thì số đo đổi theo hình). */
 const DATA: Record<string, (s: GeoScene) => void> = {
   S01: (s) => close(tools(s).d('S', 'A') / tools(s).d('A', 'B'), Math.SQRT2),
   S03: (s) => close(tools(s).d('S', 'A'), tools(s).d('A', 'B')),

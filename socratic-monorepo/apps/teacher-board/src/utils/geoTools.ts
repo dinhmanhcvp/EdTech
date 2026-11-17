@@ -9,7 +9,7 @@ import {appendPart, buildScene, lineIntersect, makeProjector, modelFromScene, pa
 import {clampLabelOffset} from './geoLabels';
 import type {ShapeMeta} from './lassoGeometry';
 import {snapPlane, type PlaneConstraintKind} from './planeConstraints';
-import {detectCircleSketch, detectPlaneShapeFromStrokes, fitCircle, frameStrokes, type SketchStrokeLike} from './sketchSolid';
+import {detectCircleSketch, detectPlaneShapeFromStrokes, fitCircle, frameStrokes, type SketchRound, type SketchStrokeLike} from './sketchSolid';
 
 const NAMES = 'MNPQRTUVWXYZHKIJEFGL'.split('');
 
@@ -1250,7 +1250,7 @@ export function dragTarget3(sc: GeoScene, name: string, dx: number, dy: number):
   return add(P, add(mul(e1, s), mul(e2, t))) as V3;
 }
 
-// ------------------------------------------------------------------ dựng hình tự do (kiểu GeoGebra)
+// ------------------------------------------------------------------ dựng hình tự do
 /** Trang dựng hình trắng: hai điểm tự do A, B (kéo đi đâu cũng được) để bắt đầu dựng bằng các dụng cụ; xóa được khi không cần. */
 export function blankConstruction(): GeoScene {
   const sc = buildScene('A(0;0), B(4;0)').scene!;
@@ -1397,5 +1397,18 @@ export function semicircleFigureText(strokes: SketchStrokeLike[]): string | null
     const [A, B] = side > 0 ? [a, b] : [b, a];
     return `Cho nửa đường tròn (O) đường kính AB, A${xy(A)}, B${xy(B)}`;
   }
+  return null;
+}
+
+/** Khối tròn xoay vẽ tay → đề (giữ tỉ lệ chiều cao / bán kính như hình vẽ). Elip đứng riêng không phải hình dựng: trả null. */
+export function roundSolidText(rd: SketchRound): string | null {
+  const f = (x: number) => `${+x.toFixed(2)}`;
+  const R = 1.5;
+  const H = Math.min(9, Math.max(0.5, (rd.h / rd.r) * R));
+  if (rd.kind === 'cylinder') return `hình trụ có bán kính đáy r = ${f(R)}, chiều cao h = ${f(H)}`;
+  if (rd.kind === 'cone') return `hình nón có bán kính đáy r = ${f(R)}, chiều cao h = ${f(H)}`;
+  if (rd.kind === 'sphere') return 'hình cầu tâm O bán kính R = 2';
+  if (rd.kind === 'hemisphere') return 'nửa hình cầu tâm O bán kính R = 2';
+  if (rd.kind === 'frustum') return `hình nón cụt có bán kính đáy lớn R = ${f(R)}, bán kính đáy nhỏ r = ${f(R * ((rd.r2 ?? rd.r / 2) / rd.r))}, chiều cao h = ${f(H)}`;
   return null;
 }

@@ -106,7 +106,7 @@ export interface SmartboardDockProps {
   customSlotCount: number;
   isGeometryLiveMode?: boolean;
   onToggleGeometryLiveMode?: () => void;
-  /** mở trang dựng hình tự do (điểm, đường, tròn, đo, biến hình… như GeoGebra) */
+  /** mở trang dựng hình tự do (điểm, đường, tròn, đo, biến hình…) */
   onGeoConstruct?: () => void;
   scenes: DockScene[];
   onScene: (id: string) => void;
@@ -238,10 +238,10 @@ export const SmartboardDock: React.FC<SmartboardDockProps> = (p) => {
               setPop(null);
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ml-1 bg-white border-[#DCD9D0] text-emerald-700 hover:bg-emerald-50"
-            title="Tự dựng hình như GeoGebra: điểm, đoạn, đường thẳng, tia, véctơ, vuông góc, song song, trung trực, phân giác, tiếp tuyến, đa giác, đường tròn, cung, quạt, đo, đối xứng, quay, tịnh tiến, vị tự. Kéo điểm gốc thì hình giữ tính chất."
+            title="Tự dựng hình từ trang trắng: điểm, đoạn, đường thẳng, tia, véctơ, vuông góc, song song, trung trực, phân giác, tiếp tuyến, đa giác, đường tròn, cung, quạt, đo, đối xứng, quay, tịnh tiến, vị tự. Kéo điểm gốc thì hình giữ tính chất."
           >
             <Compass className="w-3.5 h-3.5" />
-            <span>Dựng hình (như GeoGebra)</span>
+            <span>Dựng hình tự do</span>
           </button>
         )}
         {p.onToggleGeometryLiveMode && (

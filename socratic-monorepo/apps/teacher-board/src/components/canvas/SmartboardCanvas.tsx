@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
 import { routeLocally, matchStemModel, makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES, type SolidKind } from '../../utils/localRouter';
-import { detectSolidSketch, detectPlaneShapeFromStrokes, frameStrokes, detectCircleSketch, isShapeToolStroke, arrowStrokePoints, circleStrokePoints, recentShapeCluster, squareStrokePoints, triangleStrokePoints, type SketchWireGraph } from '../../utils/sketchSolid';
+import { detectSolidSketch, detectPlaneShapeFromStrokes, frameStrokes, recentInTime, detectCircleSketch, detectRoundSketch, ellipseStrokePoints, isShapeToolStroke, arrowStrokePoints, circleStrokePoints, recentShapeCluster, squareStrokePoints, triangleStrokePoints, type SketchWireGraph } from '../../utils/sketchSolid';
 import { buildSketchWire } from '../../utils/sketchWire';
 import { shapeFromBlueprint, solidWire, planeStats, VERTEX_LABELS } from '../../utils/inlineShape';
 import { drawConstructsOnCtx, evalConstructs } from '../../utils/planeConstruct';
@@ -14,7 +14,7 @@ import { looksLikeWords, matchViName } from '../../utils/viKeywords';
 import { InlineShape } from './InlineShape';
 import { GeometryProblemPanel, type GeoPickConfig, type GeoController } from './GeometryProblemPanel';
 import { buildScene, parseGeometryProblem, parseRichestGeometry, type GeoScene } from '../../utils/geometryProblem';
-import { blankConstruction, circleFigureText, fitSceneToBox, draggablePoints, freePoints, layoutGeo, partChips, planeTextWithCoords, problemTextForSolid, selectPartUpTo, setLabelOffset, showUpTo, togglePart } from '../../utils/geoTools';
+import { blankConstruction, circleFigureText, fitSceneToBox, roundSolidText, draggablePoints, freePoints, layoutGeo, partChips, planeTextWithCoords, problemTextForSolid, selectPartUpTo, setLabelOffset, showUpTo, togglePart } from '../../utils/geoTools';
 import { recognizeSketch, type SketchKind } from '../../utils/sketchGestures';
 import { SKETCH_ACTIONS, SKETCH_EXTRA } from '../../utils/sketchActions';
 import { type Subject, SUBJECT_LABEL } from '../../utils/subjectContext';
@@ -801,7 +801,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         const planeSk = !textHit && !solidSk && frame.length >= 1 && frame.length <= 8 ? detectPlaneShapeFromStrokes(frame) : null;
         // đường tròn vẽ tay đủ lớn (chữ O, số 0 viết tay thì nhỏ): là hình, không đọc thành chữ
         const circSk = !textHit && !solidSk && !planeSk ? detectCircleSketch(frame) : null;
-        if (circSk && circSk.r >= 45) {
+        const roundSk = !textHit && !solidSk && !planeSk ? detectRoundSketch(frame) : null;
+        if (roundSk && roundSk.kind !== 'ellipse') {
+          if (alive) {
+            setInstantResult(null);
+            setFormulaInput((prev) => (!prev.trim() ? ({ cylinder: 'Hình trụ', cone: 'Hình nón', frustum: 'Hình nón cụt', sphere: 'Hình cầu', hemisphere: 'Nửa hình cầu' } as Record<string, string>)[roundSk.kind] : prev));
+          }
+        } else if (circSk && circSk.r >= 45) {
           if (alive) {
             setInstantResult(null);
             setFormulaInput((prev) => (!prev.trim() ? 'Đường tròn' : prev));
@@ -860,7 +866,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             (detectSolidSketch(src)?.confidence ?? 0) >= 0.72 ||
             (detectSolidSketch(frameStrokes(src))?.confidence ?? 0) >= 0.72 ||
             (frameStrokes(src).length >= 1 && frameStrokes(src).length <= 8 && (detectPlaneShapeFromStrokes(frameStrokes(src))?.confidence ?? 0) >= 0.78) ||
-            (detectCircleSketch(frameStrokes(src))?.r ?? 0) >= 45;
+            (detectCircleSketch(frameStrokes(src))?.r ?? 0) >= 45 ||
+            !!detectRoundSketch(frameStrokes(src));
           if (!aiRes || aiRes.lines.length === 0) {
             // Vision không dùng được (không khóa, hết hạn mức, lỗi mạng): dùng bản đọc cục bộ và nói rõ lý do
             if (lastAiFailure) flashError(`Đang dùng nhận diện cục bộ. ${lastAiFailure}`, 7000);
@@ -1689,7 +1696,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           const allCur = strokesRef.current;
           if (allCur.length >= 1) {
             // chỉ cụm nét vừa vẽ (chạm/gần nét cuối), không gom chữ viết cũ ở chỗ khác rồi xóa mất khi thay bằng hình
-            const recent = recentShapeCluster(allCur.slice(-12).filter((s) => !s.typeset));
+            const recent = recentShapeCluster(recentInTime(allCur.slice(-12).filter((s) => !s.typeset)));
             // cùng đường nhận dạng với "Vẽ hình" của AI hub → hình giữ tính chất khi tương tác
             if (recent.length >= 1) liveConvertRef.current?.(recent);
           }
@@ -2786,6 +2793,17 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       setIsLoading(false);
       return true;
     };
+    // khối tròn xoay vẽ tay (trụ, nón, cầu) và elip: trước đây không nhận ra
+    const rd = detectRoundSketch(shapeInk);
+    if (rd?.kind === 'ellipse') {
+      // elip không phải hình dựng: thay nét tay bằng elip gọn, đúng chỗ, đúng cỡ
+      const src0 = ink[ink.length - 1];
+      saveToUndo();
+      setStrokes((prev) => [...prev.filter((q) => !ids.has(q.id)), { id: `shape-${Date.now()}-${Math.random()}`, points: ellipseStrokePoints(rd.cx, rd.cy, rd.r, rd.h, rd.ang ?? 0), color: src0.color, width: src0.width }]);
+      announceRecognized('Elip', rd.cx, rd.cy - rd.h);
+      return true;
+    }
+    if (rd && put(roundSolidText(rd))) return true;
     // đường tròn vẽ tay (kèm đường kính / bán kính / đa giác nội tiếp / tam giác ngoại tiếp): trước đây không nhận ra
     const circ = circleFigureText(shapeInk);
     if (circ && put(circ)) return true;

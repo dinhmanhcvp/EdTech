@@ -717,3 +717,191 @@ export function detectCircleSketch(strokes: SketchStrokeLike[]): SketchCircle | 
   }
   return null;
 }
+
+/**
+ * Elip khớp nhất với các điểm (conic tổng quát A·x² + B·xy + C·y² + D·x + E·y = 1, bình phương tối thiểu), kể cả elip vẽ NGHIÊNG.
+ * `ang` (radian, trong (−45°, 45°]) là hướng của bán trục `a`; elip gần thẳng trục thì a = bán trục ngang, b = dọc.
+ * `err`: sai lệch tương đối trung bình so với elip; `cover`: độ phủ góc (độ).
+ */
+export function fitEllipse(pts: SketchPt[]): {cx: number; cy: number; a: number; b: number; ang: number; err: number; cover: number} | null {
+  if (pts.length < 8) return null;
+  const mx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+  const my = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+  const K = 5;
+  const M = Array.from({length: K}, () => new Array<number>(K + 1).fill(0));
+  for (const p of pts) {
+    const [x, y] = [p.x - mx, p.y - my];
+    const v = [x * x, x * y, y * y, x, y];
+    for (let r = 0; r < K; r++) {
+      for (let c = 0; c < K; c++) M[r][c] += v[r] * v[c];
+      M[r][K] += v[r];
+    }
+  }
+  for (let c = 0; c < K; c++) {
+    let piv = c;
+    for (let r = c + 1; r < K; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+    [M[c], M[piv]] = [M[piv], M[c]];
+    if (Math.abs(M[c][c]) < 1e-12) return null;
+    for (let r = 0; r < K; r++) {
+      if (r === c) continue;
+      const f = M[r][c] / M[c][c];
+      for (let k = c; k <= K; k++) M[r][k] -= f * M[c][k];
+    }
+  }
+  const [A, B, C, D, E] = Array.from({length: K}, (_, i) => M[i][K] / M[i][i]);
+  const disc = B * B - 4 * A * C;
+  if (!(disc < 0) || !(A > 0)) return null;
+  // tâm: đạo hàm bằng 0
+  const det = 4 * A * C - B * B;
+  const x0 = (B * E - 2 * C * D) / det;
+  const y0 = (B * D - 2 * A * E) / det;
+  const G = 1 - (A * x0 * x0 + B * x0 * y0 + C * y0 * y0 + D * x0 + E * y0);
+  if (!(G > 0)) return null;
+  let ang = 0.5 * Math.atan2(B, A - C);
+  const lam = (t: number) => A * Math.cos(t) ** 2 + B * Math.sin(t) * Math.cos(t) + C * Math.sin(t) ** 2;
+  let [la, lb] = [lam(ang), lam(ang + Math.PI / 2)];
+  if (!(la > 0 && lb > 0)) return null;
+  if (Math.abs(ang) > Math.PI / 4) {
+    ang -= Math.sign(ang) * (Math.PI / 2);
+    [la, lb] = [lb, la];
+  }
+  const [a, b] = [Math.sqrt(G / la), Math.sqrt(G / lb)];
+  const [co, si] = [Math.cos(ang), Math.sin(ang)];
+  const loc = (p: SketchPt) => {
+    const [dx, dy] = [p.x - mx - x0, p.y - my - y0];
+    return [(dx * co + dy * si) / a, (-dx * si + dy * co) / b];
+  };
+  const err = pts.reduce((s, p) => {
+    const [u, v] = loc(p);
+    return s + Math.abs(Math.hypot(u, v) - 1);
+  }, 0) / pts.length;
+  const bins = new Set(pts.map((p) => {
+    const [u, v] = loc(p);
+    return Math.floor(((Math.atan2(v, u) + Math.PI) / (2 * Math.PI)) * 36) % 36;
+  }));
+  return {cx: x0 + mx, cy: y0 + my, a, b, ang, err, cover: (bins.size / 36) * 360};
+}
+
+export interface SketchRound {
+  kind: 'cylinder' | 'cone' | 'frustum' | 'sphere' | 'hemisphere' | 'ellipse';
+  /** bán kính đáy (trụ, nón), đáy lớn (nón cụt), bán kính (cầu, nửa cầu), bán trục a (elip) — px */
+  r: number;
+  /** chiều cao (trụ, nón, nón cụt) — px; elip: bán trục b */
+  h: number;
+  /** nón cụt: bán kính đáy nhỏ — px */
+  r2?: number;
+  /** elip: góc nghiêng của bán trục a (radian) */
+  ang?: number;
+  cx: number;
+  cy: number;
+}
+
+/**
+ * Khối tròn xoay và elip vẽ tay:
+ *  - hình trụ: hai elip (đáy dưới có thể chỉ vẽ nửa trước) cùng bề ngang, thẳng hàng dọc, nối bởi hai đường sinh thẳng;
+ *  - hình nón cụt: như hình trụ nhưng hai elip khác bề ngang rõ rệt (đường sinh xiên);
+ *  - hình nón: một elip đáy + hai đường sinh thẳng gặp nhau ở đỉnh, đầu kia ở hai mép elip;
+ *  - hình cầu: một đường tròn + elip (đường xích đạo) cùng tâm, cùng bề ngang;
+ *  - nửa hình cầu: một cung tròn (nửa trên) + elip đáy cùng bề ngang, hai đầu cung ở hai mép elip;
+ *  - elip: một nét kín dẹt (không phải đường tròn), nằm ngang, dựng đứng hoặc NGHIÊNG.
+ */
+export function detectRoundSketch(strokes: SketchStrokeLike[]): SketchRound | null {
+  type Ell = NonNullable<ReturnType<typeof fitEllipse>>;
+  const ells: {i: number; e: Ell}[] = [];
+  const lines: {i: number; a: SketchPt; b: SketchPt}[] = [];
+  strokes.forEach((s, i) => {
+    const pts = s.points;
+    if (pts.length < 2) return;
+    const [a, b] = [pts[0], pts[pts.length - 1]];
+    const L = dist(a, b);
+    // nét thẳng: gần bằng dây cung VÀ không phồng (nửa elip dẹt dài gần bằng dây cung nhưng phồng ra ~ bán trục nhỏ)
+    if (L >= 30 && pathLength(pts) <= 1.1 * L && Math.max(...pts.map((p) => perpDist(p, a, b))) <= 0.07 * L) {
+      lines.push({i, a, b});
+      return;
+    }
+    const e = fitEllipse(pts);
+    if (e && Math.max(e.a, e.b) >= 20 && e.err < 0.08 && e.cover >= 150) ells.push({i, e});
+  });
+  const near = (p: SketchPt, q: SketchPt, tol: number) => dist(p, q) < tol;
+  // elip "đáy" của khối: nằm ngang, dẹt
+  const flat = ells.filter(({e}) => Math.abs(e.ang) < (15 * Math.PI) / 180 && e.b / e.a < 0.8);
+  // hình cầu / nửa hình cầu: (cung) tròn + elip cùng tâm, cùng bề ngang
+  for (const s of strokes) {
+    const c = fitCircle(s.points);
+    if (!c || c.rms > 0.09 * c.r || c.r < 30) continue;
+    const eq = flat.find(({e, i}) => strokes[i] !== s && Math.abs(e.a / c.r - 1) < 0.25 && Math.hypot(e.cx - c.cx, e.cy - c.cy) < 0.3 * c.r);
+    if (!eq) continue;
+    if (c.cover >= 300) return {kind: 'sphere', r: c.r, h: 2 * c.r, cx: c.cx, cy: c.cy};
+    const up = s.points.filter((p) => p.y < eq.e.cy).length / s.points.length;
+    if (c.cover >= 140 && c.cover <= 230 && up > 0.8) return {kind: 'hemisphere', r: (c.r + eq.e.a) / 2, h: c.r, cx: eq.e.cx, cy: eq.e.cy};
+  }
+  // hình trụ / hình nón cụt
+  for (let p = 0; p < flat.length; p++)
+    for (let q = p + 1; q < flat.length; q++) {
+      const [e1, e2] = [flat[p].e, flat[q].e];
+      const a = Math.max(e1.a, e2.a);
+      if (Math.abs(e1.cx - e2.cx) > 0.3 * a || Math.abs(e1.cy - e2.cy) < 0.6 * Math.min(e1.a, e2.a)) continue;
+      const [top, bot] = e1.cy < e2.cy ? [e1, e2] : [e2, e1];
+      const side = (sx: number) =>
+        lines.some(({a: u, b: v}) => {
+          const [hi, lo] = u.y < v.y ? [u, v] : [v, u];
+          return near(hi, {x: top.cx + sx * top.a, y: top.cy}, 0.35 * a) && near(lo, {x: bot.cx + sx * bot.a, y: bot.cy}, 0.35 * a);
+        });
+      if (!(side(-1) && side(1))) continue;
+      const ratio = Math.min(e1.a, e2.a) / a;
+      if (ratio >= 0.8) return {kind: 'cylinder', r: (e1.a + e2.a) / 2, h: bot.cy - top.cy, cx: (e1.cx + e2.cx) / 2, cy: (top.cy + bot.cy) / 2};
+      if (ratio >= 0.12) return {kind: 'frustum', r: a, r2: Math.min(e1.a, e2.a), h: bot.cy - top.cy, cx: (e1.cx + e2.cx) / 2, cy: (top.cy + bot.cy) / 2};
+    }
+  // hình nón
+  for (const {e} of flat) {
+    for (let p = 0; p < lines.length; p++)
+      for (let q = p + 1; q < lines.length; q++) {
+        const ends = [lines[p], lines[q]];
+        for (const [s1, s2] of [[0, 0], [0, 1], [1, 0], [1, 1]] as const) {
+          const apex1 = s1 ? ends[0].b : ends[0].a;
+          const apex2 = s2 ? ends[1].b : ends[1].a;
+          if (!near(apex1, apex2, 0.25 * e.a)) continue;
+          const f1 = s1 ? ends[0].a : ends[0].b;
+          const f2 = s2 ? ends[1].a : ends[1].b;
+          const L = {x: e.cx - e.a, y: e.cy};
+          const R = {x: e.cx + e.a, y: e.cy};
+          const fit = (near(f1, L, 0.35 * e.a) && near(f2, R, 0.35 * e.a)) || (near(f1, R, 0.35 * e.a) && near(f2, L, 0.35 * e.a));
+          const apex = {x: (apex1.x + apex2.x) / 2, y: (apex1.y + apex2.y) / 2};
+          if (fit && Math.abs(apex.y - e.cy) > 0.6 * e.a) return {kind: 'cone', r: e.a, h: Math.abs(e.cy - apex.y), cx: e.cx, cy: e.cy};
+        }
+      }
+  }
+  // elip đứng riêng (một nét kín, dẹt; nằm ngang, dựng đứng hay nghiêng)
+  if (strokes.length === 1 && ells.length === 1) {
+    const e = ells[0].e;
+    if (e.cover >= 300 && Math.min(e.a, e.b) / Math.max(e.a, e.b) < 0.8) return {kind: 'ellipse', r: e.a, h: e.b, ang: e.ang, cx: e.cx, cy: e.cy};
+  }
+  return null;
+}
+
+/** Nét elip gọn (thay cho elip vẽ tay): khép kín. */
+export function ellipseStrokePoints(cx: number, cy: number, a: number, b: number, ang = 0): SketchPt[] {
+  const n = Math.max(36, Math.ceil((a + b) / 4));
+  const [co, si] = [Math.cos(ang), Math.sin(ang)];
+  const pts = Array.from({length: n}, (_, i) => {
+    const [u, v] = [a * Math.cos((2 * Math.PI * i) / n), b * Math.sin((2 * Math.PI * i) / n)];
+    return {x: cx + u * co - v * si, y: cy + u * si + v * co};
+  });
+  return [...pts, {...pts[0]}]; // khép kín đúng điểm đầu
+}
+
+/** Thời điểm tạo nét (ms) đọc từ id `stroke-<Date.now()>-…`; null nếu id không theo mẫu. */
+export const strokeTime = (s: {id?: string}): number | null => {
+  const m = /^[a-z]+-(\d{12,14})-/.exec(s.id ?? '');
+  return m ? Number(m[1]) : null;
+};
+
+/** Chỉ các nét vẽ trong `windowMs` cuối (tính từ nét mới nhất): nét cũ nằm chồng chỗ vẽ mới không bị gom vào hình mới. */
+export function recentInTime<T extends {id?: string}>(strokes: T[], windowMs = 15000): T[] {
+  const last = strokes.length ? strokeTime(strokes[strokes.length - 1]) : null;
+  if (last === null) return strokes;
+  return strokes.filter((s) => {
+    const t = strokeTime(s);
+    return t === null || last - t <= windowMs;
+  });
+}

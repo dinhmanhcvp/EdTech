@@ -4,8 +4,8 @@ import {GGROUPS} from '../components/canvas/SmartboardDock';
 import {buildScene} from '../utils/geometryProblem';
 import {addRegularPolygon} from '../utils/geoTools';
 
-// bộ công cụ của GeoGebra (Basic / Edit / Construct / Lines / Circles / Polygons / Transform) ↔ id dụng cụ của ta
-const GEOGEBRA: Record<string, string> = {
+// các dụng cụ dựng hình phẳng chuẩn (điểm, sửa, dựng, đường, tròn, đa giác, biến hình) ↔ id dụng cụ của bảng
+const STANDARD_TOOLS: Record<string, string> = {
   'Điểm mới': 'point', 'Đoạn thẳng': 'segment', 'Đường thẳng qua 2 điểm': 'line', 'Đa giác': 'polygon', 'Đường tròn tâm–điểm': 'circle',
   'Hiện/ẩn tên': 'label', 'Hiện/ẩn đối tượng': 'hide', 'Xóa': 'delete',
   'Trung điểm': 'midpoint', 'Đường vuông góc': 'perpline', 'Đường trung trực': 'perpbis', 'Đường song song': 'parallel', 'Đường phân giác': 'bisector', 'Các tiếp tuyến': 'tangents',
@@ -15,10 +15,10 @@ const GEOGEBRA: Record<string, string> = {
   'Tịnh tiến': 'translate', 'Quay quanh điểm': 'rotate', 'Đối xứng qua đường thẳng': 'reflline', 'Đối xứng qua điểm': 'reflpt', 'Vị tự': 'dilate',
 };
 
-describe('bộ công cụ vẽ hình có đủ công cụ của GeoGebra (hình phẳng)', () => {
-  it('mọi công cụ của GeoGebra đều có trong các nhóm của AI hub', () => {
+describe('bộ công cụ vẽ hình có đủ các dụng cụ dựng hình phẳng chuẩn', () => {
+  it('mọi dụng cụ chuẩn đều có trong các nhóm của AI hub', () => {
     const inHub = new Set(GGROUPS.flatMap((g) => g.tools.map((t) => t.id as string)));
-    for (const [name, id] of Object.entries(GEOGEBRA)) expect(inHub.has(id), name).toBe(true);
+    for (const [name, id] of Object.entries(STANDARD_TOOLS)) expect(inHub.has(id), name).toBe(true);
   });
   it('mỗi dụng cụ chỉ thuộc một nhóm; dụng cụ riêng của khối 3D (thiết diện) không lẫn vào hình phẳng', () => {
     const all = GGROUPS.flatMap((g) => g.tools.map((t) => t.id as string));

@@ -448,6 +448,8 @@ export interface GeoCircle {
   arc?: {from: V3; span: number};
   /** 'sphere': đường viền của mặt cầu (hình tròn có tâm và bán kính bằng của cầu, không nằm trong một mặt phẳng cố định) */
   kind?: 'circle' | 'sphere';
+  /** mặt cầu: chỉ vẽ nửa TRÊN của đường viền (nửa hình cầu) */
+  upper?: boolean;
   /** thuộc về chính khối (nón, trụ, cầu): vẽ cùng màu nét, không phải đường tròn thêm */
   own?: boolean;
   /** nửa xa người xem bị che: vẽ nét đứt (đường tròn đáy dưới của nón, trụ; xích đạo cầu) */
@@ -550,6 +552,22 @@ function buildFigure(text: string, notes: string[]): Model | null {
       if (mark) m.marks.add(n);
     };
     const nameOf = (re: RegExp, dflt: string) => re.exec(text)?.[1] ?? dflt;
+    if (kind === 'cầu' && /(?:nửa\s*(?:hình|khối|mặt)\s*cầu|bán cầu)/u.test(text)) {
+      // nửa hình cầu: nửa trên của mặt cầu + đường tròn đáy (nửa sau nét đứt)
+      const R = rr ?? val(new RegExp(`bán kính\\s*(?:[rR]\\s*)?=\\s*${NUM}`)) ?? 1;
+      const O = nameOf(/(?:tâm)\s*(?:là\s*)?([A-Z]'?)(?![A-Za-z'])/u, 'O');
+      const m = mk('Nửa hình cầu');
+      addPt(m, O, [0, 0, 0], true);
+      addPt(m, 'A', [-R, 0, 0]);
+      addPt(m, 'B', [R, 0, 0]);
+      addPt(m, 'S', [0, R, 0]);
+      m.aux.push([O, 'B'], [O, 'S']);
+      m.auxPart.push(0, 0);
+      m.circles.push({center: [0, 0, 0], normal: [0, 1, 0], r: R, part: 0, label: 'nửa mặt cầu', kind: 'sphere', upper: true, own: true});
+      m.circles.push({center: [0, 0, 0], normal: [0, 1, 0], r: R, part: 0, label: 'đường tròn đáy', own: true, hideBack: true});
+      m.notes.push(`nửa hình cầu tâm ${O}, bán kính ${+R.toFixed(3)}`);
+      return m;
+    }
     if (kind === 'cầu') {
       const R = rr ?? 1;
       const O = nameOf(/(?:tâm|cầu)\s*(?:là\s*)?([A-Z]'?)(?![A-Za-z'])/u, 'O');
@@ -574,7 +592,7 @@ function buildFigure(text: string, notes: string[]): Model | null {
         h = ll * 0.8;
       }
     }
-    if (kind === 'nón') {
+    if (kind === 'nón' && !/nón\s*cụt/u.test(text)) {
       const S = nameOf(/đỉnh\s*([A-Z]'?)(?![A-Za-z'])/u, 'S');
       const O = nameOf(/tâm(?: đáy)?\s*([A-Z]'?)(?![A-Za-z'])/u, 'O');
       const m = mk('Hình nón');
@@ -591,6 +609,25 @@ function buildFigure(text: string, notes: string[]): Model | null {
     }
     const O = nameOf(/tâm(?: đáy)?\s*([A-Z]'?)(?![A-Za-z'])/u, 'O');
     const O2 = `${O}'`;
+    if (/nón\s*cụt/u.test(text)) {
+      // hình nón cụt: đáy lớn bán kính R (dưới), đáy nhỏ bán kính r (trên)
+      const big = val(new RegExp(`đáy lớn\\s*(?:R\\s*)?=\\s*${NUM}`)) ?? r;
+      const small = val(new RegExp(`đáy nhỏ\\s*(?:r\\s*)?=\\s*${NUM}`)) ?? big / 2;
+      const m = mk('Hình nón cụt');
+      addPt(m, O, [0, 0, 0], true);
+      addPt(m, O2, [0, h, 0], true);
+      addPt(m, 'A', [-big, 0, 0]);
+      addPt(m, 'B', [big, 0, 0]);
+      addPt(m, "A'", [-small, h, 0]);
+      addPt(m, "B'", [small, h, 0]);
+      m.edges.push(['A', "A'"], ['B', "B'"]);
+      m.aux.push([O, O2], [O, 'B'], [O2, "B'"]);
+      m.auxPart.push(0, 0, 0);
+      m.circles.push({center: [0, 0, 0], normal: [0, 1, 0], r: big, part: 0, label: 'đường tròn đáy lớn', own: true, hideBack: true});
+      m.circles.push({center: [0, h, 0], normal: [0, 1, 0], r: small, part: 0, label: 'đường tròn đáy nhỏ', own: true});
+      m.notes.push(`hình nón cụt bán kính đáy ${+big.toFixed(3)} và ${+small.toFixed(3)}, chiều cao ${+h.toFixed(3)}`);
+      return m;
+    }
     const m = mk('Hình trụ');
     addPt(m, O, [0, 0, 0], true);
     addPt(m, O2, [0, h, 0], true);
@@ -2080,6 +2117,18 @@ export function renderScene(sc: GeoScene, upTo = Infinity): DrawnFigure {
           const c2 = pv(c.center);
           const px = rot ? 300 / (2.2 * R0) : v.k;
           const pts: {x: number; y: number}[] = [];
+          if (c.upper) {
+            // nửa trên: nối đúng hai mép trái/phải của đường tròn đáy đã chiếu (phép chiếu xiên làm đáy rộng hơn R một chút)
+            const base = circleSamples({...c, kind: 'circle', upper: undefined}, 96).map(pv);
+            const L0 = base.reduce((u, q) => (q.x < u.x ? q : u));
+            const R0p = base.reduce((u, q) => (q.x > u.x ? q : u));
+            const [mx, my, ax] = [(L0.x + R0p.x) / 2, (L0.y + R0p.y) / 2, (R0p.x - L0.x) / 2];
+            for (let i = 0; i <= 48; i++) {
+              const t = (i / 48) * Math.PI;
+              pts.push({x: Math.round((mx - ax * Math.cos(t)) * 10) / 10, y: Math.round((my - ((R0p.y - L0.y) / 2) * Math.cos(t) - c.r * px * Math.sin(t)) * 10) / 10});
+            }
+            return [{pts, label: c.label, own}];
+          }
           for (let i = 0; i <= 96; i++) {
             const t = (i / 96) * Math.PI * 2;
             pts.push({x: Math.round((c2.x + c.r * px * Math.cos(t)) * 10) / 10, y: Math.round((c2.y + c.r * px * Math.sin(t)) * 10) / 10});

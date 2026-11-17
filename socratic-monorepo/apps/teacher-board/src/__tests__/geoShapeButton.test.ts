@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {arrowStrokePoints, circleStrokePoints, detectPlaneShapeFromStrokes, detectSolidSketch, frameStrokes, recentShapeCluster, squareStrokePoints, triangleStrokePoints} from '../utils/sketchSolid';
+import {recentInTime, arrowStrokePoints, circleStrokePoints, detectPlaneShapeFromStrokes, detectSolidSketch, frameStrokes, recentShapeCluster, squareStrokePoints, triangleStrokePoints} from '../utils/sketchSolid';
 import {buildScene} from '../utils/geometryProblem';
 import {planeTextWithCoords, problemTextForSolid} from '../utils/geoTools';
 
@@ -93,5 +93,12 @@ describe('Trực quan hình học: vẽ tay → hình đúng như vẽ', () => {
     const got = recentShapeCluster([word, ...tri]);
     expect(got).toHaveLength(3);
     expect(got).not.toContain(word);
+  });
+
+  it('nét cũ (vẽ từ lâu) nằm chồng chỗ vẽ mới không bị gom vào hình mới', () => {
+    const t = 1_800_000_000_000;
+    const old = {id: `stroke-${t - 60_000}-a`, points: [P(100, 100), P(200, 200)]};
+    const fresh = [{id: `stroke-${t - 2000}-b`, points: [P(100, 100), P(300, 100)]}, {id: `stroke-${t}-c`, points: [P(300, 100), P(200, 250)]}];
+    expect(recentInTime([old, ...fresh])).toEqual(fresh);
   });
 });

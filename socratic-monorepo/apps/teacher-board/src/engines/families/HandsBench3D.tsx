@@ -2,7 +2,7 @@
 
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
-import {BENCH_ACTION, BENCH_MOVES, BENCH_SETUP, dragT, grabOf, type BenchMove} from '../../utils/lab/hands/benchMoves';
+import {BENCH_ACTION, BENCH_MOVES, BENCH_SETUP, dragT, grabOf, isTimeUnit, type BenchMove} from '../../utils/lab/hands/benchMoves';
 import {BENCH_FX, FX_PARTS} from './benchMotion';
 import {BIO_FX, BIO_FX_PARTS} from './benchMotionBio';
 import {handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
@@ -226,7 +226,8 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         return (live.st.p[key] - p.min) / (p.max - p.min || 1);
       };
       // thanh trượt nào có bộ phận cầm được thì kéo thẳng dụng cụ, không cần ray ở mép bàn
-      const railed = e.sliders.filter((p) => !grabOf(e.id, p.key));
+      const timed = e.sliders.filter((p) => !grabOf(e.id, p.key) && isTimeUnit(p.unit));
+      const railed = e.sliders.filter((p) => !grabOf(e.id, p.key) && !isTimeUnit(p.unit));
       const setParam = (key: string, t: number) => {
         const p = slider(key);
         const value = Math.min(p.max, Math.max(p.min, Math.round((p.min + (p.max - p.min) * t) / p.step) * p.step));
@@ -281,6 +282,25 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       ]);
       // bộ phận chỉ có sau khi mô hình tải xong nên danh sách lấy theo từng khung hình
       const unitText = (key: string) => `${fmt(live.st.p[key], 3)}${slider(key).unit ? ` ${slider(key).unit}` : ''}`;
+      // thông số thời gian: ĐỒNG HỒ HẸN GIỜ nằm trên bàn (Blender), chụm rồi kéo ngang để quay kim (một vòng 300° = cả thang)
+      const timers = timed.map((p, j) => {
+        const x = -3.3 + j * 0.85;
+        const body = solid(k.scene, new THREE.CylinderGeometry(0.3, 0.32, 0.08, 36), '#C9CED6', {x, y: 0.04, z: 2.3, metal: 0.6});
+        const hand = solid(k.scene, new THREE.BoxGeometry(0.03, 0.02, 0.24).translate(0, 0, -0.12), '#C4261A', {x, y: 0.1, z: 2.3});
+        const m: BenchMove = {n: 0, param: p.key, axis: 'rz', a: 0, b: 0, what: 'đồng hồ hẹn giờ'};
+        return {p, body, hand, tag: k.label(p.label), grab: {obj: body, m, read: () => unit(p.key), write: (t: number) => setParam(p.key, t), text: () => unitText(p.key)}};
+      });
+      if (timers.length)
+        void loadModel('/models/lab-parts.glb')
+          .then((lib) =>
+            timers.forEach((t) => {
+              dress(t.body, partOf(lib, 'TimerBody'));
+              dress(t.hand, partOf(lib, 'TimerHand'));
+            }),
+          )
+          .catch(() => undefined);
+      const timerGrabs = partGrabs(k, P, () => timers.map((t) => t.grab), () => 1);
+      const timerAt = new THREE.Vector3();
       const grabs = partGrabs(
         k,
         P,
@@ -302,7 +322,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       };
       const doTag = k.label('', '#1F7A4D');
       const doBox = new THREE.Box3();
-      P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny) || nearMark(nx, ny, 0.1) || (setupDone() && onMover(nx, ny)));
+      P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny) || timerGrabs.grab(nx, ny) || nearMark(nx, ny, 0.1) || (setupDone() && onMover(nx, ny)));
 
       // chuyển động của bài: dụng cụ chạy theo quy luật vật lí của bài (benchMotion.ts)
       const fx = (BENCH_FX[e.id] ?? BIO_FX[e.id])?.({
@@ -326,6 +346,11 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         sliders.step(Object.fromEntries(e.sliders.map((p) => [p.key, unit(p.key)])));
         buttons.step(dt);
         grabs.step();
+        timerGrabs.step();
+        for (const t of timers) {
+          t.hand.rotation.y = -unit(t.p.key) * 5.24;
+          t.tag(timerAt.set(t.body.position.x, 0.1, 2.98), undefined, `${t.p.label}: ${unitText(t.p.key)}`);
+        }
         // mỗi khung hình đặt lại phần động về trạng thái theo thanh trượt, rồi hiệu ứng chuyển động ghi đè lên đó
         for (const {obj, base, m} of movers) {
           const x = m.a + (m.b - m.a) * unit(m.param);
@@ -349,7 +374,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             flash = 0.5;
             return;
           }
-          if (!ptr.pressed || !ptr.active || !setupDone() || grabs.grab(x, y) || sliders.grab(x, y) || buttons.grab(x, y) || !onMover(x, y)) return;
+          if (!ptr.pressed || !ptr.active || !setupDone() || grabs.grab(x, y) || timerGrabs.grab(x, y) || sliders.grab(x, y) || buttons.grab(x, y) || !onMover(x, y)) return;
           if (e.columns.length) live.dispatch({type: 'measure'});
           else pokes++;
         });

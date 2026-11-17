@@ -101,6 +101,8 @@ describe('/lab: bài thực hành SGK là thí nghiệm 3D điều khiển bằn
     expect(t).toContain('Pit-tông: chụm vào chính dụng cụ');
     expect(benchManual('PHYS_LAB_OHM_LAW')!.tools!.join(' ')).toContain('Núm chỉnh điện áp của bộ nguồn: chụm vào chính dụng cụ');
     expect(benchManual('PHYS_LAB_NEWTON2')!.tools!.join(' ')).toContain('Con trượt');
+    // thông số thời gian chỉnh bằng đồng hồ hẹn giờ, không còn con trượt
+    expect(benchManual('PHYS_LAB_CAPACITOR_RC')!.tools!.join(' ')).toContain('Đồng hồ hẹn giờ "Thời gian nạp t"');
   });
 
   it('mọi bài có phép đo đều có thao tác LÀM thí nghiệm (chạm vào dụng cụ), và hướng dẫn nêu đúng thao tác đó', () => {

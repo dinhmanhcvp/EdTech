@@ -23,6 +23,8 @@ export interface ActionDef {
 export interface OpsDef {
   picks: PickDef[];
   actions?: ActionDef[];
+  /** tham số do chính thí nghiệm chạy ra (thời gian trôi khi bật nguồn…): không có núm xoay */
+  auto?: string[];
 }
 
 const opt = (label: string, value: number, color: string): PickOption => ({label, value, color});
@@ -54,8 +56,15 @@ export const OPS: Record<string, OpsDef> = {
   rutherford: {picks: [{id: 'Z', title: 'Lá kim loại', options: [opt('Al', 13, '#C9CED6'), opt('Fe', 26, '#8A93A6'), opt('Ag', 47, '#DADDE2'), opt('Au', 79, '#E3B341'), opt('Pb', 82, '#5B6270')]}]},
   shock: {picks: [{id: 'deg', title: 'Mũi nêm', options: [5, 10, 15, 25, 35, 45].map((d) => opt(`${d}°`, d, '#8A93A6'))}]},
   matterwave: {picks: [{id: 'm', title: 'Phân tử', options: [opt('C₆₀', 720, '#2F6FD0'), opt('C₇₀', 840, '#C2184A'), opt('C₈₄', 1008, '#2E9B57')]}]},
-  gel: {picks: [{id: 'agar', title: 'Gel agarose (%)', options: [0.7, 1, 1.5, 2].map((a) => opt(`${a}`, a, '#2E9B57'))}]},
-  morgan: {picks: [{id: 'n', title: 'Số ruồi con đếm', options: [20, 100, 500, 1000, 2000, 5000].map((n) => opt(`${n}`, n, '#C2184A'))}]},
+  // thời gian chạy không phải núm vặn: gạt công tắc nguồn thì gel chạy và đồng hồ tự đếm, gạt về thì dừng
+  gel: {picks: [{id: 'agar', title: 'Gel agarose (%)', options: [0.7, 1, 1.5, 2].map((a) => opt(`${a}`, a, '#2E9B57'))}], auto: ['min'], actions: [{id: 'start', label: 'Bật nguồn điện di', color: '#2E9B57'}, {id: 'stop', label: 'Tắt nguồn', color: '#C4261A'}]},
+  // khoảng cách hai gen không phải núm vặn: mỗi lọ ruồi là một cặp gen khác nhau trên nhiễm sắc thể (cM)
+  morgan: {
+    picks: [
+      {id: 'n', title: 'Số ruồi con đếm', options: [20, 100, 500, 1000, 2000, 5000].map((n) => opt(`${n}`, n, '#C2184A'))},
+      {id: 'd', title: 'Cặp gen theo dõi (cM)', options: [1.5, 9, 17, 36, 50].map((d) => opt(`${d}`, d, '#7A5C3A'))},
+    ],
+  },
   differential: {
     picks: [
       {id: 'mu', title: 'Mặt đường dưới bánh trái', options: [opt('Bùn', 0.1, '#7A5C3A'), opt('Sỏi', 0.35, '#A9A18F'), opt('Nhựa khô', 0.8, '#4A4F5C')]},
@@ -89,4 +98,4 @@ export const OPS: Record<string, OpsDef> = {
 /** giá trị của tham số rời rạc gần nhất với `x` trong `pick` */
 export const nearestOption = (pick: PickDef, x: number): number => pick.options.reduce((best, o, i) => (Math.abs(o.value - x) < Math.abs(pick.options[best].value - x) ? i : best), 0);
 /** tham số nào là núm xoay: mọi tham số không phải bộ phận chọn */
-export const knobParams = (spec: SimSpec, ops: OpsDef) => spec.params.filter((p) => !ops.picks.some((k) => k.id === p.id));
+export const knobParams = (spec: SimSpec, ops: OpsDef) => spec.params.filter((p) => !ops.picks.some((k) => k.id === p.id) && !ops.auto?.includes(p.id));

@@ -113,5 +113,15 @@ part('SelectorKnob', [
     box('line', (0.012, 0.12, 0.004), T(0, 0.101, -0.1), WHITE, bevel=0),
 ], (1.6, 0.1, 1.2))
 
+# ---- đồng hồ hẹn giờ đặt nằm trên bàn (thay con trượt của các thông số THỜI GIAN): gốc ở tâm vỏ (cao 0,04), mặt số quay lên
+tb = [lathe('case', [(0, 0.04), (0.27, 0.04), (0.3, 0.03), (0.32, -0.04), (0, -0.04)], T(0, 0, 0), CHROME), lathe('face', [(0, 0.046), (0.26, 0.046), (0.265, 0.04)], T(0, 0, 0), CREAM), cyl('crown', 0.04, 0.08, T(0, 0, -0.35), CHROME, rot=(math.radians(90), 0, 0))]
+for j in range(60):
+    a = j / 60 * 2 * math.pi
+    big = j % 5 == 0
+    tb.append(box('tick', (0.012 if big else 0.005, 0.05 if big else 0.025, 0.002), T(math.sin(a) * (0.22 if big else 0.232), 0.048, -math.cos(a) * (0.22 if big else 0.232)), INK, bevel=0, rot=(0, 0, -a)))
+part('TimerBody', tb, (2.6, 0.04, 1.2))
+# kim: gốc ở trục, chỉ về −z khi ở 0
+part('TimerHand', [box('hand', (0.02, 0.24, 0.006), T(0, 0, -0.1), RED, bevel=0), lathe('hub', [(0, 0.012), (0.03, 0.012), (0.035, 0)], T(0, 0, 0), CHROME)], (2.6, 0.1, 1.2))
+
 export_glb('lab-parts.glb')
 preview((0.3, 2.6, 3.6), (0.1, 0.1, -0.1), lens=50)

@@ -354,8 +354,9 @@ describe('nhóm Vật lí: thao tác trực tiếp thay thanh trượt', () => {
         expect(works, `${id}.${pick.id} có bộ phận cho kết quả đạt`).toBe(true);
         expect(nearestOption(pick, spec.solution[pick.id])).toBeGreaterThanOrEqual(0);
       }
-      // tham số nào không phải bộ phận thì là núm xoay: không bỏ sót tham số
-      expect(knobParams(spec, ops).length + ops.picks.length).toBe(spec.params.length);
+      // tham số nào không phải bộ phận thì là núm xoay, hoặc do thí nghiệm tự chạy ra (`auto`, vd. thời gian điện di): không bỏ sót tham số
+      for (const auto of ops.auto ?? []) expect(ids, `${id}.auto`).toContain(auto);
+      expect(knobParams(spec, ops).length + ops.picks.length + (ops.auto?.length ?? 0)).toBe(spec.params.length);
     }
   });
   it('9 bài nhóm Vật lí của phòng đều có thao tác trực tiếp', async () => {
@@ -370,8 +371,15 @@ describe('nhóm Sinh học: thao tác trực tiếp', () => {
     const {SIM_BY_ID} = await import('../utils/lab/hands/sims');
     expect(OPS.gel.picks[0].id).toBe('agar');
     expect(OPS.morgan.picks[0].id).toBe('n');
-    expect(knobParams(SIM_BY_ID.gel, OPS.gel).map((p) => p.id).sort()).toEqual(['min', 'volt']);
-    expect(knobParams(SIM_BY_ID.morgan, OPS.morgan).map((p) => p.id)).toEqual(['d']);
+    expect(knobParams(SIM_BY_ID.gel, OPS.gel).map((p) => p.id).sort()).toEqual(['volt']);
+    // ruồi giấm: khoảng cách hai gen là lọ ruồi để chọn, không còn núm vặn nào
+    expect(knobParams(SIM_BY_ID.morgan, OPS.morgan)).toEqual([]);
+    // quang điện có núm cường độ sáng: cường độ không làm đổi điều kiện đạt (U_h chỉ theo tần số)
+    expect(SIM_BY_ID.photo.evaluate({...SIM_BY_ID.photo.solution, P: 100}).ok).toBe(true);
+    expect(SIM_BY_ID.photo.evaluate({f: 4.3, A: 1.95, U: 0, P: 100}).ok).toBe(false);
+    // thời gian chạy do công tắc nguồn điều khiển (bật thì đồng hồ tự đếm), không còn là núm xoay
+    expect(OPS.gel.auto).toEqual(['min']);
+    expect(OPS.gel.actions?.map((x) => x.id)).toEqual(['start', 'stop']);
   });
 });
 

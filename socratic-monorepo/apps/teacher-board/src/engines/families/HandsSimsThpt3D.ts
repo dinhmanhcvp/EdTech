@@ -232,6 +232,7 @@ const photo: Scene = ({k, live}) => {
   const oz = rnd(N);
   return (now) => {
     const {f, A, U} = live.v;
+    const P = live.v.P ?? 50; // cường độ sáng: chỉ đổi SỐ photon và số electron, không đổi động năng
     const K = stopU(f, A);
     light.mat.color.setHSL(clamp((f - 4) / 3.5, 0, 1) * 0.75, 1, f > 7.9 ? 0.85 : 0.6);
     filter?.color.copy(light.mat.color);
@@ -239,15 +240,15 @@ const photo: Scene = ({k, live}) => {
       const p = (now / 700 + i / 30) % 1;
       light.pos.set([-2.8 + p * (XC + 2.8), 1.8 - p * (1.8 - Y) + (oy[i] - 0.5) * 0.5, Z + (oz[i] - 0.5) * 0.5], i * 3);
     }
-    light.flush();
+    light.flush(Math.max(3, Math.round((30 * P) / 100)));
     for (let i = 0; i < N; i++) {
       const reach = U <= 0 ? 1 : Math.min(1, (u[i] * K) / U);
       const p = (now / 1600 + ph[i]) % 1;
       const s = reach >= 1 ? p : (p < 0.5 ? p * 2 : 2 - p * 2) * reach;
       els.pos.set([XC + s * (XA - XC), Y + (oy[i] - 0.5), Z + (oz[i] - 0.5)], i * 3);
     }
-    els.flush(K > 0 ? N : 0);
-    return `Dòng quang điện ${(photoCurrent(f, A, U) * 100).toFixed(0)} % · U_h cần = ${K.toFixed(2)} V\nElectron chậm bị điện áp hãm đẩy quay lại catot; nhanh nhất có động năng hf − A`;
+    els.flush(K > 0 ? Math.max(2, Math.round((N * P) / 100)) : 0);
+    return `Dòng quang điện ${(photoCurrent(f, A, U) * P).toFixed(0)} % · U_h cần = ${K.toFixed(2)} V · cường độ sáng ${P.toFixed(0)} %\nĐèn sáng hơn chỉ cho NHIỀU electron hơn; động năng mỗi electron (và U_h) chỉ phụ thuộc tần số: hf − A`;
   };
 };
 
@@ -552,7 +553,7 @@ const gel: Scene = ({k, live}) => {
   glass(k, box(4.4, 0.2, RUN + 0.5), '#3E6FB0', 0.35, 0, 0.14, WELL + RUN / 2);
   withSims((lib) => {
     place(k.scene, lib, 'GelTank', [0, 0, WELL + RUN / 2]);
-    place(k.scene, lib, 'GelPSU', [3.35, 0, Z + 0.9]);
+    place(k.scene, lib, 'GelPSU', [3.35, 0, Z + 0.45]); // lùi ra sau công tắc dao
   });
   k.label('Cực âm (−): giếng tra mẫu')(V(-3.3, 0.1, WELL));
   k.label('Cực dương (+)')(V(-3.1, 0.1, WELL + RUN));
@@ -562,7 +563,27 @@ const gel: Scene = ({k, live}) => {
     k.label(name)(V(x, i % 2 ? 1.25 : 0.7, WELL - 0.35)); // so le hai tầng để nhãn không đè nhau
     return bps.map((bp) => ({bp, x, m: glow(k, box(0.7, 0.07, 0.07), i ? '#FF9A4D' : '#7FFFB0', x, 0.2, WELL), tag: i ? null : k.label(`${bp}`, '#7FFFB0', true)}));
   }).flat();
-  return () => {
+  // nguồn điện di: công tắc dao bật thì gel chạy, 4 phút thí nghiệm mỗi giây; lắp gel khác hoặc bật lại sau khi chạy hết thì tra mẫu mới (0 phút)
+  const lamp = glow(k, new THREE.SphereGeometry(0.07, 12, 8), '#39FF6A', 3.35, 0.62, Z + 0.8);
+  let seen = {start: live.events.start ?? 0, stop: live.events.stop ?? 0};
+  let run = false;
+  let gelOf = live.v.agar;
+  return (_now, dt) => {
+    if ((live.events.start ?? 0) !== seen.start) {
+      run = true;
+      if (live.v.min >= 60) live.set('min', 0);
+    }
+    if ((live.events.stop ?? 0) !== seen.stop) run = false;
+    seen = {start: live.events.start ?? 0, stop: live.events.stop ?? 0};
+    if (live.v.agar !== gelOf) {
+      gelOf = live.v.agar;
+      live.set('min', 0);
+    }
+    if (run) {
+      live.set('min', Math.min(60, live.v.min + dt * 4));
+      if (live.v.min >= 60) run = false;
+    }
+    lamp.visible = run;
     const {volt, min, agar} = live.v;
     for (const b of lanes) {
       const d = migrate(b.bp, volt, min, agar);
@@ -571,7 +592,7 @@ const gel: Scene = ({k, live}) => {
       b.m.position.z = z;
       b.tag?.(b.m.visible && min > 0 ? V(b.x - 0.75, 0.25, z) : null);
     }
-    return `${volt.toFixed(0)} V · ${min.toFixed(0)} phút · gel ${agar.toFixed(1)} %\nSố bên thang chuẩn là độ dài đoạn DNA (cặp base); so vạch của hiện trường với hai nghi phạm`;
+    return `${run ? 'ĐANG CHẠY' : 'Nguồn tắt'} · ${volt.toFixed(0)} V · ${min.toFixed(0)} phút · gel ${agar.toFixed(1)} %\nGạt công tắc nguồn để chạy / dừng · Số bên thang chuẩn là độ dài đoạn DNA (cặp base); so vạch của hiện trường với hai nghi phạm`;
   };
 };
 

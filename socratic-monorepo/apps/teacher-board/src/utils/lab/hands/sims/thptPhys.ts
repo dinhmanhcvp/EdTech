@@ -119,15 +119,16 @@ export const PHOTO: SimSpec = {
     {id: 'f', label: 'Tần số ánh sáng', unit: '·10¹⁴ Hz', min: 4, max: 12, init: 7, digits: 2},
     {id: 'A', label: 'Công thoát catot', unit: 'eV', min: 1.9, max: 4.7, init: 2.1, digits: 2},
     {id: 'U', label: 'Điện áp hãm', unit: 'V', min: 0, max: 3, init: 0, digits: 2},
+    {id: 'P', label: 'Cường độ sáng', unit: '%', min: 10, max: 100, init: 50, digits: 0},
   ],
-  solution: {f: 7, A: 2.1, U: stopU(7, 2.1)},
+  solution: {f: 7, A: 2.1, U: stopU(7, 2.1), P: 50},
   evaluate: (v: Values) => {
     const Uh = stopU(v.f, v.A);
     const ok = Uh > 0.1 && Math.abs(v.U - Uh) <= 0.05;
     const h = ((v.U + v.A) / (v.f * 1e14)) * 1.602177e-19;
     return {
       ok,
-      head: ok ? `Dòng vừa về 0 ở U_h ≈ ${v.U.toFixed(2)} V → h ≈ ${(h * 1e34).toFixed(2)}·10⁻³⁴ J·s` : Uh === 0 ? 'Không có electron bật ra: tần số dưới giới hạn quang điện' : `Dòng quang điện còn ${(photoCurrent(v.f, v.A, v.U) * 100).toFixed(0)} %`,
+      head: ok ? `Dòng vừa về 0 ở U_h ≈ ${v.U.toFixed(2)} V → h ≈ ${(h * 1e34).toFixed(2)}·10⁻³⁴ J·s` : Uh === 0 ? `Không có electron bật ra: tần số dưới giới hạn quang điện (dù cường độ sáng ${(v.P ?? 50).toFixed(0)} %)` : `Dòng quang điện còn ${(photoCurrent(v.f, v.A, v.U) * (v.P ?? 50)).toFixed(0)} % · cường độ sáng ${(v.P ?? 50).toFixed(0)} %`,
       lines: [`Năng lượng photon hf = ${(H_EV * v.f * 1e14).toFixed(2)} eV, giới hạn quang điện f₀ = A/h = ${(v.A / H_EV / 1e14).toFixed(2)}·10¹⁴ Hz`, 'hf = A + e·U_h → U_h = (h/e)·f − A/e: đường thẳng theo f, hệ số góc h/e. Cs 2,1; Na 2,3; Zn 4,3; Ag 4,7 eV'],
     };
   },

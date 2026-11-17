@@ -58,7 +58,8 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
   type Token = {m: THREE.Mesh; home: THREE.Vector3; i: number; color: string; skin: Skin | null};
   // nhóm có chỗ lắp trên thiết bị (`anchors`) dùng chính vectơ đó làm ổ lắp: thiết bị dời đi thì vật đã lắp đi theo
   const picks = ops.picks.map((def) => ({def, tokens: [] as Token[], socket: anchors[def.id] ?? new THREE.Vector3(), onDevice: def.id in anchors}));
-  let cursor = -3.9;
+  // khay và ổ lắp bắt đầu bên phải núm cuối cùng: ổ lắp và nhãn của nó không còn đè lên núm xoay / nút − + của núm
+  let cursor = knobs.length ? knobs[knobs.length - 1].x + 0.75 : -3.9;
   for (const g of picks) {
     const width = (g.def.options.length - 1) * 0.42;
     const xc = cursor + width / 2;

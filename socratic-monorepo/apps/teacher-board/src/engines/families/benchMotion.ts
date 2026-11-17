@@ -592,7 +592,9 @@ export const BENCH_FX: Record<string, FxBuild> = {
       const n = clamp(Math.round(L.p.L * 5), 2, 5);
       for (let i = 0; i < N; i++) {
         const x = -1.9 + (3.8 * i) / (N - 1);
-        const s = Math.sin((n * Math.PI * (x + 1.9)) / 3.8);
+        // chỉ đoạn dây giữa máy phát và cầu chặn dao động; phần sau cầu căng thẳng tới ròng rọc
+        const len = 3.8 * clamp(L.p.L, 0.4, 1);
+        const s = x + 1.9 <= len ? Math.sin((n * Math.PI * (x + 1.9)) / len) : 0;
         wire.put(i, x, 0.78 + 0.17 * s * Math.cos(T * (6 + n * 2.2)), 0);
         env.put(i, x, 0.78 + 0.17 * s, 0.0, 0.7);
       }

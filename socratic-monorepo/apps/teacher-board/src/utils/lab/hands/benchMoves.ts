@@ -28,6 +28,7 @@ export function dragT(m: BenchMove, startT: number, d: number): number {
 export const BENCH_MOVES: Record<string, BenchMove[]> = {
   SPEED: [mv(1, 's', 'x', -0.6, 2.2, 'cổng quang thứ hai')],
   // núm vặn thật trên máy (kéo ngang sang phải = vặn theo chiều kim đồng hồ = tăng)
+  STANDING_WAVE: [mv(9, 'L', 'x', -0.38, 1.9, 'cầu chặn dây')], // dây dao động từ máy phát (x = −1,9) tới cầu: 3,8 đơn vị = 1 m
   OHM_LAW: [mv(9, 'U', 'rz', 2.3, -2.3, 'núm chỉnh điện áp của bộ nguồn')],
   TRANSFORMER: [mv(9, 'U1', 'rz', 2.3, -2.3, 'núm chỉnh điện áp của bộ nguồn')],
   WAVE_INTERFERENCE: [mv(9, 'f', 'rz', 2.3, -2.3, 'núm tần số của cần rung')],
@@ -163,6 +164,9 @@ export const BENCH_SETUP: Record<string, BenchStep[]> = {
   MINI_ECOSYSTEM: [sp('Rải cát, trồng cây thủy sinh', -0.5, 0.2, 0.2), sp('Thả cá vào bể, bật đèn', -0.5, 0.6, -0.2)],
 };
 
+/** thông số THỜI GIAN (đơn vị s, phút, giờ, ngày): chỉnh bằng đồng hồ hẹn giờ trên bàn thay cho con trượt */
+export const isTimeUnit = (unit?: string): boolean => /^(s|phút|giờ|ngày)$/.test(unit ?? '');
+
 /** Bộ phận cầm được của một thanh trượt (nếu có): bài đó kéo thẳng dụng cụ thay vì kéo con trượt trên ray. */
 export function grabOf(expId: string, param: string): (BenchMove & {what: string}) | undefined {
   const all = (BENCH_MOVES[expId] ?? []).filter((m): m is BenchMove & {what: string} => m.param === param && !!m.what);
@@ -191,7 +195,9 @@ export function benchManual(presetId: string): Manual | null {
         const range = `từ ${p.min} đến ${p.max}${p.unit ? ` ${p.unit}` : ''}`;
         return g
           ? `${g.what[0].toUpperCase()}${g.what.slice(1)}: chụm vào chính dụng cụ này rồi kéo để đổi "${p.label}" (${range}); vòng con trỏ chuyển cam khi chạm đúng.`
-          : `Con trượt chia vạch "${p.label}" (mép bàn bên trái): chụm vào con chạy và kéo dọc thanh dẫn, kim đỏ chỉ trên thang chia; ${range}.`;
+          : isTimeUnit(p.unit)
+            ? `Đồng hồ hẹn giờ "${p.label}" (mép bàn phía trước, bên trái): chụm vào đồng hồ rồi kéo ngang để quay kim; ${range}.`
+            : `Con trượt chia vạch "${p.label}" (mép bàn bên trái): chụm vào con chạy và kéo dọc thanh dẫn, kim đỏ chỉ trên thang chia; ${range}.`;
       }),
       ...(e.choices ?? []).map((c) => `Công tắc xoay "${c.label}" (mép bàn bên phải): chụm một lần để vặn sang nấc kế tiếp (${c.options.map((o) => o[1]).join(', ')}).`),
       ...(b.file === 'phys' ? ['Dụng cụ tự chuyển động đúng theo quy luật của bài (xe lăn, bi rơi, con lắc đung đưa, dòng điện chạy, sóng lan…): chạm (chụm) vào vật đang chuyển động hoặc bấm ĐO để cho chạy lại từ đầu; kéo thanh trượt thì chuyển động đổi theo ngay.'] : []),

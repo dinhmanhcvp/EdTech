@@ -29,7 +29,7 @@ describe('mô hình Blender của phòng thực hành: tên nút là hợp đồ
 
   it('bộ phận thao tác dùng chung có đủ các tên mà handsOps mặc lên vật thay thế', () => {
     const names = nodeNames('lab-parts.glb');
-    for (const n of ['KnobCap', 'KnobDial', 'Socket', 'Token', 'SwitchBase', 'SwitchLever', 'PullRail', 'PullHandle', 'SlideRail', 'SlideKnob', 'SelectorBase', 'SelectorKnob']) expect(names, n).toContain(n);
+    for (const n of ['KnobCap', 'KnobDial', 'Socket', 'Token', 'SwitchBase', 'SwitchLever', 'PullRail', 'PullHandle', 'SlideRail', 'SlideKnob', 'SelectorBase', 'SelectorKnob', 'TimerBody', 'TimerHand']) expect(names, n).toContain(n);
   });
 
   it('cấu tạo máy nhóm Kĩ thuật có đủ các tên mà HandsEngOps3D lắp vào cảnh', () => {

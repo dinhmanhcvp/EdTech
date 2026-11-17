@@ -9,7 +9,7 @@ import {board, box, clamp, cloud, glass, glow, path, rnd, yCyl, Z} from './Hands
 import {handPointers, type Ptr} from './handsKit';
 import {V, solid, xCyl} from './handsModels';
 import {dress, glassify, labelBottle, loadModel, partOf, place, type Skin} from './labParts';
-import {setLine, type Kit} from './Stage3D';
+import {setLine, type CardRow, type Kit} from './Stage3D';
 
 /**
  * Bốn bài Hóa THPT làm bằng THAO TÁC trên dụng cụ thật (mô hình Blender `chem-parts.glb`), không còn thanh trượt trên bàn:
@@ -21,6 +21,25 @@ type Hands = ReturnType<typeof handPointers>;
 type Ctx = {k: Kit; P: Hands; live: SimLive};
 export type Lab = (c: Ctx) => {grab: (nx: number, ny: number) => boolean; step: (now: number, dt: number) => string};
 const CHEM = '/models/chem-parts.glb';
+
+/**
+ * Thẻ phản ứng không che cảnh suốt buổi: chỉ hiện khi con trỏ (tay / chuột) ở gần chỗ đặt thẻ, hoặc trong 6 giây sau khi hiện tượng thay đổi
+ * (số đo thay đổi liên tục như pH, nhiệt độ không tính là thay đổi).
+ */
+export function peek(card: ReturnType<Kit['card']>, P: Hands) {
+  let key = '';
+  let at = -1e9;
+  return (pos: THREE.Vector3, rows: CardRow[]) => {
+    const now = performance.now();
+    const k2 = JSON.stringify(rows).replace(/-?\d+(?:[.,]\d+)?/g, '#');
+    if (k2 !== key) {
+      key = k2;
+      at = now;
+    }
+    const near = P.ptrs.some((p) => p.active && P.distAt(p.ndc.x, p.ndc.y, pos) < 0.45);
+    card(near || now - at < 6000 ? pos : null, rows);
+  };
+}
 
 /** vật cầm được: `at` là vị trí hiện tại; `down` lúc vừa chụm, `hold` mỗi khung hình đang giữ, `up` lúc buông */
 export type Grip = {at: () => THREE.Vector3; down?: (p: Ptr) => void; hold?: (p: Ptr, dt: number) => void; up?: (p: Ptr) => void};
@@ -100,9 +119,9 @@ const titrationLab: Lab = ({k, P, live}) => {
   const sol = glass(k, yCyl(0.36, 0.46, 0.3), '#F2F6F8', 0.85, X, 0.2, Z);
   const cock = solid(k.scene, box(0.06, 0.24, 0.06), '#2459C9', {x: X, y: TIP + 0.36, z: Z + 0.14});
   const drop = solid(k.scene, new THREE.SphereGeometry(0.035, 10, 8), '#CFEFFF', {});
-  const rx = k.card('#2E9B57'); // thẻ phản ứng ngay trên dụng cụ (thay cho phần giải thích trong tab Hướng dẫn)
+  const rx = peek(k.card('#2E9B57'), P); // thẻ phản ứng ngay trên dụng cụ (thay cho phần giải thích trong tab Hướng dẫn)
   k.label('Khóa buret: chụm nhanh = 1 giọt, giữ = chảy thành dòng')(V(X + 1.1, TIP + 0.36, Z));
-  k.label('Rót NaOH vào đây')(V(X, TIP + 2.75, Z));
+  k.label('Rót NaOH vào đây')(V(X + 0.75, TIP + 2.2, Z)); // cạnh miệng buret, không sát dải số đo phía trên
   const bottles = NAOH.map((c, i) => {
     const home = V(-3.7 + i * 0.75, 0, 1.5);
     const m = solid(k.scene, based(yCyl(0.24, 0.24, 0.9), 0.9), '#BFD8E8', {x: home.x, z: home.z});
@@ -225,7 +244,7 @@ const no2Lab: Lab = ({k, P, live}) => {
   void rod;
   void thumb;
   const bath = glass(k, box(4, 0.42, 1.6), '#2F6FD0', 0.45, MID, 0.25, Z);
-  const rx = k.card('#2E9B57');
+  const rx = peek(k.card('#2E9B57'), P);
   const bathTag = k.label('Bể nước');
   const pTag = k.label('Pít-tông');
   const brown = cloud(k, 120, '#C2562A', 5);
@@ -353,7 +372,7 @@ const chlorineLab: Lab = ({k, P, live}) => {
     return {...w, m, tag: k.label(w.name)};
   });
   const cloth = solid(k.scene, box(0.8, 1.0, 0.03), '#C2185B', {x: OUT.x, y: OUT.y, z: OUT.z});
-  const rx = k.card('#2E9B57');
+  const rx = peek(k.card('#2E9B57'), P);
   const clothTag = k.label('Vải màu');
   let clothSkin: Skin | null = null;
   loadModel(CHEM)
@@ -446,7 +465,7 @@ const alkaliLab: Lab = ({k, P, live}) => {
   const rest = solid(k.scene, box(1, 0.14, 0.14).translate(0.5, 0, 0), '#8E949C', {metal: 0.6, rough: 0.5, y: TILE.y + 0.07, z: TILE.z});
   const knife = solid(k.scene, box(0.02, 0.34, 0.5), '#C9CED6', {metal: 0.9, rough: 0.2});
   solid(knife, box(0.05, 0.1, 0.5), '#3A2A20', {y: 0.2});
-  const rx = k.card('#2E9B57');
+  const rx = peek(k.card('#2E9B57'), P);
   const barTag = k.label('Na');
   const jars = METALS.map((sym, i) => {
     const home = V(-3.8 + i * 0.7, 0, 1.5);
@@ -579,7 +598,7 @@ const bzLab: Lab = ({k, P, live}) => {
     stream.visible = false;
     return {...r, home, m, stream, pill};
   });
-  const rx = k.card('#2E9B57');
+  const rx = peek(k.card('#2E9B57'), P);
   const tag = k.label('f = 3,50', '#FBF9F4');
   loadModel(SIMS_PARTS)
     .then((lib) => place(k.scene, lib, 'Stirrer', [BX, 0, Z]))

@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {describe, expect, it} from 'vitest';
 import {SPECS, type AssemblyKind} from '../utils/lab/hands/assembly';
-import {CIRC_GAIN, DWELL, FASTENERS, HOLD_REV, KITS, TOOLS, allTight, crossOrder, driveRev, holdingMessage, initialScrews, orderMistake, seated, toolFor, toolMistake} from '../utils/lab/hands/fasteners';
+import {CIRC_GAIN, DWELL, FASTENERS, HOLD_REV, KITS, TOOLS, allTight, canTurn, crossOrder, driveRev, nextMode, holdingMessage, initialScrews, orderMistake, seated, toolFor, toolMistake} from '../utils/lab/hands/fasteners';
 
 const kinds = Object.keys(SPECS) as AssemblyKind[];
 describe('tháo lắp bằng dụng cụ: luật vít, bu-lông, phe, cảo', () => {
@@ -79,5 +79,26 @@ describe('vặn vít bằng cử chỉ 2D (webcam thường, không xoay cổ ta
     expect(driveRev(0, 0.016, -quarter, 'tighten')).toBeCloseTo((quarter / (2 * Math.PI)) * CIRC_GAIN, 10);
     expect(driveRev(DWELL, 0.016, quarter, 'tighten')).toBeCloseTo(0.016 / HOLD_REV, 10); // vòng sai chiều không cộng thêm
     expect(driveRev(DWELL, 0.016, quarter, 'loosen')).toBeGreaterThan(driveRev(DWELL, 0.016, 0, 'loosen'));
+  });
+});
+
+describe('chiều vặn theo chi tiết: lướt dụng cụ qua con vừa nới không siết lại', () => {
+  it('chi tiết đang lắp: chỉ nới; con đã nới không vặn được nữa', () => {
+    let mode = nextMode('loosen', true, true, [true, false, true]);
+    expect(mode).toBe('loosen');
+    expect(canTurn(mode, true)).toBe(true); // con còn siết: nới được
+    expect(canTurn(mode, false)).toBe(false); // con vừa nới: KHÔNG tự siết lại
+    mode = nextMode(mode, true, true, [false, false, false]);
+    expect(mode).toBe('loosen'); // nới hết vẫn là nới (muốn siết lại phải nhấc ra đặt lại)
+  });
+  it('nhấc ra rồi đặt lại thì chuyển sang siết; siết đủ thì về nới', () => {
+    let mode = nextMode('loosen', false, true, [false, false]);
+    expect(mode).toBe('tighten');
+    expect(canTurn(mode, false)).toBe(true);
+    expect(canTurn(mode, true)).toBe(false); // con vừa siết không bị nới ngược
+    mode = nextMode(mode, true, true, [true, false]);
+    expect(mode).toBe('tighten');
+    mode = nextMode(mode, true, true, [true, true]);
+    expect(mode).toBe('loosen');
   });
 });

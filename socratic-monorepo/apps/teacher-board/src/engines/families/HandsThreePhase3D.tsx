@@ -33,6 +33,12 @@ const POS: Record<Term, [number, number]> = {
   GND: [-0.2, -1.2],
 };
 const NAME: Partial<Record<Term, string>> = {GND: 'Vỏ máy', PE: 'PE (đất)'};
+/**
+ * Nhãn HTML nổi cao hơn điểm neo khoảng hai lần chiều cao nhãn, nên neo ngay tại cọc thì nhãn của cọc này nằm đè lên cọc phía sau (chữ "L2" đứng trên
+ * cọc L1, hàng W2-U2-V2 đứng trên hàng U1-V1-W1) và học sinh nối nhầm cọc. Neo lệch về phía người nhìn để nhãn nằm ngang hàng cạnh trái cọc (cột lưới điện)
+ * hoặc ngay dưới hàng cọc thứ hai của bảng đấu dây.
+ */
+const LABEL_OFF: Partial<Record<Term, [number, number]>> = {PE: [-0.5, 0.72], L1: [-0.5, 0.72], L2: [-0.5, 0.72], L3: [-0.5, 0.72], W2: [0, 0.95], U2: [0, 0.95], V2: [0, 0.95]};
 const TOP = 0.2;
 const COLOR: Record<string, string> = {L1: '#D43D2A', L2: '#E3B341', L3: '#2F6FD0', PE: '#2E9B57', none: '#C8722A'};
 const BREAKER = new THREE.Vector3(-2.5, 0.62, -0.3);
@@ -123,7 +129,8 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
       for (const t of TERMS) {
         solid(new THREE.CylinderGeometry(0.11, 0.13, 0.07, 24), '#15171B', {x: POS[t][0], y: t === 'GND' ? 0.115 : 0.095, z: POS[t][1]});
         studs[t] = solid(new THREE.CylinderGeometry(0.065, 0.065, 0.14, 6), '#C9A24B', {metal: 0.9, rough: 0.3, x: POS[t][0], y: TOP - 0.07, z: POS[t][1]});
-        k.label(NAME[t] ?? t, COLOR[t])(at(t, TOP + 0.02));
+        const [dx, dz] = LABEL_OFF[t] ?? [0, 0];
+        k.label(NAME[t] ?? t, COLOR[t])(at(t, TOP + 0.02).add(new THREE.Vector3(dx, 0, dz)));
       }
 
       // ---- dây đã đấu, dây đang kéo
@@ -131,7 +138,14 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
       const wireGroup = new THREE.Group();
       k.scene.add(wireGroup);
       let shown: Wire[] | null = null;
-      let beads: {key: string; pos: THREE.Vector3; live: boolean; mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>; bead: THREE.Mesh}[] = [];
+      let beads: {key: string; pos: THREE.Vector3; live: boolean; curve: THREE.QuadraticBezierCurve3; mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>; bead: THREE.Mesh}[] = [];
+      // hạt sáng chạy dọc dây đang có điện (và trong ba cuộn dây khi động cơ chạy): nhìn là thấy mạch đã thông
+      const FLOW = 6;
+      const flow = new THREE.InstancedMesh(new THREE.SphereGeometry(0.035, 10, 8), new THREE.MeshBasicMaterial({color: '#FFE27A'}), 16 * FLOW);
+      flow.frustumCulled = false;
+      k.scene.add(flow);
+      const fm = new THREE.Matrix4();
+      const coils = (['U', 'V', 'W'] as const).map((c) => new THREE.QuadraticBezierCurve3(at(`${c}1` as Term, 0.08), at(`${c}1` as Term, 0.08).lerp(at(`${c}2` as Term, 0.08), 0.5).setY(0.12), at(`${c}2` as Term, 0.08)));
       const rebuild = () => {
         shown = live.wires;
         for (const o of [...wireGroup.children] as THREE.Mesh[]) {
@@ -148,7 +162,7 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
           const bead = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 12), new THREE.MeshStandardMaterial({color: '#FBF9F4', roughness: 0.3}));
           bead.position.copy(pos);
           wireGroup.add(mesh, bead);
-          return {key: wireKey(a, b), pos, live: !!s && s !== 'PE', mesh, bead};
+          return {key: wireKey(a, b), pos, live: !!s && s !== 'PE', curve: arc(at(a), at(b)), mesh, bead};
         });
       };
 
@@ -158,7 +172,7 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
         const mesh = new THREE.Mesh(new THREE.BufferGeometry(), mat(COLOR.none));
         mesh.visible = false;
         k.scene.add(mesh);
-        return {from: null as Term | null, mesh};
+        return {from: null as Term | null, sticky: false, mesh};
       });
       const v3 = new THREE.Vector3();
       /** vật gần con trỏ nhất tính trên màn hình */
@@ -177,7 +191,20 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
         tryAt(BREAKER, {breaker: true});
         return best;
       };
-      P.grabWhen((nx, ny) => !!pick(nx, ny, 0.07));
+      /** cọc gần nhất trong tầm với (nhả dây hơi lệch cọc vẫn nhận) */
+      const nearTerm = (nx: number, ny: number, reach: number): Term | null => {
+        let best: Term | null = null;
+        let bd = reach;
+        for (const t of TERMS) {
+          const d = P.distAt(nx, ny, studs[t].position);
+          if (d < bd) {
+            bd = d;
+            best = t;
+          }
+        }
+        return best;
+      };
+      P.grabWhen((nx, ny) => !!pick(nx, ny, 0.07) || drags.some((d) => d.sticky));
 
       let last = performance.now();
       let omega = 0;
@@ -198,16 +225,30 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
         P.ptrs.forEach((p, i) => {
           const d = drags[i];
           const hover = p.active ? pick(p.ndc.x, p.ndc.y, p.reach) : null;
-          if (p.pressed && hover) {
-            if ('term' in hover) d.from = hover.term;
-            else if ('bead' in hover) live.remove(hover.bead);
-            else live.toggle();
+          if (p.pressed) {
+            if (d.from && d.sticky) {
+              // đang cầm sẵn một đầu dây (bấm rồi nhả tại cọc): bấm cọc khác = nối, bấm chỗ khác = bỏ dây
+              const t = hover && 'term' in hover ? hover.term : nearTerm(p.ndc.x, p.ndc.y, 0.12);
+              if (t && t !== d.from) live.connect(d.from, t);
+              d.from = null;
+              d.sticky = false;
+            } else if (hover) {
+              if ('term' in hover) d.from = hover.term;
+              else if ('bead' in hover) live.remove(hover.bead);
+              else live.toggle();
+            }
+          } else if (p.released && d.from && !d.sticky) {
+            const t = hover && 'term' in hover ? hover.term : nearTerm(p.ndc.x, p.ndc.y, 0.12);
+            if (t && t !== d.from) {
+              live.connect(d.from, t);
+              d.from = null;
+            } else if (t === d.from && !p.hand) d.sticky = true; // chuột: bấm–nhả tại cọc thì đầu dây bám theo chuột, bấm tiếp vào cọc kia để nối
+            else d.from = null;
           }
-          if (p.released) {
-            if (d.from && hover && 'term' in hover && hover.term !== d.from) live.connect(d.from, hover.term);
+          if (!p.active && p.hand) {
             d.from = null;
+            d.sticky = false;
           }
-          if (!p.active) d.from = null;
           p.hot = !!hover;
           if (hover && 'term' in hover) hot.add(hover.term);
           d.mesh.visible = !!d.from;
@@ -224,10 +265,19 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
           s.scale.lerp(v3.setScalar(on ? 1.45 : 1), ease);
           s.material.emissive.set(on ? '#D9481C' : '#000000');
         }
+        let nf = 0;
+        const flowOn = live.on && !!v && v.kind !== 'short' && v.kind !== 'live_frame';
+        const runs = live.on && v?.kind === 'run';
+        const paths = [...beads.filter((b) => b.live).map((b) => b.curve), ...(runs ? coils : [])];
         for (const b of beads) {
           b.mesh.material.emissiveIntensity = live.on && b.live ? 0.3 + 0.2 * Math.sin(now / 90) : 0;
           b.bead.visible = !live.on;
         }
+        if (flowOn)
+          for (const c of paths.slice(0, 16))
+            for (let q = 0; q < FLOW; q++) flow.setMatrixAt(nf++, fm.makeTranslation(c.getPoint((q / FLOW + now / 900) % 1)));
+        for (let q = nf; q < flow.count; q++) flow.setMatrixAt(q, fm.makeScale(0, 0, 0));
+        flow.instanceMatrix.needsUpdate = true;
 
         // ---- aptomat, tia lửa
         handleX += ((live.on ? 0.14 : -0.14) - handleX) * ease;
@@ -260,7 +310,7 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
           s.material.opacity = heat * 0.5 * (1 - u);
         });
 
-        k.caption(live.on || v ? `${explain(v ?? {kind: 'dead', earthed: false}).head}\n${live.on ? 'Mạch đang có điện: không chạm vào dây' : 'Aptomat đã cắt'}` : 'Aptomat đang cắt: an toàn để đấu dây\nChụm vào một cọc, kéo tới cọc khác rồi nhả');
+        k.caption(live.on || v ? `${explain(v ?? {kind: 'dead', earthed: false}).head}\n${live.on ? 'Mạch đang có điện: không chạm vào dây' : 'Aptomat đã cắt'}` : drags.some((d) => d.sticky) ? 'Đang cầm đầu dây: bấm vào cọc cần nối (bấm chỗ trống để bỏ)' : 'Aptomat đang cắt: an toàn để đấu dây\nChụm vào một cọc, kéo tới cọc khác rồi nhả (chuột: bấm cọc này rồi bấm cọc kia)');
       };
     },
   };

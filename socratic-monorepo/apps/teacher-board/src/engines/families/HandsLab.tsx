@@ -487,9 +487,9 @@ const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: ()
         <p className="absolute left-6 top-24 max-w-md rounded-2xl border border-white/20 bg-white/10 px-4 py-6 text-xs leading-relaxed text-[#E8E6F5]">Thiết bị này không dựng được cảnh 3D (cần WebGL 2). Vẫn có thể làm bài bằng các nút bên cạnh để xem kết quả.<button type="button" data-testid="gl-retry" onClick={() => setGl(canWebGL())} className="mt-3 block min-h-[44px] rounded-full border border-white/40 px-5 font-semibold text-[#FBF9F4]">Thử lại</button><span className="mt-2 block opacity-70">Nếu vẫn không được: đóng bớt tab đang dùng 3D, bật tăng tốc phần cứng của trình duyệt (Cài đặt → Hệ thống), rồi tải lại trang.</span></p>
       )}
 
-      {hud && <div className="pointer-events-none absolute left-1/2 top-3 z-10 flex w-[min(640px,calc(100vw-520px))] -translate-x-1/2 flex-wrap justify-center gap-1">{hud}</div>}
+      {hud && <div data-avoid-labels className="pointer-events-none absolute left-1/2 top-3 z-10 flex w-[min(640px,calc(100vw-520px))] -translate-x-1/2 flex-wrap justify-center gap-1">{hud}</div>}
       {lens}
-      <aside className="absolute right-4 top-4 z-10 flex max-h-[calc(100vh-2rem)] w-[min(340px,calc(100vw-2rem))] flex-col gap-2.5 overflow-y-auto rounded-2xl border border-white/30 bg-[#FBF9F4]/90 p-3.5 text-xs tabular-nums text-[#1D1B16] shadow-2xl backdrop-blur [&_button]:min-h-[44px] [&_input[type=range]]:h-7">
+      <aside data-avoid-labels className="absolute right-4 top-4 z-10 flex max-h-[calc(100vh-2rem)] w-[min(340px,calc(100vw-2rem))] flex-col gap-2.5 overflow-y-auto rounded-2xl border border-white/30 bg-[#FBF9F4]/90 p-3.5 text-xs tabular-nums text-[#1D1B16] shadow-2xl backdrop-blur [&_button]:min-h-[44px] [&_input[type=range]]:h-7">
         <button type="button" data-testid="lab-panel-toggle" aria-expanded={open} onClick={() => { setOpen(!open); remember('panel', open ? '0' : '1'); }} className="self-end rounded-full border border-[#1D1B16]/20 bg-white px-4 font-medium hover:bg-[#F3EFE6]">
           {open ? 'Thu gọn bảng ▴' : 'Mở bảng điều khiển ▾'}
         </button>

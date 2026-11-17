@@ -105,7 +105,7 @@ function cells(g: CanvasRenderingContext2D, W: number, o: {size: number; shape: 
       for (let x = -o.size + shift; x < W + o.size; x += o.size) {
         g.fillStyle = o.fill;
         g.strokeStyle = o.wall;
-        g.lineWidth = Math.max(1.5, o.size * 0.05);
+        g.lineWidth = Math.max(2.5, o.size * 0.05);
         g.fillRect(x, y, o.size, o.size * 0.62);
         g.strokeRect(x, y, o.size, o.size * 0.62);
         o.inner?.(x + o.size / 2, y + o.size * 0.31, o.size, i++);
@@ -181,7 +181,7 @@ export const BIO_FX: Record<string, FxBuild> = {
 
   // thị trường kính hiển vi: tế bào theo tiêu bản, to nhỏ theo vật kính, mờ theo ốc chỉnh nét
   CELL_OBSERVE: (c) => {
-    const view = screen(c.root, 1.0, 1.15, -0.95, 1.2, 1.2, true);
+    const view = screen(c.root, 1.15, 0.78, -0.55, 1.15, 1.15, true);
     const light = glow(c.root, -0.6, 0.2, 0.08, 0.09, '#FFF3C4');
     return (_dt, L, T) => {
       const obj = Number(L.s.obj) || 4;
@@ -190,7 +190,7 @@ export const BIO_FX: Record<string, FxBuild> = {
       view(`${L.s.sample}|${obj}|${blur}`, (g, W) => {
         g.filter = blur > 0.2 ? `blur(${blur.toFixed(1)}px)` : 'none';
         const size = {4: 22, 10: 52, 40: 150}[obj] ?? 40;
-        if (L.s.sample === 'onion') cells(g, W, {size: size * 1.5, shape: 'brick', wall: '#7A4E8A', fill: '#EFE3F2', inner: (x, y, s) => dot(g, x + s * 0.2, y, s * 0.07, '#5B2E7A')});
+        if (L.s.sample === 'onion') cells(g, W, {size: size * 1.5, shape: 'brick', wall: '#5B2E7A', fill: '#E6D3EC', inner: (x, y, s) => dot(g, x + s * 0.2, y, s * 0.07, '#5B2E7A')});
         else if (L.s.sample === 'cheek') cells(g, W, {size: size * 1.2, shape: 'blob', wall: '#6FA3C9', fill: '#DCEBF5', inner: (x, y, s) => dot(g, x, y, s * 0.1, '#2459C9')});
         else cells(g, W, {size: size * 0.45, shape: 'yeast', wall: '#9A8A4A', fill: '#F3EBC2'});
       });
@@ -200,7 +200,7 @@ export const BIO_FX: Record<string, FxBuild> = {
   // nhỏ dung dịch lên lam kính; trong thị trường, khối nguyên sinh chất co lại (NaCl) rồi căng trở lại (nước cất)
   PLASMOLYSIS: (c) => {
     const tr = truth(c);
-    const view = screen(c.root, 0.6, 1.15, -0.95, 1.2, 1.2, true);
+    const view = screen(c.root, 0.35, 0.8, -0.7, 1.15, 1.15, true);
     const drip = stream(c.root, 4, 0.022, '#9FD3F0', -0.8, 0.55, 0.08, 0.55, 0.02, -1);
     const r = restart();
     let shown = 100;
@@ -248,7 +248,7 @@ export const BIO_FX: Record<string, FxBuild> = {
   // thị trường kính: tế bào chóp rễ / bao phấn, phần đang phân chia có nhiễm sắc thể xếp hàng hoặc tách hai cực; chưa nhuộm thì gần như không thấy gì
   MITOSIS_SLIDE: (c) => {
     const tr = truth(c);
-    const view = screen(c.root, -0.35, 1.2, -1.0, 1.2, 1.2, true);
+    const view = screen(c.root, -0.45, 0.85, -0.8, 1.1, 1.1, true);
     const flame = glow(c.root, 2.1, 0.42, 0.1, 0.1, '#FFB35C');
     return (_dt, L, T) => {
       const row = tr(L);
@@ -491,7 +491,7 @@ export const BIO_FX: Record<string, FxBuild> = {
   TREE_AGE: (c) => {
     const tr = truth(c);
     const count = dots(c.root, 1, 0.035, '#FFE27A', 1);
-    const show = display(c.root, 0, 1.0, -0.7, 0.9, 0.2, '#FFE27A');
+    const show = display(c.root, 0, 0.5, -0.85, 0.8, 0.18, '#FFE27A');
     return (_dt, L, T) => {
       const n = Math.max(1, Math.round(num(tr(L).n, 10)));
       const slice = c.part(1);
@@ -557,8 +557,8 @@ export const BIO_FX: Record<string, FxBuild> = {
       shown += (num(tr(L).k, 0) - shown) * Math.min(1, dt * 2);
       for (let i = 0; i < 20; i++) {
         const live = i < Math.round(shown);
-        ok.put(i, -1.9 + i * 0.2, 0.06 + (live ? 0.03 * Math.abs(Math.sin(T * 3 + i)) : 0), 0.95, live ? 1 : 0);
-        idle.put(i, -1.9 + i * 0.2, 0.06, 0.95, live ? 0 : 1);
+        ok.put(i, -1.9 + i * 0.2, 0.06 + (live ? 0.03 * Math.abs(Math.sin(T * 3 + i)) : 0), -0.9, live ? 1 : 0);
+        idle.put(i, -1.9 + i * 0.2, 0.06, -0.9, live ? 0 : 1);
       }
     };
   },

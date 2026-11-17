@@ -143,8 +143,8 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
   return {
     floor: true,
     room: true,
-    dist: 7.6,
-    target: [-0.5, 0.4, -0.2],
+    dist: 8.6, // thấy trọn hộp dụng cụ ở mép trước bàn (trước đây bị cắt ở đáy màn hình nên khó cầm tua vít)
+    target: [-0.3, 0.2, 0.7],
     orbit: () => [0, 48],
     setup: (k) => {
       labRoom(k, [8.4, 5.6, -0.4, 0.1]);

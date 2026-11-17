@@ -71,7 +71,7 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
       // ---- giá ống nghiệm, thùng thải, kính bảo hộ
       const rackBox = solid(k.scene, new THREE.BoxGeometry(3.4, 0.1, 0.7), '#7A5C3A', {rough: 0.8, x: -1.7, y: 0.05, z: VZ});
       const binBox = solid(k.scene, new THREE.BoxGeometry(0.9, 0.55, 0.9), '#3A3E7A', {rough: 0.6, x: BIN[0], y: 0.28, z: BIN[1]});
-      k.label('Thùng thải (thả ống vào đây để đổ bỏ)')(new THREE.Vector3(BIN[0], 0.9, BIN[1]));
+      const binTag = k.label('Thùng thải (thả ống vào đây để đổ bỏ)');
       const gog = new THREE.Group();
       gog.position.copy(GOGGLES);
       k.scene.add(gog);
@@ -120,7 +120,7 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
       const flame = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.4, 14), new THREE.MeshBasicMaterial({color: '#FFB35C', transparent: true, opacity: 0.9}));
       flame.position.y = 0.62;
       lamp.add(flame);
-      k.label('Đèn cồn (giữ dưới ống để đun)')(new THREE.Vector3(LAMP_HOME.x, 0.95, LAMP_HOME.z));
+      const lampTag = k.label('Đèn cồn (giữ dưới ống để đun)');
 
       // ---- kệ hóa chất: mọi chất trong CSDL, hiện theo nhóm
       const bottles = SUBSTANCES.map((s) => {
@@ -493,12 +493,18 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
           vs.what(inside.length && v.liquidMl > 0 ? pos.set(vs.g.position.x, vs.g.position.y + vs.h * 0.45, vs.g.position.z + vs.r + 0.05) : null, undefined, `${inside.slice(0, 3).join(', ')}${inside.length > 3 ? ` +${inside.length - 3}` : ''}`);
           // ống đang chọn, ống đang trỏ vào hoặc ống vừa có phản ứng: hiện thẻ ngay trên ống (thay cho chip một dòng)
           const pointed = P.ptrs.some((q) => q.active && P.distAt(q.ndc.x, q.ndc.y, pos.set(vs.g.position.x, vs.g.position.y + vs.h * 0.5, vs.g.position.z)) < 0.22);
-          const showCard = vs.rows.length > 0 && (i === live.active || pointed || now - vs.activeAt < 12000);
-          if (showCard) vs.what(null);
+          // thẻ chỉ hiện khi đang trỏ / cầm ống hoặc vài giây sau khi ống vừa có phản ứng mới; ống để yên thì cảnh gọn, không chữ che dụng cụ
+          const inHand = held.some((h) => h?.kind === 'vessel' && h.i === i);
+          const showCard = vs.rows.length > 0 && (pointed || inHand || now - vs.activeAt < 6000);
+          if (showCard || !(pointed || inHand)) vs.what(null);
           vs.card(showCard ? pos.set(vs.g.position.x, vs.g.position.y + vs.h + 0.25, vs.g.position.z) : null, vs.rows);
-          vs.tag(showCard ? null : pos.set(vs.g.position.x, vs.g.position.y + vs.h + 0.3, vs.g.position.z), undefined, `${v.id} · ${d.temp.toFixed(0)} °C${d.ph !== null ? ` · pH ${d.ph.toFixed(1)}` : ''} · ${v.liquidMl.toFixed(1)} mL`);
+          vs.tag(showCard || !(pointed || inHand) ? null : pos.set(vs.g.position.x, vs.g.position.y + vs.h + 0.3, vs.g.position.z), undefined, `${v.id} · ${d.temp.toFixed(0)} °C${d.ph !== null ? ` · pH ${d.ph.toFixed(1)}` : ''} · ${v.liquidMl.toFixed(1)} mL`);
         });
-        gogTag(pos.set(GOGGLES.x, 0.55, GOGGLES.z), undefined, live.lab.goggles ? 'Đã đeo kính bảo hộ' : 'Kính bảo hộ (chạm để đeo)');
+        const nearPt = (at: THREE.Vector3, r: number) => P.ptrs.some((q) => q.active && P.distAt(q.ndc.x, q.ndc.y, at) < r);
+        // nhãn hướng dẫn cố định chỉ hiện khi cần: kính khi chưa đeo, thùng thải khi đang cầm ống, đèn cồn khi trỏ tới
+        gogTag(!live.lab.goggles || nearPt(pos.set(GOGGLES.x, 0.3, GOGGLES.z), 0.2) ? pos.set(GOGGLES.x, 0.55, GOGGLES.z) : null, undefined, live.lab.goggles ? 'Đã đeo kính bảo hộ' : 'Kính bảo hộ (chạm để đeo)');
+        binTag(held.some((h) => h?.kind === 'vessel') || nearPt(pos.set(BIN[0], 0.6, BIN[1]), 0.2) ? pos.set(BIN[0], 0.9, BIN[1]) : null);
+        lampTag(nearPt(pos.copy(lamp.position).setY(lamp.position.y + 0.3), 0.18) ? pos.copy(lamp.position).setY(0.95) : null);
         tabs.forEach((t) => t.m.scale.set(1, t.gname === live.group ? 2.2 : 1, 1));
         const seenTexts = (live.lab.vessels[live.active]?.log ?? []).filter((t) => !t.startsWith('cho ')).slice(-3);
         k.caption(info || (seenTexts.length ? `${live.lab.vessels[live.active].id} · hiện tượng quan sát được\n${seenTexts.join('\n')}` : `Nhóm ${live.group}: chụm vào chai, kéo tới ống rồi giữ để rót`));

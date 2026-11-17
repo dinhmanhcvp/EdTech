@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {DWELL, FASTENERS, KITS, TOOLS, driveRev, orderMistake, toolFor, toolMistake, type Dir, type Fastener, type ToolId} from '../../utils/lab/hands/fasteners';
+import {DWELL, FASTENERS, KITS, TOOLS, canTurn, driveRev, nextMode, orderMistake, toolFor, toolMistake, type Dir, type Fastener, type ToolId} from '../../utils/lab/hands/fasteners';
 import {wrapAngle} from '../../utils/lab/hands/handTracker';
 import type {AssemblyLive} from './HandsAssembly3D';
 import {handPointers} from './handsKit';
@@ -14,7 +14,7 @@ import type {Kit} from './Stage3D';
  * đồng hồ để nới, thuận để siết) thì vặn nhanh hơn. Chuột: giữ nút trên đầu vít.
  * Luật (đúng dụng cụ, thứ tự đường chéo, đủ vít mới nhấc được chi tiết) nằm ở `utils/lab/hands/fasteners.ts`.
  */
-const PLUCK = 0.095; // khoảng cách trên màn hình để chụm được tay cầm dụng cụ
+const PLUCK = 0.12; // khoảng cách trên màn hình (tới cả thân dụng cụ, không chỉ tay cầm) để chụm được dụng cụ
 const SNAP = 0.085; // khoảng cách trên màn hình để mũi dụng cụ nhận một đầu vít
 /** Camera thường không có độ sâu nên KHÔNG vặn bằng xoay cổ tay: giữ mũi trên đầu vít một lúc thì tự vặn, vẽ vòng tròn quanh đầu vít thì vặn nhanh hơn (`driveRev`). */
 const CIRC_MIN = 0.02; // bán kính tối thiểu (màn hình) để góc quanh đầu vít còn đáng tin
@@ -145,7 +145,19 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
     })
     .catch(() => undefined);
 
-  const eng = P.ptrs.map(() => ({lastRoll: NaN, ang: NaN, dwell: 0, spin: 0, target: null as ScrewRt | null, lock: null as ScrewRt | null, warn: '', warnAt: -1e9}));
+  const eng = P.ptrs.map(() => ({lastRoll: NaN, ang: NaN, dwell: 0, spin: 0, target: null as ScrewRt | null, lock: null as ScrewRt | null, warn: '', warnAt: -1e9, sticky: false, pickAt: 0}));
+  /**
+   * Chiều vặn của từng chi tiết: chi tiết đang lắp sẵn chỉ được NỚI (đưa dụng cụ lướt qua con vừa nới không siết lại); chi tiết vừa đặt vào chỗ
+   * chỉ được SIẾT cho tới khi siết đủ thì lại chỉ được nới. Muốn siết lại chi tiết đã nới dở: nhấc chi tiết ra rồi đặt lại.
+   */
+  const mode = new Map<string, Dir>();
+  const wasOn = new Map<string, boolean>();
+  for (const p of parts) {
+    if (!fa[p.id]) continue;
+    const st = live.screws[p.id] ?? [];
+    mode.set(p.id, st.length && st.every(Boolean) ? 'loosen' : 'tighten');
+    wasOn.set(p.id, !live.off.has(p.id));
+  }
   const scr = (a: THREE.Vector3, b: THREE.Vector3) => {
     v3.copy(a).project(k.camera);
     v4.copy(b).project(k.camera);
@@ -163,9 +175,14 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
     const g = V();
     for (const t of tools) {
       if (t.by >= 0) continue;
+      // khoảng cách tới cả đoạn thân dụng cụ (từ chân tới tay cầm) trên màn hình: chạm vào đâu trên dụng cụ cũng cầm được
       gripWorld(t, g);
       v3.copy(g).project(k.camera);
-      const d = Math.hypot((v3.x - nx) * k.camera.aspect, v3.y - ny);
+      v4.copy(t.obj.position).project(k.camera);
+      const ax = (v4.x - v3.x) * k.camera.aspect;
+      const ay = v4.y - v3.y;
+      const u = Math.max(0, Math.min(1, (((nx - v3.x) * k.camera.aspect) * ax + (ny - v3.y) * ay) / (ax * ax + ay * ay || 1)));
+      const d = Math.hypot((v3.x - nx) * k.camera.aspect + ax * u, v3.y - ny + ay * u);
       if (d < bd) {
         bd = d;
         best = t;
@@ -207,6 +224,12 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
         if (!(live.screws[sc.part]?.[sc.idx] ?? false)) loose++;
       }
       bowl.forEach((m, i) => (m.visible = i < Math.min(24, Math.ceil((loose / Math.max(1, total)) * 24))));
+      // chi tiết vừa được đặt lại vào chỗ: chuyển sang siết; siết đủ: chuyển về nới
+      for (const [id, prev] of wasOn) {
+        const on = !live.off.has(id);
+        mode.set(id, nextMode(mode.get(id) ?? 'loosen', prev, on, live.screws[id] ?? []));
+        wasOn.set(id, on);
+      }
       looseTag(total ? V(dish.x, 0.8, dish.z) : null, undefined, `${loose}/${total} vít ngoài khay`);
 
       P.ptrs.forEach((p, i) => {
@@ -214,9 +237,12 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
         const held = tools.find((t) => t.by === i) ?? null;
         if (!held) {
           if (active && p.active && p.pressed) {
-            const t = nearestTool(p.ndc.x, p.ndc.y, p.reach);
+            const t = nearestTool(p.ndc.x, p.ndc.y, Math.max(p.reach, PLUCK));
             if (t) {
               t.by = i;
+              // chuột: bấm một lần là cầm, dụng cụ đi theo chuột (không phải giữ nút); bấm chỗ trống để trả. Tay: chụm để cầm, buông là trả
+              e.sticky = !p.hand;
+              e.pickAt = now;
               e.lastRoll = p.roll;
               e.spin = 0;
               e.target = null;
@@ -226,7 +252,10 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
           return;
         }
         // ---- đang cầm dụng cụ
-        if (!p.active || p.released || !active) {
+        if (e.sticky && !p.active && active) return; // chuột rời khung: giữ nguyên dụng cụ
+        const dropMouse = e.sticky && p.pressed && now - e.pickAt > 200 && !e.target;
+        if (!active || dropMouse || (!e.sticky && (!p.active || p.released))) {
+          e.sticky = false;
           held.by = -1;
           e.target = null;
           e.lock = null;
@@ -243,13 +272,15 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
         if (e.lock && scr(goal, anchorWorld(e.lock, aw)) > SNAP * 1.4) e.lock = null;
         for (const sc of screws) {
           if (live.off.has(sc.part) || sc === e.lock) continue;
+          // chỉ nhận con vít đúng chiều đang làm của chi tiết: lướt qua con vừa nới thì không siết lại
+          if (!canTurn(mode.get(sc.part) ?? 'loosen', live.screws[sc.part]?.[sc.idx] ?? false)) continue;
           const d = scr(goal, anchorWorld(sc, aw));
           if (d < bd) {
             bd = d;
             best = sc;
           }
         }
-        let hint = `Đang cầm ${TOOLS[held.id].name}. Đưa mũi tới một đầu vít cần tháo (hoặc ô xanh cần siết).`;
+        let hint = `Đang cầm ${TOOLS[held.id].name}. Đưa mũi tới một đầu vít cần tháo (hoặc ô xanh cần siết).${e.sticky ? ' Bấm chỗ trống để trả dụng cụ về hộp.' : ''}`;
         let engaged: ScrewRt | null = null;
         let dir: Dir = 'loosen';
         if (best) {
@@ -324,7 +355,7 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
         const on = !live.off.has(sc.part);
         const turning = sc.prog > 0.001;
         sc.g.visible = on && (inState || turning);
-        sc.hole.visible = on && anyHeld && !inState;
+        sc.hole.visible = on && anyHeld && !inState && mode.get(sc.part) === 'tighten';
         if (turning) {
           const t = Math.min(1, sc.prog);
           const lift = inState ? t : 1 - t; // đang nới: nhô dần lên; đang siết: hạ dần xuống

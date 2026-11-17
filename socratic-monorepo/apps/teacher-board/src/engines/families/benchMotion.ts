@@ -572,11 +572,12 @@ export const BENCH_FX: Record<string, FxBuild> = {
   WAVE_INTERFERENCE: (c) => {
     const rs = [0, 1].map(() => [0, 1, 2, 3, 4].map(() => rippleRing(c.root, '#DDF3FF')));
     return (_dt, L, T) => {
-      const lam = 0.62 * (30 / L.p.f);
+      // vòng sóng chỉ lan trong khay nước (mép khay gần nhất cách nguồn 0,5): tần số cao thì vòng sóng dày hơn (bước sóng ngắn hơn)
+      const count = clamp(Math.round(L.p.f / 12), 2, 5);
       [-0.3, 0.3].forEach((sx, s) =>
         rs[s].forEach((ring, i) => {
-          const k = (T * 0.55 + i / 5) % 1;
-          ring(sx, 0.62, -0.3, 0.05 + k * lam * 5, 0.8 * (1 - k));
+          const k = (T * 0.55 + i / count) % 1;
+          ring(sx, 0.62, -0.3, 0.04 + k * 0.44, i < count ? 0.8 * (1 - k) : 0);
         }),
       );
     };

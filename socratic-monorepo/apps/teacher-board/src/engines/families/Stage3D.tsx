@@ -49,6 +49,52 @@ export interface Kit {
   /** đẩy giá trị về bảng điều khiển (thanh trượt hoặc lựa chọn); SceneLab chặn theo min/max/bước của thanh trượt */
   set(key: string, value: number | string): void;
 }
+type Rect = {left: number; top: number; right: number; bottom: number};
+const area = (r: Rect) => Math.max(0, r.right - r.left) * Math.max(0, r.bottom - r.top);
+const overlap = (a: Rect, b: Rect) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+const moved = (r: Rect, dx: number, dy: number): Rect => ({left: r.left + dx, right: r.right + dx, top: r.top + dy, bottom: r.bottom + dy});
+/**
+ * Nhãn và thẻ nổi không được đè lên nhau hay tràn ra ngoài khung: giữ trong khung nhìn (cách mép 4 px); nhãn đè lên nhãn đã đặt thì nhích xuống ngay dưới,
+ * không còn chỗ thì tạm ẩn khung hình này. Thẻ (tính chất, phản ứng) được đặt trước nhãn; giữa các nhãn, nhãn tạo trước được ưu tiên.
+ */
+export function declutter(box: HTMLElement, shown: {el: HTMLElement; card?: boolean}[]): void {
+  const B = box.getBoundingClientRect();
+  if (!B.width) return; // môi trường không có bố cục (kiểm thử)
+  // vùng giao diện cố định (dải số đo, bảng điều khiển, ô chọn bài, chú thích) coi như đã có chỗ: nhãn tránh ra, không nằm dưới chúng
+  const taken: Rect[] = Array.from(document.querySelectorAll('[data-avoid-labels]')).map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0);
+  const order = [...shown].sort((a, b) => Number(!!b.card) - Number(!!a.card));
+  for (const L of order) {
+    const r = L.el.getBoundingClientRect();
+    if (!r.width) continue;
+    let dx = 0;
+    let dy = 0;
+    if (r.top < B.top + 4) dy = B.top + 4 - r.top;
+    if (r.bottom + dy > B.bottom - 4) dy = B.bottom - 4 - r.bottom;
+    if (r.left < B.left + 4) dx = B.left + 4 - r.left;
+    if (r.right + dx > B.right - 4) dx = B.right - 4 - r.right;
+    let q = moved(r, dx, dy);
+    const hit = (x: Rect) => taken.find((t) => overlap(t, x) > 0.3 * Math.min(area(t), area(x)));
+    let t = hit(q);
+    if (t) {
+      const q2 = moved(q, 0, t.bottom + 2 - q.top);
+      if (!hit(q2) && q2.bottom <= B.bottom - 4) {
+        dy += q2.top - q.top;
+        q = q2;
+        t = undefined;
+      }
+    }
+    if (t) {
+      L.el.style.opacity = '0';
+      L.el.dataset.crowd = '1'; // bị ẩn vì chật chỗ (dò lỗi bố cục đọc thuộc tính này)
+      continue;
+    }
+    delete L.el.dataset.crowd;
+    if (dx) L.el.style.left = `calc(${L.el.style.left} + ${dx}px)`;
+    if (dy) L.el.style.top = `calc(${L.el.style.top} + ${dy}px)`;
+    taken.push(q);
+  }
+}
+
 export interface SceneDef {
   /** nền trời đêm, không sàn, không đèn mặc định (cảnh tự đặt đèn) */
   night?: boolean;
@@ -178,7 +224,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
     };
     camera.position.set(0, 0, 1e4); // chưa đặt: place() sẽ dùng def.dist
 
-    const labels: {el: HTMLSpanElement; pos: THREE.Vector3; on: boolean}[] = [];
+    const labels: {el: HTMLElement; pos: THREE.Vector3; on: boolean; card?: boolean}[] = [];
     let capText = '';
     const pickers: THREE.Object3D[] = [];
     const ray = new THREE.Raycaster();
@@ -259,7 +305,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
         if (color) root.style.borderTop = `3px solid ${color}`;
         root.style.opacity = '0';
         el.append(root);
-        const L = {el: root, pos: new THREE.Vector3(), on: false};
+        const L = {el: root, pos: new THREE.Vector3(), on: false, card: true};
         labels.push(L);
         let last = '';
         return (at, rows) => {
@@ -435,15 +481,19 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       controls.update();
       scene.updateMatrixWorld();
       renderer.render(scene, camera);
+      const shown: typeof labels = [];
       for (const L of labels) {
         if (L.on) v.copy(L.pos).project(camera);
         const show = L.on && v.z < 1;
         L.el.style.opacity = show ? '1' : '0';
+        if (!show) delete L.el.dataset.crowd;
         if (show) {
           L.el.style.left = `${((v.x + 1) / 2) * 100}%`;
           L.el.style.top = `${((1 - v.y) / 2) * 100}%`;
+          shown.push(L);
         }
       }
+      declutter(el, shown);
     };
     frame();
 
@@ -484,7 +534,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       onWheel={(e) => e.stopPropagation()}
       className={`relative w-full overflow-hidden cursor-grab active:cursor-grabbing ${fill ? 'h-full' : 'aspect-[560/340] rounded-2xl border'} ${dark ? 'border-[#1B1B4B] text-[#E8E6F5]' : 'border-[#1D1B16]/15 text-[#1D1B16]'}`}
     >
-      <div ref={cap} className={`pointer-events-none absolute max-w-[70%] ${fill ? 'bottom-4 left-4 origin-bottom-left rounded-xl bg-[#11143A]/85 font-mono tabular-nums px-3 py-2 empty:hidden' : 'left-4 top-3'}`} />
+      <div ref={cap} data-avoid-labels className={`pointer-events-none absolute max-w-[70%] ${fill ? 'bottom-4 left-4 origin-bottom-left rounded-xl bg-[#11143A]/85 font-mono tabular-nums px-3 py-2 empty:hidden' : 'left-4 top-3'}`} />
       <span className="pointer-events-none absolute bottom-2 right-3 text-[10px] opacity-70">Kéo nền để xoay · lăn để phóng · kéo vật có chấm cam để thao tác</span>
     </div>
   );

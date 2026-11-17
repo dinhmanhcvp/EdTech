@@ -177,3 +177,15 @@ export function driveRev(dwell: number, dt: number, dAngle: number, dir: Dir): n
   const circ = (dir === 'loosen' ? dAngle : -dAngle) > 0 ? Math.abs(dAngle) / (2 * Math.PI) : 0;
   return (dwell >= DWELL ? dt / HOLD_REV : 0) + circ * CIRC_GAIN;
 }
+
+/**
+ * Chiều vặn được phép của một chi tiết, cập nhật mỗi khung hình: chi tiết vừa được đặt lại vào chỗ thì chuyển sang SIẾT; siết đủ thì về NỚI;
+ * còn lại giữ nguyên. Nhờ vậy lướt dụng cụ qua con vít vừa nới (chi tiết vẫn đang lắp) không siết nó lại.
+ */
+export function nextMode(mode: Dir, wasOn: boolean, on: boolean, state: readonly boolean[]): Dir {
+  if (on && !wasOn) return 'tighten';
+  if (mode === 'tighten' && state.length > 0 && state.every(Boolean)) return 'loosen';
+  return mode;
+}
+/** con vít đang siết (`tight`) có được vặn theo chiều hiện tại của chi tiết không */
+export const canTurn = (mode: Dir, tight: boolean): boolean => (tight ? 'loosen' : 'tighten') === mode;

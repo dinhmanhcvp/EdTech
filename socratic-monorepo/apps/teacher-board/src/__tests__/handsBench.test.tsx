@@ -5,7 +5,7 @@ import {describe, it, expect, afterEach} from 'vitest';
 import {render, cleanup, fireEvent} from '@testing-library/react';
 import {HandsLab} from '../engines/families/HandsLab';
 import {LAB_ALIAS, LESSONS, LESSON_BY_ID} from '../engines/families/labLessons';
-import {BENCH_MOVES, benchManual, benchOf, dragT, grabOf} from '../utils/lab/hands/benchMoves';
+import {BENCH_ACTION, BENCH_MOVES, BENCH_SETUP, benchManual, benchOf, dragT, grabOf} from '../utils/lab/hands/benchMoves';
 import {EXPERIMENT_BY_ID} from '../utils/lab/chem/experiments';
 import {BIO_EXPERIMENTS} from '../utils/lab/bio/experiments';
 import {PHYS_EXPERIMENTS} from '../utils/lab/phys/experiments';
@@ -68,7 +68,7 @@ describe('/lab: bài thực hành SGK là thí nghiệm 3D điều khiển bằn
     fireEvent.click(r.getByTestId('phys-check'));
     expect(r.getByTestId('phys-verdict').getAttribute('data-ok')).toBe('1');
     fireEvent.click(r.getByTestId('lab-panel-guide'));
-    expect(r.getByTestId('lab-manual').textContent).toContain('Nút ĐO');
+    expect(r.getByTestId('lab-manual').textContent).toContain('CHUẨN BỊ');
   });
 
   it('mở bài Hóa SGK: bàn hóa học 3D chọn sẵn đúng bài', () => {
@@ -95,5 +95,32 @@ describe('/lab: bài thực hành SGK là thí nghiệm 3D điều khiển bằn
     const t = benchManual('PHYS_LAB_BOYLE')!.tools!.join(' ');
     expect(t).toContain('Pit-tông: chụm vào chính dụng cụ');
     expect(benchManual('PHYS_LAB_OHM_LAW')!.tools!.join(' ')).toContain('Con trượt');
+  });
+
+  it('mọi bài có phép đo đều có thao tác LÀM thí nghiệm (chạm vào dụng cụ), và hướng dẫn nêu đúng thao tác đó', () => {
+    for (const e of [...PHYS_EXPERIMENTS, ...BIO_EXPERIMENTS]) {
+      // bài đã gộp sang bài tay (va chạm, lực từ) không mở bằng bàn đo này
+      if (!e.columns.length || !LESSONS.some((l) => l.id.endsWith(`_LAB_${e.id}`))) continue;
+      expect(BENCH_ACTION[e.id], `${e.id} chưa có thao tác`).toBeTruthy();
+    }
+    for (const id of Object.keys(BENCH_ACTION)) expect([...PHYS_EXPERIMENTS, ...BIO_EXPERIMENTS].some((e) => e.id === id), id).toBe(true);
+    expect(benchManual('PHYS_LAB_SPEED')!.tools!.join(' ')).toContain('Thả xe qua hai cổng quang');
+  });
+
+  it('mọi bài có thao tác đo đều có 1–3 bước chuẩn bị làm trên dụng cụ, đúng thứ tự trong hướng dẫn, toạ độ hợp lệ trong vùng bàn', () => {
+    for (const id of Object.keys(BENCH_ACTION)) {
+      const st = BENCH_SETUP[id] ?? [];
+      expect(st.length, `${id} chưa có bước chuẩn bị`).toBeGreaterThanOrEqual(1);
+      expect(st.length).toBeLessThanOrEqual(3);
+      for (const s of st) {
+        expect(s.label.length, id).toBeGreaterThan(5);
+        expect(s.at.every(Number.isFinite), `${id}: ${s.label}`).toBe(true);
+        expect(Math.abs(s.at[0]) <= 3.2 && s.at[1] >= 0 && s.at[1] <= 2.6 && Math.abs(s.at[2]) <= 1.2, `${id}: ${s.label} ngoài vùng bàn`).toBe(true);
+      }
+    }
+    for (const id of Object.keys(BENCH_SETUP)) expect(BENCH_ACTION[id], `${id} có bước chuẩn bị nhưng không có thao tác đo`).toBeTruthy();
+    const tools = benchManual('PHYS_LAB_HOOKE')!.tools!.join(' ');
+    expect(tools).toContain('CHUẨN BỊ');
+    expect(tools.indexOf('1. Treo lò xo lên giá')).toBeLessThan(tools.indexOf('2. Đặt thước'));
   });
 });

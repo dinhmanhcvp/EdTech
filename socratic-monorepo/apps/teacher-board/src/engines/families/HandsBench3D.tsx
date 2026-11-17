@@ -233,14 +233,8 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         const value = Math.min(p.max, Math.max(p.min, Math.round((p.min + (p.max - p.min) * t) / p.step) * p.step));
         if (value !== live.st.p[key]) live.dispatch({type: 'set', key, value});
       };
-      const sliders = handSliders(
-        k,
-        P,
-        railed.map((p) => ({id: p.key, label: p.label, t: unit(p.key)})),
-        [-3.9, 1.4],
-        setParam,
-        (key) => `${fmt(live.st.p[key], 3)}${slider(key).unit ? ` ${slider(key).unit}` : ''}`,
-      );
+      // không còn thanh ray: mọi thông số không có bộ phận riêng đều là núm xoay hoặc đồng hồ hẹn giờ; `sliders` giữ cho các chỗ gọi bên dưới
+      const sliders = handSliders(k, P, [], [-3.9, 1.4], setParam, () => '');
       const action = BENCH_ACTION[e.id] ?? 'Đo';
       // CHUẨN BỊ: chuỗi thao tác làm một lần trên dụng cụ (đặt, nối, treo, nhúng…); xong mới tới thao tác đo
       const setup = e.columns.length ? BENCH_SETUP[e.id] ?? [] : [];
@@ -299,7 +293,28 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             }),
           )
           .catch(() => undefined);
-      const timerGrabs = partGrabs(k, P, () => timers.map((t) => t.grab), () => 1);
+      // thông số số học còn lại: NÚM XOAY chia độ (Blender `KnobDial` + `KnobCap`), chụm rồi kéo ngang để vặn (sang phải = tăng), cùng hàng với đồng hồ hẹn giờ
+      const SWEEP = 1.5 * Math.PI;
+      const dials = railed.map((p, j) => {
+        const x = -3.3 + (timed.length + j) * 0.85;
+        const base = solid(k.scene, new THREE.CylinderGeometry(0.27, 0.3, 0.08, 28), '#3A3E7A', {x, y: 0.04, z: 2.3});
+        const cap = solid(k.scene, new THREE.CylinderGeometry(0.2, 0.22, 0.2, 28), '#E3B341', {x, y: 0.18, z: 2.3, metal: 0.4});
+        solid(cap, new THREE.BoxGeometry(0.05, 0.05, 0.17), '#1D1B16', {y: 0.12, z: -0.09});
+        const m: BenchMove = {n: 0, param: p.key, axis: 'rz', a: 0, b: 0, what: 'núm vặn'};
+        return {p, x, base, cap, tag: k.label(p.label), grab: {obj: cap, m, read: () => unit(p.key), write: (t: number) => setParam(p.key, t), text: () => unitText(p.key)}};
+      });
+      if (dials.length)
+        void loadModel('/models/lab-parts.glb')
+          .then((lib) =>
+            dials.forEach((d) => {
+              d.base.visible = false;
+              const dial = partOf(lib, 'KnobDial');
+              if (dial) k.scene.add(dial.obj.translateX(d.x).translateZ(2.3));
+              dress(d.cap, partOf(lib, 'KnobCap'));
+            }),
+          )
+          .catch(() => undefined);
+      const timerGrabs = partGrabs(k, P, () => [...timers, ...dials].map((t) => t.grab), () => 1);
       const timerAt = new THREE.Vector3();
       const grabs = partGrabs(
         k,
@@ -350,6 +365,10 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         for (const t of timers) {
           t.hand.rotation.y = -unit(t.p.key) * 5.24;
           t.tag(timerAt.set(t.body.position.x, 0.1, 2.98), undefined, `${t.p.label}: ${unitText(t.p.key)}`);
+        }
+        for (const d of dials) {
+          d.cap.rotation.y = -(-SWEEP / 2 + unit(d.p.key) * SWEEP);
+          d.tag(timerAt.set(d.x, 0.1, 2.98), undefined, `${d.p.label}: ${unitText(d.p.key)}`);
         }
         // mỗi khung hình đặt lại phần động về trạng thái theo thanh trượt, rồi hiệu ứng chuyển động ghi đè lên đó
         for (const {obj, base, m} of movers) {

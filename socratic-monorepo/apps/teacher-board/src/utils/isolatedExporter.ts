@@ -5,6 +5,7 @@
  * 3. Fill entire canvas with solid pure white (#FFFFFF) BEFORE drawing any strokes.
  * 4. Render strokes in pure black (#000000) with thick, smooth curves: lineWidth = 8, lineCap = 'round', lineJoin = 'round' using quadratic curve smoothing.
  * 5. Export as image/png base64 data URL.
+ * Tên hàm giữ "Webp" vì nhiều nơi gọi, nhưng ảnh xuất ra là PNG (nét đen trên nền trắng nén tốt, giữ nét sắc cho OCR).
  */
 import { Stroke, Point } from './lassoGeometry';
 

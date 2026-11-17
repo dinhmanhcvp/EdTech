@@ -1,6 +1,8 @@
 /**
- * $1 Unistroke Recognizer (Client-side offline shape detector, < 2ms latency)
- * Automatically detects Lines, Arrows, Rectangles, Circles, and Triangles.
+ * Nhận dạng nét đơn bằng luật đơn giản (offline, không phải thuật toán $1 Unistroke):
+ * nét khép kín → đường tròn, nét gần thẳng (khoảng cách đầu–cuối / độ dài > 0,88) → đoạn thẳng, còn lại UNKNOWN.
+ * RECTANGLE / TRIANGLE / ARROW có trong kiểu nhưng CHƯA được trả về. Bảng không gọi hàm này;
+ * nét vẽ → hình trên bảng do `inlineShape.ts` / `sketchGestures.ts` đảm nhận.
  */
 import { Point, Stroke } from './lassoGeometry';
 

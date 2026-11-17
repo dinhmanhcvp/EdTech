@@ -103,7 +103,7 @@ describe('Smartboard Magic Lasso & 4 Deterministic Engines (Phase 3)', () => {
     }
     fireEvent.pointerUp(canvas);
 
-    // 2. Test local offline $1 Unistroke recognizer directly
+    // 2. Test local offline rule-based stroke recognizer directly
     const lineStroke: Stroke = {
       id: 'stroke-line',
       points: [

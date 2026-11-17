@@ -46,6 +46,8 @@ export const OPS: Record<string, OpsDef> = {
       {id: 'w', title: 'Bề dày thành (mm)', options: [0.5, 1, 2, 3, 5].map((w) => opt(`${w}`, w, '#8A93A6'))},
       {id: 'slit', title: 'Rãnh xẻ dọc', options: [opt('Nguyên', 0, '#C9CED6'), opt('Xẻ nửa', 50, '#E3B341'), opt('Xẻ hết', 100, '#D9481C')]},
     ],
+    // nam châm đứng ở miệng ống cho tới khi học sinh kéo cần thả
+    actions: [{id: 'drop', label: 'Thả nam châm', color: '#2E9B57'}],
   },
   photo: {
     picks: [

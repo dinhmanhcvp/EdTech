@@ -197,7 +197,7 @@ export function benchManual(presetId: string): Manual | null {
           ? `${g.what[0].toUpperCase()}${g.what.slice(1)}: chụm vào chính dụng cụ này rồi kéo để đổi "${p.label}" (${range}); vòng con trỏ chuyển cam khi chạm đúng.`
           : isTimeUnit(p.unit)
             ? `Đồng hồ hẹn giờ "${p.label}" (mép bàn phía trước, bên trái): chụm vào đồng hồ rồi kéo ngang để quay kim; ${range}.`
-            : `Con trượt chia vạch "${p.label}" (mép bàn bên trái): chụm vào con chạy và kéo dọc thanh dẫn, kim đỏ chỉ trên thang chia; ${range}.`;
+            : `Núm vặn "${p.label}" (mép bàn phía trước, cùng hàng với đồng hồ hẹn giờ): chụm vào núm rồi kéo ngang, sang phải là tăng, vạch trên núm chỉ trên thang chia; ${range}.`;
       }),
       ...(e.choices ?? []).map((c) => `Công tắc xoay "${c.label}" (mép bàn bên phải): chụm một lần để vặn sang nấc kế tiếp (${c.options.map((o) => o[1]).join(', ')}).`),
       ...(b.file === 'phys' ? ['Dụng cụ tự chuyển động đúng theo quy luật của bài (xe lăn, bi rơi, con lắc đung đưa, dòng điện chạy, sóng lan…): chạm (chụm) vào vật đang chuyển động hoặc bấm ĐO để cho chạy lại từ đầu; kéo thanh trượt thì chuyển động đổi theo ngay.'] : []),

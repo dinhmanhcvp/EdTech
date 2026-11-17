@@ -100,7 +100,7 @@ describe('/lab: bài thực hành SGK là thí nghiệm 3D điều khiển bằn
     const t = benchManual('PHYS_LAB_BOYLE')!.tools!.join(' ');
     expect(t).toContain('Pit-tông: chụm vào chính dụng cụ');
     expect(benchManual('PHYS_LAB_OHM_LAW')!.tools!.join(' ')).toContain('Núm chỉnh điện áp của bộ nguồn: chụm vào chính dụng cụ');
-    expect(benchManual('PHYS_LAB_NEWTON2')!.tools!.join(' ')).toContain('Con trượt');
+    expect(benchManual('PHYS_LAB_NEWTON2')!.tools!.join(' ')).toContain('Núm vặn "Khối lượng xe');
     // thông số thời gian chỉnh bằng đồng hồ hẹn giờ, không còn con trượt
     expect(benchManual('PHYS_LAB_CAPACITOR_RC')!.tools!.join(' ')).toContain('Đồng hồ hẹn giờ "Thời gian nạp t"');
   });

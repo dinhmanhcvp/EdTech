@@ -244,8 +244,9 @@ function makeDef(input: HandsInput, live: SimLive): SceneDef {
     floor: true,
     room: true,
     // bài có dụng cụ cao (buret chuẩn độ) lùi máy quay và nhìn cao hơn để không cắt mất đỉnh dụng cụ
-    dist: live.id === 'titration' ? 10.6 : 9,
-    target: live.id === 'titration' ? [-0.2, 1.0, -0.2] : [-0.2, 0.2, -0.2],
+    // eddy: ống dài 3 đơn vị, nam châm chờ ở miệng ống nên cũng phải nằm trong khung
+    dist: live.id === 'titration' ? 10.6 : live.id === 'eddy' ? 11.4 : 9,
+    target: live.id === 'titration' ? [-0.2, 1.0, -0.2] : live.id === 'eddy' ? [-0.2, 1.3, -0.2] : [-0.2, 0.2, -0.2],
     orbit: () => [0, 50],
     setup: (k) => {
       labRoom(k, [8.4, 5.6, -0.3, 0.1]);

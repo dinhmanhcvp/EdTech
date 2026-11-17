@@ -1,3 +1,8 @@
+# 2026-11-17 — Cẩm nang hỏi đáp nổi bật cho học sinh THPT (`docs/`, không sửa mã sản phẩm)
+- Ba tệp mới: `CAM_NANG_HOI_DAP_NOI_BAT_THPT.md` (kiến thức: so sánh iFLYTEK/BC178.08 nội bộ, thuật toán nét viết → chữ, nét vẽ → hình, công thức → hình, gia sư, thống kê, bài tập tự kiểm), `CAM_NANG_CAU_HOI.md` (45 câu, chỉ câu hỏi), `CAM_NANG_GOI_Y_TRA_LOI.md` (gợi ý trả lời đánh số khớp). Bộ số dùng poster v4 (412 HS, +0,92, 81,3 %, 98,0 %); khác cẩm nang docx cũ (N = 86).
+- Tên BC178.08 chỉ ở Phần 2 (nội bộ); mọi câu trả lời dùng "các hệ thống bảng AI khác".
+- Phát hiện: `shapeRecognizer.ts` ghi "$1 Unistroke" nhưng chỉ làm tròn + đoạn thẳng; `isolatedExporter.ts` xuất PNG (không phải WebP). Chưa sửa mã. Chưa làm bản .docx.
+
 # 2026-11-15 (3) — Vẽ hình từ đề: thêm cách nói, giữ tính chất khi kéo, vẽ từng phần, gợi ý đường phụ Socratic (`apps/teacher-board`)
 - Quét 40 đề mẫu (THCS/THPT) qua `buildScene`, kéo từng đỉnh tự do rồi so tập quan hệ (`detectFacts`). Sửa: (1) `cutLines` (đường tròn đường kính BC cắt AB, AC tại M, N) nay gắn công thức `lcx` (tâm ẩn `#c…` chỉ khi chưa có điểm tên đúng tâm) → M, N theo khi kéo A; (2) mệnh đề "Chứng minh AH vuông góc BC" không còn bị coi là định nghĩa H (chân đường cao); (3) tiếp điểm kẻ từ điểm ngoài có công thức `tan` (thêm `r` cố định), `freePoints` nhận điểm ngoài đường tròn (`tan`, `lcint`, `lcx`) → kéo M thì A, B, C, D, I theo.
 - `utils/geoPhrasing.ts` (mới, gọi đầu `addExtras`): "K là điểm đối xứng của H qua BC", "D là chân đường phân giác trong góc A", "AD là phân giác…", "AM là trung tuyến / AH là đường cao", "các đường trung tuyến BM, CN cắt nhau tại G", "tia phân giác góc BAC cắt BC tại D và cắt đường tròn tại E", "đường tròn tâm A bán kính AH", "BM cắt CN tại G" (chỉ khi đề không có đường tròn).
@@ -2248,3 +2253,18 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 - **Bố cục `handsOps.ts`:** khay và ổ lắp bắt đầu bên phải núm cuối cùng; trước đây ổ lắp thứ nhất và nhãn của nó đè lên núm thứ hai / nút − + (rutherford, matterwave, nay cả photo). Đã xem bằng mắt photo, shock, rutherford, matterwave, morgan: không chồng.
 - **Không đổi (đã xem, hợp lí):** thomson (3 núm trên nguồn), eddy (chỉ vật chọn, nam châm tự thả lặp lại), shock (núm Mach + mũi nêm), rutherford, matterwave, ligo, bec. Ghi chú: eddy chưa có thao tác tự tay thả nam châm; rutherford cho vặn tham số va chạm b (khái niệm mô phỏng, ngoài đời không điều khiển được).
 - Kiểm tra: tsc sạch; `handsSims.test.tsx`, `labManual.test.tsx` xanh. CHƯA commit (mọi thay đổi sau `932bad2`).
+
+## 2026-11-17 (7) · Rà mã nguồn sau các phiên khác (932bad2, e06646e đã push)
+- Kiểm tra: tsc sạch cả teacher-board, student-app, teacher-console; vitest gốc monorepo 3482/3482; pytest ai-engine 580/580 (phải chạy trong `services/ai-engine`, chạy từ gốc thì 2 tệp `test_asg_*` lỗi nạp `lesson_llm`; README đã sửa lệnh).
+- Sửa mô tả sai mà phiên cẩm nang phát hiện (không đổi hành vi): `shapeRecognizer.ts` không phải $1 Unistroke, chỉ tròn/đoạn thẳng và bảng không gọi; `isolatedExporter.ts` xuất PNG dù tên hàm có "Webp"; README mục Magic Lasso và bảng SLA nói đúng như vậy.
+- Còn mở từ phiên lab (5)(6): 12 thông số SGK vẫn là con trượt (cần bộ phận Blender riêng từng bài); eddy chưa có thao tác tự thả nam châm; chưa thử kéo đồng hồ hẹn giờ / núm bộ nguồn bằng chuột ở tốc độ thật, chưa thử camera tay. CHƯA commit đợt này.
+
+## 17/11/2026 – Cẩm nang hỏi đáp FreshNose (THPT)
+- `docs/bao-cao-freshnose/visef/CAM_NANG_FRESHNOSE_CAU_HOI.md/.docx` (76 câu) và `CAM_NANG_FRESHNOSE_GOI_Y_TRA_LOI.md/.docx` (cùng số câu, có ví dụ tính tay). Số lấy từ `bao-cao_final-mau-2026.md`; số "tính lại" lấy từ `HUONG_DAN_TRA_LOI_BGK.md` mục A. Chỗ `[điền: …]` nhóm phải tự điền. Dựng docx bằng md2docx (bản sao từ cẩm nang Socratic, chưa lưu trong repo).
+
+## 2026-11-17 (8) · /lab: eddy tự tay thả nam châm; hết thanh ray ở bài thực hành SGK
+- **Eddy (`HandsSimsThpt3D.ts`, `sims/ops.ts`, `manual.ts`):** nam châm đứng ở miệng ống cho tới khi kéo cần xanh "Thả nam châm" (`OPS.eddy.actions` = `drop`, cơ chế cần kéo đơn có sẵn của `handsOps`); rơi MỘT lần rồi nằm ở khay; đổi vật liệu / bề dày / rãnh thì nam châm về miệng ống chờ thả lại; chú thích báo "đoán trước". Camera `HandsSims3D.tsx` lùi (dist 11,4, nhìn cao 1,3) vì ống cao 3 đơn vị bị cắt đỉnh. Nút "Thả nam châm" ở bảng điều khiển là bản dự phòng; `handsSims.test.tsx` đổi ca eddy (trước khẳng định không có nút).
+- **Bài thực hành SGK (`HandsBench3D.tsx`):** MỌI thông số không có bộ phận riêng và không phải thời gian nay là NÚM XOAY Blender (`KnobDial` + `KnobCap` của `lab-parts.glb`, quét 270°), chụm rồi kéo ngang để vặn, cùng hàng mép bàn phía trước với đồng hồ hẹn giờ (`dials`, dùng chung `partGrabs`). `handSliders` gọi với danh sách rỗng (không còn ray); `benchManual` nói "Núm vặn …". Tối đa 3 núm / bài (FORCE_COMPOSITION, COLLISION_MOMENTUM, LEVER_MOMENT, MINI_ECOSYSTEM).
+- **Đã xem trên /lab:** eddy (nam châm ở miệng ống, thả bằng nút → rơi 3,05 s, nằm khay); FORCE_COMPOSITION (3 núm có nhãn; kéo núm F₁ đổi 3 → 4 N).
+- **Test:** tsc sạch; vitest 3309/3310 (C27 `geoPdfProblems` quá giờ khi chạy cả bộ, chạy riêng xanh).
+- **Chưa kiểm / còn lại:** chưa xem bằng mắt từng bài trong 12 bài có núm mới (chỉ FORCE_COMPOSITION); núm chỉ là dụng cụ chung, chưa phải bộ phận riêng từng bài (cân, ống bơm pH…) — muốn thật hơn cần dựng riêng bằng Blender; kéo cần "Thả nam châm" bằng chuột/camera thật chưa thử (chỉ bấm nút dự phòng). CHƯA commit.

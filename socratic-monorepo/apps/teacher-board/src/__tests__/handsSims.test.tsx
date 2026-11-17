@@ -408,8 +408,11 @@ describe('nút thao tác riêng của bài', () => {
     expect(r.getByTestId('sim-act-start').textContent).toContain('×2');
     expect(r.getByTestId('sim-act-stop').textContent).toContain('×1');
     cleanup();
+    // bài eddy: nam châm chờ ở miệng ống, chỉ rơi khi thả (nút dự phòng cho cần kéo trên bàn)
     const q = render(<HandsLab experiment={'eddy' as never} />);
-    expect(q.queryByTestId('sim-actions')).toBeNull();
+    fireEvent.click(q.getByTestId('sim-act-drop'));
+    expect(q.getByTestId('sim-act-drop').textContent).toContain('Thả nam châm');
+    expect(q.getByTestId('sim-act-drop').textContent).toContain('×1');
     cleanup();
     // bài va chạm: có nút thả xe ở bảng điều khiển làm bản dự phòng cho công tắc trên bàn
     const c = render(<HandsLab experiment={'collision' as never} />);

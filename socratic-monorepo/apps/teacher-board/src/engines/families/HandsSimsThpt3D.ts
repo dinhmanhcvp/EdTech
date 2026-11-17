@@ -177,19 +177,25 @@ const eddy: Scene = ({k, live}) => {
   k.label('Ống kim loại dài 1 m')(V(0, 3.4, Z));
   const tag = k.label('Dòng Foucault');
   let key = '';
-  let t0 = 0;
+  // nam châm giữ ở miệng ống tới khi kéo cần "Thả nam châm"; rơi một lần rồi nằm ở khay; đổi ống thì về miệng ống chờ thả lại
+  let t0: number | null = null;
+  let seen = live.events.drop ?? 0;
   return (now) => {
     if (sig(live) !== key) {
       key = sig(live);
+      t0 = null;
+    }
+    if ((live.events.drop ?? 0) !== seen) {
+      seen = live.events.drop ?? 0;
       t0 = now;
     }
     const {sigma, w, slit: s} = live.v;
     const vt = terminal(sigma, w, s);
     const T = fallTime(vt);
-    const t = ((now - t0) / 1000) % (T + 1);
-    const y = 3 - 2.8 * Math.min(1, fallPos(vt, t));
+    const t = t0 === null ? -1 : Math.min((now - t0) / 1000, T);
+    const y = t < 0 ? 3 : 3 - 2.8 * Math.min(1, fallPos(vt, t));
     magnet.position.set(0, y, Z);
-    const strength = Number.isFinite(vt) && t < T ? 1 - Math.exp((-t * 9.81) / vt) : 0;
+    const strength = Number.isFinite(vt) && t >= 0 && t < T ? 1 - Math.exp((-t * 9.81) / vt) : 0;
     rings.forEach((r) => {
       r.m.position.set(0, y + r.dy, Z);
       r.m.material.opacity = strength;
@@ -199,6 +205,7 @@ const eddy: Scene = ({k, live}) => {
     tube.scale.x = tube.scale.z = 1 + w / 25;
     slit.visible = s > 0.5;
     slit.scale.y = s / 100;
+    if (t0 === null) return 'Nam châm đang giữ ở miệng ống: kéo cần "Thả nam châm" để thả\nĐoán trước: ống này giữ nam châm lâu hay chóng rơi?';
     return `Rơi 1 m mất ${T.toFixed(2)} s (rơi tự do: 0,45 s)\nNam châm rơi làm từ thông qua thành ống biến thiên: dòng Foucault sinh lực cản`;
   };
 };

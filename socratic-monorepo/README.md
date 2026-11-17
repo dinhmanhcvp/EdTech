@@ -37,7 +37,7 @@ Khóa AI **không nằm trong repo**: đặt `GEMINI_API_KEY` (và/hoặc `OPENR
 
 Lưu ý cho **Lab**: camera tay chỉ bật được trên `localhost` hoặc `https`; lần bật đầu cần mạng (MediaPipe tải từ CDN). Không có camera thì dùng chuột (nhấn giữ = chụm). Dùng Chrome hoặc Edge.
 
-Kiểm tra: `npm test` (vitest, toàn bộ) và `python -m pytest services/ai-engine/tests -q`.
+Kiểm tra: `npm test` (vitest, toàn bộ) và `cd services/ai-engine && python -m pytest tests -q` (chạy trong thư mục service để nạp được `lesson_llm`).
 
 ---
 
@@ -45,9 +45,9 @@ Kiểm tra: `npm test` (vitest, toàn bộ) và `python -m pytest services/ai-en
 
 1. **"On-Demand Magic Lasso"**:
    - Viết bảng tự nhiên 0 độ trễ (< 16ms) với Pure Ink Mode trên HTML5 Canvas.
-   - Nhận diện hình học cơ bản ($1 Unistroke Recognizer: đường thẳng, mũi tên, hình tròn, tam giác) offline tại Client (< 2ms).
+   - Nhận diện offline tại Client: nét vẽ tay → hình sạch (đoạn thẳng, đường tròn, đa giác, khối 3D) và chữ viết toán → công thức (so khớp mẫu chamfer + bố cục 2D).
    - Chỉ kích hoạt AI khi giáo viên chủ động khoanh vùng. Lọc nét bằng thuật toán **Point-in-Polygon** ($\ge 70\%$ điểm tọa độ nằm trong vùng khoanh).
-   - **Isolated Off-Screen Render**: Vẽ riêng nét chọn lên canvas ẩn, nền trắng, nét đen chuẩn hóa, nén thành `image/webp` siêu nhẹ **< 8KB**.
+   - **Isolated Off-Screen Render**: Vẽ riêng nét chọn lên canvas ẩn, nền trắng, nét đen chuẩn hóa, xuất ảnh `image/png` đen trắng nhỏ gọn.
    - Zero-Keyboard Recovery: Menu Bubble **Tap & Swap** (Top 3 phương án) và nút **Undo-to-Ink**.
 
 2. **"AI as a Compiler, Client as a Render Engine"**:
@@ -162,9 +162,9 @@ socratic-vision-board/
 
 | Chỉ số (Metric) | Mục tiêu Cam kết (Target SLA) | Giải pháp Kỹ thuật Đảm bảo |
 |---|---|---|
-| **Độ trễ viết bảng & nhận diện hình** | **< 16ms (60 FPS)** | HTML5 Canvas + $1 Unistroke Recognizer offline tại Client |
+| **Độ trễ viết bảng & nhận diện hình** | **< 16ms (60 FPS)** | HTML5 Canvas + nhận diện nét/hình offline tại Client |
 | **Số lần gọi API trung bình / tiết 45p** | **Chỉ 3 – 6 lần** | On-Demand Magic Lasso + Unified Single-Call Blueprint |
-| **Dung lượng ảnh gửi lên Vision API** | **< 8KB / lần** | Point-in-Polygon Hit-Testing + Isolated Off-screen Binarized WebP |
+| **Dung lượng ảnh gửi lên Vision API** | **< 8KB / lần** | Point-in-Polygon Hit-Testing + Isolated Off-screen Binarized PNG |
 | **Chi phí API tạo ảnh / video 3D** | **$0.00 (Bằng không)** | 100% dựng bằng 4 Client-Side Deterministic Engines (WebGL/Canvas) |
 | **Độ trễ kéo thanh trượt Sandbox** | **0ms (Tức thì ở 60 FPS)** | Biến thanh trượt truyền thẳng vào vòng lặp render của Engine |
 | **Tỷ lệ giảm tải LLM (Gia sư)** | **Giảm 80% – 90%** | Tầng lọc kép: SymPy (<10ms) + ChromaDB Semantic Cache (>0.90) |

@@ -17,7 +17,7 @@ export const SINH3_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'BIOLOGY',
     title: 'Giảm phân và trao đổi chéo',
-    question: 'Vì sao giảm phân tạo ra các tế bào con có số NST giảm một nửa còn nguyên phân thì không? Trao đổi chéo ở kì đầu I làm tăng đa dạng di truyền như thế nào?',
+    question: 'Trước khi bấm qua các kì: em đoán trao đổi chéo xảy ra ở kì nào và giữa những chromatid nào? Sau khi đi hết: ghi số NST ở tế bào con em đếm được, chỗ em đoán sai. Bạn em nói "giảm phân chỉ khác nguyên phân ở số tế bào con" — mô phỏng của em cho thấy những khác biệt nào nữa?',
     keywords: /giam phan|trao doi cheo|tiep hop nhiem sac the|meiosis|giao tu|bo nst don boi/,
     examples: ['giảm phân', 'trao đổi chéo', 'tiếp hợp nhiễm sắc thể', 'hình thành giao tử'],
     data: {
@@ -50,7 +50,7 @@ export const SINH3_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'BIOLOGY',
     title: 'Cung phản xạ và dẫn truyền qua synapse',
-    question: 'Một phản xạ đi qua những thành phần nào của cung phản xạ? Xung thần kinh truyền qua synapse hóa học bằng chất trung gian nào và theo mấy chiều?',
+    question: 'Trước khi kích thích: em đoán xung thần kinh đi qua synapse theo một chiều hay hai chiều? Sau khi xem: ghi các bộ phận cung phản xạ em thấy theo thứ tự, chỗ em đoán sai. Một bạn nói "chất dẫn truyền đi ngược về được neuron trước" — mô phỏng em vừa xem bác bỏ thế nào?',
     keywords: /cung phan xa|phan xa tuy song|synapse|xinap|chat trung gian hoa hoc|acetylcholine|dan truyen xung than kinh|ket noi than kinh/,
     examples: ['cung phản xạ', 'synapse', 'chất trung gian hóa học'],
     data: {
@@ -79,7 +79,7 @@ export const SINH3_PRESETS: Record<string, PresetSpec> = {
     family: 'ANATOMY_FLOW',
     engine: 'BIOLOGY',
     title: 'Cấu tạo tai và cơ chế nghe',
-    question: 'Sóng âm được chuyển thành xung thần kinh qua những bộ phận nào của tai? Vì sao chuỗi xương con giúp khuếch đại âm thanh?',
+    question: 'Trước khi đi theo đường âm: em đoán âm cao và âm thấp làm rung vùng nào của màng đáy? Sau khi đi hết: ghi đường đi của âm em thấy và chỗ em đoán sai. Bạn em nói "tai nghe bằng màng nhĩ, màng nhĩ thủng là điếc hoàn toàn" — các bộ phận em vừa xem phản biện thế nào?',
     keywords: /cau tao cua tai|cau tao tai|oc tai|mang nhi|xuong con|co quan thinh giac|co che nghe|ong tai|tai trong|tai giua/,
     examples: ['cấu tạo của tai', 'ốc tai', 'màng nhĩ', 'cơ chế nghe', 'chuỗi xương con'],
     data: {
@@ -103,7 +103,7 @@ export const SINH3_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'BIOLOGY',
     title: 'Tháp tuổi và ước lượng kích thước quần thể (đánh dấu – bắt lại)',
-    question: 'Hình dạng tháp tuổi cho biết quần thể đang tăng, ổn định hay suy giảm thế nào? Làm sao ước lượng số cá thể của quần thể khi không thể đếm hết?',
+    question: 'Trước khi đổi dạng tháp tuổi: em đoán tháp đáy hẹp báo hiệu quần thể tương lai thế nào? Sau khi thử đánh dấu – bắt lại: ghi số con đánh dấu, số bắt lại và ước lượng kích thước em tính được. Một bạn nói "con đánh dấu trốn kĩ hơn cũng không sao" — ước lượng của em sẽ lệch về phía nào?',
     keywords: /thap tuoi|nhom tuoi cua quan the|danh dau bat lai|danh dau va bat lai|uoc luong kich thuoc quan the|mat do quan the|kieu phan bo cua quan the|ti le gioi tinh/,
     examples: ['tháp tuổi', 'nhóm tuổi của quần thể', 'phương pháp đánh dấu bắt lại', 'ước lượng kích thước quần thể'],
     data: {

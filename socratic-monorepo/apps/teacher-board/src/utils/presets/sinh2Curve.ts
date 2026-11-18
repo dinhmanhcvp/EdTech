@@ -55,7 +55,7 @@ export const SINH2_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Hormone thực vật: tác dụng của auxin phụ thuộc nồng độ và cơ quan',
-    question: 'Vì sao cùng một nồng độ auxin có thể kích thích rễ nhưng ức chế thân, hoặc ngược lại? Nồng độ nào là cực thuận cho từng cơ quan?',
+    question: 'Trước khi đọc đồ thị: em đoán cùng một nồng độ auxin có kích thích cả rễ lẫn thân không? Sau khi xem: ghi nồng độ cực thuận em đọc được cho rễ, chồi, thân. Một bạn nói "auxin càng nhiều cây càng lớn nhanh" — vùng nào trên đồ thị của em bác bỏ, và ứng dụng thuốc diệt cỏ dựa vào điều gì?',
     keywords: /hormone thuc vat|phytohormone|nong do auxin|auxin va gibberellin|cytokinin|ethylene|acid abscisic|uu the ngon|sinh truong va phat trien o thuc vat|quang chu k[yi]/,
     examples: ['hormone thực vật', 'nồng độ auxin', 'cytokinin', 'ưu thế ngọn', 'quang chu kì'],
     data: {
@@ -82,7 +82,7 @@ export const SINH2_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Chu kì kinh nguyệt và điều hòa bằng hormone',
-    question: 'Hormone nào tăng vọt gây rụng trứng, và hormone nào duy trì niêm mạc tử cung sau rụng trứng? Vì sao nếu không có thụ tinh thì kinh nguyệt xảy ra?',
+    question: 'Trước khi đổi độ dài chu kì: em đoán ngày rụng trứng dời theo thế nào? Sau khi thử: ghi ngày rụng trứng và độ dài pha nang, pha hoàng thể em đọc được với hai độ dài chu kì. Bạn em nói "rụng trứng luôn vào ngày 14" — số liệu của em bác bỏ thế nào, pha nào thay đổi?',
     keywords: /chu k[yi] kinh nguyet|kinh nguyet|rung trung|hormone sinh duc|\bfsh\b|\blh\b|estrogen|progesterone|sinh tinh|sinh trung|tranh thai|thu tinh o nguoi/,
     examples: ['chu kì kinh nguyệt', 'rụng trứng', 'hormone FSH LH', 'estrogen và progesterone', 'sinh tinh sinh trứng'],
     data: {
@@ -110,7 +110,7 @@ export const SINH2_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Sinh trưởng của quần thể vi khuẩn: bốn pha',
-    question: 'Quần thể vi khuẩn trải qua những pha nào trong môi trường nuôi cấy không liên tục và vì sao pha lũy thừa dừng lại? Thời gian thế hệ ngắn có ý nghĩa gì?',
+    question: 'Trước khi đổi thời gian thế hệ: em đoán sau 12 giờ số tế bào khoảng bao nhiêu? Sau khi thử: ghi pha và số tế bào em đọc được ở giờ thứ 12 với hai thời gian thế hệ. Một bạn nói "vi khuẩn cứ nhân đôi mãi theo cấp số nhân" — đồ thị của em bác bỏ thế nào, vì sao?',
     keywords: /sinh truong cua vi khuan|pha tiem phat|pha luy thua|nuoi cay vi sinh vat|thoi gian the he|kich thuoc quan the vi sinh vat|nhuom gram|khang sinh do/,
     examples: ['sinh trưởng của vi khuẩn', 'pha tiềm phát pha lũy thừa', 'nuôi cấy vi sinh vật', 'thời gian thế hệ'],
     data: {
@@ -138,7 +138,7 @@ export const SINH2_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Dinh dưỡng khoáng: thiếu, đủ và thừa phân bón',
-    question: 'Vì sao bón quá nhiều phân bón lại làm giảm năng suất, và vì sao cây thiếu khoáng sinh trưởng kém? Vùng nồng độ nào là thích hợp?',
+    question: 'Trước khi kéo liều phân: em đoán năng suất tăng mãi theo lượng phân bón không? Sau khi thử: ghi liều tối ưu và ngưỡng gây độc em đọc được. Bạn em nói "bón gấp đôi thì thu hoạch gấp đôi" — số liệu của em bác bỏ thế nào?',
     keywords: /dinh duong khoang|nguyen to khoang|thieu khoang|lieu luong phan bon|phan bon|nguyen to dai luong|nguyen to vi luong|trieu chung thieu/,
     examples: ['dinh dưỡng khoáng', 'liều lượng phân bón', 'triệu chứng thiếu khoáng', 'nguyên tố đại lượng và vi lượng'],
     data: {
@@ -171,7 +171,7 @@ export const SINH2_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Hô hấp ở thực vật và các yếu tố ảnh hưởng',
-    question: 'Vì sao hạt khô hô hấp rất yếu còn hạt đang nảy mầm hô hấp mạnh? Nhiệt độ ảnh hưởng đến cường độ hô hấp thế nào và đến mức nào thì giảm?',
+    question: 'Trước khi đổi độ ẩm hạt: em đoán hạt ẩm hay hạt khô hô hấp mạnh hơn? Sau khi thử: ghi cường độ hô hấp em đọc được ở hai độ ẩm và khi tăng từ 20 °C lên 30 °C. Một bạn nói "cứ để hạt chỗ ấm là giữ được lâu" — số liệu của em gợi ý cách bảo quản nào?',
     keywords: /ho hap o thuc vat|ho hap hieu khi o thuc vat|cuong do ho hap|bao quan nong san|hat nay mam|yeu to anh huong den ho hap|ho hap sang/,
     examples: ['hô hấp ở thực vật', 'cường độ hô hấp', 'bảo quản nông sản', 'hạt nảy mầm'],
     data: {
@@ -205,7 +205,7 @@ export const SINH2_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Học tập ở động vật: phản xạ có điều kiện của Pavlov',
-    question: 'Làm sao một kích thích trung tính như tiếng chuông trở thành tín hiệu gây tiết nước bọt ở chó? Điều gì xảy ra khi ngừng củng cố bằng thức ăn?',
+    question: 'Trước khi ngừng củng cố: em đoán phản xạ có điều kiện mất ngay hay mất dần? Sau khi thử: ghi số lần ghép cặp để đạt 90 % và phản ứng khi ngừng củng cố em đọc được. Bạn em nói "đã học được thì nhớ mãi" — đồ thị của em bác bỏ thế nào?',
     keywords: /phan xa co dieu kien|phan xa khong dieu kien|pavlov|tap tinh cua dong vat|hoc tap o dong vat|in vet|pheromone|di cu cua dong vat|tap tinh bam sinh/,
     examples: ['phản xạ có điều kiện', 'thí nghiệm Pavlov', 'tập tính của động vật', 'học tập ở động vật', 'pheromone'],
     data: {
@@ -233,7 +233,7 @@ export const SINH2_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Mức phản ứng của kiểu gene với nhiệt độ',
-    question: 'Vì sao cùng một kiểu gene nhưng kiểu hình có thể khác nhau ở các môi trường khác nhau? Mức phản ứng rộng và hẹp khác nhau thế nào về khả năng thích nghi?',
+    question: 'Trước khi đổi nhiệt độ: em đoán thỏ Himalaya nuôi ở 10 °C có lông vùng nào đổi màu? Sau khi thử: ghi màu lông em đọc được ở 10 °C và 35 °C. Một bạn nói "lông đen do gene khác với lông trắng" — số liệu của em cho thấy điều gì thật sự thay đổi?',
     keywords: /muc phan ung|kieu hinh va moi truong|tho himalaya|thuong bien|anh huong cua moi truong len bieu hien gene|di truyen va moi truong/,
     examples: ['mức phản ứng', 'thỏ Himalaya', 'thường biến', 'kiểu hình và môi trường'],
     data: {

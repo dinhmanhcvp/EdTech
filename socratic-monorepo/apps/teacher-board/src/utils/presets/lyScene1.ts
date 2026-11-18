@@ -48,7 +48,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Chuyển động thẳng: đồ thị độ dịch chuyển–thời gian và vận tốc–thời gian',
-    question: 'Độ dốc của đồ thị độ dịch chuyển–thời gian và diện tích dưới đồ thị vận tốc–thời gian cho biết những đại lượng nào? Vì sao hai vật nặng nhẹ khác nhau rơi tự do chạm đất cùng lúc?',
+    question: 'Trước khi chạy: em đoán đồ thị độ dịch chuyển–thời gian của chuyển động biến đổi đều có dạng gì? Sau khi chạy: ghi vận tốc tức thời em đọc được ở hai thời điểm và độ dốc tương ứng trên đồ thị. Bạn em nói "vận tốc âm nghĩa là vật chậm dần" — trường hợp nào của em bác bỏ?',
     keywords: /do thi do dich chuyen|do thi van toc (?:thoi gian|theo thoi gian)|chuyen dong thang (?:deu|bien doi deu)|roi tu do|ong newton|do dich chuyen va quang duong|gia toc roi tu do/,
     examples: ['đồ thị độ dịch chuyển thời gian', 'chuyển động thẳng biến đổi đều', 'rơi tự do', 'ống Newton'],
     data: {
@@ -101,7 +101,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Tổng hợp vận tốc: thuyền qua sông',
-    question: 'Muốn thuyền sang đúng điểm đối diện bờ bên kia ta phải hướng mũi thuyền thế nào? Hướng nào qua sông nhanh nhất và khi đó thuyền bị trôi bao xa?',
+    question: 'Trước khi lái: em đoán muốn qua sông nhanh nhất thì mũi thuyền hướng thế nào? Sau khi thử: ghi thời gian qua sông và quãng trôi em đọc được ở ba góc lái. Một bạn nói "muốn tới đúng bến đối diện thì cứ lái thẳng vuông góc bờ" — số liệu nào của em bác bỏ?',
     keywords: /thuyen qua song|tong hop van toc|van toc tuong doi|cong thuc cong van toc|van toc keo theo/,
     examples: ['tổng hợp vận tốc', 'công thức cộng vận tốc', 'vận tốc kéo theo'],
     data: {
@@ -147,7 +147,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Sai số phép đo',
-    question: 'Vì sao đo nhiều lần và lấy trung bình lại làm giảm sai số ngẫu nhiên nhưng không loại bỏ được sai số dụng cụ? Sai số tỉ đối cho ta so sánh điều gì?',
+    question: 'Trước khi đo: em đoán tăng số lần đo thì sai số ngẫu nhiên và sai số dụng cụ đổi thế nào? Sau khi thử: ghi ΔA của em với 3 lần và 10 lần đo. Bạn em nói "đo thật nhiều lần thì sai số về 0" — thành phần nào trong ΔA của em không giảm, vì sao?',
     keywords: /sai so phep do|sai so dung cu|sai so ngau nhien|sai so he thong|do nhieu lan (?:lay )?gia tri trung binh|do chia nho nhat/,
     examples: ['sai số phép đo', 'sai số dụng cụ và sai số ngẫu nhiên', 'đo nhiều lần lấy giá trị trung bình'],
     data: {
@@ -188,7 +188,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Tổng hợp, phân tích lực và cân bằng của ba lực',
-    question: 'Hợp lực của hai lực phụ thuộc góc giữa chúng thế nào? Vì sao dây treo càng gần nằm ngang thì lực căng càng lớn dù vật nặng không đổi?',
+    question: 'Trước khi đổi góc: em đoán hợp lực của F₁, F₂ lớn nhất và nhỏ nhất ở góc nào? Sau khi thử: ghi hợp lực em đọc được ở 0°, 90°, 180°. Một bạn treo vật bằng hai dây và nói "dây càng xòe rộng càng đỡ căng" — lực căng em đọc được khi tăng góc dây ủng hộ hay bác bỏ?',
     keywords: /tong hop luc|phan tich luc|quy tac hinh binh hanh luc|can bang cua (?:vat|chat diem) (?:chiu tac dung cua )?ba luc|luc can day treo|hop luc cua hai luc/,
     examples: ['tổng hợp lực', 'phân tích lực', 'cân bằng của vật chịu tác dụng của ba lực', 'hợp lực của hai lực'],
     data: {
@@ -245,7 +245,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Moment lực, đòn bẩy và điều kiện cân bằng',
-    question: 'Đòn bẩy cân bằng khi moment của hai lực đối với trục quay có quan hệ gì? Vì sao càng đặt vật nặng gần điểm tựa thì càng dễ nâng bằng lực nhỏ?',
+    question: 'Trước khi đặt vật: em đoán vật nặng gấp đôi phải đặt ở đâu để đòn bẩy cân bằng? Sau khi thử: ghi m₁, d₁, m₂, d₂ của em lúc cân bằng và moment hai bên. Bạn em nói "hai bên cân bằng khi khối lượng bằng nhau" — bộ số nào của em bác bỏ?',
     keywords: /moment luc|don bay|dieu kien can bang cua vat (?:co )?truc quay|ngau luc|quy tac moment|trong tam cua vat/,
     examples: ['moment lực', 'đòn bẩy', 'điều kiện cân bằng của vật có trục quay', 'ngẫu lực'],
     data: {
@@ -286,7 +286,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Định luật II Newton: xe có ma sát và máy Atwood',
-    question: 'Gia tốc phụ thuộc hợp lực và khối lượng như thế nào? Vì sao máy Atwood với hai khối lượng gần bằng nhau chuyển động chậm dù trọng lực lên mỗi vật rất lớn?',
+    question: 'Trước khi chạy máy Atwood: em đoán hai khối gần bằng nhau thì gia tốc lớn hay nhỏ? Sau khi thử: ghi gia tốc em đọc được với ba cặp m₁, m₂. Một bạn nói "vật nặng hơn rơi nhanh như rơi tự do vì nó nặng" — số liệu nào của em bác bỏ, và hợp lực thật sự là gì?',
     keywords: /dinh luat (?:2|ii|hai) (?:cua )?newton|dinh luat (?:ii|2) niu-?ton|may atwood|\batwood\b|luc ma sat truot/,
     examples: ['định luật II Newton', 'máy Atwood', 'lực ma sát trượt và gia tốc'],
     data: {
@@ -329,7 +329,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Lò xo, định luật Hooke và ghép lò xo',
-    question: 'Ghép nối tiếp và ghép song song hai lò xo cho độ cứng tương đương khác nhau ra sao? Độ giãn thay đổi thế nào khi treo cùng một vật?',
+    question: 'Trước khi ghép: em đoán hai lò xo nối tiếp cứng hơn hay mềm hơn một lò xo? Sau khi thử: ghi k tương đương và độ giãn em đọc được ở ba cách ghép. Bạn em nói "ghép song song thì k giảm một nửa" — số liệu của em bác bỏ thế nào?',
     keywords: /dinh luat hooke|\bhooke\b|do cung cua lo xo|ghep lo xo|bien dang cua lo xo|luc dan hoi cua lo xo/,
     examples: ['định luật Hooke', 'độ cứng của lò xo', 'ghép lò xo nối tiếp song song'],
     data: {
@@ -373,7 +373,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Áp suất chất lỏng và lực đẩy Archimedes',
-    question: 'Áp suất trong chất lỏng tăng theo độ sâu như thế nào? Vì sao vật có khối lượng riêng nhỏ hơn chất lỏng thì nổi và chìm một phần?',
+    question: 'Trước khi đổi khối lượng riêng: em đoán vật nổi, lơ lửng hay chìm khi so ρ vật với ρ chất lỏng? Sau khi thử: ghi trạng thái và lực đẩy Archimedes em đọc được với ba cặp số. Một bạn nói "vật chìm sâu hơn thì lực đẩy Archimedes lớn hơn" — kết quả khi em đổi độ sâu nói gì?',
     keywords: /ap suat chat long|luc day archimedes|archimedes|ap suat thuy tinh|vat noi vat chim|khoi luong rieng cua chat long/,
     examples: ['áp suất chất lỏng', 'lực đẩy Archimedes', 'vật nổi vật chìm'],
     data: {
@@ -409,7 +409,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Công, năng lượng và bảo toàn cơ năng khi trượt xuống dốc',
-    question: 'Khi vật trượt xuống dốc thế năng giảm đi chuyển thành những dạng nào? Có ma sát thì cơ năng còn bảo toàn không và phần mất đi đi đâu?',
+    question: 'Trước khi thả: em đoán có ma sát thì động năng ở chân dốc giảm bao nhiêu so với không ma sát? Sau khi thử: ghi thế năng, động năng, nhiệt em đọc được với μ = 0 và μ khác 0. Bạn em nói "có ma sát là mất năng lượng, không bảo toàn nữa" — dòng "Tổng" em đọc được phản biện thế nào?',
     keywords: /bao toan co nang|dinh luat bao toan nang luong|cong va cong suat|dong nang va the nang|cong cua luc ma sat|hieu suat cua may/,
     examples: ['bảo toàn cơ năng', 'động năng và thế năng', 'công của lực ma sát', 'hiệu suất của máy'],
     data: {
@@ -467,7 +467,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Va chạm một chiều: bảo toàn động lượng',
-    question: 'Trong va chạm đàn hồi và va chạm mềm, đại lượng nào luôn bảo toàn, đại lượng nào không? Vì sao động năng giảm đi trong va chạm mềm?',
+    question: 'Trước khi cho va chạm: em đoán va chạm mềm thì động năng và động lượng cái nào giữ nguyên? Sau khi thử: ghi động lượng và động năng trước, sau với e = 0 và e = 1. Một bạn nói "va chạm mềm vi phạm bảo toàn năng lượng" — số liệu của em và năng lượng đã đi đâu?',
     keywords: /va cham (?:dan hoi|mem|mot chieu)|dinh luat bao toan dong luong|dong luong cua vat|con lac newton/,
     examples: ['va chạm một chiều', 'định luật bảo toàn động lượng', 'va chạm đàn hồi và va chạm mềm', 'con lắc Newton'],
     data: {
@@ -519,7 +519,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Chuyển động tròn đều, lực hướng tâm và vệ tinh',
-    question: 'Vì sao vật chuyển động tròn đều vẫn có gia tốc? Vệ tinh ở càng cao thì tốc độ dài và chu kì thay đổi ra sao?',
+    question: 'Trước khi đổi bán kính quỹ đạo: em đoán vệ tinh ở cao hơn quay nhanh hay chậm hơn? Sau khi thử: ghi chu kì và tốc độ em đọc được ở hai độ cao. Bạn em nói "vật quay tròn đều không có gia tốc vì tốc độ không đổi" — số liệu gia tốc hướng tâm của em bác bỏ thế nào?',
     keywords: /chuyen dong tron deu|luc huong tam|gia toc huong tam|toc do goc|ve tinh nhan tao|toc do vu tru/,
     examples: ['chuyển động tròn đều', 'lực hướng tâm', 'gia tốc hướng tâm', 'vệ tinh nhân tạo'],
     data: {
@@ -569,7 +569,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Dao động điều hòa của con lắc lò xo',
-    question: 'Li độ, vận tốc và gia tốc của dao động điều hòa lệch pha nhau thế nào? Cơ năng chuyển hóa giữa động năng và thế năng ra sao, và khi có ma sát biên độ thay đổi thế nào?',
+    question: 'Trước khi đổi biên độ: em đoán chu kì thay đổi không? Sau khi thử: ghi vmax, amax em đọc được với hai biên độ cùng chu kì. Một bạn nói "ở vị trí biên vật đứng yên nên gia tốc bằng 0" — giá trị x, v, a em đọc được tại biên nói gì?',
     keywords: /con lac lo xo|li do va van toc|chu ki dao dong|dao dong tat dan|co nang cua dao dong|cong huong co hoc/,
     examples: ['con lắc lò xo', 'dao động tắt dần', 'cơ năng của dao động', 'li độ và vận tốc'],
     data: {
@@ -612,7 +612,7 @@ export const LY_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Sóng cơ: sóng ngang, sóng dọc và sóng dừng',
-    question: 'Phần tử môi trường có truyền đi theo sóng không? Bước sóng, tần số và tốc độ truyền sóng liên hệ nhau thế nào, và sóng dừng hình thành khi nào?',
+    question: 'Trước khi tăng tần số: em đoán bước sóng thay đổi thế nào khi tốc độ truyền giữ nguyên? Sau khi thử: ghi λ, f, v em đọc được ở hai tần số. Bạn em nói "sóng truyền đi thì các phần tử môi trường cũng đi theo sóng" — khi em theo dõi một điểm trên dây, em thấy gì?',
     keywords: /song co\b(?!.*giao thoa)|song ngang|song doc|song dung|buoc song|toc do truyen song|phuong trinh song|song am\b/,
     examples: ['sóng cơ', 'sóng ngang và sóng dọc', 'sóng dừng', 'bước sóng'],
     data: {

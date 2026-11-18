@@ -12,7 +12,10 @@ export const LY_LAB_PRESETS: Record<string, PresetSpec> = {
         family: 'PHYS_BENCH',
         engine: 'PHYSICS',
         title: `Thực hành: ${e.title}`,
-        question: `Sau khi đo "${e.title}", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?`,
+        // bài an toàn không đo gì: câu hỏi chung về sai số không hợp
+        question: e.id === 'SAFETY'
+          ? 'Trước khi làm: em đoán phòng thực hành Vật lí có những nguy cơ nào. Sau khi làm: ghi các biển báo và thao tác an toàn em tìm thấy, cái nào em chưa đoán ra. Một bạn nói "pin chỉ 3 V thì không cần cẩn thận" — dựa vào điều em vừa làm, em phản biện thế nào?'
+          : `Trước khi đo: dùng lí thuyết dự đoán kết quả của bài "${e.title}". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo "lệch tức là làm sai" — em dùng số liệu của mình để phản biện thế nào?`,
         keywords: new RegExp(`(?:thi nghiem|thuc hanh|lam thi nghiem).*(?:${e.keywords.source.replace(/(^|\|)(?:thuc hanh|thi nghiem) /g, '$1')})`),
         examples: e.examples.map((x) => (WITH_PREFIX.test(x) ? x : `thí nghiệm ${x}`)),
         data: {experiment: e.id},

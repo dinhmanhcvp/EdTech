@@ -45,7 +45,7 @@ export const HOA_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'CHEMISTRY',
     title: 'Giản đồ năng lượng: enthalpy phản ứng và năng lượng hoạt hóa',
-    question: 'Phản ứng tỏa nhiệt và thu nhiệt khác nhau thế nào trên giản đồ năng lượng? Chất xúc tác làm thay đổi đại lượng nào và không làm thay đổi đại lượng nào?',
+    question: 'Trước khi thêm xúc tác: em đoán ΔH thay đổi không? Sau khi thử: ghi Ea thuận, Ea nghịch, ΔH em đọc được khi có và không có xúc tác. Một bạn nói "xúc tác làm phản ứng toả nhiều nhiệt hơn nên nhanh hơn" — số liệu của em bác bỏ thế nào?',
     keywords: /gian do nang luong|enthalpy|bien thien enthalpy|phan ung toa nhiet|phan ung thu nhiet|nang luong hoat hoa|dinh luat hess|nhiet cua phan ung|nhiet luong ke/,
     examples: ['giản đồ năng lượng', 'biến thiên enthalpy', 'phản ứng tỏa nhiệt và thu nhiệt', 'năng lượng hoạt hóa'],
     data: {
@@ -75,7 +75,7 @@ export const HOA_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'CHEMISTRY',
     title: 'Tốc độ phản ứng: nhiệt độ, xúc tác và phương trình Arrhenius',
-    question: 'Vì sao tăng nhiệt độ hoặc dùng xúc tác làm nồng độ chất đầu giảm nhanh hơn? Tăng 10 °C thì tốc độ thường tăng khoảng mấy lần?',
+    question: 'Trước khi tăng nhiệt độ 10 °C: em đoán phản ứng nhanh gấp mấy lần? Sau khi thử: ghi hằng số tốc độ và số lần nhanh hơn em đọc được với hai giá trị Ea. Bạn em nói "tăng 10 °C thì mọi phản ứng nhanh gấp đôi" — số liệu của em cho thấy điều đó phụ thuộc vào gì?',
     keywords: /thuyet va cham|arrhenius|he so nhiet do|van'?t hoff|hang so toc do|chu ki ban huy cua phan ung/,
     examples: ['thuyết va chạm', 'hệ số nhiệt độ Van’t Hoff', 'hằng số tốc độ k', 'chu kì bán hủy của phản ứng'],
     data: {
@@ -105,7 +105,7 @@ export const HOA_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'CHEMISTRY',
     title: 'Cân bằng hóa học tổng quát: thương số phản ứng Q so với hằng số K',
-    question: 'So sánh Q với K cho ta biết chiều dịch chuyển của phản ứng thế nào? Vì sao Q luôn tiến về K và dừng lại ở đó?',
+    question: 'Trước khi đổi Q ban đầu: em đoán khi Q < K phản ứng chạy theo chiều nào? Sau khi thử: ghi chiều phản ứng em đọc được với ba giá trị lg Q. Một bạn nói "ở trạng thái cân bằng phản ứng dừng hẳn" — mô phỏng và số liệu của em phản biện thế nào?',
     keywords: /hang so can bang|thuong so phan ung|kc cua phan ung|so sanh q va k|tong hop amoniac|haber/,
     examples: ['hằng số cân bằng', 'thương số phản ứng Q', 'quá trình Haber tổng hợp ammonia'],
     data: {
@@ -134,7 +134,7 @@ export const HOA_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'CHEMISTRY',
     title: 'pH của acid mạnh, acid yếu và dung dịch đệm',
-    question: 'Vì sao pha loãng acid yếu làm pH tăng chậm hơn acid mạnh? Dung dịch đệm giữ pH ổn định nhờ cặp acid–base liên hợp như thế nào?',
+    question: 'Trước khi đổi pKa: em đoán acid yếu 0,1 M có pH bằng 1 như acid mạnh không? Sau khi thử: ghi pH và phần trăm phân li em đọc được với hai pKa, và pH đệm với hai tỉ lệ [A⁻]/[HA]. Bạn em nói "acid yếu là acid loãng" — số liệu của em bác bỏ thế nào?',
     keywords: /thang ph\b|do ph\b|acid yeu|axit yeu|acid manh|dung dich dem|hang so phan li acid|\bpka\b|su dien li/,
     examples: ['thang pH', 'acid yếu', 'dung dịch đệm', 'hằng số phân li acid pKa'],
     data: {
@@ -164,7 +164,7 @@ export const HOA_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'CHEMISTRY',
     title: 'Nhiệt độ sôi của alkane, aldehyde, alcohol và acid carboxylic',
-    question: 'Vì sao alcohol và acid carboxylic sôi cao hơn nhiều so với alkane có số nguyên tử C tương đương? Nhiệt độ sôi biến thiên thế nào khi tăng số nguyên tử carbon?',
+    question: 'Trước khi xem: em xếp alkane, aldehyde, alcohol, carboxylic acid có 3 carbon theo nhiệt độ sôi tăng dần. Sau khi xem: ghi nhiệt độ sôi em đọc được và chỗ em xếp sai. Một bạn nói "phân tử khối lớn hơn thì sôi cao hơn, thế thôi" — cặp nào của em có phân tử khối gần bằng mà nhiệt độ sôi chênh nhiều?',
     keywords: /nhiet do soi (?:cua )?(?:alkane|ancol|alcohol|acid|axit|hop chat huu co|cac chat)|lien ket hydrogen giua cac phan tu|so sanh nhiet do soi|day dong dang/,
     examples: ['nhiệt độ sôi của alcohol', 'so sánh nhiệt độ sôi', 'liên kết hydrogen giữa các phân tử'],
     data: {
@@ -191,7 +191,7 @@ export const HOA_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'CHEMISTRY',
     title: 'Amino acid: điện tích theo pH và điểm đẳng điện',
-    question: 'Amino acid mang điện tích gì ở pH thấp, pH cao và tại pH nào nó không di chuyển trong điện trường? Điều đó dùng để tách các amino acid như thế nào?',
+    question: 'Trước khi đổi pH: em đoán ở pH thấp hơn pI amino acid di chuyển về cực nào khi điện di? Sau khi thử: ghi điện tích và hướng điện di em đọc được ở ba giá trị pH. Bạn em nói "ở pI amino acid không có điện tích nào" — vì sao câu đó chưa chính xác, dạng tồn tại thật ở pI là gì?',
     keywords: /amino acid|axit amin|diem dang dien|dien di|lien ket peptide|peptide\b|protein\b|ion luong cuc/,
     examples: ['amino acid', 'điểm đẳng điện', 'điện di amino acid', 'liên kết peptide', 'protein'],
     data: {

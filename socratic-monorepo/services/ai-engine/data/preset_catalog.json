@@ -11,413 +11,413 @@
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: So sánh tính kim loại của natri và magnesium (phản ứng với nước)",
-  "question": "Quan sát thí nghiệm \"So sánh tính kim loại của natri và magnesium (phản ứng với nước)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi làm: em đoán Na hay Mg làm phenolphthalein hóa hồng trước? Sau khi làm: ghi lại ống của em hồng sau bao lâu và có cần đun không. Một bạn nói \"Mg không phản ứng với nước\" — kết quả của em ủng hộ hay bác bỏ câu đó, và câu đúng phải sửa thế nào?"
  },
  {
   "id": "CHEM_LAB_RATE_TEMP",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Ảnh hưởng của nhiệt độ đến tốc độ phản ứng (Mg + nước)",
-  "question": "Quan sát thí nghiệm \"Ảnh hưởng của nhiệt độ đến tốc độ phản ứng (Mg + nước)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi làm: dự đoán ống nóng hồng trước ống nguội bao nhiêu giây. Sau khi làm: ghi thời điểm hồng của từng ống em đo được. Bạn em bảo \"đun nóng làm Mg nhiều hơn nên nhanh hơn\" — chỗ sai trong lập luận đó là gì, và em kiểm tra lại bằng cách nào trên chính hai ống của mình?"
  },
  {
   "id": "CHEM_LAB_CL2_I2_STARCH",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: So sánh tính phi kim của chlorine và iodine; nhận biết iodine bằng hồ tinh bột",
-  "question": "Quan sát thí nghiệm \"So sánh tính phi kim của chlorine và iodine; nhận biết iodine bằng hồ tinh bột\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi nhỏ: em đoán dung dịch KI có hồ tinh bột sẽ đổi sang màu gì? Sau khi nhỏ: tả màu em thấy và ống nào giữ nguyên. Nếu chỉ nhìn ống của em thì đã đủ để kết luận \"chlorine có tính phi kim mạnh hơn iodine\" chưa, còn thiếu ống đối chứng nào?"
  },
  {
   "id": "CHEM_LAB_CARBONATE_ACID",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Muối carbonate tác dụng với acid: nhận biết khí CO₂",
-  "question": "Quan sát thí nghiệm \"Muối carbonate tác dụng với acid: nhận biết khí CO₂\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi làm: em đoán nước vôi trong ở ống dẫn khí sẽ thế nào? Sau khi làm: ghi lại thứ tự hiện tượng em thấy ở từng ống. Một bạn nói \"cứ sủi bọt là CO₂\" — dùng chính dụng cụ của bài, em chứng minh khí của em đúng là CO₂ chứ không phải H₂ ra sao?"
  },
  {
   "id": "CHEM_LAB_CONDUCTIVITY",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Thử tính dẫn điện của hợp chất ion",
-  "question": "Quan sát thí nghiệm \"Thử tính dẫn điện của hợp chất ion\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi thử: em đoán ống nào làm đèn sáng? Sau khi thử: ghi kết quả từng ống của em, có ống nào khác dự đoán không. Bạn em bảo \"muối ăn dẫn điện vì nó là muối\" — vậy sao hạt muối khô của em lại không làm đèn sáng, và câu của bạn phải sửa thế nào cho đúng?"
  },
  {
   "id": "CHEM_LAB_REDOX_FE",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Xác định chất oxi hóa, chất khử: sắt với CuSO₄ và H₂SO₄ loãng",
-  "question": "Quan sát thí nghiệm \"Xác định chất oxi hóa, chất khử: sắt với CuSO₄ và H₂SO₄ loãng\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi làm: em đoán đinh sắt trong CuSO₄ và trong H₂SO₄ loãng sẽ thay đổi thế nào? Sau khi làm: tả màu đinh và màu dung dịch sau 2 phút ở ống của em. Từ chính hai ống đó, em chỉ ra chất nhường electron, chất nhận electron; nếu ai đó nói \"Cu²⁺ bị oxi hóa\" thì sai ở đâu?"
  },
  {
   "id": "CHEM_LAB_NEUTRAL_TEMP",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Theo dõi sự thay đổi nhiệt độ của phản ứng trung hòa",
-  "question": "Quan sát thí nghiệm \"Theo dõi sự thay đổi nhiệt độ của phản ứng trung hòa\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi trộn: em đoán nhiệt độ tăng hay giảm, khoảng bao nhiêu độ? Sau khi trộn: ghi nhiệt độ đầu và cao nhất em đọc được. Một bạn bảo \"dùng gấp đôi thể tích thì nhiệt độ tăng gấp đôi\" — làm thêm một lần với thể tích khác, số liệu của em ủng hộ hay bác bỏ câu đó?"
  },
  {
   "id": "CHEM_LAB_RATE_CONC",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Ảnh hưởng của nồng độ đến tốc độ phản ứng (Na₂S₂O₃ + H₂SO₄)",
-  "question": "Quan sát thí nghiệm \"Ảnh hưởng của nồng độ đến tốc độ phản ứng (Na₂S₂O₃ + H₂SO₄)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi làm: xếp ba ống theo thứ tự em đoán sẽ đục. Sau khi làm: ghi thời gian đục em đo ở từng ống. Nồng độ tăng gấp 6 lần thì thời gian của em có giảm đúng 6 lần không? Nếu không, em giải thích chênh lệch đó thế nào?"
  },
  {
   "id": "CHEM_LAB_RATE_SURFACE",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Ảnh hưởng của diện tích bề mặt đến tốc độ phản ứng (CaCO₃ + HCl)",
-  "question": "Quan sát thí nghiệm \"Ảnh hưởng của diện tích bề mặt đến tốc độ phản ứng (CaCO₃ + HCl)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi làm: em đoán ống đá viên hay đá đập nhỏ sủi mạnh hơn, và cuối cùng ống nào thu được nhiều khí hơn? Sau khi làm: ghi điều em quan sát. Bạn em nói \"đá nhỏ nhanh hơn nên ra nhiều CO₂ hơn\" — kết quả của em có ủng hộ nửa sau của câu đó không?"
  },
  {
   "id": "CHEM_LAB_RATE_CAT",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Ảnh hưởng của chất xúc tác đến tốc độ phản ứng (H₂O₂ + MnO₂)",
-  "question": "Quan sát thí nghiệm \"Ảnh hưởng của chất xúc tác đến tốc độ phản ứng (H₂O₂ + MnO₂)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi thêm MnO₂: em đoán ống 1 và ống 2 khác nhau ra sao? Sau khi làm: tả lượng bọt ở hai ống của em. Bạn em cho rằng MnO₂ \"tham gia phản ứng nên bị hết\". Em sẽ làm thêm bước nào trong lab để kiểm tra nhận định đó, và em đoán kết quả ra sao?"
  },
  {
   "id": "CHEM_LAB_HALIDE_DISPLACE",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Phản ứng thế của muối halide với nước chlorine và nước bromine",
-  "question": "Quan sát thí nghiệm \"Phản ứng thế của muối halide với nước chlorine và nước bromine\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi nhỏ: dự đoán màu từng ống NaBr, NaI khi gặp nước chlorine và nước bromine. Sau khi làm: ghi màu thật em thấy. Dựa đúng vào các ống của em, em sắp xếp tính oxi hóa Cl₂, Br₂, I₂ được đến đâu? Còn cặp nào em chưa có bằng chứng và cần thêm ống nào?"
  },
  {
   "id": "CHEM_LAB_HCL_METALS",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Dung dịch HCl tác dụng với kim loại (Zn, Cu)",
-  "question": "Quan sát thí nghiệm \"Dung dịch HCl tác dụng với kim loại (Zn, Cu)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi làm: em đoán Zn và Cu, kim loại nào sủi bọt trong HCl? Sau khi làm: ghi điều em thấy ở từng ống. Một bạn nói \"HCl là acid mạnh nên hòa tan được mọi kim loại\" — kết quả của em bác bỏ câu đó thế nào, và quy luật đúng là gì?"
  },
  {
   "id": "CHEM_LAB_HALIDE_ID",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Nhận biết ion halide bằng dung dịch AgNO₃",
-  "question": "Quan sát thí nghiệm \"Nhận biết ion halide bằng dung dịch AgNO₃\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi nhỏ AgNO₃: em đoán ống nào không có kết tủa? Sau khi làm: ghi màu kết tủa từng ống của em. Nếu giáo viên đưa một ống không ghi nhãn cho kết tủa vàng nhạt, em có chắc chắn đó là NaBr không, hay còn nhầm được với ống nào? Em làm thêm gì để chắc chắn?"
  },
  {
   "id": "CHEM_LAB_ACID_BASE_INDICATOR",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Chất chỉ thị acid – base và pH của dung dịch muối",
-  "question": "Quan sát thí nghiệm \"Chất chỉ thị acid – base và pH của dung dịch muối\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi thử: em đoán dung dịch CH₃COONa làm phenolphthalein thế nào? Sau khi thử: ghi màu thật em thấy ở từng ống. Bạn em nói \"muối thì luôn trung tính\" — dùng ống CH₃COONa của em để phản biện, và em đoán NaCl sẽ cho kết quả ra sao (thử lại để kiểm tra)?"
  },
  {
   "id": "CHEM_LAB_S_FE_HEAT",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Sulfur tác dụng với sắt khi đun nóng",
-  "question": "Quan sát thí nghiệm \"Sulfur tác dụng với sắt khi đun nóng\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi đun: em đoán hỗn hợp sắt và lưu huỳnh sau khi đun sẽ trông thế nào? Sau khi đun: tả chất rắn em thu được. Một bạn nói \"chất đen chỉ là bột sắt bị cháy\" — em dùng cách nào (nam châm, màu…) để chứng minh đã có chất mới?"
  },
  {
   "id": "CHEM_LAB_CU_H2SO4_CONC",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Đồng tác dụng với dung dịch sulfuric acid đặc, nóng",
-  "question": "Quan sát thí nghiệm \"Đồng tác dụng với dung dịch sulfuric acid đặc, nóng\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi đun: em đoán lá đồng có tan không? Sau khi đun: ghi màu dung dịch và hiện tượng khí ở ống của em. Bạn em bảo \"khí thoát ra là H₂ như mọi kim loại tác dụng với acid\" — hiện tượng nào trong ống của em bác bỏ điều đó?"
  },
  {
   "id": "CHEM_LAB_SULFATE_TEST",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Nhận biết ion sulfate bằng ion Ba²⁺",
-  "question": "Quan sát thí nghiệm \"Nhận biết ion sulfate bằng ion Ba²⁺\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi làm: em đoán kết tủa với BaCl₂ có tan trong HCl dư không? Sau khi làm: ghi điều em thấy. Nếu một bạn bỏ qua bước thêm HCl và khẳng định \"có kết tủa trắng tức là có sulfate\", em chỉ ra họ có thể nhầm với ion nào?"
  },
  {
   "id": "CHEM_LAB_C2H2_PREP",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Điều chế acetylene từ đất đèn và thử tính chất",
-  "question": "Quan sát thí nghiệm \"Điều chế acetylene từ đất đèn và thử tính chất\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi dẫn khí: em đoán nước bromine sẽ đổi thế nào? Sau khi làm: ghi lại tốc độ sủi khí và màu nước bromine ở ống của em. Một bạn nói \"khí nào sục qua cũng làm nước bromine nhạt màu vì bị loãng\" — em thiết kế ống đối chứng nào để bác bỏ?"
  },
  {
   "id": "CHEM_LAB_HEXANE_BR",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Hexane: phản ứng bromine hóa và thử với KMnO₄",
-  "question": "Quan sát thí nghiệm \"Hexane: phản ứng bromine hóa và thử với KMnO₄\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi làm: em đoán hexane làm mất màu nước bromine trong tối không? Sau khi làm: ghi lại khi nào màu bắt đầu nhạt ở ống của em. Từ kết quả của em, vì sao không thể dùng nước bromine trong tối để phân biệt hexane với nước cất? Điều kiện ánh sáng cho thấy đây là loại phản ứng nào?"
  },
  {
   "id": "CHEM_LAB_CU_OH_GLYCEROL",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Cu(OH)₂ tác dụng với alcohol đa chức (glycerol)",
-  "question": "Quan sát thí nghiệm \"Cu(OH)₂ tác dụng với alcohol đa chức (glycerol)\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi nhỏ glycerol: em đoán kết tủa xanh lam sẽ ra sao? Sau khi làm: tả màu em thấy. Bạn em cho rằng \"mọi alcohol đều hòa tan Cu(OH)₂\". Em sẽ thử thêm chất nào để kiểm tra, và đặc điểm cấu tạo nào em đang muốn tách riêng ra?"
  },
  {
   "id": "CHEM_LAB_TOLLENS",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Phản ứng tráng bạc của aldehyde",
-  "question": "Quan sát thí nghiệm \"Phản ứng tráng bạc của aldehyde\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi đun: em đoán thành ống nghiệm sẽ thay đổi thế nào? Sau khi đun: tả lớp bám em thấy. Nếu một bạn lắc mạnh hoặc đun sôi và không thấy gương bạc mà chỉ có kết tủa đen, kết quả đó có nghĩa aldehyde không phản ứng không? Em giải thích ra sao?"
  },
  {
   "id": "CHEM_LAB_ACETIC_ACID",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Tính acid của acetic acid",
-  "question": "Quan sát thí nghiệm \"Tính acid của acetic acid\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi làm: em đoán khí ở ống Na₂CO₃ và ống Mg có giống nhau không? Sau khi làm: ghi tốc độ sủi bọt ở từng ống của em. Bạn em nói \"acetic acid là acid nên cũng mạnh như HCl\" — em đề xuất cách so sánh công bằng ngay trong lab để kiểm tra?"
  },
  {
   "id": "CHEM_LAB_GLUCOSE_CU",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Glucose tác dụng với Cu(OH)₂: tính polyalcohol và tính aldehyde",
-  "question": "Quan sát thí nghiệm \"Glucose tác dụng với Cu(OH)₂: tính polyalcohol và tính aldehyde\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi đun: em đoán dung dịch xanh thẫm sẽ biến đổi ra sao khi đun nóng? Sau khi làm: ghi màu ở hai thời điểm trước và sau khi đun. Hai hiện tượng của em chứng tỏ hai nhóm chức khác nhau — nếu chỉ làm bước đầu mà không đun thì em sẽ bỏ sót kết luận nào?"
  },
  {
   "id": "CHEM_LAB_STARCH_IODINE",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Hồ tinh bột với iodine và thủy phân tinh bột",
-  "question": "Quan sát thí nghiệm \"Hồ tinh bột với iodine và thủy phân tinh bột\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi thử ống đã đun với acid: em đoán còn màu xanh tím không? Sau khi làm: ghi màu thật ở hai ống của em. Bạn em nói \"màu mất vì đun nóng làm iodine bay hơi\" — em bố trí thêm ống nào để tách hai khả năng đó ra?"
  },
  {
   "id": "CHEM_LAB_BIURET",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Phản ứng màu biuret của peptide và protein",
-  "question": "Quan sát thí nghiệm \"Phản ứng màu biuret của peptide và protein\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi nhỏ CuSO₄: em đoán lòng trắng trứng sẽ đổi sang màu gì? Sau khi làm: tả màu em thấy. Một bạn dùng nước đường thay lòng trắng trứng và cũng thấy màu xanh nhạt, rồi kết luận \"đường có protein\" — sai ở đâu?"
  },
  {
   "id": "CHEM_LAB_ANILINE_BR",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Aniline tác dụng với nước bromine",
-  "question": "Quan sát thí nghiệm \"Aniline tác dụng với nước bromine\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi nhỏ: em đoán aniline có làm mất màu nước bromine ngay ở nhiệt độ thường không? Sau khi làm: tả hiện tượng ở ống của em. So với bài hexane (cần ánh sáng), em rút ra gì về ảnh hưởng của nhóm –NH₂ lên vòng benzene?"
  },
  {
   "id": "CHEM_LAB_METAL_SALT",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Kim loại tác dụng với dung dịch muối",
-  "question": "Quan sát thí nghiệm \"Kim loại tác dụng với dung dịch muối\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi làm: em đoán trong ba cặp Zn + CuSO₄, Cu + AgNO₃, Cu + ZnSO₄, cặp nào có phản ứng? Sau khi làm: ghi hiện tượng từng cặp em thấy. Chỉ từ ba cặp của em, em xếp được tính khử Zn, Cu, Ag chưa? Cặp nào em cần thử thêm để chắc chắn?"
  },
  {
   "id": "CHEM_LAB_CATION_NAOH",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Nhận biết các cation kim loại bằng dung dịch NaOH",
-  "question": "Quan sát thí nghiệm \"Nhận biết các cation kim loại bằng dung dịch NaOH\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi nhỏ: em đoán màu kết tủa của từng ion. Sau khi làm: ghi màu thật và ống nào thay đổi khi thêm NaOH dư hoặc để lâu. Một bạn chỉ nhỏ vài giọt NaOH rồi kết luận ống trắng là Mg²⁺ — em chỉ ra họ có thể nhầm với ion nào và bước nào bị bỏ qua?"
  },
  {
   "id": "CHEM_LAB_CU_NH3_COMPLEX",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Sự tạo thành phức chất của Cu²⁺ với NH₃",
-  "question": "Quan sát thí nghiệm \"Sự tạo thành phức chất của Cu²⁺ với NH₃\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi nhỏ NH₃: em đoán điều gì xảy ra khi nhỏ ít và khi nhỏ dư? Sau khi làm: ghi lại thời điểm kết tủa xuất hiện và tan trong ống của em. Bạn em nói \"kết tủa tan vì bị pha loãng\" — em thêm ống đối chứng nào (chỉ thêm nước) để bác bỏ?"
  },
  {
   "id": "CHEM_LAB_KMNO4_FE2",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Chuẩn độ muối Fe(II) bằng dung dịch thuốc tím",
-  "question": "Quan sát thí nghiệm \"Chuẩn độ muối Fe(II) bằng dung dịch thuốc tím\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi chuẩn độ: em ước lượng cần khoảng bao nhiêu mL KMnO₄? Sau khi làm: ghi thể tích tại điểm hồng bền em đọc được và tính nồng độ Fe²⁺ từ số liệu của mình. Nếu em nhỏ quá tay vài giọt thì kết quả bị lệch về phía nào?"
  },
  {
   "id": "CHEM_LAB_NH4_NAOH",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Nhận biết ion ammonium bằng dung dịch kiềm",
-  "question": "Quan sát thí nghiệm \"Nhận biết ion ammonium bằng dung dịch kiềm\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi đun: em đoán giấy quỳ ẩm đặt ở miệng ống sẽ đổi màu gì? Sau khi làm: ghi kết quả em thấy. Một bạn đặt quỳ khô và không thấy đổi màu, rồi kết luận \"không có NH₃\" — em giải thích vì sao kết luận đó chưa đáng tin?"
  },
  {
   "id": "CHEM_LAB_CARBONATE_BARIUM",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Phân biệt SO₄²⁻ và CO₃²⁻ bằng BaCl₂ rồi acid",
-  "question": "Quan sát thí nghiệm \"Phân biệt SO₄²⁻ và CO₃²⁻ bằng BaCl₂ rồi acid\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi thêm HCl: em đoán kết tủa ở ống nào sẽ tan? Sau khi làm: ghi điều em thấy ở từng ống, có sủi bọt ở đâu. Dựa vào chính các ống của em, nếu chỉ dừng ở bước BaCl₂ thì em kết luận được gì và không kết luận được gì?"
  },
  {
   "id": "CHEM_LAB_FE3_SCN",
   "engine": "CHEMISTRY",
   "family": "CHEM_BENCH",
   "title": "Thực hành: Nhận biết ion Fe³⁺ bằng KSCN",
-  "question": "Quan sát thí nghiệm \"Nhận biết ion Fe³⁺ bằng KSCN\": hiện tượng nào xảy ra và em giải thích bằng phương trình hóa học nào?"
+  "question": "Trước khi nhỏ KSCN: em đoán ống Fe³⁺ và ống Fe²⁺ khác nhau thế nào? Sau khi làm: ghi màu thật ở hai ống. Có một lọ Fe²⁺ để lâu ngoài không khí, nhỏ KSCN thấy hồng nhạt — em đọc kết quả đó ra sao, và có thể kết luận lọ đó \"đã hỏng hoàn toàn\" không?"
  },
  {
   "id": "PHYS_LAB_SAFETY",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Quy tắc an toàn trong phòng thực hành Vật lí",
-  "question": "Sau khi đo \"Quy tắc an toàn trong phòng thực hành Vật lí\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi làm: em đoán phòng thực hành Vật lí có những nguy cơ nào. Sau khi làm: ghi các biển báo và thao tác an toàn em tìm thấy, cái nào em chưa đoán ra. Một bạn nói \"pin chỉ 3 V thì không cần cẩn thận\" — dựa vào điều em vừa làm, em phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_ERROR_MEASURE",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành tính sai số trong phép đo, ghi kết quả đo",
-  "question": "Sau khi đo \"Thực hành tính sai số trong phép đo, ghi kết quả đo\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thực hành tính sai số trong phép đo, ghi kết quả đo\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_SPEED",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành đo tốc độ của vật chuyển động",
-  "question": "Sau khi đo \"Thực hành đo tốc độ của vật chuyển động\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thực hành đo tốc độ của vật chuyển động\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_FREE_FALL_G",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành đo gia tốc rơi tự do",
-  "question": "Sau khi đo \"Thực hành đo gia tốc rơi tự do\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thực hành đo gia tốc rơi tự do\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_FORCE_COMPOSITION",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành tổng hợp lực",
-  "question": "Sau khi đo \"Thực hành tổng hợp lực\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thực hành tổng hợp lực\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_COLLISION_MOMENTUM",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành xác định động lượng của vật trước và sau va chạm",
-  "question": "Sau khi đo \"Thực hành xác định động lượng của vật trước và sau va chạm\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thực hành xác định động lượng của vật trước và sau va chạm\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_SOUND_FREQUENCY",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành đo tần số của sóng âm",
-  "question": "Sau khi đo \"Thực hành đo tần số của sóng âm\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thực hành đo tần số của sóng âm\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_SOUND_SPEED",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành đo tốc độ truyền âm",
-  "question": "Sau khi đo \"Thực hành đo tốc độ truyền âm\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thực hành đo tốc độ truyền âm\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_EMF_INTERNAL_R",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành đo suất điện động và điện trở trong của pin điện hóa",
-  "question": "Sau khi đo \"Thực hành đo suất điện động và điện trở trong của pin điện hóa\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thực hành đo suất điện động và điện trở trong của pin điện hóa\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_NEWTON2",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm định luật II Newton: gia tốc theo lực",
-  "question": "Sau khi đo \"Thí nghiệm định luật II Newton: gia tốc theo lực\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm định luật II Newton: gia tốc theo lực\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_FRICTION",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm lực ma sát trượt: xác định hệ số ma sát",
-  "question": "Sau khi đo \"Thí nghiệm lực ma sát trượt: xác định hệ số ma sát\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm lực ma sát trượt: xác định hệ số ma sát\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_HOOKE",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm định luật Hooke: xác định độ cứng lò xo",
-  "question": "Sau khi đo \"Thí nghiệm định luật Hooke: xác định độ cứng lò xo\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm định luật Hooke: xác định độ cứng lò xo\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_PENDULUM_G",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm con lắc đơn: xác định gia tốc trọng trường",
-  "question": "Sau khi đo \"Thí nghiệm con lắc đơn: xác định gia tốc trọng trường\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm con lắc đơn: xác định gia tốc trọng trường\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_BOYLE",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm định luật Boyle",
-  "question": "Sau khi đo \"Thí nghiệm định luật Boyle\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm định luật Boyle\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_OHM_LAW",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm định luật Ohm: đặc tuyến vôn–ampe của điện trở",
-  "question": "Sau khi đo \"Thí nghiệm định luật Ohm: đặc tuyến vôn–ampe của điện trở\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm định luật Ohm: đặc tuyến vôn–ampe của điện trở\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_SPECIFIC_HEAT",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm xác định nhiệt dung riêng của nước",
-  "question": "Sau khi đo \"Thí nghiệm xác định nhiệt dung riêng của nước\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm xác định nhiệt dung riêng của nước\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_CHARLES",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm định luật Charles: thể tích khí theo nhiệt độ",
-  "question": "Sau khi đo \"Thí nghiệm định luật Charles: thể tích khí theo nhiệt độ\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm định luật Charles: thể tích khí theo nhiệt độ\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_MAGNETIC_FORCE",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm lực từ tác dụng lên dây dẫn mang dòng điện",
-  "question": "Sau khi đo \"Thí nghiệm lực từ tác dụng lên dây dẫn mang dòng điện\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm lực từ tác dụng lên dây dẫn mang dòng điện\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_EM_INDUCTION",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm cảm ứng điện từ: suất điện động khi nam châm chuyển động",
-  "question": "Sau khi đo \"Thí nghiệm cảm ứng điện từ: suất điện động khi nam châm chuyển động\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm cảm ứng điện từ: suất điện động khi nam châm chuyển động\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_WAVE_INTERFERENCE",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm giao thoa sóng mặt nước",
-  "question": "Sau khi đo \"Thí nghiệm giao thoa sóng mặt nước\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm giao thoa sóng mặt nước\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_STANDING_WAVE",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm sóng dừng trên sợi dây",
-  "question": "Sau khi đo \"Thí nghiệm sóng dừng trên sợi dây\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm sóng dừng trên sợi dây\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_CAPACITOR_RC",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm nạp tụ điện qua điện trở: hằng số thời gian RC",
-  "question": "Sau khi đo \"Thí nghiệm nạp tụ điện qua điện trở: hằng số thời gian RC\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm nạp tụ điện qua điện trở: hằng số thời gian RC\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_LATENT_HEAT_FUSION",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm xác định nhiệt nóng chảy riêng của nước đá",
-  "question": "Sau khi đo \"Thí nghiệm xác định nhiệt nóng chảy riêng của nước đá\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm xác định nhiệt nóng chảy riêng của nước đá\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_LEVER_MOMENT",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm moment lực: điều kiện cân bằng của đòn bẩy",
-  "question": "Sau khi đo \"Thí nghiệm moment lực: điều kiện cân bằng của đòn bẩy\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm moment lực: điều kiện cân bằng của đòn bẩy\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_PROJECTILE_HORIZONTAL",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm chuyển động ném ngang",
-  "question": "Sau khi đo \"Thí nghiệm chuyển động ném ngang\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm chuyển động ném ngang\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_TRANSFORMER",
   "engine": "PHYSICS",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thí nghiệm máy biến áp: tỉ số điện áp và số vòng dây",
-  "question": "Sau khi đo \"Thí nghiệm máy biến áp: tỉ số điện áp và số vòng dây\", kết quả của em có phù hợp lí thuyết trong phạm vi sai số không, và nguồn sai số chính là gì?"
+  "question": "Trước khi đo: dùng lí thuyết dự đoán kết quả của bài \"Thí nghiệm máy biến áp: tỉ số điện áp và số vòng dây\". Sau khi đo: ghi bảng số liệu và sai số của chính em. Kết quả của em lệch dự đoán bao nhiêu, nguồn sai số chính là gì? Một bạn bảo \"lệch tức là làm sai\" — em dùng số liệu của mình để phản biện thế nào?"
  },
  {
   "id": "PHYS_LAB_BENCH",
@@ -431,161 +431,161 @@
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành nhận biết một số phân tử sinh học",
-  "question": "Sau khi làm \"Thực hành nhận biết một số phân tử sinh học\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi nhỏ thuốc thử: em đoán mẫu nào chứa tinh bột, đường khử, protein, lipid. Sau khi làm: ghi màu từng ống của em, so với ống nước cất. Một mẫu của em đổi màu rất nhạt — em kết luận \"có\" hay \"không\"? Ống đối chứng giúp em quyết định thế nào?"
  },
  {
   "id": "BIO_LAB_CELL_OBSERVE",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành quan sát tế bào dưới kính hiển vi",
-  "question": "Sau khi làm \"Thực hành quan sát tế bào dưới kính hiển vi\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi quan sát: em đoán tế bào nào lớn nhất trong ba loại. Sau khi đo: ghi kích thước em đo được ở từng loại. Bạn em nói \"tế bào miệng không có thành nên nhìn không rõ là do kính kém\" — từ tiêu bản của em, em phản biện thế nào?"
  },
  {
   "id": "BIO_LAB_PLASMOLYSIS",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành thí nghiệm co và phản co nguyên sinh",
-  "question": "Sau khi làm \"Thực hành thí nghiệm co và phản co nguyên sinh\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi nhỏ muối: em đoán khối nguyên sinh chất sẽ co hay phồng, khoảng bao nhiêu phần trăm? Sau khi làm: ghi tỉ lệ diện tích em đo trước, sau khi nhỏ muối và sau khi nhỏ lại nước cất. Nếu lần thứ hai không phản co được, em nghi tế bào đã gặp chuyện gì?"
  },
  {
   "id": "BIO_LAB_ENZYME",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành ảnh hưởng của nhiệt độ, pH, chất ức chế đến hoạt tính enzyme amylase",
-  "question": "Sau khi làm \"Thực hành ảnh hưởng của nhiệt độ, pH, chất ức chế đến hoạt tính enzyme amylase\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi ủ: em đoán ở nhiệt độ và pH nào iodine hết xanh tím nhanh nhất? Sau khi làm: ghi thời gian em đo ở từng điều kiện. Bạn em nói \"nhiệt độ càng cao enzyme càng mạnh\" — số liệu của em ủng hộ đến mức nào và gãy ở đâu?"
  },
  {
   "id": "BIO_LAB_MITOSIS_SLIDE",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành làm và quan sát tiêu bản quá trình nguyên phân và giảm phân",
-  "question": "Sau khi làm \"Thực hành làm và quan sát tiêu bản quá trình nguyên phân và giảm phân\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi đếm: em đoán chỉ số phân bào ở chóp rễ khoảng bao nhiêu phần trăm? Sau khi đếm: ghi số tế bào phân chia trên tổng số ở từng thị trường của em. Các thị trường của em chênh nhau bao nhiêu, và vì sao không được lấy kết quả của một thị trường đẹp nhất?"
  },
  {
   "id": "BIO_LAB_YOGURT",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành làm sữa chua và theo dõi quá trình lên men",
-  "question": "Sau khi làm \"Thực hành làm sữa chua và theo dõi quá trình lên men\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi ủ: em đoán pH của ống có men và ống không men sẽ thay đổi thế nào theo giờ? Sau khi làm: ghi pH em đo ở các mốc. Một bạn nói \"ủ càng nóng sữa chua càng nhanh\" — số liệu ở các nhiệt độ của em có ủng hộ không?"
  },
  {
   "id": "BIO_LAB_VIRUS_SURVEY",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành điều tra một số bệnh do virus và tuyên truyền phòng chống",
-  "question": "Sau khi làm \"Thực hành điều tra một số bệnh do virus và tuyên truyền phòng chống\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi khảo sát: em đoán bệnh nào người ta biết cách phòng ít nhất. Sau khi khảo sát: ghi tỉ lệ em thu được cho từng bệnh và cỡ mẫu. Từ số liệu của em, chọn một bệnh để tuyên truyền và nói vì sao; nếu nhóm bạn chọn bệnh khác thì số liệu nào của em giúp hai nhóm tranh luận?"
  },
  {
   "id": "BIO_LAB_TRANSPIRATION",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành thí nghiệm thoát hơi nước ở lá",
-  "question": "Sau khi làm \"Thực hành thí nghiệm thoát hơi nước ở lá\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi cân: em đoán bôi vaseline mặt trên hay mặt dưới lá thì cây mất nước ít hơn. Sau khi làm: ghi lượng nước mất em cân được ở từng lô. Từ số liệu của em, khí khổng tập trung ở đâu? Lô nào là đối chứng, và nếu thiếu lô đó em có kết luận được không?"
  },
  {
   "id": "BIO_LAB_PIGMENT",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành tách chiết sắc tố quang hợp bằng sắc kí giấy",
-  "question": "Sau khi làm \"Thực hành tách chiết sắc tố quang hợp bằng sắc kí giấy\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi chạy sắc kí: em đoán vạch màu nào đi xa nhất. Sau khi chạy: ghi quãng đường dung môi và từng vạch, tính Rf của em. Nếu lần chạy của bạn có Rf khác của em, em kiểm tra những yếu tố nào trước khi kết luận ai sai?"
  },
  {
   "id": "BIO_LAB_LEAF_STARCH",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành thử tinh bột ở lá (vai trò của ánh sáng trong quang hợp)",
-  "question": "Sau khi làm \"Thực hành thử tinh bột ở lá (vai trò của ánh sáng trong quang hợp)\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi thử iodine: em vẽ dự đoán phần lá nào sẽ xanh tím. Sau khi làm: tả kết quả trên lá của em. Một bạn quên để cây trong tối trước và thấy cả lá đều xanh tím, rồi kết luận \"ánh sáng không cần cho quang hợp\" — sai ở đâu?"
  },
  {
   "id": "BIO_LAB_SEED_RESPIRATION",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành hô hấp ở hạt nảy mầm",
-  "question": "Sau khi làm \"Thực hành hô hấp ở hạt nảy mầm\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi làm: em đoán ống nước vôi nào vẩn đục trước. Sau khi làm: ghi mức độ vẩn đục hoặc lượng CO₂ em đo ở từng nhiệt độ. Bạn em hỏi \"sao không dùng hạt khô làm đối chứng mà phải luộc chín?\" — em trả lời thế nào?"
  },
  {
   "id": "BIO_LAB_CIRCULATION",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành đo mạch và huyết áp trước và sau vận động",
-  "question": "Sau khi làm \"Thực hành đo mạch và huyết áp trước và sau vận động\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi chạy: em đoán mạch của mình tăng lên bao nhiêu nhịp/phút. Sau khi đo: ghi mạch và huyết áp lúc nghỉ, ngay sau chạy, sau 5 phút nghỉ của chính em. So với bạn cùng nhóm, ai hồi phục nhanh hơn và điều đó có thể nói gì? Kết luận đó dựa trên một lần đo đã chắc chưa?"
  },
  {
   "id": "BIO_LAB_TROPISM",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành cảm ứng ở thực vật: hướng sáng, hướng trọng lực, hướng nước",
-  "question": "Sau khi làm \"Thực hành cảm ứng ở thực vật: hướng sáng, hướng trọng lực, hướng nước\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi bố trí: em đoán góc uốn của cây mầm sau 3 ngày. Sau khi làm: ghi góc em đo theo từng ngày ở lô thí nghiệm và lô đối chứng. Nếu lô đối chứng của em cũng uốn cong, em nghi bố trí có vấn đề gì?"
  },
  {
   "id": "BIO_LAB_APICAL_DOMINANCE",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành bấm ngọn, tỉa cành (ưu thế ngọn)",
-  "question": "Sau khi làm \"Thực hành bấm ngọn, tỉa cành (ưu thế ngọn)\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi bấm ngọn: em đoán số cành bên sẽ thay đổi thế nào. Sau khi theo dõi: ghi số cành và chiều cao của hai lô theo thời gian. Bạn em nói \"bấm ngọn làm cây khỏe hơn\" — số liệu của em cho thấy \"khỏe hơn\" theo nghĩa nào, và với cây lấy gỗ thì sao?"
  },
  {
   "id": "BIO_LAB_TREE_AGE",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành tính tuổi cây qua vòng gỗ",
-  "question": "Sau khi làm \"Thực hành tính tuổi cây qua vòng gỗ\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi đếm: em đoán cây đường kính lớn nhất bao nhiêu tuổi. Sau khi đếm: ghi số vòng em đếm và vẽ đồ thị theo đường kính. Dùng đồ thị của em ước tính tuổi một cây đường kính khác; vì sao ước tính đó có thể sai với cây trồng ở nơi khác?"
  },
  {
   "id": "BIO_LAB_METAMORPHOSIS",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành quan sát quá trình biến thái ở động vật",
-  "question": "Sau khi làm \"Thực hành quan sát quá trình biến thái ở động vật\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi theo dõi: em đoán con non của loài nào giống con trưởng thành nhất. Sau khi theo dõi: ghi các giai đoạn và số ngày em ghi nhận cho từng loài. Bạn em xếp châu chấu vào biến thái hoàn toàn — dấu hiệu nào trong ghi chép của em giúp em phản biện?"
  },
  {
   "id": "BIO_LAB_PROPAGATION",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành nhân giống vô tính và thụ phấn cho cây",
-  "question": "Sau khi làm \"Thực hành nhân giống vô tính và thụ phấn cho cây\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi làm: em đoán tỉ lệ thành công của từng lô. Sau khi làm: ghi tỉ lệ em thu được ở từng cặp lô có/không xử lí. Lô nào cho chênh lệch lớn nhất? Nếu một lô chỉ có 2 cây thay vì 20, em còn tin kết luận đến đâu?"
  },
  {
   "id": "BIO_LAB_DNA_EXTRACT",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành tách chiết DNA",
-  "question": "Sau khi làm \"Thực hành tách chiết DNA\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi làm: em đoán bỏ bước nào sẽ làm lượng DNA giảm nhiều nhất. Sau khi làm: ghi lượng DNA em thu được khi làm đủ bước và khi bỏ từng bước. Kết quả của em có đúng như dự đoán không, và số liệu đó cho thấy bước ấy đóng vai trò gì?"
  },
  {
   "id": "BIO_LAB_CHROMOSOME_MUTATION",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành quan sát đột biến số lượng nhiễm sắc thể trên tiêu bản",
-  "question": "Sau khi làm \"Thực hành quan sát đột biến số lượng nhiễm sắc thể trên tiêu bản\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi đếm: em đoán các tiêu bản đột biến có số nhiễm sắc thể bao nhiêu. Sau khi đếm: ghi số em đếm được ở từng tiêu bản. Nếu hai bạn đếm cùng một tế bào ra hai số khác nhau, em sẽ làm gì để chọn số đúng, và vì sao phải đếm ở kì giữa?"
  },
  {
   "id": "BIO_LAB_MODIFICATION",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành thí nghiệm về thường biến ở cây trồng",
-  "question": "Sau khi làm \"Thực hành thí nghiệm về thường biến ở cây trồng\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi trồng: em đoán giống nào tăng năng suất mạnh hơn khi bón thêm phân. Sau khi làm: vẽ đường mức phản ứng từ số liệu của em. Bạn em nói \"bón càng nhiều phân năng suất càng cao\" — đồ thị của em có điểm nào bác bỏ không?"
  },
  {
   "id": "BIO_LAB_QUADRAT",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành xác định kiểu phân bố và ước tính mật độ, kích thước quần thể",
-  "question": "Sau khi làm \"Thực hành xác định kiểu phân bố và ước tính mật độ, kích thước quần thể\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi đếm: em đoán quần thể phân bố đều, ngẫu nhiên hay theo nhóm. Sau khi đếm: ghi số cá thể từng ô, tính trung bình và phương sai của em. Nếu em chỉ đặt ô ở chỗ thấy nhiều cây, kết quả ước tính kích thước quần thể bị lệch về phía nào?"
  },
  {
   "id": "BIO_LAB_COMMUNITY",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành tìm hiểu một số đặc trưng cơ bản của quần xã",
-  "question": "Sau khi làm \"Thực hành tìm hiểu một số đặc trưng cơ bản của quần xã\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi tính: em đoán khu nào có độ đa dạng cao nhất. Sau khi đếm: ghi số loài, loài ưu thế và chỉ số Simpson em tính được cho từng khu. Một bạn nói \"nhiều cá thể thì đa dạng\" — số liệu khu nào của em bác bỏ câu đó?"
  },
  {
   "id": "BIO_LAB_MINI_ECOSYSTEM",
   "engine": "BIOLOGY",
   "family": "PHYS_BENCH",
   "title": "Thực hành: Thực hành thiết kế một hệ sinh thái nhân tạo (bể cá)",
-  "question": "Sau khi làm \"Thực hành thiết kế một hệ sinh thái nhân tạo (bể cá)\", nhóm đối chứng cho em biết điều gì, và kết quả có đủ để rút ra kết luận chưa?"
+  "question": "Trước khi chạy 7 ngày: dự đoán bố trí nào của em giữ được cá khỏe. Sau khi chạy: ghi oxygen hòa tan và tình trạng cá với bố trí của em, rồi đổi một yếu tố và chạy lại. Bể của em có thật sự tự duy trì không, hay vẫn phụ thuộc thứ gì từ bên ngoài?"
  },
  {
   "id": "BIO_LAB_BENCH",
@@ -599,909 +599,909 @@
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Giới hạn sinh thái",
-  "question": "Vì sao ngoài khoảng thuận lợi mức hoạt động sinh lí giảm dần rồi về 0 ở điểm gây chết? Loài có giới hạn sinh thái rộng và loài có giới hạn hẹp khác nhau thế nào về vùng phân bố?"
+  "question": "Trước khi kéo: em đoán loài có giới hạn sinh thái rộng hay hẹp dễ phân bố rộng hơn? Sau khi thử: ghi giới hạn sinh thái, khoảng thuận lợi của A và B em đọc được. Một bạn nói \"ngoài khoảng thuận lợi là sinh vật chết ngay\" — vùng nào trên đồ thị của em bác bỏ?"
  },
  {
   "id": "PHYS_RADIOACTIVE_DECAY",
   "engine": "PHYSICS",
   "family": "CURVE_LAB",
   "title": "Phân rã phóng xạ và chu kì bán rã",
-  "question": "Sau mỗi chu kì bán rã lượng chất phóng xạ còn lại giảm một nửa: tại sao đường cong không bao giờ chạm trục thời gian? Muốn tính tuổi mẫu vật bằng C-14 ta cần biết những đại lượng nào?"
+  "question": "Trước khi đổi chu kì bán rã: em đoán sau 3T còn lại bao nhiêu phần trăm? Sau khi thử: ghi phần còn lại em đọc được sau 1T, 2T, 3T và tuổi mẫu với tỉ lệ em chọn. Bạn em nói \"sau 2 chu kì bán rã thì chất phóng xạ hết sạch\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "BIO_DIGESTIVE_SYSTEM",
   "engine": "BIOLOGY",
   "family": "ANATOMY_FLOW",
   "title": "Hệ tiêu hóa ở người",
-  "question": "Thức ăn đi qua những đoạn nào của ống tiêu hóa, và ở mỗi đoạn enzyme nào biến đổi chất nào? Vì sao phần lớn việc hấp thụ diễn ra ở ruột non?"
+  "question": "Trước khi đi theo dòng thức ăn: em đoán tinh bột, protein, lipid bắt đầu được tiêu hoá hoá học ở đâu. Sau khi đi hết: ghi enzyme và cơ quan em đọc được cho từng chất, chỗ em đoán sai. Một bạn nói \"dạ dày là nơi hấp thụ chất dinh dưỡng chủ yếu\" — mô phỏng em vừa xem bác bỏ thế nào?"
  },
  {
   "id": "BIO_GENE_ENGINEERING",
   "engine": "BIOLOGY",
   "family": "PROCESS_STEPS",
   "title": "DNA tái tổ hợp và chuyển gene",
-  "question": "Vì sao phải dùng cùng một loại enzyme giới hạn để cắt gene và plasmid? Điều gì cho phép vi khuẩn sản xuất protein của người sau khi nhận plasmid tái tổ hợp?"
+  "question": "Trước khi bấm qua các bước: em đoán vì sao phải dùng cùng một enzyme cắt cho cả gene và plasmid? Sau khi đi hết: ghi các bước em thấy và chỗ em đoán sai. Bạn em nói \"chuyển gene là trộn gene vào vi khuẩn là xong\" — bước nào em thấy là bắt buộc để biết tế bào nào đã nhận gene?"
  },
  {
   "id": "BIO_FEEDBACK_LOOP",
   "engine": "BIOLOGY",
   "family": "FEEDBACK_SYSTEM",
   "title": "Điều hòa glucose máu bằng liên hệ ngược",
-  "question": "Khi glucose máu tăng sau bữa ăn, bộ phận tiếp nhận, điều khiển và thực hiện nào hoạt động? Điều gì xảy ra với glucose máu nếu tuyến tụy không tiết đủ insulin?"
+  "question": "Trước khi tăng lượng đường ăn vào: em đoán glucose máu sẽ vượt bao xa rồi quay về thế nào? Sau khi thử: ghi đỉnh glucose em đọc được khi bật và tắt điều hoà ngược, khi giảm độ nhạy insulin. Một bạn nói \"người tiểu đường loại 2 là thiếu insulin\" — số liệu khi em giảm độ nhạy insulin gợi ý điều gì khác?"
  },
  {
   "id": "BIO_ENZYME_ACTIVITY",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Hoạt tính enzyme theo nhiệt độ",
-  "question": "Vì sao tốc độ phản ứng do enzyme xúc tác tăng theo nhiệt độ rồi giảm mạnh sau nhiệt độ tối ưu? Vì sao enzyme của vi khuẩn suối nước nóng lại có nhiệt độ tối ưu cao hơn nhiều?"
+  "question": "Trước khi kéo: em đoán enzyme A có hoạt tính cao nhất ở nhiệt độ nào? Sau khi thử: ghi nhiệt độ tối ưu và nhiệt độ biến tính em đọc được cho A và B. Bạn em nói \"làm lạnh enzyme cũng phá huỷ nó như đun nóng\" — đường cong của em cho thấy hai trường hợp khác nhau thế nào?"
  },
  {
   "id": "BIO_LIGHT_COMPENSATION",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Điểm bù và điểm bão hòa ánh sáng",
-  "question": "Dưới điểm bù ánh sáng cây quang hợp được bao nhiêu so với hô hấp? Vì sao cây C₄ bão hòa ánh sáng muộn hơn và quang hợp mạnh hơn cây C₃ ở cường độ sáng cao?"
+  "question": "Trước khi kéo cường độ ánh sáng: em đoán cây C₃ hay C₄ có điểm bù ánh sáng thấp hơn? Sau khi thử: ghi điểm bù, điểm gần bão hoà em đọc được cho hai loại cây. Một bạn nói \"ở điểm bù cây không quang hợp\" — số liệu của em sửa câu đó thế nào?"
  },
  {
   "id": "BIO_IMMUNE_RESPONSE",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Đáp ứng miễn dịch nguyên phát và thứ phát (vaccine)",
-  "question": "Vì sao lần tiếp xúc kháng nguyên thứ hai tạo kháng thể nhanh hơn và nhiều hơn lần đầu? Điều đó giải thích vai trò của tiêm vaccine (và tiêm nhắc) như thế nào?"
+  "question": "Trước khi đổi ngày tiếp xúc lần 2: em đoán đáp ứng thứ phát nhanh và mạnh hơn bao nhiêu? Sau khi thử: ghi thời điểm xuất hiện và độ cao đỉnh em đọc được cho hai lần. Bạn em nói \"đã tiêm vaccine thì không bao giờ nhiễm bệnh\" — đồ thị của em cho thấy vaccine thật sự làm gì?"
  },
  {
   "id": "BIO_ACTION_POTENTIAL",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Điện thế hoạt động của neuron",
-  "question": "Vì sao kích thích dưới ngưỡng không gây xung thần kinh còn kích thích trên ngưỡng luôn cho xung có biên độ như nhau? Bao myelin giúp xung lan truyền nhanh hơn bằng cách nào?"
+  "question": "Trước khi tăng cường độ kích thích: em đoán biên độ điện thế hoạt động có tăng theo không? Sau khi thử: ghi kết quả em đọc được ở kích thích dưới ngưỡng, đúng ngưỡng, trên ngưỡng, và tốc độ lan truyền khi có, không có myelin. Một bạn nói \"kích thích mạnh thì xung thần kinh to hơn\" — số liệu của em phản biện thế nào?"
  },
  {
   "id": "BIO_POPULATION_GROWTH",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Tăng trưởng của quần thể (chữ J và chữ S)",
-  "question": "Khi nào quần thể tăng trưởng theo đường cong chữ J và vì sao trong thực tế thường chuyển sang chữ S? Sức chứa của môi trường (K) ảnh hưởng thế nào tới kích thước quần thể?"
+  "question": "Trước khi đổi K: em đoán quần thể tăng nhanh nhất ở kích thước nào? Sau khi thử: ghi điểm uốn và tốc độ tăng cực đại em đọc được với hai giá trị K. Bạn em nói \"quần thể nhỏ nhất thì tăng nhanh nhất vì còn nhiều tài nguyên\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "BIO_EUKARYOTE_CELL",
   "engine": "BIOLOGY",
   "family": "ANATOMY_FLOW",
   "title": "Tế bào nhân thực và các bào quan",
-  "question": "Bào quan nào tổng hợp protein, bào quan nào đóng gói và vận chuyển protein, bào quan nào tạo ATP? Vì sao tế bào nhân thực cần hệ thống màng bên trong như vậy?"
+  "question": "Trước khi chạm từng bào quan: em đoán tế bào cơ tim cần nhiều bào quan nào nhất, tế bào tuyến tuỵ cần nhiều bào quan nào nhất. Sau khi xem: ghi chức năng em đọc được và chỗ em đoán sai. Một bạn nói \"tế bào thực vật không có ti thể vì đã có lục lạp\" — mô phỏng em vừa xem bác bỏ thế nào?"
  },
  {
   "id": "BIO_HEART_CIRCULATION",
   "engine": "BIOLOGY",
   "family": "ANATOMY_FLOW",
   "title": "Cấu tạo tim và vòng tuần hoàn máu",
-  "question": "Máu đi qua những ngăn tim và mạch nào theo thứ tự trong vòng tuần hoàn phổi và vòng tuần hoàn hệ thống? Van tim có vai trò gì?"
+  "question": "Trước khi đi theo dòng máu: em đoán động mạch phổi chứa máu giàu O₂ hay nghèo O₂? Sau khi đi hết: ghi đường đi của máu em thấy và chỗ em đoán sai. Bạn em nói \"động mạch luôn chứa máu đỏ tươi\" — chỗ nào trong vòng tuần hoàn em vừa xem bác bỏ?"
  },
  {
   "id": "BIO_NEPHRON",
   "engine": "BIOLOGY",
   "family": "ANATOMY_FLOW",
   "title": "Nephron và sự tạo thành nước tiểu",
-  "question": "Từ khoảng 180 L dịch lọc mỗi ngày, vì sao chỉ còn 1,5–2 L nước tiểu thải ra ngoài? Ba giai đoạn lọc, tái hấp thu và tiết diễn ra ở đâu?"
+  "question": "Trước khi đi theo dịch lọc: em đoán glucose có trong nước tiểu người khoẻ không? Sau khi đi hết: ghi các chất được lọc, tái hấp thụ, bài tiết em đọc được ở từng đoạn, chỗ em đoán sai. Một bạn nói \"thận chỉ lọc chất thải ra\" — đoạn nào em thấy thận lấy lại chất cần thiết?"
  },
  {
   "id": "BIO_FLOWER_STRUCTURE",
   "engine": "BIOLOGY",
   "family": "ANATOMY_FLOW",
   "title": "Cấu tạo hoa và thụ tinh kép",
-  "question": "Bộ phận nào của hoa chứa hạt phấn, bộ phận nào chứa noãn? Vì sao thụ tinh ở thực vật có hoa gọi là thụ tinh kép và sản phẩm của nó là gì?"
+  "question": "Trước khi xem thụ tinh: em đoán hai tinh tử kết hợp với những gì? Sau khi xem: ghi sản phẩm của mỗi lần kết hợp em đọc được, chỗ em đoán sai. Bạn em nói \"thụ tinh kép nghĩa là hai hạt phấn thụ tinh cho hai noãn\" — mô phỏng của em bác bỏ thế nào?"
  },
  {
   "id": "BIO_MITOSIS",
   "engine": "BIOLOGY",
   "family": "PROCESS_STEPS",
   "title": "Nguyên phân",
-  "question": "Vì sao tế bào con tạo ra từ nguyên phân có bộ NST giống hệt tế bào mẹ? Hoạt động nào của NST ở kì giữa và kì sau bảo đảm điều đó?"
+  "question": "Trước khi bấm qua các kì: em đoán NST nhân đôi ở kì nào, tách nhau ở kì nào? Sau khi đi hết: ghi số NST và số chromatid em đếm được ở kì giữa và kì sau. Một bạn nói \"NST nhân đôi ở kì đầu nên kì đầu có gấp đôi NST\" — số liệu em đếm được bác bỏ thế nào?"
  },
  {
   "id": "BIO_VIRUS_CYCLE",
   "engine": "BIOLOGY",
   "family": "PROCESS_STEPS",
   "title": "Chu kì nhân lên của virus (sinh tan)",
-  "question": "Vì sao virus chỉ nhân lên được trong tế bào chủ? Chu kì sinh tan khác chu kì tiềm tan ở điểm nào?"
+  "question": "Trước khi bấm qua các giai đoạn: em đoán virus tự tổng hợp protein của nó bằng gì? Sau khi đi hết: ghi năm giai đoạn em thấy và chỗ em đoán sai. Bạn em nói \"kháng sinh diệt được virus như diệt vi khuẩn\" — chu kì em vừa xem cho thấy vì sao không?"
  },
  {
   "id": "BIO_DNA_FORK",
   "engine": "BIOLOGY",
   "family": "PROCESS_STEPS",
   "title": "Chạc sao chép DNA: mạch liên tục và đoạn Okazaki",
-  "question": "Vì sao một mạch mới được tổng hợp liên tục còn mạch kia phải tổng hợp thành từng đoạn Okazaki? Vì sao gọi là nguyên tắc bán bảo toàn?"
+  "question": "Trước khi chạy chạc sao chép: em đoán vì sao một mạch được tổng hợp liên tục còn mạch kia thành từng đoạn? Sau khi xem: ghi chiều tổng hợp và các enzyme em thấy, chỗ em đoán sai. Một bạn nói \"DNA polymerase có thể tổng hợp theo cả hai chiều\" — mô phỏng của em bác bỏ thế nào?"
  },
  {
   "id": "BIO_OSMOREGULATION_ADH",
   "engine": "BIOLOGY",
   "family": "FEEDBACK_SYSTEM",
   "title": "Điều hòa áp suất thẩm thấu của máu (ADH)",
-  "question": "Khi áp suất thẩm thấu máu tăng, vùng dưới đồi, tuyến yên và thận phối hợp thế nào để đưa nó về mức bình thường? Vì sao uống rượu bia làm khát nước và đi tiểu nhiều?"
+  "question": "Trước khi cho mất nước: em đoán lượng ADH và lượng nước tiểu đổi thế nào? Sau khi thử: ghi áp suất thẩm thấu em đọc được khi bật, tắt điều hoà ngược và khi uống rượu bia. Bạn em nói \"uống bia vào thì cơ thể giữ được nhiều nước hơn\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "BIO_BLOOD_PRESSURE_REFLEX",
   "engine": "BIOLOGY",
   "family": "FEEDBACK_SYSTEM",
   "title": "Điều hòa huyết áp bằng phản xạ thần kinh",
-  "question": "Khi huyết áp đột ngột giảm, thụ thể áp lực, trung khu điều hòa tim mạch và dây giao cảm phối hợp thế nào để huyết áp trở lại bình thường?"
+  "question": "Trước khi cho đứng dậy nhanh: em đoán huyết áp tụt rồi hồi phục trong bao lâu? Sau khi thử: ghi đường huyết áp em đọc được khi phản xạ bình thường và khi mạch kém đàn hồi. Một bạn nói \"huyết áp tụt thì tim đập chậm lại để nghỉ\" — số liệu của em phản biện thế nào?"
  },
  {
   "id": "BIO_METABOLISM_PATHWAYS",
   "engine": "BIOLOGY",
   "family": "PROCESS_STEPS",
   "title": "Đường phân và lên men",
-  "question": "Khi không có O₂, tế bào tái tạo NAD⁺ để đường phân tiếp tục bằng cách nào? Vì sao lên men chỉ thu được rất ít ATP so với hô hấp hiếu khí?"
+  "question": "Trước khi đi qua các bước: em đoán một phân tử glucose qua đường phân thu được mấy ATP? Sau khi đi hết: ghi số ATP, NADH em đọc được và sản phẩm khi lên men lactic, lên men rượu, chỗ em đoán sai. Bạn em nói \"lên men tạo nhiều ATP hơn vì không cần O₂\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "BIO_ANIMAL_DEVELOPMENT",
   "engine": "BIOLOGY",
   "family": "PROCESS_STEPS",
   "title": "Biến thái hoàn toàn và không hoàn toàn ở côn trùng",
-  "question": "Biến thái hoàn toàn khác biến thái không hoàn toàn ở điểm nào? Hormone nào điều khiển lột xác và biến thái?"
+  "question": "Trước khi xem: em đoán con non của bướm và châu chấu giống bố mẹ đến mức nào? Sau khi xem: ghi các giai đoạn em thấy ở mỗi loài, chỗ em đoán sai. Một bạn nói \"sâu bướm và bướm là hai loài khác nhau\" — mô phỏng em vừa xem bác bỏ thế nào?"
  },
  {
   "id": "BIO_ORIGIN_OF_LIFE",
   "engine": "BIOLOGY",
   "family": "PROCESS_STEPS",
   "title": "Nguồn gốc sự sống: Miller–Urey, tế bào nguyên thủy và nội cộng sinh",
-  "question": "Thí nghiệm của Miller chứng minh điều gì về sự hình thành chất hữu cơ trên Trái Đất nguyên thủy? Ti thể và lục lạp có nguồn gốc từ đâu theo thuyết nội cộng sinh?"
+  "question": "Trước khi xem thí nghiệm Miller–Urey: em đoán từ khí vô cơ và tia lửa điện thu được chất gì? Sau khi xem: ghi sản phẩm em đọc được và chỗ em đoán sai. Bạn em nói \"thí nghiệm đó đã tạo ra sự sống\" — kết quả em vừa xem chứng minh được đến đâu?"
  },
  {
   "id": "BIO_SUCCESSION_CYCLES",
   "engine": "BIOLOGY",
   "family": "PROCESS_STEPS",
   "title": "Chu trình nitrogen và diễn thế sinh thái",
-  "question": "Nitrogen trong khí quyển được cây hấp thụ nhờ những quá trình nào và trở lại khí quyển ra sao? Vì sao diễn thế nguyên sinh bắt đầu từ môi trường chưa có sinh vật?"
+  "question": "Trước khi đi theo chu trình nitrogen: em đoán cây hấp thụ nitrogen ở dạng nào? Sau khi đi hết: ghi các dạng nitrogen và vi khuẩn tham gia em đọc được, chỗ em đoán sai. Một bạn nói \"N₂ chiếm 78 % không khí nên cây không bao giờ thiếu đạm\" — chu trình của em phản biện thế nào?"
  },
  {
   "id": "BIO_MENDEL_EXTENDED",
   "engine": "BIOLOGY",
   "family": "TRIAL_LAB",
   "title": "Các quy luật di truyền mở rộng: trội không hoàn toàn, đồng trội, liên kết và hoán vị gene",
-  "question": "Tỉ lệ kiểu hình thay đổi thế nào khi trội không hoàn toàn, khi hai gene liên kết, khi có hoán vị gene tần số f? Vì sao con trai mắc bệnh liên kết X lặn nhiều hơn?"
+  "question": "Trước khi lai: em tự tính tỉ lệ kiểu hình đời con của phép lai em chọn. Sau khi lai nhiều lần: ghi tỉ lệ em đếm được và so với số em tính. Bạn em nói \"lai 20 cây không ra đúng 3 : 1 tức là Mendel sai\" — kết quả khi em tăng số lần lai nói gì?"
  },
  {
   "id": "BIO_CYTOPLASMIC_INHERITANCE",
   "engine": "BIOLOGY",
   "family": "TRIAL_LAB",
   "title": "Di truyền tế bào chất (thí nghiệm của Correns)",
-  "question": "Vì sao kiểu hình của con luôn giống mẹ khi gene nằm ở lục lạp hay ti thể? Phép lai thuận và lai nghịch cho kết quả khác nhau nói lên điều gì?"
+  "question": "Trước khi lai: em đoán đời con có lá giống cây bố hay cây mẹ? Sau khi thử: ghi kiểu lá đời con em thấy khi đổi vai cây lá xanh, lá đốm làm mẹ. Một bạn nói \"lai thuận và lai nghịch luôn cho kết quả như nhau\" — số liệu của em bác bỏ thế nào, và vì sao?"
  },
  {
   "id": "BIO_GENETIC_CODE_TABLE",
   "engine": "BIOLOGY",
   "family": "TABLE_LAB",
   "title": "Bảng mã di truyền (64 codon)",
-  "question": "Vì sao nhiều codon cùng mã hóa một amino acid (tính thoái hóa) mà mỗi codon chỉ mã hóa một amino acid (tính đặc hiệu)? Codon nào mở đầu và codon nào kết thúc dịch mã?"
+  "question": "Trước khi tra: em đoán có bao nhiêu codon mã hoá cho leucine và có codon nào không mã hoá amino acid nào? Sau khi tra: ghi các codon em tìm được và chỗ em đoán sai. Bạn em nói \"mỗi amino acid ứng với đúng một codon\" — bảng em vừa tra bác bỏ thế nào, điều đó có lợi gì khi xảy ra đột biến?"
  },
  {
   "id": "BIO_EVIDENCE_PHYLOGENY",
   "engine": "BIOLOGY",
   "family": "TABLE_LAB",
   "title": "Bằng chứng phân tử: cytochrome C và quan hệ họ hàng",
-  "question": "Số amino acid khác nhau trong cytochrome C của hai loài cho biết điều gì về mức độ gần gũi tiến hóa? Vì sao người gần tinh tinh hơn gần nấm men?"
+  "question": "Trước khi tra: em đoán loài nào có cytochrome C giống người nhất, khỉ, chó hay cá? Sau khi tra: ghi số amino acid khác biệt em đọc được. Một bạn nói \"người tiến hoá từ tinh tinh\" — số liệu của em ủng hộ kết luận nào chính xác hơn?"
  },
  {
   "id": "BIO_MEIOSIS",
   "engine": "BIOLOGY",
   "family": "PROCESS_STEPS",
   "title": "Giảm phân và trao đổi chéo",
-  "question": "Vì sao giảm phân tạo ra các tế bào con có số NST giảm một nửa còn nguyên phân thì không? Trao đổi chéo ở kì đầu I làm tăng đa dạng di truyền như thế nào?"
+  "question": "Trước khi bấm qua các kì: em đoán trao đổi chéo xảy ra ở kì nào và giữa những chromatid nào? Sau khi đi hết: ghi số NST ở tế bào con em đếm được, chỗ em đoán sai. Bạn em nói \"giảm phân chỉ khác nguyên phân ở số tế bào con\" — mô phỏng của em cho thấy những khác biệt nào nữa?"
  },
  {
   "id": "BIO_REFLEX_ARC",
   "engine": "BIOLOGY",
   "family": "PROCESS_STEPS",
   "title": "Cung phản xạ và dẫn truyền qua synapse",
-  "question": "Một phản xạ đi qua những thành phần nào của cung phản xạ? Xung thần kinh truyền qua synapse hóa học bằng chất trung gian nào và theo mấy chiều?"
+  "question": "Trước khi kích thích: em đoán xung thần kinh đi qua synapse theo một chiều hay hai chiều? Sau khi xem: ghi các bộ phận cung phản xạ em thấy theo thứ tự, chỗ em đoán sai. Một bạn nói \"chất dẫn truyền đi ngược về được neuron trước\" — mô phỏng em vừa xem bác bỏ thế nào?"
  },
  {
   "id": "BIO_EAR_HEARING",
   "engine": "BIOLOGY",
   "family": "ANATOMY_FLOW",
   "title": "Cấu tạo tai và cơ chế nghe",
-  "question": "Sóng âm được chuyển thành xung thần kinh qua những bộ phận nào của tai? Vì sao chuỗi xương con giúp khuếch đại âm thanh?"
+  "question": "Trước khi đi theo đường âm: em đoán âm cao và âm thấp làm rung vùng nào của màng đáy? Sau khi đi hết: ghi đường đi của âm em thấy và chỗ em đoán sai. Bạn em nói \"tai nghe bằng màng nhĩ, màng nhĩ thủng là điếc hoàn toàn\" — các bộ phận em vừa xem phản biện thế nào?"
  },
  {
   "id": "BIO_POPULATION_ECOLOGY",
   "engine": "BIOLOGY",
   "family": "SCENE_LAB",
   "title": "Tháp tuổi và ước lượng kích thước quần thể (đánh dấu – bắt lại)",
-  "question": "Hình dạng tháp tuổi cho biết quần thể đang tăng, ổn định hay suy giảm thế nào? Làm sao ước lượng số cá thể của quần thể khi không thể đếm hết?"
+  "question": "Trước khi đổi dạng tháp tuổi: em đoán tháp đáy hẹp báo hiệu quần thể tương lai thế nào? Sau khi thử đánh dấu – bắt lại: ghi số con đánh dấu, số bắt lại và ước lượng kích thước em tính được. Một bạn nói \"con đánh dấu trốn kĩ hơn cũng không sao\" — ước lượng của em sẽ lệch về phía nào?"
  },
  {
   "id": "BIO_SCALE_CELL_TYPES",
   "engine": "BIOLOGY",
   "family": "SCENE_LAB",
   "title": "Tế bào nhân sơ, nhân thực và tỉ lệ diện tích trên thể tích",
-  "question": "Vì sao hầu hết tế bào đều rất nhỏ? Tế bào nhân sơ khác tế bào nhân thực ở những điểm nào về kích thước và cấu tạo?"
+  "question": "Trước khi tăng cạnh tế bào: em đoán tỉ lệ S/V tăng hay giảm? Sau khi thử: ghi S, V, S/V em đọc được khi cạnh tăng gấp đôi. Bạn em nói \"tế bào to thì trao đổi chất tốt hơn vì có nhiều màng hơn\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "BIO_BIOMOLECULES",
   "engine": "BIOLOGY",
   "family": "SCENE_LAB",
   "title": "Các phân tử sinh học: nước, phospholipid, protein, nucleic acid",
-  "question": "Liên kết hydrogen giữa các phân tử nước tạo nên tính chất nào? Cấu trúc bậc 1, 2, 3, 4 của protein khác nhau thế nào và vì sao các bậc đó quyết định chức năng?"
+  "question": "Trước khi chọn phân tử: em đoán vì sao phospholipid tự xếp thành lớp kép trong nước? Sau khi xem: ghi đặc điểm em đọc được của từng phân tử và các bậc cấu trúc protein. Một bạn nói \"protein bị biến tính vẫn giữ nguyên chức năng vì trình tự amino acid không đổi\" — mô phỏng em vừa xem phản biện thế nào?"
  },
  {
   "id": "BIO_MEMBRANE_TRANSPORT",
   "engine": "BIOLOGY",
   "family": "SCENE_LAB",
   "title": "Vận chuyển các chất qua màng sinh chất",
-  "question": "Chất nào đi qua màng không tốn năng lượng và chất nào cần ATP? Vì sao vận chuyển chủ động có thể đưa chất đi ngược chiều gradient nồng độ?"
+  "question": "Trước khi đổi nồng độ: em đoán chất đi theo chiều nào khi không có ATP? Sau khi thử: ghi chiều chuyển động em đọc được ở ba cách vận chuyển, có và không có ATP. Bạn em nói \"chất luôn đi từ nơi nồng độ cao tới nơi nồng độ thấp\" — trường hợp nào của em bác bỏ?"
  },
  {
   "id": "BIO_PLANT_TROPISM",
   "engine": "BIOLOGY",
   "family": "SCENE_LAB",
   "title": "Hướng động ở thực vật và vai trò của auxin",
-  "question": "Vì sao ngọn cây uốn cong về phía có ánh sáng? Auxin phân bố thế nào ở hai bên thân và rễ cây khi đặt nằm ngang?"
+  "question": "Trước khi chiếu sáng một phía: em đoán auxin tập trung ở phía nào và cây cong về đâu? Sau khi thử: ghi kết quả em thấy khi còn và khi cắt đỉnh ngọn. Một bạn nói \"cây cong về phía sáng vì phía sáng mọc nhanh hơn\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "BIO_TRANSCRIPTION_TRANSLATION",
   "engine": "BIOLOGY",
   "family": "SCENE_LAB",
   "title": "Phiên mã, dịch mã và đột biến gene",
-  "question": "Từ trình tự mạch gốc DNA ta suy ra mRNA, anticodon của tRNA và chuỗi amino acid thế nào? Đột biến thay thế, thêm hoặc mất một cặp nucleotide ảnh hưởng ra sao tới protein?"
+  "question": "Trước khi gây đột biến: em đoán thay một cặp hay thêm một cặp nucleotide làm chuỗi polypeptide thay đổi nhiều hơn? Sau khi thử: ghi chuỗi polypeptide em đọc được với ba dạng đột biến ở cùng vị trí. Bạn em nói \"đột biến gene nào cũng làm protein thay đổi\" — trường hợp nào của em bác bỏ?"
  },
  {
   "id": "BIO_CHROMOSOME",
   "engine": "BIOLOGY",
   "family": "SCENE_LAB",
   "title": "Đột biến cấu trúc và số lượng nhiễm sắc thể",
-  "question": "Bốn dạng đột biến cấu trúc NST làm thay đổi trình tự các gene như thế nào? Thể lệch bội khác thể đa bội ở điểm nào?"
+  "question": "Trước khi chọn dạng đột biến: em đoán đảo đoạn có làm thay đổi lượng vật chất di truyền không? Sau khi xem: ghi hậu quả em đọc được cho đảo đoạn, lặp đoạn và thể ba. Một bạn nói \"đột biến NST nào cũng có hại\" — dạng nào em vừa xem được ứng dụng trong chọn giống?"
  },
  {
   "id": "BIO_PEDIGREE",
   "engine": "BIOLOGY",
   "family": "SCENE_LAB",
   "title": "Phả hệ và xác suất con mắc bệnh di truyền",
-  "question": "Từ kiểu gene của bố mẹ, xác suất sinh con mắc bệnh là bao nhiêu khi bệnh do gene lặn, gene trội trên NST thường hay gene lặn liên kết X? Vì sao bệnh liên kết X lặn gặp ở nam nhiều hơn?"
+  "question": "Trước khi chọn kiểu di truyền: em tự tính xác suất con trai mắc bệnh cho phép lai em chọn. Sau khi xem: ghi kiểu gene bố mẹ và xác suất mô phỏng đưa ra, chỗ em tính khác. Bạn em nói \"bố mẹ không mắc bệnh thì con không thể mắc\" — phép lai nào của em bác bỏ?"
  },
  {
   "id": "BIO_POPULATION_EVOLUTION",
   "engine": "BIOLOGY",
   "family": "SCENE_LAB",
   "title": "Các nhân tố tiến hóa: phiêu bạt di truyền, chọn lọc, di nhập",
-  "question": "Quần thể nhỏ và quần thể lớn khác nhau thế nào về mức dao động ngẫu nhiên của tần số allele? Chọn lọc tự nhiên và dòng gene làm tần số allele thay đổi theo hướng nào?"
+  "question": "Trước khi chạy: em đoán quần thể N nhỏ hay N lớn dễ bị cố định một allele hơn? Sau khi chạy: ghi số quần thể đã cố định em đọc được với hai giá trị N, khi không có chọn lọc. Một bạn nói \"allele nào được giữ lại cũng là allele có lợi\" — số liệu với s = 0 của em bác bỏ thế nào?"
  },
  {
   "id": "BIO_FOOD_WEB_ENERGY",
   "engine": "BIOLOGY",
   "family": "SCENE_LAB",
   "title": "Dòng năng lượng qua các bậc dinh dưỡng và phóng đại sinh học",
-  "question": "Vì sao chuỗi thức ăn thường chỉ có 4–5 bậc dinh dưỡng? Chất độc bền như DDT có nồng độ thay đổi thế nào khi đi lên các bậc cao của chuỗi?"
+  "question": "Trước khi đổi hiệu suất: em đoán năng lượng tới bậc 4 còn bao nhiêu phần trăm? Sau khi thử: ghi năng lượng từng bậc em đọc được với hai hiệu suất, và nồng độ DDT khi bật. Bạn em nói \"chuỗi thức ăn có thể dài bao nhiêu bậc cũng được\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "BIO_PLANT_GROWTH",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Hormone thực vật: tác dụng của auxin phụ thuộc nồng độ và cơ quan",
-  "question": "Vì sao cùng một nồng độ auxin có thể kích thích rễ nhưng ức chế thân, hoặc ngược lại? Nồng độ nào là cực thuận cho từng cơ quan?"
+  "question": "Trước khi đọc đồ thị: em đoán cùng một nồng độ auxin có kích thích cả rễ lẫn thân không? Sau khi xem: ghi nồng độ cực thuận em đọc được cho rễ, chồi, thân. Một bạn nói \"auxin càng nhiều cây càng lớn nhanh\" — vùng nào trên đồ thị của em bác bỏ, và ứng dụng thuốc diệt cỏ dựa vào điều gì?"
  },
  {
   "id": "BIO_HUMAN_REPRODUCTION",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Chu kì kinh nguyệt và điều hòa bằng hormone",
-  "question": "Hormone nào tăng vọt gây rụng trứng, và hormone nào duy trì niêm mạc tử cung sau rụng trứng? Vì sao nếu không có thụ tinh thì kinh nguyệt xảy ra?"
+  "question": "Trước khi đổi độ dài chu kì: em đoán ngày rụng trứng dời theo thế nào? Sau khi thử: ghi ngày rụng trứng và độ dài pha nang, pha hoàng thể em đọc được với hai độ dài chu kì. Bạn em nói \"rụng trứng luôn vào ngày 14\" — số liệu của em bác bỏ thế nào, pha nào thay đổi?"
  },
  {
   "id": "BIO_MICROBE_LAB",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Sinh trưởng của quần thể vi khuẩn: bốn pha",
-  "question": "Quần thể vi khuẩn trải qua những pha nào trong môi trường nuôi cấy không liên tục và vì sao pha lũy thừa dừng lại? Thời gian thế hệ ngắn có ý nghĩa gì?"
+  "question": "Trước khi đổi thời gian thế hệ: em đoán sau 12 giờ số tế bào khoảng bao nhiêu? Sau khi thử: ghi pha và số tế bào em đọc được ở giờ thứ 12 với hai thời gian thế hệ. Một bạn nói \"vi khuẩn cứ nhân đôi mãi theo cấp số nhân\" — đồ thị của em bác bỏ thế nào, vì sao?"
  },
  {
   "id": "BIO_MINERAL_NUTRITION",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Dinh dưỡng khoáng: thiếu, đủ và thừa phân bón",
-  "question": "Vì sao bón quá nhiều phân bón lại làm giảm năng suất, và vì sao cây thiếu khoáng sinh trưởng kém? Vùng nồng độ nào là thích hợp?"
+  "question": "Trước khi kéo liều phân: em đoán năng suất tăng mãi theo lượng phân bón không? Sau khi thử: ghi liều tối ưu và ngưỡng gây độc em đọc được. Bạn em nói \"bón gấp đôi thì thu hoạch gấp đôi\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "BIO_PLANT_RESPIRATION",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Hô hấp ở thực vật và các yếu tố ảnh hưởng",
-  "question": "Vì sao hạt khô hô hấp rất yếu còn hạt đang nảy mầm hô hấp mạnh? Nhiệt độ ảnh hưởng đến cường độ hô hấp thế nào và đến mức nào thì giảm?"
+  "question": "Trước khi đổi độ ẩm hạt: em đoán hạt ẩm hay hạt khô hô hấp mạnh hơn? Sau khi thử: ghi cường độ hô hấp em đọc được ở hai độ ẩm và khi tăng từ 20 °C lên 30 °C. Một bạn nói \"cứ để hạt chỗ ấm là giữ được lâu\" — số liệu của em gợi ý cách bảo quản nào?"
  },
  {
   "id": "BIO_ANIMAL_BEHAVIOR",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Học tập ở động vật: phản xạ có điều kiện của Pavlov",
-  "question": "Làm sao một kích thích trung tính như tiếng chuông trở thành tín hiệu gây tiết nước bọt ở chó? Điều gì xảy ra khi ngừng củng cố bằng thức ăn?"
+  "question": "Trước khi ngừng củng cố: em đoán phản xạ có điều kiện mất ngay hay mất dần? Sau khi thử: ghi số lần ghép cặp để đạt 90 % và phản ứng khi ngừng củng cố em đọc được. Bạn em nói \"đã học được thì nhớ mãi\" — đồ thị của em bác bỏ thế nào?"
  },
  {
   "id": "BIO_REACTION_NORM",
   "engine": "BIOLOGY",
   "family": "CURVE_LAB",
   "title": "Mức phản ứng của kiểu gene với nhiệt độ",
-  "question": "Vì sao cùng một kiểu gene nhưng kiểu hình có thể khác nhau ở các môi trường khác nhau? Mức phản ứng rộng và hẹp khác nhau thế nào về khả năng thích nghi?"
+  "question": "Trước khi đổi nhiệt độ: em đoán thỏ Himalaya nuôi ở 10 °C có lông vùng nào đổi màu? Sau khi thử: ghi màu lông em đọc được ở 10 °C và 35 °C. Một bạn nói \"lông đen do gene khác với lông trắng\" — số liệu của em cho thấy điều gì thật sự thay đổi?"
  },
  {
   "id": "BIO_RESPIRATORY_SYSTEM",
   "engine": "BIOLOGY",
   "family": "ANATOMY_FLOW",
   "title": "Hệ hô hấp ở người và trao đổi khí ở phế nang",
-  "question": "Không khí đi qua những bộ phận nào trước khi tới phế nang, và vì sao phế nang là nơi trao đổi khí hiệu quả? Cơ hoành và cơ liên sườn giúp thông khí thế nào?"
+  "question": "Trước khi đi theo dòng khí: em đoán O₂ đi từ phế nang vào máu nhờ cơ chế gì? Sau khi xem: ghi đường đi của không khí và chỗ trao đổi khí em thấy, chỗ em đoán sai. Bạn em nói \"thở ra là thải hết O₂ ra ngoài\" — mô phỏng em vừa xem bác bỏ thế nào?"
  },
  {
   "id": "BIO_WATER_TRANSPORT_PLANT",
   "engine": "BIOLOGY",
   "family": "ANATOMY_FLOW",
   "title": "Vận chuyển nước và chất hữu cơ ở thực vật",
-  "question": "Nước đi từ đất lên lá qua những con đường và nhờ những lực nào? Mạch rây vận chuyển chất hữu cơ từ đâu đến đâu?"
+  "question": "Trước khi đi theo dòng nước: em đoán động lực chính kéo nước lên ngọn cây cao là gì? Sau khi xem: ghi đường đi của nước, chất hữu cơ và chỗ em đoán sai. Một bạn nói \"nước và đường đều đi lên trong cùng một mạch\" — mô phỏng em vừa xem phân biệt thế nào?"
  },
  {
   "id": "BIO_SENSE_ORGANS",
   "engine": "BIOLOGY",
   "family": "ANATOMY_FLOW",
   "title": "Cấu tạo mắt và sự tạo ảnh",
-  "question": "Ánh sáng đi qua những cấu trúc nào của mắt trước khi tạo ảnh trên võng mạc? Thể thủy tinh thay đổi thế nào khi nhìn vật gần và vật xa?"
+  "question": "Trước khi đi theo tia sáng: em đoán ảnh trên màng lưới cùng chiều hay ngược chiều vật? Sau khi xem: ghi đường đi của ánh sáng và bộ phận điều tiết em thấy, chỗ em đoán sai. Bạn em nói \"mắt cận nhìn xa không rõ vì thể thuỷ tinh quá dẹt\" — mô phỏng em vừa xem phản biện thế nào?"
  },
  {
   "id": "PHYS_EM_WAVE_3D",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Sóng điện từ trong không gian: E vuông góc B vuông góc phương truyền",
-  "question": "Điện trường và từ trường của sóng điện từ dao động trong những mặt phẳng nào so với phương truyền? Khi E đạt cực đại thì B đang ở đâu, và nếu giảm bước sóng thì tần số đổi ra sao?"
+  "question": "Trước khi đổi bước sóng: em đoán tần số tăng hay giảm khi λ tăng? Sau khi thử: ghi f em đọc được ở hai bước sóng của em, và hướng của E, B khi nhìn từ trên xuống. Một bạn nói \"E và B dao động lệch pha nhau một phần tư chu kì\" — hình em quan sát ủng hộ hay bác bỏ?"
  },
  {
   "id": "PHYS_EARTH_SEASONS",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Trái Đất nghiêng 23,5°: ngày – đêm và các mùa",
-  "question": "Vì sao cùng một ngày mà nơi ngày dài, nơi ngày ngắn? Nếu trục Trái Đất không nghiêng thì còn có mùa không, và độ dài ngày ở xích đạo thay đổi thế nào quanh năm?"
+  "question": "Trước khi đổi ngày: em đoán ở vĩ độ của em ngày nào dài nhất năm? Sau khi thử: ghi độ dài ngày và góc cao Mặt Trời em đọc được vào hai ngày đối nhau trong năm. Bạn em nói \"mùa hè nóng vì Trái Đất gần Mặt Trời hơn\" — kết quả khi em đặt độ nghiêng trục bằng 0 phản biện thế nào?"
  },
  {
   "id": "PHYS_NEWTON_CRADLE",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Con lắc Newton: bảo toàn động lượng và năng lượng",
-  "question": "Nâng hai quả cầu lên rồi thả, vì sao đúng hai quả bên kia bật ra mà không phải một quả bay nhanh hơn? Nếu có hao hụt năng lượng thì điều gì thay đổi sau mỗi lần va chạm?"
+  "question": "Trước khi thả: em đoán nâng 2 quả thì bên kia bật lên mấy quả? Sau khi thử: ghi số quả bật lên và biên độ em thấy với 1, 2, 3 quả. Một bạn nói \"nâng 2 quả, bên kia bật 1 quả nhanh gấp đôi cũng bảo toàn động lượng\" — điều kiện nào nữa bác bỏ khả năng đó, em kiểm bằng số liệu nào?"
  },
  {
   "id": "PHYS_KINEMATICS_1D",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Chuyển động thẳng: đồ thị độ dịch chuyển–thời gian và vận tốc–thời gian",
-  "question": "Độ dốc của đồ thị độ dịch chuyển–thời gian và diện tích dưới đồ thị vận tốc–thời gian cho biết những đại lượng nào? Vì sao hai vật nặng nhẹ khác nhau rơi tự do chạm đất cùng lúc?"
+  "question": "Trước khi chạy: em đoán đồ thị độ dịch chuyển–thời gian của chuyển động biến đổi đều có dạng gì? Sau khi chạy: ghi vận tốc tức thời em đọc được ở hai thời điểm và độ dốc tương ứng trên đồ thị. Bạn em nói \"vận tốc âm nghĩa là vật chậm dần\" — trường hợp nào của em bác bỏ?"
  },
  {
   "id": "PHYS_RELATIVE_VELOCITY",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Tổng hợp vận tốc: thuyền qua sông",
-  "question": "Muốn thuyền sang đúng điểm đối diện bờ bên kia ta phải hướng mũi thuyền thế nào? Hướng nào qua sông nhanh nhất và khi đó thuyền bị trôi bao xa?"
+  "question": "Trước khi lái: em đoán muốn qua sông nhanh nhất thì mũi thuyền hướng thế nào? Sau khi thử: ghi thời gian qua sông và quãng trôi em đọc được ở ba góc lái. Một bạn nói \"muốn tới đúng bến đối diện thì cứ lái thẳng vuông góc bờ\" — số liệu nào của em bác bỏ?"
  },
  {
   "id": "PHYS_MEASUREMENT_ERROR",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Sai số phép đo",
-  "question": "Vì sao đo nhiều lần và lấy trung bình lại làm giảm sai số ngẫu nhiên nhưng không loại bỏ được sai số dụng cụ? Sai số tỉ đối cho ta so sánh điều gì?"
+  "question": "Trước khi đo: em đoán tăng số lần đo thì sai số ngẫu nhiên và sai số dụng cụ đổi thế nào? Sau khi thử: ghi ΔA của em với 3 lần và 10 lần đo. Bạn em nói \"đo thật nhiều lần thì sai số về 0\" — thành phần nào trong ΔA của em không giảm, vì sao?"
  },
  {
   "id": "PHYS_FORCE_COMPOSITION",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Tổng hợp, phân tích lực và cân bằng của ba lực",
-  "question": "Hợp lực của hai lực phụ thuộc góc giữa chúng thế nào? Vì sao dây treo càng gần nằm ngang thì lực căng càng lớn dù vật nặng không đổi?"
+  "question": "Trước khi đổi góc: em đoán hợp lực của F₁, F₂ lớn nhất và nhỏ nhất ở góc nào? Sau khi thử: ghi hợp lực em đọc được ở 0°, 90°, 180°. Một bạn treo vật bằng hai dây và nói \"dây càng xòe rộng càng đỡ căng\" — lực căng em đọc được khi tăng góc dây ủng hộ hay bác bỏ?"
  },
  {
   "id": "PHYS_MOMENT_LEVER",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Moment lực, đòn bẩy và điều kiện cân bằng",
-  "question": "Đòn bẩy cân bằng khi moment của hai lực đối với trục quay có quan hệ gì? Vì sao càng đặt vật nặng gần điểm tựa thì càng dễ nâng bằng lực nhỏ?"
+  "question": "Trước khi đặt vật: em đoán vật nặng gấp đôi phải đặt ở đâu để đòn bẩy cân bằng? Sau khi thử: ghi m₁, d₁, m₂, d₂ của em lúc cân bằng và moment hai bên. Bạn em nói \"hai bên cân bằng khi khối lượng bằng nhau\" — bộ số nào của em bác bỏ?"
  },
  {
   "id": "PHYS_NEWTON_LAWS",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Định luật II Newton: xe có ma sát và máy Atwood",
-  "question": "Gia tốc phụ thuộc hợp lực và khối lượng như thế nào? Vì sao máy Atwood với hai khối lượng gần bằng nhau chuyển động chậm dù trọng lực lên mỗi vật rất lớn?"
+  "question": "Trước khi chạy máy Atwood: em đoán hai khối gần bằng nhau thì gia tốc lớn hay nhỏ? Sau khi thử: ghi gia tốc em đọc được với ba cặp m₁, m₂. Một bạn nói \"vật nặng hơn rơi nhanh như rơi tự do vì nó nặng\" — số liệu nào của em bác bỏ, và hợp lực thật sự là gì?"
  },
  {
   "id": "PHYS_SPRING_HOOKE",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Lò xo, định luật Hooke và ghép lò xo",
-  "question": "Ghép nối tiếp và ghép song song hai lò xo cho độ cứng tương đương khác nhau ra sao? Độ giãn thay đổi thế nào khi treo cùng một vật?"
+  "question": "Trước khi ghép: em đoán hai lò xo nối tiếp cứng hơn hay mềm hơn một lò xo? Sau khi thử: ghi k tương đương và độ giãn em đọc được ở ba cách ghép. Bạn em nói \"ghép song song thì k giảm một nửa\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "PHYS_FLUID_PRESSURE",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Áp suất chất lỏng và lực đẩy Archimedes",
-  "question": "Áp suất trong chất lỏng tăng theo độ sâu như thế nào? Vì sao vật có khối lượng riêng nhỏ hơn chất lỏng thì nổi và chìm một phần?"
+  "question": "Trước khi đổi khối lượng riêng: em đoán vật nổi, lơ lửng hay chìm khi so ρ vật với ρ chất lỏng? Sau khi thử: ghi trạng thái và lực đẩy Archimedes em đọc được với ba cặp số. Một bạn nói \"vật chìm sâu hơn thì lực đẩy Archimedes lớn hơn\" — kết quả khi em đổi độ sâu nói gì?"
  },
  {
   "id": "PHYS_WORK_ENERGY",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Công, năng lượng và bảo toàn cơ năng khi trượt xuống dốc",
-  "question": "Khi vật trượt xuống dốc thế năng giảm đi chuyển thành những dạng nào? Có ma sát thì cơ năng còn bảo toàn không và phần mất đi đi đâu?"
+  "question": "Trước khi thả: em đoán có ma sát thì động năng ở chân dốc giảm bao nhiêu so với không ma sát? Sau khi thử: ghi thế năng, động năng, nhiệt em đọc được với μ = 0 và μ khác 0. Bạn em nói \"có ma sát là mất năng lượng, không bảo toàn nữa\" — dòng \"Tổng\" em đọc được phản biện thế nào?"
  },
  {
   "id": "PHYS_COLLISION_1D",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Va chạm một chiều: bảo toàn động lượng",
-  "question": "Trong va chạm đàn hồi và va chạm mềm, đại lượng nào luôn bảo toàn, đại lượng nào không? Vì sao động năng giảm đi trong va chạm mềm?"
+  "question": "Trước khi cho va chạm: em đoán va chạm mềm thì động năng và động lượng cái nào giữ nguyên? Sau khi thử: ghi động lượng và động năng trước, sau với e = 0 và e = 1. Một bạn nói \"va chạm mềm vi phạm bảo toàn năng lượng\" — số liệu của em và năng lượng đã đi đâu?"
  },
  {
   "id": "PHYS_CIRCULAR_MOTION",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Chuyển động tròn đều, lực hướng tâm và vệ tinh",
-  "question": "Vì sao vật chuyển động tròn đều vẫn có gia tốc? Vệ tinh ở càng cao thì tốc độ dài và chu kì thay đổi ra sao?"
+  "question": "Trước khi đổi bán kính quỹ đạo: em đoán vệ tinh ở cao hơn quay nhanh hay chậm hơn? Sau khi thử: ghi chu kì và tốc độ em đọc được ở hai độ cao. Bạn em nói \"vật quay tròn đều không có gia tốc vì tốc độ không đổi\" — số liệu gia tốc hướng tâm của em bác bỏ thế nào?"
  },
  {
   "id": "PHYS_SHM",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Dao động điều hòa của con lắc lò xo",
-  "question": "Li độ, vận tốc và gia tốc của dao động điều hòa lệch pha nhau thế nào? Cơ năng chuyển hóa giữa động năng và thế năng ra sao, và khi có ma sát biên độ thay đổi thế nào?"
+  "question": "Trước khi đổi biên độ: em đoán chu kì thay đổi không? Sau khi thử: ghi vmax, amax em đọc được với hai biên độ cùng chu kì. Một bạn nói \"ở vị trí biên vật đứng yên nên gia tốc bằng 0\" — giá trị x, v, a em đọc được tại biên nói gì?"
  },
  {
   "id": "PHYS_WAVE_MECH",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Sóng cơ: sóng ngang, sóng dọc và sóng dừng",
-  "question": "Phần tử môi trường có truyền đi theo sóng không? Bước sóng, tần số và tốc độ truyền sóng liên hệ nhau thế nào, và sóng dừng hình thành khi nào?"
+  "question": "Trước khi tăng tần số: em đoán bước sóng thay đổi thế nào khi tốc độ truyền giữ nguyên? Sau khi thử: ghi λ, f, v em đọc được ở hai tần số. Bạn em nói \"sóng truyền đi thì các phần tử môi trường cũng đi theo sóng\" — khi em theo dõi một điểm trên dây, em thấy gì?"
  },
  {
   "id": "PHYS_ELECTRIC_FIELD",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Điện trường, đường sức và định luật Coulomb",
-  "question": "Đường sức điện xuất phát từ điện tích nào và kết thúc ở đâu? Lực Coulomb giữa hai điện tích thay đổi thế nào khi khoảng cách tăng gấp đôi?"
+  "question": "Trước khi đổi khoảng cách: em đoán tăng gấp đôi khoảng cách thì lực Coulomb còn bao nhiêu? Sau khi thử: ghi F em đọc được ở ba khoảng cách của em. Một bạn nói \"điện tích lớn hơn chịu lực lớn hơn điện tích nhỏ\" — số liệu của em và định luật 3 Newton phản biện thế nào?"
  },
  {
   "id": "PHYS_DC_CIRCUIT",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Mạch điện một chiều: định luật Ohm cho toàn mạch",
-  "question": "Hiệu điện thế giữa hai cực nguồn giảm thế nào khi dòng điện tăng? Điện trở ngoài bằng bao nhiêu thì công suất tiêu thụ lớn nhất?"
+  "question": "Trước khi đổi cách mắc: em đoán mắc song song thì dòng mạch chính tăng hay giảm? Sau khi thử: ghi I và U hai cực em đọc được khi nối tiếp và song song. Bạn em nói \"hiệu điện thế hai cực pin luôn bằng suất điện động\" — số liệu nào của em bác bỏ, và khi nào câu đó mới đúng?"
  },
  {
   "id": "PHYS_OSCILLOSCOPE",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Dao động kí điện tử: đọc chu kì và biên độ",
-  "question": "Làm sao đọc chu kì, tần số và hiệu điện thế từ màn hình dao động kí khi biết thang thời gian và thang điện áp?"
+  "question": "Trước khi đổi thang thời gian: em đoán một chu kì chiếm nhiều ô hơn hay ít ô hơn? Sau khi thử: ghi số ô một chu kì và điện áp đỉnh – đỉnh em đọc được ở hai thang. Một bạn đọc chu kì sai vì quên nhân với thang đo — em kiểm lại bằng số liệu nào?"
  },
  {
   "id": "PHYS_KINETIC_GAS_PARTICLES",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Mô hình động học phân tử của chất khí",
-  "question": "Áp suất chất khí sinh ra từ đâu theo mô hình hạt? Vì sao tăng nhiệt độ hoặc giảm thể tích đều làm áp suất tăng?"
+  "question": "Trước khi tăng nhiệt độ: em đoán áp suất và tốc độ hạt thay đổi thế nào? Sau khi thử: ghi áp suất tỉ đối và tốc độ căn quân phương em đọc được ở hai nhiệt độ. Bạn em nói \"nhiệt độ tăng gấp đôi thì tốc độ hạt tăng gấp đôi\" — số liệu của em ủng hộ hay bác bỏ?"
  },
  {
   "id": "PHYS_STATES_OF_MATTER",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Mô hình phân tử của chất rắn, lỏng, khí và sự chuyển thể",
-  "question": "Khoảng cách và chuyển động của các phân tử khác nhau thế nào ở thể rắn, lỏng, khí? Nhiệt độ tăng qua nhiệt độ nóng chảy và sôi thì mô hình thay đổi ra sao?"
+  "question": "Trước khi đun: em đoán khoảng cách và chuyển động của phân tử nước đổi thế nào khi chuyển thể? Sau khi kéo nhiệt độ: ghi thể, khoảng cách, chuyển động em đọc được ở ba nhiệt độ. Một bạn nói \"khi nước đá tan, phân tử nước biến thành phân tử khác\" — mô hình em quan sát bác bỏ thế nào?"
  },
  {
   "id": "PHYS_MAGNETIC_FIELD",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Từ trường: lực Lorentz và từ trường của dòng điện thẳng",
-  "question": "Điện tích chuyển động trong từ trường đều chịu lực như thế nào, và vì sao quỹ đạo là đường tròn? Hai dây dẫn thẳng song song mang dòng điện cùng chiều hút hay đẩy nhau?"
+  "question": "Trước khi tăng cảm ứng từ: em đoán bán kính quỹ đạo electron lớn lên hay nhỏ đi? Sau khi thử: ghi bán kính em đọc được ở hai giá trị B và hai tốc độ. Bạn em nói \"hai dòng điện cùng chiều thì đẩy nhau như hai cực cùng tên\" — kết quả khi em cho I₁, I₂ cùng chiều nói gì?"
  },
  {
   "id": "PHYS_EM_INDUCTION",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Cảm ứng điện từ: từ thông và suất điện động của khung dây quay",
-  "question": "Suất điện động xuất hiện khi nào, và vì sao khung dây quay đều trong từ trường sinh ra dòng điện xoay chiều? Khi từ thông cực đại thì suất điện động bằng bao nhiêu?"
+  "question": "Trước khi tăng tần số quay: em đoán suất điện động cực đại đổi thế nào? Sau khi thử: ghi E₀ em đọc được ở hai tần số và hai số vòng dây. Một bạn nói \"suất điện động lớn nhất khi từ thông lớn nhất\" — khi em theo dõi khung quay, hai giá trị đó đạt cực đại cùng lúc không?"
  },
  {
   "id": "PHYS_ALPHA_SCATTERING",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Thí nghiệm tán xạ hạt α của Rutherford",
-  "question": "Vì sao một số hạt α bị bật ngược trở lại, điều mà mẫu bánh pudding của Thomson không giải thích được? Điều đó nói gì về kích thước và điện tích của hạt nhân?"
+  "question": "Trước khi bắn: em đoán với mẫu Thomson có hạt α nào bật ngược lại không? Sau khi thử: ghi góc lệch em thấy với mẫu Thomson và mẫu hạt nhân, cùng động năng. Bạn em nói \"hạt α bật ngược vì va vào electron\" — số liệu của em và khối lượng electron phản biện thế nào?"
  },
  {
   "id": "PHYS_FISSION_REACTOR",
   "engine": "PHYSICS",
   "family": "SCENE_LAB",
   "title": "Phân hạch dây chuyền và thanh điều khiển lò phản ứng",
-  "question": "Hệ số nhân neutron k bằng bao nhiêu thì phản ứng dây chuyền tắt dần, ổn định hay tăng nhanh? Thanh điều khiển giúp đưa lò về trạng thái tới hạn như thế nào?"
+  "question": "Trước khi cắm thanh điều khiển: em đoán hệ số nhân k cần bằng bao nhiêu để lò chạy ổn định? Sau khi thử: ghi k và số phân hạch ở thế hệ cuối em đọc được ở ba độ cắm. Một bạn nói \"k càng lớn lò càng tốt vì ra nhiều năng lượng\" — số liệu của em cho thấy rủi ro gì?"
  },
  {
   "id": "PHYS_YOUNG_INTERFERENCE",
   "engine": "PHYSICS",
   "family": "CURVE_LAB",
   "title": "Giao thoa ánh sáng Young",
-  "question": "Khoảng vân phụ thuộc bước sóng, khoảng cách hai khe và khoảng cách đến màn như thế nào? Vì sao ánh sáng đỏ cho vân thưa hơn ánh sáng tím?"
+  "question": "Trước khi đổi bước sóng: em đoán ánh sáng đỏ hay tím cho vân rộng hơn? Sau khi thử: ghi khoảng vân i em đọc được với hai bước sóng và hai khoảng cách khe a. Bạn em nói \"hai khe càng xa nhau vân càng rộng\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "PHYS_CAPACITOR",
   "engine": "PHYSICS",
   "family": "CURVE_LAB",
   "title": "Tụ điện: điện tích, năng lượng và ghép tụ",
-  "question": "Điện tích tụ tích được tăng theo hiệu điện thế thế nào, và năng lượng dự trữ phụ thuộc ra sao? Ghép nối tiếp hay song song làm điện dung tương đương thay đổi thế nào?"
+  "question": "Trước khi ghép: em đoán ghép nối tiếp thì điện dung tương đương lớn hơn hay nhỏ hơn tụ nhỏ nhất? Sau khi thử: ghi điện dung, Q, W em đọc được khi ghép song song và nối tiếp. Một bạn nói \"ghép tụ giống ghép điện trở\" — số liệu của em cho thấy chỗ nào ngược lại?"
  },
  {
   "id": "PHYS_HEAT_CALORIMETRY",
   "engine": "PHYSICS",
   "family": "CURVE_LAB",
   "title": "Đồ thị đun nóng nước đá: nhiệt dung riêng và nhiệt nóng chảy, hóa hơi",
-  "question": "Vì sao nhiệt độ không đổi trong lúc nước đá đang tan và nước đang sôi dù vẫn cung cấp nhiệt? Nhiệt lượng nào lớn nhất trong toàn bộ quá trình?"
+  "question": "Trước khi đun: em đoán giai đoạn nào trên đồ thị nhiệt độ đứng yên dù vẫn cấp nhiệt? Sau khi thử: ghi nhiệt lượng từng giai đoạn em đọc được với khối lượng của em. Bạn em nói \"cấp nhiệt thì nhiệt độ luôn tăng\" — đoạn nào trên đồ thị của em bác bỏ, nhiệt đi đâu?"
  },
  {
   "id": "PHYS_THERMOMETER",
   "engine": "PHYSICS",
   "family": "CURVE_LAB",
   "title": "Nhiệt độ và các thang đo: Celsius, Kelvin, Fahrenheit",
-  "question": "Vì sao thang Kelvin bắt đầu từ độ không tuyệt đối? Đổi 36,6 °C sang kelvin và Fahrenheit thế nào?"
+  "question": "Trước khi đổi: em đoán có nhiệt độ nào mà số đọc theo Celsius và Fahrenheit bằng nhau không? Sau khi thử: ghi các giá trị em đọc được khi tìm điểm đó. Một bạn nói \"20 °C nóng gấp đôi 10 °C\" — đổi hai giá trị sang Kelvin, em phản biện thế nào?"
  },
  {
   "id": "PHYS_TRANSFORMER_GRID",
   "engine": "PHYSICS",
   "family": "CURVE_LAB",
   "title": "Máy biến áp và hao phí khi truyền tải điện",
-  "question": "Vì sao truyền tải điện đi xa phải dùng điện áp rất cao? Máy biến áp thay đổi điện áp và cường độ dòng điện theo tỉ lệ nào?"
+  "question": "Trước khi đổi điện áp truyền tải: em đoán tăng điện áp gấp đôi thì hao phí giảm bao nhiêu lần? Sau khi thử: ghi hao phí em đọc được ở 110 kV, 220 kV, 500 kV. Bạn em nói \"muốn giảm hao phí thì cứ làm dây thật to\" — số liệu của em cho thấy cách nào hiệu quả hơn, vì sao?"
  },
  {
   "id": "PHYS_NUCLEAR_BINDING",
   "engine": "PHYSICS",
   "family": "CURVE_LAB",
   "title": "Năng lượng liên kết riêng của hạt nhân",
-  "question": "Vì sao hạt nhân ở gần số khối 56 (sắt) bền nhất? Vì sao phân hạch hạt nhân nặng và nhiệt hạch hạt nhân nhẹ đều giải phóng năng lượng?"
+  "question": "Trước khi xem đồ thị: em đoán hạt nhân nào bền nhất? Sau khi đọc: ghi năng lượng liên kết riêng em đọc được ở A = 4, 56, 238. Một bạn nói \"hạt nhân càng nặng càng bền vì có nhiều nucleon giữ nhau\" — số liệu của em bác bỏ thế nào, và vì sao cả phân hạch lẫn nhiệt hạch đều tỏa năng lượng?"
  },
  {
   "id": "PHYS_EM_SPECTRUM",
   "engine": "PHYSICS",
   "family": "TABLE_LAB",
   "title": "Thang sóng điện từ",
-  "question": "Các loại sóng điện từ khác nhau về bước sóng, tần số và năng lượng photon thế nào? Vì sao tia X và gamma nguy hiểm hơn sóng vô tuyến?"
+  "question": "Trước khi tra bảng: em xếp sóng vô tuyến, ánh sáng nhìn thấy, tia X theo bước sóng tăng dần. Sau khi tra: ghi chỗ em xếp sai và bước sóng thật em đọc được. Một bạn nói \"tia X và sóng radio là hai loại sóng khác bản chất\" — bảng em vừa xem phản biện thế nào?"
  },
  {
   "id": "CHEM_ATOM_STRUCTURE",
   "engine": "CHEMISTRY",
   "family": "SCENE_LAB",
   "title": "Cấu hình electron: Aufbau, Hund, Pauli",
-  "question": "Electron được điền vào các orbital theo thứ tự năng lượng và quy tắc nào? Vì sao Cr và Cu có cấu hình khác với dự đoán theo Aufbau?"
+  "question": "Trước khi đổi Z: em tự viết cấu hình electron của Cr (Z = 24) theo thứ tự Aufbau. Sau khi xem: ghi cấu hình mô phỏng đưa ra, số electron độc thân em đọc được, và chỗ em viết khác. Một bạn nói \"electron luôn điền đầy phân lớp này rồi mới sang phân lớp sau\" — trường hợp của em phản biện thế nào?"
  },
  {
   "id": "CHEM_BONDING",
   "engine": "CHEMISTRY",
   "family": "SCENE_LAB",
   "title": "Liên kết hóa học: cộng hóa trị và liên kết ion",
-  "question": "Hiệu độ âm điện giữa hai nguyên tử cho biết loại liên kết thế nào? Vì sao CO₂ có liên kết phân cực nhưng phân tử lại không phân cực?"
+  "question": "Trước khi chọn chất: em đoán HF, H₂O, NaCl, N₂ chất nào có liên kết ion? Sau khi xem: ghi hiệu độ âm điện và loại liên kết em đọc được cho từng chất. Bạn em nói \"cứ có kim loại là liên kết ion, không có là cộng hoá trị\" — chất nào trong danh sách giúp em kiểm tra ranh giới đó?"
  },
  {
   "id": "CHEM_REDOX",
   "engine": "CHEMISTRY",
   "family": "SCENE_LAB",
   "title": "Phản ứng oxi hóa – khử: số oxi hóa và chuyển electron",
-  "question": "Chất nào nhường electron, chất nào nhận electron? Vì sao tổng số electron nhường luôn bằng tổng số electron nhận?"
+  "question": "Trước khi chọn phản ứng: em tự xác định chất khử, chất oxi hoá của H₂ + CuO. Sau khi xem: ghi số oxi hoá trước, sau và số electron em đọc được, so với dự đoán. Một bạn nói \"chất oxi hoá là chất bị oxi hoá\" — phản ứng nào của em giúp em sửa câu đó?"
  },
  {
   "id": "CHEM_HALOGEN_LAB",
   "engine": "CHEMISTRY",
   "family": "SCENE_LAB",
   "title": "Ống nghiệm ảo: nhận biết halide và phản ứng đẩy halogen",
-  "question": "Vì sao AgNO₃ tạo kết tủa với Cl⁻, Br⁻, I⁻ nhưng không với F⁻? Halogen nào đẩy được halogen nào ra khỏi muối và điều đó nói gì về tính oxi hóa?"
+  "question": "Trước khi nhỏ: em đoán màu kết tủa của AgNO₃ với NaCl, NaBr, NaI và có ống nào không kết tủa. Sau khi làm: ghi màu thật em thấy ở từng ống. Một bạn nói \"nước bromine đẩy được chlorine ra khỏi NaCl\" — ống nào em làm được để kiểm tra, và kết quả của em nói gì?"
  },
  {
   "id": "CHEM_VIRTUAL_TESTTUBE",
   "engine": "CHEMISTRY",
   "family": "SCENE_LAB",
   "title": "Ống nghiệm ảo: nhận biết ion bằng kết tủa, màu và chất khí",
-  "question": "Từ hiện tượng (màu kết tủa, tan trong thuốc thử dư, khí thoát ra) ta suy ra ion nào có trong dung dịch như thế nào?"
+  "question": "Trước khi nhỏ thuốc thử: em đoán ion trong ống chưa biết là gì. Sau khi làm: ghi màu kết tủa, có tan trong thuốc thử dư không, có khí không ở ống của em. Một bạn chỉ nhìn một màu kết tủa trắng đã kết luận ngay — ion nào khác cũng cho kết tủa trắng, và em cần thêm bước nào?"
  },
  {
   "id": "CHEM_SPECTRA",
   "engine": "CHEMISTRY",
   "family": "SCENE_LAB",
   "title": "Phổ hồng ngoại (IR) và phổ khối lượng (MS)",
-  "question": "Các peak hấp thụ ở số sóng đặc trưng cho nhóm chức nào? Peak ion phân tử trong phổ khối cho ta biết điều gì về phân tử khối?"
+  "question": "Trước khi xem phổ IR: em đoán ethanol và acetic acid khác nhau ở peak nào? Sau khi xem: ghi số sóng các peak đặc trưng và phân tử khối em đọc được cho hai chất. Bạn em nói \"chỉ cần phổ MS là biết nhóm chức\" — dữ liệu em vừa đọc cho thấy mỗi loại phổ trả lời câu hỏi gì?"
  },
  {
   "id": "CHEM_ALKALI_EARTH",
   "engine": "CHEMISTRY",
   "family": "SCENE_LAB",
   "title": "Thử màu ngọn lửa của kim loại kiềm, kiềm thổ và đồng",
-  "question": "Vì sao mỗi kim loại cho ngọn lửa một màu đặc trưng? Màu ngọn lửa giúp nhận ra ion kim loại nào và được dùng ở đâu?"
+  "question": "Trước khi đốt: em đoán muối kali và muối natri cho ngọn lửa màu gì? Sau khi thử: ghi màu ngọn lửa em thấy với từng muối. Một bạn dùng màu ngọn lửa để khẳng định mẫu chỉ có kali nhưng ngọn lửa vàng rực — vì sao kết luận đó chưa chắc, em cần làm gì thêm?"
  },
  {
   "id": "CHEM_ORGANIC_STRUCTURE",
   "engine": "CHEMISTRY",
   "family": "SCENE_LAB",
   "title": "Công thức cấu tạo, nhóm chức và đồng phân hợp chất hữu cơ",
-  "question": "Hai chất có cùng công thức phân tử nhưng khác công thức cấu tạo thì khác nhau thế nào? Nhóm chức nào quyết định tính chất đặc trưng của từng loại hợp chất?"
+  "question": "Trước khi xem: em đoán butane và 2-methylpropane có cùng công thức phân tử không, nhiệt độ sôi chất nào cao hơn? Sau khi xem: ghi công thức cấu tạo, nhóm chức em đọc được cho hai cặp chất bất kì. Bạn em nói \"cùng công thức phân tử thì cùng tính chất\" — cặp nào của em bác bỏ?"
  },
  {
   "id": "CHEM_LIPID_SOAP",
   "engine": "CHEMISTRY",
   "family": "SCENE_LAB",
   "title": "Chất béo, xà phòng và cơ chế tẩy rửa (micelle)",
-  "question": "Phần đầu ưa nước và phần đuôi kị nước của phân tử xà phòng sắp xếp thế nào quanh giọt dầu? Vì sao xà phòng giặt kém trong nước cứng?"
+  "question": "Trước khi tăng nồng độ xà phòng: em đoán dưới nồng độ micelle tới hạn thì giọt dầu có bị bao không? Sau khi thử: ghi số phân tử bám quanh giọt dầu và trạng thái em đọc được ở ba nồng độ, có và không có nước cứng. Một bạn nói \"cho thật nhiều xà phòng vào nước cứng là giặt sạch như thường\" — số liệu của em nói gì?"
  },
  {
   "id": "CHEM_CARBOHYDRATE",
   "engine": "CHEMISTRY",
   "family": "SCENE_LAB",
   "title": "Glucose: dạng mạch hở và dạng mạch vòng α, β",
-  "question": "Glucose tồn tại chủ yếu ở dạng nào trong dung dịch và vì sao các dạng chuyển hóa qua lại được? Hai dạng α và β khác nhau ở vị trí nào?"
+  "question": "Trước khi chọn dạng: em đoán trong dung dịch glucose dạng nào chiếm nhiều nhất? Sau khi xem: ghi tỉ lệ các dạng em đọc được. Bạn em nói \"dạng mạch hở rất ít nên glucose không thể có phản ứng của nhóm –CHO\" — vì sao cân bằng giữa các dạng bác bỏ được lập luận đó?"
  },
  {
   "id": "CHEM_POLYMER",
   "engine": "CHEMISTRY",
   "family": "SCENE_LAB",
   "title": "Polymer: trùng hợp và trùng ngưng",
-  "question": "Phản ứng trùng hợp khác trùng ngưng ở chỗ nào? Số mắt xích n liên hệ với phân tử khối của polymer như thế nào?"
+  "question": "Trước khi đổi số mắt xích: em đoán trùng ngưng nylon-6,6 khác trùng hợp PE ở sản phẩm phụ nào? Sau khi thử: ghi phân tử khối và số phân tử nước giải phóng em đọc được với hai giá trị n. Một bạn nói \"phân tử khối polymer bằng n nhân phân tử khối monome trong mọi trường hợp\" — số liệu nylon của em bác bỏ thế nào?"
  },
  {
   "id": "CHEM_ELECTROLYSIS",
   "engine": "CHEMISTRY",
   "family": "SCENE_LAB",
   "title": "Điện phân và định luật Faraday",
-  "question": "Ở catot và anot xảy ra quá trình nào khi điện phân các dung dịch và chất nóng chảy khác nhau? Khối lượng chất sinh ra phụ thuộc cường độ dòng điện và thời gian như thế nào?"
+  "question": "Trước khi điện phân CuSO₄: em đoán ở catot và anot sinh ra chất gì? Sau khi thử: ghi số mol electron và lượng chất em đọc được với hai bộ I, t. Bạn em nói \"tăng gấp đôi cường độ dòng điện thì phải chạy gấp đôi thời gian\" — số liệu Faraday của em nói ngược lại thế nào?"
  },
  {
   "id": "CHEM_ENERGETICS",
   "engine": "CHEMISTRY",
   "family": "CURVE_LAB",
   "title": "Giản đồ năng lượng: enthalpy phản ứng và năng lượng hoạt hóa",
-  "question": "Phản ứng tỏa nhiệt và thu nhiệt khác nhau thế nào trên giản đồ năng lượng? Chất xúc tác làm thay đổi đại lượng nào và không làm thay đổi đại lượng nào?"
+  "question": "Trước khi thêm xúc tác: em đoán ΔH thay đổi không? Sau khi thử: ghi Ea thuận, Ea nghịch, ΔH em đọc được khi có và không có xúc tác. Một bạn nói \"xúc tác làm phản ứng toả nhiều nhiệt hơn nên nhanh hơn\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "CHEM_KINETICS",
   "engine": "CHEMISTRY",
   "family": "CURVE_LAB",
   "title": "Tốc độ phản ứng: nhiệt độ, xúc tác và phương trình Arrhenius",
-  "question": "Vì sao tăng nhiệt độ hoặc dùng xúc tác làm nồng độ chất đầu giảm nhanh hơn? Tăng 10 °C thì tốc độ thường tăng khoảng mấy lần?"
+  "question": "Trước khi tăng nhiệt độ 10 °C: em đoán phản ứng nhanh gấp mấy lần? Sau khi thử: ghi hằng số tốc độ và số lần nhanh hơn em đọc được với hai giá trị Ea. Bạn em nói \"tăng 10 °C thì mọi phản ứng nhanh gấp đôi\" — số liệu của em cho thấy điều đó phụ thuộc vào gì?"
  },
  {
   "id": "CHEM_EQUILIBRIUM_GENERAL",
   "engine": "CHEMISTRY",
   "family": "CURVE_LAB",
   "title": "Cân bằng hóa học tổng quát: thương số phản ứng Q so với hằng số K",
-  "question": "So sánh Q với K cho ta biết chiều dịch chuyển của phản ứng thế nào? Vì sao Q luôn tiến về K và dừng lại ở đó?"
+  "question": "Trước khi đổi Q ban đầu: em đoán khi Q < K phản ứng chạy theo chiều nào? Sau khi thử: ghi chiều phản ứng em đọc được với ba giá trị lg Q. Một bạn nói \"ở trạng thái cân bằng phản ứng dừng hẳn\" — mô phỏng và số liệu của em phản biện thế nào?"
  },
  {
   "id": "CHEM_ACID_BASE",
   "engine": "CHEMISTRY",
   "family": "CURVE_LAB",
   "title": "pH của acid mạnh, acid yếu và dung dịch đệm",
-  "question": "Vì sao pha loãng acid yếu làm pH tăng chậm hơn acid mạnh? Dung dịch đệm giữ pH ổn định nhờ cặp acid–base liên hợp như thế nào?"
+  "question": "Trước khi đổi pKa: em đoán acid yếu 0,1 M có pH bằng 1 như acid mạnh không? Sau khi thử: ghi pH và phần trăm phân li em đọc được với hai pKa, và pH đệm với hai tỉ lệ [A⁻]/[HA]. Bạn em nói \"acid yếu là acid loãng\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "CHEM_BOILING_POINTS",
   "engine": "CHEMISTRY",
   "family": "CURVE_LAB",
   "title": "Nhiệt độ sôi của alkane, aldehyde, alcohol và acid carboxylic",
-  "question": "Vì sao alcohol và acid carboxylic sôi cao hơn nhiều so với alkane có số nguyên tử C tương đương? Nhiệt độ sôi biến thiên thế nào khi tăng số nguyên tử carbon?"
+  "question": "Trước khi xem: em xếp alkane, aldehyde, alcohol, carboxylic acid có 3 carbon theo nhiệt độ sôi tăng dần. Sau khi xem: ghi nhiệt độ sôi em đọc được và chỗ em xếp sai. Một bạn nói \"phân tử khối lớn hơn thì sôi cao hơn, thế thôi\" — cặp nào của em có phân tử khối gần bằng mà nhiệt độ sôi chênh nhiều?"
  },
  {
   "id": "CHEM_AMINO_PROTEIN",
   "engine": "CHEMISTRY",
   "family": "CURVE_LAB",
   "title": "Amino acid: điện tích theo pH và điểm đẳng điện",
-  "question": "Amino acid mang điện tích gì ở pH thấp, pH cao và tại pH nào nó không di chuyển trong điện trường? Điều đó dùng để tách các amino acid như thế nào?"
+  "question": "Trước khi đổi pH: em đoán ở pH thấp hơn pI amino acid di chuyển về cực nào khi điện di? Sau khi thử: ghi điện tích và hướng điện di em đọc được ở ba giá trị pH. Bạn em nói \"ở pI amino acid không có điện tích nào\" — vì sao câu đó chưa chính xác, dạng tồn tại thật ở pI là gì?"
  },
  {
   "id": "CHEM_PERIODIC_TABLE",
   "engine": "CHEMISTRY",
   "family": "TABLE_LAB",
   "title": "Bảng tuần hoàn các nguyên tố và xu hướng biến đổi tuần hoàn",
-  "question": "Bán kính nguyên tử, độ âm điện và năng lượng ion hóa biến đổi thế nào theo chu kì và theo nhóm? Vì sao các nguyên tố trong cùng một nhóm có tính chất tương tự nhau?"
+  "question": "Trước khi tra bảng: em đoán trong chu kì 3 bán kính nguyên tử và độ âm điện biến đổi theo chiều nào? Sau khi tra: ghi giá trị em đọc được cho Na, Mg, Cl và chỗ em đoán sai. Một bạn nói \"nguyên tử nhiều electron hơn thì to hơn\" — số liệu chu kì 3 của em bác bỏ thế nào?"
  },
  {
   "id": "CHEM_ELECTROCHEM_SERIES",
   "engine": "CHEMISTRY",
   "family": "TABLE_LAB",
   "title": "Dãy điện hóa của kim loại và thế điện cực chuẩn",
-  "question": "Kim loại đứng trước có tính khử mạnh hơn kim loại đứng sau như thế nào, và dựa vào thế điện cực chuẩn ta dự đoán phản ứng và suất điện động của pin ra sao?"
+  "question": "Trước khi tra: em đoán Fe có khử được Cu²⁺ và Zn²⁺ không? Sau khi tra: ghi thế điện cực chuẩn em đọc được và kết luận cho từng cặp. Bạn em nói \"kim loại đứng trước đẩy được mọi kim loại đứng sau ra khỏi muối, kể cả Na\" — vì sao Na là ngoại lệ trong dung dịch?"
  },
  {
   "id": "CHEM_TRANSITION_COMPLEX",
   "engine": "CHEMISTRY",
   "family": "TABLE_LAB",
   "title": "Cấu hình d, màu của ion kim loại chuyển tiếp và phức chất",
-  "question": "Vì sao nhiều ion kim loại chuyển tiếp có màu còn Zn²⁺ và Sc³⁺ thì không? Số electron d liên quan đến màu và phức chất như thế nào?"
+  "question": "Trước khi tra: em đoán Zn²⁺ và Cu²⁺ ion nào có màu trong dung dịch? Sau khi tra: ghi cấu hình d và màu em đọc được cho hai ion. Một bạn nói \"kim loại chuyển tiếp nào cũng tạo ion có màu\" — ion nào em vừa tra bác bỏ, và cấu hình d giải thích ra sao?"
  },
  {
   "id": "CHEM_INDUSTRIAL_PROCESS",
   "engine": "CHEMISTRY",
   "family": "PROCESS_STEPS",
   "title": "Sản xuất sulfuric acid theo phương pháp tiếp xúc",
-  "question": "Vì sao SO₃ không được hấp thụ trực tiếp bằng nước mà bằng H₂SO₄ đặc? Các điều kiện nhiệt độ và xúc tác của giai đoạn oxi hóa SO₂ được chọn để cân bằng yếu tố nào?"
+  "question": "Trước khi bấm qua các công đoạn: em đoán vì sao người ta không hấp thụ SO₃ trực tiếp bằng nước? Sau khi đi hết: ghi điều kiện từng công đoạn em đọc được và chỗ em đoán sai. Bạn em nói \"tăng nhiệt độ thật cao cho phản ứng nhanh là tốt nhất\" — với phản ứng toả nhiệt 2SO₂ + O₂ ⇌ 2SO₃, em phản biện thế nào?"
  },
  {
   "id": "CHEM_ORGANIC_REACTIONS",
   "engine": "CHEMISTRY",
   "family": "PROCESS_STEPS",
   "title": "Cộng HBr vào propene theo quy tắc Markovnikov",
-  "question": "Vì sao khi cộng HBr vào propene sản phẩm chính là 2-bromopropane chứ không phải 1-bromopropane? Độ bền của carbocation quyết định điều đó thế nào?"
+  "question": "Trước khi xem cơ chế: em đoán HBr cộng vào propene cho sản phẩm chính nào? Sau khi xem: ghi carbocation trung gian em thấy và chỗ em đoán sai. Một bạn thuộc quy tắc Markovnikov nhưng không giải thích được — độ bền carbocation em vừa xem giúp em giải thích thế nào?"
  },
  {
   "id": "CHEM_SCIENCE_PROCESS",
   "engine": "CHEMISTRY",
   "family": "PROCESS_STEPS",
   "title": "Quy trình nghiên cứu khoa học trong hóa học",
-  "question": "Một nghiên cứu khoa học trải qua những bước nào, và vì sao phải kiểm soát biến số trong thí nghiệm? Hãy áp dụng cho việc tìm hiểu ảnh hưởng của nhiệt độ đến thời gian tan của viên sủi?"
+  "question": "Trước khi xem các bước: em tự viết giả thuyết cho câu hỏi \"nhiệt độ ảnh hưởng thế nào tới thời gian tan của viên sủi\". Sau khi đi hết: ghi biến độc lập, biến phụ thuộc, biến cần giữ nguyên trong thiết kế của em. Bạn em đo ở nước nóng bằng cốc to, nước lạnh bằng cốc nhỏ — thí nghiệm đó sai ở đâu?"
  },
  {
   "id": "CHEM_SEPARATION",
   "engine": "CHEMISTRY",
   "family": "ANATOMY_FLOW",
   "title": "Chưng cất phân đoạn dầu mỏ và các phương pháp tách chất",
-  "question": "Các phân đoạn dầu mỏ được tách theo tiêu chí nào trong tháp chưng cất? Vì sao phân đoạn nhẹ lên đỉnh tháp còn cặn nặng ở đáy?"
+  "question": "Trước khi đi theo tháp chưng cất: em đoán xăng hay dầu mazut thu được ở đỉnh tháp? Sau khi xem: ghi khoảng nhiệt độ sôi từng phân đoạn em đọc được và chỗ em đoán sai. Một bạn nói \"chưng cất tách được từng chất tinh khiết ra khỏi dầu mỏ\" — vì sao gọi là phân đoạn?"
  },
  {
   "id": "CHEM_METALLURGY",
   "engine": "CHEMISTRY",
   "family": "ANATOMY_FLOW",
   "title": "Lò cao luyện gang: các vùng phản ứng",
-  "question": "Quặng sắt được khử dần qua những giai đoạn nào khi đi xuống trong lò cao, và vai trò của than cốc, CO và đá vôi là gì?"
+  "question": "Trước khi đi theo lò cao: em đoán chất nào trực tiếp khử oxide sắt ở phần lớn lò? Sau khi xem: ghi các vùng nhiệt độ và phản ứng em đọc được, chỗ em đoán sai. Bạn em nói \"đá vôi cho vào để cung cấp carbon\" — vai trò thật của đá vôi em thấy trong mô phỏng là gì?"
  },
  {
   "id": "MATH_UNIT_CIRCLE",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Đường tròn lượng giác",
-  "question": "Khi điểm M chạy trên đường tròn đơn vị, hoành độ và tung độ của M cho ta những giá trị lượng giác nào? Vì sao sin(π − α) = sin α còn cos(π − α) = −cos α?"
+  "question": "Trước khi kéo góc α: em đoán sin α và cos α đổi dấu ở những góc phần tư nào? Sau khi kéo: ghi giá trị em đọc được ở α, π − α và α + π. Một bạn nói \"sin x = 0,5 chỉ có một nghiệm 30°\" — các nghiệm em thấy trên đường tròn trong [0°, 360°) bác bỏ câu đó thế nào?"
  },
  {
   "id": "MATH_TRIANGLE_SOLVER",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Giải tam giác (định lí sin, cos, trường hợp hai nghiệm)",
-  "question": "Biết hai cạnh và một góc, khi nào có đúng một tam giác, khi nào có hai tam giác và khi nào không có tam giác nào? Định lí cosin và định lí sin dùng ở bước nào?"
+  "question": "Trước khi đặt số: với cạnh a, b và góc A đối diện a, em đoán có thể có mấy tam giác? Sau khi thử: ghi bộ số em chọn cho ra 0, 1 và 2 tam giác. Bạn em bảo \"biết hai cạnh và một góc là luôn dựng được đúng một tam giác\" — bộ số nào của em làm câu đó sai?"
  },
  {
   "id": "MATH_VECTOR_2D",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Vectơ trong mặt phẳng: tổng, hiệu, tích vô hướng",
-  "question": "Quy tắc hình bình hành và quy tắc ba điểm cho cùng một tổng như thế nào? Tích vô hướng cho biết gì về góc giữa hai vectơ và hình chiếu của vectơ này lên vectơ kia?"
+  "question": "Trước khi kéo: em đoán khi nào tích vô hướng a·b bằng 0, khi nào âm? Sau khi kéo: ghi một cặp toạ độ của em cho a·b = 0 và một cặp cho a·b < 0, kèm góc đọc được. Một bạn nói \"|a + b| = |a| + |b| với mọi vectơ\" — số liệu nào của em bác bỏ, và khi nào câu đó mới đúng?"
  },
  {
   "id": "MATH_VECTOR_3D",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Vectơ trong không gian Oxyz: tích có hướng",
-  "question": "Tích có hướng của hai vectơ cho vectơ có phương và độ dài như thế nào? Vì sao độ dài của nó bằng diện tích hình bình hành dựng trên hai vectơ?"
+  "question": "Trước khi đổi toạ độ: em đoán tích có hướng [a, b] bằng vectơ không khi nào? Sau khi thử: ghi cặp a, b của em cho [a, b] = 0 và diện tích hình bình hành tương ứng. Bạn em bảo \"[a, b] = [b, a]\" — kết quả em đọc được khi đổi chỗ a, b nói gì?"
  },
  {
   "id": "MATH_ANALYTIC_LINE_CIRCLE",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Đường thẳng và đường tròn trong mặt phẳng Oxy",
-  "question": "Khoảng cách từ tâm đến đường thẳng so với bán kính cho biết đường thẳng cắt, tiếp xúc hay không cắt đường tròn như thế nào? Dây cung có độ dài bao nhiêu?"
+  "question": "Trước khi kéo: em đoán đường thẳng cắt, tiếp xúc hay không cắt đường tròn khi so d(I, đường thẳng) với R thế nào? Sau khi kéo: ghi ba bộ A, B, C của em cho ba vị trí khác nhau, kèm d và độ dài dây cung. Một bạn chỉ nhìn hình rồi kết luận \"tiếp xúc\" — số liệu nào em dùng để kiểm tra lại?"
  },
  {
   "id": "MATH_CONIC_LAB",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Ba đường conic: elip, hypebol, parabol",
-  "question": "Tổng (hiệu) khoảng cách từ một điểm của elip (hypebol) đến hai tiêu điểm vì sao không đổi? Parabol là tập điểm cách đều tiêu điểm và đường chuẩn nghĩa là gì?"
+  "question": "Trước khi kéo điểm M trên elip: em đoán tổng khoảng cách từ M tới hai tiêu điểm có đổi không? Sau khi kéo: ghi tổng đó ở ba vị trí M của em và so với 2a. Bạn em nói \"elip càng dẹt thì tâm sai càng nhỏ\" — các giá trị a, b, e em đọc được ủng hộ hay bác bỏ?"
  },
  {
   "id": "MATH_SET_LOGIC",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Tập hợp, biểu đồ Venn, khoảng trên trục số và bảng chân trị",
-  "question": "Số phần tử của hợp hai tập hợp tính thế nào khi hai tập có phần chung? Hợp, giao của hai khoảng trên trục số và mệnh đề kéo theo P ⇒ Q đúng, sai khi nào?"
+  "question": "Trước khi tô miền: em đoán n(A ∪ B) bằng n(A) + n(B) khi nào? Sau khi đổi số: ghi n(A), n(B), n(A ∩ B) và n(A ∪ B) em đọc được ở hai trường hợp. Một bạn tính n(A ∪ B) = n(A) + n(B) cho mọi bài — trường hợp nào của em cho thấy họ đếm trùng?"
  },
  {
   "id": "MATH_COUNTING_TREE",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Quy tắc đếm, hoán vị, chỉnh hợp, tổ hợp và tam giác Pascal",
-  "question": "Vì sao chọn k phần tử không tính thứ tự lại chia cho k! so với chọn có thứ tự? Mỗi số trong tam giác Pascal được tạo từ hai số nào ở hàng trên?"
+  "question": "Trước khi đổi n, k: em đoán chọn có thứ tự (chỉnh hợp) hay không thứ tự (tổ hợp) cho số lớn hơn, lớn hơn bao nhiêu lần? Sau khi thử: ghi Aₙᵏ và Cₙᵏ em đọc được với hai bộ n, k của em. Bạn em bảo \"chọn 3 bạn làm lớp trưởng, lớp phó, bí thư là tổ hợp\" — em phản biện bằng con số nào?"
  },
  {
   "id": "MATH_STAT_DESCRIPTIVE",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Thống kê mô tả: số trung bình, trung vị, tứ phân vị, độ lệch chuẩn",
-  "question": "Khi thêm một giá trị rất lớn vào mẫu số liệu, số trung bình và trung vị thay đổi khác nhau như thế nào? Khoảng tứ phân vị và độ lệch chuẩn phản ánh điều gì?"
+  "question": "Trước khi sửa mẫu số liệu: em đoán thêm một giá trị rất lớn sẽ làm số trung bình hay trung vị thay đổi nhiều hơn? Sau khi thử: ghi trung bình, trung vị, khoảng tứ phân vị trước và sau khi em thêm giá trị đó. Một bạn nói \"trung bình luôn đại diện tốt nhất cho mẫu\" — số liệu của em bác bỏ thế nào?"
  },
  {
   "id": "MATH_APPROX_ERROR",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Số gần đúng và sai số",
-  "question": "Quy tròn đến mấy chữ số thập phân thì sai số tuyệt đối không vượt quá nửa đơn vị hàng quy tròn? Sai số tương đối khác sai số tuyệt đối ở điểm nào khi so sánh độ chính xác?"
+  "question": "Trước khi quy tròn: em đoán quy tròn π đến chữ số thập phân thứ 2 thì sai số tuyệt đối khoảng bao nhiêu? Sau khi thử: ghi Δ và δ em đọc được ở hai mức quy tròn của em. Bạn em nói \"1/3 ≈ 0,33 và π ≈ 3,14 chính xác như nhau vì cùng hai chữ số thập phân\" — sai số tương đối em đọc được nói gì?"
  },
  {
   "id": "MATH_SEQUENCE_LAB",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Dãy số: cấp số cộng, cấp số nhân, giới hạn của dãy",
-  "question": "Khi nào cấp số nhân có tổng vô hạn? Với dãy có giới hạn L, cho ε nhỏ bao nhiêu thì từ số hạng nào trở đi mọi số hạng đều nằm trong dải (L − ε, L + ε)?"
+  "question": "Trước khi đổi d hoặc q: em đoán cấp số nhân với q = 0,5 có tổng tiến tới một số hữu hạn không? Sau khi thử: ghi số hạng thứ N và tổng em đọc được với hai giá trị q của em. Một bạn nói \"cộng vô hạn số dương thì tổng phải vô hạn\" — số liệu nào của em bác bỏ?"
  },
  {
   "id": "MATH_LIMIT_CONTINUITY",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Giới hạn hàm số theo ε–δ và tính liên tục",
-  "question": "Với mỗi dải sai lệch ε quanh giới hạn, ta tìm được khoảng δ quanh x₀ để mọi giá trị hàm trong khoảng đó nằm trong dải: hàm nào làm điều này được, hàm nào không?"
+  "question": "Trước khi chọn ε: em đoán hàm (x² − 1)/(x − 1) có giới hạn tại x₀ = 1 dù không xác định ở đó không? Sau khi thử: ghi δ lớn nhất em đọc được với hai giá trị ε của em, và kết luận liên tục của từng hàm. Bạn em nói \"có giới hạn thì liên tục\" — hàm nào trong mô phỏng em dùng để phản biện?"
  },
  {
   "id": "MATH_SPACE_RELATIONS",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Quan hệ trong không gian: góc và khoảng cách trên hình lập phương",
-  "question": "Góc giữa đường thẳng và mặt phẳng, góc nhị diện và khoảng cách giữa hai đường chéo nhau được xác định bằng hình chiếu hoặc đoạn vuông góc chung như thế nào?"
+  "question": "Trước khi xem kết quả: em đoán góc giữa AC′ và mặt (ABCD) lớn hơn hay nhỏ hơn 45°? Sau khi xem: ghi kết quả em đọc được với cạnh a của em, rồi đổi a. Một bạn nói \"cạnh lập phương to hơn thì góc to hơn\" — hai lần đo của em ủng hộ hay bác bỏ, vì sao?"
  },
  {
   "id": "MATH_DERIVATIVE_LAB",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Đạo hàm: từ cát tuyến đến tiếp tuyến",
-  "question": "Khi điểm thứ hai tiến sát điểm đang xét, hệ số góc cát tuyến dần tới giá trị nào? Giá trị đó cho ta biết gì về tốc độ thay đổi của hàm?"
+  "question": "Trước khi giảm h: em đoán hệ số góc cát tuyến tiến tới số nào? Sau khi kéo: ghi hệ số góc cát tuyến em đọc được ở ba giá trị h và so với f′(x₀). Bạn em bảo \"cho h = 0 luôn là xong\" — điều gì xảy ra với công thức cát tuyến khi h = 0, và vì sao phải nói tới giới hạn?"
  },
  {
   "id": "MATH_FUNCTION_STUDY",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Khảo sát và vẽ đồ thị hàm số theo từng bước",
-  "question": "Bảng biến thiên được lập từ dấu của y′ như thế nào, và nó cho ta biết gì về cực trị, tiệm cận và hình dạng đồ thị?"
+  "question": "Trước khi bấm qua các bước: em đoán hàm y = x³ − 3x + 2 có mấy cực trị và đồ thị cắt Ox mấy lần? Sau khi đi hết các bước: ghi điểm cực trị em đọc được và chỗ em đoán sai. Một bạn vẽ đồ thị chỉ bằng cách chấm vài điểm — bước nào trong khảo sát giúp em bắt được chỗ họ có thể vẽ sai?"
  },
  {
   "id": "MATH_INTEGRAL_AREA",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Tích phân và diện tích: tổng Riemann hội tụ về tích phân",
-  "question": "Khi chia nhỏ khoảng [a, b] thành nhiều phần hơn, tổng diện tích các hình chữ nhật tiến tới đại lượng nào? Cách chọn điểm đại diện (trái, phải, giữa) ảnh hưởng ra sao tới sai số?"
+  "question": "Trước khi tăng n: em đoán tổng Riemann theo đầu mút trái lớn hay nhỏ hơn diện tích thật với f(x) = x²? Sau khi thử: ghi tổng em đọc được ở ba giá trị n với đầu mút trái và phải. Bạn em nói \"đầu mút trái luôn cho số nhỏ hơn\" — hàm nào trong mô phỏng làm câu đó sai?"
  },
  {
   "id": "MATH_QUADRIC_SURFACES",
   "engine": "MATH",
   "family": "SCENE_LAB",
   "title": "Mặt bậc hai và dải Möbius",
-  "question": "Các mặt cắt song song với mặt phẳng tọa độ của elipxoit, hypeboloit, paraboloit là những đường nào? Vì sao dải Möbius chỉ có một mặt?"
+  "question": "Trước khi chọn mặt: em đoán mặt nào có thể chứa trọn những đường thẳng nằm trên nó? Sau khi xoay: ghi mặt nào em thấy có đường thẳng nằm trọn trên mặt. Một bạn nói \"dải Möbius có hai mặt như tờ giấy bình thường\" — khi em lần theo dải trong mô phỏng, em thấy gì?"
  },
  {
   "id": "MATH_QUADRATIC",
   "engine": "MATH",
   "family": "CURVE_LAB",
   "title": "Hàm số bậc hai, parabol và dấu tam thức",
-  "question": "Hệ số a, b, c quyết định hướng, đỉnh và số giao điểm với trục hoành của parabol như thế nào? Dấu của Δ cho biết gì về số nghiệm và dấu của tam thức?"
+  "question": "Trước khi kéo a, b, c: em đoán đổi dấu a thì đỉnh và số nghiệm thay đổi thế nào? Sau khi kéo: ghi Δ, nghiệm và đỉnh I em đọc được ở ba bộ số của em. Bạn em bảo \"Δ < 0 thì tam thức luôn âm\" — bộ số nào của em bác bỏ, và dấu thật sự phụ thuộc vào gì?"
  },
  {
   "id": "MATH_EXP_LOG",
   "engine": "MATH",
   "family": "CURVE_LAB",
   "title": "Hàm số mũ và hàm số lôgarit",
-  "question": "Vì sao đồ thị y = aˣ và y = logₐ x đối xứng nhau qua đường thẳng y = x? Cơ số a lớn hơn 1 hay nhỏ hơn 1 thì đồng biến hay nghịch biến?"
+  "question": "Trước khi đổi cơ số a: em đoán aˣ đồng biến hay nghịch biến khi 0 < a < 1? Sau khi thử: ghi tính đơn điệu và nghiệm của aˣ = b em đọc được với hai cơ số của em. Một bạn nói \"phương trình aˣ = b luôn có nghiệm\" — giá trị b nào của em bác bỏ?"
  },
  {
   "id": "MATH_OPTIMIZATION",
   "engine": "MATH",
   "family": "CURVE_LAB",
   "title": "Bài toán tối ưu: làm hộp có thể tích lớn nhất",
-  "question": "Vì sao thể tích hộp đạt lớn nhất đúng tại điểm mà đạo hàm V′(x) bằng 0? Cắt góc quá nhỏ hay quá lớn thì thể tích thay đổi ra sao?"
+  "question": "Trước khi kéo: em đoán cắt góc vuông cạnh x bằng bao nhiêu phần cạnh tấm a thì hộp lớn nhất? Sau khi thử: ghi thể tích em đọc được ở x nhỏ, x tối ưu và x lớn. Bạn em nói \"cắt càng sâu hộp càng cao nên càng chứa nhiều\" — số liệu nào của em bác bỏ, và đạo hàm giải thích thế nào?"
  },
  {
   "id": "MATH_FINANCE_GROWTH",
   "engine": "MATH",
   "family": "CURVE_LAB",
   "title": "Lãi đơn, lãi kép và tăng trưởng",
-  "question": "Vì sao lãi kép tăng nhanh hơn lãi đơn dù cùng lãi suất? Cần bao nhiêu năm để số tiền gấp đôi?"
+  "question": "Trước khi đổi lãi suất: em đoán gửi 10 năm thì lãi kép hơn lãi đơn bao nhiêu? Sau khi thử: ghi số tiền đơn, kép và thời gian gấp đôi em đọc được ở hai lãi suất của em. Một bạn nói \"lãi suất tăng gấp đôi thì thời gian gấp đôi giảm một nửa\" — số liệu của em ủng hộ đến đâu?"
  },
  {
   "id": "MATH_PROBABILITY_LAB",
   "engine": "MATH",
   "family": "TRIAL_LAB",
   "title": "Phòng thí nghiệm xác suất: tần suất, luật số lớn, Monty Hall, Bayes",
-  "question": "Vì sao tần suất quan sát dao động mạnh khi ít lần thử nhưng tiến gần xác suất lí thuyết khi thử rất nhiều lần? Đổi cửa trong trò Monty Hall có lợi hơn giữ nguyên không?"
+  "question": "Trước khi chạy Monty Hall: em đoán đổi cửa hay giữ nguyên cho xác suất thắng cao hơn, hay như nhau? Sau khi chạy: ghi tần suất thắng em thu được với mỗi chiến lược sau 20 lần và sau 1000 lần. Bạn em nói \"còn hai cửa thì mỗi cửa 50 %\" — số liệu của em bác bỏ thế nào, và vì sao 20 lần chưa đủ để kết luận?"
  }
 ]

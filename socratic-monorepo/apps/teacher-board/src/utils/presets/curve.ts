@@ -27,8 +27,7 @@ export const CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Giới hạn sinh thái',
-    question:
-      'Vì sao ngoài khoảng thuận lợi mức hoạt động sinh lí giảm dần rồi về 0 ở điểm gây chết? Loài có giới hạn sinh thái rộng và loài có giới hạn hẹp khác nhau thế nào về vùng phân bố?',
+    question: 'Trước khi kéo: em đoán loài có giới hạn sinh thái rộng hay hẹp dễ phân bố rộng hơn? Sau khi thử: ghi giới hạn sinh thái, khoảng thuận lợi của A và B em đọc được. Một bạn nói "ngoài khoảng thuận lợi là sinh vật chết ngay" — vùng nào trên đồ thị của em bác bỏ?',
     keywords: /gioi han sinh thai|khoang thuan loi|diem gay chet|khoang uc che|ecological (?:tolerance|limit)/,
     examples: ['giới hạn sinh thái', 'khoảng thuận lợi và điểm gây chết', 'giới hạn sinh thái của nhiệt độ'],
     data: {
@@ -64,8 +63,7 @@ export const CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'PHYSICS',
     title: 'Phân rã phóng xạ và chu kì bán rã',
-    question:
-      'Sau mỗi chu kì bán rã lượng chất phóng xạ còn lại giảm một nửa: tại sao đường cong không bao giờ chạm trục thời gian? Muốn tính tuổi mẫu vật bằng C-14 ta cần biết những đại lượng nào?',
+    question: 'Trước khi đổi chu kì bán rã: em đoán sau 3T còn lại bao nhiêu phần trăm? Sau khi thử: ghi phần còn lại em đọc được sau 1T, 2T, 3T và tuổi mẫu với tỉ lệ em chọn. Bạn em nói "sau 2 chu kì bán rã thì chất phóng xạ hết sạch" — số liệu của em bác bỏ thế nào?',
     keywords: /chu k[yi] ban ra|phan ra phong xa|dinh tuoi (?:bang )?(?:c-?14|carbon)|carbon-?14|\bc-?14\b|radioactive decay|half-?life/,
     examples: ['chu kì bán rã', 'phân rã phóng xạ', 'định tuổi bằng carbon-14'],
     data: {

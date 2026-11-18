@@ -40,8 +40,7 @@ export const SINH_FEEDBACK_PRESETS: Record<string, PresetSpec> = {
     family: 'FEEDBACK_SYSTEM',
     engine: 'BIOLOGY',
     title: 'Điều hòa áp suất thẩm thấu của máu (ADH)',
-    question:
-      'Khi áp suất thẩm thấu máu tăng, vùng dưới đồi, tuyến yên và thận phối hợp thế nào để đưa nó về mức bình thường? Vì sao uống rượu bia làm khát nước và đi tiểu nhiều?',
+    question: 'Trước khi cho mất nước: em đoán lượng ADH và lượng nước tiểu đổi thế nào? Sau khi thử: ghi áp suất thẩm thấu em đọc được khi bật, tắt điều hoà ngược và khi uống rượu bia. Bạn em nói "uống bia vào thì cơ thể giữ được nhiều nước hơn" — số liệu của em bác bỏ thế nào?',
     keywords: /\badh\b|ap suat tham thau (?:cua )?mau|dieu hoa (?:ap suat )?tham thau|hormone chong bai nieu/,
     examples: ['hormone ADH', 'ADH và thận tái hấp thu nước'],
     data: {
@@ -71,8 +70,7 @@ export const SINH_FEEDBACK_PRESETS: Record<string, PresetSpec> = {
     family: 'FEEDBACK_SYSTEM',
     engine: 'BIOLOGY',
     title: 'Điều hòa huyết áp bằng phản xạ thần kinh',
-    question:
-      'Khi huyết áp đột ngột giảm, thụ thể áp lực, trung khu điều hòa tim mạch và dây giao cảm phối hợp thế nào để huyết áp trở lại bình thường?',
+    question: 'Trước khi cho đứng dậy nhanh: em đoán huyết áp tụt rồi hồi phục trong bao lâu? Sau khi thử: ghi đường huyết áp em đọc được khi phản xạ bình thường và khi mạch kém đàn hồi. Một bạn nói "huyết áp tụt thì tim đập chậm lại để nghỉ" — số liệu của em phản biện thế nào?',
     keywords: /dieu hoa huyet ap|huyet ap (?:giam|tang) dot ngot|phan xa (?:dieu hoa )?(?:huyet ap|tim mach)|thu the ap luc|xoang dong mach canh/,
     examples: ['điều hòa huyết áp', 'phản xạ điều hòa tim mạch', 'thụ thể áp lực xoang động mạch cảnh'],
     data: {

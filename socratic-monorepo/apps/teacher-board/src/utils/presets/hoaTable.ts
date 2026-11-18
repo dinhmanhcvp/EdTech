@@ -45,7 +45,7 @@ export const HOA_TABLE_PRESETS: Record<string, PresetSpec> = {
     family: 'TABLE_LAB',
     engine: 'CHEMISTRY',
     title: 'Bảng tuần hoàn các nguyên tố và xu hướng biến đổi tuần hoàn',
-    question: 'Bán kính nguyên tử, độ âm điện và năng lượng ion hóa biến đổi thế nào theo chu kì và theo nhóm? Vì sao các nguyên tố trong cùng một nhóm có tính chất tương tự nhau?',
+    question: 'Trước khi tra bảng: em đoán trong chu kì 3 bán kính nguyên tử và độ âm điện biến đổi theo chiều nào? Sau khi tra: ghi giá trị em đọc được cho Na, Mg, Cl và chỗ em đoán sai. Một bạn nói "nguyên tử nhiều electron hơn thì to hơn" — số liệu chu kì 3 của em bác bỏ thế nào?',
     keywords: /bang tuan hoan|xu huong bien doi tuan hoan|chu ki va nhom nguyen to|do am dien cua nguyen to|nang luong ion hoa|ban kinh nguyen tu|quy luat bien doi tinh chat/,
     examples: ['bảng tuần hoàn', 'xu hướng biến đổi tuần hoàn', 'độ âm điện của nguyên tố', 'năng lượng ion hóa', 'bán kính nguyên tử'],
     data: {
@@ -75,7 +75,7 @@ export const HOA_TABLE_PRESETS: Record<string, PresetSpec> = {
     family: 'TABLE_LAB',
     engine: 'CHEMISTRY',
     title: 'Dãy điện hóa của kim loại và thế điện cực chuẩn',
-    question: 'Kim loại đứng trước có tính khử mạnh hơn kim loại đứng sau như thế nào, và dựa vào thế điện cực chuẩn ta dự đoán phản ứng và suất điện động của pin ra sao?',
+    question: 'Trước khi tra: em đoán Fe có khử được Cu²⁺ và Zn²⁺ không? Sau khi tra: ghi thế điện cực chuẩn em đọc được và kết luận cho từng cặp. Bạn em nói "kim loại đứng trước đẩy được mọi kim loại đứng sau ra khỏi muối, kể cả Na" — vì sao Na là ngoại lệ trong dung dịch?',
     keywords: /day dien hoa|the dien cuc chuan|quy tac alpha|suat dien dong cua pin dien hoa|tinh khu cua kim loai|day hoat dong hoa hoc cua kim loai|ac quy|pin nhien lieu/,
     examples: ['dãy điện hóa', 'thế điện cực chuẩn', 'quy tắc alpha', 'tính khử của kim loại', 'pin nhiên liệu'],
     data: {
@@ -110,7 +110,7 @@ export const HOA_TABLE_PRESETS: Record<string, PresetSpec> = {
     family: 'TABLE_LAB',
     engine: 'CHEMISTRY',
     title: 'Cấu hình d, màu của ion kim loại chuyển tiếp và phức chất',
-    question: 'Vì sao nhiều ion kim loại chuyển tiếp có màu còn Zn²⁺ và Sc³⁺ thì không? Số electron d liên quan đến màu và phức chất như thế nào?',
+    question: 'Trước khi tra: em đoán Zn²⁺ và Cu²⁺ ion nào có màu trong dung dịch? Sau khi tra: ghi cấu hình d và màu em đọc được cho hai ion. Một bạn nói "kim loại chuyển tiếp nào cũng tạo ion có màu" — ion nào em vừa tra bác bỏ, và cấu hình d giải thích ra sao?',
     keywords: /ion kim loai chuyen tiep|mau cua ion|phuc chat|nguyen to nhom b|cau hinh electron cua ion|so phoi tri|ion phuc/,
     examples: ['ion kim loại chuyển tiếp', 'màu của ion', 'số phối trí'],
     data: {

@@ -168,7 +168,7 @@ export const HOA_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'CHEMISTRY',
     title: 'Cấu hình electron: Aufbau, Hund, Pauli',
-    question: 'Electron được điền vào các orbital theo thứ tự năng lượng và quy tắc nào? Vì sao Cr và Cu có cấu hình khác với dự đoán theo Aufbau?',
+    question: 'Trước khi đổi Z: em tự viết cấu hình electron của Cr (Z = 24) theo thứ tự Aufbau. Sau khi xem: ghi cấu hình mô phỏng đưa ra, số electron độc thân em đọc được, và chỗ em viết khác. Một bạn nói "electron luôn điền đầy phân lớp này rồi mới sang phân lớp sau" — trường hợp của em phản biện thế nào?',
     keywords: /cau hinh electron|quy tac hund|nguyen l[yi] pauli|nguyen l[yi] vung ben|orbital nguyen tu|aufbau|lop va phan lop electron/,
     examples: ['cấu hình electron', 'quy tắc Hund', 'nguyên lí Pauli', 'orbital nguyên tử'],
     data: {
@@ -208,7 +208,7 @@ export const HOA_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'CHEMISTRY',
     title: 'Liên kết hóa học: cộng hóa trị và liên kết ion',
-    question: 'Hiệu độ âm điện giữa hai nguyên tử cho biết loại liên kết thế nào? Vì sao CO₂ có liên kết phân cực nhưng phân tử lại không phân cực?',
+    question: 'Trước khi chọn chất: em đoán HF, H₂O, NaCl, N₂ chất nào có liên kết ion? Sau khi xem: ghi hiệu độ âm điện và loại liên kết em đọc được cho từng chất. Bạn em nói "cứ có kim loại là liên kết ion, không có là cộng hoá trị" — chất nào trong danh sách giúp em kiểm tra ranh giới đó?',
     keywords: /lien ket hoa hoc|lien ket cong hoa tri|lien ket ion|cong thuc lewis|quy tac octet|lien ket (?:don|doi|ba)|do am dien va lien ket|phan tu phan cuc/,
     examples: ['liên kết hóa học', 'liên kết cộng hóa trị', 'liên kết ion', 'công thức Lewis', 'quy tắc octet'],
     data: {
@@ -264,7 +264,7 @@ export const HOA_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'CHEMISTRY',
     title: 'Phản ứng oxi hóa – khử: số oxi hóa và chuyển electron',
-    question: 'Chất nào nhường electron, chất nào nhận electron? Vì sao tổng số electron nhường luôn bằng tổng số electron nhận?',
+    question: 'Trước khi chọn phản ứng: em tự xác định chất khử, chất oxi hoá của H₂ + CuO. Sau khi xem: ghi số oxi hoá trước, sau và số electron em đọc được, so với dự đoán. Một bạn nói "chất oxi hoá là chất bị oxi hoá" — phản ứng nào của em giúp em sửa câu đó?',
     keywords: /so oxi hoa|chat khu va chat oxi hoa|can bang electron|nhuong electron|nhan electron/,
     examples: ['số oxi hóa', 'chất khử và chất oxi hóa', 'cân bằng electron', 'nhường electron'],
     data: {
@@ -298,7 +298,7 @@ export const HOA_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'CHEMISTRY',
     title: 'Ống nghiệm ảo: nhận biết halide và phản ứng đẩy halogen',
-    question: 'Vì sao AgNO₃ tạo kết tủa với Cl⁻, Br⁻, I⁻ nhưng không với F⁻? Halogen nào đẩy được halogen nào ra khỏi muối và điều đó nói gì về tính oxi hóa?',
+    question: 'Trước khi nhỏ: em đoán màu kết tủa của AgNO₃ với NaCl, NaBr, NaI và có ống nào không kết tủa. Sau khi làm: ghi màu thật em thấy ở từng ống. Một bạn nói "nước bromine đẩy được chlorine ra khỏi NaCl" — ống nào em làm được để kiểm tra, và kết quả của em nói gì?',
     keywords: /nhan biet (?:ion )?halide|nhan biet ion halogenua|phan ung day halogen|halogen day halogen|tinh oxi hoa cua halogen|nuoc clo|nuoc brom|ket tua agcl|agbr|\bagi\b/,
     examples: ['nhận biết ion halide', 'phản ứng đẩy halogen', 'nước clo và muối bromide', 'kết tủa AgCl AgBr'],
     data: {
@@ -327,7 +327,7 @@ export const HOA_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'CHEMISTRY',
     title: 'Ống nghiệm ảo: nhận biết ion bằng kết tủa, màu và chất khí',
-    question: 'Từ hiện tượng (màu kết tủa, tan trong thuốc thử dư, khí thoát ra) ta suy ra ion nào có trong dung dịch như thế nào?',
+    question: 'Trước khi nhỏ thuốc thử: em đoán ion trong ống chưa biết là gì. Sau khi làm: ghi màu kết tủa, có tan trong thuốc thử dư không, có khí không ở ống của em. Một bạn chỉ nhìn một màu kết tủa trắng đã kết luận ngay — ion nào khác cũng cho kết tủa trắng, và em cần thêm bước nào?',
     keywords: /ong nghiem ao|nhan biet (?:cac )?(?:ion|cation|anion)|nhan biet dung dich|ket tua cua cu\(oh\)2|phan ung tao ket tua|phan ung tao khi/,
     examples: ['ống nghiệm ảo', 'nhận biết các ion', 'phản ứng tạo kết tủa', 'nhận biết dung dịch'],
     data: {
@@ -358,7 +358,7 @@ export const HOA_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'CHEMISTRY',
     title: 'Phổ hồng ngoại (IR) và phổ khối lượng (MS)',
-    question: 'Các peak hấp thụ ở số sóng đặc trưng cho nhóm chức nào? Peak ion phân tử trong phổ khối cho ta biết điều gì về phân tử khối?',
+    question: 'Trước khi xem phổ IR: em đoán ethanol và acetic acid khác nhau ở peak nào? Sau khi xem: ghi số sóng các peak đặc trưng và phân tử khối em đọc được cho hai chất. Bạn em nói "chỉ cần phổ MS là biết nhóm chức" — dữ liệu em vừa đọc cho thấy mỗi loại phổ trả lời câu hỏi gì?',
     keywords: /pho hong ngoai|pho khoi luong|pho ir\b|pho ms\b|peak ion phan tu|so song|lap cong thuc phan tu/,
     examples: ['phổ hồng ngoại', 'phổ khối lượng', 'phổ IR của ethanol', 'peak ion phân tử'],
     data: {
@@ -401,7 +401,7 @@ export const HOA_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'CHEMISTRY',
     title: 'Thử màu ngọn lửa của kim loại kiềm, kiềm thổ và đồng',
-    question: 'Vì sao mỗi kim loại cho ngọn lửa một màu đặc trưng? Màu ngọn lửa giúp nhận ra ion kim loại nào và được dùng ở đâu?',
+    question: 'Trước khi đốt: em đoán muối kali và muối natri cho ngọn lửa màu gì? Sau khi thử: ghi màu ngọn lửa em thấy với từng muối. Một bạn dùng màu ngọn lửa để khẳng định mẫu chỉ có kali nhưng ngọn lửa vàng rực — vì sao kết luận đó chưa chắc, em cần làm gì thêm?',
     keywords: /mau ngon lua|thu mau ngon lua|phan ung mau ngon lua|kim loai kiem|kim loai kiem tho|nuoc cung|phao hoa/,
     examples: ['màu ngọn lửa', 'thử màu ngọn lửa', 'kim loại kiềm', 'kim loại kiềm thổ'],
     data: {

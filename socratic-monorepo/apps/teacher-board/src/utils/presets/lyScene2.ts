@@ -112,7 +112,7 @@ export const LY_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Điện trường, đường sức và định luật Coulomb',
-    question: 'Đường sức điện xuất phát từ điện tích nào và kết thúc ở đâu? Lực Coulomb giữa hai điện tích thay đổi thế nào khi khoảng cách tăng gấp đôi?',
+    question: 'Trước khi đổi khoảng cách: em đoán tăng gấp đôi khoảng cách thì lực Coulomb còn bao nhiêu? Sau khi thử: ghi F em đọc được ở ba khoảng cách của em. Một bạn nói "điện tích lớn hơn chịu lực lớn hơn điện tích nhỏ" — số liệu của em và định luật 3 Newton phản biện thế nào?',
     keywords: /dinh luat coulomb|\bcoulomb\b|duong suc dien|dien truong deu|cuong do dien truong|dien tich diem|luc tuong tac tinh dien/,
     examples: ['định luật Coulomb', 'đường sức điện', 'cường độ điện trường', 'điện tích điểm'],
     data: {
@@ -143,7 +143,7 @@ export const LY_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Mạch điện một chiều: định luật Ohm cho toàn mạch',
-    question: 'Hiệu điện thế giữa hai cực nguồn giảm thế nào khi dòng điện tăng? Điện trở ngoài bằng bao nhiêu thì công suất tiêu thụ lớn nhất?',
+    question: 'Trước khi đổi cách mắc: em đoán mắc song song thì dòng mạch chính tăng hay giảm? Sau khi thử: ghi I và U hai cực em đọc được khi nối tiếp và song song. Bạn em nói "hiệu điện thế hai cực pin luôn bằng suất điện động" — số liệu nào của em bác bỏ, và khi nào câu đó mới đúng?',
     keywords: /dinh luat ohm|ohm cho toan mach|suat dien dong|dien tro trong cua nguon|mach noi tiep|mach song song|cong suat tieu thu|hieu suat cua nguon/,
     examples: ['định luật Ohm cho toàn mạch', 'suất điện động và điện trở trong', 'mạch nối tiếp và song song'],
     data: {
@@ -194,7 +194,7 @@ export const LY_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Dao động kí điện tử: đọc chu kì và biên độ',
-    question: 'Làm sao đọc chu kì, tần số và hiệu điện thế từ màn hình dao động kí khi biết thang thời gian và thang điện áp?',
+    question: 'Trước khi đổi thang thời gian: em đoán một chu kì chiếm nhiều ô hơn hay ít ô hơn? Sau khi thử: ghi số ô một chu kì và điện áp đỉnh – đỉnh em đọc được ở hai thang. Một bạn đọc chu kì sai vì quên nhân với thang đo — em kiểm lại bằng số liệu nào?',
     keywords: /dao dong ky|dao dong ki|\boscilloscope\b|man hinh dao dong ky|time\/?div|thang thoi gian/,
     examples: ['dao động kí', 'đọc chu kì trên màn hình dao động kí', 'thang thời gian ms/div'],
     data: {
@@ -236,7 +236,7 @@ export const LY_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Mô hình động học phân tử của chất khí',
-    question: 'Áp suất chất khí sinh ra từ đâu theo mô hình hạt? Vì sao tăng nhiệt độ hoặc giảm thể tích đều làm áp suất tăng?',
+    question: 'Trước khi tăng nhiệt độ: em đoán áp suất và tốc độ hạt thay đổi thế nào? Sau khi thử: ghi áp suất tỉ đối và tốc độ căn quân phương em đọc được ở hai nhiệt độ. Bạn em nói "nhiệt độ tăng gấp đôi thì tốc độ hạt tăng gấp đôi" — số liệu của em ủng hộ hay bác bỏ?',
     keywords: /mo hinh dong hoc phan tu|chuyen dong nhiet cua phan tu khi|ap suat chat khi theo|dong nang tinh tien trung binh|phuong trinh clapeyron|toc do can quan phuong/,
     examples: ['mô hình động học phân tử', 'chuyển động nhiệt của phân tử khí', 'phương trình Clapeyron', 'tốc độ căn quân phương'],
     data: {
@@ -274,7 +274,7 @@ export const LY_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Mô hình phân tử của chất rắn, lỏng, khí và sự chuyển thể',
-    question: 'Khoảng cách và chuyển động của các phân tử khác nhau thế nào ở thể rắn, lỏng, khí? Nhiệt độ tăng qua nhiệt độ nóng chảy và sôi thì mô hình thay đổi ra sao?',
+    question: 'Trước khi đun: em đoán khoảng cách và chuyển động của phân tử nước đổi thế nào khi chuyển thể? Sau khi kéo nhiệt độ: ghi thể, khoảng cách, chuyển động em đọc được ở ba nhiệt độ. Một bạn nói "khi nước đá tan, phân tử nước biến thành phân tử khác" — mô hình em quan sát bác bỏ thế nào?',
     keywords: /cau tao chat|mo hinh phan tu (?:cua )?(?:chat )?(?:ran|long|khi)|su chuyen the|chat ran chat long chat khi|noi nang cua vat|su nong chay|su hoa hoi/,
     examples: ['cấu tạo chất', 'mô hình phân tử của chất rắn lỏng khí', 'sự chuyển thể', 'nội năng của vật'],
     data: {
@@ -312,7 +312,7 @@ export const LY_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Từ trường: lực Lorentz và từ trường của dòng điện thẳng',
-    question: 'Điện tích chuyển động trong từ trường đều chịu lực như thế nào, và vì sao quỹ đạo là đường tròn? Hai dây dẫn thẳng song song mang dòng điện cùng chiều hút hay đẩy nhau?',
+    question: 'Trước khi tăng cảm ứng từ: em đoán bán kính quỹ đạo electron lớn lên hay nhỏ đi? Sau khi thử: ghi bán kính em đọc được ở hai giá trị B và hai tốc độ. Bạn em nói "hai dòng điện cùng chiều thì đẩy nhau như hai cực cùng tên" — kết quả khi em cho I₁, I₂ cùng chiều nói gì?',
     keywords: /luc lorentz|\blorentz\b|tu truong cua dong dien thang|quy tac ban tay (?:trai|phai)|duong suc tu|cam ung tu|luc tu tac dung len day dan/,
     examples: ['lực Lorentz', 'từ trường của dòng điện thẳng', 'quy tắc bàn tay phải', 'đường sức từ'],
     data: {
@@ -370,7 +370,7 @@ export const LY_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Cảm ứng điện từ: từ thông và suất điện động của khung dây quay',
-    question: 'Suất điện động xuất hiện khi nào, và vì sao khung dây quay đều trong từ trường sinh ra dòng điện xoay chiều? Khi từ thông cực đại thì suất điện động bằng bao nhiêu?',
+    question: 'Trước khi tăng tần số quay: em đoán suất điện động cực đại đổi thế nào? Sau khi thử: ghi E₀ em đọc được ở hai tần số và hai số vòng dây. Một bạn nói "suất điện động lớn nhất khi từ thông lớn nhất" — khi em theo dõi khung quay, hai giá trị đó đạt cực đại cùng lúc không?',
     keywords: /cam ung dien tu|dinh luat faraday|\bfaraday\b|dinh luat lenz|\blenz\b|tu thong|suat dien dong cam ung|may phat dien xoay chieu|may phat dien/,
     examples: ['cảm ứng điện từ', 'định luật Faraday', 'định luật Lenz', 'máy phát điện xoay chiều'],
     data: {
@@ -412,7 +412,7 @@ export const LY_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Thí nghiệm tán xạ hạt α của Rutherford',
-    question: 'Vì sao một số hạt α bị bật ngược trở lại, điều mà mẫu bánh pudding của Thomson không giải thích được? Điều đó nói gì về kích thước và điện tích của hạt nhân?',
+    question: 'Trước khi bắn: em đoán với mẫu Thomson có hạt α nào bật ngược lại không? Sau khi thử: ghi góc lệch em thấy với mẫu Thomson và mẫu hạt nhân, cùng động năng. Bạn em nói "hạt α bật ngược vì va vào electron" — số liệu của em và khối lượng electron phản biện thế nào?',
     keywords: /tan xa (?:hat )?alpha|tan xa rutherford|\brutherford\b|thi nghiem rutherford|mau hanh tinh nguyen tu|cau tao hat nhan/,
     examples: ['tán xạ hạt alpha', 'thí nghiệm Rutherford', 'mẫu hành tinh nguyên tử', 'cấu tạo hạt nhân'],
     data: {
@@ -449,7 +449,7 @@ export const LY_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Phân hạch dây chuyền và thanh điều khiển lò phản ứng',
-    question: 'Hệ số nhân neutron k bằng bao nhiêu thì phản ứng dây chuyền tắt dần, ổn định hay tăng nhanh? Thanh điều khiển giúp đưa lò về trạng thái tới hạn như thế nào?',
+    question: 'Trước khi cắm thanh điều khiển: em đoán hệ số nhân k cần bằng bao nhiêu để lò chạy ổn định? Sau khi thử: ghi k và số phân hạch ở thế hệ cuối em đọc được ở ba độ cắm. Một bạn nói "k càng lớn lò càng tốt vì ra nhiều năng lượng" — số liệu của em cho thấy rủi ro gì?',
     keywords: /phan hach|phan ung day chuyen|lo phan ung hat nhan|thanh dieu khien|nha may dien hat nhan|he so nhan neutron|ban toi han/,
     examples: ['phân hạch', 'phản ứng dây chuyền', 'lò phản ứng hạt nhân', 'thanh điều khiển'],
     data: {

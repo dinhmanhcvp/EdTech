@@ -79,7 +79,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'BIOLOGY',
     title: 'Tế bào nhân sơ, nhân thực và tỉ lệ diện tích trên thể tích',
-    question: 'Vì sao hầu hết tế bào đều rất nhỏ? Tế bào nhân sơ khác tế bào nhân thực ở những điểm nào về kích thước và cấu tạo?',
+    question: 'Trước khi tăng cạnh tế bào: em đoán tỉ lệ S/V tăng hay giảm? Sau khi thử: ghi S, V, S/V em đọc được khi cạnh tăng gấp đôi. Bạn em nói "tế bào to thì trao đổi chất tốt hơn vì có nhiều màng hơn" — số liệu của em bác bỏ thế nào?',
     keywords: /te bao nhan so|te bao nhan thuc|ti le dien tich tren the tich|ti le s\/v|cap do to chuc cua the gioi song|kinh hien vi/,
     examples: ['tế bào nhân sơ', 'tỉ lệ diện tích trên thể tích', 'cấp độ tổ chức của thế giới sống'],
     data: {
@@ -123,7 +123,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'BIOLOGY',
     title: 'Các phân tử sinh học: nước, phospholipid, protein, nucleic acid',
-    question: 'Liên kết hydrogen giữa các phân tử nước tạo nên tính chất nào? Cấu trúc bậc 1, 2, 3, 4 của protein khác nhau thế nào và vì sao các bậc đó quyết định chức năng?',
+    question: 'Trước khi chọn phân tử: em đoán vì sao phospholipid tự xếp thành lớp kép trong nước? Sau khi xem: ghi đặc điểm em đọc được của từng phân tử và các bậc cấu trúc protein. Một bạn nói "protein bị biến tính vẫn giữ nguyên chức năng vì trình tự amino acid không đổi" — mô phỏng em vừa xem phản biện thế nào?',
     keywords: /lien ket hydrogen giua cac phan tu nuoc|phan tu sinh hoc|phospholipid|cau truc bac (?:1|2|3|4|mot|hai|ba|bon) cua protein|cau truc protein|nucleotide|dai phan tu sinh hoc|cau truc cua nuoc/,
     examples: ['phân tử sinh học', 'cấu trúc của nước', 'phospholipid', 'cấu trúc bậc 4 của protein', 'nucleotide'],
     data: {
@@ -200,7 +200,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'BIOLOGY',
     title: 'Vận chuyển các chất qua màng sinh chất',
-    question: 'Chất nào đi qua màng không tốn năng lượng và chất nào cần ATP? Vì sao vận chuyển chủ động có thể đưa chất đi ngược chiều gradient nồng độ?',
+    question: 'Trước khi đổi nồng độ: em đoán chất đi theo chiều nào khi không có ATP? Sau khi thử: ghi chiều chuyển động em đọc được ở ba cách vận chuyển, có và không có ATP. Bạn em nói "chất luôn đi từ nơi nồng độ cao tới nơi nồng độ thấp" — trường hợp nào của em bác bỏ?',
     keywords: /van chuyen (?:cac chat )?qua mang|khuech tan tang cuong|van chuyen chu dong|van chuyen thu dong|bom natri|kenh protein|mang khảm dong|gradient nong do/,
     examples: ['vận chuyển các chất qua màng', 'khuếch tán tăng cường', 'vận chuyển chủ động', 'bơm natri kali'],
     data: {
@@ -252,7 +252,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'BIOLOGY',
     title: 'Hướng động ở thực vật và vai trò của auxin',
-    question: 'Vì sao ngọn cây uốn cong về phía có ánh sáng? Auxin phân bố thế nào ở hai bên thân và rễ cây khi đặt nằm ngang?',
+    question: 'Trước khi chiếu sáng một phía: em đoán auxin tập trung ở phía nào và cây cong về đâu? Sau khi thử: ghi kết quả em thấy khi còn và khi cắt đỉnh ngọn. Một bạn nói "cây cong về phía sáng vì phía sáng mọc nhanh hơn" — số liệu của em bác bỏ thế nào?',
     keywords: /huong dong|huong sang|huong trong luc|huong nuoc|huong hoa|auxin va huong dong|\bung dong\b|cay trinh nu/,
     examples: ['hướng động', 'hướng sáng', 'hướng trọng lực'],
     data: {
@@ -316,7 +316,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'BIOLOGY',
     title: 'Phiên mã, dịch mã và đột biến gene',
-    question: 'Từ trình tự mạch gốc DNA ta suy ra mRNA, anticodon của tRNA và chuỗi amino acid thế nào? Đột biến thay thế, thêm hoặc mất một cặp nucleotide ảnh hưởng ra sao tới protein?',
+    question: 'Trước khi gây đột biến: em đoán thay một cặp hay thêm một cặp nucleotide làm chuỗi polypeptide thay đổi nhiều hơn? Sau khi thử: ghi chuỗi polypeptide em đọc được với ba dạng đột biến ở cùng vị trí. Bạn em nói "đột biến gene nào cũng làm protein thay đổi" — trường hợp nào của em bác bỏ?',
     keywords: /phien ma|dich ma|ma di truyen|bo ba ma hoa|codon|anticodon|dot bien gene|dot bien diem|dot bien dich khung|mach goc/,
     examples: ['phiên mã', 'dịch mã', 'mã di truyền', 'đột biến gene', 'bộ ba mã hóa'],
     data: {
@@ -372,7 +372,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'BIOLOGY',
     title: 'Đột biến cấu trúc và số lượng nhiễm sắc thể',
-    question: 'Bốn dạng đột biến cấu trúc NST làm thay đổi trình tự các gene như thế nào? Thể lệch bội khác thể đa bội ở điểm nào?',
+    question: 'Trước khi chọn dạng đột biến: em đoán đảo đoạn có làm thay đổi lượng vật chất di truyền không? Sau khi xem: ghi hậu quả em đọc được cho đảo đoạn, lặp đoạn và thể ba. Một bạn nói "đột biến NST nào cũng có hại" — dạng nào em vừa xem được ứng dụng trong chọn giống?',
     keywords: /dot bien (?:cau truc )?(?:nst|nhiem sac the)|mat doan|lap doan|dao doan|chuyen doan|the lech boi|da boi|the ba|the mot|hoi chung down|bo nhiem sac the/,
     examples: ['đột biến cấu trúc nhiễm sắc thể', 'mất đoạn lặp đoạn đảo đoạn chuyển đoạn', 'thể lệch bội', 'đa bội', 'hội chứng Down'],
     data: {
@@ -421,7 +421,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'BIOLOGY',
     title: 'Phả hệ và xác suất con mắc bệnh di truyền',
-    question: 'Từ kiểu gene của bố mẹ, xác suất sinh con mắc bệnh là bao nhiêu khi bệnh do gene lặn, gene trội trên NST thường hay gene lặn liên kết X? Vì sao bệnh liên kết X lặn gặp ở nam nhiều hơn?',
+    question: 'Trước khi chọn kiểu di truyền: em tự tính xác suất con trai mắc bệnh cho phép lai em chọn. Sau khi xem: ghi kiểu gene bố mẹ và xác suất mô phỏng đưa ra, chỗ em tính khác. Bạn em nói "bố mẹ không mắc bệnh thì con không thể mắc" — phép lai nào của em bác bỏ?',
     keywords: /pha he|xac suat sinh con bi benh|di truyen lien ket gioi tinh|benh di truyen|tu van di truyen|gene tren nst x|benh mau kho dong|mu mau/,
     examples: ['phả hệ', 'xác suất sinh con bị bệnh', 'di truyền liên kết giới tính', 'bệnh máu khó đông'],
     data: {
@@ -464,7 +464,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'BIOLOGY',
     title: 'Các nhân tố tiến hóa: phiêu bạt di truyền, chọn lọc, di nhập',
-    question: 'Quần thể nhỏ và quần thể lớn khác nhau thế nào về mức dao động ngẫu nhiên của tần số allele? Chọn lọc tự nhiên và dòng gene làm tần số allele thay đổi theo hướng nào?',
+    question: 'Trước khi chạy: em đoán quần thể N nhỏ hay N lớn dễ bị cố định một allele hơn? Sau khi chạy: ghi số quần thể đã cố định em đọc được với hai giá trị N, khi không có chọn lọc. Một bạn nói "allele nào được giữ lại cũng là allele có lợi" — số liệu với s = 0 của em bác bỏ thế nào?',
     keywords: /nhan to tien hoa|phieu bat di truyen|yeu to ngau nhien|chon loc tu nhien|dong gene|di nhap gene|giao phoi can huyet|tan so allele cua quan the|hieu ung sang lap/,
     examples: ['nhân tố tiến hóa', 'phiêu bạt di truyền', 'chọn lọc tự nhiên', 'dòng gene', 'tần số allele của quần thể'],
     data: {
@@ -504,7 +504,7 @@ export const SINH2_SCENE_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'BIOLOGY',
     title: 'Dòng năng lượng qua các bậc dinh dưỡng và phóng đại sinh học',
-    question: 'Vì sao chuỗi thức ăn thường chỉ có 4–5 bậc dinh dưỡng? Chất độc bền như DDT có nồng độ thay đổi thế nào khi đi lên các bậc cao của chuỗi?',
+    question: 'Trước khi đổi hiệu suất: em đoán năng lượng tới bậc 4 còn bao nhiêu phần trăm? Sau khi thử: ghi năng lượng từng bậc em đọc được với hai hiệu suất, và nồng độ DDT khi bật. Bạn em nói "chuỗi thức ăn có thể dài bao nhiêu bậc cũng được" — số liệu của em bác bỏ thế nào?',
     keywords: /thap sinh thai|hieu suat sinh thai|bac dinh duong|chuoi thuc an|luoi thuc an|phong dai sinh hoc|quy tac 10|dong nang luong trong he sinh thai|ddt/,
     examples: ['tháp sinh thái', 'hiệu suất sinh thái', 'bậc dinh dưỡng', 'chuỗi thức ăn', 'phóng đại sinh học'],
     data: {

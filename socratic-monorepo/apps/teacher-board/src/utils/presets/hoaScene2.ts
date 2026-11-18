@@ -72,7 +72,7 @@ export const HOA_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'CHEMISTRY',
     title: 'Công thức cấu tạo, nhóm chức và đồng phân hợp chất hữu cơ',
-    question: 'Hai chất có cùng công thức phân tử nhưng khác công thức cấu tạo thì khác nhau thế nào? Nhóm chức nào quyết định tính chất đặc trưng của từng loại hợp chất?',
+    question: 'Trước khi xem: em đoán butane và 2-methylpropane có cùng công thức phân tử không, nhiệt độ sôi chất nào cao hơn? Sau khi xem: ghi công thức cấu tạo, nhóm chức em đọc được cho hai cặp chất bất kì. Bạn em nói "cùng công thức phân tử thì cùng tính chất" — cặp nào của em bác bỏ?',
     keywords: /nhom chuc|dong phan (?:cau tao|mach carbon|vi tri)|cong thuc cau tao|cong thuc khung|dong dang|danh phap hop chat huu co|hop chat huu co/,
     examples: ['nhóm chức', 'đồng phân cấu tạo', 'công thức cấu tạo thu gọn', 'công thức khung phân tử', 'hợp chất hữu cơ'],
     data: {
@@ -120,7 +120,7 @@ export const HOA_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'CHEMISTRY',
     title: 'Chất béo, xà phòng và cơ chế tẩy rửa (micelle)',
-    question: 'Phần đầu ưa nước và phần đuôi kị nước của phân tử xà phòng sắp xếp thế nào quanh giọt dầu? Vì sao xà phòng giặt kém trong nước cứng?',
+    question: 'Trước khi tăng nồng độ xà phòng: em đoán dưới nồng độ micelle tới hạn thì giọt dầu có bị bao không? Sau khi thử: ghi số phân tử bám quanh giọt dầu và trạng thái em đọc được ở ba nồng độ, có và không có nước cứng. Một bạn nói "cho thật nhiều xà phòng vào nước cứng là giặt sạch như thường" — số liệu của em nói gì?',
     keywords: /xa phong|micelle|chat beo|xa phong hoa|chat giat rua|nuoc cung|acid beo|triglyceride|co che tay rua/,
     examples: ['xà phòng', 'micelle', 'chất béo', 'xà phòng hóa chất béo', 'cơ chế tẩy rửa'],
     data: {
@@ -164,7 +164,7 @@ export const HOA_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'CHEMISTRY',
     title: 'Glucose: dạng mạch hở và dạng mạch vòng α, β',
-    question: 'Glucose tồn tại chủ yếu ở dạng nào trong dung dịch và vì sao các dạng chuyển hóa qua lại được? Hai dạng α và β khác nhau ở vị trí nào?',
+    question: 'Trước khi chọn dạng: em đoán trong dung dịch glucose dạng nào chiếm nhiều nhất? Sau khi xem: ghi tỉ lệ các dạng em đọc được. Bạn em nói "dạng mạch hở rất ít nên glucose không thể có phản ứng của nhóm –CHO" — vì sao cân bằng giữa các dạng bác bỏ được lập luận đó?',
     keywords: /glucose (?:dang |o dang )?(?:mach|vong)|cau tao (?:cua )?glucose|dang mach vong|carbohydrate|saccharose|cacbohidrat|gluxit/,
     examples: ['glucose dạng mạch vòng', 'cấu tạo của glucose', 'carbohydrate', 'saccharose'],
     data: {
@@ -202,7 +202,7 @@ export const HOA_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'CHEMISTRY',
     title: 'Polymer: trùng hợp và trùng ngưng',
-    question: 'Phản ứng trùng hợp khác trùng ngưng ở chỗ nào? Số mắt xích n liên hệ với phân tử khối của polymer như thế nào?',
+    question: 'Trước khi đổi số mắt xích: em đoán trùng ngưng nylon-6,6 khác trùng hợp PE ở sản phẩm phụ nào? Sau khi thử: ghi phân tử khối và số phân tử nước giải phóng em đọc được với hai giá trị n. Một bạn nói "phân tử khối polymer bằng n nhân phân tử khối monome trong mọi trường hợp" — số liệu nylon của em bác bỏ thế nào?',
     keywords: /trung hop|trung ngung|polymer\b|polime|mat xich|nhua pvc|nylon|to nilon|cao su luu hoa/,
     examples: ['trùng hợp', 'trùng ngưng', 'polymer', 'mắt xích', 'nylon-6,6'],
     data: {
@@ -235,7 +235,7 @@ export const HOA_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'CHEMISTRY',
     title: 'Điện phân và định luật Faraday',
-    question: 'Ở catot và anot xảy ra quá trình nào khi điện phân các dung dịch và chất nóng chảy khác nhau? Khối lượng chất sinh ra phụ thuộc cường độ dòng điện và thời gian như thế nào?',
+    question: 'Trước khi điện phân CuSO₄: em đoán ở catot và anot sinh ra chất gì? Sau khi thử: ghi số mol electron và lượng chất em đọc được với hai bộ I, t. Bạn em nói "tăng gấp đôi cường độ dòng điện thì phải chạy gấp đôi thời gian" — số liệu Faraday của em nói ngược lại thế nào?',
     keywords: /dien phan|dinh luat faraday ve dien phan|ma dien|tinh luyen dong|dieu che nhom|chlor[- ]?kiem|catot|anot|cuc am|cuc duong cua binh dien phan/,
     examples: ['điện phân', 'điện phân dung dịch NaCl', 'mạ điện', 'điều chế nhôm'],
     data: {

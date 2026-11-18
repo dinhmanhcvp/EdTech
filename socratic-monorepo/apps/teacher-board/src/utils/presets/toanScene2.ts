@@ -146,7 +146,7 @@ export const TOAN_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Quy tắc đếm, hoán vị, chỉnh hợp, tổ hợp và tam giác Pascal',
-    question: 'Vì sao chọn k phần tử không tính thứ tự lại chia cho k! so với chọn có thứ tự? Mỗi số trong tam giác Pascal được tạo từ hai số nào ở hàng trên?',
+    question: 'Trước khi đổi n, k: em đoán chọn có thứ tự (chỉnh hợp) hay không thứ tự (tổ hợp) cho số lớn hơn, lớn hơn bao nhiêu lần? Sau khi thử: ghi Aₙᵏ và Cₙᵏ em đọc được với hai bộ n, k của em. Bạn em bảo "chọn 3 bạn làm lớp trưởng, lớp phó, bí thư là tổ hợp" — em phản biện bằng con số nào?',
     keywords: /quy tac (?:cong|nhan)|hoan vi|chinh hop|to hop|tam giac pascal|\bpascal\b|nhi thuc newton|so do cay dem|dem so cach/,
     examples: ['quy tắc cộng quy tắc nhân', 'hoán vị chỉnh hợp tổ hợp', 'tam giác Pascal', 'nhị thức Newton'],
     data: {
@@ -203,7 +203,7 @@ export const TOAN_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Thống kê mô tả: số trung bình, trung vị, tứ phân vị, độ lệch chuẩn',
-    question: 'Khi thêm một giá trị rất lớn vào mẫu số liệu, số trung bình và trung vị thay đổi khác nhau như thế nào? Khoảng tứ phân vị và độ lệch chuẩn phản ánh điều gì?',
+    question: 'Trước khi sửa mẫu số liệu: em đoán thêm một giá trị rất lớn sẽ làm số trung bình hay trung vị thay đổi nhiều hơn? Sau khi thử: ghi trung bình, trung vị, khoảng tứ phân vị trước và sau khi em thêm giá trị đó. Một bạn nói "trung bình luôn đại diện tốt nhất cho mẫu" — số liệu của em bác bỏ thế nào?',
     keywords: /thong ke mo ta|so trung binh cong|do lech chuan|tu phan vi|khoang bien thien|phuong sai|mau (?:so lieu )?ghep nhom/,
     examples: ['thống kê mô tả', 'độ lệch chuẩn và phương sai', 'tứ phân vị của mẫu số liệu', 'mẫu số liệu ghép nhóm'],
     data: {
@@ -256,7 +256,7 @@ export const TOAN_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Số gần đúng và sai số',
-    question: 'Quy tròn đến mấy chữ số thập phân thì sai số tuyệt đối không vượt quá nửa đơn vị hàng quy tròn? Sai số tương đối khác sai số tuyệt đối ở điểm nào khi so sánh độ chính xác?',
+    question: 'Trước khi quy tròn: em đoán quy tròn π đến chữ số thập phân thứ 2 thì sai số tuyệt đối khoảng bao nhiêu? Sau khi thử: ghi Δ và δ em đọc được ở hai mức quy tròn của em. Bạn em nói "1/3 ≈ 0,33 và π ≈ 3,14 chính xác như nhau vì cùng hai chữ số thập phân" — sai số tương đối em đọc được nói gì?',
     keywords: /so gan dung|sai so tuyet doi|sai so tuong doi|quy tron so|do chinh xac cua so gan dung/,
     examples: ['số gần đúng và sai số', 'sai số tuyệt đối sai số tương đối', 'quy tròn số gần đúng'],
     data: {
@@ -301,7 +301,7 @@ export const TOAN_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Dãy số: cấp số cộng, cấp số nhân, giới hạn của dãy',
-    question: 'Khi nào cấp số nhân có tổng vô hạn? Với dãy có giới hạn L, cho ε nhỏ bao nhiêu thì từ số hạng nào trở đi mọi số hạng đều nằm trong dải (L − ε, L + ε)?',
+    question: 'Trước khi đổi d hoặc q: em đoán cấp số nhân với q = 0,5 có tổng tiến tới một số hữu hạn không? Sau khi thử: ghi số hạng thứ N và tổng em đọc được với hai giá trị q của em. Một bạn nói "cộng vô hạn số dương thì tổng phải vô hạn" — số liệu nào của em bác bỏ?',
     keywords: /cap so cong|cap so nhan|gioi han cua day so|tong cap so nhan lui vo han|day so co gioi han|day so tang|day so giam|cong sai|cong boi/,
     examples: ['cấp số cộng', 'cấp số nhân', 'giới hạn của dãy số', 'tổng cấp số nhân lùi vô hạn'],
     data: {
@@ -352,7 +352,7 @@ export const TOAN_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Giới hạn hàm số theo ε–δ và tính liên tục',
-    question: 'Với mỗi dải sai lệch ε quanh giới hạn, ta tìm được khoảng δ quanh x₀ để mọi giá trị hàm trong khoảng đó nằm trong dải: hàm nào làm điều này được, hàm nào không?',
+    question: 'Trước khi chọn ε: em đoán hàm (x² − 1)/(x − 1) có giới hạn tại x₀ = 1 dù không xác định ở đó không? Sau khi thử: ghi δ lớn nhất em đọc được với hai giá trị ε của em, và kết luận liên tục của từng hàm. Bạn em nói "có giới hạn thì liên tục" — hàm nào trong mô phỏng em dùng để phản biện?',
     keywords: /gioi han ham so|epsilon delta|\bepsilon\b|ham so lien tuc|gian doan tai|tiem can ngang|tiem can dung/,
     examples: ['giới hạn hàm số', 'hàm số liên tục tại một điểm', 'tiệm cận đứng và tiệm cận ngang'],
     data: {
@@ -394,7 +394,7 @@ export const TOAN_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Quan hệ trong không gian: góc và khoảng cách trên hình lập phương',
-    question: 'Góc giữa đường thẳng và mặt phẳng, góc nhị diện và khoảng cách giữa hai đường chéo nhau được xác định bằng hình chiếu hoặc đoạn vuông góc chung như thế nào?',
+    question: 'Trước khi xem kết quả: em đoán góc giữa AC′ và mặt (ABCD) lớn hơn hay nhỏ hơn 45°? Sau khi xem: ghi kết quả em đọc được với cạnh a của em, rồi đổi a. Một bạn nói "cạnh lập phương to hơn thì góc to hơn" — hai lần đo của em ủng hộ hay bác bỏ, vì sao?',
     keywords: /goc giua duong thang va mat phang|goc nhi dien|khoang cach giua hai duong thang cheo nhau|duong thang cheo nhau|ba duong vuong goc|khoang cach tu diem den mat phang/,
     examples: ['góc giữa đường thẳng và mặt phẳng', 'góc nhị diện', 'khoảng cách hai đường thẳng chéo nhau'],
     data: {
@@ -442,7 +442,7 @@ export const TOAN_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Đạo hàm: từ cát tuyến đến tiếp tuyến',
-    question: 'Khi điểm thứ hai tiến sát điểm đang xét, hệ số góc cát tuyến dần tới giá trị nào? Giá trị đó cho ta biết gì về tốc độ thay đổi của hàm?',
+    question: 'Trước khi giảm h: em đoán hệ số góc cát tuyến tiến tới số nào? Sau khi kéo: ghi hệ số góc cát tuyến em đọc được ở ba giá trị h và so với f′(x₀). Bạn em bảo "cho h = 0 luôn là xong" — điều gì xảy ra với công thức cát tuyến khi h = 0, và vì sao phải nói tới giới hạn?',
     keywords: /dinh nghia dao ham|y nghia (?:hinh hoc )?cua dao ham|cat tuyen|he so goc cua tiep tuyen|toc do thay doi tuc thoi/,
     examples: ['định nghĩa đạo hàm', 'ý nghĩa hình học của đạo hàm', 'từ cát tuyến đến tiếp tuyến'],
     data: {
@@ -480,7 +480,7 @@ export const TOAN_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Khảo sát và vẽ đồ thị hàm số theo từng bước',
-    question: 'Bảng biến thiên được lập từ dấu của y′ như thế nào, và nó cho ta biết gì về cực trị, tiệm cận và hình dạng đồ thị?',
+    question: 'Trước khi bấm qua các bước: em đoán hàm y = x³ − 3x + 2 có mấy cực trị và đồ thị cắt Ox mấy lần? Sau khi đi hết các bước: ghi điểm cực trị em đọc được và chỗ em đoán sai. Một bạn vẽ đồ thị chỉ bằng cách chấm vài điểm — bước nào trong khảo sát giúp em bắt được chỗ họ có thể vẽ sai?',
     keywords: /khao sat (?:va ve do thi )?(?:ham so|su bien thien)|cac buoc khao sat/,
     examples: ['khảo sát hàm số', 'các bước khảo sát và vẽ đồ thị'],
     data: {
@@ -539,7 +539,7 @@ export const TOAN_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Tích phân và diện tích: tổng Riemann hội tụ về tích phân',
-    question: 'Khi chia nhỏ khoảng [a, b] thành nhiều phần hơn, tổng diện tích các hình chữ nhật tiến tới đại lượng nào? Cách chọn điểm đại diện (trái, phải, giữa) ảnh hưởng ra sao tới sai số?',
+    question: 'Trước khi tăng n: em đoán tổng Riemann theo đầu mút trái lớn hay nhỏ hơn diện tích thật với f(x) = x²? Sau khi thử: ghi tổng em đọc được ở ba giá trị n với đầu mút trái và phải. Bạn em nói "đầu mút trái luôn cho số nhỏ hơn" — hàm nào trong mô phỏng làm câu đó sai?',
     keywords: /dien tich (?:hinh phang )?(?:duoi|gioi han boi) (?:do thi|duong cong)|tich phan xac dinh|hinh thang va hinh chu nhat xap xi dien tich|hinh thang va hinh chu nhat xap xi|ung dung cua tich phan/,
     examples: ['diện tích dưới đường cong', 'tích phân xác định', 'hình thang và hình chữ nhật xấp xỉ diện tích'],
     data: {
@@ -588,7 +588,7 @@ export const TOAN_SCENE2_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Mặt bậc hai và dải Möbius',
-    question: 'Các mặt cắt song song với mặt phẳng tọa độ của elipxoit, hypeboloit, paraboloit là những đường nào? Vì sao dải Möbius chỉ có một mặt?',
+    question: 'Trước khi chọn mặt: em đoán mặt nào có thể chứa trọn những đường thẳng nằm trên nó? Sau khi xoay: ghi mặt nào em thấy có đường thẳng nằm trọn trên mặt. Một bạn nói "dải Möbius có hai mặt như tờ giấy bình thường" — khi em lần theo dải trong mô phỏng, em thấy gì?',
     keywords: /mat bac hai|elipxoit|ellipsoid|hypeboloit|paraboloit|dai mobius|mobius|mat non/,
     examples: ['mặt bậc hai', 'elipxoit hypeboloit paraboloit', 'dải Möbius'],
     data: {

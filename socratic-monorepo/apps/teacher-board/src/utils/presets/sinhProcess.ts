@@ -15,8 +15,7 @@ export const SINH_PROCESS_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'BIOLOGY',
     title: 'Nguyên phân',
-    question:
-      'Vì sao tế bào con tạo ra từ nguyên phân có bộ NST giống hệt tế bào mẹ? Hoạt động nào của NST ở kì giữa và kì sau bảo đảm điều đó?',
+    question: 'Trước khi bấm qua các kì: em đoán NST nhân đôi ở kì nào, tách nhau ở kì nào? Sau khi đi hết: ghi số NST và số chromatid em đếm được ở kì giữa và kì sau. Một bạn nói "NST nhân đôi ở kì đầu nên kì đầu có gấp đôi NST" — số liệu em đếm được bác bỏ thế nào?',
     keywords: /nguyen phan|mitosis|\bki (?:dau|giua|sau|cuoi)\b/,
     examples: ['nguyên phân', 'các kì của nguyên phân', 'kì giữa kì sau'],
     data: {
@@ -59,8 +58,7 @@ export const SINH_PROCESS_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'BIOLOGY',
     title: 'Chu kì nhân lên của virus (sinh tan)',
-    question:
-      'Vì sao virus chỉ nhân lên được trong tế bào chủ? Chu kì sinh tan khác chu kì tiềm tan ở điểm nào?',
+    question: 'Trước khi bấm qua các giai đoạn: em đoán virus tự tổng hợp protein của nó bằng gì? Sau khi đi hết: ghi năm giai đoạn em thấy và chỗ em đoán sai. Bạn em nói "kháng sinh diệt được virus như diệt vi khuẩn" — chu kì em vừa xem cho thấy vì sao không?',
     keywords: /sinh tan|tiem tan|chu k[yi] nhan len|virus nhan len|thuc khuan the|\bphage\b/,
     examples: ['chu kì sinh tan của virus', 'chu kì nhân lên của virus', 'thực khuẩn thể'],
     data: {
@@ -98,8 +96,7 @@ export const SINH_PROCESS_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'BIOLOGY',
     title: 'Chạc sao chép DNA: mạch liên tục và đoạn Okazaki',
-    question:
-      'Vì sao một mạch mới được tổng hợp liên tục còn mạch kia phải tổng hợp thành từng đoạn Okazaki? Vì sao gọi là nguyên tắc bán bảo toàn?',
+    question: 'Trước khi chạy chạc sao chép: em đoán vì sao một mạch được tổng hợp liên tục còn mạch kia thành từng đoạn? Sau khi xem: ghi chiều tổng hợp và các enzyme em thấy, chỗ em đoán sai. Một bạn nói "DNA polymerase có thể tổng hợp theo cả hai chiều" — mô phỏng của em bác bỏ thế nào?',
     keywords: /okazaki|chac sao chep|diem khoi dau sao chep|ban bao toan|(?:dna|adn) polymerase|mach lien tuc/,
     examples: ['đoạn Okazaki', 'chạc sao chép', 'nguyên tắc bán bảo toàn'],
     data: {

@@ -86,7 +86,7 @@ export const LY_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'PHYSICS',
     title: 'Giao thoa ánh sáng Young',
-    question: 'Khoảng vân phụ thuộc bước sóng, khoảng cách hai khe và khoảng cách đến màn như thế nào? Vì sao ánh sáng đỏ cho vân thưa hơn ánh sáng tím?',
+    question: 'Trước khi đổi bước sóng: em đoán ánh sáng đỏ hay tím cho vân rộng hơn? Sau khi thử: ghi khoảng vân i em đọc được với hai bước sóng và hai khoảng cách khe a. Bạn em nói "hai khe càng xa nhau vân càng rộng" — số liệu của em bác bỏ thế nào?',
     keywords: /giao thoa (?:anh sang )?young|khe young|thi nghiem young|khoang van|van sang van toi|giao thoa anh sang/,
     examples: ['giao thoa Young', 'khoảng vân', 'vân sáng vân tối', 'thí nghiệm Young'],
     data: {
@@ -113,7 +113,7 @@ export const LY_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'PHYSICS',
     title: 'Tụ điện: điện tích, năng lượng và ghép tụ',
-    question: 'Điện tích tụ tích được tăng theo hiệu điện thế thế nào, và năng lượng dự trữ phụ thuộc ra sao? Ghép nối tiếp hay song song làm điện dung tương đương thay đổi thế nào?',
+    question: 'Trước khi ghép: em đoán ghép nối tiếp thì điện dung tương đương lớn hơn hay nhỏ hơn tụ nhỏ nhất? Sau khi thử: ghi điện dung, Q, W em đọc được khi ghép song song và nối tiếp. Một bạn nói "ghép tụ giống ghép điện trở" — số liệu của em cho thấy chỗ nào ngược lại?',
     keywords: /tu dien(?! deu| abcd)|dien dung cua tu|nang luong cua tu dien|ghep tu dien|tich dien cho tu/,
     examples: ['tụ điện', 'điện dung của tụ', 'năng lượng của tụ điện', 'ghép tụ điện'],
     data: {
@@ -142,7 +142,7 @@ export const LY_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'PHYSICS',
     title: 'Đồ thị đun nóng nước đá: nhiệt dung riêng và nhiệt nóng chảy, hóa hơi',
-    question: 'Vì sao nhiệt độ không đổi trong lúc nước đá đang tan và nước đang sôi dù vẫn cung cấp nhiệt? Nhiệt lượng nào lớn nhất trong toàn bộ quá trình?',
+    question: 'Trước khi đun: em đoán giai đoạn nào trên đồ thị nhiệt độ đứng yên dù vẫn cấp nhiệt? Sau khi thử: ghi nhiệt lượng từng giai đoạn em đọc được với khối lượng của em. Bạn em nói "cấp nhiệt thì nhiệt độ luôn tăng" — đoạn nào trên đồ thị của em bác bỏ, nhiệt đi đâu?',
     keywords: /nhiet dung rieng|nhiet nong chay|nhiet hoa hoi|nhiet luong|can bang nhiet|dinh luat i cua nhiet dong luc hoc|do thi chuyen the|nuoc da/,
     examples: ['nhiệt dung riêng', 'nhiệt nóng chảy riêng', 'nhiệt lượng cân bằng nhiệt', 'đồ thị chuyển thể của nước đá'],
     data: {
@@ -165,7 +165,7 @@ export const LY_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'PHYSICS',
     title: 'Nhiệt độ và các thang đo: Celsius, Kelvin, Fahrenheit',
-    question: 'Vì sao thang Kelvin bắt đầu từ độ không tuyệt đối? Đổi 36,6 °C sang kelvin và Fahrenheit thế nào?',
+    question: 'Trước khi đổi: em đoán có nhiệt độ nào mà số đọc theo Celsius và Fahrenheit bằng nhau không? Sau khi thử: ghi các giá trị em đọc được khi tìm điểm đó. Một bạn nói "20 °C nóng gấp đôi 10 °C" — đổi hai giá trị sang Kelvin, em phản biện thế nào?',
     keywords: /thang nhiet do|nhiet do tuyet doi|do khong tuyet doi|nhiet ke|thang kelvin|thang celsius|thang fahrenheit|nhiet do cua vat/,
     examples: ['thang nhiệt độ', 'nhiệt độ tuyệt đối', 'nhiệt kế', 'thang Celsius Kelvin Fahrenheit'],
     data: {
@@ -191,7 +191,7 @@ export const LY_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'PHYSICS',
     title: 'Máy biến áp và hao phí khi truyền tải điện',
-    question: 'Vì sao truyền tải điện đi xa phải dùng điện áp rất cao? Máy biến áp thay đổi điện áp và cường độ dòng điện theo tỉ lệ nào?',
+    question: 'Trước khi đổi điện áp truyền tải: em đoán tăng điện áp gấp đôi thì hao phí giảm bao nhiêu lần? Sau khi thử: ghi hao phí em đọc được ở 110 kV, 220 kV, 500 kV. Bạn em nói "muốn giảm hao phí thì cứ làm dây thật to" — số liệu của em cho thấy cách nào hiệu quả hơn, vì sao?',
     keywords: /may bien ap|hao phi (?:dien )?khi truyen tai|truyen tai dien (?:nang )?di xa|cong suat hao phi|bien ap/,
     examples: ['máy biến áp', 'hao phí khi truyền tải điện', 'truyền tải điện năng đi xa'],
     data: {
@@ -219,7 +219,7 @@ export const LY_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'PHYSICS',
     title: 'Năng lượng liên kết riêng của hạt nhân',
-    question: 'Vì sao hạt nhân ở gần số khối 56 (sắt) bền nhất? Vì sao phân hạch hạt nhân nặng và nhiệt hạch hạt nhân nhẹ đều giải phóng năng lượng?',
+    question: 'Trước khi xem đồ thị: em đoán hạt nhân nào bền nhất? Sau khi đọc: ghi năng lượng liên kết riêng em đọc được ở A = 4, 56, 238. Một bạn nói "hạt nhân càng nặng càng bền vì có nhiều nucleon giữ nhau" — số liệu của em bác bỏ thế nào, và vì sao cả phân hạch lẫn nhiệt hạch đều tỏa năng lượng?',
     keywords: /nang luong lien ket rieng|nang luong lien ket cua hat nhan|do hut khoi|phan ung nhiet hach|nhiet hach|do ben vung cua hat nhan/,
     examples: ['năng lượng liên kết riêng', 'độ hụt khối', 'phản ứng nhiệt hạch', 'độ bền vững của hạt nhân'],
     data: {
@@ -245,7 +245,7 @@ export const LY_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'TABLE_LAB',
     engine: 'PHYSICS',
     title: 'Thang sóng điện từ',
-    question: 'Các loại sóng điện từ khác nhau về bước sóng, tần số và năng lượng photon thế nào? Vì sao tia X và gamma nguy hiểm hơn sóng vô tuyến?',
+    question: 'Trước khi tra bảng: em xếp sóng vô tuyến, ánh sáng nhìn thấy, tia X theo bước sóng tăng dần. Sau khi tra: ghi chỗ em xếp sai và bước sóng thật em đọc được. Một bạn nói "tia X và sóng radio là hai loại sóng khác bản chất" — bảng em vừa xem phản biện thế nào?',
     keywords: /thang song dien tu|pho song dien tu|song dien tu|tia hong ngoai|tia tu ngoai|tia x\b|tia gamma|anh sang nhin thay/,
     examples: ['thang sóng điện từ', 'phổ sóng điện từ', 'tia hồng ngoại và tử ngoại'],
     data: {

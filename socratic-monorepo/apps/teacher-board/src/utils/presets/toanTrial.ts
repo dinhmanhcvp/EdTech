@@ -15,7 +15,7 @@ export const TOAN_TRIAL_PRESETS: Record<string, PresetSpec> = {
     family: 'TRIAL_LAB',
     engine: 'MATH',
     title: 'Phòng thí nghiệm xác suất: tần suất, luật số lớn, Monty Hall, Bayes',
-    question: 'Vì sao tần suất quan sát dao động mạnh khi ít lần thử nhưng tiến gần xác suất lí thuyết khi thử rất nhiều lần? Đổi cửa trong trò Monty Hall có lợi hơn giữ nguyên không?',
+    question: 'Trước khi chạy Monty Hall: em đoán đổi cửa hay giữ nguyên cho xác suất thắng cao hơn, hay như nhau? Sau khi chạy: ghi tần suất thắng em thu được với mỗi chiến lược sau 20 lần và sau 1000 lần. Bạn em nói "còn hai cửa thì mỗi cửa 50 %" — số liệu của em bác bỏ thế nào, và vì sao 20 lần chưa đủ để kết luận?',
     keywords: /xac suat|luat so lon|tan suat|monty hall|cong thuc bayes|bien co doc lap|tung (?:dong xu|xuc xac)|lay bi/,
     examples: ['xác suất', 'luật số lớn', 'tung đồng xu và xúc xắc', 'Monty Hall', 'công thức Bayes'],
     data: {

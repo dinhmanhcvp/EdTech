@@ -5,7 +5,7 @@ export const SINH2_ANAT_PRESETS: Record<string, PresetSpec> = {
     family: 'ANATOMY_FLOW',
     engine: 'BIOLOGY',
     title: 'Hệ hô hấp ở người và trao đổi khí ở phế nang',
-    question: 'Không khí đi qua những bộ phận nào trước khi tới phế nang, và vì sao phế nang là nơi trao đổi khí hiệu quả? Cơ hoành và cơ liên sườn giúp thông khí thế nào?',
+    question: 'Trước khi đi theo dòng khí: em đoán O₂ đi từ phế nang vào máu nhờ cơ chế gì? Sau khi xem: ghi đường đi của không khí và chỗ trao đổi khí em thấy, chỗ em đoán sai. Bạn em nói "thở ra là thải hết O₂ ra ngoài" — mô phỏng em vừa xem bác bỏ thế nào?',
     keywords: /he ho hap|phe nang|khi quan|phe quan|thong khi o phoi|trao doi khi o phoi|co hoanh|ho hap o nguoi/,
     examples: ['hệ hô hấp', 'phế nang', 'trao đổi khí ở phổi', 'cơ hoành'],
     data: {
@@ -28,7 +28,7 @@ export const SINH2_ANAT_PRESETS: Record<string, PresetSpec> = {
     family: 'ANATOMY_FLOW',
     engine: 'BIOLOGY',
     title: 'Vận chuyển nước và chất hữu cơ ở thực vật',
-    question: 'Nước đi từ đất lên lá qua những con đường và nhờ những lực nào? Mạch rây vận chuyển chất hữu cơ từ đâu đến đâu?',
+    question: 'Trước khi đi theo dòng nước: em đoán động lực chính kéo nước lên ngọn cây cao là gì? Sau khi xem: ghi đường đi của nước, chất hữu cơ và chỗ em đoán sai. Một bạn nói "nước và đường đều đi lên trong cùng một mạch" — mô phỏng em vừa xem phân biệt thế nào?',
     keywords: /mach go|mach ray|hut nuoc o re|long hut|dai caspary|dong mach go|van chuyen nuoc o thuc vat|ap suat re/,
     examples: ['mạch gỗ và mạch rây', 'hút nước ở rễ', 'lông hút', 'đai Caspary'],
     data: {
@@ -51,7 +51,7 @@ export const SINH2_ANAT_PRESETS: Record<string, PresetSpec> = {
     family: 'ANATOMY_FLOW',
     engine: 'BIOLOGY',
     title: 'Cấu tạo mắt và sự tạo ảnh',
-    question: 'Ánh sáng đi qua những cấu trúc nào của mắt trước khi tạo ảnh trên võng mạc? Thể thủy tinh thay đổi thế nào khi nhìn vật gần và vật xa?',
+    question: 'Trước khi đi theo tia sáng: em đoán ảnh trên màng lưới cùng chiều hay ngược chiều vật? Sau khi xem: ghi đường đi của ánh sáng và bộ phận điều tiết em thấy, chỗ em đoán sai. Bạn em nói "mắt cận nhìn xa không rõ vì thể thuỷ tinh quá dẹt" — mô phỏng em vừa xem phản biện thế nào?',
     keywords: /cau tao cua mat|cau tao mat|vong mac|the thuy tinh|giac mac|diem vang|can thi|vien thi|co quan thi giac|te bao que va te bao non|dieu tiet cua mat/,
     examples: ['cấu tạo của mắt', 'võng mạc', 'thể thủy tinh', 'cận thị viễn thị', 'cơ quan thị giác'],
     data: {

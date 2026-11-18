@@ -73,7 +73,7 @@ export const LY_SCENE3_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Sóng điện từ trong không gian: E vuông góc B vuông góc phương truyền',
-    question: 'Điện trường và từ trường của sóng điện từ dao động trong những mặt phẳng nào so với phương truyền? Khi E đạt cực đại thì B đang ở đâu, và nếu giảm bước sóng thì tần số đổi ra sao?',
+    question: 'Trước khi đổi bước sóng: em đoán tần số tăng hay giảm khi λ tăng? Sau khi thử: ghi f em đọc được ở hai bước sóng của em, và hướng của E, B khi nhìn từ trên xuống. Một bạn nói "E và B dao động lệch pha nhau một phần tư chu kì" — hình em quan sát ủng hộ hay bác bỏ?',
     keywords: /su lan truyen cua song dien tu|song dien tu lan truyen|song dien tu 3d|vecto e vuong goc b|dien truong va tu truong bien thien|song dien tu trong khong gian/,
     examples: ['sự lan truyền của sóng điện từ', 'sóng điện từ 3D', 'vectơ E vuông góc B', 'điện trường và từ trường biến thiên'],
     data: {
@@ -147,7 +147,7 @@ export const LY_SCENE3_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Trái Đất nghiêng 23,5°: ngày – đêm và các mùa',
-    question: 'Vì sao cùng một ngày mà nơi ngày dài, nơi ngày ngắn? Nếu trục Trái Đất không nghiêng thì còn có mùa không, và độ dài ngày ở xích đạo thay đổi thế nào quanh năm?',
+    question: 'Trước khi đổi ngày: em đoán ở vĩ độ của em ngày nào dài nhất năm? Sau khi thử: ghi độ dài ngày và góc cao Mặt Trời em đọc được vào hai ngày đối nhau trong năm. Bạn em nói "mùa hè nóng vì Trái Đất gần Mặt Trời hơn" — kết quả khi em đặt độ nghiêng trục bằng 0 phản biện thế nào?',
     keywords: /trai dat nghieng|ngay dem va cac mua|do dai ngay dem|ngay dai dem ngan|trai dat quay quanh mat troi|ngay dem dai ngan theo mua|goc nghieng cua truc trai dat/,
     examples: ['Trái Đất nghiêng', 'ngày đêm và các mùa', 'độ dài ngày đêm', 'góc nghiêng của trục Trái Đất'],
     data: {
@@ -253,7 +253,7 @@ export const LY_SCENE3_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'PHYSICS',
     title: 'Con lắc Newton: bảo toàn động lượng và năng lượng',
-    question: 'Nâng hai quả cầu lên rồi thả, vì sao đúng hai quả bên kia bật ra mà không phải một quả bay nhanh hơn? Nếu có hao hụt năng lượng thì điều gì thay đổi sau mỗi lần va chạm?',
+    question: 'Trước khi thả: em đoán nâng 2 quả thì bên kia bật lên mấy quả? Sau khi thử: ghi số quả bật lên và biên độ em thấy với 1, 2, 3 quả. Một bạn nói "nâng 2 quả, bên kia bật 1 quả nhanh gấp đôi cũng bảo toàn động lượng" — điều kiện nào nữa bác bỏ khả năng đó, em kiểm bằng số liệu nào?',
     keywords: /qua lac newton|newton cradle|cac qua cau treo va cham|va cham cua cac qua cau treo|bo qua cau treo cua newton/,
     examples: ['quả lắc Newton', 'Newton cradle', 'các quả cầu treo va chạm', 'bộ quả cầu treo của Newton'],
     data: {

@@ -7,8 +7,7 @@ export const SINH_ANATOMY_PRESETS: Record<string, PresetSpec> = {
     family: 'ANATOMY_FLOW',
     engine: 'BIOLOGY',
     title: 'Tế bào nhân thực và các bào quan',
-    question:
-      'Bào quan nào tổng hợp protein, bào quan nào đóng gói và vận chuyển protein, bào quan nào tạo ATP? Vì sao tế bào nhân thực cần hệ thống màng bên trong như vậy?',
+    question: 'Trước khi chạm từng bào quan: em đoán tế bào cơ tim cần nhiều bào quan nào nhất, tế bào tuyến tuỵ cần nhiều bào quan nào nhất. Sau khi xem: ghi chức năng em đọc được và chỗ em đoán sai. Một bạn nói "tế bào thực vật không có ti thể vì đã có lục lạp" — mô phỏng em vừa xem bác bỏ thế nào?',
     keywords: /te bao nhan thuc|cac bao quan|cau truc te bao|bo may golgi|luoi noi chat|\blysosome\b|\bribosome\b/,
     examples: ['tế bào nhân thực', 'các bào quan', 'cấu trúc tế bào'],
     data: {
@@ -66,8 +65,7 @@ export const SINH_ANATOMY_PRESETS: Record<string, PresetSpec> = {
     family: 'ANATOMY_FLOW',
     engine: 'BIOLOGY',
     title: 'Cấu tạo tim và vòng tuần hoàn máu',
-    question:
-      'Máu đi qua những ngăn tim và mạch nào theo thứ tự trong vòng tuần hoàn phổi và vòng tuần hoàn hệ thống? Van tim có vai trò gì?',
+    question: 'Trước khi đi theo dòng máu: em đoán động mạch phổi chứa máu giàu O₂ hay nghèo O₂? Sau khi đi hết: ghi đường đi của máu em thấy và chỗ em đoán sai. Bạn em nói "động mạch luôn chứa máu đỏ tươi" — chỗ nào trong vòng tuần hoàn em vừa xem bác bỏ?',
     keywords: /tuan hoan (?:mau|kin|kep)|cau tao (?:cua )?tim|bon ngan tim|van tim|vong tuan hoan/,
     examples: ['tuần hoàn máu', 'cấu tạo tim', 'van tim và bốn ngăn tim'],
     data: {
@@ -160,8 +158,7 @@ export const SINH_ANATOMY_PRESETS: Record<string, PresetSpec> = {
     family: 'ANATOMY_FLOW',
     engine: 'BIOLOGY',
     title: 'Nephron và sự tạo thành nước tiểu',
-    question:
-      'Từ khoảng 180 L dịch lọc mỗi ngày, vì sao chỉ còn 1,5–2 L nước tiểu thải ra ngoài? Ba giai đoạn lọc, tái hấp thu và tiết diễn ra ở đâu?',
+    question: 'Trước khi đi theo dịch lọc: em đoán glucose có trong nước tiểu người khoẻ không? Sau khi đi hết: ghi các chất được lọc, tái hấp thụ, bài tiết em đọc được ở từng đoạn, chỗ em đoán sai. Một bạn nói "thận chỉ lọc chất thải ra" — đoạn nào em thấy thận lấy lại chất cần thiết?',
     keywords: /nephron|tao (?:thanh )?nuoc tieu|he tiet nieu|cau than|nang bowman|\bong than\b/,
     examples: ['nephron', 'sự tạo thành nước tiểu', 'cầu thận và nang Bowman'],
     data: {
@@ -220,8 +217,7 @@ export const SINH_ANATOMY_PRESETS: Record<string, PresetSpec> = {
     family: 'ANATOMY_FLOW',
     engine: 'BIOLOGY',
     title: 'Cấu tạo hoa và thụ tinh kép',
-    question:
-      'Bộ phận nào của hoa chứa hạt phấn, bộ phận nào chứa noãn? Vì sao thụ tinh ở thực vật có hoa gọi là thụ tinh kép và sản phẩm của nó là gì?',
+    question: 'Trước khi xem thụ tinh: em đoán hai tinh tử kết hợp với những gì? Sau khi xem: ghi sản phẩm của mỗi lần kết hợp em đọc được, chỗ em đoán sai. Bạn em nói "thụ tinh kép nghĩa là hai hạt phấn thụ tinh cho hai noãn" — mô phỏng của em bác bỏ thế nào?',
     keywords: /cau tao (?:cua )?hoa|hoa luong tinh|hoa don tinh|bao phan|tui phoi|thu tinh kep|\bong phan\b/,
     examples: ['cấu tạo hoa', 'túi phôi và thụ tinh kép', 'hoa lưỡng tính'],
     data: {

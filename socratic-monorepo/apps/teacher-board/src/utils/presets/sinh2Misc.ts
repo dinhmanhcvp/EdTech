@@ -62,7 +62,7 @@ export const SINH2_MISC_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'BIOLOGY',
     title: 'Đường phân và lên men',
-    question: 'Khi không có O₂, tế bào tái tạo NAD⁺ để đường phân tiếp tục bằng cách nào? Vì sao lên men chỉ thu được rất ít ATP so với hô hấp hiếu khí?',
+    question: 'Trước khi đi qua các bước: em đoán một phân tử glucose qua đường phân thu được mấy ATP? Sau khi đi hết: ghi số ATP, NADH em đọc được và sản phẩm khi lên men lactic, lên men rượu, chỗ em đoán sai. Bạn em nói "lên men tạo nhiều ATP hơn vì không cần O₂" — số liệu của em bác bỏ thế nào?',
     keywords: /duong phan|len men|lactic|len men ruou|hieu qua nang luong cua len men|pyruvate|glycolysis/,
     examples: ['đường phân', 'lên men', 'lên men lactic', 'lên men rượu', 'pyruvate'],
     data: {
@@ -92,7 +92,7 @@ export const SINH2_MISC_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'BIOLOGY',
     title: 'Biến thái hoàn toàn và không hoàn toàn ở côn trùng',
-    question: 'Biến thái hoàn toàn khác biến thái không hoàn toàn ở điểm nào? Hormone nào điều khiển lột xác và biến thái?',
+    question: 'Trước khi xem: em đoán con non của bướm và châu chấu giống bố mẹ đến mức nào? Sau khi xem: ghi các giai đoạn em thấy ở mỗi loài, chỗ em đoán sai. Một bạn nói "sâu bướm và bướm là hai loài khác nhau" — mô phỏng em vừa xem bác bỏ thế nào?',
     keywords: /bien thai|lot xac|sinh truong va phat trien o dong vat|ecdysone|hormone juvenile|nhong|au trung|sau non/,
     examples: ['biến thái', 'biến thái hoàn toàn', 'lột xác', 'sinh trưởng và phát triển ở động vật'],
     data: {
@@ -121,7 +121,7 @@ export const SINH2_MISC_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'BIOLOGY',
     title: 'Nguồn gốc sự sống: Miller–Urey, tế bào nguyên thủy và nội cộng sinh',
-    question: 'Thí nghiệm của Miller chứng minh điều gì về sự hình thành chất hữu cơ trên Trái Đất nguyên thủy? Ti thể và lục lạp có nguồn gốc từ đâu theo thuyết nội cộng sinh?',
+    question: 'Trước khi xem thí nghiệm Miller–Urey: em đoán từ khí vô cơ và tia lửa điện thu được chất gì? Sau khi xem: ghi sản phẩm em đọc được và chỗ em đoán sai. Bạn em nói "thí nghiệm đó đã tạo ra sự sống" — kết quả em vừa xem chứng minh được đến đâu?',
     keywords: /nguon goc su song|thi nghiem miller|miller ?-? ?urey|tien hoa hoa hoc|noi cong sinh|te bao so khai|protocell|nien bieu dia chat|phat sinh loai nguoi/,
     examples: ['nguồn gốc sự sống', 'thí nghiệm Miller', 'tiến hóa hóa học', 'thuyết nội cộng sinh', 'niên biểu địa chất'],
     data: {
@@ -150,7 +150,7 @@ export const SINH2_MISC_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'BIOLOGY',
     title: 'Chu trình nitrogen và diễn thế sinh thái',
-    question: 'Nitrogen trong khí quyển được cây hấp thụ nhờ những quá trình nào và trở lại khí quyển ra sao? Vì sao diễn thế nguyên sinh bắt đầu từ môi trường chưa có sinh vật?',
+    question: 'Trước khi đi theo chu trình nitrogen: em đoán cây hấp thụ nitrogen ở dạng nào? Sau khi đi hết: ghi các dạng nitrogen và vi khuẩn tham gia em đọc được, chỗ em đoán sai. Một bạn nói "N₂ chiếm 78 % không khí nên cây không bao giờ thiếu đạm" — chu trình của em phản biện thế nào?',
     keywords: /chu trinh nito|chu trinh nitrogen|co dinh dam|nitrate? hoa|phan nitrate? hoa|chu trinh sinh dia hoa|dien the sinh thai|dien the nguyen sinh|phu duong/,
     examples: ['chu trình nitrogen', 'cố định đạm', 'nitrate hóa', 'diễn thế sinh thái', 'phú dưỡng'],
     data: {
@@ -179,7 +179,7 @@ export const SINH2_MISC_PRESETS: Record<string, PresetSpec> = {
     family: 'TRIAL_LAB',
     engine: 'BIOLOGY',
     title: 'Các quy luật di truyền mở rộng: trội không hoàn toàn, đồng trội, liên kết và hoán vị gene',
-    question: 'Tỉ lệ kiểu hình thay đổi thế nào khi trội không hoàn toàn, khi hai gene liên kết, khi có hoán vị gene tần số f? Vì sao con trai mắc bệnh liên kết X lặn nhiều hơn?',
+    question: 'Trước khi lai: em tự tính tỉ lệ kiểu hình đời con của phép lai em chọn. Sau khi lai nhiều lần: ghi tỉ lệ em đếm được và so với số em tính. Bạn em nói "lai 20 cây không ra đúng 3 : 1 tức là Mendel sai" — kết quả khi em tăng số lần lai nói gì?',
     keywords: /troi khong hoan toan|dong troi|lien ket gene|hoan vi gene|lien ket hoan toan|phan li doc lap|lai phan tich|quy luat di truyen|nhom mau abo/,
     examples: ['trội không hoàn toàn', 'đồng trội', 'liên kết gene và hoán vị gene', 'phân li độc lập', 'nhóm máu ABO'],
     data: {
@@ -197,7 +197,7 @@ export const SINH2_MISC_PRESETS: Record<string, PresetSpec> = {
     family: 'TRIAL_LAB',
     engine: 'BIOLOGY',
     title: 'Di truyền tế bào chất (thí nghiệm của Correns)',
-    question: 'Vì sao kiểu hình của con luôn giống mẹ khi gene nằm ở lục lạp hay ti thể? Phép lai thuận và lai nghịch cho kết quả khác nhau nói lên điều gì?',
+    question: 'Trước khi lai: em đoán đời con có lá giống cây bố hay cây mẹ? Sau khi thử: ghi kiểu lá đời con em thấy khi đổi vai cây lá xanh, lá đốm làm mẹ. Một bạn nói "lai thuận và lai nghịch luôn cho kết quả như nhau" — số liệu của em bác bỏ thế nào, và vì sao?',
     keywords: /di truyen te bao chat|di truyen ngoai nhan|correns|di truyen theo me|gene ngoai nhan|gene o luc lap|gene o ti the|lai thuan nghich/,
     examples: ['di truyền tế bào chất', 'thí nghiệm của Correns', 'di truyền theo mẹ', 'gene ngoài nhân', 'lai thuận nghịch'],
     data: {
@@ -217,7 +217,7 @@ export const SINH2_MISC_PRESETS: Record<string, PresetSpec> = {
     family: 'TABLE_LAB',
     engine: 'BIOLOGY',
     title: 'Bảng mã di truyền (64 codon)',
-    question: 'Vì sao nhiều codon cùng mã hóa một amino acid (tính thoái hóa) mà mỗi codon chỉ mã hóa một amino acid (tính đặc hiệu)? Codon nào mở đầu và codon nào kết thúc dịch mã?',
+    question: 'Trước khi tra: em đoán có bao nhiêu codon mã hoá cho leucine và có codon nào không mã hoá amino acid nào? Sau khi tra: ghi các codon em tìm được và chỗ em đoán sai. Bạn em nói "mỗi amino acid ứng với đúng một codon" — bảng em vừa tra bác bỏ thế nào, điều đó có lợi gì khi xảy ra đột biến?',
     keywords: /bang ma di truyen|tinh thoai hoa cua ma di truyen|ma bo ba|codon mo dau|ma ket thuc/,
     examples: ['bảng mã di truyền', 'tính thoái hóa của mã di truyền', 'codon mở đầu', 'mã kết thúc'],
     data: {
@@ -254,7 +254,7 @@ export const SINH2_MISC_PRESETS: Record<string, PresetSpec> = {
     family: 'TABLE_LAB',
     engine: 'BIOLOGY',
     title: 'Bằng chứng phân tử: cytochrome C và quan hệ họ hàng',
-    question: 'Số amino acid khác nhau trong cytochrome C của hai loài cho biết điều gì về mức độ gần gũi tiến hóa? Vì sao người gần tinh tinh hơn gần nấm men?',
+    question: 'Trước khi tra: em đoán loài nào có cytochrome C giống người nhất, khỉ, chó hay cá? Sau khi tra: ghi số amino acid khác biệt em đọc được. Một bạn nói "người tiến hoá từ tinh tinh" — số liệu của em ủng hộ kết luận nào chính xác hơn?',
     keywords: /cytochrome ?c|bang chung phan tu|quan he ho hang|cay phat sinh|bang chung tien hoa|hoa thach|dong ho phan tu|co quan tuong dong|co quan thoai hoa/,
     examples: ['cytochrome C', 'bằng chứng phân tử', 'quan hệ họ hàng giữa các loài', 'cây phát sinh chủng loại', 'cơ quan thoái hóa'],
     data: {

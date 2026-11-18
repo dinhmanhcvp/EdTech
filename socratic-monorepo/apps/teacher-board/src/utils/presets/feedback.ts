@@ -31,8 +31,7 @@ export const FEEDBACK_PRESETS: Record<string, PresetSpec> = {
     family: 'FEEDBACK_SYSTEM',
     engine: 'BIOLOGY',
     title: 'Điều hòa glucose máu bằng liên hệ ngược',
-    question:
-      'Khi glucose máu tăng sau bữa ăn, bộ phận tiếp nhận, điều khiển và thực hiện nào hoạt động? Điều gì xảy ra với glucose máu nếu tuyến tụy không tiết đủ insulin?',
+    question: 'Trước khi tăng lượng đường ăn vào: em đoán glucose máu sẽ vượt bao xa rồi quay về thế nào? Sau khi thử: ghi đỉnh glucose em đọc được khi bật và tắt điều hoà ngược, khi giảm độ nhạy insulin. Một bạn nói "người tiểu đường loại 2 là thiếu insulin" — số liệu khi em giảm độ nhạy insulin gợi ý điều gì khác?',
     keywords: /insulin|glucagon|duong huyet|glucose (?:mau|huyet)|lien he nguoc|dieu hoa nguoc|can bang noi moi|negative feedback|homeostasis/,
     examples: ['insulin glucagon', 'điều hòa glucose máu', 'cân bằng nội môi', 'liên hệ ngược'],
     data: {

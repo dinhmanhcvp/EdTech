@@ -5,8 +5,7 @@ export const ANATOMY_PRESETS: Record<string, PresetSpec> = {
     family: 'ANATOMY_FLOW',
     engine: 'BIOLOGY',
     title: 'Hệ tiêu hóa ở người',
-    question:
-      'Thức ăn đi qua những đoạn nào của ống tiêu hóa, và ở mỗi đoạn enzyme nào biến đổi chất nào? Vì sao phần lớn việc hấp thụ diễn ra ở ruột non?',
+    question: 'Trước khi đi theo dòng thức ăn: em đoán tinh bột, protein, lipid bắt đầu được tiêu hoá hoá học ở đâu. Sau khi đi hết: ghi enzyme và cơ quan em đọc được cho từng chất, chỗ em đoán sai. Một bạn nói "dạ dày là nơi hấp thụ chất dinh dưỡng chủ yếu" — mô phỏng em vừa xem bác bỏ thế nào?',
     keywords: /he tieu hoa|ong tieu hoa|tieu hoa (?:o )?nguoi|enzyme tieu hoa|digestive/,
     examples: ['hệ tiêu hóa', 'ống tiêu hóa ở người', 'tiêu hóa ở người'],
     data: {

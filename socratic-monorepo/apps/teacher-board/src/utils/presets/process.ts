@@ -5,8 +5,7 @@ export const PROCESS_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'BIOLOGY',
     title: 'DNA tái tổ hợp và chuyển gene',
-    question:
-      'Vì sao phải dùng cùng một loại enzyme giới hạn để cắt gene và plasmid? Điều gì cho phép vi khuẩn sản xuất protein của người sau khi nhận plasmid tái tổ hợp?',
+    question: 'Trước khi bấm qua các bước: em đoán vì sao phải dùng cùng một enzyme cắt cho cả gene và plasmid? Sau khi đi hết: ghi các bước em thấy và chỗ em đoán sai. Bạn em nói "chuyển gene là trộn gene vào vi khuẩn là xong" — bước nào em thấy là bắt buộc để biết tế bào nào đã nhận gene?',
     keywords: /(?:dna|adn) tai to hop|cong nghe (?:dna|adn|gene|gen)\b|plasmid|enzyme gioi han|recombinant/,
     examples: ['DNA tái tổ hợp', 'plasmid và enzyme giới hạn', 'công nghệ gene'],
     data: {

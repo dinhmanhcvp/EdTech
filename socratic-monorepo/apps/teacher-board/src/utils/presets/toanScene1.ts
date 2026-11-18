@@ -72,7 +72,7 @@ export const TOAN_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Đường tròn lượng giác',
-    question: 'Khi điểm M chạy trên đường tròn đơn vị, hoành độ và tung độ của M cho ta những giá trị lượng giác nào? Vì sao sin(π − α) = sin α còn cos(π − α) = −cos α?',
+    question: 'Trước khi kéo góc α: em đoán sin α và cos α đổi dấu ở những góc phần tư nào? Sau khi kéo: ghi giá trị em đọc được ở α, π − α và α + π. Một bạn nói "sin x = 0,5 chỉ có một nghiệm 30°" — các nghiệm em thấy trên đường tròn trong [0°, 360°) bác bỏ câu đó thế nào?',
     keywords: /duong tron luong giac|gia tri luong giac cua goc|cung lien quan|phuong trinh luong giac co ban|sin x = m/,
     examples: ['đường tròn lượng giác', 'giá trị lượng giác của góc α', 'cung liên quan đặc biệt'],
     data: {
@@ -141,7 +141,7 @@ export const TOAN_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Giải tam giác (định lí sin, cos, trường hợp hai nghiệm)',
-    question: 'Biết hai cạnh và một góc, khi nào có đúng một tam giác, khi nào có hai tam giác và khi nào không có tam giác nào? Định lí cosin và định lí sin dùng ở bước nào?',
+    question: 'Trước khi đặt số: với cạnh a, b và góc A đối diện a, em đoán có thể có mấy tam giác? Sau khi thử: ghi bộ số em chọn cho ra 0, 1 và 2 tam giác. Bạn em bảo "biết hai cạnh và một góc là luôn dựng được đúng một tam giác" — bộ số nào của em làm câu đó sai?',
     keywords: /giai tam giac|dinh li (?:cosin|sin)\b|dinh ly (?:cosin|sin)\b|cong thuc heron|truong hop mo ho|dinh ly cos\b|ssa/,
     examples: ['giải tam giác', 'định lí cosin và định lí sin', 'công thức Heron tính diện tích'],
     data: {
@@ -193,7 +193,7 @@ export const TOAN_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Vectơ trong mặt phẳng: tổng, hiệu, tích vô hướng',
-    question: 'Quy tắc hình bình hành và quy tắc ba điểm cho cùng một tổng như thế nào? Tích vô hướng cho biết gì về góc giữa hai vectơ và hình chiếu của vectơ này lên vectơ kia?',
+    question: 'Trước khi kéo: em đoán khi nào tích vô hướng a·b bằng 0, khi nào âm? Sau khi kéo: ghi một cặp toạ độ của em cho a·b = 0 và một cặp cho a·b < 0, kèm góc đọc được. Một bạn nói "|a + b| = |a| + |b| với mọi vectơ" — số liệu nào của em bác bỏ, và khi nào câu đó mới đúng?',
     keywords: /tong (?:va )?hieu (?:cua )?hai vecto|quy tac hinh binh hanh|tich vo huong|toa do cua vecto|hinh chieu (?:cua )?vecto|vecto trong mat phang/,
     examples: ['tổng và hiệu hai vectơ', 'tích vô hướng của hai vectơ', 'tọa độ của vectơ'],
     data: {
@@ -245,7 +245,7 @@ export const TOAN_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Vectơ trong không gian Oxyz: tích có hướng',
-    question: 'Tích có hướng của hai vectơ cho vectơ có phương và độ dài như thế nào? Vì sao độ dài của nó bằng diện tích hình bình hành dựng trên hai vectơ?',
+    question: 'Trước khi đổi toạ độ: em đoán tích có hướng [a, b] bằng vectơ không khi nào? Sau khi thử: ghi cặp a, b của em cho [a, b] = 0 và diện tích hình bình hành tương ứng. Bạn em bảo "[a, b] = [b, a]" — kết quả em đọc được khi đổi chỗ a, b nói gì?',
     keywords: /tich co huong|vecto trong khong gian|he truc (?:toa do )?oxyz|toa do (?:cua )?vecto trong khong gian/,
     examples: ['tích có hướng của hai vectơ', 'tích có hướng và diện tích hình bình hành'],
     data: {
@@ -300,7 +300,7 @@ export const TOAN_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Đường thẳng và đường tròn trong mặt phẳng Oxy',
-    question: 'Khoảng cách từ tâm đến đường thẳng so với bán kính cho biết đường thẳng cắt, tiếp xúc hay không cắt đường tròn như thế nào? Dây cung có độ dài bao nhiêu?',
+    question: 'Trước khi kéo: em đoán đường thẳng cắt, tiếp xúc hay không cắt đường tròn khi so d(I, đường thẳng) với R thế nào? Sau khi kéo: ghi ba bộ A, B, C của em cho ba vị trí khác nhau, kèm d và độ dài dây cung. Một bạn chỉ nhìn hình rồi kết luận "tiếp xúc" — số liệu nào em dùng để kiểm tra lại?',
     keywords: /vi tri tuong doi (?:cua )?duong thang va duong tron|khoang cach tu diem den duong thang|phuong trinh duong tron|tiep tuyen cua duong tron|phuong trinh tong quat cua duong thang/,
     examples: ['vị trí tương đối của đường thẳng và đường tròn', 'khoảng cách từ điểm đến đường thẳng', 'phương trình đường tròn'],
     data: {
@@ -359,7 +359,7 @@ export const TOAN_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Ba đường conic: elip, hypebol, parabol',
-    question: 'Tổng (hiệu) khoảng cách từ một điểm của elip (hypebol) đến hai tiêu điểm vì sao không đổi? Parabol là tập điểm cách đều tiêu điểm và đường chuẩn nghĩa là gì?',
+    question: 'Trước khi kéo điểm M trên elip: em đoán tổng khoảng cách từ M tới hai tiêu điểm có đổi không? Sau khi kéo: ghi tổng đó ở ba vị trí M của em và so với 2a. Bạn em nói "elip càng dẹt thì tâm sai càng nhỏ" — các giá trị a, b, e em đọc được ủng hộ hay bác bỏ?',
     keywords: /\belip\b|ellipse|hypebol\b|hyperbol\b|parabol (?:co )?tieu diem|duong chuan|duong conic|\bconic\b/,
     examples: ['elip và tiêu điểm', 'hypebol', 'parabol tiêu điểm đường chuẩn', 'đường conic'],
     data: {
@@ -446,7 +446,7 @@ export const TOAN_SCENE1_PRESETS: Record<string, PresetSpec> = {
     family: 'SCENE_LAB',
     engine: 'MATH',
     title: 'Tập hợp, biểu đồ Venn, khoảng trên trục số và bảng chân trị',
-    question: 'Số phần tử của hợp hai tập hợp tính thế nào khi hai tập có phần chung? Hợp, giao của hai khoảng trên trục số và mệnh đề kéo theo P ⇒ Q đúng, sai khi nào?',
+    question: 'Trước khi tô miền: em đoán n(A ∪ B) bằng n(A) + n(B) khi nào? Sau khi đổi số: ghi n(A), n(B), n(A ∩ B) và n(A ∪ B) em đọc được ở hai trường hợp. Một bạn tính n(A ∪ B) = n(A) + n(B) cho mọi bài — trường hợp nào của em cho thấy họ đếm trùng?',
     keywords: /bieu do venn|\bvenn\b|hop (?:va )?giao cua hai tap hop|phan bu cua tap hop|menh de keo theo|bang chan tri|tap hop con|khoang tren truc so|giao (?:cua )?hai khoang/,
     examples: ['biểu đồ Venn', 'hợp và giao của hai tập hợp', 'bảng chân trị mệnh đề kéo theo', 'giao hai khoảng trên trục số'],
     data: {

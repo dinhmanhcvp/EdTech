@@ -30,8 +30,7 @@ export const SINH_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Hoạt tính enzyme theo nhiệt độ',
-    question:
-      'Vì sao tốc độ phản ứng do enzyme xúc tác tăng theo nhiệt độ rồi giảm mạnh sau nhiệt độ tối ưu? Vì sao enzyme của vi khuẩn suối nước nóng lại có nhiệt độ tối ưu cao hơn nhiều?',
+    question: 'Trước khi kéo: em đoán enzyme A có hoạt tính cao nhất ở nhiệt độ nào? Sau khi thử: ghi nhiệt độ tối ưu và nhiệt độ biến tính em đọc được cho A và B. Bạn em nói "làm lạnh enzyme cũng phá huỷ nó như đun nóng" — đường cong của em cho thấy hai trường hợp khác nhau thế nào?',
     keywords: /hoat tinh enzyme|enzyme (?:va )?(?:nhiet do|ph\b|co chat)|nhiet do (?:toi uu )?cua enzyme|bien tinh enzyme|enzyme bi bien tinh/,
     examples: ['hoạt tính enzyme', 'enzyme và nhiệt độ', 'nhiệt độ tối ưu của enzyme'],
     data: {
@@ -60,8 +59,7 @@ export const SINH_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Điểm bù và điểm bão hòa ánh sáng',
-    question:
-      'Dưới điểm bù ánh sáng cây quang hợp được bao nhiêu so với hô hấp? Vì sao cây C₄ bão hòa ánh sáng muộn hơn và quang hợp mạnh hơn cây C₃ ở cường độ sáng cao?',
+    question: 'Trước khi kéo cường độ ánh sáng: em đoán cây C₃ hay C₄ có điểm bù ánh sáng thấp hơn? Sau khi thử: ghi điểm bù, điểm gần bão hoà em đọc được cho hai loại cây. Một bạn nói "ở điểm bù cây không quang hợp" — số liệu của em sửa câu đó thế nào?',
     keywords: /diem bu|diem bao hoa|thuc vat c ?[34]\b|cay c ?[34]\b|cuong do anh sang (?:va )?(?:quang hop|thuc vat)/,
     examples: ['điểm bù ánh sáng', 'điểm bão hòa ánh sáng', 'thực vật C3 và C4'],
     data: {
@@ -91,8 +89,7 @@ export const SINH_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Đáp ứng miễn dịch nguyên phát và thứ phát (vaccine)',
-    question:
-      'Vì sao lần tiếp xúc kháng nguyên thứ hai tạo kháng thể nhanh hơn và nhiều hơn lần đầu? Điều đó giải thích vai trò của tiêm vaccine (và tiêm nhắc) như thế nào?',
+    question: 'Trước khi đổi ngày tiếp xúc lần 2: em đoán đáp ứng thứ phát nhanh và mạnh hơn bao nhiêu? Sau khi thử: ghi thời điểm xuất hiện và độ cao đỉnh em đọc được cho hai lần. Bạn em nói "đã tiêm vaccine thì không bao giờ nhiễm bệnh" — đồ thị của em cho thấy vaccine thật sự làm gì?',
     keywords: /dap ung mien dich|mien dich (?:nguyen phat|thu phat)|tiem nhac|tiem chung|vaccine|vac xin/,
     examples: ['đáp ứng miễn dịch thứ phát', 'tiêm nhắc lại vaccine', 'miễn dịch nguyên phát'],
     data: {
@@ -121,8 +118,7 @@ export const SINH_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Điện thế hoạt động của neuron',
-    question:
-      'Vì sao kích thích dưới ngưỡng không gây xung thần kinh còn kích thích trên ngưỡng luôn cho xung có biên độ như nhau? Bao myelin giúp xung lan truyền nhanh hơn bằng cách nào?',
+    question: 'Trước khi tăng cường độ kích thích: em đoán biên độ điện thế hoạt động có tăng theo không? Sau khi thử: ghi kết quả em đọc được ở kích thích dưới ngưỡng, đúng ngưỡng, trên ngưỡng, và tốc độ lan truyền khi có, không có myelin. Một bạn nói "kích thích mạnh thì xung thần kinh to hơn" — số liệu của em phản biện thế nào?',
     keywords: /dien the hoat dong|dien the nghi|xung than kinh|action potential|bao myelin|khu cuc va tai phan cuc/,
     examples: ['điện thế hoạt động', 'điện thế nghỉ', 'xung thần kinh'],
     data: {
@@ -151,8 +147,7 @@ export const SINH_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'BIOLOGY',
     title: 'Tăng trưởng của quần thể (chữ J và chữ S)',
-    question:
-      'Khi nào quần thể tăng trưởng theo đường cong chữ J và vì sao trong thực tế thường chuyển sang chữ S? Sức chứa của môi trường (K) ảnh hưởng thế nào tới kích thước quần thể?',
+    question: 'Trước khi đổi K: em đoán quần thể tăng nhanh nhất ở kích thước nào? Sau khi thử: ghi điểm uốn và tốc độ tăng cực đại em đọc được với hai giá trị K. Bạn em nói "quần thể nhỏ nhất thì tăng nhanh nhất vì còn nhiều tài nguyên" — số liệu của em bác bỏ thế nào?',
     keywords: /tang truong (?:cua )?quan the|duong cong (?:chu )?(?:j|s)\b|logistic|suc chua (?:cua )?moi truong|tiem nang sinh hoc/,
     examples: ['tăng trưởng quần thể', 'đường cong chữ S', 'sức chứa của môi trường'],
     data: {

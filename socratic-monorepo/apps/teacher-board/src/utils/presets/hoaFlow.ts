@@ -8,7 +8,7 @@ export const HOA_FLOW_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'CHEMISTRY',
     title: 'Sản xuất sulfuric acid theo phương pháp tiếp xúc',
-    question: 'Vì sao SO₃ không được hấp thụ trực tiếp bằng nước mà bằng H₂SO₄ đặc? Các điều kiện nhiệt độ và xúc tác của giai đoạn oxi hóa SO₂ được chọn để cân bằng yếu tố nào?',
+    question: 'Trước khi bấm qua các công đoạn: em đoán vì sao người ta không hấp thụ SO₃ trực tiếp bằng nước? Sau khi đi hết: ghi điều kiện từng công đoạn em đọc được và chỗ em đoán sai. Bạn em nói "tăng nhiệt độ thật cao cho phản ứng nhanh là tốt nhất" — với phản ứng toả nhiệt 2SO₂ + O₂ ⇌ 2SO₃, em phản biện thế nào?',
     keywords: /san xuat (?:sulfuric acid|h2so4|axit sunfuric)|phuong phap tiep xuc|oleum|san xuat amoniac|san xuat axit nitric|quy trinh san xuat acid/,
     examples: ['sản xuất sulfuric acid', 'phương pháp tiếp xúc', 'oleum', 'quy trình sản xuất acid'],
     data: {
@@ -39,7 +39,7 @@ export const HOA_FLOW_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'CHEMISTRY',
     title: 'Cộng HBr vào propene theo quy tắc Markovnikov',
-    question: 'Vì sao khi cộng HBr vào propene sản phẩm chính là 2-bromopropane chứ không phải 1-bromopropane? Độ bền của carbocation quyết định điều đó thế nào?',
+    question: 'Trước khi xem cơ chế: em đoán HBr cộng vào propene cho sản phẩm chính nào? Sau khi xem: ghi carbocation trung gian em thấy và chỗ em đoán sai. Một bạn thuộc quy tắc Markovnikov nhưng không giải thích được — độ bền carbocation em vừa xem giúp em giải thích thế nào?',
     keywords: /quy tac markovnikov|markovnikov|phan ung cong (?:hbr|vao anken|hydrogen halide)|carbocation|phan ung the va cong|phan ung este hoa|phan ung trung hop anken/,
     examples: ['quy tắc Markovnikov', 'phản ứng cộng HBr vào anken', 'carbocation'],
     data: {
@@ -66,7 +66,7 @@ export const HOA_FLOW_PRESETS: Record<string, PresetSpec> = {
     family: 'PROCESS_STEPS',
     engine: 'CHEMISTRY',
     title: 'Quy trình nghiên cứu khoa học trong hóa học',
-    question: 'Một nghiên cứu khoa học trải qua những bước nào, và vì sao phải kiểm soát biến số trong thí nghiệm? Hãy áp dụng cho việc tìm hiểu ảnh hưởng của nhiệt độ đến thời gian tan của viên sủi?',
+    question: 'Trước khi xem các bước: em tự viết giả thuyết cho câu hỏi "nhiệt độ ảnh hưởng thế nào tới thời gian tan của viên sủi". Sau khi đi hết: ghi biến độc lập, biến phụ thuộc, biến cần giữ nguyên trong thiết kế của em. Bạn em đo ở nước nóng bằng cốc to, nước lạnh bằng cốc nhỏ — thí nghiệm đó sai ở đâu?',
     keywords: /quy trinh nghien cuu khoa hoc|phuong phap nghien cuu hoa hoc|gia thuyet khoa hoc|bien so doc lap|thiet ke thi nghiem|bao cao ket qua nghien cuu/,
     examples: ['quy trình nghiên cứu khoa học', 'phương pháp nghiên cứu hóa học', 'giả thuyết khoa học', 'thiết kế thí nghiệm'],
     data: {
@@ -96,7 +96,7 @@ export const HOA_FLOW_PRESETS: Record<string, PresetSpec> = {
     family: 'ANATOMY_FLOW',
     engine: 'CHEMISTRY',
     title: 'Chưng cất phân đoạn dầu mỏ và các phương pháp tách chất',
-    question: 'Các phân đoạn dầu mỏ được tách theo tiêu chí nào trong tháp chưng cất? Vì sao phân đoạn nhẹ lên đỉnh tháp còn cặn nặng ở đáy?',
+    question: 'Trước khi đi theo tháp chưng cất: em đoán xăng hay dầu mazut thu được ở đỉnh tháp? Sau khi xem: ghi khoảng nhiệt độ sôi từng phân đoạn em đọc được và chỗ em đoán sai. Một bạn nói "chưng cất tách được từng chất tinh khiết ra khỏi dầu mỏ" — vì sao gọi là phân đoạn?',
     keywords: /chung cat (?:phan doan )?dau mo|thap chung cat|phan doan dau mo|phuong phap tach chat|chiet\b|ket tinh\b|sac ky|cracking|crackinh|tach chat ra khoi hon hop/,
     examples: ['chưng cất phân đoạn dầu mỏ', 'tháp chưng cất', 'phương pháp tách chất', 'cracking'],
     data: {
@@ -120,7 +120,7 @@ export const HOA_FLOW_PRESETS: Record<string, PresetSpec> = {
     family: 'ANATOMY_FLOW',
     engine: 'CHEMISTRY',
     title: 'Lò cao luyện gang: các vùng phản ứng',
-    question: 'Quặng sắt được khử dần qua những giai đoạn nào khi đi xuống trong lò cao, và vai trò của than cốc, CO và đá vôi là gì?',
+    question: 'Trước khi đi theo lò cao: em đoán chất nào trực tiếp khử oxide sắt ở phần lớn lò? Sau khi xem: ghi các vùng nhiệt độ và phản ứng em đọc được, chỗ em đoán sai. Bạn em nói "đá vôi cho vào để cung cấp carbon" — vai trò thật của đá vôi em thấy trong mô phỏng là gì?',
     keywords: /lo cao|luyen gang|luyen thep|san xuat gang|tach kim loai|an mon dien hoa|hop kim|quang sat|khu oxit kim loai/,
     examples: ['lò cao luyện gang', 'sản xuất gang', 'luyện thép', 'ăn mòn điện hóa'],
     data: {

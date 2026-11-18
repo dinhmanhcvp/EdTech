@@ -21,7 +21,7 @@ export const TOAN_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'MATH',
     title: 'Hàm số bậc hai, parabol và dấu tam thức',
-    question: 'Hệ số a, b, c quyết định hướng, đỉnh và số giao điểm với trục hoành của parabol như thế nào? Dấu của Δ cho biết gì về số nghiệm và dấu của tam thức?',
+    question: 'Trước khi kéo a, b, c: em đoán đổi dấu a thì đỉnh và số nghiệm thay đổi thế nào? Sau khi kéo: ghi Δ, nghiệm và đỉnh I em đọc được ở ba bộ số của em. Bạn em bảo "Δ < 0 thì tam thức luôn âm" — bộ số nào của em bác bỏ, và dấu thật sự phụ thuộc vào gì?',
     keywords: /ham so bac hai|tam thuc bac hai|dau cua tam thuc|bat phuong trinh bac hai|do thi parabol|dinh cua parabol|bieu thuc delta/,
     examples: ['hàm số bậc hai', 'dấu của tam thức bậc hai', 'bất phương trình bậc hai', 'đỉnh của parabol'],
     data: {
@@ -60,7 +60,7 @@ export const TOAN_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'MATH',
     title: 'Hàm số mũ và hàm số lôgarit',
-    question: 'Vì sao đồ thị y = aˣ và y = logₐ x đối xứng nhau qua đường thẳng y = x? Cơ số a lớn hơn 1 hay nhỏ hơn 1 thì đồng biến hay nghịch biến?',
+    question: 'Trước khi đổi cơ số a: em đoán aˣ đồng biến hay nghịch biến khi 0 < a < 1? Sau khi thử: ghi tính đơn điệu và nghiệm của aˣ = b em đọc được với hai cơ số của em. Một bạn nói "phương trình aˣ = b luôn có nghiệm" — giá trị b nào của em bác bỏ?',
     keywords: /ham so mu|ham so logarit|ham so lo-?ga-?rit|ham mu va logarit|logarit co so|doi xung qua duong thang y = ?x|phuong trinh mu va logarit/,
     examples: ['hàm số mũ', 'hàm số lôgarit', 'đồ thị hàm mũ và lôgarit đối xứng'],
     data: {
@@ -90,7 +90,7 @@ export const TOAN_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'MATH',
     title: 'Bài toán tối ưu: làm hộp có thể tích lớn nhất',
-    question: 'Vì sao thể tích hộp đạt lớn nhất đúng tại điểm mà đạo hàm V′(x) bằng 0? Cắt góc quá nhỏ hay quá lớn thì thể tích thay đổi ra sao?',
+    question: 'Trước khi kéo: em đoán cắt góc vuông cạnh x bằng bao nhiêu phần cạnh tấm a thì hộp lớn nhất? Sau khi thử: ghi thể tích em đọc được ở x nhỏ, x tối ưu và x lớn. Bạn em nói "cắt càng sâu hộp càng cao nên càng chứa nhiều" — số liệu nào của em bác bỏ, và đạo hàm giải thích thế nào?',
     keywords: /bai toan toi uu|gia tri lon nhat (?:va )?nho nhat thuc te|lam hop (?:khong nap )?the tich lon nhat|toi uu hoa the tich|cat bon goc/,
     examples: ['bài toán tối ưu', 'làm hộp không nắp thể tích lớn nhất', 'cắt bốn góc tấm tôn'],
     data: {
@@ -117,7 +117,7 @@ export const TOAN_CURVE_PRESETS: Record<string, PresetSpec> = {
     family: 'CURVE_LAB',
     engine: 'MATH',
     title: 'Lãi đơn, lãi kép và tăng trưởng',
-    question: 'Vì sao lãi kép tăng nhanh hơn lãi đơn dù cùng lãi suất? Cần bao nhiêu năm để số tiền gấp đôi?',
+    question: 'Trước khi đổi lãi suất: em đoán gửi 10 năm thì lãi kép hơn lãi đơn bao nhiêu? Sau khi thử: ghi số tiền đơn, kép và thời gian gấp đôi em đọc được ở hai lãi suất của em. Một bạn nói "lãi suất tăng gấp đôi thì thời gian gấp đôi giảm một nửa" — số liệu của em ủng hộ đến đâu?',
     keywords: /lai kep|lai don|lai suat (?:kep|don|ngan hang)|gui tiet kiem|tang truong (?:kep|theo cap so nhan)|quy tac 72/,
     examples: ['lãi kép', 'lãi đơn và lãi kép', 'gửi tiết kiệm lãi suất ngân hàng'],
     data: {

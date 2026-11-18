@@ -57,7 +57,7 @@ tr.me td{font-weight:700;color:#0E6B47;background:#E6F3EA;border-bottom:2pt soli
 .box h4{font-size:29pt;color:#0E6B47;font-weight:700;margin-bottom:.15cm}
 .arr{height:1.5cm;display:flex;justify-content:center;align-items:center}
 .arr svg{height:1.3cm}
-.card{display:flex;gap:1cm;align-items:center;border-left:9pt solid #0E6B47;background:#E6F3EA;padding:.55cm .9cm;margin-bottom:.8cm;border-radius:0 .35cm .35cm 0}
+.card{display:flex;gap:1cm;align-items:center;border-left:9pt solid #0E6B47;background:#E6F3EA;padding:.45cm .9cm;margin-bottom:.45cm;border-radius:0 .35cm .35cm 0}
 .card .ch{font-weight:900;color:#0E6B47;font-size:34pt;flex:none;width:3.4cm}
 .card .q{flex:1;font-size:32pt;line-height:1.22}
 .card .th{flex:none;background:#1C66C2;color:#fff;font-weight:700;font-size:28pt;padding:.35cm .7cm;border-radius:.3cm;text-align:center;line-height:1.15}

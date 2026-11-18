@@ -75,13 +75,7 @@ Một câu học sinh ở dưới khối 06 để làm điểm nhấn cảm xúc
 
 ---
 
-## Khi giám khảo hỏi: "Em hơn BC178.08 và iFLYTEK ở điểm nào?"
-
-Trả lời tự nhiên, khoảng 30 giây, không nêu danh sách tính năng:
-
-> "Dạ, em tôn trọng cả hai. Họ làm rất rộng, và khung hồng ngoại giữ được phấn thật là một ưu điểm thật. Chỗ em chọn khác là: các hệ thống đó mạnh ở việc **đưa nội dung ra**, và AI giải từng bước cho học sinh xem. Em chọn hướng ngược lại: AI **không giải hộ**, và em có đo. Thí điểm của em có nhóm đối chứng, và chỗ hơn rõ nhất là phần học sinh phải tự suy luận. Em không cạnh tranh số công cụ, em cạnh tranh ở chỗ học sinh có tự nghĩ ra không."
-
-Ba câu hỏi khác dễ gặp:
+Ba câu hỏi dễ gặp:
 - **"Chỉ có bốn môn thôi à?"** "Dạ, bốn môn để chứng minh cách làm, mở rộng thêm môn là việc kỹ thuật, nên em dồn sức vào cách dạy."
 - **"AI sai thì sao?"** "Toán thật phán đúng sai, AI chỉ được hỏi gợi mở, và mô phỏng chạy theo phương trình xác định."
 - **"Dữ liệu học sinh bảo vệ thế nào?"** "Hiện phòng học nằm trong bộ nhớ tạm, chưa có tài khoản, nên em chưa đưa vào trường công; đây là hạng mục Giai đoạn 2."

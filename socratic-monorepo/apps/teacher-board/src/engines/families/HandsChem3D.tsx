@@ -43,7 +43,8 @@ const BIN: [number, number] = [3.2, 0.1];
 const LAMP_HOME = new THREE.Vector3(3.3, 0.3, 1.9);
 const GOGGLES = new THREE.Vector3(3.5, 0.1, 2.5);
 const TAB_Z = -1.2;
-const slot = (i: number): [number, number] => [-3.8 + (i % 13) * 0.62, -2.45 + Math.floor(i / 13) * 0.55];
+/** ô đặt chai trên kệ; dãy ít chai (≤ 8, như kệ "Bài này") đặt thưa hơn để tay trên webcam không chụm nhầm chai bên cạnh */
+const slot = (i: number, n = 13): [number, number] => [-3.8 + (i % 13) * (n <= 8 ? 0.95 : 0.62), -2.45 + Math.floor(i / 13) * 0.55];
 const GROUP_COLOR: Record<string, string> = {Acid: '#D9481C', Base: '#2459C9', Muối: '#7A8394', Halogen: '#2E9B57', 'Kim loại': '#B9BEC5', 'Chất rắn': '#C9A24B', 'Hữu cơ': '#C2184A', 'Chỉ thị': '#6B4BC8'};
 const contentColor = (s: Substance): string => {
   const sp = Object.keys(s.species).map((k) => SPECIES[k]?.color).find(Boolean);
@@ -146,7 +147,7 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
         const mine = bottles.filter(inGroup);
         bottles.forEach((b) => (b.g.visible = inGroup(b)));
         mine.forEach((b, i) => {
-          const [x, z] = slot(i);
+          const [x, z] = slot(i, mine.length);
           b.home.set(x, 0.1, z);
           if (b.g.position.lengthSq() === 0) b.g.position.copy(b.home); // lần đầu hiện: đặt ngay vào kệ, không bay từ gốc toạ độ
         });

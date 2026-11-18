@@ -57,7 +57,7 @@ tr.me td{font-weight:700;color:#0E6B47;background:#E6F3EA;border-bottom:2pt soli
 .box h4{font-size:29pt;color:#0E6B47;font-weight:700;margin-bottom:.15cm}
 .arr{height:1.5cm;display:flex;justify-content:center;align-items:center}
 .arr svg{height:1.3cm}
-.card{display:flex;gap:1cm;align-items:center;border-left:9pt solid #0E6B47;background:#E6F3EA;padding:.55cm .9cm;margin-bottom:.8cm;border-radius:0 .35cm .35cm 0}
+.card{display:flex;gap:1cm;align-items:center;border-left:9pt solid #0E6B47;background:#E6F3EA;padding:.45cm .9cm;margin-bottom:.45cm;border-radius:0 .35cm .35cm 0}
 .card .ch{font-weight:900;color:#0E6B47;font-size:34pt;flex:none;width:3.4cm}
 .card .q{flex:1;font-size:32pt;line-height:1.22}
 .card .th{flex:none;background:#1C66C2;color:#fff;font-weight:700;font-size:28pt;padding:.35cm .7cm;border-radius:.3cm;text-align:center;line-height:1.15}
@@ -125,8 +125,14 @@ def n_(k):
     return f'<span class="n">{k}</span>'
 
 
+def im(name, w, extra=""):
+    """Ảnh đúng tỉ lệ gốc, rộng w cm, căn giữa."""
+    iw, ih = Image.open(os.path.join(A, name)).size
+    return f'<img src="assets/{name}" style="width:{w}cm;height:{w * ih / iw:.2f}cm;margin:0 auto;{extra}">'
+
+
 K = 1.2   # hệ số phóng chữ so với khổ tham chiếu 100×150 cm của prompt
-EXTRA_CSS = ".src .dot{width:.55cm;height:.55cm;border-width:2pt}.pair .g:before{content:none}.pair .g{padding-left:0}.pair .h{margin-bottom:.3cm}"
+EXTRA_CSS = ".src .dot{width:.55cm;height:.55cm;border-width:2pt}.pair .g:before{content:none}.pair .g{padding-left:0}.pair .h{margin-bottom:.3cm}.tl:before{left:14.2cm;right:14.2cm}.leg.big{font-size:43pt;gap:.65cm;line-height:1.08}.leg.big .n{width:2.3cm;height:2.3cm;font-size:34pt}.leg.big div{gap:.6cm}.tl .x{font-size:38pt}.tl .i{font-size:31pt}.tl .c{width:3.8cm;height:3.8cm;font-size:50pt}.tl:before{top:1.9cm}.fl.box{font-size:38pt;padding:.5cm .8cm}.fl.box h4{font-size:38pt}.fl .ic{width:4cm;height:4cm}.fl .ic svg{width:2.6cm;height:2.6cm}.fl .n{width:1.6cm;height:1.6cm;font-size:28pt}.lv div{font-size:30pt}.lv b{font-size:32pt}"
 
 
 def page(W, H, body, title):
@@ -145,7 +151,7 @@ ICON = {
 flow = lambda ic, h, t, extra="": f'<div class="box fl" style="padding:.4cm .7cm"><div class="ic">{ICON[ic]}</div><div class="tx"><h4>{h}</h4>{t}{extra}</div></div>'
 
 # ================================================================ TẤM TRÁI 60×120 (①②③)
-kvrow = lambda big, d, mb=".6cm": f'<div class="kv" style="margin-bottom:{mb}"><div class="big" style="width:22cm">{big}</div><div class="d">{d}</div></div>'
+kvrow = lambda big, d, mb=".25cm": f'<div class="kv" style="margin-bottom:{mb}"><div class="big" style="width:22cm">{big}</div><div class="d">{d}</div></div>'
 Y, N = '<span class="dot yes"></span>', '<span class="dot no"></span>'
 card = lambda ch, q, th: f'<div class="card"><div class="ch">{ch}</div><div class="q">{q}</div><div class="th">{th}</div></div>'
 left = '<div class="col">' + (
@@ -153,15 +159,11 @@ left = '<div class="col">' + (
         kvrow("25,4&nbsp;%", 'rau quả toàn cầu mất sau thu hoạch <span class="src">(FAO, 2025)</span>')
         + kvrow("7,12<small>&nbsp;tỷ USD</small>", 'xuất khẩu rau quả Việt Nam 2024 <span class="src">(Bộ Công Thương, 2024)</span>')
         + kvrow("14/18", 'HTX, kho mát từng bị thối lây cả pallet <span class="src">(khảo sát nhóm, n = 18)</span>', "1cm")
-        + '<div class="ttl">Một sọt thối lây sang sọt kế bên</div>'
-        + '<img src="assets/bd_lay_lan.png" style="width:54cm;height:10cm">'
-        + '<div class="src" style="margin:.1cm 0 .9cm">Sơ đồ minh họa của nhóm tác giả, không phải số đo.</div>'
-        + '<div class="ttl">Rau quả mất gần gấp đôi thực phẩm nói chung</div>'
-        + '<img src="assets/bd_ton_that.png" style="width:54cm;height:10cm">'
+        + '<div class="ttl">Rau quả mất gần gấp đôi thực phẩm nói chung</div>' + im("bd_ton_that.png", 46)
         + '<div class="src">Tổn thất sau thu hoạch (FAO, 2025; Đại học Cần Thơ, 2021). Biểu đồ: nhóm tác giả.</div>', "b1")
     + sec(2, "Thực trạng, khoảng trống",
           '<div class="ttl">15/18 đơn vị vẫn kiểm tra bằng mắt và mũi</div>'
-          + '<img src="assets/bd_khao_sat.png" style="width:54cm;height:12cm">'
+          + im("bd_khao_sat.png", 42)
           + '<div class="src" style="margin:.1cm 0 1cm">Khảo sát nhóm tác giả: 18 đơn vị, 4 tỉnh.</div>'
           + f'<table><tr><th>Giải pháp</th><th>Liên tục</th><th>Đo lên men</th><th>Hạn chế</th></tr>'
           + f'<tr><td>Nhiệt ẩm</td><td>{Y}</td><td>{N}</td><td>Không thấy lên men</td></tr>'
@@ -174,6 +176,13 @@ left = '<div class="col">' + (
           card("CH1", "Phân loại đúng ba trạng thái bao nhiêu phần trăm?", "≥ 85 %")
           + card("CH2", "Báo lên men sớm hơn mắt thường bao nhiêu giờ, cảnh báo giả bao nhiêu?", "≥ 12 giờ<br>≤ 10 %")
           + card("CH3", "Node chạy bao lâu trên pin 6.000 mAh, gói thiết bị giá bao nhiêu?", "≥ 20 ngày<br>≤ 22 triệu"), "b3")
+    + sec(4, "Phương pháp nghiên cứu",
+          '<div style="display:flex;gap:1cm;margin-bottom:.6cm">'
+          + ''.join(f'<div style="flex:1"><div class="big" style="font-size:80pt">{a}</div><div class="cap" style="color:#1A1A1A;font-size:27pt">{b}</div></div>' for a, b in (("4.500", "mẫu chuỗi thời gian"), ("3 × 3", "đợt × chuỗi đo"), ("1.500", "mẫu kiểm tra")))
+          + '</div><p class="t" style="font-size:31pt;line-height:1.25;margin-bottom:.5cm">Đối chứng ba nhóm quả, đo mỗi 30 phút; phân loại bằng Random Forest.</p>'
+          + '<div class="ttl" style="font-size:29pt;margin-bottom:.1cm">Mỗi chuỗi 500 mẫu; đợt 3 dùng để kiểm tra</div>'
+          + im("bd_thiet_ke_tn.png", 44)
+          + '<div class="src">Thí nghiệm 1–21/6/2026, các đợt chồng nhau 5 ngày. Biểu đồ: nhóm tác giả.</div>', "b4")
 ) + '</div>'
 
 # ================================================================ TẤM GIỮA 120×150 (tên dự án, ④–⑦)
@@ -184,7 +193,7 @@ nw = 24.0; nh = round(nw * node_wh[1] / node_wh[0], 1)
 hw = 21.0; hh = round(hw * hub_wh[1] / hub_wh[0], 1)
 
 title_band = (
-    '<div data-sec="title" style="background:linear-gradient(115deg,#0B4F37 0%,#0E6B47 60%,#1C66C2 100%);height:28cm;padding:2.6cm 3cm 0;color:#fff;display:flex;gap:2cm;align-items:flex-start">'
+    '<div data-sec="title" style="background:linear-gradient(115deg,#0B4F37 0%,#0E6B47 60%,#1C66C2 100%);height:26.5cm;padding:2.2cm 3cm 0;color:#fff;display:flex;gap:2cm;align-items:flex-start">'
     + '<div style="flex:1">'
     + '<div style="font-size:38pt;color:#CFE8D9;line-height:1.2">Cuộc thi Khoa học kỹ thuật dành cho học sinh trung học, năm học 2026–2027</div>'
     + '<div style="font-size:120pt;font-weight:900;line-height:1;letter-spacing:-2pt;margin-top:.8cm">FRESHNOSE AI</div>'
@@ -195,45 +204,51 @@ title_band = (
     + '<div style="flex:none;width:24cm;height:24cm;border-radius:50%;background:#fff;overflow:hidden;margin-top:.6cm;border:.6cm solid #F2A31B"><img src="assets/node_hero_sq.png" style="width:24cm;height:24cm"></div></div>'
 )
 step = lambda n, t, i: f'<div class="step"><div class="c">{n}</div><div><div class="x">{t}</div><div class="i">{i}</div></div></div>'
+tl = lambda n, t, i: f'<div class="s"><div class="c">{n}</div><div class="x">{t}</div><div class="i">{i}</div></div>'
+
+
+def im(name, w, extra=""):
+    """Ảnh đúng tỉ lệ gốc, rộng w cm, căn giữa."""
+    iw, ih = Image.open(os.path.join(A, name)).size
+    return f'<img src="assets/{name}" style="width:{w}cm;height:{w * ih / iw:.2f}cm;margin:0 auto;{extra}">'
+
+
+NH, HH = 33.0, 28.0    # chiều cao hình Node, Hub (cm)
 mid = '<div class="col">' + title_band + (
-    '<div class="grid2">'
-    + sec(4, "Phương pháp nghiên cứu",
-          '<div style="display:flex;gap:1cm;margin-bottom:.7cm">'
-          + ''.join(f'<div style="flex:1"><div class="big" style="font-size:80pt">{a}</div><div class="cap" style="color:#1A1A1A;font-size:27pt">{b}</div></div>' for a, b in (("4.500", "mẫu chuỗi thời gian"), ("3 × 3", "đợt × chuỗi đo"), ("1.500", "mẫu kiểm tra")))
-          + '</div><ul class="t" style="list-style:none;font-size:31pt;line-height:1.27">'
-          + '<li style="margin-bottom:.5cm">• Đối chứng ba nhóm quả, đo mỗi 30 phút; phân loại bằng Random Forest.</li></ul>'
-          + '<div class="ttl" style="font-size:29pt;margin-bottom:.1cm">Mỗi chuỗi 500 mẫu; đợt 3 dùng để kiểm tra</div>'
-          + '<img src="assets/bd_thiet_ke_tn.png" style="width:54cm;height:11.5cm">'
-          + '<div class="src">Thí nghiệm 1–21/6/2026, các đợt chồng nhau 5 ngày. Biểu đồ: nhóm tác giả.</div>', "b4", "l")
-    + sec(5, "Quy trình nghiên cứu",
-          step(1, "Ý tưởng, khảo sát", "3–4/2026")
-          + step(2, "Chế tạo nguyên mẫu v1 → v2; thí nghiệm 3 đợt", "5–8/2026")
-          + step(3, "Phân tích, đối chiếu tiêu chí", "8–10/2026")
-          + step(4, "Pilot tại 2 kho mát", "từ 10/2026, chưa có kết quả")
-          + '<div class="ttl" style="font-size:29pt;margin:.4cm 0 .1cm">Cải tiến: pin Node từ 18–19 giờ lên 23,5 ngày</div>'
-          + '<img src="assets/bd_pin.png" style="width:54cm;height:6.5cm">'
-          + '<div class="src">Nhật ký đo v1, v2: nhóm tác giả.</div>', "b5", "r")
-    + '</div>'
-    + '<div class="grid2">'
+    # ⑤ Quy trình: một dải ngang toàn chiều rộng
+    sec(5, "Quy trình nghiên cứu",
+        '<div class="tl" style="margin-bottom:.9cm">'
+        + tl(1, "Ý tưởng, khảo sát", "3–4/2026")
+        + tl(2, "Chế tạo nguyên mẫu v1 → v2; thí nghiệm 3 đợt", "5–8/2026")
+        + tl(3, "Phân tích, đối chiếu tiêu chí", "8–10/2026")
+        + tl(4, "Pilot tại 2 kho mát", "từ 10/2026, chưa có kết quả")
+        + '</div>'
+        + '<div style="display:flex;gap:1.5cm;align-items:center">'
+        + '<div class="ttl" style="font-size:38pt;width:38cm;margin:0">Cải tiến: pin Node từ 18–19 giờ lên 23,5 ngày<div class="src" style="font-weight:400;margin-top:.3cm">Nhật ký đo v1, v2: nhóm tác giả.</div></div>'
+        + im("bd_pin.png", 72) + '</div>', "b5")
+    # ⑥ Sơ đồ cấu tạo: Node + Hub cạnh nhau, chú giải lớn
     + sec(6, "Sơ đồ cấu tạo",
-          f'<div style="display:flex;gap:1cm"><img src="assets/node_3d_crop.png" style="width:{nw}cm;height:{nh}cm;flex:none">'
-          + '<div class="leg" style="margin-top:.8cm">' + ''.join(f'<div>{n_(i)}<span>{t}</span></div>' for i, t in enumerate(legend_node, 1)) + '</div></div>'
-          + '<div style="height:.6cm"></div>'
-          + f'<div style="display:flex;gap:1cm;align-items:center"><img src="assets/hub_3d_crop.png" style="width:{hw}cm;height:{hh}cm;flex:none">'
-          + '<div class="leg">' + ''.join(f'<div>{n_(i)}<span>{t}</span></div>' for i, t in enumerate(legend_hub, 11)) + '</div></div>'
-          + '<div class="src" style="margin-top:.4cm">Hình: mô hình dựng 3D theo thiết kế của nhóm tác giả, chưa phải ảnh chụp nguyên mẫu.</div>', "b6", "l")
+          '<div style="display:flex;gap:1.2cm;align-items:center;justify-content:space-between">'
+          + f'<img src="assets/node_3d_crop.png" style="width:{NH * node_wh[0] / node_wh[1]:.1f}cm;height:{NH}cm;flex:none">'
+          + '<div class="leg big">' + ''.join(f'<div>{n_(i)}<span>{t}</span></div>' for i, t in enumerate(legend_node, 1)) + '</div>'
+          + f'<img src="assets/hub_3d_crop.png" style="width:{HH * hub_wh[0] / hub_wh[1]:.1f}cm;height:{HH}cm;flex:none">'
+          + '<div class="leg big">' + ''.join(f'<div>{n_(i)}<span>{t}</span></div>' for i, t in enumerate(legend_hub, 11)) + '</div></div>'
+          + '<div class="src" style="margin-top:.5cm">Hình: mô hình dựng 3D theo thiết kế của nhóm tác giả, chưa phải ảnh chụp nguyên mẫu.</div>', "b6")
+    # ⑦ Nguyên lý hoạt động: trái = vì sao đo được, phải = chuỗi xử lý
     + sec(7, "Nguyên lý hoạt động",
-          f'<p class="t" style="font-size:31pt;line-height:1.28;margin-bottom:.5cm">Quả lên men sinh ethanol, acetaldehyde (Berna, 2010) nên {RS} giảm (nhiễm nấm: TGS2602 0,93 → 0,33; TGS822 0,93 → 0,29); nhiệt, ẩm đo kèm để bù trôi.</p>'
-          + '<img src="assets/kho_voc.png" style="width:54cm;height:15cm;object-fit:cover;object-position:50% 55%;border-radius:.6cm;margin:.2cm 0 .1cm">'
-          + '<div class="src" style="margin-bottom:.6cm">Hình 3D minh họa: khí bay lên từ sọt xoài bắt đầu hỏng, Node ở thanh kệ phía trên. Nhóm tác giả.</div>'
-          + '<div class="ttl" style="font-size:29pt;margin-bottom:.2cm">Tín hiệu giảm trước khi thấy vết thối (nhiễm nấm, đợt 3)</div><img src="assets/bd_tin_hieu.png" style="width:54cm;height:15cm">'
-          + '<div class="src" style="margin:.1cm 0 .6cm">Biểu đồ: nhóm tác giả, dữ liệu thực nghiệm 2026.</div>'
+          '<div style="display:flex;gap:2cm;align-items:flex-start"><div style="width:58cm;flex:none">'
+          + f'<p class="t" style="font-size:38pt;line-height:1.22;margin-bottom:.5cm">Quả lên men sinh ethanol, acetaldehyde (Berna, 2010) nên {RS} giảm (nhiễm nấm: TGS2602 0,93 → 0,33; TGS822 0,93 → 0,29); nhiệt, ẩm đo kèm để bù trôi.</p>'
+          + '<img src="assets/kho_voc.png" style="width:58cm;height:12cm;object-fit:cover;object-position:50% 55%;border-radius:.6cm">'
+          + '<div class="src" style="margin:.1cm 0 .5cm">Hình 3D minh họa: khí bay lên từ sọt xoài bắt đầu hỏng, Node ở thanh kệ phía trên. Nhóm tác giả.</div>'
+          + '<div class="ttl" style="font-size:35pt;margin-bottom:.2cm">Tín hiệu giảm trước khi thấy vết thối (nhiễm nấm, đợt 3)</div>' + im("bd_tin_hieu.png", 58)
+          + '<div class="src" style="margin:.1cm 0 0">Biểu đồ: nhóm tác giả, dữ liệu thực nghiệm 2026.</div></div>'
+          + '<div style="flex:1">'
           + flow("sensor", f"ĐO · Node {n_(3)} {n_(4)} {n_(5)}", "Mỗi 30 phút: sấy 120 giây, đọc 30 giây, ngủ sâu.") + ARROW
           + flow("chip", f"XỬ LÝ · Node {n_(6)}", "ESP32-S3 lọc nhiễu, bù nhiệt ẩm.") + ARROW
           + flow("radio", f"TRUYỀN {n_(7)} {n_(10)} → {n_(12)}", "LoRa AS923 về Hub.") + ARROW
           + flow("tree", f"PHÂN LOẠI · Hub {n_(11)}", "Random Forest chia ba trạng thái.") + ARROW
-          + flow("screen", f"CẢNH BÁO · màn hình {n_(13)}", "", '<div class="lv" style="margin-top:.2cm"><div class="a"><b>Mức 1</b>An toàn</div><div class="b"><b>Mức 2</b>Chín sinh lý</div><div class="c"><b>Mức 3</b>Nguy cơ lên men</div></div><div style="margin-top:.25cm">Mức 3: tách sọt dập, thông gió, xuất trước (FEFO).</div>'), "b7", "r")
-    + '</div>'
+          + flow("screen", f"CẢNH BÁO · màn hình {n_(13)}", "", '<div class="lv" style="margin-top:.2cm"><div class="a"><b>Mức 1</b>An toàn</div><div class="b"><b>Mức 2</b>Chín sinh lý</div><div class="c"><b>Mức 3</b>Nguy cơ lên men</div></div><div style="margin-top:.25cm">Mức 3: tách sọt dập, thông gió, xuất trước (FEFO).</div>')
+          + '</div></div>', "b7")
     + '<div class="cnt" data-sec="foot"><div class="src">Số liệu: nhóm tác giả, 2026. Danh mục tài liệu đầy đủ trong báo cáo.</div></div>'
 ) + '</div>'
 

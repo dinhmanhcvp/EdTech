@@ -48,7 +48,7 @@ function emitBox(e){const c=getComputedStyle(e),r=R(e);if(r.w<1||r.h<1)return;
  const bc=['Top','Right','Bottom','Left'].map(s=>hex(rgb(c['border'+s+'Color'])||{r:0,g:0,b:0}));
  const rad=c.borderTopLeftRadius,isPct=rad.includes('%');const rpx=parseFloat(rad)||0;
  const uni=bw.every(w=>w>0&&w===bw[0]);
- const grad=/linear-gradient/.test(c.backgroundImage);if((bg&&bg.a>0.01)||uni||grad){items.push({k:'box',sec:secOf(e),x:r.x,y:r.y,w:r.w,h:r.h,fill:grad?'0E6B47':(bg&&bg.a>0.01?hex(bg):null),line:uni?bc[0]:null,lw:uni?bw[0]*0.75:0,rad:rpx,pct:isPct&&rpx>=49});}
+ const grad=/linear-gradient/.test(c.backgroundImage);if((bg&&bg.a>0.01)||uni||grad){items.push({k:'box',sec:secOf(e),x:r.x,y:r.y,w:r.w,h:r.h,fill:grad?'0E6B47':(bg&&bg.a>0.01?hex(bg.a<0.99?{r:14+(bg.r-14)*bg.a,g:107+(bg.g-107)*bg.a,b:71+(bg.b-71)*bg.a}:bg):null),line:uni?bc[0]:null,lw:uni?bw[0]*0.75:0,rad:rpx,pct:isPct&&rpx>=49});}
  if(!uni){bw.forEach((w,i)=>{if(w>0){const t=[[r.x,r.y,r.w,w],[r.x+r.w-w,r.y,w,r.h],[r.x,r.y+r.h-w,r.w,w],[r.x,r.y,w,r.h]][i];items.push({k:'box',sec:secOf(e),x:t[0],y:t[1],w:t[2],h:t[3],fill:bc[i],line:null,lw:0,rad:0,pct:false});}});}}
 let svgN=0;
 function walk(e){const tag=e.tagName;if(['SCRIPT','STYLE','HEAD'].includes(tag))return;
@@ -176,3 +176,26 @@ datas = []
 for n, lab in (("tam-trai", "Tấm trái"), ("tam-giua", "Tấm giữa"), ("tam-phai", "Tấm phải")):
     d, f = build_panel(n, lab); datas.append(d); print("da xuat", f, f"{d['W'] / PX * S:.0f}x{d['H'] / PX * S:.0f} cm", len(d["items"]), "doi tuong")
 print("da xuat", build_blocks(datas))
+
+
+def build_full(datas):
+    """Cả ba tấm trên MỘT slide (124×75 cm ở tỉ lệ 1:2), mỗi mục vẫn là một nhóm sửa được."""
+    prs = Presentation(); GAP = 2.0
+    ws = [d["W"] / PX * S for d in datas]; hs = [d["H"] / PX * S for d in datas]
+    prs.slide_width, prs.slide_height = Cm(sum(ws) + GAP * 4), Cm(max(hs) + GAP * 2)
+    sl = prs.slides.add_slide(prs.slide_layouts[6])
+    bg = sl.background.fill; bg.solid(); bg.fore_color.rgb = RGBColor(0xD9, 0xDE, 0xE4)
+    x0 = GAP
+    for d, w, h, lab in zip(datas, ws, hs, ("Tấm trái", "Tấm giữa", "Tấm phải")):
+        ox, oy = x0 / S * PX, (max(hs) + GAP * 2 - h) / 2 / S * PX
+        groups = {}
+        for it in d["items"]: groups.setdefault(it["sec"], []).append(it)
+        for sid, its in groups.items():
+            g = sl.shapes.add_group_shape(); g.name = f"{lab} · {sid}"
+            add_items(g.shapes, its, dx=-ox, dy=-oy)
+        x0 += w + GAP
+    f = os.path.join(OUT, "poster_ca-3-tam.pptx"); prs.save(f)
+    return f
+
+
+print("da xuat", build_full(datas))

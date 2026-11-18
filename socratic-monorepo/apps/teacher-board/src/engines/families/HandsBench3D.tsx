@@ -25,6 +25,14 @@ interface Grabbable {
   write: (t: number) => void;
   text: () => string;
 }
+/** khoảng cách giữa các núm / đồng hồ cùng hàng mép bàn (đơn vị cảnh): đủ xa để tay trên webcam không chụm nhầm núm bên cạnh */
+const DIAL_GAP = 1.4;
+/** vị trí (x, z) núm / đồng hồ thứ j ở hàng mép bàn phía trước */
+export const dialAt = (j: number): [number, number] => [-3.3 + j * DIAL_GAP, 2.3];
+/** vị trí (x, z) công tắc chọn thứ i: cột 3 công tắc, quá 3 thì sang cột bên cạnh (mặt bàn chỉ sâu tới z ≈ 2,9) */
+export const choiceAt = (i: number): [number, number] => [1.1 + Math.floor(i / 3) * 0.8, 0.9 + (i % 3) * 0.8];
+/** nút đo (cam lớn) */
+export const MEASURE_AT: [number, number] = [3.4, 2.45];
 function partGrabs(k: Kit, P: ReturnType<typeof handPointers>, parts: () => Grabbable[], scale: () => number) {
   const ray = new THREE.Raycaster();
   const v2 = new THREE.Vector2();
@@ -261,7 +269,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       // mỗi lựa chọn của bài là một nút tròn: bấm = sang lựa chọn kế tiếp; nút cam lớn = một lần đo
       const buttons = pads(k, P, [
         ...(e.choices ?? []).map((c, i) => ({
-          at: [1.1, 1.15 + i * 0.52] as [number, number],
+          at: choiceAt(i),
           color: '#E3B341',
           r: 0.16,
           side: true,
@@ -272,13 +280,13 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             live.dispatch({type: 'choose', key: c.key, value: c.options[(at + 1) % c.options.length][0]});
           },
         })),
-        ...(e.columns.length ? [{at: [3.4, 2.45] as [number, number], color: '#D9481C', r: 0.28, text: () => (setupDone() ? `${action} (lần ${live.st.rows.length + 1})` : `Bước ${stage + 1}/${setup.length}: ${setup[stage].label}`), press: () => (setupDone() ? live.dispatch({type: 'measure'}) : void (stage++, (flash = 0.5)))}] : []),
+        ...(e.columns.length ? [{at: MEASURE_AT, color: '#D9481C', r: 0.28, text: () => (setupDone() ? `${action} (lần ${live.st.rows.length + 1})` : `Bước ${stage + 1}/${setup.length}: ${setup[stage].label}`), press: () => (setupDone() ? live.dispatch({type: 'measure'}) : void (stage++, (flash = 0.5)))}] : []),
       ]);
       // bộ phận chỉ có sau khi mô hình tải xong nên danh sách lấy theo từng khung hình
       const unitText = (key: string) => `${fmt(live.st.p[key], 3)}${slider(key).unit ? ` ${slider(key).unit}` : ''}`;
       // thông số thời gian: ĐỒNG HỒ HẸN GIỜ nằm trên bàn (Blender), chụm rồi kéo ngang để quay kim (một vòng 300° = cả thang)
       const timers = timed.map((p, j) => {
-        const x = -3.3 + j * 0.85;
+        const [x] = dialAt(j);
         const body = solid(k.scene, new THREE.CylinderGeometry(0.3, 0.32, 0.08, 36), '#C9CED6', {x, y: 0.04, z: 2.3, metal: 0.6});
         const hand = solid(k.scene, new THREE.BoxGeometry(0.03, 0.02, 0.24).translate(0, 0, -0.12), '#C4261A', {x, y: 0.1, z: 2.3});
         const m: BenchMove = {n: 0, param: p.key, axis: 'rz', a: 0, b: 0, what: 'đồng hồ hẹn giờ'};
@@ -296,7 +304,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       // thông số số học còn lại: NÚM XOAY chia độ (Blender `KnobDial` + `KnobCap`), chụm rồi kéo ngang để vặn (sang phải = tăng), cùng hàng với đồng hồ hẹn giờ
       const SWEEP = 1.5 * Math.PI;
       const dials = railed.map((p, j) => {
-        const x = -3.3 + (timed.length + j) * 0.85;
+        const [x] = dialAt(timed.length + j);
         const base = solid(k.scene, new THREE.CylinderGeometry(0.27, 0.3, 0.08, 28), '#3A3E7A', {x, y: 0.04, z: 2.3});
         const cap = solid(k.scene, new THREE.CylinderGeometry(0.2, 0.22, 0.2, 28), '#E3B341', {x, y: 0.18, z: 2.3, metal: 0.4});
         solid(cap, new THREE.BoxGeometry(0.05, 0.05, 0.17), '#1D1B16', {y: 0.12, z: -0.09});

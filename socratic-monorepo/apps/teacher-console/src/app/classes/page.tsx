@@ -1,12 +1,13 @@
 'use client';
 
 import React, {useCallback, useEffect, useState} from 'react';
-import {BarChart3, Pencil, Trash2, Users} from 'lucide-react';
+import {BarChart3, BookOpen, Pencil, Trash2, Users} from 'lucide-react';
 import {ApiError, api} from '../../lib/api';
 import type {ClassInfo} from '../../lib/types';
 import {ErrorNote, Shell} from '../../components/Shell';
 import {StudentsPanel} from '../../components/StudentsPanel';
 import {ClassMetricsPanel} from '../../components/ClassMetricsPanel';
+import {NotebookPanel} from '../../components/NotebookPanel';
 
 const EMPTY: Omit<ClassInfo, 'id'> = {name: '', grade: '', subject: '', size: 0, notes: ''};
 
@@ -18,6 +19,7 @@ function Classes() {
   const [error, setError] = useState<string | null>(null);
   const [rosterOf, setRosterOf] = useState<string | null>(null);
   const [metricsOf, setMetricsOf] = useState<string | null>(null);
+  const [notebookOf, setNotebookOf] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -107,6 +109,9 @@ function Classes() {
                 <button data-testid="class-metrics" aria-label="Chỉ số của lớp" title="Chỉ số học tập của lớp" aria-pressed={metricsOf === c.id} onClick={() => setMetricsOf(metricsOf === c.id ? null : c.id)} className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100 aria-[pressed=true]:bg-brand-50 aria-[pressed=true]:text-brand-700">
                   <BarChart3 className="h-4 w-4" />
                 </button>
+                <button data-testid="class-notebook" aria-label="Vở ghi SGK của lớp" title="Vở ghi Học theo SGK: dự đoán và kết quả của học sinh" aria-pressed={notebookOf === c.id} onClick={() => setNotebookOf(notebookOf === c.id ? null : c.id)} className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100 aria-[pressed=true]:bg-brand-50 aria-[pressed=true]:text-brand-700">
+                  <BookOpen className="h-4 w-4" />
+                </button>
                 <button data-testid="class-edit" aria-label="Sửa lớp" onClick={() => (setEditing(c.id), setForm({name: c.name, grade: c.grade, subject: c.subject, size: c.size, notes: c.notes}))} className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100">
                   <Pencil className="h-4 w-4" />
                 </button>
@@ -117,6 +122,7 @@ function Classes() {
             )}
             {rosterOf === c.id && <StudentsPanel consoleClassId={c.id} />}
             {metricsOf === c.id && <ClassMetricsPanel consoleClassId={c.id} />}
+            {notebookOf === c.id && <NotebookPanel consoleClassId={c.id} />}
           </li>
         ))}
       </ul>

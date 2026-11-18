@@ -8,15 +8,18 @@ import {KINDS, LAB_ALIAS, LESSONS, LESSON_BY_ID} from '../../engines/families/la
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F2B544]';
 
-/** Phòng thực hành ảo: trang riêng, tách khỏi bảng viết. Mọi bài là phòng 3D điều khiển bằng tay phủ kín màn hình. Bảng chọn bài: tab theo môn, ô tìm, hai nhóm bài; `/lab?bai=<mã>` mở thẳng một bài. */
+/** Phòng thực hành ảo: trang riêng, tách khỏi bảng viết. Mọi bài là phòng 3D điều khiển bằng tay phủ kín màn hình. Bảng chọn bài: tab theo môn, ô tìm, hai nhóm bài; `/lab?bai=<mã>` mở thẳng một bài; thêm `&nhung=1` (app học sinh nhúng) thì giữ tên bài nhưng bỏ nút đổi bài. */
 export default function LabPage() {
   const [exp, setExp] = useState<string>('three-phase');
   const [open, setOpen] = useState(false);
   const [subject, setSubject] = useState<SubjectId>('kt');
   const [q, setQ] = useState('');
+  const [embedded, setEmbedded] = useState(false);
   // đọc ?bai sau khi gắn: tránh lệch HTML giữa máy chủ và trình duyệt
   useEffect(() => {
-    const raw = new URLSearchParams(window.location.search).get('bai') ?? '';
+    const params = new URLSearchParams(window.location.search);
+    setEmbedded(params.get('nhung') === '1');
+    const raw = params.get('bai') ?? '';
     const id = LAB_ALIAS[raw] ?? raw;
     if (LESSON_BY_ID.has(id)) setExp(id);
   }, []);
@@ -52,13 +55,13 @@ export default function LabPage() {
 
       {open && <button type="button" aria-label="Đóng danh sách bài" tabIndex={-1} onClick={() => setOpen(false)} className="fixed inset-0 z-20 cursor-default bg-[#0E1030]/50" />}
       <nav data-avoid-labels className="fixed left-4 top-4 z-20 pointer-events-none flex max-h-[calc(100vh-2rem)] w-[min(600px,calc(100vw-2rem))] flex-col items-start gap-2 [&>*]:pointer-events-auto" aria-label="Chọn bài thực hành">
-        <button type="button" data-testid="lab-menu" title={cur.name} aria-expanded={open} aria-controls="lab-picker" onClick={toggle} className={`flex min-h-[48px] ${open ? 'max-w-full' : 'max-w-[min(340px,100%)]'} items-center gap-2.5 rounded-full border border-white bg-white py-1 pl-4 pr-3 text-left text-[#0E1030] shadow-lg hover:bg-[#F3EFE6] ${FOCUS}`}>
+        <button type="button" data-testid="lab-menu" title={cur.name} aria-expanded={open} aria-controls="lab-picker" disabled={embedded} onClick={toggle} className={`flex min-h-[48px] ${open ? 'max-w-full' : 'max-w-[min(340px,100%)]'} items-center gap-2.5 rounded-full border border-white bg-white py-1 pl-4 pr-3 text-left text-[#0E1030] shadow-lg hover:bg-[#F3EFE6] ${FOCUS}`}>
           <i className="h-3 w-3 shrink-0 rounded-full" style={{background: color(cur.subject)}} />
           <span className="flex min-w-0 flex-col leading-tight">
             <span className="text-[10px] font-semibold uppercase tracking-wide text-[#0E1030]/60">{SUBJECTS.find((s) => s.id === cur.subject)!.label}</span>
             <span className="truncate text-sm font-semibold">{cur.name}</span>
           </span>
-          <span className="shrink-0 rounded-full bg-[#0E1030] px-3 py-1.5 text-xs font-medium text-white">{open ? 'Đóng ✕' : 'Đổi bài ▾'}</span>
+          {!embedded && <span className="shrink-0 rounded-full bg-[#0E1030] px-3 py-1.5 text-xs font-medium text-white">{open ? 'Đóng ✕' : 'Đổi bài ▾'}</span>}
         </button>
 
         {open && (

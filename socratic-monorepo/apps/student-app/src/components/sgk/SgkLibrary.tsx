@@ -1,9 +1,11 @@
 'use client';
 
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Check, ExternalLink, FlaskConical, Search, Sparkles} from 'lucide-react';
 import {SGK_ITEMS, SGK_SUBJECTS, type SgkItem, type SgkSubject} from '../../data/sgkCatalog';
 import {teacherAppUrl} from '../../utils/apiBase';
+import {hubFetch, loadStudent, type HubStudent} from '../../utils/hubApi';
+import type {NotebookEntry} from '@socratic/types/src/hub';
 
 const GRADES = [10, 11, 12] as const;
 type Grade = (typeof GRADES)[number];
@@ -13,7 +15,7 @@ const MIN_NOTE = 15;
 /** Bỏ dấu, hạ chữ thường để tìm không cần gõ dấu. */
 const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/gi, 'd').toLowerCase();
 
-// vở ghi và đánh dấu "đã học" chỉ là tiện ích trên máy học sinh: hỏng localStorage thì trang vẫn chạy
+// vở ghi và "đã học" luôn có bản trên máy; học sinh đã đăng nhập hub (tab Lớp của em) thì đồng bộ thêm lên lớp để giáo viên đọc. Hỏng localStorage thì trang vẫn chạy
 function readStore<T>(key: string, fallback: T): T {
   try {
     const raw = window.localStorage.getItem(key);
@@ -30,10 +32,10 @@ function writeStore(key: string, value: unknown) {
   }
 }
 
-/** Địa chỉ mở học liệu trên bảng: bài thực hành ở /lab, mô phỏng ở /xem. Rỗng khi chưa cấu hình địa chỉ bảng. */
+/** Địa chỉ mở học liệu trên bảng: bài thực hành ở /lab (chế độ nhúng: không có nút đổi bài), mô phỏng ở /xem. Rỗng khi chưa cấu hình địa chỉ bảng. */
 export function itemHref(item: Pick<SgkItem, 'id' | 'lab'>, board = teacherAppUrl()): string {
   if (!board || board === '#') return '';
-  return item.lab ? `${board}/lab?bai=${encodeURIComponent(item.id)}` : `${board}/xem?id=${encodeURIComponent(item.id)}`;
+  return item.lab ? `${board}/lab?bai=${encodeURIComponent(item.id)}&nhung=1` : `${board}/xem?id=${encodeURIComponent(item.id)}`;
 }
 
 const seg = 'px-3 py-1.5 rounded-md text-sm transition cursor-pointer text-mute hover:text-ink aria-[pressed=true]:bg-white aria-[pressed=true]:text-ink aria-[pressed=true]:font-semibold aria-[pressed=true]:shadow-card';
@@ -47,11 +49,56 @@ export function SgkLibrary() {
   const [done, setDone] = useState<string[]>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [pasteWarn, setPasteWarn] = useState(false);
+  const viewerRef = useRef<HTMLElement>(null);
+  const [who, setWho] = useState<HubStudent | null>(null);
+  const [sync, setSync] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const timers = useRef<Record<string, number>>({});
 
   useEffect(() => {
-    setDone(readStore<string[]>('sgk_done', []));
-    setNotes(readStore<Record<string, string>>('sgk_notes', {}));
+    const localNotes = readStore<Record<string, string>>('sgk_notes', {});
+    const localDone = readStore<string[]>('sgk_done', []);
+    setDone(localDone);
+    setNotes(localNotes);
+    const me = loadStudent();
+    setWho(me);
+    if (!me) return;
+    // bản trên lớp thắng bản trên máy; bài chỉ có trên máy thì đẩy lên một lần
+    hubFetch<{entries: NotebookEntry[]}>('GET', '/me/notebook')
+      .then(({entries}) => {
+        const n = {...localNotes};
+        const d = new Set(localDone);
+        for (const e of entries) {
+          n[`${e.itemKey}:du-doan`] = e.prediction;
+          n[`${e.itemKey}:ket-qua`] = e.result;
+          if (e.done) d.add(e.itemKey);
+          else d.delete(e.itemKey);
+        }
+        setNotes(n);
+        setDone([...d]);
+        writeStore('sgk_notes', n);
+        writeStore('sgk_done', [...d]);
+        const onServer = new Set(entries.map((e) => e.itemKey));
+        const localOnly = new Set([...Object.keys(localNotes).map((k) => k.split(':')[0]), ...localDone].filter((id) => !onServer.has(id)));
+        localOnly.forEach((id) => void push(id, n, [...d]));
+      })
+      .catch(() => setSync('error'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** Lưu một học liệu lên lớp; chỉ khi đã đăng nhập hub. */
+  const push = (id: string, n: Record<string, string>, d: string[]) => {
+    if (!loadStudent()) return Promise.resolve();
+    setSync('saving');
+    return hubFetch('PUT', `/me/notebook/${encodeURIComponent(id)}`, {prediction: n[`${id}:du-doan`] ?? '', result: n[`${id}:ket-qua`] ?? '', done: d.includes(id)})
+      .then(() => setSync('saved'))
+      .catch(() => setSync('error'));
+  };
+  // gõ liên tục thì chỉ gửi sau 0,8 s ngừng gõ
+  const queue = (id: string, n: Record<string, string>, d: string[]) => {
+    if (!who) return;
+    window.clearTimeout(timers.current[id]);
+    timers.current[id] = window.setTimeout(() => void push(id, n, d), 800);
+  };
 
   const inGrade = useMemo(() => SGK_ITEMS.filter((i) => i.subject === subject && i.grade === grade), [subject, grade]);
   const needle = fold(q.trim());
@@ -70,15 +117,22 @@ export function SgkLibrary() {
   const current = shown.find((i) => keyOf(i) === openKey) ?? shown[0] ?? null;
   const doneInGrade = inGrade.filter((i) => done.includes(i.id)).length;
 
+  // màn hẹp: khung xem nằm dưới danh sách, chọn bài xong phải đưa nó lên
+  const open = (key: string) => {
+    setOpenKey(key);
+    if (window.matchMedia?.('(max-width: 1023px)').matches) window.setTimeout(() => viewerRef.current?.scrollIntoView?.({behavior: 'smooth', block: 'start'}), 0);
+  };
   const toggleDone = (id: string) => {
     const next = done.includes(id) ? done.filter((x) => x !== id) : [...done, id];
     setDone(next);
     writeStore('sgk_done', next);
+    queue(id, notes, next);
   };
-  const setNote = (id: string, text: string) => {
-    const next = {...notes, [id]: text};
+  const setNote = (key: string, text: string) => {
+    const next = {...notes, [key]: text};
     setNotes(next);
     writeStore('sgk_notes', next);
+    queue(key.split(':')[0], next, done);
   };
 
   const href = current ? itemHref(current) : '';
@@ -144,7 +198,7 @@ export function SgkLibrary() {
                       type="button"
                       data-testid={`sgk-item-${i.id}`}
                       aria-current={current && keyOf(current) === keyOf(i) ? 'true' : undefined}
-                      onClick={() => setOpenKey(keyOf(i))}
+                      onClick={() => open(keyOf(i))}
                       className="w-full text-left px-3 py-2 flex items-start gap-2 text-sm hover:bg-sunk aria-[current=true]:bg-sunk aria-[current=true]:font-semibold cursor-pointer"
                     >
                       {i.lab ? <FlaskConical aria-label="Thực hành 3D" className="w-4 h-4 mt-0.5 shrink-0 text-hint" /> : <Sparkles aria-label="Mô phỏng" className="w-4 h-4 mt-0.5 shrink-0 text-mute" />}
@@ -159,7 +213,7 @@ export function SgkLibrary() {
         </nav>
 
         {current && (
-          <article data-testid="sgk-viewer" className="bg-white border border-rule rounded-xl shadow-card p-4 flex flex-col gap-3 min-w-0">
+          <article ref={viewerRef} data-testid="sgk-viewer" className="bg-white border border-rule rounded-xl shadow-card p-4 flex flex-col gap-3 min-w-0">
             <header className="flex flex-wrap items-start gap-2">
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-mute">{SGK_SUBJECTS.find((s) => s.id === current.subject)!.label} {current.grade} · {current.lesson}</p>
@@ -211,6 +265,11 @@ export function SgkLibrary() {
             >
               <Check className="w-4 h-4" /> {done.includes(current.id) ? 'Đã học' : 'Đánh dấu đã học'}
             </button>
+            <p data-testid="sgk-sync" className="text-xs text-mute">
+              {who
+                ? {idle: `Vở ghi lưu lên lớp ${who.student.className}: thầy cô đọc được.`, saving: 'Đang lưu lên lớp…', saved: `Đã lưu lên lớp ${who.student.className}.`, error: 'Chưa lưu lên lớp được (mất mạng?). Vở vẫn còn trên máy; em sửa tiếp là thử lại.'}[sync]
+                : 'Vở ghi đang chỉ lưu trên máy này. Vào "Lớp của em", nhập mã học sinh để thầy cô đọc được vở.'}
+            </p>
           </article>
         )}
       </div>

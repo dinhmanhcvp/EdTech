@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS submissions (id TEXT PRIMARY KEY, run_id TEXT NOT NUL
 CREATE INDEX IF NOT EXISTS idx_submissions_run ON submissions (run_id, question_id, created_at);
 CREATE TABLE IF NOT EXISTS resource_uses (period_id TEXT NOT NULL, assignment_id TEXT NOT NULL, class_id TEXT, opened_at REAL NOT NULL, PRIMARY KEY (period_id, assignment_id));
 CREATE TABLE IF NOT EXISTS resource_annotations (period_id TEXT NOT NULL, assignment_id TEXT NOT NULL, page INTEGER NOT NULL, strokes TEXT NOT NULL, updated_at REAL NOT NULL, PRIMARY KEY (period_id, assignment_id, page));
+CREATE TABLE IF NOT EXISTS notebook_entries (student_id TEXT NOT NULL, item_key TEXT NOT NULL, prediction TEXT NOT NULL, result TEXT NOT NULL, done INTEGER NOT NULL, updated_at REAL NOT NULL, PRIMARY KEY (student_id, item_key));
 """
 
 

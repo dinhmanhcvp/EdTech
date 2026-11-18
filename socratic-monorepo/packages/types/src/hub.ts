@@ -128,6 +128,12 @@ export const HubStreamEventSchema = z.discriminatedUnion('type', [
   z.object({type: z.literal('submission_update'), runId: z.string(), studentId: z.string(), questionId: z.string(), status: z.string()}),
 ]);
 
+/** Vở ghi "Học theo SGK" (`/me/notebook`, `/classes/{cid}/notebook`): một dòng cho mỗi học liệu (mã preset / bài lab). */
+export const NotebookEntrySchema = z.object({
+  itemKey: z.string().regex(/^[A-Z0-9_]{3,64}$/), prediction: z.string().max(2000), result: z.string().max(2000), done: z.boolean(), updatedAt: z.number(),
+});
+export const ClassNotebookEntrySchema = NotebookEntrySchema.extend({studentId: z.string(), studentName: z.string()});
+
 export type PlanItem = z.infer<typeof PlanItemSchema>;
 export type PlanItemPublic = z.infer<typeof PlanItemPublicSchema>;
 export type PlanSection = z.infer<typeof PlanSectionSchema>;
@@ -145,3 +151,5 @@ export type PlanSuggestion = z.infer<typeof PlanSuggestionSchema>;
 export type ParentReport = z.infer<typeof ParentReportSchema>;
 export type ParentView = z.infer<typeof ParentViewSchema>;
 export type HubStreamEvent = z.infer<typeof HubStreamEventSchema>;
+export type NotebookEntry = z.infer<typeof NotebookEntrySchema>;
+export type ClassNotebookEntry = z.infer<typeof ClassNotebookEntrySchema>;

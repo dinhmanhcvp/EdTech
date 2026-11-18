@@ -116,6 +116,8 @@ export interface ParentReport {
   comment: string; source: 'ai' | 'template'; vsLastWeek: {minutesDelta: number; activeDaysDelta: number};
 }
 
+/** Một dòng vở ghi "Học theo SGK" của học sinh (khớp `ClassNotebookEntrySchema` của packages/types/src/hub.ts). */
+export interface ClassNotebookEntry {itemKey: string; prediction: string; result: string; done: boolean; updatedAt: number; studentId: string; studentName: string}
 export type Subject = 'MATH' | 'PHYSICS' | 'CHEMISTRY' | 'BIOLOGY';
 export type PlanItem =
   | {id: string; type: 'formula'; latex: string; caption?: string}
@@ -200,6 +202,7 @@ export const hub = {
   rotateParentLink: (studentId: string) => hubFetch<{parentToken: string}>('POST', `/students/${studentId}/parent-link`),
   reportNow: (studentId: string) => hubFetch<ParentReport>('POST', `/students/${studentId}/reports`),
   classMetrics: (hubClassId: string) => hubFetch<ClassMetrics>('GET', `/classes/${hubClassId}/metrics`),
+  classNotebook: (hubClassId: string) => hubFetch<{entries: ClassNotebookEntry[]}>('GET', `/classes/${hubClassId}/notebook`).then((r) => r.entries),
 
   plans: () => hubFetch<{plans: PlanListItem[]}>('GET', '/plans').then((r) => r.plans),
   plan: (id: string) => hubFetch<{id: string; version: number; body: PlanBody}>('GET', `/plans/${id}`),

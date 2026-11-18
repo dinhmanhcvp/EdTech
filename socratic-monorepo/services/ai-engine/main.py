@@ -53,6 +53,7 @@ from routers.hub_roster import router as hub_roster_router
 from routers.hub_plans import router as hub_plans_router
 from routers.hub_sessions import router as hub_sessions_router
 from routers.hub_student import router as hub_student_router
+from routers.hub_notebook import router as hub_notebook_router
 from routers.hub_metrics import router as hub_metrics_router
 from routers.hub_parent import router as hub_parent_router
 from routers.hub_assignments import router as hub_assignments_router
@@ -120,6 +121,7 @@ app.include_router(hub_roster_router)
 app.include_router(hub_plans_router)
 app.include_router(hub_sessions_router)
 app.include_router(hub_student_router)
+app.include_router(hub_notebook_router)
 app.include_router(hub_metrics_router)
 app.include_router(hub_parent_router)
 app.include_router(hub_assignments_router)

@@ -2403,3 +2403,6 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 
 ## 2026-11-19 · Đề Câu IV bị đọc tách chữ ("A B C", "O H lớn hơn O A", "chín mươi độ")
 - `cleanHandwritten` (geometryProblem.ts): gộp hai chữ hoa lẻ liền nhau thành tên đoạn (trừ sau gọi/lấy/các/và/hay/với/điểm/nối), và đổi "chín mươi độ" (30/45/60) thành số. Test thêm vào `geoPerpBisector.test.ts`. Chưa commit.
+
+## 2026-11-19 · Mô phỏng nổi trên bảng bị phóng/thu thay vì di chuyển
+- SmartboardCanvas: `handleHoloWheelZoom` chỉ phóng khi Ctrl/⌘ + cuộn (trước: mọi cuộn hai ngón = phóng); `handleHoloPointerDownAnywhere` xóa con trỏ cũ còn sót khi không phải cảm ứng (trước: con trỏ kẹt → lần nhấn sau thành "hai ngón" = chụm phóng). Chưa có test riêng, chưa thử tay thật. Chưa commit.

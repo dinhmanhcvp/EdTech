@@ -602,6 +602,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     } catch {}
 
+    // chuột chỉ có một con trỏ: bỏ con trỏ cũ còn sót (mất pointerup) kẻo lần nhấn sau bị tính là hai ngón → chụm phóng to
+    if (e.pointerType !== 'touch') {
+      activeHoloPointersRef.current.clear();
+      isPinchingHoloRef.current = false;
+    }
     activeHoloPointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
     if (activeHoloPointersRef.current.size === 2) {
@@ -694,7 +699,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   };
 
   const handleHoloWheelZoom = (e: React.WheelEvent) => {
-    e.preventDefault();
+    // cuộn hai ngón trên bàn di chuột/chuột thường chỉ là cuộn; chụm (Ctrl/⌘ + cuộn) mới phóng to thu nhỏ
+    if (!e.ctrlKey && !e.metaKey) return;
     e.stopPropagation();
     const delta = -e.deltaY * 0.0018;
     setHoloScale((prev) => Math.max(0.5, Math.min(2.5, Number((prev + delta).toFixed(2)))));

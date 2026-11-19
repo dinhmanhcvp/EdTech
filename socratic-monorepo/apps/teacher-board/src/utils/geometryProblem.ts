@@ -206,6 +206,8 @@ interface BaseDesc {
   at?: string;
   /** lời đề (hình thang vuông: đọc "vuông tại A và B") */
   text?: string;
+  /** tam giác vuông cân: hai cạnh góc vuông bằng nhau */
+  iso?: boolean;
 }
 type P2 = [number, number];
 
@@ -226,12 +228,14 @@ function describeBase(text: string, names: string[]): BaseDesc {
     return {kind: /hình vuông/.test(text) ? 'square' : /hình chữ nhật/.test(text) ? 'rect' : 'para'};
   }
   if (word === 'tam giác đều' || word === 'đều') return {kind: 'tri_eq'};
-  const r = new RegExp(`vuông\\s*(?:cân\\s*)?tại\\s*(${PT})`).exec(text);
+  // "vuông cân tại A", "vuông ở A", "vuông cân ABC tại C"
+  const r = new RegExp(`vuông\\s*(cân\\s*)?(?:${nm}\\s*)?(?:tại|ở)\\s*(${PT})`).exec(text);
+  const iso = word === 'vuông cân' || !!r?.[1];
   // "AB vuông BC" / "AB vuông góc BC" (không ghi "tại"): vuông tại đỉnh chung của hai cạnh
   const pp = new RegExp(`(${PT})(${PT})\\s*vuông(?:\\s*góc)?\\s*(?:với\\s*)?(${PT})(${PT})(?![A-Za-z'])`).exec(text);
   const common = pp ? [pp[1], pp[2]].filter((x) => x === pp[3] || x === pp[4]) : [];
   const rightAt = !r && pp && common.length === 1 && [pp[1], pp[2], pp[3], pp[4]].every((x) => names.includes(x)) ? common[0] : undefined;
-  if (word.startsWith('vuông') || r || rightAt) return {kind: 'tri_right', at: at ?? r?.[1] ?? rightAt ?? names[0]};
+  if (word.startsWith('vuông') || r || rightAt) return {kind: 'tri_right', at: at ?? r?.[2] ?? rightAt ?? names[0], iso};
   if (word === 'cân') return {kind: 'tri_iso', at: at ?? names[0]};
   const c = new RegExp(`cân\\s*tại\\s*(${PT})`).exec(text);
   if (c) return {kind: 'tri_iso', at: c[1]};
@@ -264,6 +268,7 @@ function baseCoords(desc: BaseDesc, names: string[], L: (a: string, b: string) =
         if (l2 !== undefined && l1 === undefined && hyp > l2) l1 = Math.sqrt(hyp * hyp - l2 * l2);
       }
       if (side !== undefined) l1 = l2 = side;
+      if (desc.iso) l1 = l2 = l1 ?? l2 ?? (hyp !== undefined ? hyp / Math.SQRT2 : 1.6);
       out[r] = [0, 0];
       out[v1] = [l1 ?? 1.6, 0];
       out[v2] = [0, l2 ?? (l1 ?? 1.6) * 0.75];

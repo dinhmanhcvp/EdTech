@@ -98,24 +98,28 @@ function buildMotor(scene: THREE.Scene): Record<string, Built> {
 }
 
 // ------------------------------------------------------------------ cánh tay robot 3 bậc tự do
-const ARM = {base: V(-0.3, 0, -1.0), shoulderY: 0.62, elbowY: 1.22, l1: 0.6, l2: 1.0};
+/** cánh tay robot phóng 1,3 lần (servo chỉ ~35 px khó chụm): mọi hằng số động học nhân theo, nên động học ngược vẫn khớp hình */
+export const ROBOT_SCALE = 1.3;
+const RS = ROBOT_SCALE;
+const ARM = {base: V(-0.3, 0, -1.0), shoulderY: 0.62 * RS, elbowY: 1.22 * RS, l1: 0.6 * RS, l2: 1.0 * RS};
 
 function buildRobot(scene: THREE.Scene): Record<string, Built> {
   const B = ARM.base;
-  const at = (dx: number, dy: number, dz = 0) => V(B.x + dx, B.y + dy, B.z + dz);
+  const at = (dx: number, dy: number, dz = 0) => V(B.x + dx * RS, B.y + dy * RS, B.z + dz * RS);
+  const atY = (dx: number, y: number, dz = 0) => V(B.x + dx * RS, y, B.z + dz * RS); // y đã tính theo tỉ lệ (ARM.elbowY)
   const servo = '#1E2A4A';
   const alu = {metal: 0.7, rough: 0.35};
-  solid(scene, new THREE.BoxGeometry(1.7, 0.08, 1.2), '#2B2F36', {rough: 0.5, x: B.x, y: 0.04, z: B.z});
+  solid(scene, new THREE.BoxGeometry(1.7 * RS, 0.08 * RS, 1.2 * RS), '#2B2F36', {rough: 0.5, x: B.x, y: 0.04 * RS, z: B.z});
   const P: Record<string, Built> = {
-    base_servo: part(scene, at(0, 0.22), V(-3.0, 0.14, 0.7), {stage: 0}),
-    turntable: part(scene, at(0, 0.4), V(-2.35, 0.03, 0.7), {stage: 1}),
-    shoulder_servo: part(scene, at(0, 0.57), V(-1.75, 0.14, 0.7), {stage: 1}),
-    lower_arm: part(scene, at(0, 0.92), V(-1.2, 0.37, 0.7), {stage: 2}),
-    elbow_servo: part(scene, at(0, ARM.elbowY), V(-0.65, 0.12, 0.7), {stage: 2}),
-    forearm: part(scene, at(0.36, ARM.elbowY), V(0.05, 0.05, 0.7), {stage: 3}),
-    gripper: part(scene, at(0.74, ARM.elbowY), V(0.85, 0.07, 0.7), {stage: 3}),
-    board: part(scene, at(0.52, 0.1, 0.33), V(1.6, 0.02, 0.7), {stage: 0}),
-    battery: part(scene, at(-0.52, 0.15, 0.33), V(2.35, 0.07, 0.7), {stage: 0}),
+    base_servo: part(scene, at(0, 0.22), V(-3.3, 0.14 * RS, 0.7), {stage: 0, scale: RS}),
+    turntable: part(scene, at(0, 0.4), V(-2.6, 0.03 * RS, 0.7), {stage: 1, scale: RS}),
+    shoulder_servo: part(scene, at(0, 0.57), V(-1.9, 0.14 * RS, 0.7), {stage: 1, scale: RS}),
+    lower_arm: part(scene, at(0, 0.92), V(-1.2, 0.37 * RS, 0.7), {stage: 2, scale: RS}),
+    elbow_servo: part(scene, atY(0, ARM.elbowY), V(-0.5, 0.12 * RS, 0.7), {stage: 2, scale: RS}),
+    forearm: part(scene, atY(0.36, ARM.elbowY), V(0.2, 0.05 * RS, 0.7), {stage: 3, scale: RS}),
+    gripper: part(scene, atY(0.74, ARM.elbowY), V(0.95, 0.07 * RS, 0.7), {stage: 3, scale: RS}),
+    board: part(scene, at(0.52, 0.1, 0.33), V(1.65, 0.02 * RS, 0.7), {stage: 0, scale: RS}),
+    battery: part(scene, at(-0.52, 0.15, 0.33), V(2.35, 0.07 * RS, 0.7), {stage: 0, scale: RS}),
   };
   solid(P.base_servo.obj, new THREE.BoxGeometry(0.3, 0.28, 0.3), servo, {rough: 0.4});
   solid(P.base_servo.obj, new THREE.CylinderGeometry(0.05, 0.05, 0.06, 16), '#E9E4D8', {y: 0.16});
@@ -137,7 +141,7 @@ function buildRobot(scene: THREE.Scene): Record<string, Built> {
   return P;
 }
 
-const BUILD: Record<AssemblyKind, (s: THREE.Scene) => Model> = {motor: (s) => ({parts: buildMotor(s), wideTray: true}), robot: (s) => ({parts: buildRobot(s)}), engine: buildEngine, drone: buildDrone, pc: buildPC};
+export const BUILD: Record<AssemblyKind, (s: THREE.Scene) => Model> = {motor: (s) => ({parts: buildMotor(s), wideTray: true}), robot: (s) => ({parts: buildRobot(s)}), engine: buildEngine, drone: buildDrone, pc: buildPC};
 
 function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
   return {
@@ -156,7 +160,8 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
       const robot = live.kind === 'robot';
       solid(k.scene, new THREE.BoxGeometry(8.4, 0.12, 5.6), '#D9C6A5', {rough: 0.85, x: -0.4, y: -0.056, z: 0.1});
       // khay đặt chi tiết
-      solid(k.scene, new THREE.BoxGeometry(6.6, 0.02, model.wideTray ? 2.2 : 0.9), '#CDB892', {rough: 0.9, x: -0.4, y: 0.012, z: model.wideTray ? 1.05 : 0.7});
+      const trayD = model.tray?.depth ?? (model.wideTray ? 2.2 : 0.9);
+      solid(k.scene, new THREE.BoxGeometry(6.6, 0.02, trayD), '#CDB892', {rough: 0.9, x: -0.4, y: 0.012, z: model.tray?.z ?? (model.wideTray ? 1.05 : 0.7)});
       const built = model.parts;
       const parts = live.spec.parts.map((s) => {
         const b = built[s.id];
@@ -166,6 +171,7 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
           if (m) mats.push(m);
         });
         b.obj.position.copy(live.off.has(s.id) ? b.tray : b.home);
+        b.obj.scale.setScalar(b.scale ?? 1);
         return {...b, id: s.id, mats, label: k.label(s.name), lit: false};
       });
       type PartRt = (typeof parts)[number];
@@ -179,23 +185,69 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
       const built0 = () => live.off.size === 0;
       const ikMode = () => (robot || !!model.tip) && built0();
       const tip = model.tip ?? V();
-      const tools = toolKit({k, P, live, parts, ik: ikMode});
-      void dressMachine(live.kind, k.scene, parts, scenery, tools.reanchor);
-      /** chi tiết gần con trỏ nhất; ưu tiên chi tiết tháo được ngay (các chi tiết lắp chồng nhau nằm sát nhau trên màn hình) */
+      const pickRay = new THREE.Raycaster();
+      const pickV = new THREE.Vector2();
+      const pickBox = new THREE.Box3();
+      const pickAt = V();
+      const roots = parts.map((q) => q.obj);
+      const shown = (o: THREE.Object3D | null) => {
+        for (let n = o; n; n = n.parent) if (!n.visible) return false;
+        return true;
+      };
+      const ownerOf = (o: THREE.Object3D): PartRt | undefined => {
+        for (let n: THREE.Object3D | null = o; n; n = n.parent) {
+          const q = parts.find((r) => r.obj === n);
+          if (q) return q;
+        }
+        return undefined;
+      };
+      const covered = (p: PartRt) => !live.off.has(p.id) && blockersToRemove(live.spec, live.off, p.id).length > 0;
+      /**
+       * Chi tiết dưới con trỏ. Trước hết là chi tiết có LƯỚI nằm ngay dưới con trỏ (chạm vào đâu trên chi tiết cũng cầm được: nhóm hai động cơ,
+       * hai cánh có gốc toạ độ ở khoảng trống giữa chúng, nên đo theo gốc thì chạm thẳng vào động cơ vẫn trượt); không có thì chi tiết có tâm hộp bao gần nhất
+       * trong tầm với. Ưu tiên chi tiết tháo được ngay vì các chi tiết lắp chồng nhau nằm sát nhau trên màn hình.
+       */
       const pick = (nx: number, ny: number, reach: number): PartRt | null => {
+        pickRay.setFromCamera(pickV.set(nx, ny), k.camera);
+        let covers: PartRt | null = null;
+        const seen = new Set<PartRt>();
+        for (const h of pickRay.intersectObjects(roots, true)) {
+          if (!shown(h.object)) continue;
+          const q = ownerOf(h.object);
+          if (!q || seen.has(q)) continue;
+          seen.add(q);
+          if (!covered(q)) return q;
+          covers ??= q;
+        }
         let best: PartRt | null = null;
         let bd = Infinity;
         for (const p of parts) {
-          const d = P.distAt(nx, ny, p.obj.position);
+          p.obj.updateWorldMatrix(true, false);
+          pickAt.copy(pickBox.setFromObject(p.obj).getCenter(V()));
+          const d = P.distAt(nx, ny, pickAt);
           if (d > reach) continue;
-          const score = d + (!live.off.has(p.id) && blockersToRemove(live.spec, live.off, p.id).length ? 1 : 0);
+          const score = d + (covered(p) ? 1 : 0);
           if (score < bd) {
             bd = score;
             best = p;
           }
         }
+        return best && !covered(best) ? best : covers ?? best;
+      };
+      /** khoảng cách trên màn hình tới chi tiết gần nhất: 0 nếu có lưới của chi tiết ngay dưới con trỏ; dùng để chi tiết thắng dụng cụ khi chi tiết gần hơn */
+      const partAt = (nx: number, ny: number): number => {
+        pickRay.setFromCamera(pickV.set(nx, ny), k.camera);
+        if (pickRay.intersectObjects(roots, true).some((h) => shown(h.object))) return 0;
+        let best = Infinity;
+        for (const p of parts) {
+          p.obj.updateWorldMatrix(true, false);
+          best = Math.min(best, P.distAt(nx, ny, pickBox.setFromObject(p.obj).getCenter(pickAt)));
+        }
         return best;
       };
+
+      const tools = toolKit({k, P, live, parts, ik: ikMode, partAt});
+      void dressMachine(live.kind, k.scene, parts, scenery, tools.reanchor);
       P.grabWhen((nx, ny) => tools.grab(nx, ny) || (ikMode() ? P.distAt(nx, ny, tip) < 0.12 : !!pick(nx, ny, 0.07)));
 
       let last = performance.now();
@@ -208,6 +260,7 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
       const m3 = new THREE.Matrix4();
       const tmp = new THREE.Matrix4();
       const v3 = V();
+      const sv = V();
       const shoulder = V(ARM.base.x, ARM.shoulderY, ARM.base.z);
       const elbow = V(ARM.base.x, ARM.elbowY, ARM.base.z);
 
@@ -266,7 +319,7 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
         const text = model.run?.({dt, now, on: live.run, target: reach});
         if (ik && robot) {
           const t = now / 1000;
-          const tg: THREE.Vector3 = reach ?? V(ARM.base.x + (1.05 + 0.25 * Math.sin(t * 0.9)) * Math.cos(Math.sin(t * 0.5)), 0.35, ARM.base.z + (1.05 + 0.25 * Math.sin(t * 0.9)) * Math.sin(Math.sin(t * 0.5)) + 0.2);
+          const tg: THREE.Vector3 = reach ?? V(ARM.base.x + (1.05 * RS + 0.25 * RS * Math.sin(t * 0.9)) * Math.cos(Math.sin(t * 0.5)), 0.35 * RS, ARM.base.z + (1.05 * RS + 0.25 * RS * Math.sin(t * 0.9)) * Math.sin(Math.sin(t * 0.5)) + 0.2 * RS);
           const dx = tg.x - ARM.base.x;
           const dz = tg.z - ARM.base.z;
           const sol = armIK(Math.hypot(dx, dz), tg.y - ARM.shoulderY, ARM.l1, ARM.l2);
@@ -286,7 +339,7 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
           const stage = ik && robot ? [null, m1, m2, m3][p.stage ?? 0] : (built0() && p.pose) || null;
           p.obj.matrixAutoUpdate = !stage;
           if (stage) {
-            p.obj.matrix.copy(stage).multiply(tmp.makeTranslation(p.home.x, p.home.y, p.home.z));
+            p.obj.matrix.copy(stage).multiply(tmp.makeTranslation(p.home.x, p.home.y, p.home.z)).scale(sv.setScalar(p.scale ?? 1));
             p.obj.matrixWorldNeedsUpdate = true;
           } else if (!isHeld) p.obj.position.lerp(live.off.has(p.id) ? p.tray : p.home, 1 - Math.exp(-dt * 10));
           if (p.spin) p.obj.rotation.x = angle;

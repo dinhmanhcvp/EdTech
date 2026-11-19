@@ -182,7 +182,7 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
       padClock = padNow;
       for (const pd of pads) {
         // tay: chỉ cần đưa điểm chụm tới trên nút; chuột: nhấn giữ
-        const on = P.ptrs.some((ptr, n) => ptr.active && !held[n] && (ptr.hand || ptr.down) && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < (ptr.hand ? 0.11 : 0.06));
+        const on = P.ptrs.some((ptr, n) => ptr.active && !held[n] && (ptr.hand || ptr.down) && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < (ptr.hand || ptr.touch ? 0.11 : 0.06));
         pd.held = on ? pd.held + padDt : 0;
         const rate = padRate(pd.held);
         if (rate) {
@@ -318,7 +318,7 @@ export function padBank(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
       const v = read();
       for (const r of rows) {
         for (const pd of r.pads) {
-          const on = P.ptrs.some((ptr) => ptr.active && (ptr.hand || ptr.down) && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < (ptr.hand ? 0.11 : 0.1));
+          const on = P.ptrs.some((ptr) => ptr.active && (ptr.hand || ptr.down) && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < (ptr.hand || ptr.touch ? 0.11 : 0.1));
           pd.held = on ? pd.held + dt : 0;
           const rate = padRate(pd.held);
           if (rate) write(r.p.id, fromUnit(r.p, Math.min(1, Math.max(0, toUnit(r.p, v[r.p.id]) + pd.dir * rate * dt))));

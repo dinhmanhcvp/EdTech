@@ -10,7 +10,7 @@ export interface HandsInput {
   /** vẽ thêm khung xương 21 khớp; mặc định tắt vì lớp phủ đã hiện bàn tay thật từ camera */
   skeleton?: boolean;
   /** chuột / cảm ứng, toạ độ NDC (−1..1); nhấn/nhả xếp hàng, cảnh xử lí mỗi khung hình một sự kiện */
-  mouse: {x: number; y: number; down: boolean; active: boolean; queue: {x: number; y: number; down: boolean}[]};
+  mouse: {x: number; y: number; down: boolean; active: boolean; queue: {x: number; y: number; down: boolean}[]; /** sự kiện cuối là ngón tay / bút trên màn hình cảm ứng, không phải chuột */ touch?: boolean};
   /** cảnh gán: có vật cầm được dưới điểm này không (nếu có thì tạm khoá xoay máy quay) */
   grab: (nx: number, ny: number) => boolean;
 }
@@ -20,6 +20,8 @@ export const newInput = (): HandsInput => ({hands: [{pts: [], pinch: false}, {pt
 export interface Ptr {
   ndc: THREE.Vector2;
   hand: boolean;
+  /** con trỏ chuột nhưng là ngón tay chạm màn hình: không có "di chuột" trước khi bấm, đầu ngón to hơn con trỏ → tầm bắt rộng như tay, dụng cụ cầm theo kiểu giữ–kéo */
+  touch: boolean;
   active: boolean;
   down: boolean;
   pressed: boolean;
@@ -108,7 +110,7 @@ export function handPointers(k: Kit, input: HandsInput, h: number) {
     k.scene.add(joints, bones);
     return {ring, joints, bones, pts: [] as THREE.Vector3[], seen: false, gl: Array.from({length: 42}, () => glide()), src: null as Pt[] | null, t: 0};
   });
-  const ptrs: Ptr[] = [0, 1, 2].map((i) => ({ndc: new THREE.Vector2(), hand: i < 2, active: false, down: false, pressed: false, released: false, hot: false, reach: i < 2 ? 0.16 : 0.07, slide: 0, roll: NaN}));
+  const ptrs: Ptr[] = [0, 1, 2].map((i) => ({ndc: new THREE.Vector2(), hand: i < 2, touch: false, active: false, down: false, pressed: false, released: false, hot: false, reach: i < 2 ? 0.16 : 0.07, slide: 0, roll: NaN}));
   /** khoảng cách trên MÀN HÌNH từ điểm (nx, ny) tới một điểm 3D: đúng cho cả vật nằm cao */
   const distAt = (nx: number, ny: number, pos: THREE.Vector3) => {
     v3.copy(pos).project(k.camera);
@@ -182,6 +184,10 @@ export function handPointers(k: Kit, input: HandsInput, h: number) {
         p.down = down;
         p.active = active;
         p.slide = hand?.slide ?? 0;
+        if (!p.hand) {
+          p.touch = !!input.mouse.touch;
+          p.reach = p.touch ? 0.16 : 0.07;
+        }
         // góc cổ tay mẫu thưa theo camera (30 Hz): lọc mũ theo thời gian thực, đi theo đường ngắn nhất qua mốc ±π
         if (WRIST_ROLL && hand && hand.pts.length === 21) {
           const nowS = performance.now() / 1000;

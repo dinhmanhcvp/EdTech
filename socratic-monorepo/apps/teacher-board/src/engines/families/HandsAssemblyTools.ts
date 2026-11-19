@@ -22,6 +22,9 @@ const TOOL_Y = 0.55;
 const TILT = 0.45;
 const LIFT = 0.09; // vít nhô lên bao nhiêu khi đã nới hết
 const RACK = {x0: -3.0, step: 0.62, z: 2.55, y: 0.1};
+const RACK_X0 = -4.3; // mép trái / phải vùng xếp dụng cụ trên giá
+const RACK_X1 = 3.6;
+const RACK_GAP = 0.16; // khe giữa hai dụng cụ kề nhau
 const SCALE: Record<ToolId, number> = {ph1: 0.8, ph2: 1, flat: 1, hex25: 0.75, hex4: 0.95, sock10: 1.1, sock13: 1.35, sparksock: 1.8, spanner: 1.5, puller: 1.6, pliers: 0.9, torque: 1.35};
 const HEAD: Record<ToolId, 'ScrewPh' | 'BoltHex'> = {ph1: 'ScrewPh', ph2: 'ScrewPh', flat: 'ScrewPh', hex25: 'ScrewPh', hex4: 'ScrewPh', pliers: 'ScrewPh', sock10: 'BoltHex', sock13: 'BoltHex', sparksock: 'BoltHex', spanner: 'BoltHex', puller: 'BoltHex', torque: 'BoltHex'};
 const LIB = '/models/tools-parts.glb';
@@ -46,22 +49,26 @@ interface ToolRt {
   spin: number;
 }
 
-export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof handPointers>; live: AssemblyLive; parts: {id: string; obj: THREE.Group}[]; ik: () => boolean}) {
+/** `partAt(nx, ny)`: khoảng cách màn hình tới chi tiết gần nhất (0 = ngay dưới con trỏ); chi tiết gần hơn dụng cụ thì chụm vào là cầm chi tiết, không cầm dụng cụ */
+export function toolKit({k, P, live, parts, ik, partAt}: {k: Kit; P: ReturnType<typeof handPointers>; live: AssemblyLive; parts: {id: string; obj: THREE.Group}[]; ik: () => boolean; partAt?: (nx: number, ny: number) => number}) {
   const fa = FASTENERS[live.kind];
   const v3 = V();
   const v4 = V();
 
   // ---- giá dụng cụ và khay từ
-  solid(k.scene, new THREE.BoxGeometry(6.8, 0.1, 0.6), '#8A5B35', {rough: 0.6, x: -0.2, y: 0.05, z: RACK.z});
-  k.label('Hộp dụng cụ: chụm để cầm, chọn đúng cỡ')(V(-3.1, 0.2, RACK.z + 0.5));
-  const dish = V(3.2, 0.02, RACK.z);
-  const dishPlain = solid(k.scene, new THREE.CylinderGeometry(0.5, 0.42, 0.14, 28), '#B9BEC5', {metal: 0.8, rough: 0.35, x: dish.x, y: 0.07, z: dish.z});
-  k.label('Khay từ đựng vít')(V(dish.x, 0.5, dish.z));
+  // giá dài gần hết mặt bàn (bàn x ∈ [−4,6; 3,8]); dụng cụ xếp theo bề rộng thật (`layoutRack`)
+  solid(k.scene, new THREE.BoxGeometry(RACK_X1 - RACK_X0 + 0.3, 0.1, 0.6), '#8A5B35', {rough: 0.6, x: (RACK_X0 + RACK_X1) / 2, y: 0.05, z: RACK.z});
+  // nhãn ở mép trước bàn, dưới giá: không che dụng cụ
+  k.label('Hộp dụng cụ: chụm để cầm, chọn đúng cỡ')(V(RACK_X0 + 1.2, -0.75, RACK.z + 0.45));
+  // khay từ nằm TRONG mặt bàn (bàn x ≤ 3,8; z ≤ 2,9), sau đầu phải giá dụng cụ (giá z ≥ 2,25): trước đây ở (3,2; RACK.z) chìa ra ngoài mép bàn và đè lên giá
+  const DISH_S = 0.8;
+  const dish = V(3.3, 0.02, 1.35); // lùi xa giá để dụng cụ dựng đứng ở cuối giá không che khay
+  const dishPlain = solid(k.scene, new THREE.CylinderGeometry(0.5 * DISH_S, 0.42 * DISH_S, 0.14 * DISH_S, 28), '#B9BEC5', {metal: 0.8, rough: 0.35, x: dish.x, y: 0.07 * DISH_S, z: dish.z});
   const looseTag = k.label('');
   const bowl = Array.from({length: 24}, (_, i) => {
     const a = i * 2.4;
-    const r = 0.06 + ((i * 37) % 10) * 0.035;
-    const m = solid(k.scene, new THREE.CylinderGeometry(0.035, 0.035, 0.05, 8), '#C9CED6', {metal: 0.9, rough: 0.3, x: dish.x + Math.cos(a) * r, y: 0.17, z: dish.z + Math.sin(a) * r});
+    const r = (0.06 + ((i * 37) % 10) * 0.035) * DISH_S;
+    const m = solid(k.scene, new THREE.CylinderGeometry(0.035, 0.035, 0.05, 8), '#C9CED6', {metal: 0.9, rough: 0.3, x: dish.x + Math.cos(a) * r, y: 0.15, z: dish.z + Math.sin(a) * r});
     m.rotation.set(Math.random(), 0, Math.random());
     m.visible = false;
     return m;
@@ -85,6 +92,35 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
     return {id, obj, home, homeRot, grip: flat ? V(0, 0.03, 1.0) : id === 'puller' ? V(0, 0.7, 0) : id === 'pliers' ? V(0, 0.95, 0) : V(0, 0.95, 0), by: -1, spin: 0};
   });
   const labelOf = new Map<ToolId, ReturnType<typeof k.label>>(tools.map((t) => [t.id, k.label(TOOLS[t.id].name)]));
+  /**
+   * Xếp dụng cụ trên giá theo hộp bao THẬT của từng mô hình (cờ lê, cần tự động, cờ lê lực dài gấp mấy lần tua vít): trước đây cách đều 0,62
+   * nên các dụng cụ nằm ngang đè lên nhau. Không đủ chỗ thì thu nhỏ đều cả bộ. Chạy lại khi mô hình Blender về.
+   */
+  const layoutRack = () => {
+    if (tools.some((t) => t.by >= 0)) return; // đang cầm: không xếp lại dưới tay người dùng
+    const box = new THREE.Box3();
+    const ext = tools.map((t) => {
+      t.obj.position.set(0, RACK.y, 0);
+      t.obj.rotation.copy(t.homeRot);
+      t.obj.scale.setScalar(1);
+      t.obj.updateMatrixWorld(true);
+      box.setFromObject(t.obj);
+      // tua vít dựng đứng chỉ rộng bằng cán trên trục x nhưng nhìn nghiêng thì chiếm chỗ hơn: tối thiểu 0,34
+      const w = box.max.x - box.min.x;
+      return {w: Math.max(0.34, w), minX: box.min.x - Math.max(0, 0.34 - w) / 2, cz: (box.min.z + box.max.z) / 2};
+    });
+    const total = ext.reduce((a, e) => a + e.w, 0) + RACK_GAP * (tools.length - 1);
+    const s = Math.min(1, (RACK_X1 - RACK_X0) / total);
+    let x = RACK_X0 + ((RACK_X1 - RACK_X0) - total * s) / 2;
+    tools.forEach((t, i) => {
+      const e = ext[i];
+      t.home.set(x - e.minX * s, RACK.y, RACK.z - e.cz * s);
+      t.obj.scale.setScalar(s);
+      t.obj.position.copy(t.home);
+      x += (e.w + RACK_GAP) * s;
+    });
+  };
+  layoutRack();
 
   // ---- ốc vít trên từng chi tiết (đặt trên mặt trên của hộp bao chi tiết, theo vòng quanh để thứ tự đường chéo có nghĩa)
   const screws: ScrewRt[] = [];
@@ -130,6 +166,7 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
         t.obj.clear();
         t.obj.add(sk.obj);
       }
+      layoutRack();
       for (const sc of screws) {
         const sk = partOf(lib, HEAD[sc.fa.tool]);
         if (!sk) continue;
@@ -139,6 +176,7 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
       const rack = partOf(lib, 'MagDish');
       if (rack) {
         rack.obj.position.set(dish.x, 0, dish.z);
+        rack.obj.scale.setScalar(DISH_S);
         k.scene.add(rack.obj);
         dishPlain.visible = false;
       }
@@ -169,9 +207,11 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
     o.updateWorldMatrix(true, false);
     return out.copy(sc.anchor).applyMatrix4(o.matrixWorld);
   };
+  let toolDist = Infinity; // khoảng cách tới dụng cụ `nearestTool` vừa trả về
   const nearestTool = (nx: number, ny: number, reach: number): ToolRt | null => {
     let best: ToolRt | null = null;
     let bd = reach;
+    toolDist = Infinity;
     const g = V();
     for (const t of tools) {
       if (t.by >= 0) continue;
@@ -186,6 +226,7 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
       if (d < bd) {
         bd = d;
         best = t;
+        toolDist = d;
       }
     }
     return best;
@@ -230,7 +271,8 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
         mode.set(id, nextMode(mode.get(id) ?? 'loosen', prev, on, live.screws[id] ?? []));
         wasOn.set(id, on);
       }
-      looseTag(total ? V(dish.x, 0.8, dish.z) : null, undefined, `${loose}/${total} vít ngoài khay`);
+      // vít đã tháo (chưa siết) nằm TRONG khay từ; một nhãn duy nhất (trước đây hai nhãn chồng nhau và ghi nhầm "ngoài khay")
+      looseTag(V(dish.x, 0.5, dish.z), undefined, total ? `Khay từ: ${loose}/${total} vít đã tháo` : 'Khay từ đựng vít');
 
       P.ptrs.forEach((p, i) => {
         const e = eng[i];
@@ -238,10 +280,10 @@ export function toolKit({k, P, live, parts, ik}: {k: Kit; P: ReturnType<typeof h
         if (!held) {
           if (active && p.active && p.pressed) {
             const t = nearestTool(p.ndc.x, p.ndc.y, Math.max(p.reach, PLUCK));
-            if (t) {
+            if (t && !(partAt && partAt(p.ndc.x, p.ndc.y) < toolDist)) {
               t.by = i;
               // chuột: bấm một lần là cầm, dụng cụ đi theo chuột (không phải giữ nút); bấm chỗ trống để trả. Tay: chụm để cầm, buông là trả
-              e.sticky = !p.hand;
+              e.sticky = !p.hand && !p.touch; // ngón tay trên màn hình: giữ–kéo như tay, không "dính" (không có di chuột để dụng cụ đi theo)
               e.pickAt = now;
               e.lastRoll = p.roll;
               e.spin = 0;

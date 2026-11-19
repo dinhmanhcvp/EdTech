@@ -78,6 +78,11 @@ CURSOR = {}
 def part(name, objs, row, gap=0.35):
     """đặt chi tiết vào lưới xem thử theo hàng (không ảnh hưởng GLB: cảnh đặt lại gốc về 0)"""
     o = join(name, objs)
+    # bpy join lấy gốc toạ độ của vật ĐẦU TIÊN làm gốc của cả lưới: cặp động cơ drone (vật đầu ở (±0,32; ±0,32)) lệch nửa đường chéo khỏi khung,
+    # rôto động cơ điện lệch 0,17, pít-tông 0,03. Đặt gốc về gốc thế giới để toạ độ dựng = toạ độ so với điểm đặt (home) trong cảnh.
+    bpy.context.view_layer.objects.active = o
+    bpy.context.scene.cursor.location = (0, 0, 0)
+    bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
     x = CURSOR.get(row, -4.5)
     o.location = T(x + 0.5, 0.0, row)
     CURSOR[row] = x + 1.4 + gap
@@ -226,62 +231,165 @@ for sz in (-1, 1):
 part('EngineCrankshaft', crk, R_E)
 
 # ================================================================== 3. CÁNH TAY ROBOT (đứng theo y)
+# Kích thước bao và gốc của từng chi tiết giữ nguyên (động học ngược ở HandsAssembly3D phụ thuộc vào chúng); chỉ thêm chi tiết.
 R_R = 0.5
-part('RobotBase', [B('plate', 1.7, 0.08, 1.2, 0, 0.04, 0, DGRAY, bevel=0.012)] + [Y('foot', 0.05, 0.03, sx * 0.75, 0.0, sz * 0.5, RUBBER) for sx in (-1, 1) for sz in (-1, 1)], R_R)
-bs = [B('body', 0.3, 0.28, 0.3, 0, 0, 0, SERVO, bevel=0.012), Y('horn', 0.05, 0.06, 0, 0.16, 0, WHITE), B('flange', 0.38, 0.03, 0.14, 0, -0.1, 0, SERVO, bevel=0.006), B('cable', 0.04, 0.03, 0.06, 0.17, -0.1, 0, BLACKP, bevel=0.003)]
-part('RobotBaseServo', bs, R_R)
-tt = [Y('disc', 0.32, 0.06, 0, 0, 0, ALU, bevel=0.006, seg=60), Y('hub', 0.08, 0.04, 0, 0.04, 0, STEEL)] + [Y('holes', 0.02, 0.07, 0.24 * math.cos(a), 0, 0.24 * math.sin(a), BLACKP, seg=12) for a in [i * math.pi / 2 + D(45) for i in range(4)]]
+WIRE_Y = mat('wireyellow', hexc('#E3B341'), rough=0.5)
+SILK = mat('silkscreen', hexc('#EDEBE3'), rough=0.6)
+RED_W = mat('wirered', hexc('#C4261A'), rough=0.5)
+CAPB = mat('capblue', hexc('#2B4C9B'), rough=0.4)
+
+
+def servo(sx, sy, sz, axis='y', cable=True):
+    """servo RC: thân xanh có mép gân, tai bắt vít, nhãn, trục ra + cần trắng nhiều lỗ, ba dây (vàng, đỏ, đen); `axis` = hướng trục ra (y lên, z về phía người xem)"""
+    o = [B('body', sx, sy, sz, 0, 0, 0, SERVO, bevel=0.012),
+         B('ear', sx + 0.08, 0.025, sz * 0.5, 0, -sy * 0.36, 0, SERVO, bevel=0.005),
+         B('label', sx * 0.55, 0.002, sz * 0.5, 0, sy / 2 + 0.001, 0, SILK, bevel=0.0) if axis == 'z' else B('label', sx * 0.5, sy * 0.5, 0.002, 0, 0, -sz / 2 - 0.001, SILK, bevel=0.0)]
+    for sgn in (-1, 1):
+        o.append(Y('earhole', 0.012, 0.03, sgn * (sx / 2 + 0.025), -sy * 0.36, 0, BLACKP, bevel=0.001, seg=12))
+        o.append(B('rib', 0.012, sy * 0.9, 0.012, sgn * (sx / 2 - 0.006), 0, sz / 2 - 0.006, SERVO, bevel=0.0))
+    if axis == 'y':
+        o += [Y('boss', 0.05, 0.03, 0, sy / 2 + 0.015, 0, STEEL, bevel=0.003, seg=32),
+              B('horn', 0.22, 0.02, 0.05, 0, sy / 2 + 0.04, 0, WHITE, bevel=0.006),
+              Y('hornscrew', 0.012, 0.012, 0, sy / 2 + 0.056, 0, STEEL, bevel=0.001, seg=8)]
+        o += [Y('hornhole', 0.007, 0.024, sgn * 0.075, sy / 2 + 0.04, 0, BLACKP, bevel=0.0, seg=8) for sgn in (-1, 1)]
+    else:
+        o += [Z('boss', 0.05, 0.03, 0, 0, sz / 2 + 0.015, STEEL, bevel=0.003, seg=32),
+              B('horn', 0.05, 0.22, 0.02, 0, 0, sz / 2 + 0.04, WHITE, bevel=0.006),
+              Z('hornscrew', 0.012, 0.012, 0, 0, sz / 2 + 0.056, STEEL, bevel=0.001, seg=8)]
+        o += [Z('hornhole', 0.007, 0.024, 0, sgn * 0.075, sz / 2 + 0.04, BLACKP, bevel=0.0, seg=8) for sgn in (-1, 1)]
+    if cable:
+        for off, w in ((-0.014, BLACKP), (0.0, RED), (0.014, WIRE_Y)):
+            o.append(tube('lead', [T(sx / 2 - 0.01, -sy * 0.2, off), T(sx / 2 + 0.07, -sy * 0.3, off), T(sx / 2 + 0.13, -sy * 0.45, off * 1.5)], 0.005, w))
+    return o
+
+
+part('RobotBase', [B('plate', 1.7, 0.08, 1.2, 0, 0.04, 0, DGRAY, bevel=0.02), B('top', 1.56, 0.012, 1.06, 0, 0.086, 0, CARBON, bevel=0.006)]
+     + [Y('foot', 0.05, 0.03, sx * 0.75, 0.0, sz * 0.5, RUBBER) for sx in (-1, 1) for sz in (-1, 1)]
+     + [Y('bolt', 0.022, 0.014, sx * 0.72, 0.095, sz * 0.48, STEEL, bevel=0.002, seg=6) for sx in (-1, 1) for sz in (-1, 1)]
+     + [Y('pivot', 0.2, 0.012, 0, 0.098, 0, LGRAY, bevel=0.003, seg=48)]
+     + [B('tick', 0.012, 0.004, 0.05, 0.27 * math.cos(a), 0.094, 0.27 * math.sin(a), YEL, bevel=0.0, rot=(0, 0, -a)) for a in [i * math.pi / 12 for i in range(24)]], R_R)
+part('RobotBaseServo', servo(0.3, 0.28, 0.3, 'y'), R_R)
+tt = [Y('disc', 0.32, 0.06, 0, 0, 0, ALU, bevel=0.006, seg=60), Y('hub', 0.08, 0.04, 0, 0.04, 0, STEEL), Y('bearing', 0.11, 0.012, 0, 0.032, 0, LGRAY, bevel=0.002, seg=40)]
+tt += [Y('holes', 0.02, 0.07, 0.24 * math.cos(a), 0, 0.24 * math.sin(a), BLACKP, seg=12) for a in [i * math.pi / 2 + D(45) for i in range(4)]]
+tt += [Y('slot', 0.035, 0.07, 0.17 * math.cos(a), 0, 0.17 * math.sin(a), BLACKP, seg=16) for a in [i * math.pi / 2 for i in range(4)]]
+tt += [Y('rimscrew', 0.01, 0.012, 0.29 * math.cos(a), 0.03, 0.29 * math.sin(a), STEEL, bevel=0.001, seg=6) for a in [i * math.pi / 6 for i in range(12)]]
 part('RobotTurntable', tt, R_R)
-ss = [B('body', 0.3, 0.28, 0.24, 0, 0, 0, SERVO, bevel=0.012), Z('horn', 0.05, 0.05, 0, 0, 0.14, WHITE), B('flange', 0.38, 0.03, 0.1, 0, -0.1, 0, SERVO, bevel=0.006)]
-part('RobotShoulderServo', ss, R_R)
-la = [B('plateL', 0.1, 0.74, 0.03, 0, 0, 0.15, ALUO, bevel=0.004), B('plateR', 0.1, 0.74, 0.03, 0, 0, -0.15, ALUO, bevel=0.004), B('cross', 0.08, 0.06, 0.3, 0, 0.34, 0, ALUO, bevel=0.004), B('cross2', 0.08, 0.06, 0.3, 0, -0.34, 0, ALUO, bevel=0.004)]
-for y in (0.3, -0.3):
+part('RobotShoulderServo', servo(0.3, 0.28, 0.24, 'z'), R_R)
+
+
+def channel(length, depth, zoff, along):
+    """tay đòn nhôm hai thành: hai tấm có lỗ giảm trọng lượng, thanh giằng hai đầu, bu-lông; `along` = 'y' (cánh tay dưới) hoặc 'x' (cánh tay trên)"""
+    o = []
     for sz in (-1, 1):
-        la.append(Z('rivet', 0.016, 0.04, 0, y, sz * 0.15, STEEL, seg=12))
+        if along == 'y':
+            o.append(B('plate', depth, length, 0.03, 0, 0, sz * zoff, ALUO, bevel=0.006))
+            for y in (-0.22, -0.08, 0.08, 0.22):
+                o.append(Z('lighten', 0.026, 0.036, 0, y, sz * zoff, BLACKP, bevel=0.0, seg=20))
+            for y in (0.31, -0.31):
+                o.append(Z('rivet', 0.016, 0.04, 0, y, sz * zoff, STEEL, seg=12))
+        else:
+            o.append(B('plate', length, depth, 0.03, 0, 0, sz * zoff, ALUO, bevel=0.006))
+            for x in (-0.2, -0.07, 0.07, 0.2):
+                o.append(Z('lighten', 0.028, 0.036, x, 0, sz * zoff, BLACKP, bevel=0.0, seg=20))
+            for x in (0.27, -0.27):
+                o.append(Z('rivet', 0.016, 0.04, x, 0, sz * zoff, STEEL, seg=12))
+    return o
+
+
+la = channel(0.74, 0.1, 0.15, 'y')
+la += [B('cross', 0.08, 0.06, 0.3, 0, 0.34, 0, ALUO, bevel=0.004), B('cross2', 0.08, 0.06, 0.3, 0, -0.34, 0, ALUO, bevel=0.004)]
+la += [Z('bushT', 0.045, 0.34, 0, 0.34, 0, STEEL, bevel=0.003, seg=24), Z('bushB', 0.045, 0.34, 0, -0.34, 0, STEEL, bevel=0.003, seg=24)]
 part('RobotLowerArm', la, R_R)
-part('RobotElbowServo', [B('body', 0.26, 0.24, 0.22, 0, 0, 0, SERVO, bevel=0.012), Z('horn', 0.045, 0.05, 0, 0, 0.12, WHITE), B('cable', 0.04, 0.04, 0.05, 0.14, -0.1, 0, BLACKP, bevel=0.003)], R_R)
-fa = [B('plateL', 0.62, 0.09, 0.03, 0, 0, 0.14, ALUO, bevel=0.004), B('plateR', 0.62, 0.09, 0.03, 0, 0, -0.14, ALUO, bevel=0.004), B('cross', 0.06, 0.07, 0.28, 0.27, 0, 0, ALUO, bevel=0.004), B('cross2', 0.06, 0.07, 0.28, -0.27, 0, 0, ALUO, bevel=0.004)]
+part('RobotElbowServo', servo(0.26, 0.24, 0.22, 'z'), R_R)
+fa = channel(0.62, 0.09, 0.14, 'x')
+fa += [B('cross', 0.06, 0.07, 0.28, 0.27, 0, 0, ALUO, bevel=0.004), B('cross2', 0.06, 0.07, 0.28, -0.27, 0, 0, ALUO, bevel=0.004)]
+fa += [Z('bushL', 0.04, 0.3, -0.27, 0, 0, STEEL, bevel=0.003, seg=24), Z('bushR', 0.04, 0.3, 0.27, 0, 0, STEEL, bevel=0.003, seg=24)]
 part('RobotForearm', fa, R_R)
-gp = [B('body', 0.16, 0.14, 0.2, 0, 0, 0, SERVO, bevel=0.01), B('fingerL', 0.2, 0.03, 0.03, 0.16, 0, 0.07, LGRAY, bevel=0.004), B('fingerR', 0.2, 0.03, 0.03, 0.16, 0, -0.07, LGRAY, bevel=0.004), B('padL', 0.04, 0.05, 0.02, 0.27, 0, 0.055, RUBBER, bevel=0.003), B('padR', 0.04, 0.05, 0.02, 0.27, 0, -0.055, RUBBER, bevel=0.003), Y('gear', 0.04, 0.05, 0.08, 0.0, 0, STEEL)]
+gp = [B('body', 0.16, 0.14, 0.2, 0, 0, 0, SERVO, bevel=0.01), Y('gear', 0.04, 0.05, 0.08, 0.0, 0, STEEL),
+      B('label', 0.1, 0.002, 0.12, 0, 0.071, 0, SILK, bevel=0.0)]
+for sz in (-1, 1):
+    gp += [B('finger', 0.2, 0.03, 0.03, 0.16, 0, sz * 0.07, LGRAY, bevel=0.004), B('pad', 0.04, 0.05, 0.02, 0.27, 0, sz * 0.055, RUBBER, bevel=0.003),
+           B('link', 0.1, 0.012, 0.012, 0.09, 0.022, sz * 0.045, LGRAY, bevel=0.0, rot=(0, 0, -sz * D(25))),
+           Y('knuckle', 0.018, 0.04, 0.09, 0, sz * 0.085, STEEL, bevel=0.002, seg=16)]
+    gp += [Y('tooth', 0.006, 0.04, 0.14 + 0.02 * i, 0.0, sz * 0.085, STEEL, bevel=0.0, seg=6) for i in range(3)]
+gp += [tube('lead', [T(-0.08, -0.02, 0.0), T(-0.14, -0.05, 0.03), T(-0.19, -0.1, 0.05)], 0.005, WIRE_Y)]
 part('RobotGripper', gp, R_R)
 rb = [B('pcb', 0.5, 0.03, 0.36, 0, 0, 0, GREEN, bevel=0.003), B('mcu', 0.14, 0.04, 0.14, -0.05, 0.03, 0, BLACKP, bevel=0.003), B('header', 0.06, 0.07, 0.24, 0.19, 0.04, 0, BLACKP, bevel=0.003), B('usb', 0.08, 0.04, 0.07, -0.23, 0.035, -0.1, LGRAY, bevel=0.003)]
+rb += [B('jack', 0.07, 0.045, 0.06, -0.23, 0.037, 0.1, BLACKP, bevel=0.003), Y('crystal', 0.018, 0.012, 0.05, 0.027, 0.1, STEEL, bevel=0.002, seg=16)]
+rb += [Y('cap', 0.025, 0.04, 0.1, 0.035, 0.13, CAPB, bevel=0.003, seg=16), Y('cap2', 0.025, 0.04, 0.1, 0.035, -0.13, CAPB, bevel=0.003, seg=16)]
+rb += [B('silk', 0.22, 0.002, 0.012, -0.05, 0.0155, -0.14, SILK, bevel=0.0), B('silk2', 0.22, 0.002, 0.012, -0.05, 0.0155, 0.14, SILK, bevel=0.0)]
+rb += [Y('led', 0.008, 0.008, -0.17 + 0.03 * i, 0.019, 0.15, LED, bevel=0.0, seg=10) for i in range(3)]
 for i in range(8):
     rb.append(Y('pin', 0.008, 0.04, 0.12 + 0.012 * (i % 2), 0.035, -0.1 + 0.03 * i, GOLD, seg=8))
 part('RobotBoard', rb, R_R)
-part('RobotBattery', [B('cell', 0.42, 0.14, 0.24, 0, 0, 0, DGRAY, bevel=0.012), B('band', 0.14, 0.145, 0.245, -0.08, 0, 0, YEL, bevel=0.006), B('plug', 0.06, 0.05, 0.1, 0.25, 0, 0, WHITE, bevel=0.004)], R_R)
+rbat = [B('holder', 0.42, 0.1, 0.24, 0, -0.02, 0, BLACKP, bevel=0.012), B('band', 0.14, 0.145, 0.245, -0.08, 0, 0, YEL, bevel=0.006), B('plug', 0.06, 0.05, 0.1, 0.25, 0, 0, WHITE, bevel=0.004)]
+rbat += [tube('lead_r', [T(0.21, 0.02, 0.03), T(0.3, 0.05, 0.04), T(0.36, 0.0, 0.06)], 0.008, RED_W), tube('lead_k', [T(0.21, 0.02, -0.03), T(0.3, 0.05, -0.04), T(0.36, 0.0, -0.06)], 0.008, BLACKP)]
+rbat += [B('switch', 0.04, 0.03, 0.03, -0.12, 0.085, 0.07, RED, bevel=0.004), B('label', 0.18, 0.002, 0.16, 0.05, 0.0705, 0, SILK, bevel=0.0)]
+part('RobotBattery', rbat, R_R)
 
 # ================================================================== 4. DRONE 4 CÁNH (nằm trong mặt xz)
+# Chiều cao xếp chồng (từ tâm khung, trục y): tấm trên 0,0175 · ESC 0,03 · mạch bay 0,1125 · bộ thu 0,14 · động cơ (gốc) 0,10 · cánh (gốc) 0,172 · pin −0,115.
+# Cảnh (handsModels.buildDrone) phóng mọi chi tiết 1,5 lần quanh gốc của chi tiết; kích thước ở đây là kích thước gốc.
 R_D = 4.2
 A_ = 0.32
 part('DronePad', [Y('pad', 0.95, 0.02, 0, 0.01, 0, DGRAY, seg=64), lathe('ring', [(0.78, 0.02), (0.82, 0.02), (0.82, 0.035), (0.78, 0.035)], T(0, 0, 0), YEL, steps=64)], R_D)
-fr = [B('plate', 0.34, 0.035, 0.34, 0, 0, 0, CARBON, bevel=0.006), B('plate2', 0.3, 0.02, 0.3, 0, -0.05, 0, CARBON, bevel=0.006)]
+fr = [B('plate', 0.36, 0.035, 0.36, 0, 0, 0, CARBON, bevel=0.012), B('plate2', 0.34, 0.02, 0.34, 0, -0.055, 0, CARBON, bevel=0.01)]
 for s in (-1, 1):
-    fr.append(B('arm', 0.96, 0.03, 0.08, 0, 0, 0, CARBON, bevel=0.005, rot=(0, 0, s * D(45))))
+    fr.append(B('arm', 0.94, 0.03, 0.075, 0, 0, 0, CARBON, bevel=0.006, rot=(0, 0, s * D(45))))
+    fr.append(B('slot', 0.016, 0.004, 0.2, s * 0.158, 0.0175, 0, BLACKP, bevel=0.0))
 for sx in (-1, 1):
     for sz in (-1, 1):
-        fr.append(Y('standoff', 0.015, 0.2, sx * 0.2, -0.11, sz * 0.2, LGRAY, seg=12))
-        fr.append(Y('foot', 0.03, 0.02, sx * 0.2, -0.22, sz * 0.2, RUBBER, seg=12))
+        mx, mz = sx * A_, sz * A_
+        fr.append(Y('mount', 0.09, 0.02, mx, 0.02, mz, CARBON, bevel=0.005, seg=40))
+        for k in range(4):
+            a = D(45 + 90 * k)
+            fr.append(Y('mscrew', 0.008, 0.01, mx + 0.065 * math.cos(a), 0.035, mz + 0.065 * math.sin(a), LGRAY, bevel=0.001, seg=8))
+        fr.append(Y('leg', 0.015, 0.2, sx * 0.2, -0.11, sz * 0.2, LGRAY, seg=12))
+        fr.append(Y('foot', 0.032, 0.022, sx * 0.2, -0.22, sz * 0.2, RUBBER, seg=16))
+        fr.append(Y('post', 0.012, 0.06, sx * 0.13, -0.025, sz * 0.13, GOLD, seg=10))
+        fr.append(Y('tscrew', 0.01, 0.008, sx * 0.15, 0.02, sz * 0.15, LGRAY, bevel=0.001, seg=6))
+fr.append(B('front', 0.06, 0.004, 0.03, 0, 0.019, -0.15, YEL, bevel=0.001))
 part('DroneFrame', fr, R_D)
 
 
 def motors(positions, color):
     objs = []
     for (mx, mz) in positions:
-        objs += [Y('bell', 0.07, 0.1, mx, 0, mz, color, bevel=0.005, seg=32), Y('base', 0.05, 0.03, mx, -0.06, mz, LGRAY, seg=24), Y('shaft', 0.012, 0.06, mx, 0.08, mz, STEEL, seg=12)]
-        for k in range(6):
-            a = 2 * math.pi * k / 6
-            objs.append(Y('magnet', 0.012, 0.09, mx + 0.062 * math.cos(a), 0, mz + 0.062 * math.sin(a), DGRAY, seg=8))
+        objs += [Y('flange', 0.056, 0.012, mx, -0.064, mz, LGRAY, bevel=0.002, seg=32),
+                 Y('winding', 0.05, 0.045, mx, -0.035, mz, COPPER, bevel=0.002, seg=32),
+                 Y('bell', 0.068, 0.065, mx, 0.0225, mz, color, bevel=0.006, seg=40),
+                 Y('topcap', 0.05, 0.006, mx, 0.058, mz, DGRAY, bevel=0.001, seg=32),
+                 Y('shaft', 0.012, 0.06, mx, 0.085, mz, STEEL, bevel=0.001, seg=12)]
+        for k in range(8):  # khe thông gió quanh chuông
+            a = 2 * math.pi * k / 8
+            objs.append(B('vent', 0.012, 0.03, 0.012, mx + 0.0685 * math.cos(a), 0.02, mz + 0.0685 * math.sin(a), BLACKP, bevel=0.001, rot=(0, 0, -a)))
+        r = math.hypot(mx, mz)
+        tx, tz = -mz / r, mx / r  # ba dây pha toả về phía tâm khung
+        for off, w in ((-0.016, RED_W), (0.0, BLACKP), (0.016, YEL)):
+            objs.append(tube('lead', [T(mx + tx * off, -0.064, mz + tz * off), T(mx * 0.75 + tx * off, -0.075, mz * 0.75 + tz * off), T(mx * 0.45 + tx * off, -0.05, mz * 0.45 + tz * off)], 0.005, w))
     return objs
 
 
 part('DroneMotorsCW', motors([(A_, A_), (-A_, -A_)], OLED), R_D)
 part('DroneMotorsCCW', motors([(A_, -A_), (-A_, A_)], BLUE), R_D)
-prop = [B('blade1', 0.25, 0.008, 0.05, 0.125, 0, 0, TINT, bevel=0.002, rot=(D(12), 0, 0)), B('blade2', 0.25, 0.008, 0.05, -0.125, 0, 0, TINT, bevel=0.002, rot=(D(-12), 0, 0)), Y('hub', 0.03, 0.03, 0, 0, 0, WHITE, seg=24), Y('nut', 0.02, 0.02, 0, 0.02, 0, STEEL, seg=6)]
+prop = []
+for s in (-1, 1):  # hai cánh đối xứng, góc xoắn ngược dấu để cùng đẩy gió xuống; mỗi cánh hai đoạn thon dần
+    prop += [B('blade_in', 0.13, 0.014, 0.105, s * 0.1, 0, 0, TINT, bevel=0.005, rot=(s * D(14), 0, 0)),
+             B('blade_out', 0.085, 0.012, 0.08, s * 0.2075, 0, 0, TINT, bevel=0.004, rot=(s * D(14), 0, 0))]
+prop += [Y('hub', 0.04, 0.034, 0, 0, 0, WHITE, bevel=0.003, seg=32), Y('spinner', 0.03, 0.034, 0, 0.024, 0, WHITE, bevel=0.002, r2=0.009, seg=32)]
 part('DroneProp', prop, R_D)
-part('DroneEsc', [B('pcb', 0.26, 0.025, 0.26, 0, 0, 0, GREEN, bevel=0.003)] + [B('fet', 0.04, 0.02, 0.04, -0.08 + 0.055 * i, 0.02, -0.08 + 0.055 * j, BLACKP, bevel=0.002) for i in range(4) for j in range(2)] + [Y('cap', 0.03, 0.05, 0.09, 0.035, 0.09, DGRAY, seg=16)], R_D)
-part('DroneFlightController', [B('pcb', 0.2, 0.025, 0.2, 0, 0, 0, SERVO, bevel=0.003), B('imu', 0.07, 0.03, 0.07, 0, 0.01, 0, BLACKP, bevel=0.003), B('usb', 0.05, 0.03, 0.04, 0.1, 0.01, 0, LGRAY, bevel=0.003)] + [Y('hole', 0.012, 0.03, sx * 0.09, 0, sz * 0.09, GOLD, seg=12) for sx in (-1, 1) for sz in (-1, 1)], R_D)
-part('DroneReceiver', [B('body', 0.08, 0.03, 0.12, 0, 0, 0, BLACKP, bevel=0.004), Y('antenna', 0.006, 0.2, 0, 0.1, -0.05, WHITE, seg=8), B('led', 0.012, 0.004, 0.012, 0.02, 0.016, 0.03, GREEN, bevel=0)], R_D)
-part('DroneLiPo', [B('cell', 0.42, 0.1, 0.18, 0, 0, 0, DGRAY, bevel=0.01), B('band', 0.12, 0.102, 0.182, 0, 0, 0, YEL, bevel=0.004), B('plug', 0.06, 0.06, 0.1, 0.25, 0, 0, YEL, bevel=0.004)], R_D)
+esc = [B('pcb', 0.26, 0.025, 0.26, 0, 0, 0, GREEN, bevel=0.003), B('chip', 0.07, 0.014, 0.07, 0, 0.0195, 0, BLACKP, bevel=0.002)]
+esc += [B('fet', 0.04, 0.02, 0.04, -0.09 + 0.06 * i, 0.0225, -0.09 + 0.18 * j, BLACKP, bevel=0.002) for i in range(4) for j in range(2)]
+esc += [Y('cap', 0.03, 0.04, sx * 0.09, 0.0325, 0.0, CAPB, bevel=0.003, seg=20) for sx in (-1, 1)]
+esc += [Y('pad', 0.02, 0.004, sx * 0.11, 0.0145, sz * 0.11, GOLD, bevel=0.001, seg=16) for sx in (-1, 1) for sz in (-1, 1)]
+esc += [B('xt60', 0.05, 0.03, 0.04, -0.15, 0.0, 0, YEL, bevel=0.004), tube('lead_r', [T(-0.17, 0.0, 0.012), T(-0.24, 0.0, 0.03), T(-0.3, -0.02, 0.05)], 0.008, RED_W), tube('lead_k', [T(-0.17, 0.0, -0.012), T(-0.24, 0.0, -0.03), T(-0.3, -0.02, -0.05)], 0.008, BLACKP)]
+part('DroneEsc', esc, R_D)
+fc = [B('pcb', 0.2, 0.025, 0.2, 0, 0, 0, SERVO, bevel=0.003), B('mcu', 0.05, 0.012, 0.05, 0.035, 0.0185, -0.055, BLACKP, bevel=0.002), B('imu', 0.06, 0.02, 0.06, 0.035, 0.0225, 0.045, BLACKP, bevel=0.003), B('usb', 0.05, 0.03, 0.04, 0.1, 0.0275, 0, LGRAY, bevel=0.003)]
+fc += [Y('post', 0.012, 0.057, sx * 0.09, -0.041, sz * 0.09, GOLD, bevel=0.001, seg=12) for sx in (-1, 1) for sz in (-1, 1)]
+fc += [Y('hole', 0.014, 0.004, sx * 0.09, 0.0145, sz * 0.09, STEEL, bevel=0.001, seg=12) for sx in (-1, 1) for sz in (-1, 1)]
+part('DroneFlightController', fc, R_D)
+part('DroneReceiver', [B('body', 0.08, 0.03, 0.12, -0.065, 0, 0, BLACKP, bevel=0.004), B('label', 0.06, 0.002, 0.08, -0.065, 0.0155, 0, CREAM, bevel=0.0), Y('antbase', 0.01, 0.02, -0.065, 0.025, -0.05, BLACKP, bevel=0.002, seg=12), Y('antenna', 0.004, 0.2, -0.065, 0.12, -0.05, WHITE, bevel=0.001, seg=8), B('led', 0.012, 0.004, 0.012, -0.04, 0.017, 0.04, GREEN, bevel=0)], R_D)
+part('DroneLiPo', [B('cell', 0.42, 0.1, 0.18, 0, 0, 0, DGRAY, bevel=0.015), B('band', 0.2, 0.102, 0.182, 0, 0, 0, YEL, bevel=0.005), B('plug', 0.05, 0.035, 0.07, 0.235, 0, 0, YEL, bevel=0.004), tube('lead_r', [T(0.26, 0.01, 0.015), T(0.31, 0.03, 0.03), T(0.36, 0.0, 0.04)], 0.008, RED_W), tube('lead_k', [T(0.26, 0.01, -0.015), T(0.31, 0.03, -0.0), T(0.36, 0.0, -0.01)], 0.008, BLACKP)], R_D)
 
 # ================================================================== 5. MÁY TÍNH ĐỂ BÀN
 R_P = 8.4

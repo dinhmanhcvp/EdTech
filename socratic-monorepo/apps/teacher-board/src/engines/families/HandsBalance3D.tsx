@@ -213,7 +213,7 @@ function makeDef(input: HandsInput, live: BalanceLive): SceneDef {
         });
 
         for (const pd of pads) {
-          const on = P.ptrs.some((ptr, n) => ptr.active && !held[n] && (ptr.hand || ptr.down) && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < (ptr.hand ? 0.09 : 0.05));
+          const on = P.ptrs.some((ptr, n) => ptr.active && !held[n] && (ptr.hand || ptr.down) && P.distAt(ptr.ndc.x, ptr.ndc.y, pd.at) < (ptr.hand || ptr.touch ? 0.09 : 0.05));
           pd.held = on ? pd.held + dt : 0;
           const rate = padRate(pd.held);
           if (rate) {

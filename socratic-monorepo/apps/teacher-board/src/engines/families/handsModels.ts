@@ -12,12 +12,16 @@ export interface Built {
   stage?: number;
   /** khi máy đã lắp đủ: phép dời (toạ độ thế giới) áp lên chi tiết đang ở vị trí lắp, do `Model.run` cập nhật mỗi khung hình */
   pose?: THREE.Matrix4;
+  /** phóng to cả chi tiết (cả vít gắn trên nó) quanh gốc của nó; `home` và `tray` đã tính theo tỉ lệ này */
+  scale?: number;
 }
 /** Một mô hình tháo lắp: các chi tiết và phần chuyển động khi đã lắp xong. */
 export interface Model {
   parts: Record<string, Built>;
   /** khay hai hàng (có chi tiết dài) */
   wideTray?: boolean;
+  /** khay riêng (tâm z và bề sâu) khi chi tiết lớn hơn mặc định (0,9 một hàng, 2,2 hai hàng); khay phải nằm sau z ≈ 1,4, vì đỉnh các dụng cụ dựng đứng ở hộp dụng cụ nhìn từ trên rơi vào vùng z ≈ 1,5 và bấm vào chi tiết ở đó sẽ cầm nhầm dụng cụ */
+  tray?: {z: number; depth: number};
   /** có thì khi lắp xong người học kéo điểm này để điều khiển máy (drone) */
   tip?: THREE.Vector3;
   /** độ cao mặt phẳng mà con trỏ kéo `tip` */
@@ -141,58 +145,80 @@ export function buildEngine(scene: THREE.Scene): Model {
 }
 
 // ------------------------------------------------------------------ drone 4 cánh
+/**
+ * Mọi chi tiết phóng to `S` lần (drone thật chỉ nhỏ bằng bàn tay, cả bàn 7 đơn vị nên trước đây cả máy chỉ ~40 px và cánh gần như vô hình).
+ * Chiều cao xếp chồng (đơn vị gốc, từ tâm khung): khung 0, ESC 0,03, mạch bay 0,1125, bộ thu 0,14, động cơ 0,10, cánh 0,172, pin −0,115.
+ */
+export const DRONE_SCALE = 1.4;
+/** tâm bãi đỗ: lùi ra sau (z −1,45 thay −1,0) để nhường chỗ cho khay hai hàng ở phía trước bãi */
+export const DRONE_AT = V(-0.3, 0, -1.45);
 export function buildDrone(scene: THREE.Scene): Model {
   const A = 0.32;
-  solid(scene, yCyl(0.95, 0.02, 48), '#2B2F36', {rough: 0.7, x: C.x, y: 0.01, z: C.z});
-  solid(scene, new THREE.TorusGeometry(0.8, 0.02, 8, 48).rotateX(Math.PI / 2), '#E3B341', {x: C.x, y: 0.025, z: C.z});
+  const S = DRONE_SCALE;
+  const FY = 0.22; // độ cao tâm khung (đơn vị gốc)
+  const sc = {scale: S};
+  const Cd = DRONE_AT;
+  const home = (rel: number) => V(Cd.x, (FY + rel) * S, Cd.z);
+  solid(scene, yCyl(1.06, 0.02, 48), '#2B2F36', {rough: 0.7, x: Cd.x, y: 0.01, z: Cd.z});
+  solid(scene, new THREE.TorusGeometry(0.9, 0.02, 8, 48).rotateX(Math.PI / 2), '#E3B341', {x: Cd.x, y: 0.025, z: Cd.z});
+  // khay hai hàng: hàng sau (z 0,1) là chi tiết rộng, hàng trước (z 0,8) là động cơ và mạch; y khay = 0,02 + phần thấp nhất của chi tiết × S
   const P: Record<string, Built> = {
-    frame: part(scene, at(0, 0.22), V(2.3, 0.22, -1.0)),
-    motors_a: part(scene, at(0, 0.29), V(-3.0, 0.05, 0.7)),
-    props_a: part(scene, at(0, 0.36), V(-2.25, 0.02, 0.7)),
-    motors_b: part(scene, at(0, 0.29), V(-1.5, 0.05, 0.7)),
-    props_b: part(scene, at(0, 0.36), V(-0.75, 0.02, 0.7)),
-    esc: part(scene, at(0, 0.255), V(0, 0.02, 0.7)),
-    fc: part(scene, at(0, 0.3), V(0.75, 0.02, 0.7)),
-    rx: part(scene, at(0, 0.335), V(1.5, 0.02, 0.7)),
-    battery: part(scene, at(0, 0.14), V(2.25, 0.05, 0.7)),
+    frame: part(scene, home(0), V(0.85, 0.02 + 0.232 * S, 0.1), sc),
+    props_a: part(scene, home(0.172), V(-2.7, 0.02 + 0.015 * S, 0.1), sc),
+    props_b: part(scene, home(0.172), V(-0.95, 0.02 + 0.015 * S, 0.1), sc),
+    battery: part(scene, home(-0.115), V(2.1, 0.02 + 0.05 * S, 0.1), sc),
+    motors_a: part(scene, home(0.1), V(-2.8, 0.02 + 0.07 * S, 0.8), sc),
+    motors_b: part(scene, home(0.1), V(-1.45, 0.02 + 0.07 * S, 0.8), sc),
+    esc: part(scene, home(0.03), V(-0.35, 0.02 + 0.0125 * S, 0.8), sc),
+    fc: part(scene, home(0.1125), V(0.3, 0.02 + 0.07 * S, 0.8), sc),
+    rx: part(scene, home(0.14), V(0.95, 0.02 + 0.015 * S, 0.8), sc),
   };
   const carbon = {metal: 0.3, rough: 0.45};
-  for (const s of [-1, 1]) solid(P.frame.obj, box(0.96, 0.03, 0.08), '#1F2329', carbon).rotation.y = (s * Math.PI) / 4;
-  solid(P.frame.obj, box(0.34, 0.035, 0.34), '#1F2329', carbon);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) solid(P.frame.obj, yCyl(0.015, 0.2, 8), '#C9CED6', {...steel, x: sx * 0.2, y: -0.11, z: sz * 0.2});
+  solid(P.frame.obj, box(0.36, 0.035, 0.36), '#1F2329', carbon);
+  solid(P.frame.obj, box(0.34, 0.02, 0.34), '#1F2329', {...carbon, y: -0.055});
+  for (const s of [-1, 1]) solid(P.frame.obj, box(0.94, 0.03, 0.075), '#1F2329', carbon).rotation.y = (s * Math.PI) / 4;
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    solid(P.frame.obj, yCyl(0.015, 0.2, 8), '#C9CED6', {...steel, x: sx * 0.2, y: -0.11, z: sz * 0.2});
+    solid(P.frame.obj, yCyl(0.09, 0.02, 24), '#1F2329', {...carbon, x: sx * A, y: 0.02, z: sz * A});
+  }
   const spinners: {g: THREE.Group; dir: number}[] = [];
   for (const [key, dir, sign] of [['a', 1, 1], ['b', -1, -1]] as const)
     for (const s of [-1, 1]) {
       const x = s * A;
       const z = s * sign * A;
-      solid(P[`motors_${key}`].obj, yCyl(0.07, 0.1, 20), dir > 0 ? '#D9481C' : '#2F6FD0', {...steel, x, z});
+      const mo = P[`motors_${key}`].obj;
+      solid(mo, yCyl(0.068, 0.065), dir > 0 ? '#D9481C' : '#2F6FD0', {...steel, x, y: 0.0225, z});
+      solid(mo, yCyl(0.05, 0.045), '#B8693B', {...steel, x, y: -0.035, z});
+      solid(mo, yCyl(0.056, 0.012), '#C9CED6', {...steel, x, y: -0.064, z});
       const g = new THREE.Group();
-      g.position.set(x, 0, z);
+      g.position.set(x, 0, z); // gốc chi tiết cánh đã nằm ở độ cao moay-ơ (home y = khung + 0,172)
       g.userData.keep = true;
       g.userData.prop = dir; // cánh quay: mô hình thật được đặt vào chính nhóm này (HandsMachines)
       P[`props_${key}`].obj.add(g);
-      solid(g, box(0.5, 0.008, 0.05), dir > 0 ? '#F2B49F' : '#A9C6F2', {rough: 0.4});
+      solid(g, box(0.5, 0.014, 0.1), dir > 0 ? '#F28A66' : '#6FA3F0', {rough: 0.4});
       solid(g, yCyl(0.03, 0.03, 12), '#E9E4D8');
       spinners.push({g, dir});
     }
   solid(P.esc.obj, box(0.26, 0.025, 0.26), '#1F7A4D', {rough: 0.5});
   solid(P.fc.obj, box(0.2, 0.025, 0.2), '#1E2A4A', {rough: 0.5});
-  solid(P.fc.obj, box(0.07, 0.03, 0.07), '#15171B', {y: 0.01});
-  solid(P.rx.obj, box(0.08, 0.03, 0.12), '#15171B');
-  solid(P.rx.obj, yCyl(0.006, 0.2, 6), '#E9E4D8', {y: 0.1, z: -0.05});
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) solid(P.fc.obj, yCyl(0.012, 0.057, 8), '#D6A93A', {metal: 0.8, rough: 0.3, x: sx * 0.09, y: -0.041, z: sz * 0.09});
+  solid(P.fc.obj, box(0.07, 0.03, 0.07), '#15171B', {x: 0.03, y: 0.01});
+  solid(P.rx.obj, box(0.08, 0.03, 0.12), '#15171B', {x: -0.065});
+  solid(P.rx.obj, yCyl(0.006, 0.2, 6), '#E9E4D8', {x: -0.065, y: 0.1, z: -0.05});
   solid(P.battery.obj, box(0.42, 0.1, 0.18), '#3A3F47', {rough: 0.5});
   solid(P.battery.obj, box(0.12, 0.102, 0.182), '#E3B341', {rough: 0.5});
 
   const M = new THREE.Matrix4();
   const rot = new THREE.Matrix4();
   for (const p of Object.values(P)) p.pose = M;
-  const c0 = at(0, 0.25);
+  const c0 = V(Cd.x, 0.25 * S, Cd.z);
   const tip = c0.clone();
   const [pos, vel, acc] = [V(), V(), V()];
   let w = 0;
   let spin = 0;
   return {
     parts: P,
+    tray: {z: 0.5, depth: 1.8},
     tip,
     driveY: 1.25,
     run: ({dt, now, on, target}) => {
@@ -200,7 +226,7 @@ export function buildDrone(scene: THREE.Scene): Model {
       spin += w * dt;
       for (const s of spinners) s.g.rotation.y = s.dir * spin;
       // bám điểm đích bằng lò xo – giảm chấn; thân nghiêng theo gia tốc ngang như drone thật: a = g·tanθ
-      if (on) acc.set(target ? target.x - C.x : 0, 1 + 0.04 * Math.sin(now / 400), target ? target.z - C.z : 0);
+      if (on) acc.set(target ? target.x - Cd.x : 0, 1 + 0.04 * Math.sin(now / 400), target ? target.z - Cd.z : 0);
       else acc.set(0, 0, 0);
       acc.sub(pos).multiplyScalar(8).addScaledVector(vel, -5).clampLength(0, 8);
       pos.addScaledVector(vel.addScaledVector(acc, dt), dt);

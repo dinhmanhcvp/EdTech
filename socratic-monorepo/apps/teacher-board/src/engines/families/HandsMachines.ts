@@ -9,11 +9,11 @@ import {glassify, loadModel, partOf} from './labParts';
  * nên không bị ẩn; quạt và cánh được thay bằng mô hình thật nhưng vẫn là chính nhóm đang quay. Chi tiết không có tên trong bảng dưới
  * (cụm xu-páp) giữ nguyên hình khối.
  */
-const SCENERY: Record<AssemblyKind, {node: string; at: [number, number, number]}> = {
+const SCENERY: Record<AssemblyKind, {node: string; at: [number, number, number]; scale?: number}> = {
   motor: {node: 'MotorStator', at: [-0.3, 0.58, -1.0]},
   engine: {node: 'EngineFrame', at: [-0.3, 0, -1.0]},
-  robot: {node: 'RobotBase', at: [-0.3, 0, -1.0]},
-  drone: {node: 'DronePad', at: [-0.3, 0, -1.0]},
+  robot: {node: 'RobotBase', at: [-0.3, 0, -1.0], scale: 1.3}, // = ROBOT_SCALE
+  drone: {node: 'DronePad', at: [-0.3, 0, -1.45], scale: 1.12}, // = DRONE_AT; chi tiết phóng 1,4 lần (DRONE_SCALE): bãi đỗ rộng ra theo, lùi về sau để không lấn khay
   pc: {node: 'PcCase', at: [-0.3, 0, -1.0]},
 };
 export const NODE_OF: Record<AssemblyKind, Record<string, string>> = {
@@ -40,6 +40,7 @@ export function dressMachine(kind: AssemblyKind, scene: THREE.Object3D, parts: D
       if (base) {
         scenery.forEach((o) => (o.visible = false));
         base.obj.position.set(...sc.at);
+        base.obj.scale.setScalar(sc.scale ?? 1);
         scene.add(base.obj);
       }
       for (const p of parts) {
@@ -67,7 +68,7 @@ export function dressMachine(kind: AssemblyKind, scene: THREE.Object3D, parts: D
             const prop = partOf(lib, 'DroneProp');
             if (!prop) return;
             g.clear();
-            for (const m of prop.mats) if (m.name === 'tint') m.color.set((g.userData.prop as number) > 0 ? '#F2B49F' : '#A9C6F2');
+            for (const m of prop.mats) if (m.name === 'tint') m.color.set((g.userData.prop as number) > 0 ? '#F28A66' : '#6FA3F0');
             g.add(prop.obj);
           }
         });

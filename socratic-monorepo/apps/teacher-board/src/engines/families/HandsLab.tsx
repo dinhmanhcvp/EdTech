@@ -459,6 +459,7 @@ const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: ()
     const m = input.mouse;
     const at = {x: ((e.clientX - r.left) / r.width) * 2 - 1, y: 1 - ((e.clientY - r.top) / r.height) * 2};
     m.active = true;
+    m.touch = e.pointerType !== 'mouse';
     if (down === undefined && !m.queue.length) Object.assign(m, at);
     else m.queue.push({...at, down: down ?? m.queue[m.queue.length - 1].down});
     return at;
@@ -471,9 +472,16 @@ const HandsShell: React.FC<{hint: string; render: (input: HandsInput, onFail: ()
           className="absolute inset-0"
           onPointerDownCapture={(e) => {
             const p = mouseAt(e);
-            if (input.grab(p.x, p.y)) {
+            // ngón tay không có di chuột trước và đầu ngón to: thử cả các điểm quanh chỗ chạm (cùng cỡ tầm bắt của tay) trước khi coi là kéo nền xoay máy quay
+            const r = e.currentTarget.getBoundingClientRect();
+            const near = (rad: number) => Array.from({length: 8}, (_, i) => (i * Math.PI) / 4).some((a) => input.grab(p.x + (Math.cos(a) * rad * r.height) / r.width, p.y + Math.sin(a) * rad));
+            if (input.grab(p.x, p.y) || (e.pointerType !== 'mouse' && (near(0.08) || near(0.15)))) {
               mouseAt(e, true);
-              e.currentTarget.setPointerCapture(e.pointerId);
+              try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+              } catch {
+                /* con trỏ đã kết thúc: bỏ qua, các sự kiện kế tiếp vẫn tới */
+              }
             }
           }}
           onPointerMove={(e) => mouseAt(e)}

@@ -7,6 +7,13 @@ const PT = "[A-Z]'?";
 export function expandPhrasing(text0: string): string {
   let t = text0;
   const SEG = "[A-Z]'?[A-Z]'?";
+  // đường trung trực: phải đổi TRƯỚC luật "XY cắt ZW tại P" bên dưới (nếu không "trung trực của CE cắt AH tại N" thành "CE giao AH tại N")
+  const TT = `(?:[Đđ]ường\\s*)?trung trực\\s*(?:của\\s*)?(?:đoạn thẳng\\s*|đoạn\\s*|cạnh\\s*)?(${SEG})`;
+  const LN = '(?:đường thẳng\\s*|cạnh\\s*|tia\\s*|đoạn thẳng\\s*)?';
+  // "Đường thẳng qua (điểm) A (và) song song với (đường thẳng) BC cắt (đường) trung trực của CE tại K"
+  t = t.replace(new RegExp(`(?:[Đđ]ường thẳng\\s*)?(?:đi\\s*)?qua\\s*(?:điểm\\s*)?(${PT})\\s*(?:,|và)?\\s*(song song|vuông góc)\\s*(?:với\\s*)?${LN}(${SEG})\\s*,?\\s*cắt\\s*${TT}\\s*(?:tại|ở)\\s*(?:điểm\\s*)?(${PT})(?![\\p{L}A-Z'])`, 'gu'), '$5 là giao trung trực $4 với đường qua $1 $2 $3');
+  // "Đường trung trực của (đoạn thẳng) CE cắt (đường thẳng) AH tại (điểm) N"
+  t = t.replace(new RegExp(`${TT}\\s*cắt\\s*${LN}(${SEG})\\s*(?:tại|ở)\\s*(?:điểm\\s*)?(${PT})(?![\\p{L}A-Z'])`, 'gu'), '$3 là giao trung trực $1 với $2');
   // "tam giác ABC nhọn có trực tâm H" → H là trực tâm
   t = t.replace(new RegExp(`\\s*,?\\s*(?:có|với)\\s*trực tâm\\s*(?:là\\s*)?(?:điểm\\s*)?(${PT})(?![\\p{L}A-Z'])`, 'gu'), '; $1 là trực tâm');
   // "Điểm A di động trên cung lớn BC" → A thuộc cung lớn BC

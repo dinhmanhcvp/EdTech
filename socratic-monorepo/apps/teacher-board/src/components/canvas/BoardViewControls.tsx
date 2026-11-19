@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import {ChevronLeft, ChevronRight, Maximize, Minimize, Minus, Plus, ScanSearch, FilePlus2, Trash2} from 'lucide-react';
+import {ChevronLeft, ChevronRight, Maximize, Minimize, Minus, Plus, ScanSearch, FilePlus2, Trash2, ArrowDownToLine} from 'lucide-react';
 
 interface Props {
   zoom: number;
@@ -16,6 +16,8 @@ interface Props {
   onNextPage: () => void;
   onAddPage: () => void;
   onDeletePage: () => void;
+  /** kéo dài trang hiện tại xuống dưới thêm nửa màn hình và cuộn tới chỗ trống */
+  onExtend?: () => void;
 }
 
 const btn = 'inline-flex items-center justify-center w-8 h-8 rounded-lg text-stone-700 hover:bg-stone-100 active:bg-stone-200 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer';
@@ -39,6 +41,11 @@ export const BoardViewControls: React.FC<Props> = (p) => (
       <button data-testid="page-delete" className={btn} onClick={p.onDeletePage} disabled={p.pageCount <= 1} title="Xóa trang này">
         <Trash2 className="w-4 h-4" />
       </button>
+      {p.onExtend && (
+        <button data-testid="board-extend" className={btn} onClick={p.onExtend} title="Kéo dài bảng xuống dưới (thêm chỗ viết; cuộn chuột để lên xuống)">
+          <ArrowDownToLine className="w-4 h-4" />
+        </button>
+      )}
     </div>
     <div className="flex items-center gap-0.5 px-1.5 py-1 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E6E4DD] shadow-[0_6px_24px_-8px_rgba(20,20,19,0.25)]">
       <button data-testid="zoom-out" className={btn} onClick={p.onZoomOut} title="Thu nhỏ (Ctrl + −)">

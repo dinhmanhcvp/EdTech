@@ -384,7 +384,8 @@ export function runCircleLore(api: LoreApi, sentences: string[], st: State): num
 
     // ---- "X giao ZW tại P" khi một đường là đường thẳng đi qua điểm mới...: để vòng dựng cũ xử lý
     // ---- đường thẳng cắt đường tròn tại điểm thứ hai: "AH giao (O) tại D", "MD cắt (O) tại C khác D"
-    if (c && o && oP && (r = /(?:[Tt]ia|[Đđ]oạn thẳng|[Đđ]ường thẳng)?\s*([A-Z]'?)([A-Z]'?)\s*(?:cắt|giao)\s*(?:(?:nửa\s*)?đường tròn\s*(?:\(\s*[A-Z]'?\s*(?:[;,][^)]*)?\)|tâm\s*[A-Z]'?)?|\(\s*[A-Z]'?\s*(?:[;,][^)]*)?\))\s*(?:tại|ở)\s*(?:điểm\s*)?(?:thứ\s*(?:hai|2)\s*(?:là\s*)?)?([A-Z]'?)(?![A-Za-z'])/u.exec(s)) && !has(r[3]) && has(r[1]) && has(r[2])) {
+    // "đường tròn tâm O bán kính OB" đã được viết lại thành "đường tròn tâm O đi qua B"
+    if (c && o && oP && (r = /(?:[Tt]ia|[Đđ]oạn thẳng|[Đđ]ường thẳng)?\s*([A-Z]'?)([A-Z]'?)\s*(?:cắt|giao)\s*(?:(?:nửa\s*)?đường tròn\s*(?:\(\s*[A-Z]'?\s*(?:[;,][^)]*)?\)|tâm\s*[A-Z]'?(?:\s*(?:đi\s*)?qua\s*(?:điểm\s*)?[A-Z]'?)?)?|\(\s*[A-Z]'?\s*(?:[;,][^)]*)?\))\s*(?:tại|ở)\s*(?:điểm\s*)?(?:thứ\s*(?:hai|2)\s*(?:là\s*)?)?([A-Z]'?)(?![A-Za-z'])/u.exec(s)) && !has(r[3]) && has(r[1]) && has(r[2])) {
       const [a, b] = [r[1], r[2]];
       const onc = (n: string) => Math.abs(len(sub(P(n)!, oP)) - c.r) < 1e-6;
       const outside = (n: string) => len(sub(P(n)!, oP)) > c.r * 1.0001;

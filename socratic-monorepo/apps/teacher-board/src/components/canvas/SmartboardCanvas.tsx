@@ -8,7 +8,7 @@ import { detectSolidSketch, detectPlaneShapeFromStrokes, frameStrokes, recentInT
 import { buildSketchWire } from '../../utils/sketchWire';
 import { shapeFromBlueprint, solidWire, planeStats, VERTEX_LABELS } from '../../utils/inlineShape';
 import { drawConstructsOnCtx, evalConstructs } from '../../utils/planeConstruct';
-import { type BoardView, FIT_VIEW, clampView, zoomAt, panBy, bufferQuality } from '../../utils/boardView';
+import { type BoardView, FIT_VIEW, clampView, zoomAt, panBy, bufferQuality, boardHeight } from '../../utils/boardView';
 import { BoardViewControls } from './BoardViewControls';
 import { looksLikeWords, matchViName } from '../../utils/viKeywords';
 import { InlineShape } from './InlineShape';
@@ -516,11 +516,28 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const [holoScale, setHoloScale] = useState<number>(1.0);
 
   // ---- Thu phóng / di chuyển bảng, nhiều trang, chữ, toàn màn hình (như các bảng trắng trực tuyến) ----
+  // Bảng phủ kín khung (không khóa 16:9): rộng 1200 đơn vị, cao theo tỉ lệ khung; kéo dài được xuống dưới (nút hoặc tự dài khi viết gần mép dưới)
+  const [wrapSz, setWrapSz] = useState({ w: 1200, h: 675 });
+  const [extraH, setExtraH] = useState(0);
+  const contentBottom = useMemo(() => {
+    let b = 0;
+    for (const s of strokes) {
+      const y0 = s.points[0]?.y ?? 0;
+      b = Math.max(b, y0 + (s.typeset?.h ?? 0));
+      for (const p of s.points) if (p.y > b) b = p.y;
+    }
+    return b;
+  }, [strokes]);
+  const boardH = boardHeight(wrapSz.w, wrapSz.h, extraH, contentBottom);
+  const boardHRef = useRef(boardH);
+  boardHRef.current = boardH;
+  /** chiều cao tờ giấy tính bằng px khung khi chưa phóng */
+  const paperH = (el: HTMLElement | null) => ((el?.clientWidth || 1200) * boardHRef.current) / 1200;
   const [view, setViewState] = useState<BoardView>(FIT_VIEW);
   const viewRef = useRef<BoardView>(FIT_VIEW);
   const applyView = (v: BoardView) => {
     const el = boardWrapRef.current;
-    const next = clampView(v, el?.clientWidth || 1200, el?.clientHeight || 675);
+    const next = clampView(v, el?.clientWidth || 1200, el?.clientHeight || 675, paperH(el));
     viewRef.current = next;
     setViewState(next);
   };
@@ -945,7 +962,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   };
 
   // Lớp nền đã vẽ sẵn (giấy + lưới + nét đã chốt): chỉ vẽ lại khi các thứ này đổi, còn nét đang viết chỉ chồng lên trên
-  const bufQ = bufferQuality(view.k);
+  // bảng kéo dài: giữ bộ đệm ≤ ~24 triệu điểm ảnh (canvas quá lớn làm trình duyệt hết bộ nhớ hoặc vẽ trắng)
+  const bufQ = Math.min(bufferQuality(view.k), Math.sqrt(24e6 / (1200 * boardH)));
   const baseCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const baseKeyRef = useRef<unknown[] | null>(null);
 
@@ -1071,7 +1089,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(base, 0, 0);
     }
-    ctx.setTransform(bufQ, 0, 0, bufQ, 0, 0); // từ đây vẽ theo tọa độ bảng 1200×675
+    ctx.setTransform(bufQ, 0, 0, bufQ, 0, 0); // từ đây vẽ theo tọa độ bảng (rộng 1200, cao boardH)
 
     // 3. Active freehand stroke
     if (currentStroke.length > 1) {
@@ -1411,7 +1429,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const toBoard = (canvas: HTMLCanvasElement, clientX: number, clientY: number, pressure?: number, pen = false): Point => {
     const rect = canvas.getBoundingClientRect();
     const sx = 1200 / (rect.width || 1);
-    const sy = 675 / (rect.height || 1);
+    const sy = sx; // canvas giữ đúng tỉ lệ 1200 : boardH nên tỉ lệ dọc = tỉ lệ ngang (không lệch khi bảng vừa dài thêm)
     const pt: Point = { x: (clientX - rect.left) * sx, y: (clientY - rect.top) * sy };
     if (pen && pressure !== undefined && pressure > 0) pt.p = pressure;
     return pt;
@@ -1513,7 +1531,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     if (pan && pan.id === e.pointerId) {
       const el = boardWrapRef.current;
       applyView(
-        panBy({ ...viewRef.current, tx: pan.tx, ty: pan.ty }, e.clientX - pan.sx, e.clientY - pan.sy, el?.clientWidth || 1200, el?.clientHeight || 675),
+        panBy({ ...viewRef.current, tx: pan.tx, ty: pan.ty }, e.clientX - pan.sx, e.clientY - pan.sy, el?.clientWidth || 1200, el?.clientHeight || 675, paperH(el)),
       );
       return;
     }
@@ -2140,9 +2158,17 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   const wrapSize = () => ({ W: boardWrapRef.current?.clientWidth || 1200, H: boardWrapRef.current?.clientHeight || 675 });
   const zoomStep = (f: number) => {
     const { W, H } = wrapSize();
-    applyView(zoomAt(viewRef.current, viewRef.current.k * f, W / 2, H / 2, W, H));
+    applyView(zoomAt(viewRef.current, viewRef.current.k * f, W / 2, H / 2, W, H, paperH(boardWrapRef.current)));
   };
   const fitView = () => applyView(FIT_VIEW);
+  /** Kéo dài trang xuống thêm nửa màn hình rồi cuộn tới cuối (chỗ trống mới) */
+  const extendBoard = () => {
+    const screen = boardHeight(wrapSz.w, wrapSz.h, 0, 0);
+    const next = boardH + Math.round(screen / 2);
+    setExtraH(next - screen);
+    boardHRef.current = next;
+    applyView({ ...viewRef.current, ty: -1e9 }); // clamp đưa về mép dưới của tờ giấy đã dài thêm
+  };
   const toggleFullscreen = () => {
     try {
       if (document.fullscreenElement) void document.exitFullscreen();
@@ -2182,6 +2208,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     setRedoStack([]);
     setSketchAlts(null);
     setTextDraft(null);
+    setExtraH(0); // trang khác: chiều dài theo nội dung của trang đó
   };
   const withCurrentPage = () => {
     const n = pages.slice();
@@ -2434,12 +2461,14 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       const r = el.getBoundingClientRect();
       const W = el.clientWidth;
       const H = el.clientHeight;
+      const CH = paperH(el);
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        applyView(zoomAt(v, v.k * Math.exp(-e.deltaY * 0.0025), e.clientX - r.left, e.clientY - r.top, W, H));
-      } else if (v.k > 1) {
+        applyView(zoomAt(v, v.k * Math.exp(-e.deltaY * 0.0025), e.clientX - r.left, e.clientY - r.top, W, H, CH));
+      } else if (v.k > 1 || CH * v.k > H + 1) {
+        // đã phóng to, hoặc bảng đã kéo dài quá một màn: cuộn để đi lên/xuống
         e.preventDefault();
-        applyView(panBy(v, -(e.shiftKey ? e.deltaY : e.deltaX), e.shiftKey ? 0 : -e.deltaY, W, H));
+        applyView(panBy(v, -(e.shiftKey ? e.deltaY : e.deltaX), e.shiftKey ? 0 : -e.deltaY, W, H, CH));
       }
     };
     el.addEventListener('wheel', onWheel, { passive: false });
@@ -2479,8 +2508,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     const [a, b] = Array.from(g.touches.values());
     const d = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
     const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    const z = zoomAt(g.v0, g.v0.k * (d / g.d0), g.mid0.x - r.left, g.mid0.y - r.top, el.clientWidth, el.clientHeight);
-    applyView(panBy(z, mid.x - g.mid0.x, mid.y - g.mid0.y, el.clientWidth, el.clientHeight));
+    const z = zoomAt(g.v0, g.v0.k * (d / g.d0), g.mid0.x - r.left, g.mid0.y - r.top, el.clientWidth, el.clientHeight, paperH(el));
+    applyView(panBy(z, mid.x - g.mid0.x, mid.y - g.mid0.y, el.clientWidth, el.clientHeight, paperH(el)));
   };
   const gestureUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType !== 'touch') return;
@@ -2533,9 +2562,13 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
   useEffect(() => {
     const el = boardWrapRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => setBoardScale((el.clientWidth || 1200) / 1200));
+    const sync = () => {
+      setBoardScale((el.clientWidth || 1200) / 1200);
+      setWrapSz({ w: el.clientWidth || 1200, h: el.clientHeight || 675 });
+    };
+    const ro = new ResizeObserver(sync);
     ro.observe(el);
-    setBoardScale((el.clientWidth || 1200) / 1200);
+    sync();
     return () => ro.disconnect();
   }, []);
 
@@ -2551,7 +2584,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     let href = canvas.toDataURL('image/png');
     if (octx) {
       octx.drawImage(canvas, 0, 0);
-      octx.scale(canvas.width / 1200, canvas.height / 675);
+      octx.scale(canvas.width / 1200, canvas.height / boardHRef.current);
       for (const s of strokes) {
         if (!s.typeset) continue;
         if (s.shape) {
@@ -2731,7 +2764,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       const shape = shapeFromBlueprint(bp, sw, sh);
       if (shape) {
         const ax = keepDrawn ? Math.max(0, Math.min(1200 - sw, bb.x0 - PAD)) : Math.max(0, Math.min(1200 - sw, centerX - sw / 2));
-        const ay = keepDrawn ? Math.max(0, Math.min(675 - sh, bb.y0 - PAD)) : Math.max(0, Math.min(675 - sh, centerY - sh / 2));
+        const ay = keepDrawn ? Math.max(0, Math.min(boardHRef.current - sh, bb.y0 - PAD)) : Math.max(0, Math.min(boardHRef.current - sh, centerY - sh / 2));
         if (keepDrawn && shape.solid) {
           shape.sketch = buildSketchWire(shape.solid.kind as SolidKind, shape.solid.dims, sketchGraph!, {x: ax, y: ay});
         }
@@ -2758,7 +2791,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       const targetW = 560;
       const targetH = 380;
       const newX = Math.max(10, Math.min(1200 - targetW - 10, centerX - targetW / 2));
-      const newY = Math.max(10, Math.min(675 - targetH - 10, centerY - targetH / 2));
+      const newY = Math.max(10, Math.min(boardHRef.current - targetH - 10, centerY - targetH / 2));
 
       saveToUndo();
       const selIds = new Set(strokesToTransform.map((s) => s.id));
@@ -3281,7 +3314,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 const targetW = 560;
                 const targetH = 380;
                 const newX = Math.max(10, Math.min(1200 - targetW - 10, centerX - targetW / 2));
-                const newY = Math.max(10, Math.min(675 - targetH - 10, centerY - targetH / 2));
+                const newY = Math.max(10, Math.min(boardHRef.current - targetH - 10, centerY - targetH / 2));
                 setHoloPosition({ x: Math.round(newX), y: Math.round(newY) });
                 saveToUndo();
                 setStrokes((prev) => prev.filter((s) => !ids.has(s.id)));
@@ -3558,7 +3591,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           onPointerCancelCapture={gestureUp}
           data-testid="board-wrap"
           data-zoom={view.k.toFixed(3)}
-          style={{ maxWidth: 'min(100vw, calc(100vh * 1.7778))' }} /* bảng phủ kín màn hình, giữ tỉ lệ 16:9 */
+          style={{ height: '100dvh' }} /* bảng phủ kín màn hình (không khóa 16:9): giấy cao theo tỉ lệ khung, dài hơn thì cuộn */
           className={`relative overflow-hidden bg-[#EDEBE5] ${
             (activeBlueprint && displayMode === 'DOCK') || isCompilingShimmer
               ? isSplitView
@@ -3576,7 +3609,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
             ref={canvasRef}
             data-testid="chalkboard-canvas"
             width={Math.round(1200 * bufQ)}
-            height={Math.round(675 * bufQ)}
+            height={Math.round(boardH * bufQ)}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -3723,7 +3756,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 data-testid="recognition-chip"
                 role="status"
                 className="absolute -translate-x-1/2 -translate-y-full -mt-1 px-3 py-1 rounded-full text-white text-xs font-semibold whitespace-nowrap shadow-lg bg-gradient-to-r from-blue-600 to-sky-500 animate-in fade-in zoom-in-95"
-                style={{ left: `${(recogChip.x / 1200) * 100}%`, top: `${(recogChip.y / 675) * 100}%` }}
+                style={{ left: `${(recogChip.x / 1200) * 100}%`, top: `${(recogChip.y / boardH) * 100}%` }}
               >
                 ✦ AI đã nhận ra: {recogChip.text}
               </div>
@@ -3752,7 +3785,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                 }}
                 placeholder="Gõ chữ rồi Enter…"
                 className="absolute pointer-events-auto bg-white/90 border-2 border-blue-500 rounded-md px-2 outline-none shadow-md"
-                style={{ left: `${(textDraft.x / 1200) * 100}%`, top: `${(textDraft.y / 675) * 100}%`, fontSize: Math.max(10, 30 * boardScale), color: strokeColor, minWidth: 160 * boardScale + 120, lineHeight: 1.3 }}
+                style={{ left: `${(textDraft.x / 1200) * 100}%`, top: `${(textDraft.y / boardH) * 100}%`, fontSize: Math.max(10, 30 * boardScale), color: strokeColor, minWidth: 160 * boardScale + 120, lineHeight: 1.3 }}
               />
             )}
             {strokes
@@ -3821,7 +3854,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                     }`}
                     style={{
                       left: `${(s.points[0].x / 1200) * 100}%`,
-                      top: `${(s.points[0].y / 675) * 100}%`,
+                      top: `${(s.points[0].y / boardH) * 100}%`,
                       width: t.w * boardScale,
                       height: t.h * boardScale,
                       pointerEvents: hidden ? 'auto' : 'none',
@@ -3844,7 +3877,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                   key={s.id}
                   data-testid="board-image"
                   className="absolute pointer-events-none"
-                  style={{ left: `${(s.points[0].x / 1200) * 100}%`, top: `${(s.points[0].y / 675) * 100}%`, width: s.typeset!.w * boardScale, height: s.typeset!.h * boardScale }}
+                  style={{ left: `${(s.points[0].x / 1200) * 100}%`, top: `${(s.points[0].y / boardH) * 100}%`, width: s.typeset!.w * boardScale, height: s.typeset!.h * boardScale }}
                 >
                   <div className="pointer-events-auto absolute left-0 -top-[22px] flex items-center gap-px rounded-md bg-white/90 border border-[#DCD9D0] shadow-sm opacity-40 hover:opacity-100 transition-opacity" style={{ fontSize: 11 }}>
                     <span data-testid="image-grip" title="Kéo để di chuyển" onPointerDown={(e) => onTypesetGripDown(e, s)} onPointerMove={onTypesetGripMove} onPointerUp={onTypesetGripUp} className="px-1.5 cursor-grab active:cursor-grabbing select-none touch-none text-stone-500">
@@ -3875,7 +3908,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
                     className="absolute"
                     style={{
                       left: `${(s.points[0].x / 1200) * 100}%`,
-                      top: `${(s.points[0].y / 675) * 100}%`,
+                      top: `${(s.points[0].y / boardH) * 100}%`,
                       fontSize: Math.max(8, t.size * boardScale),
                       color: s.color,
                       lineHeight: 1.3,
@@ -3953,7 +3986,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
               className="absolute z-20 pointer-events-auto select-none cursor-grab active:cursor-grabbing touch-none group"
               style={{
                 left: `${(holoPosition.x / 1200) * 100}%`,
-                top: `${(holoPosition.y / 675) * 100}%`,
+                top: `${(holoPosition.y / boardH) * 100}%`,
                 transform: `scale(${holoScale})`,
                 transformOrigin: 'top left',
                 // Họ có hình + bảng điều khiển đặt cạnh nhau: khung rộng hơn để hình to mà không cao quá bảng.
@@ -4194,6 +4227,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         onNextPage={() => goPage(pageIdx + 1)}
         onAddPage={addPage}
         onDeletePage={deletePage}
+        onExtend={extendBoard}
       />
       <AiFab
         selectionCount={selectedStrokes.length}
@@ -4237,7 +4271,7 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           if (selectedStrokes.length === 0 || !canvasRef.current) return null;
           const bb = bboxOfStrokes(selectedStrokes);
           const r = canvasRef.current.getBoundingClientRect();
-          return { x: r.left + (bb.x1 / 1200) * r.width + 130, y: r.top + ((bb.y0 + bb.y1) / 2 / 675) * r.height };
+          return { x: r.left + (bb.x1 / 1200) * r.width + 130, y: r.top + ((bb.y0 + bb.y1) / 2 / boardHRef.current) * r.height };
         })()}
         panel={
           selectedStrokes.length > 0 && !convertCtx

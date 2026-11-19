@@ -52,7 +52,7 @@ const KEYWORDS = [
   'đều', 'tâm', 'thuộc', 'giao', 'trùng', 'là', 'tại', 'cắt', 'bằng', 'góc', 'giữa', 'qua', 'kẻ', 'nối', 'đoạn', 'lên', 'trên', 'với', 'của', 'và', 'đứng',
   'tính', 'cho', 'gọi', 'chân', 'đường tròn', 'đường kính', 'ngoại tiếp', 'nội tiếp', 'trực tâm', 'trung tuyến', 'phân giác', 'lần lượt', 'sao cho', 'hình nón', 'hình trụ', 'hình cầu', 'khối nón', 'khối trụ', 'khối cầu', 'mặt cầu', 'bán kính', 'đường sinh',
 ];
-KEYWORDS.push('đường trung bình');
+KEYWORDS.push('đường trung bình', 'trung trực'); // "trung trực" không có trong danh sách thì bị khôi phục dấu thành "trùng trực"
 const KW_RE = new RegExp(`(?<!\\p{L})(?:${KEYWORDS.map((k) => k.replace(/ /g, '\\s+')).join('|')})(?!\\p{L})`, 'giu');
 
 const stripAccent = (w: string) => w.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
@@ -1304,6 +1304,40 @@ function addExtras(m: Model, text0: string): void {
         setDef(x, {k: 'll', p: c1.y, a: c1.z, b: c1.w, r: c1.rel, q: c2.y, c: c2.z, d: c2.w, s: c2.rel});
         for (const {y} of cs) addAux(x, y);
       }
+      // "N là giao trung trực CE với AH" / "K là giao trung trực CE với đường qua A song song BC" (câu do expandPhrasing viết lại)
+      for (const c of sentences) {
+        const r = /([A-Z]'?)\s*là giao trung trực\s*([A-Z]'?)([A-Z]'?)\s*với\s*(?:đường qua\s*([A-Z]'?)\s*(song song|vuông góc)\s*([A-Z]'?)([A-Z]'?)|([A-Z]'?)([A-Z]'?))(?![A-Za-z'])/u.exec(c);
+        if (!r || has(r[1]) || !has(r[2]) || !has(r[3])) continue;
+        const [x, y] = [r[2], r[3]];
+        const [q, cc, dd, s] = r[4] ? [r[4], r[6], r[7], r[5] === 'song song' ? ('par' as const) : ('perp' as const)] : [r[8], r[8], r[9], 'par' as const];
+        if (![q, cc, dd].every(has)) continue;
+        const mn = `#m${x}${y}`; // trung điểm ẩn tên: đường trung trực đi qua nó
+        if (!has(mn)) {
+          m.pts.set(mn, mul(add(P(x)!, P(y)!), 0.5));
+          m.order.push(mn);
+          m.ptPart.set(mn, m.cur);
+          m.defs.set(mn, {k: 'calc', f: 'mid', n: [x, y]});
+        }
+        const M = P(mn)!;
+        const v = sub(P(y)!, P(x)!);
+        const dir = (u: V3, w: V3): V3 => (s === 'par' ? sub(w, u) : [-(w[1] - u[1]), w[0] - u[0], 0]);
+        const X = lineIntersect(M, add(M, [-v[1], v[0], 0]), P(q)!, add(P(q)!, dir(P(cc)!, P(dd)!)));
+        if (!X) {
+          if (pass === 3) m.ignored.push(`trung trực ${x}${y} không cắt đường còn lại`);
+          continue;
+        }
+        define(r[1], X, `${r[1]} là giao của trung trực ${x}${y} với ${r[4] ? `đường qua ${q} ${r[5]} ${cc}${dd}` : `${cc}${dd}`}`);
+        setDef(r[1], {k: 'll', p: mn, a: x, b: y, r: 'perp', q, c: cc, d: dd, s});
+        addAux(x, y);
+        if (r[4]) addAux(q, r[1]);
+        else chainLine(cc, dd);
+        // vẽ đường trung trực qua mọi điểm đã có trên nó (trung điểm ẩn, N, K…), nối liền theo thứ tự
+        const on = m.order
+          .filter((n) => has(n) && Math.abs(dot(sub(P(n)!, M), v)) < 1e-6 * len(v) * Math.max(1, len(sub(P(n)!, M))))
+          .map((n) => ({n, t: dot(sub(P(n)!, M), [-v[1], v[0], 0])}))
+          .sort((a, b) => a.t - b.t);
+        for (let k = 0; k + 1 < on.length; k++) addAux(on[k].n, on[k + 1].n);
+      }
     }
     for (const c of clauses) {
       let r: RegExpExecArray | null;
@@ -1385,7 +1419,25 @@ function addExtras(m: Model, text0: string): void {
         }
         if (s && P(s[0]) && P(s[1])) {
           const ratio = ratioOnSegment(c, s[0], s[1], r[1]);
-          const tt = ratio ?? 1 / 3;
+          let tt = ratio ?? 1 / 3;
+          // "E thuộc AB sao cho AE lớn hơn AT": chọn vị trí thỏa bất đẳng thức (đợi các điểm khác của điều kiện được dựng xong)
+          const cmp = ratio === null ? /sao cho\s*([A-Z]'?)([A-Z]'?)\s*(lớn|nhỏ|bé|dài|ngắn)\s*hơn\s*([A-Z]'?)([A-Z]'?)(?![A-Za-z'])/u.exec(c) : null;
+          const me = r[1];
+          if (cmp && !has(me)) {
+            const others = [cmp[1], cmp[2], cmp[4], cmp[5]].filter((n) => n !== me);
+            if (!others.every(has)) {
+              if (pass < 3) continue;
+            } else {
+              const at = (t: number) => add(P(s[0])!, mul(sub(P(s[1])!, P(s[0])!), t));
+              const dist = (a: string, b: string, X: V3) => len(sub(a === me ? X : P(a)!, b === me ? X : P(b)!));
+              const ok = (t: number) => {
+                const X = at(t);
+                const [d1, d2] = [dist(cmp[1], cmp[2], X), dist(cmp[4], cmp[5], X)];
+                return /lớn|dài/.test(cmp[3]) ? d1 > d2 * 1.05 : d1 < d2 * 0.95;
+              };
+              tt = [1 / 3, 2 / 3, 0.5, 0.25, 0.75, 0.15, 0.85].find(ok) ?? tt;
+            }
+          }
           const fresh2 = !has(r[1]);
           if (fresh2) m.defs.set(r[1], ratio === null ? {k: 'seg', a: s[0], b: s[1], t: tt} : {k: 'seg', a: s[0], b: s[1], t: tt, fix: true});
           define(r[1], add(P(s[0])!, mul(sub(P(s[1])!, P(s[0])!), tt)), `${r[1]} thuộc ${r[2]}${tt !== 1 / 3 ? ` (tỉ lệ ${+tt.toFixed(3)})` : ''}`);

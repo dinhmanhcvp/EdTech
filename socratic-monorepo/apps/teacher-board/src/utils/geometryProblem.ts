@@ -2301,6 +2301,9 @@ export function cleanHandwritten(raw: string): string {
   // đoạn hai chữ cái bị tách ("S A ⊥", "trung điểm S B"): chỉ gộp khi đứng trước ký hiệu/từ quan hệ hoặc sau từ chỉ đoạn
   t = t.replace(/(?<![\p{L}'])([A-Z]'?)\s+([A-Z]'?)(?=\s*(?:⊥|∥|∩|≡|=|vuông|song|trùng|giao|là\s|cắt)(?![\p{L}]))/gu, '$1$2');
   t = t.replace(/(?<=(?:điểm|nối|đoạn|cạnh|thẳng|đường)\s)([A-Z]'?)\s+([A-Z]'?)(?![\p{L}'])/gu, '$1$2');
+  // đoạn thẳng đọc tách ở chỗ bất kỳ ("sao cho O H lớn hơn O A", "bán kính O B tại"): hai chữ hoa lẻ liền nhau; trừ danh sách điểm ("Gọi M N", "các điểm")
+  t = t.replace(/(?<!(?:[Gg]ọi|[Ll]ấy|các|và|hay|với|điểm|nối)\s)(?<![\p{L}'])([A-Z]'?)[ \t]+([A-Z]'?)(?![\p{L}'])(?!\s*[A-Z](?![\p{L}]))/gu, '$1$2');
+  t = t.replace(/chín\s*mươi\s*độ/gi, '90°').replace(/ba\s*mươi\s*độ/gi, '30°').replace(/sáu\s*mươi\s*độ/gi, '60°').replace(/bốn\s*mươi\s*lăm\s*độ/gi, '45°');
   t = t.replace(/(?<![\p{L}'])([A-Z]'?)\s*\.\s*((?:[A-Z]'?){3,})/gu, '$1.$2');
   return t.replace(/[ \t]+/g, ' ').trim();
 }

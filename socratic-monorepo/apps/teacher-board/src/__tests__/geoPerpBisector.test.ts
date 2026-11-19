@@ -41,4 +41,13 @@ describe('đường trung trực cắt một đường; giao thứ hai với "đ
     expect(d(N, C)).toBeCloseTo(d(N, E), 6);
     expect(d(K, C)).toBeCloseTo(d(K, E), 6);
   });
+
+  it('đề bị đọc tách chữ ("A B C", "O H lớn hơn O A") và số viết bằng chữ vẫn vẽ đủ', () => {
+    const tach = DE.replace(/(?<![\p{L}'])([A-Z])([A-Z])(?![\p{L}'])/gu, '$1 $2').replace('ABC', 'A B C').replace('90 độ', 'chín mươi độ');
+    const b = buildScene('Câu IV\n' + tach);
+    expect(b.ignored).toEqual([]);
+    for (const n of ['H', 'O', 'T', 'E', 'N', 'K', 'F']) expect(b.scene!.order).toContain(n);
+    check(b.scene!.pts as Record<string, V>);
+    expect(b.scene!.circles?.length).toBe(2);
+  });
 });

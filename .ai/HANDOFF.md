@@ -2400,3 +2400,6 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 ## 2026-11-19 · Đề "vuông cân" chỉ vẽ ra tam giác vuông
 - `geometryProblem.ts` describeBase: cờ `iso` khi đề ghi "vuông cân" (cả "vuông cân ở A", "tam giác vuông cân ABC tại C"); baseCoords đặt hai cạnh góc vuông bằng nhau (cho cạnh huyền thì cạnh góc vuông = huyền/√2).
 - Test `geoRightIso.test.ts`. Chưa commit.
+
+## 2026-11-19 · Đề Câu IV bị đọc tách chữ ("A B C", "O H lớn hơn O A", "chín mươi độ")
+- `cleanHandwritten` (geometryProblem.ts): gộp hai chữ hoa lẻ liền nhau thành tên đoạn (trừ sau gọi/lấy/các/và/hay/với/điểm/nối), và đổi "chín mươi độ" (30/45/60) thành số. Test thêm vào `geoPerpBisector.test.ts`. Chưa commit.

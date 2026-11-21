@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {choiceAt, dialAt, MEASURE_AT} from '../engines/families/HandsBench3D';
+import {choiceAt, dialAt} from '../engines/families/HandsBench3D';
 import {grabOf, isTimeUnit} from '../utils/lab/hands/benchMoves';
 import {PHYS_EXPERIMENTS} from '../utils/lab/phys/experiments';
 import {BIO_EXPERIMENTS} from '../utils/lab/bio/experiments';
@@ -16,7 +16,6 @@ const layout = (e: {id: string; sliders: {key: string; unit?: string}[]; choices
   const railed = e.sliders.filter((p) => !grabOf(e.id, p.key) && !isTimeUnit(p.unit ?? ''));
   const out: Ctl[] = [...timed, ...railed].map((_, j) => ({name: `núm ${j + 1}`, x: dialAt(j)[0], z: dialAt(j)[1], r: 0.32}));
   (e.choices ?? []).forEach((_, i) => out.push({name: `công tắc ${i + 1}`, x: choiceAt(i)[0], z: choiceAt(i)[1], r: 0.21}));
-  if (e.columns.length) out.push({name: 'nút đo', x: MEASURE_AT[0], z: MEASURE_AT[1], r: 0.33});
   return out;
 };
 

@@ -314,7 +314,6 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             press: () => cycle(c),
           }))
           .filter((_, i) => !BENCH_PICK[e.id]?.[e.choices![i].key]),
-        ...(e.columns.length ? [{at: MEASURE_AT, color: '#D9481C', r: 0.28, text: () => (setupDone() ? `${action} (lần ${live.st.rows.length + 1})` : `Bước ${stage + 1}/${setup.length}: ${setup[stage].label}`), press: () => (setupDone() ? live.dispatch({type: 'measure'}) : undefined)}] : []),
       ]);
       // bộ phận chỉ có sau khi mô hình tải xong nên danh sách lấy theo từng khung hình
       const unitText = (key: string) => `${fmt(live.st.p[key], 3)}${slider(key).unit ? ` ${slider(key).unit}` : ''}`;
@@ -407,12 +406,91 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         if (pokeRay.intersectObject(o, true).length) return true;
         return P.distAt(nx, ny, doBox.setFromObject(o).getCenter(pullPt)) < reach;
       };
+      // THAO TÁC LÀM THÍ NGHIỆM cho bài không có vật để kéo: một KHÓA / CẦN GẠT thật đặt trước dụng cụ. Bài điện: khóa dao (lưỡi đồng quay từ mở sang đóng);
+      // bài khác: cần trượt trên ray. Nắm tay cầm, gạt hết hành trình thì thí nghiệm chạy và ghi số đo; thả ra cần bật về vị trí mở.
+      const KNIFE = new Set(['OHM_LAW', 'EMF_INTERNAL_R', 'CAPACITOR_RC', 'TRANSFORMER', 'SPECIFIC_HEAT', 'WAVE_INTERFERENCE', 'STANDING_WAVE', 'SOUND_FREQUENCY']);
+      const knife = KNIFE.has(e.id);
+      const levOn = e.columns.length > 0 && !pull;
+      const lev = new THREE.Group();
+      const levBase = new THREE.MeshStandardMaterial({color: knife ? '#1A1A1C' : '#2A2E66', roughness: 0.5});
+      const levMetal = new THREE.MeshStandardMaterial({color: '#C98A4A', metalness: 0.8, roughness: 0.3});
+      const levHandle = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 12), new THREE.MeshStandardMaterial({color: '#FF8A3D', emissive: '#FF8A3D', emissiveIntensity: 0.5, roughness: 0.4}));
+      const blade = new THREE.Group();
+      if (knife) {
+        const base = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.06, 0.3), levBase);
+        base.position.set(0.3, 0.03, 0);
+        lev.add(base);
+        for (const px of [0, 0.62]) {
+          const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.12, 14), levMetal);
+          post.position.set(px, 0.12, 0);
+          lev.add(post);
+        }
+        const bl = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.025, 0.06), levMetal);
+        bl.position.set(0.31, 0, 0);
+        blade.add(bl);
+        levHandle.position.set(0.66, 0, 0);
+        blade.add(levHandle);
+        blade.position.set(0, 0.18, 0);
+        lev.add(blade);
+      } else {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.16), levBase);
+        rail.position.set(0.55, 0.025, 0);
+        lev.add(rail);
+        const groove = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.012, 0.04), new THREE.MeshStandardMaterial({color: '#0B0E2A'}));
+        groove.position.set(0.55, 0.055, 0);
+        lev.add(groove);
+        const goal = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.015, 20), new THREE.MeshStandardMaterial({color: '#3CCB7F', emissive: '#3CCB7F', emissiveIntensity: 0.5}));
+        goal.position.set(1.1, 0.06, 0);
+        lev.add(goal);
+        levHandle.position.set(0.05, 0.14, 0);
+        lev.add(levHandle);
+      }
+      lev.visible = false;
+      root.add(lev);
+      const levTag = k.label('', '#D9481C');
+      let levT = 0;
+      let levHeld = -1;
+      let levLock = false;
+      let levPlaced = false;
+      const levPos = new THREE.Vector3();
+      const levW = new THREE.Vector3();
+      const levPlane = new THREE.Plane();
+      const levQ = new THREE.Vector3();
+      const KNIFE_OPEN = 1.15;
+      /** đặt khóa ở mép phía người nhìn của bộ dụng cụ, lệch sang trái để không đè nút chọn */
+      const levPlace = () => {
+        if (levPlaced || !setObj) return;
+        const bb = new THREE.Box3().setFromObject(setObj);
+        const a = root.worldToLocal(bb.min.clone());
+        const b = root.worldToLocal(bb.max.clone());
+        levPos.set(Math.max(-2.6, Math.min(1.6, (a.x + b.x) / 2 - 0.6)), 0.0, Math.min(1.9, Math.max(a.z, b.z) + 0.55));
+        lev.position.copy(levPos);
+        levPlaced = true;
+      };
+      const levHandleWorld = (out: THREE.Vector3) => levHandle.getWorldPosition(out);
+      const levNear = (nx: number, ny: number, reach: number) => {
+        if (!levOn || !levPlaced || !setupDone()) return false;
+        root.updateMatrixWorld();
+        return P.distAt(nx, ny, levHandleWorld(levW)) < reach;
+      };
+      /** tiến độ 0..1 của cần theo vị trí con trỏ: khóa dao = góc lưỡi, cần trượt = vị trí trên ray */
+      const levFrom = (nx: number, ny: number) => {
+        pokeRay.setFromCamera(pokeV.set(nx, ny), k.camera);
+        root.updateMatrixWorld();
+        const o = lev.localToWorld(levW.set(0, knife ? 0.18 : 0.14, 0));
+        levPlane.setFromNormalAndCoplanarPoint(knife ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0), o);
+        const q = pokeRay.ray.intersectPlane(levPlane, levQ);
+        if (!q) return levT;
+        lev.worldToLocal(q);
+        if (knife) return 1 - Math.max(0, Math.min(KNIFE_OPEN, Math.atan2(q.y - 0.18, q.x))) / KNIFE_OPEN;
+        return Math.max(0, Math.min(1, (q.x - 0.05) / 1.05));
+      };
       const HOLD = 1.0;
       const holdT: number[] = P.ptrs.map(() => 0);
       const holdLock: boolean[] = P.ptrs.map(() => false);
       let holdShow = 0;
       const doBox = new THREE.Box3();
-      P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny) || timerGrabs.grab(nx, ny) || nearMark(nx, ny, 0.1) || !!pickAt(nx, ny, 0.1) || (setupDone() && (pull ? pullNear(nx, ny, 0.09) : onMover(nx, ny))));
+      P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny) || timerGrabs.grab(nx, ny) || nearMark(nx, ny, 0.1) || !!pickAt(nx, ny, 0.1) || levNear(nx, ny, 0.1) || (setupDone() && (pull ? pullNear(nx, ny, 0.09) : levOn ? false : onMover(nx, ny))));
 
       // chuyển động của bài: dụng cụ chạy theo quy luật vật lí của bài (benchMotion.ts)
       const fx = (BENCH_FX[e.id] ?? BIO_FX[e.id])?.({
@@ -494,6 +572,21 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           }
           if (pk) return;
           const n2 = P.ptrs.indexOf(ptr);
+          if (levOn && setupDone()) {
+            if (levHeld < 0 && ptr.pressed && ptr.active && !grabs.grab(x, y, r) && !timerGrabs.grab(x, y, r) && !sliders.grab(x, y) && !buttons.grab(x, y, r) && levNear(x, y, Math.max(0.12, ptr.reach))) levHeld = n2;
+            if (levHeld === n2) {
+              ptr.hot = true;
+              if (ptr.active && ptr.down) {
+                levT = levFrom(x, y);
+                if (levT >= 0.95 && !levLock) {
+                  levLock = true;
+                  live.dispatch({type: 'measure'});
+                }
+              } else levHeld = -1;
+            }
+            holdT[n2] = 0;
+            return;
+          }
           if (pull && setupDone()) {
             const o = pullObj();
             if (o && pullHeld < 0 && ptr.pressed && ptr.active && !grabs.grab(x, y, r) && !timerGrabs.grab(x, y, r) && !sliders.grab(x, y) && !buttons.grab(x, y, r) && pullNear(x, y, Math.max(0.1, ptr.reach))) {
@@ -549,6 +642,21 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           const d = pullHeld >= 0 ? pullD : pullFrom;
           if (o && d > 0) o.position.addScaledVector(pullDir, d);
         }
+        // cần gạt / khóa dao: chỉ hiện khi đã chuẩn bị xong; thả ra thì bật về vị trí mở
+        if (levOn) {
+          levPlace();
+          lev.visible = levPlaced && setupDone();
+          if (levHeld < 0) {
+            levT = Math.max(0, levT - dt * 2.2);
+            if (levT < 0.3) levLock = false;
+          }
+          if (knife) blade.rotation.z = (1 - levT) * KNIFE_OPEN;
+          else levHandle.position.x = 0.05 + levT * 1.05;
+          if (lev.visible) {
+            root.updateMatrixWorld();
+            levTag(lev.localToWorld(levW.set(0.45, 0.55, 0)), undefined, levHeld >= 0 ? `${Math.round(levT * 100)} % — ${knife ? 'đóng hẳn khóa' : 'gạt hết cần'} để: ${action.toLowerCase()}` : `${knife ? 'Nắm tay cầm, gạt khóa xuống để' : 'Nắm núm, gạt cần sang ô xanh để'}: ${action.toLowerCase()}`);
+          } else levTag(null);
+        }
         // cục cam của bước chuẩn bị hiện tại: đặt ở mép bàn (phía người nhìn), kéo vào vòng cam
         if (!setupDone()) {
           if (puckFor !== stage) {
@@ -581,7 +689,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           m.tag(root.localToWorld(markWorld.set(...setup[i].at)).setY(markWorld.y + 0.5), undefined, `Bước ${i + 1}/${setup.length}: ${setup[i].label}`);
         });
         const tg = targets();
-        if (tg.length && e.columns.length && setupDone()) {
+        if (tg.length && e.columns.length && setupDone() && !levOn) {
           const at = doBox.setFromObject(tg[0]).getCenter(new THREE.Vector3());
           doTag(at.setY(doBox.max.y + (tg[0] === setObj ? 0.35 : 0.5)), undefined, pull ? (pullHeld >= 0 ? `Kéo ${Math.round((pullD / pull.max) * 100)} % — thả ra để: ${action.toLowerCase()}` : `Chụm vào ${pull.what}`) : holdShow > 0.02 ? `Đang ${action.toLowerCase()}… ${Math.round(Math.min(1, holdShow) * 100)} %` : `Giữ chụm để làm: ${action}`);
         } else doTag(null);

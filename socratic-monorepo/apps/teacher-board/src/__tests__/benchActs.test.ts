@@ -2,7 +2,9 @@ import {readFileSync} from 'fs';
 import {join} from 'path';
 import {describe, expect, it} from 'vitest';
 import {OVER_R, dropped, wirePath, newSqueeze, newStir, pourStep, pourTilt, squash, squeezeStep, stirProgress, stirStep} from '../utils/lab/hands/benchActs';
-import {BENCH_SETUP, benchManual} from '../utils/lab/hands/benchMoves';
+import {BENCH_MOVES, BENCH_SETUP, benchManual} from '../utils/lab/hands/benchMoves';
+import {FX_PARTS} from '../engines/families/benchMotion';
+import {BIO_FX_PARTS} from '../engines/families/benchMotionBio';
 
 const nodes = (file: string): Set<string> => {
   const b = readFileSync(join(__dirname, '../../public/models', file));
@@ -77,13 +79,29 @@ describe('thao tác thật trong bước chuẩn bị (đặt, rót, khuấy, b�
     expect([...kinds].sort()).toEqual(['connect', 'pour', 'place', 'press', 'squeeze', 'stir'].sort());
     for (const [id, s] of acts) {
       const a = s.act!;
-      if (a.kind === 'press') continue; // bấm công tắc trên thiết bị: không có vật
+      if (a.kind === 'press' || a.part !== undefined) continue; // bấm công tắc / dùng phần động có sẵn: không có vật trong bench-props.glb
       expect(g.has(`Prop_${a.prop}`), `${id}: ${a.prop}`).toBe(true);
       for (const v of [a.from[0], s.at[0]]) expect(Math.abs(v), id).toBeLessThanOrEqual(3.1);
       expect(a.from[2], `${id} vật nằm ở mép bàn phía người nhìn`).toBeGreaterThanOrEqual(1.3);
       if (a.kind === 'stir') expect(a.n ?? 3, id).toBeGreaterThanOrEqual(2);
       if (a.kind === 'pour') expect(a.color, id).toBeTruthy();
     }
+  });
+
+  it('bước dùng phần động có sẵn: phần đó có trong bộ dụng cụ và được cảnh nạp (BENCH_MOVES hoặc phần chạy tự do)', () => {
+    const phys = nodes('bench-phys.glb');
+    const bio = nodes('bench-bio.glb');
+    let n = 0;
+    for (const [id, steps] of Object.entries(BENCH_SETUP))
+      for (const s of steps) {
+        const part = s.act?.part;
+        if (part === undefined) continue;
+        n++;
+        expect(phys.has('Mov_' + id + '_' + part) || bio.has('Mov_' + id + '_' + part), id + ': phần động trong GLB').toBe(true);
+        const loaded = (BENCH_MOVES[id] ?? []).some((m) => m.n === part) || (FX_PARTS[id] ?? BIO_FX_PARTS[id] ?? []).includes(part);
+        expect(loaded, id + ': phần động được cảnh nạp').toBe(true);
+      }
+    expect(n).toBeGreaterThanOrEqual(14);
   });
 
   it('hướng dẫn của bài nói đúng thao tác thật (rót, khuấy, bóp, đặt), không còn "cục cam" cho bước đã đổi', () => {

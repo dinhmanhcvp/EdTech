@@ -286,10 +286,17 @@ for (const [id, i] of [['SOUND_FREQUENCY', 1], ['SOUND_SPEED', 0], ['CELL_OBSERV
   if (st) st.act = press(st.label, '', [0, 0, 0], st.at).act;
 }
 
+// Cơ học: cầm CHÍNH phần động của bộ dụng cụ (xe, cổng quang, quả cân, khối gỗ, bi, pit-tông, lò xo…) đặt vào chỗ của nó; không dựng thêm vật nên không trùng
+const fit = (id: string, i: number, part: number) => {
+  const st = BENCH_SETUP[id]?.[i];
+  if (st) st.act = place(st.label, '', edge(st.at[0] + (st.at[0] < 0 ? 0.9 : -0.9)), st.at, {part}).act;
+};
+for (const [id, i, part] of [['SPEED', 0, 2], ['SPEED', 1, 1], ['NEWTON2', 0, 2], ['NEWTON2', 1, 1], ['FREE_FALL_G', 0, 2], ['FREE_FALL_G', 1, 1], ['FRICTION', 0, 2], ['HOOKE', 0, 1], ['PENDULUM_G', 0, 2], ['BOYLE', 1, 1], ['LEVER_MOMENT', 1, 3], ['PROJECTILE_HORIZONTAL', 1, 2], ['ERROR_MEASURE', 1, 1], ['EM_INDUCTION', 1, 1], ['QUADRAT', 1, 1], ['COMMUNITY', 1, 1]] as const) fit(id, i, part);
+
 /** cách làm bằng tay của từng kiểu thao tác thật (cho tab Hướng dẫn); chỉ cần chụm, kéo, giữ yên, vẽ vòng, chụm–nhả */
 const PROP_NAME: Record<string, string> = {slide: 'lam kính', cover: 'lamen', rack: 'giá ống nghiệm', bottle: 'lọ thuốc thử', jug: 'cốc nước', pestle: 'chày', rod: 'đũa thủy tinh', bulb: 'bóng bơm', flask: 'bình tam giác', disc: 'lát cắt thân cây', foil: 'lá nhôm', jar: 'hũ', plug: 'phích cắm'};
 const ACT_HOW: Record<BenchAct['kind'], (a: BenchAct) => string> = {
-  place: (a) => `Đặt ${PROP_NAME[a.prop] ?? 'vật'}: chụm vật đang nằm ở mép bàn gần bạn, kéo tới vòng cam rồi buông; thả lệch thì vật tự trở về chỗ cũ.`,
+  place: (a) => a.part !== undefined ? 'Đặt đúng chỗ: chụm bộ phận của dụng cụ (đang để ở mép bàn gần bạn), kéo tới vòng cam rồi buông; thả lệch thì bộ phận tự về mép bàn.' : `Đặt ${PROP_NAME[a.prop] ?? 'vật'}: chụm vật đang nằm ở mép bàn gần bạn, kéo tới vòng cam rồi buông; thả lệch thì vật tự trở về chỗ cũ.`,
   pour: (a) => `Rót từ ${PROP_NAME[a.prop] ?? 'lọ'}: chụm lọ, đưa MIỆNG LỌ tới vòng cam rồi giữ yên: lọ tự nghiêng và rót, giữ càng lâu càng được nhiều (cần chừng ${a.n ?? 2} giây); nhấc ra thì ngừng, phần đã rót vẫn còn.`,
   stir: (a) => `Khuấy bằng ${PROP_NAME[a.prop] ?? 'dụng cụ'}: chụm, đưa đầu dụng cụ vào vòng cam rồi vẽ vòng tròn quanh tâm vòng (${a.n ?? 3} vòng, theo chiều nào cũng được); nhãn ghi số vòng đã khuấy.`,
   press: () => 'Bật: đưa con trỏ tới vòng cam ở công tắc của thiết bị rồi chụm một lần (như bấm công tắc thật); vòng chớp sáng là đã bật.',

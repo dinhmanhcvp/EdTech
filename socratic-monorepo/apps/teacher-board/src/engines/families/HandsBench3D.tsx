@@ -291,7 +291,13 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           propLib = l;
         })
         .catch(() => undefined);
-      const A = {for: -1, obj: null as THREE.Object3D | null, held: -1, prog: 0, tilt: 0.12, sq: 0, stir: newStir(), pump: newSqueeze(), lipH: 0.4};
+      const A = {part: false, off: new THREE.Vector3(), home: new THREE.Vector3(), for: -1, obj: null as THREE.Object3D | null, held: -1, prog: 0, tilt: 0.12, sq: 0, stir: newStir(), pump: newSqueeze(), lipH: 0.4};
+      // phần động có sẵn của bộ dụng cụ (`Mov_*`: xe, cổng quang, quả cân, bi, pit-tông…) làm vật để cầm: dịch ra mép bàn bằng một độ lệch `off` cộng lên sau mọi hiệu ứng
+      const partOffs = new Map<THREE.Object3D, THREE.Vector3>();
+      const partAnims: {off: THREE.Vector3; from: THREE.Vector3; to: THREE.Vector3; t: number}[] = [];
+      const partTo = (off: THREE.Vector3, to: THREE.Vector3) => partAnims.push({off, from: off.clone(), to: to.clone(), t: 0});
+      const localCenter = (o: THREE.Object3D) => root.worldToLocal(new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()));
+      if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') (window as unknown as {__bench?: unknown}).__bench = {A, partOffs, byN, stageOf: () => stage, setup};
       const anims: {obj: THREE.Object3D; from: THREE.Vector3; to: THREE.Vector3; ry: number; t: number}[] = [];
       const actTag = k.label('', '#D9481C');
       const streamMat = new THREE.MeshStandardMaterial({color: '#9CD0F0', transparent: true, opacity: 0.85, roughness: 0.1});
@@ -330,6 +336,18 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           A.obj = null;
           return;
         }
+        if (a.part !== undefined) {
+          const q = byN.get(a.part);
+          if (!q) {
+            A.for = stage;
+            A.obj = null;
+            return actFinish(); // thiếu phần động: bỏ qua bước, không để học sinh kẹt
+          }
+          const off = new THREE.Vector3(a.from[0] - q.base.x, 0.06 - q.base.y, a.from[2] - q.base.z);
+          partOffs.set(q.obj, off);
+          Object.assign(A, {for: stage, obj: q.obj, part: true, off, home: off.clone(), held: -1, prog: 0, tilt: 0.12, sq: 0, lipH: 0.3});
+          return;
+        }
         const sk = partOf(propLib, `Prop_${a.prop}`);
         if (!sk) {
           A.for = stage;
@@ -346,7 +364,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           root.add(line);
           wires.push({line, obj: sk.obj, anchor: [a.from[0], 0.05, a.from[2] + 0.55], h: new THREE.Box3().setFromObject(sk.obj).getSize(new THREE.Vector3()).y});
         }
-        Object.assign(A, {for: stage, obj: sk.obj, held: -1, prog: 0, tilt: 0.12, sq: 0, stir: newStir(), pump: newSqueeze(), lipH: Math.max(0.2, bb.max.y - sk.obj.position.y)});
+        Object.assign(A, {part: false, for: stage, obj: sk.obj, held: -1, prog: 0, tilt: 0.12, sq: 0, stir: newStir(), pump: newSqueeze(), lipH: Math.max(0.2, bb.max.y - sk.obj.position.y)});
       };
       /** nhận một con trỏ cho bước thao tác thật; true = con trỏ đang dùng cho vật này */
       const actInput = (ptr: (typeof P.ptrs)[number], n: number, dt: number): boolean => {
@@ -369,7 +387,8 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         const r = Math.max(0.14, ptr.reach);
         const [ax, ay, az] = setup[stage].at;
         const home = new THREE.Vector3(...a.from);
-        const grab = o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0));
+        // trong vòng lặp con trỏ các phần động vừa được đặt lại về vị trí gốc (độ lệch `off` được cộng ở cuối khung hình): tâm thật = tâm gốc + off
+        const grab = A.part ? localCenter(o).add(A.off) : o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0));
         const nearProp = ptr.active && P.distAt(x, y, worldPt(grab)) < r;
         if (A.held < 0 && ptr.pressed && nearProp) A.held = n;
         if (A.held !== n) return false;
@@ -379,6 +398,25 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           A.pump = squeezeStep(A.pump, down, true);
           if (!down) A.held = -1;
           if (A.pump.pumps >= (a.n ?? 5)) actFinish();
+          return true;
+        }
+        if (A.part) {
+          // phần động của bộ dụng cụ: buông đúng vòng cam thì về chỗ của nó (độ lệch về 0), không thì về mép bàn
+          if (!down) {
+            if (dropped(P.distAt(x, y, worldPt(new THREE.Vector3(ax, ay, az))), Math.max(0.18, ptr.reach))) {
+              partTo(A.off, new THREE.Vector3());
+              actFinish();
+            } else {
+              A.held = -1;
+              partTo(A.off, A.home);
+            }
+            return true;
+          }
+          const hp = localAt(x, y, ay);
+          const c = localCenter(o).add(A.off);
+          A.off.x += Math.max(-3.1, Math.min(3.1, hp.x)) - c.x;
+          A.off.z += Math.max(-1.7, Math.min(2.6, hp.z)) - c.z;
+          A.off.y += (ay + 0.25 - c.y) * 0.5;
           return true;
         }
         if (!down) {
@@ -421,7 +459,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         if (pa?.kind === 'press') return P.distAt(nx, ny, worldPt(new THREE.Vector3(...setup[stage].at))) < Math.max(0.18, reach);
         const o = A.obj;
         if (!curAct() || !o || A.for !== stage) return false;
-        return A.held >= 0 || P.distAt(nx, ny, worldPt(o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0)))) < reach;
+        return A.held >= 0 || P.distAt(nx, ny, worldPt(A.part ? localCenter(o) : o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0)))) < reach;
       };
       const frameAct = (dt: number, elapsed: number) => {
         ensureProp();
@@ -433,6 +471,12 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           m.obj.rotation.y += (m.ry - m.obj.rotation.y) * u;
           if (m.t >= 1) anims.splice(i, 1);
         }
+        for (const m of partAnims) {
+          m.t = Math.min(1, m.t + dt / 0.35);
+          m.off.lerpVectors(m.from, m.to, m.t * m.t * (3 - 2 * m.t));
+        }
+        for (let i = partAnims.length - 1; i >= 0; i--) if (partAnims[i].t >= 1) partAnims.splice(i, 1);
+        for (const [po, off] of partOffs) po.position.add(off);
         // dây nối theo đuôi phích (cả phích đang cầm và phích đã nối xong)
         for (const w of wires) setLine(w.line, wirePath(w.anchor, [w.obj.position.x, w.obj.position.y + w.h, w.obj.position.z]).flat());
         const a = curAct();

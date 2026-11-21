@@ -22,6 +22,8 @@ export interface BenchAct {
   rot?: number;
   /** place: chỗ vật nằm sau khi đặt (gốc ở giữa đáy), khi khác chỗ vòng cam (vòng cam nổi lên trên để dễ thấy, vật thì nằm trong cốc / bể) */
   rest?: [number, number, number];
+  /** place: dùng chính phần động `Mov_<MÃ BÀI>_<part>` của bộ dụng cụ làm vật để cầm (xe, cổng quang, quả cân…) thay vì vật trong `bench-props.glb` */
+  part?: number;
   /** nhãn động từ của chỉ dẫn trên cảnh: "Rót", "Khuấy", "Bóp bóng", "Đặt" */
   verb: string;
 }

@@ -34,7 +34,7 @@ export interface Kit {
   line(color: string, width: number, pts?: number[], segments?: boolean): FatLine;
   arrow(color: string, radius?: number): Arrow3;
   /** nhãn HTML bám theo một điểm 3D; gọi với null để ẩn. `parent` = nhóm chứa điểm (để đổi về toạ độ thế giới) */
-  label(text: string, color?: string, plain?: boolean): (at: THREE.Vector3 | null, parent?: THREE.Object3D, text?: string) => void;
+  label(text: string, color?: string, plain?: boolean, size?: number): (at: THREE.Vector3 | null, parent?: THREE.Object3D, text?: string) => void;
   /** thẻ thông tin nhiều dòng bám theo một điểm 3D (tính chất chất, phản ứng đang xảy ra); gọi với at = null để ẩn, `rows` để đổi nội dung */
   card(color?: string): (at: THREE.Vector3 | null, rows?: CardRow[]) => void;
   /** chú thích góc trên trái: dòng đầu đậm */
@@ -272,12 +272,13 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
           },
         };
       },
-      label: (text, color, plain = false) => {
+      label: (text, color, plain = false, size) => {
         const sp = document.createElement('span');
         sp.className = plain
           ? 'pointer-events-none absolute -translate-x-1/2 -translate-y-[130%] whitespace-nowrap text-[13px] font-semibold'
           : `pointer-events-none absolute -translate-x-1/2 -translate-y-[200%] whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums shadow-sm ${dark ? 'border-white/20 bg-[#11143A]/85 text-[#E8E6F5]' : 'border-[#1D1B16]/15 bg-[#FBF9F4]/90 text-[#1D1B16]'}`;
         if (plain) {
+          if (size) sp.style.fontSize = `${size}px`;
           sp.style.color = color ?? (dark ? '#E8E6F5' : '#1D1B16');
           sp.style.textShadow = dark ? '0 0 4px #0B0E2A' : '0 0 3px #FBF9F4, 0 0 3px #FBF9F4';
         } else if (color) {

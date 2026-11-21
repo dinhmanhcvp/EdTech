@@ -115,7 +115,7 @@ export const ORGAN_SCENES: Record<string, SceneDef> = {
     orbit: () => [0, 8],
     setup: (k) => {
       const P = parts(k);
-      const hint = 'Chạm một bộ phận để xem chi tiết; kéo để xoay xem (xanh: máu nghèo O₂, đỏ: máu giàu O₂)';
+      const hint = 'Chạm một bộ phận để xem chi tiết · xanh: nghèo O₂, đỏ: giàu O₂';
       const name = (s: Record<string, string>) => (id: string) => s[`L:${id}`] || s[`T:${id}`] || id;
       // tim Blender cắt bổ, co bóp, van đóng mở; không tải được mô hình thì dùng bản hình khối cũ
       let draw: (s: Record<string, string>) => void = blenderHeart(k, (id, o) => P.add(id, o), () => (draw = primitiveHeart(k, P)));

@@ -293,8 +293,19 @@ const fit = (id: string, i: number, part: number) => {
 };
 for (const [id, i, part] of [['SPEED', 0, 2], ['SPEED', 1, 1], ['NEWTON2', 0, 2], ['NEWTON2', 1, 1], ['FREE_FALL_G', 0, 2], ['FREE_FALL_G', 1, 1], ['FRICTION', 0, 2], ['HOOKE', 0, 1], ['PENDULUM_G', 0, 2], ['BOYLE', 1, 1], ['LEVER_MOMENT', 1, 3], ['PROJECTILE_HORIZONTAL', 1, 2], ['ERROR_MEASURE', 1, 1], ['EM_INDUCTION', 1, 1], ['QUADRAT', 1, 1], ['COMMUNITY', 1, 1]] as const) fit(id, i, part);
 
+// Sinh thực vật và thí nghiệm "rót / quét / bón / phát phiếu": dùng lọ, hũ, tờ phiếu và vòng bít thật (bench-props.glb)
+withAct('MITOSIS_SLIDE', 0, pour('Nhuộm đầu rễ bằng orcein', 'bottle', edge(0.9), [0.3, 0.3, 0.55], {color: '#C0392B', n: 1.4}));
+withAct('PIGMENT', 0, pour('Chấm dịch chiết lên giấy sắc kí', 'bottle', edge(1.4), [0.8, 0.35, 0], {color: '#3F8F3A', n: 1.2}));
+withAct('PROPAGATION', 1, pour('Quét auxin lên cành', 'bottle', edge(0.4), [1.2, 0.35, -0.3], {color: '#E3B341', n: 1.4}));
+withAct('MODIFICATION', 1, pour('Bón phân đạm đều các chậu', 'jar', edge(0.2), [0.9, 0.5, -0.2], {color: '#DDE6EE'}));
+withAct('MINI_ECOSYSTEM', 0, pour('Rải cát, trồng cây thủy sinh', 'jar', edge(-1.4), [-0.5, 0.2, 0.2], {color: '#D9C49A'}));
+withAct('SEED_RESPIRATION', 0, pour('Cho hạt vào bình, đậy nút', 'jar', edge(-0.6), [-1.5, 0.5, 0], {color: '#C9A66A', n: 1.4}));
+withAct('VIRUS_SURVEY', 0, place('Phát phiếu khảo sát', 'paper', edge(-0.7), [-1.6, 0.25, 0.3]));
+withAct('VIRUS_SURVEY', 1, place('Thu phiếu về bàn tổng hợp', 'paper', edge(0.1), [0.7, 0.35, 0.2]));
+withAct('CIRCULATION', 0, place('Quấn vòng bít vào cánh tay', 'cuff', edge(-0.4), [-1.3, 0.4, 0], {rest: [-1.3, 0.3, 0]}));
+
 /** cách làm bằng tay của từng kiểu thao tác thật (cho tab Hướng dẫn); chỉ cần chụm, kéo, giữ yên, vẽ vòng, chụm–nhả */
-const PROP_NAME: Record<string, string> = {slide: 'lam kính', cover: 'lamen', rack: 'giá ống nghiệm', bottle: 'lọ thuốc thử', jug: 'cốc nước', pestle: 'chày', rod: 'đũa thủy tinh', bulb: 'bóng bơm', flask: 'bình tam giác', disc: 'lát cắt thân cây', foil: 'lá nhôm', jar: 'hũ', plug: 'phích cắm'};
+const PROP_NAME: Record<string, string> = {slide: 'lam kính', cover: 'lamen', rack: 'giá ống nghiệm', bottle: 'lọ thuốc thử', jug: 'cốc nước', pestle: 'chày', rod: 'đũa thủy tinh', bulb: 'bóng bơm', flask: 'bình tam giác', disc: 'lát cắt thân cây', foil: 'lá nhôm', jar: 'hũ', plug: 'phích cắm', cuff: 'vòng bít', paper: 'tờ phiếu'};
 const ACT_HOW: Record<BenchAct['kind'], (a: BenchAct) => string> = {
   place: (a) => a.part !== undefined ? 'Đặt đúng chỗ: chụm bộ phận của dụng cụ (đang để ở mép bàn gần bạn), kéo tới vòng cam rồi buông; thả lệch thì bộ phận tự về mép bàn.' : `Đặt ${PROP_NAME[a.prop] ?? 'vật'}: chụm vật đang nằm ở mép bàn gần bạn, kéo tới vòng cam rồi buông; thả lệch thì vật tự trở về chỗ cũ.`,
   pour: (a) => `Rót từ ${PROP_NAME[a.prop] ?? 'lọ'}: chụm lọ, đưa MIỆNG LỌ tới vòng cam rồi giữ yên: lọ tự nghiêng và rót, giữ càng lâu càng được nhiều (cần chừng ${a.n ?? 2} giây); nhấc ra thì ngừng, phần đã rót vẫn còn.`,

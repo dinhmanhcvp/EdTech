@@ -28,9 +28,11 @@ const POINT: Record<string, P3> = {
   pa: [0.0, 0.95, 0.55], pv: [0.95, 1.85, -0.35], la: [0.62, 0.7, 0.1], 'valve-l': [0.42, 0.18, 0.1], lv: [0.55, -0.85, 0.12], aorta: [1.45, 0.5, -0.35],
 };
 const LABEL: Record<string, P3> = {
-  lung: [-2.7, 2.9, 0.3], vc: [-2.7, 1.6, 0.3], ra: [-2.7, 0.75, 0.3], 'valve-r': [-2.7, 0.0, 0.3], rv: [-2.7, -0.8, 0.3], body: [-2.7, -2.4, 0.3],
-  pa: [2.6, 2.75, 0.3], pv: [2.6, 1.95, 0.3], la: [2.6, 1.05, 0.3], 'valve-l': [2.6, 0.25, 0.3], lv: [2.6, -0.6, 0.3], aorta: [2.6, -1.4, 0.3],
+  lung: [-2.5, 2.9, 0.3], vc: [-2.5, 1.7, 0.3], ra: [-2.5, 0.8, 0.3], 'valve-r': [-2.5, 0.05, 0.3], rv: [-2.5, -0.8, 0.3], body: [-2.5, -2.45, 0.3],
+  pa: [2.5, 2.8, 0.3], pv: [2.5, 2.0, 0.3], la: [2.5, 1.1, 0.3], 'valve-l': [2.5, 0.3, 0.3], lv: [2.5, -0.55, 0.3], aorta: [2.5, -1.4, 0.3],
 };
+/** tên ngắn trên hình (tên đầy đủ ở thẻ chú giải bên cạnh) */
+const SHORT: Record<string, string> = {lung: 'Phổi', body: 'Các cơ quan', vc: 'TM chủ', ra: 'Nhĩ phải', 'valve-r': 'Van 3 lá', rv: 'Thất phải', pa: 'ĐM phổi', pv: 'TM phổi', la: 'Nhĩ trái', 'valve-l': 'Van 2 lá', lv: 'Thất trái', aorta: 'ĐM chủ'};
 const ATRIA = new Set(['ra', 'la']);
 const VENTRICLES = new Set(['rv', 'lv']);
 const VALVES = new Set(['valve-r', 'valve-l']);
@@ -133,7 +135,8 @@ export function blenderHeart(k: Kit, add: (id: string, obj: THREE.Object3D) => v
   rig.add(key, fill, rim, rim.target);
   rig.visible = false;
   k.scene.add(rig);
-  const tags = new Map(HEART_PARTS.map((id) => [id, k.label('', '#2B2823', true)]));
+  // chữ nhỏ (10 px) và tên ngắn: khung tim trên bảng chỉ rộng ~400 px, nhãn to sẽ đè lên tim; tên đầy đủ hiện ở thẻ chú giải khi chọn bộ phận
+  const tags = new Map(HEART_PARTS.map((id) => [id, k.label('', '#2B2823', true, 10)]));
   // đường dẫn mảnh từ nhãn tới đúng chỗ trên bộ phận
   const leaders = k.line('#4B473D', 1.2, HEART_PARTS.flatMap((id) => [...LABEL[id], ...POINT[id]]), true);
   Object.assign(leaders.material, {transparent: true, opacity: 0.55});
@@ -186,8 +189,7 @@ export function blenderHeart(k: Kit, add: (id: string, obj: THREE.Object3D) => v
     blue.flush(a);
     red.flush(b);
     for (const [id, tag] of tags) {
-      const name = s[`L:${id}`] || s[`T:${id}`] || id;
-      tag(id === s.sel || ext ? null : at.set(...LABEL[id]), undefined, name);
+      tag(id === s.sel || ext ? null : at.set(...LABEL[id]), undefined, SHORT[id]);
     }
   };
 }

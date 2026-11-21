@@ -297,7 +297,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       const partAnims: {off: THREE.Vector3; from: THREE.Vector3; to: THREE.Vector3; t: number}[] = [];
       const partTo = (off: THREE.Vector3, to: THREE.Vector3) => partAnims.push({off, from: off.clone(), to: to.clone(), t: 0});
       const localCenter = (o: THREE.Object3D) => root.worldToLocal(new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()));
-      if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') (window as unknown as {__bench?: unknown}).__bench = {A, partOffs, byN, stageOf: () => stage, setup};
+      if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') (window as unknown as {__bench?: unknown}).__bench = {A, partOffs, byN, stageOf: () => stage, setup, cam: k.camera, root};
       const anims: {obj: THREE.Object3D; from: THREE.Vector3; to: THREE.Vector3; ry: number; t: number}[] = [];
       const actTag = k.label('', '#D9481C');
       const streamMat = new THREE.MeshStandardMaterial({color: '#9CD0F0', transparent: true, opacity: 0.85, roughness: 0.1});
@@ -355,6 +355,8 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           return actFinish(); // thiếu mô hình: bỏ qua bước, không để học sinh kẹt
         }
         glassify(sk.obj, 0.18);
+        // rót thuốc / hạt / cát: chất trong lọ lấy màu của thứ sắp rót
+        if (a.kind === 'pour' && a.color) for (const m of sk.mats) if (m.name === 'tint') m.color.set(a.color);
         sk.obj.position.set(...(a.kind === 'squeeze' ? setup[stage].at : a.from));
         root.add(sk.obj);
         const bb = new THREE.Box3().setFromObject(sk.obj);

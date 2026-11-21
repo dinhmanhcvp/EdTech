@@ -66,7 +66,8 @@ export const SINH_ANATOMY_PRESETS: Record<string, PresetSpec> = {
     engine: 'BIOLOGY',
     title: 'Cấu tạo tim và vòng tuần hoàn máu',
     question: 'Trước khi đi theo dòng máu: em đoán động mạch phổi chứa máu giàu O₂ hay nghèo O₂? Sau khi đi hết: ghi đường đi của máu em thấy và chỗ em đoán sai. Bạn em nói "động mạch luôn chứa máu đỏ tươi" — chỗ nào trong vòng tuần hoàn em vừa xem bác bỏ?',
-    keywords: /tuan hoan (?:mau|kin|kep)|cau tao (?:cua )?tim|bon ngan tim|van tim|vong tuan hoan/,
+    // "tim" một mình / "quả tim" / "tim người" / "tim 3d": cả chuỗi chỉ có thế để không cướp "tìm x" (bỏ dấu thì "tìm" trùng "tim")
+    keywords: /tuan hoan (?:mau|kin|kep)|cau tao (?:cua )?tim|bon ngan tim|van tim|vong tuan hoan|^\s*(?:qua |trai |hinh )?tim(?:\s+(?:nguoi|3d|ba chieu))?\s*$|qua tim|trai tim|tim nguoi|tim 3d/,
     examples: ['tuần hoàn máu', 'cấu tạo tim', 'van tim và bốn ngăn tim'],
     data: {
       viewBox: [340, 400],

@@ -178,6 +178,12 @@ for sz in (-1, 1):
     gh += [tube('lg', [T(-0.06, 0.07, sz * 0.03), T(-0.14, 0.17, sz * 0.07), T(-0.22, 0.02, sz * 0.09)], 0.012, GRASSH), tube('lm', [T(0.04, 0.06, sz * 0.03), T(0.08, 0.02, sz * 0.08)], 0.008, GRASSH)]
 prop('grasshopper', gh)
 
+# vòng bít huyết áp: băng vải đen quấn tròn, gốc ở GIỮA, trục dọc theo +x (quấn quanh cánh tay nằm ngang), miếng dán gai ở mép, ống dẫn ra ngoài
+CUFFM = mat('cuffblack', hexc('#1B1C20'), rough=0.85)
+cuff = [lathe('cuff', [(0.17, -0.25), (0.2, -0.25), (0.2, 0.25), (0.17, 0.25)], T(0, 0, 0), CUFFM, rot=(0, R90, 0), steps=40), B(0.4, 0.06, 0.1, 0, 0.19, 0.0, mat('velcro', hexc('#5A5D66'), rough=0.95), 0.01)]
+cuff.append(tube('hose', [T(0.0, 0.2, 0.0), T(0.05, 0.3, 0.12), T(0.2, 0.1, 0.4)], 0.02, CUFFM))
+prop('cuff', cuff)
+
 # xếp thẳng hàng để xem thử (không ảnh hưởng GLB: lưới đã xuất cùng gốc)
 export_glb('bench-props.glb')
 if PREVIEW:

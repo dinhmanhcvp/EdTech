@@ -6,7 +6,7 @@ import {usePrefersReducedMotion} from '../visualKit';
 import {StageBackdrop, canWebGL} from './SceneLab';
 
 /** Sơ đồ có bản 3D thật (chạm chọn bộ phận); bản SVG luôn còn làm dự phòng. */
-export const ANATOMY_3D = new Set(['BIO_HEART_CIRCULATION', 'BIO_EUKARYOTE_CELL', 'BIO_FLOWER_STRUCTURE', 'BIO_DIGESTIVE_SYSTEM', 'BIO_RESPIRATORY_SYSTEM', 'BIO_EAR_HEARING', 'BIO_NEPHRON']);
+export const ANATOMY_3D = new Set(['BIO_HEART_CIRCULATION', 'BIO_EUKARYOTE_CELL', 'BIO_FLOWER_STRUCTURE', 'BIO_DIGESTIVE_SYSTEM', 'BIO_RESPIRATORY_SYSTEM', 'BIO_EAR_HEARING', 'BIO_NEPHRON', 'BIO_SENSE_ORGANS']);
 const Organ3D = React.lazy(() => import('./Organ3D'));
 
 /** Hình giải phẫu/sơ đồ phân lớp: chạm bộ phận xem chú giải, "đi theo" lần lượt, hạt chuyển động dọc đường chảy. */
@@ -18,6 +18,9 @@ export const AnatomyFlow: React.FC<{id: string; data: AnatomyData}> = ({id, data
   const reduced = usePrefersReducedMotion();
   const has3d = ANATOMY_3D.has(id);
   const [in3d, setIn3d] = useState(false);
+  /** tim: xem mặt ngoài (mạch vành, cơ tim) hay bổ dọc (buồng, van, dòng máu) */
+  const [heartView, setHeartView] = useState<'cut' | 'ext'>('cut');
+  const hasExt = id === 'BIO_HEART_CIRCULATION';
   useEffect(() => {
     if (has3d && canWebGL()) setIn3d(true);
   }, [has3d]);
@@ -42,6 +45,12 @@ export const AnatomyFlow: React.FC<{id: string; data: AnatomyData}> = ({id, data
       <div className="w-full md:w-1/2 flex flex-col gap-2">
         {has3d && (
           <div className="flex gap-1 self-end" data-testid="anatomy-view-toggle">
+            {hasExt && in3d &&
+              (['ext', 'cut'] as const).map((v) => (
+                <button key={v} type="button" data-testid={`heart-view-${v}`} aria-pressed={heartView === v} onClick={() => setHeartView(v)} className={`min-h-[30px] rounded-full border px-3.5 text-xs font-medium ${heartView === v ? 'border-[#A8481C] bg-[#A8481C] text-white' : 'border-[#1D1B16]/25 bg-white text-[#1D1B16]'}`}>
+                  {v === 'ext' ? 'Mặt ngoài' : 'Bổ dọc'}
+                </button>
+              ))}
             {[true, false].map((on) => (
               <button key={String(on)} type="button" aria-pressed={in3d === on} onClick={() => setIn3d(on)} className={`min-h-[30px] rounded-full border px-3.5 text-xs font-medium ${in3d === on ? 'border-[#1D1B16] bg-[#1D1B16] text-[#F3EFE6]' : 'border-[#1D1B16]/25 bg-white text-[#1D1B16]'}`}>
                 {on ? '3D' : '2D'}
@@ -51,7 +60,7 @@ export const AnatomyFlow: React.FC<{id: string; data: AnatomyData}> = ({id, data
         )}
         {has3d && in3d ? (
           <Suspense fallback={<div className="w-full aspect-[560/340] rounded-2xl border border-[#1D1B16]/15 bg-[#EEEAE0]" />}>
-            <Organ3D id={id} p={{}} s={{sel: sel ?? '', flow: flowOn ? '1' : '0', ...Object.fromEntries(data.parts.flatMap((x) => [[`L:${x.id}`, x.label], [`T:${x.id}`, x.title]]))}} onPick={(pid) => setSel((cur) => (pid && pid !== cur ? pid : null))} onFail={() => setIn3d(false)} />
+            <Organ3D id={id} p={{}} s={{sel: sel ?? '', flow: flowOn ? '1' : '0', view: heartView, ...Object.fromEntries(data.parts.flatMap((x) => [[`L:${x.id}`, x.label], [`T:${x.id}`, x.title]]))}} onPick={(pid) => setSel((cur) => (pid && pid !== cur ? pid : null))} onFail={() => setIn3d(false)} />
           </Suspense>
         ) : (
       <svg viewBox={`0 0 ${vw} ${vh}`} className="w-full max-h-[460px] rounded-2xl border border-[#1D1B16]/15">

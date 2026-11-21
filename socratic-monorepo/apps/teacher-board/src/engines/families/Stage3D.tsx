@@ -104,6 +104,8 @@ export interface SceneDef {
   noGrid?: boolean;
   /** phòng thực hành ảo: nền tối, góc nhìn rộng, không lưới; cảnh tự dựng phòng (`labRoom`) */
   room?: boolean;
+  /** phòng sáng (phòng thí nghiệm Sinh): nền và sương màu kem thay cho nền tối */
+  bright?: boolean;
   dist: number;
   target?: [number, number, number];
   /** góc ngang, góc cao (độ) lấy từ thanh trượt: đổi thì đặt lại máy quay, sau đó người dùng vẫn kéo tự do */
@@ -175,7 +177,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
     el.prepend(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const bg = night ? '#0B0E2A' : def.room ? '#0E1030' : '#EEEAE0';
+    const bg = night ? '#0B0E2A' : def.room ? (def.bright ? '#DCD8CE' : '#0E1030') : '#EEEAE0';
     scene.background = new THREE.Color(bg);
     const pmrem = new THREE.PMREMGenerator(renderer);
     if (night) {
@@ -190,7 +192,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       }).flat();
       scene.add(new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)), new THREE.PointsMaterial({color: '#E8E6F5', size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.7})));
     } else {
-      scene.fog = new THREE.Fog(bg, def.dist * 1.6, def.dist * 3.2);
+      scene.fog = def.bright ? new THREE.Fog(bg, def.dist * 1.2, def.dist * 3.0) : new THREE.Fog(bg, def.dist * 1.6, def.dist * 3.2);
       scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
       const sun = new THREE.DirectionalLight('#FFF6E8', def.room ? 1.5 : 2.2);
       sun.position.set(2.5, 4.5, 3.5);
@@ -199,7 +201,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       sun.shadow.radius = 5;
       const sh = def.room ? 5 : 3;
       Object.assign(sun.shadow.camera, {left: -sh, right: sh, top: sh, bottom: -sh, near: 0.5, far: 14});
-      scene.add(sun, new THREE.HemisphereLight('#FFFFFF', '#D8D2C4', def.room ? 0.25 : 0.5));
+      scene.add(sun, new THREE.HemisphereLight('#FFFFFF', '#D8D2C4', def.room ? (def.bright ? 0.7 : 0.25) : 0.5));
       if (!def.noGrid && !def.room) scene.add(new THREE.GridHelper(24, 48, '#CFC8B8', '#DDD7C9'));
       if (def.floor && !def.room) {
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({opacity: 0.22}));

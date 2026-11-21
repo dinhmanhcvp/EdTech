@@ -18,6 +18,8 @@ const BRR: V3[] = BRL.map(([x, y, z]) => [-x, y, z] as V3);
 export const FLOW_RES: V3[][] = [[[0, 6.5, 0.4], [0, 6, 0.2], ...BRL], [[0, 6.5, 0.4], [0, 6, 0.2], ...BRR]];
 export const FLOW_EAR: V3[] = [[-4.7, 0, 0], [-3.9, 0, 0], [-1.6, 0, 0], [-1.1, 0.15, 0], [-0.7, 0.4, 0], [-0.4, 0, 0], [1.6, -0.5, 0]];
 const TUB: V3[] = [[-0.9, 4.1, 0], [-0.2, 3.9, 0], [0.4, 3.5, 0], [-0.2, 3.1, 0], [0.5, 2.7, 0], [-0.1, 2.3, 0], [0.3, 1.5, 0], [0, 0.9, 0], [0.7, 0.9, 0], [1.0, 2.0, 0], [1.4, 3.2, 0], [1.8, 3.8, 0], [2.3, 4.2, 0]];
+/** tia sáng vào mắt (mắt bổ đôi, nửa còn lại ở z < 0): ba tia song song khúc xạ qua giác mạc và thể thủy tinh, hội tụ ở điểm vàng */
+export const FLOW_EYE: V3[][] = [0.55, 0, -0.55].map((h) => [[-3.8, h, 0.1], [-1.62, h * 0.95, 0.1], [-0.95, h * 0.6, 0.1], [1.42, 0, 0.1]] as V3[]);
 export const FLOW_NEPH: V3[] = [[-1.5, 4.6, 0], ...TUB, [2.3, 3.0, 0], [2.3, 1.2, 0], [1.9, 0.5, 0], [1.4, 0.15, 0], [0.6, -0.7, 0], [0.2, -1.4, 0]];
 
 interface OrganDef {
@@ -31,6 +33,8 @@ interface OrganDef {
   dist: number;
   target: [number, number, number];
   hint: string;
+  /** bộ phận chỉ để nhìn (không chạm chọn), vd. củng mạc làm nền cho mắt bổ đôi */
+  deco?: string[];
 }
 function organ(def: OrganDef): SceneDef {
   return {
@@ -42,10 +46,16 @@ function organ(def: OrganDef): SceneDef {
       const P = parts(k);
       loadModel(LIB)
         .then((lib) =>
-          def.ids.forEach((id) => {
-            const sk = partOf(lib, def.prefix + id);
-            if (sk) P.add(id, sk.obj);
-          }),
+          {
+            def.ids.forEach((id) => {
+              const sk = partOf(lib, def.prefix + id);
+              if (sk) P.add(id, sk.obj);
+            });
+            def.deco?.forEach((id) => {
+              const sk = partOf(lib, def.prefix + id);
+              if (sk) k.scene.add(sk.obj);
+            });
+          },
         )
         .catch(() => k.caption('Không tải được mô hình 3D — chuyển sang bản 2D'));
       const sw = swarm(def.dots * def.flows.length, 0.1, def.color, {roughness: 0.2, emissive: def.color, emissiveIntensity: 0.6});
@@ -71,6 +81,7 @@ function organ(def: OrganDef): SceneDef {
 export const BLENDER_ORGANS: Record<string, SceneDef> = {
   BIO_DIGESTIVE_SYSTEM: organ({prefix: 'dig_', ids: ['mouth', 'esophagus', 'liver', 'gallbladder', 'stomach', 'pancreas', 'small', 'large', 'anus'], flows: [FLOW_DIG], color: '#FFD166', dots: 16, dist: 15, target: [0, 3.4, 0], hint: 'Chạm một cơ quan để xem chi tiết; hạt vàng là thức ăn đi qua ống tiêu hóa'}),
   BIO_RESPIRATORY_SYSTEM: organ({prefix: 'res_', ids: ['nose', 'trachea', 'bronchi', 'lungs', 'alveoli', 'diaphragm'], flows: FLOW_RES, color: '#60A5FA', dots: 10, dist: 15, target: [0, 3.4, 0], hint: 'Chạm một bộ phận để xem chi tiết; hạt xanh là không khí khi hít vào'}),
+  BIO_SENSE_ORGANS: organ({prefix: 'eye_', ids: ['cornea', 'iris', 'lens', 'vitreous', 'retina', 'fovea', 'nerve'], deco: ['sclera'], flows: FLOW_EYE, color: '#FFD166', dots: 8, dist: 7, target: [0.2, 0, 0], hint: 'Mắt bổ đôi: chạm một bộ phận để xem chi tiết; hạt vàng là tia sáng hội tụ về điểm vàng'}),
   BIO_EAR_HEARING: organ({prefix: 'ear_', ids: ['pinna', 'canal', 'drum', 'ossicles', 'cochlea', 'nerve', 'canals'], flows: [FLOW_EAR], color: '#60A5FA', dots: 14, wave: 0.18, dist: 13, target: [0, 0, 0], hint: 'Chạm một bộ phận để xem chi tiết; hạt xanh là sóng âm truyền vào tai'}),
   BIO_NEPHRON: organ({prefix: 'neph_', ids: ['capsule', 'glomerulus', 'arteriole', 'capillary', 'tubule', 'collecting', 'pelvis'], flows: [FLOW_NEPH], color: '#F59E0B', dots: 18, dist: 13, target: [0, 2.6, 0], hint: 'Chạm một bộ phận của nephron để xem chi tiết; hạt cam là dịch lọc'}),
 };

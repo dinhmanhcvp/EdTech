@@ -114,9 +114,9 @@ def lung_fn(p, n):
     return c
 
 
-lungs = [roughen(blob('lg', [('E', (s * 1.2, 2.55, -0.1), (0.68 if s < 0 else 0.6, 0.62, 0.42)), ('E', (s * 1.25, 2.1, -0.15), (0.5, 0.3, 0.38))], MYO, res=0.03), 0.015, 0.2) for s in (-1, 1)]
-for o in lungs:
-    colored(o, lung_fn, rough=0.5, coat=0.3)
+# phổi thật (organs.py): thùy, rãnh liên thùy, lưới tiểu thùy; đáy ở y = 1,8, tâm hai phổi ở x = ±1,2 như bản cũ (đường máu HEART_LOOPS không đổi)
+from organs import heart_ext, lungs as real_lungs, remap  # noqa: E402
+lungs = real_lungs(at=(0, 1.8, -0.1), s=1.4, gap=0.58, rings=False)
 RING = tissue('cartilage', '#E9E2D2', rough=0.5, coat=0.3)
 tr = [tube('trachea', [T(0, 3.45, -0.2), T(0, 2.75, -0.2)], 0.11, RING), tube('br', [T(0, 2.78, -0.2), T(-0.5, 2.55, -0.18), T(-0.9, 2.5, -0.15)], 0.075, RING),
       tube('br', [T(0, 2.78, -0.2), T(0.5, 2.55, -0.18), T(0.9, 2.5, -0.15)], 0.075, RING)]
@@ -124,6 +124,19 @@ for i in range(8):
     bpy.ops.mesh.primitive_torus_add(major_radius=0.115, minor_radius=0.018, location=T(0, 2.85 + i * 0.08, -0.2))
     tr.append(finish(bpy.context.object, RING))
 piece('heart_lung', lungs + tr, (0, 0, 0))
+# tim nhìn ngoài (nút `heart_ext`, chế độ "Mặt ngoài" của cảnh): cùng chỗ với tim bổ dọc, cao ≈ 2,2 không kể mạch lớn
+# ưu tiên tim giải phẫu thật (Z-Anatomy, CC BY-SA 4.0; `zanat_build.py`), thiếu tệp thì dùng tim tự dựng
+from organs import zanat  # noqa: E402
+_za = zanat('ZH_')
+if _za:
+    for _id, _o in _za.items():  # ra, la, rv, lv, aorta, pa, vc, pv, cor
+        _o.name = 'heart_ext_' + _id
+        _o.data.name = _o.name
+else:
+    _hx = heart_ext('hx')
+    remap(_hx, lambda x, y, z: ((x - 0.05) * 2.0, y * 2.0 - 1.0, z * 2.0))
+    for _o in _hx:  # mỗi bộ phận một nút `heart_ext_<id>` (cùng id với bộ phận tim bổ dọc): cảnh chạm chọn được như bản bổ dọc
+        piece(_o.name.replace('hx_', 'heart_ext_'), [_o], (0, 0, 0))
 
 
 def bed_fn(p, n):

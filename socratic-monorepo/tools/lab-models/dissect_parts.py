@@ -533,21 +533,18 @@ def lung_fn(p, n):
     return c
 
 
-piece('HUMAN_o_lung', [colored(roughen(blob('hl', [('E', (-0.8, 0.3, s * 0.32), (0.32, 0.13, 0.22))], CAV, res=0.018), 0.008, 0.1), lung_fn) for s in (-1, 1)])
+# phổi thật (organs.py) đặt nằm ngửa: đỉnh phổi về phía đầu (−x), mặt trước lên trên (+y), phổi phải người ở +z; dẹt theo chiều trước–sau
+from organs import lungs as real_lungs, remap  # noqa: E402
+_hl = real_lungs(s=1.0, gap=0.26, rings=False)
+remap(_hl, lambda x, y, z: (-0.47 - y * 0.62, 0.3 + z * 0.62 * 0.62, -x * 0.58))
+piece('HUMAN_o_lung', _hl)
 
 
-def human_heart(p, n):
-    if p[0] < -0.98:
-        return tint('#E0C6B4', 1 + 0.08 * fbm(p, 14))  # gốc mạch lớn
-    c = tint('#9E2832', 1 + 0.14 * fbm(p, 8))
-    if abs(p[2] - (-0.08 - (p[0] + 0.75) * 0.5)) < 0.03:
-        c = blend(c, '#E7D29A', 0.75)  # mỡ + động mạch vành trong rãnh
-    return c
-
-
-piece('HUMAN_o_heart', [colored(blob('hh', [('E', (-0.75, 0.31, -0.08), (0.24, 0.12, 0.18)), ('E', (-0.56, 0.3, -0.18), (0.12, 0.09, 0.1)),
-                                           ('C', (-0.95, 0.33, 0.0), (-1.1, 0.34, 0.02), 0.06), ('C', (-0.95, 0.33, -0.08), (-1.12, 0.35, -0.18), 0.05)], CAV, res=0.015),
-                                human_heart, rough=0.3, coat=0.6)])
+# tim thật (organs.py) đặt nằm ngửa giữa hai phổi, lệch về bên trái người (−z), đáy tim về phía đầu, mặt trước lên trên
+from organs import heart_ext  # noqa: E402
+_hh = heart_ext('hh')
+remap(_hh, lambda x, y, z: (-0.64 - (y - 0.45) * 0.38, 0.38 + z * 0.38 * 0.6, -0.03 - x * 0.38))
+piece('HUMAN_o_heart', remap(_hh, lambda x, y, z: (x, y, z)))
 piece('HUMAN_o_diaphragm', [colored(ell('dp', (-0.33, 0.26, 0), (0.06, 0.16, 0.5), CAV), lambda p, n: tint('#A8474C', 0.85 + 0.25 * abs(math.sin(math.atan2(p[2], p[1] - 0.1) * 30))))])
 piece('HUMAN_o_liver', [colored(roughen(blob('hv', [('E', (-0.05, 0.31, 0.22), (0.3, 0.12, 0.34)), ('E', (0.0, 0.3, -0.12), (0.18, 0.09, 0.18)), ('E', (0.18, 0.24, 0.2), (0.05, 0.04, 0.05))], CAV, res=0.018), 0.006, 0.12),
                                 lambda p, n: tint('#3F7B3A') if math.dist((p[0], p[2]), (0.18, 0.2)) < 0.06 else mottled('#6E261E', 0.12, 6)(p, n), rough=0.22, coat=0.8)])
@@ -566,6 +563,20 @@ largeint = blob('li', li_el, CAV, res=0.016)
 piece('HUMAN_o_largeint', [colored(largeint, lambda p, n: blend(tint('#C8977A', 1 + 0.1 * fbm(p, 12)), '#E9D3BA', 0.6) if n.z > 0.93 else tint('#C8977A', 1 + 0.1 * fbm(p, 12)), rough=0.4, coat=0.5)])
 si = tube('si', snake(0.5, 0.92, (-0.27, -0.16, -0.05, 0.06, 0.17, 0.28), 0.32, 0.03), 0.042, CAV)
 colored(piece('HUMAN_o_smallint', [si]), veined('#E0A493', '#A84452', 10, 0.04), rough=0.35, coat=0.65)
+# mọi cơ quan còn lại → khối liền ướt (Voxel Remesh + Displace + Clearcoat/Subsurface), giữ màu đã vẽ
+from organs import refuse, zanat  # noqa: E402
+_zm = zanat('ZM_')  # cơ quan giải phẫu thật (Z-Anatomy, CC BY-SA 4.0), đã đặt nằm ngửa; thiếu tệp thì giữ hình tự dựng
+for _nm in ('HUMAN_o_lung', 'HUMAN_o_heart', 'HUMAN_o_diaphragm', 'HUMAN_o_liver', 'HUMAN_o_stomach', 'HUMAN_o_largeint', 'HUMAN_o_smallint'):
+    _src = bpy.data.objects[_nm]
+    _src.name = _nm + '_src'
+    _real = _zm.get(_nm[len('HUMAN_o_'):])
+    if _real is not None:
+        bpy.data.objects.remove(_src, do_unlink=True)
+        piece(_nm, [_real])
+    elif _nm not in ('HUMAN_o_lung', 'HUMAN_o_heart'):
+        piece(_nm, [refuse(_src)])
+    else:
+        _src.name = _nm
 tag('HUMAN', *[o for o in bpy.data.objects if o.name.startswith('HUMAN_')])
 
 

@@ -46,6 +46,12 @@ SAND = mat('sand', hexc('#D9C49A'), rough=0.95)
 GRASS = mat('grass', hexc('#4E9A3B'), rough=0.9)
 FOIL = mat('foil', (0.85, 0.85, 0.86), metallic=1, rough=0.3)
 PINK = mat('pink', hexc('#E889A8'), rough=0.5)
+# chất liệu dụng cụ thật: thân kính hiển vi sơn kem bóng, nhựa đen núm, thủy tinh nâu, nhãn giấy, chân cao su
+MPAINT = mat('mpaint', hexc('#ECE5D3'), rough=0.32)
+KNURL = mat('knurl', hexc('#1A1A1C'), metallic=0.3, rough=0.45)
+AMBER = mat('amber', hexc('#8A4A12'), rough=0.06, alpha=0.62)
+LABEL = mat('label', hexc('#F3EEDF'), rough=0.85)
+LCD = mat('lcd', hexc('#203A2C'), rough=0.2)
 
 
 # ------------------------------------------------------------------ hình cơ bản theo toạ độ three.js (y lên, z về phía người nhìn)
@@ -123,12 +129,14 @@ def meter(x, z, sym='V', tint=RED, lean=0.0):
 
 
 def digital(x, z, txt='0.000', w=0.8, pan=False, live=True):
-    """đồng hồ / cân hiện số (live: không in chữ, mã vẽ số đo thật lên mặt hiển thị)"""
-    o = [B(w, 0.22, 0.5, x, 0.11, z, CASE, 0.02), B(w * 0.7, 0.13, 0.012, x, 0.12, z + 0.251, DARK, 0)]
+    """cân / đồng hồ hiện số: vỏ bo tròn, mặt LCD có viền, 3 phím, chân cao su; live: mã vẽ số đo thật lên mặt hiển thị"""
+    o = [B(w, 0.22, 0.5, x, 0.11, z, CASE, 0.035), B(w * 0.74, 0.15, 0.014, x, 0.12, z + 0.249, BAKELITE, 0.006), B(w * 0.7, 0.13, 0.012, x, 0.12, z + 0.251, DARK, 0)]
+    o += [C(0.022, 0.016, x - w * 0.22 + i * w * 0.22, 0.225, z + 0.17, [GREENM, INK, RED][i], bevel=0.004, seg=14) for i in range(3)]
+    o += [C(0.03, 0.02, x + sx * (w / 2 - 0.07), 0.0, z + sz * 0.18, RUBBER, seg=12) for sx in (-1, 1) for sz in (-1, 1)]
     if not live:
         o.append(TX(txt, 0.09, x, 0.12, z + 0.26, LED))
     if pan:
-        o += [C(w * 0.42, 0.03, x, 0.245, z, STEEL)]
+        o += [C(w * 0.42, 0.03, x, 0.245, z, STEEL, bevel=0.006, seg=36), C(w * 0.43, 0.012, x, 0.262, z, CHROME, seg=36), C(0.05, 0.03, x, 0.23, z, IRON)]
     return o
 
 
@@ -211,9 +219,14 @@ def ruler(x0, x1, z, y=0.012, vertical=False, at=0.0):
 
 
 def beaker(x, z, r=0.22, h=0.42, fill=0.55, lm=WATER):
+    """cốc thủy tinh có mỏ rót, vạch chia trắng in trên thành và mặt chất lỏng hơi lõm"""
     o = [LA([(0, 0), (r, 0), (r, h), (r + 0.015, h + 0.01), (r - 0.012, h), (r - 0.012, 0.012), (0, 0.012)], x, 0, z, GLASS)]
+    for i in range(1, 5):
+        yy = h * i / 5
+        o.append(B(0.07 if i % 2 == 0 else 0.045, 0.006, 0.004, x - r * 0.35, yy, z + r + 0.002, WHITE, 0))
     if fill and lm:
-        o.append(C(r - 0.02, h * fill, x, 0.014 + h * fill / 2, z, lm, seg=24))
+        o.append(C(r - 0.02, h * fill, x, 0.014 + h * fill / 2, z, lm, seg=28))
+        o.append(C(r - 0.016, 0.006, x, 0.014 + h * fill + 0.002, z, GLASS, seg=28))
     return o
 
 
@@ -236,7 +249,13 @@ def rack(x, z, liquids):
 
 
 def bottle(x, z, m=L_BROWN, cap=INK, r=0.1, h=0.3):
-    return [LA([(0, 0), (r, 0), (r, h * 0.7), (r * 0.4, h * 0.9), (r * 0.4, h), (0, h)], x, 0, z, m), C(r * 0.48, 0.07, x, h + 0.03, z, cap)]
+    """lọ hoá chất thật: vỏ thủy tinh (nâu nếu là thuốc thử sẫm), chất lỏng bên trong, nhãn giấy có vạch màu, nắp vặn có gờ"""
+    shell = AMBER if m is L_BROWN else GLASS
+    prof = [(0, 0), (r, 0), (r, h * 0.7), (r * 0.42, h * 0.88), (r * 0.42, h), (0, h)]
+    o = [LA(prof, x, 0, z, shell), LA([(0, 0), (r * 0.9, 0), (r * 0.9, h * 0.62), (0, h * 0.62)], x, 0.01, z, m)]
+    o += [C(r * 1.012, h * 0.36, x, h * 0.36, z, LABEL, seg=28), C(r * 1.016, h * 0.06, x, h * 0.46, z, cap, seg=28)]
+    o += [C(r * 0.5, 0.075, x, h + 0.035, z, cap, bevel=0.006, seg=24)] + [B(0.006, 0.07, 0.01, x + r * 0.5 * math.cos(a), h + 0.035, z + r * 0.5 * math.sin(a), cap, 0, ry=-a) for a in [k * 0.5236 for k in range(12)]]
+    return o
 
 
 def burner(x, z):
@@ -250,22 +269,49 @@ def thermometer(x, y, z, h=0.9, lean=0.0):
 
 
 def microscope(x, z):
-    return [
-        B(0.6, 0.07, 0.7, x, 0.035, z, IRON, 0.02), B(0.12, 0.9, 0.14, x, 0.5, z - 0.25, IRON, 0.02), B(0.12, 0.14, 0.4, x, 0.95, z - 0.1, IRON, 0.02),
-        C(0.06, 0.5, x, 1.05, z + 0.08, CHROME, 'y'), C(0.075, 0.1, x, 1.33, z + 0.08, BAKELITE), C(0.1, 0.06, x, 0.76, z + 0.08, STEEL),
-        C(0.03, 0.14, x - 0.05, 0.67, z + 0.06, BRASS), C(0.03, 0.18, x + 0.05, 0.65, z + 0.1, BRASS),
-        C(0.07, 0.05, x + 0.09, 0.4, z - 0.25, BAKELITE, 'x'), C(0.07, 0.05, x - 0.09, 0.4, z - 0.25, BAKELITE, 'x'),
-        C(0.09, 0.04, x, 0.12, z + 0.08, LAMP), S(0.04, x, 0.15, z + 0.08, mat('bulb', hexc('#FFF3C4'), emit=1.5)),
-    ]
+    """kính hiển vi quang học: chân và thân sơn kem bóng, tay cầm cong, đầu nghiêng có thị kính cao su, mâm xoay 3 vật kính có vòng màu,
+    ốc to có khía + ốc nhỏ mạ crôm hai bên, đèn có thấu kính phát sáng, chân cao su"""
+    o = [B(0.62, 0.08, 0.74, x, 0.045, z, MPAINT, 0.035), B(0.5, 0.01, 0.6, x, 0.09, z, MPAINT, 0.004)]
+    o += [C(0.035, 0.02, x + sx * 0.25, 0.0, z + sz * 0.3, RUBBER, seg=12) for sx in (-1, 1) for sz in (-1, 1)]
+    o += [C(0.085, 0.05, x, 0.12, z + 0.08, CHROME, bevel=0.006, seg=32), C(0.06, 0.012, x, 0.15, z + 0.08, mat('bulb', hexc('#FFF3C4'), emit=1.6), seg=28)]
+    o += [B(0.18, 0.3, 0.2, x, 0.24, z - 0.26, MPAINT, 0.03)]
+    o += [TB([(x, 0.36, z - 0.28), (x, 0.62, z - 0.33), (x, 0.86, z - 0.24), (x, 0.97, z - 0.08)], 0.075, MPAINT)]
+    o += [B(0.17, 0.17, 0.34, x, 0.99, z - 0.04, MPAINT, 0.045), C(0.075, 0.03, x, 0.9, z + 0.08, MPAINT, seg=28)]
+    o += [TB([(x, 1.04, z - 0.1), (x, 1.24, z - 0.24)], 0.042, KNURL, False), C(0.055, 0.07, x, 1.27, z - 0.26, RUBBER, seg=24)]
+    o += [C(0.115, 0.05, x, 0.86, z + 0.08, CHROME, bevel=0.01, seg=32)]
+    for (dx, dz), ln, ring in (((0, 0.065), 0.12, RED), ((-0.056, -0.03), 0.16, YELLOW), ((0.056, -0.03), 0.2, BLUE)):
+        o += [C(0.026, ln, x + dx, 0.835 - ln / 2, z + 0.08 + dz, CHROME, seg=16), C(0.028, 0.012, x + dx, 0.82 - ln * 0.35, z + 0.08 + dz, ring, seg=16)]
+    for sx in (-1, 1):
+        o += [C(0.09, 0.045, x + sx * 0.12, 0.42, z - 0.26, KNURL, 'x', bevel=0.008, seg=32)]
+        o += [B(0.044, 0.012, 0.012, x + sx * 0.12, 0.42 + 0.092 * math.sin(a), z - 0.26 + 0.092 * math.cos(a), KNURL, 0, rz=0) for a in [k * 0.3927 for k in range(16)]]
+        o += [C(0.05, 0.03, x + sx * 0.165, 0.42, z - 0.26, CHROME, 'x', bevel=0.006, seg=24)]
+    return o
 
 
 def stage(x, z, y=0.5):
-    """bàn kính của kính hiển vi kèm một lam kính"""
-    return [B(0.46, 0.03, 0.46, x, y, z + 0.08, INK, 0.008), B(0.3, 0.008, 0.1, x, y + 0.02, z + 0.08, GLASS, 0), B(0.08, 0.004, 0.08, x, y + 0.026, z + 0.08, L_VIOLET, 0)]
+    """bàn kính đen có lỗ sáng, hai kẹp lam crôm, tụ quang bên dưới, kèm một lam kính có mẫu"""
+    o = [B(0.46, 0.03, 0.46, x, y, z + 0.08, INK, 0.01), C(0.035, 0.032, x, y + 0.001, z + 0.08, mat('hole', hexc('#FFF8E0'), emit=0.8), seg=20)]
+    o += [C(0.05, 0.08, x, y - 0.06, z + 0.08, IRON, seg=24)]
+    o += [B(0.3, 0.008, 0.1, x, y + 0.02, z + 0.08, GLASS, 0), B(0.08, 0.004, 0.08, x, y + 0.026, z + 0.08, L_VIOLET, 0)]
+    for sx in (-1, 1):
+        o += [B(0.13, 0.008, 0.022, x + sx * 0.12, y + 0.03, z + 0.03, CHROME, 0.002), C(0.014, 0.025, x + sx * 0.18, y + 0.03, z + 0.03, CHROME, seg=10)]
+    return o
 
 
 def slide(x, z, m=L_VIOLET):
-    return [B(0.3, 0.008, 0.1, x, 0.006, z, GLASS, 0), B(0.08, 0.004, 0.08, x, 0.012, z, m, 0)]
+    """lam kính có lá kính mỏng và vùng nhãn mờ ở một đầu"""
+    return [B(0.3, 0.008, 0.1, x, 0.006, z, GLASS, 0), B(0.08, 0.004, 0.08, x, 0.012, z, m, 0), B(0.06, 0.003, 0.09, x - 0.11, 0.012, z, LABEL, 0)]
+
+
+def slidebox(x, z, n=6):
+    """hộp gỗ đựng lam kính, nắp mở: các lam xếp đứng có nhãn màu"""
+    o = [B(0.7, 0.06, 0.34, x, 0.03, z, WOOD, 0.01)] + [B(0.7, 0.12, 0.02, x, 0.09, z + sz * 0.16, WOOD, 0.004) for sz in (-1, 1)] + [B(0.02, 0.12, 0.34, x + sx * 0.34, 0.09, z, WOOD, 0.004) for sx in (-1, 1)]
+    o += [B(0.7, 0.34, 0.02, x, 0.2, z - 0.19, WOOD, 0.008)]
+    cols = [L_VIOLET, L_RED, L_BLUE, PURPLE, L_GREEN, L_YELLOW]
+    for i in range(n):
+        xx = x - 0.27 + i * 0.105
+        o += [B(0.012, 0.15, 0.28, xx, 0.12, z, GLASS, 0), B(0.014, 0.05, 0.06, xx, 0.17, z - 0.1, LABEL, 0), B(0.014, 0.03, 0.04, xx, 0.1, z + 0.02, cols[i % 6], 0)]
+    return o
 
 
 def petri(x, z, m=None):
@@ -547,7 +593,33 @@ def phys():
 
 
 # ================================================================== SINH HỌC
+# cần trượt trên ray: mỗi thanh trượt còn lại của bài Sinh là MỘT cần gạt thật nằm trước dụng cụ (id: x đầu ray, z, dài, màu tay cầm)
+LEVERS = {
+    'PLASMOLYSIS': (-0.6, 0.9, 1.0), 'ENZYME': (-0.8, 0.92, 1.0), 'YOGURT': (-1.9, 0.95, 1.0), 'VIRUS_SURVEY': (-1.5, 0.9, 1.0),
+    'PIGMENT': (-0.5, 0.9, 1.0), 'LEAF_STARCH': (0.0, 0.9, 1.0), 'TROPISM': (-0.8, 0.9, 1.0), 'APICAL_DOMINANCE': (-0.6, 0.9, 1.0),
+    'METAMORPHOSIS': (-1.9, 0.85, 1.0), 'PROPAGATION': (-0.6, 0.9, 1.0), 'DNA_EXTRACT': (-1.2, 0.9, 1.0), 'MODIFICATION': (-1.0, 0.9, 1.0),
+    'MINI_ECOSYSTEM': (-1.6, 0.85, 1.0),
+}
+LEVER2 = {'MINI_ECOSYSTEM': (-0.3, 0.85, 1.0)}
+_PART = part
+
+
+def rail(x0, z, ln):
+    return [B(ln + 0.14, 0.03, 0.1, x0 + ln / 2, 0.015, z, INK, 0.008), B(ln, 0.012, 0.03, x0 + ln / 2, 0.034, z, DARK, 0)] + [B(0.012, 0.03, 0.05, x0 + ln * k / 4, 0.036, z - 0.075, WHITE, 0) for k in range(5)]
+
+
+def handle(x0, z):
+    return [B(0.12, 0.05, 0.12, x0, 0.065, z, STEEL, 0.01), C(0.045, 0.1, x0, 0.14, z, ORANGE, bevel=0.01, seg=20)]
+
+
 def bio():
+    def part(name, objs, pivot=(0, 0, 0)):
+        if name.startswith('Set_') and name[4:] in LEVERS:
+            for lv in (LEVERS[name[4:]], LEVER2.get(name[4:])):
+                if lv:
+                    objs = objs + rail(*lv)
+        return _PART(name, objs, pivot)
+
     # BIOMOLECULES: giá 5 ống mẫu, 4 lọ thuốc thử, đèn cồn, cốc cách thủy
     o = rack(-1.5, 0, [liq('starch', '#EDE6CF', 0.8), L_YELLOW, liq('egg', '#F3EFD8', 0.7), liq('oil', '#E8C84A', 0.8), WATER])
     for i, (m, c) in enumerate(((L_BROWN, INK), (L_BLUE, BLUE), (L_VIOLET, PURPLE), (L_RED, RED))):
@@ -557,7 +629,7 @@ def bio():
     part('Mov_BIOMOLECULES_1', [C(0.014, 0.3, 0, 0.17, 0, GLASS, seg=10), LA([(0, 0), (0.012, 0.02), (0.012, 0.04), (0, 0.04)], 0, 0, 0, GLASS), S(0.045, 0, 0.35, 0, RUBBER)])
 
     # CELL_OBSERVE: kính hiển vi (bàn kính động theo núm chỉnh nét), lam kính, củ hành, xanh methylene
-    o = microscope(-0.6, 0) + slide(0.6, 0.5) + slide(1.0, 0.6, L_BLUE) + [S(0.2, 1.6, 0.2, -0.3, PURPLE), C(0.03, 0.1, 1.6, 0.43, -0.3, LEAF2), B(0.5, 0.3, 0.3, 2.3, 0.15, 0.4, WOOD, 0.01)] + bottle(0.5, -0.5, L_BLUE, BLUE) + [C(0.012, 0.4, 1.3, 0.012, 0.75, CHROME, 'x', seg=6)]
+    o = microscope(-0.6, 0) + slide(0.6, 0.5) + slide(1.0, 0.6, L_BLUE) + [S(0.2, 1.6, 0.2, -0.3, PURPLE), C(0.03, 0.1, 1.6, 0.43, -0.3, LEAF2), ] + slidebox(2.3, 0.4) + bottle(0.5, -0.5, L_BLUE, BLUE) + [C(0.012, 0.4, 1.3, 0.012, 0.75, CHROME, 'x', seg=6)]
     part('Set_CELL_OBSERVE', o)
     part('Mov_CELL_OBSERVE_1', stage(-0.6, 0, 0), pivot=(0, 0, 0))
 
@@ -720,7 +792,14 @@ def bio():
     part('Mov_MINI_ECOSYSTEM_1', weeds, pivot=(-0.5, 0.1, 0))
 
 
-(phys if WHICH == 'phys' else bio)()
+def bio_levers():
+    for i, (x0, z, ln) in LEVERS.items():
+        _PART('Mov_%s_9' % i, handle(x0, z), pivot=(x0, 0.065, z))
+    for i, (x0, z, ln) in LEVER2.items():
+        _PART('Mov_%s_8' % i, handle(x0, z), pivot=(x0, 0.065, z))
+
+
+(phys if WHICH == 'phys' else (lambda: (bio(), bio_levers())))()
 export_glb('bench-%s.glb' % WHICH)
 
 # ------------------------------------------------------------------ ảnh xem thử: xếp các bộ thành lưới 3 × 2, mỗi tờ 6 bài

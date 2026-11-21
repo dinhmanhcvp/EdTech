@@ -46,7 +46,8 @@ export function cardiacPhase(t: number, period = 0.8): {atria: number; ventricle
  * (`sel`, `flow`, `L:<id>`, `T:<id>`). `onFail` khi không tải được mô hình (cảnh dùng bản hình khối cũ).
  */
 export function blenderHeart(k: Kit, add: (id: string, obj: THREE.Object3D) => void, onFail: () => void) {
-  const nodes = new Map<string, {obj: THREE.Object3D; s0: THREE.Vector3}>();
+  /** `cut`: bộ phận tim bổ dọc; `ext`: cùng bộ phận ở tim nhìn ngoài (`heart_ext_<id>`, khối liền ướt có mạch vành), bật theo `s.view` */
+  const nodes = new Map<string, {obj: THREE.Object3D; s0: THREE.Vector3; cut: THREE.Object3D; ext: THREE.Object3D | null}>();
   let ready = false;
   k.caption('Đang tải mô hình tim…');
   loadModel('/models/heart.glb')
@@ -55,14 +56,40 @@ export function blenderHeart(k: Kit, add: (id: string, obj: THREE.Object3D) => v
         const src = lib.getObjectByName(`heart_${id}`);
         if (!src) continue;
         const o = src.clone(true);
-        o.traverse((c) => {
+        const exSrc = lib.getObjectByName(`heart_ext_${id}`);
+        // vỏ chung đặt ở chốt co bóp của bộ phận: cả hai bản (bổ dọc / mặt ngoài) cùng đập, cùng được chạm chọn dưới một id
+        const g = new THREE.Group();
+        g.position.copy(o.position);
+        o.position.set(0, 0, 0);
+        g.add(o);
+        let ex: THREE.Object3D | null = null;
+        if (exSrc) {
+          ex = exSrc.clone(true);
+          ex.position.copy(exSrc.position).sub(g.position);
+          ex.visible = false;
+          g.add(ex);
+          // mạch vành + tĩnh mạch tim (một nút riêng) đi cùng tâm thất trái ở mặt ngoài
+          const cor = id === 'lv' ? lib.getObjectByName('heart_ext_cor') : null;
+          if (cor) {
+            const c = cor.clone(true);
+            c.position.copy(cor.position).sub(g.position);
+            ex.add(c);
+            c.position.sub(ex.position);
+          }
+        }
+        g.traverse((c) => {
           const m = c as THREE.Mesh;
           if (m.isMesh) m.castShadow = m.receiveShadow = true;
         });
-        add(id, o);
+        add(id, g);
         // add() đã nhân bản vật liệu: gắn vi bề mặt mô ướt lên bản riêng
-        wetAll(o, id === 'lung' ? 14 : id === 'body' ? 6 : 9, id === 'lung' ? 0.0025 : 0.0015, 0.3);
-        nodes.set(id, {obj: o, s0: o.scale.clone()});
+        wetAll(o, id === 'lung' ? 14 : id === 'body' ? 6 : 9, id === 'lung' ? 0.0025 : 0.0015, 0.3); // chỉ bản bổ dọc: bản mặt ngoài đã có thớ sần từ Blender
+        if (ex)
+          ex.traverse((c) => {
+            const m = (c as THREE.Mesh).material as THREE.MeshPhysicalMaterial | undefined;
+            if (m && 'clearcoat' in m) Object.assign(m, {clearcoat: 0.85, clearcoatRoughness: 0.15, sheen: 0.35, sheenColor: new THREE.Color('#FF6A5A'), sheenRoughness: 0.5});
+          });
+        nodes.set(id, {obj: g, s0: g.scale.clone(), cut: o, ext: ex});
       }
       ready = nodes.size > 0;
       if (!ready) onFail();
@@ -94,6 +121,18 @@ export function blenderHeart(k: Kit, add: (id: string, obj: THREE.Object3D) => v
     m.renderOrder = 3;
   }
   k.scene.add(blue, red);
+  // ánh sáng điện ảnh khi xem mặt ngoài: đèn chính ấm, đèn phụ lạnh dịu, đèn viền sau mạnh làm sáng mép ướt và mạch nhỏ
+  const rig = new THREE.Group();
+  const key = new THREE.DirectionalLight('#FFD2A8', 2.2);
+  key.position.set(-3, 3.5, 4);
+  const fill = new THREE.DirectionalLight('#9FB8FF', 0.7);
+  fill.position.set(4, 0.5, 3);
+  const rim = new THREE.DirectionalLight('#FFF1E6', 3.2);
+  rim.position.set(1.5, 3, -4.5);
+  rim.target.position.set(0, 0, 0);
+  rig.add(key, fill, rim, rim.target);
+  rig.visible = false;
+  k.scene.add(rig);
   const tags = new Map(HEART_PARTS.map((id) => [id, k.label('', '#2B2823', true)]));
   // đường dẫn mảnh từ nhãn tới đúng chỗ trên bộ phận
   const leaders = k.line('#4B473D', 1.2, HEART_PARTS.flatMap((id) => [...LABEL[id], ...POINT[id]]), true);
@@ -109,6 +148,20 @@ export function blenderHeart(k: Kit, add: (id: string, obj: THREE.Object3D) => v
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
     if (!ready) return;
+    const ext = s.view === 'ext';
+    rig.visible = ext;
+    leaders.visible = !ext;
+    // mặt ngoài: phóng máy quay vào tim (zoom ống kính, người dùng vẫn xoay / lăn được)
+    const cam = k.camera as THREE.PerspectiveCamera;
+    const z = ext ? 1.35 : 1;
+    if (Math.abs(cam.zoom - z) > 0.002) {
+      cam.zoom += (z - cam.zoom) * Math.min(1, dt * 6);
+      cam.updateProjectionMatrix();
+    }
+    for (const n of nodes.values()) {
+      n.cut.visible = !ext;
+      if (n.ext) n.ext.visible = ext;
+    }
     const {atria, ventricles} = cardiacPhase(now / 1000);
     for (const [id, n] of nodes) {
       if (ATRIA.has(id)) n.obj.scale.copy(n.s0).multiplyScalar(1 - 0.07 * atria);
@@ -120,7 +173,7 @@ export function blenderHeart(k: Kit, add: (id: string, obj: THREE.Object3D) => v
     u = (u + dt * 0.045 * (0.45 + 2.0 * ventricles)) % 1;
     let a = 0;
     let b = 0;
-    if (s.flow !== '0')
+    if (s.flow !== '0' && !ext)
       curves.forEach((cv, li) => {
         for (let i = 0; i < N; i++) {
           const v = (u + i / N + li * 0.5 / N) % 1;
@@ -134,7 +187,7 @@ export function blenderHeart(k: Kit, add: (id: string, obj: THREE.Object3D) => v
     red.flush(b);
     for (const [id, tag] of tags) {
       const name = s[`L:${id}`] || s[`T:${id}`] || id;
-      tag(id === s.sel ? null : at.set(...LABEL[id]), undefined, name);
+      tag(id === s.sel || ext ? null : at.set(...LABEL[id]), undefined, name);
     }
   };
 }

@@ -64,6 +64,143 @@ export function labRoom(k: Kit, [w, d, cx, cz]: [number, number, number, number]
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(0.22, -FLOOR - 0.4, 0.22, '#2A2D5C', cx + sx * (w / 2 - 0.35), (FLOOR - 0.4) / 2, cz + sz * (d / 2 - 0.35));
 }
 
+/** ảnh vẽ bằng canvas (nhiễu, vân đá, cảnh ngoài cửa sổ) thành texture lặp */
+function paint(w: number, h: number, draw: (g: CanvasRenderingContext2D, w: number, h: number) => void, repeat = 1): THREE.Texture | null {
+  if (typeof document === 'undefined') return null;
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  const g = cv.getContext('2d');
+  if (!g) return null;
+  draw(g, w, h);
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeat, repeat);
+  t.anisotropy = 4;
+  return t;
+}
+/** số giả ngẫu nhiên cố định theo hạt giống: phòng giống nhau mỗi lần mở */
+const rnd = (i: number) => {
+  const a = Math.sin(i * 12.9898 + 4.1) * 43758.5453;
+  return a - Math.floor(a);
+};
+
+/** mặt bàn đá granite đen lấm tấm (bàn thí nghiệm Sinh) */
+export function graniteTop(k: Kit, [w, d, cx, cz]: [number, number, number, number]) {
+  const map = paint(512, 512, (g, W, H) => {
+    g.fillStyle = '#1B1C1F';
+    g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 9000; i++) {
+      const r = rnd(i * 3 + 1);
+      g.fillStyle = r < 0.55 ? '#2A2B2F' : r < 0.85 ? '#3A3B40' : r < 0.97 ? '#5A5C62' : '#9A9CA3';
+      const s = r > 0.97 ? 1.6 : 1 + rnd(i * 3 + 2) * 1.6;
+      g.fillRect(rnd(i * 7) * W, rnd(i * 11 + 5) * H, s, s);
+    }
+  }, 3);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, d), new THREE.MeshStandardMaterial({color: '#FFFFFF', map, roughness: 0.32, metalness: 0.05}));
+  top.position.set(cx, -0.056, cz);
+  top.receiveShadow = true;
+  k.scene.add(top);
+  // mép bàn bo đen mờ
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, 0.05, 0.06), new THREE.MeshStandardMaterial({color: '#0E0F11', roughness: 0.5}));
+  edge.position.set(cx, -0.09, cz + d / 2);
+  k.scene.add(edge);
+}
+
+/**
+ * Phòng thí nghiệm Sinh sáng, có chiều sâu: tủ bếp thí nghiệm hai tầng (cánh tủ, tay nắm), kệ lọ hoá chất, cửa sổ nhìn ra vườn, chậu cây,
+ * tường kem, sàn gạch xám. Mọi thứ ở xa bàn và chìm trong sương nhẹ (`bright` của Stage3D) nên làm nền mềm, không tranh với dụng cụ.
+ */
+export function bioRoom(k: Kit, [w, d, cx, cz]: [number, number, number, number]) {
+  const FLOOR = -2.6;
+  const wall = cz - d / 2 - 3.2;
+  const add = (geo: THREE.BufferGeometry, color: string, x: number, y: number, z: number, o: {rough?: number; metal?: number; map?: THREE.Texture | null; glow?: number; opacity?: number} = {}) => {
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color, roughness: o.rough ?? 0.8, metalness: o.metal ?? 0, map: o.map ?? null, emissive: o.glow ? color : '#000000', emissiveIntensity: o.glow ?? 0, transparent: o.opacity !== undefined, opacity: o.opacity ?? 1}));
+    m.position.set(x, y, z);
+    m.receiveShadow = true;
+    k.scene.add(m);
+    return m;
+  };
+  const box = (sx: number, sy: number, sz: number, color: string, x: number, y: number, z: number, o: Parameters<typeof add>[5] = {}) => add(new THREE.BoxGeometry(sx, sy, sz), color, x, y, z, o);
+  const tiles = paint(256, 256, (g, W, H) => {
+    g.fillStyle = '#B9BCBC';
+    g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 4; i++)
+      for (let j = 0; j < 4; j++) {
+        g.fillStyle = `hsl(180, 3%, ${70 + rnd(i * 4 + j) * 6}%)`;
+        g.fillRect(i * 64 + 1, j * 64 + 1, 62, 62);
+      }
+  }, 10);
+  box(40, 0.1, 40, '#FFFFFF', 0, FLOOR - 0.05, 0, {map: tiles, rough: 0.6});
+  // tường kem + chân tường
+  box(40, 14, 0.2, '#E9E4D8', 0, FLOOR + 7, wall - 0.9);
+  for (const sx of [-1, 1]) box(0.2, 14, 40, '#E2DDD0', cx + sx * 12, FLOOR + 7, 0);
+  // cửa sổ: khung trắng, kính nhìn ra vườn xanh có nắng
+  const garden = paint(512, 256, (g, W, H) => {
+    const sky = g.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#CFE6F5');
+    sky.addColorStop(0.55, '#E8F3E6');
+    sky.addColorStop(1, '#9CC48A');
+    g.fillStyle = sky;
+    g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 70; i++) {
+      const x = rnd(i * 5) * W;
+      const y = H * (0.45 + rnd(i * 5 + 1) * 0.5);
+      const r = 18 + rnd(i * 5 + 2) * 40;
+      g.fillStyle = `hsla(${95 + rnd(i * 5 + 3) * 35}, 38%, ${34 + rnd(i * 5 + 4) * 26}%, 0.75)`;
+      g.beginPath();
+      g.arc(x, y, r, 0, Math.PI * 2);
+      g.fill();
+    }
+  });
+  for (const sx of [-1, 1]) {
+    const x = cx + sx * 5.2;
+    add(new THREE.PlaneGeometry(3.6, 2.6), '#FFFFFF', x, 3.3, wall - 0.78, {map: garden, glow: 0.9, rough: 1});
+    box(3.8, 0.12, 0.16, '#F7F6F2', x, 4.65, wall - 0.75);
+    box(3.8, 0.16, 0.3, '#F7F6F2', x, 1.95, wall - 0.7);
+    for (const dx of [-1.85, 0, 1.85]) box(0.1, 2.8, 0.14, '#F7F6F2', x + dx, 3.3, wall - 0.74);
+  }
+  // tủ thí nghiệm dọc tường: tủ dưới có cánh + tay nắm, mặt đá, tủ treo phía trên giữa hai cửa sổ
+  const cab = (x0: number, n: number, y: number, h: number, dep: number, color: string) => {
+    for (let i = 0; i < n; i++) {
+      const x = x0 + i * 1.02;
+      box(1.0, h, dep, color, x, y, wall - 0.75 + dep / 2, {rough: 0.55});
+      box(0.32, 0.04, 0.04, '#B8BCC2', x + 0.3, y + h * 0.3, wall - 0.73 + dep, {metal: 0.8, rough: 0.3});
+    }
+  };
+  cab(cx - 6.6, 14, FLOOR + 0.95, 1.8, 0.75, '#D8DCDF');
+  box(14.6, 0.08, 0.85, '#2A2B2F', cx + 0.03, FLOOR + 1.89, wall - 0.33, {rough: 0.35});
+  cab(cx - 1.53, 4, 4.4, 1.3, 0.45, '#E4E7E9');
+  // kệ gỗ và lọ hoá chất (nâu, trong, xanh) trên kệ
+  for (const [y, n] of [[2.75, 9], [3.55, 7]] as const) {
+    box(4.1, 0.06, 0.4, '#9A7048', cx, y, wall - 0.55, {rough: 0.7});
+    for (let i = 0; i < n; i++) {
+      const r = rnd(i + y * 10);
+      const h = 0.28 + r * 0.25;
+      const c = r < 0.4 ? '#6B3A12' : r < 0.7 ? '#DDE7EE' : r < 0.85 ? '#2F6FD0' : '#3F8F3A';
+      add(new THREE.CylinderGeometry(0.09 + r * 0.04, 0.1 + r * 0.04, h, 16), c, cx - 1.8 + i * (3.6 / (n - 1)), y + 0.03 + h / 2, wall - 0.55, {rough: 0.15, opacity: c === '#DDE7EE' ? 0.55 : 0.92});
+      add(new THREE.CylinderGeometry(0.05, 0.05, 0.06, 12), '#1D1B16', cx - 1.8 + i * (3.6 / (n - 1)), y + 0.06 + h, wall - 0.55);
+    }
+  }
+  // dụng cụ trên mặt tủ sau: cốc, bình tam giác, chậu cây
+  for (let i = 0; i < 6; i++) {
+    const x = cx - 6 + i * 2.3 + rnd(i) * 0.5;
+    const h = 0.3 + rnd(i + 9) * 0.3;
+    add(new THREE.CylinderGeometry(0.12, 0.2, h, 18), i % 2 ? '#CFE3F0' : '#E8F0E0', x, FLOOR + 1.93 + h / 2, wall - 0.3, {rough: 0.1, opacity: 0.5});
+  }
+  for (const sx of [-1, 1]) {
+    const x = cx + sx * 7.2;
+    add(new THREE.CylinderGeometry(0.28, 0.2, 0.45, 18), '#B5532A', x, FLOOR + 2.15, wall - 0.35);
+    for (let i = 0; i < 9; i++) add(new THREE.SphereGeometry(0.22 + rnd(i + sx) * 0.12, 12, 10), i % 2 ? '#3F8F3A' : '#5DA34A', x + (rnd(i * 3) - 0.5) * 0.6, FLOOR + 2.55 + rnd(i * 4) * 0.6, wall - 0.35 + (rnd(i * 5) - 0.5) * 0.3);
+  }
+  // đèn trần dạng tấm phát sáng
+  for (const sx of [-1, 0, 1]) box(2.4, 0.06, 0.8, '#FFFDF6', cx + sx * 4.2, 6.2, cz - 1.5, {glow: 1.2});
+  // chân bàn: khung thép sơn xám
+  box(w - 0.3, 0.2, d - 0.3, '#3A3D44', cx, -0.22, cz, {metal: 0.4, rough: 0.5});
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(0.14, -FLOOR - 0.3, 0.14, '#4A4E57', cx + sx * (w / 2 - 0.35), (FLOOR - 0.3) / 2, cz + sz * (d / 2 - 0.35), {metal: 0.6, rough: 0.4});
+}
+
 const BONES = [0, 1, 1, 2, 2, 3, 3, 4, 0, 5, 5, 6, 6, 7, 7, 8, 5, 9, 9, 10, 10, 11, 11, 12, 9, 13, 13, 14, 14, 15, 15, 16, 13, 17, 17, 18, 18, 19, 19, 20, 0, 17];
 
 /** Hai bàn tay ảo (21 khớp) + vòng con trỏ, vẽ trên mặt phẳng cao `h`; trả ba con trỏ (tay 0, tay 1, chuột). */

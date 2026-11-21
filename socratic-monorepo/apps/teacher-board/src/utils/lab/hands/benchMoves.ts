@@ -44,13 +44,23 @@ export const BENCH_MOVES: Record<string, BenchMove[]> = {
   EM_INDUCTION: [mv(1, 'v', 'x', 0.9, -0.2, 'nam châm')], // nam châm đưa vào lòng cuộn dây
   LEVER_MOMENT: [mv(1, 'd1', 'x', -0.4, -1.6, 'quả cân bên trái')], // quả cân trái: mỗi lỗ 10 cm
   PROJECTILE_HORIZONTAL: [mv(1, 'h', 'y', 0.5, 1.5, 'bệ máng ném')], // bệ máng ném
-  ENZYME: [mv(1, 'T', 'x', -1.1, -0.2, 'cần gạt nhiệt độ bể')],
-  YOGURT: [mv(1, 'T', 'x', -0.14, 0.34, 'cần gạt nhiệt độ ủ')],
+  ENZYME: [mv(9, 'pH', 'x', 0, 1.0, 'cần chọn pH dung dịch đệm'), mv(1, 'T', 'x', -1.1, -0.2, 'cần gạt nhiệt độ bể')],
+  YOGURT: [mv(9, 't', 'x', 0, 1.0, 'cần thời gian ủ'), mv(1, 'T', 'x', -0.14, 0.34, 'cần gạt nhiệt độ ủ')],
   SEED_RESPIRATION: [mv(1, 'T', 'x', -1.55, -0.45, 'cần gạt nhiệt độ bể')],
   CELL_OBSERVE: [mv(1, 'focus', 'y', 0.44, 0.56, 'bàn kính')], // bàn kính
   TRANSPIRATION: [mv(1, 'L', 'x', 2.2, 0.6, 'đèn')], // đèn lại gần cây
   TREE_AGE: [mv(1, 'D', 's', 0.4, 1.5, 'lát cắt thân cây')], // lát cắt thân cây
-  MINI_ECOSYSTEM: [mv(1, 'pl', 's', 0.2, 1.3, 'cây thủy sinh')], // cây thủy sinh
+  PLASMOLYSIS: [mv(9, 't', 'x', 0, 1.0, 'cần thời gian ngâm tiêu bản')],
+  VIRUS_SURVEY: [mv(9, 'n', 'x', 0, 1.0, 'cần số phiếu khảo sát')],
+  PIGMENT: [mv(9, 'ds', 'x', 0, 1.0, 'cần quãng chạy của dung môi')],
+  LEAF_STARCH: [mv(9, 'h', 'x', 0, 1.0, 'cần số giờ chiếu sáng')],
+  TROPISM: [mv(9, 'd', 'x', 0, 1.0, 'cần số ngày nuôi')],
+  APICAL_DOMINANCE: [mv(9, 'd', 'x', 0, 1.0, 'cần số ngày sau khi bấm ngọn')],
+  METAMORPHOSIS: [mv(9, 'd', 'x', 0, 1.0, 'cần số ngày nuôi')],
+  PROPAGATION: [mv(9, 'd', 'x', 0, 1.0, 'cần số ngày giâm cành')],
+  DNA_EXTRACT: [mv(9, 'mass', 'x', 0, 1.0, 'cần khối lượng mẫu')],
+  MODIFICATION: [mv(9, 'N', 'x', 0, 1.0, 'cần liều phân đạm')],
+  MINI_ECOSYSTEM: [mv(1, 'pl', 's', 0.2, 1.3, 'cây thủy sinh'), mv(9, 'fi', 'x', 0, 1.0, 'cần số cá thả vào bể'), mv(8, 'L', 'x', 0, 1.0, 'cần số giờ chiếu sáng')], // cây thủy sinh
 };
 
 /**
@@ -104,6 +114,35 @@ export const BENCH_ACTION: Record<string, string> = {
   QUADRAT: 'Đặt khung, đếm cá thể',
   COMMUNITY: 'Đặt khung, đếm từng loài',
   MINI_ECOSYSTEM: 'Đo oxygen sau 7 ngày',
+};
+
+/**
+ * LỰA CHỌN trên chính dụng cụ: mỗi lựa chọn của bài (mẫu, thuốc thử, dung dịch, giống…) gắn với MỘT dụng cụ thật trên bàn;
+ * chạm vào dụng cụ đó (vòng vàng nhỏ) là đổi sang lựa chọn kế tiếp, nhãn ngay trên dụng cụ ghi lựa chọn hiện tại.
+ * Toạ độ theo hệ của bộ dụng cụ Blender (`tools/lab-models/bench_parts.py`).
+ */
+export const BENCH_PICK: Record<string, Record<string, [number, number, number]>> = {
+  BIOMOLECULES: {sample: [-1.5, 0.62, 0], reagent: [0.45, 0.55, 0.5]},
+  CELL_OBSERVE: {sample: [0.6, 0.12, 0.5], obj: [-0.6, 0.95, 0.05]},
+  PLASMOLYSIS: {sol: [1.45, 0.4, -0.3]},
+  ENZYME: {inh: [1.85, 0.4, -0.3]},
+  MITOSIS_SLIDE: {sample: [0.2, 0.6, -0.3], stain: [1.0, 0.4, -0.3]},
+  YOGURT: {st: [-1.0, 0.55, 0]},
+  VIRUS_SURVEY: {d: [-1.2, 0.45, 0.4]},
+  TRANSPIRATION: {c: [1.9, 0.3, 0.5]},
+  PIGMENT: {b: [-0.6, 0.35, -0.4]},
+  LEAF_STARCH: {dark: [-1.62, 1.05, 0.05], leaf: [1.7, 0.15, 0.4]},
+  SEED_RESPIRATION: {g: [-1.0, 0.6, 0]},
+  CIRCULATION: {st: [-0.9, 0.5, 0]},
+  TROPISM: {ty: [-0.5, 1.0, -0.4], grp: [-1.9, 0.55, 0]},
+  APICAL_DOMINANCE: {cut: [0.7, 1.0, 0]},
+  METAMORPHOSIS: {sp: [-1.4, 0.55, 0]},
+  PROPAGATION: {m: [-1.8, 0.45, 0.3], tr: [1.2, 0.35, -0.3]},
+  DNA_EXTRACT: {grind: [-2.2, 0.4, 0.2], lysis: [2.6, 0.35, -0.3], filter: [-0.45, 0.95, -0.3], eth: [0.7, 0.35, 0.2]},
+  CHROMOSOME_MUTATION: {sl: [-0.2, 0.2, 0.5]},
+  MODIFICATION: {g: [0.9, 0.55, -0.2]},
+  QUADRAT: {site: [-0.6, 0.25, 0.85]},
+  COMMUNITY: {site: [-0.6, 0.25, 0.85]},
 };
 
 /**

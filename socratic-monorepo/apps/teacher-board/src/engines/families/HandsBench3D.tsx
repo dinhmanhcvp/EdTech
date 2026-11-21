@@ -2,10 +2,10 @@
 
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
-import {BENCH_ACTION, BENCH_MOVES, BENCH_SETUP, dragT, grabOf, isTimeUnit, type BenchMove} from '../../utils/lab/hands/benchMoves';
+import {BENCH_ACTION, BENCH_MOVES, BENCH_PICK, BENCH_SETUP, dragT, grabOf, isTimeUnit, type BenchMove} from '../../utils/lab/hands/benchMoves';
 import {BENCH_FX, FX_PARTS} from './benchMotion';
 import {BIO_FX, BIO_FX_PARTS} from './benchMotionBio';
-import {handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
+import {bioRoom, graniteTop, handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {dress, glassify, loadModel, partOf} from './labParts';
 import type {BenchLive} from './PhysBench';
@@ -171,13 +171,20 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
   return {
     floor: true,
     room: true,
+    bright: live.file === 'bio',
     dist: 8.2,
     target: [-0.3, 0.45, 0.1],
     orbit: () => [0, 50],
     setup: (k) => {
       const e = live.e;
-      labRoom(k, [8.4, 5.6, -0.3, 0.1]);
-      solid(k.scene, new THREE.BoxGeometry(8.4, 0.12, 5.6), '#1C1F4A', {rough: 0.9, x: -0.3, y: -0.056, z: 0.1});
+      // bài Sinh: phòng thí nghiệm sáng, mặt bàn đá đen lấm tấm; bài Lí giữ phòng tối
+      if (live.file === 'bio') {
+        bioRoom(k, [8.4, 5.6, -0.3, 0.1]);
+        graniteTop(k, [8.4, 5.6, -0.3, 0.1]);
+      } else {
+        labRoom(k, [8.4, 5.6, -0.3, 0.1]);
+        solid(k.scene, new THREE.BoxGeometry(8.4, 0.12, 5.6), '#1C1F4A', {rough: 0.9, x: -0.3, y: -0.056, z: 0.1});
+      }
       const P = handPointers(k, input, 0.3);
 
       // bộ dụng cụ Blender của bài + các phần động theo thanh trượt
@@ -267,19 +274,37 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         return P.distAt(nx, ny, root.localToWorld(markWorld.set(...setup[stage].at))) < reach;
       };
       // mỗi lựa chọn của bài là một nút tròn: bấm = sang lựa chọn kế tiếp; nút cam lớn = một lần đo
+      const cycle = (c: NonNullable<typeof e.choices>[number]) => {
+        const at = c.options.findIndex((o) => o[0] === live.st.s[c.key]);
+        live.dispatch({type: 'choose', key: c.key, value: c.options[(at + 1) % c.options.length][0]});
+      };
+      // lựa chọn gắn với dụng cụ thật (BENCH_PICK): vòng vàng nhỏ + nhãn ngay trên dụng cụ, chạm là đổi; không còn nút tròn ở mép bàn
+      const picks = (e.choices ?? []).flatMap((c) => {
+        const at = BENCH_PICK[e.id]?.[c.key];
+        if (!at) return [];
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.025, 8, 28).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({color: '#E3B341', transparent: true, opacity: 0.95, depthTest: false}));
+        ring.position.set(...at);
+        ring.renderOrder = 5;
+        root.add(ring);
+        return [{c, at, ring, tag: k.label('', '#8A6A12'), cool: 0}];
+      });
+      const pickWorld = new THREE.Vector3();
+      const pickAt = (nx: number, ny: number, reach: number) => {
+        root.updateMatrixWorld();
+        return picks.find((q) => P.distAt(nx, ny, root.localToWorld(pickWorld.set(...q.at))) < reach);
+      };
       const buttons = pads(k, P, [
-        ...(e.choices ?? []).map((c, i) => ({
-          at: choiceAt(i),
-          color: '#E3B341',
-          r: 0.16,
-          side: true,
-          notch: (): [number, number] => [Math.max(0, c.options.findIndex((o) => o[0] === live.st.s[c.key])), c.options.length],
-          text: () => `${c.label}: ${c.options.find((o) => o[0] === live.st.s[c.key])?.[1] ?? ''}`,
-          press: () => {
-            const at = c.options.findIndex((o) => o[0] === live.st.s[c.key]);
-            live.dispatch({type: 'choose', key: c.key, value: c.options[(at + 1) % c.options.length][0]});
-          },
-        })),
+        ...(e.choices ?? [])
+          .map((c, i) => ({
+            at: choiceAt(i),
+            color: '#E3B341',
+            r: 0.16,
+            side: true,
+            notch: (): [number, number] => [Math.max(0, c.options.findIndex((o) => o[0] === live.st.s[c.key])), c.options.length],
+            text: () => `${c.label}: ${c.options.find((o) => o[0] === live.st.s[c.key])?.[1] ?? ''}`,
+            press: () => cycle(c),
+          }))
+          .filter((_, i) => !BENCH_PICK[e.id]?.[e.choices![i].key]),
         ...(e.columns.length ? [{at: MEASURE_AT, color: '#D9481C', r: 0.28, text: () => (setupDone() ? `${action} (lần ${live.st.rows.length + 1})` : `Bước ${stage + 1}/${setup.length}: ${setup[stage].label}`), press: () => (setupDone() ? live.dispatch({type: 'measure'}) : void (stage++, (flash = 0.5)))}] : []),
       ]);
       // bộ phận chỉ có sau khi mô hình tải xong nên danh sách lấy theo từng khung hình
@@ -351,7 +376,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       };
       const doTag = k.label('', '#1F7A4D');
       const doBox = new THREE.Box3();
-      P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny) || timerGrabs.grab(nx, ny) || nearMark(nx, ny, 0.1) || (setupDone() && onMover(nx, ny)));
+      P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny) || timerGrabs.grab(nx, ny) || nearMark(nx, ny, 0.1) || !!pickAt(nx, ny, 0.1) || (setupDone() && onMover(nx, ny)));
 
       // chuyển động của bài: dụng cụ chạy theo quy luật vật lí của bài (benchMotion.ts)
       const fx = (BENCH_FX[e.id] ?? BIO_FX[e.id])?.({
@@ -408,11 +433,25 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             flash = 0.5;
             return;
           }
+          const pk = ptr.pressed && ptr.active ? pickAt(x, y, Math.max(0.1, ptr.reach)) : undefined;
+          if (pk && pk.cool <= 0) {
+            pk.cool = 0.5;
+            cycle(pk.c);
+            return;
+          }
+          if (pk) return;
           if (!ptr.pressed || !ptr.active || !setupDone() || grabs.grab(x, y, r) || timerGrabs.grab(x, y, r) || sliders.grab(x, y) || buttons.grab(x, y, r) || !onMover(x, y, ptr.hand ? ptr.reach : 0)) return;
           if (e.columns.length) live.dispatch({type: 'measure'});
           else pokes++;
         });
         fx?.(dt, {p: live.st.p, s: live.st.s, rows: live.st.rows.length + pokes * 1000}, elapsed);
+        // nhãn vàng trên dụng cụ có lựa chọn: ghi lựa chọn hiện tại
+        for (const q of picks) {
+          q.cool = Math.max(0, q.cool - dt);
+          q.ring.scale.setScalar(1 + 0.12 * Math.sin(elapsed * 4 + q.at[0]) + (q.cool > 0 ? q.cool * 0.6 : 0));
+          root.updateMatrixWorld();
+          q.tag(root.localToWorld(pickWorld.set(...q.at)).setY(pickWorld.y + 0.3), undefined, `${q.c.label}: ${q.c.options.find((o) => o[0] === live.st.s[q.c.key])?.[1] ?? ''} · chạm để đổi`);
+        }
         // nhãn xanh trên dụng cụ cần chạm: nói rõ thao tác của bài
         flash = Math.max(0, flash - dt);
         marks.forEach((m, i) => {

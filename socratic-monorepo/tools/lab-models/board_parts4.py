@@ -50,7 +50,30 @@ def P(*pts):
     return [T(*p) for p in pts]
 
 
-def organ(prefix, name, objs, group):
+from organs import flesh_from, organify  # noqa: E402
+from organic import blob, mottled, veined  # noqa: E402
+
+
+from organs import zanat  # noqa: E402
+ZA = {**{'res_' + k: v for k, v in zanat('ZR_').items()}, **{'dig_' + k: v for k, v in zanat('ZD_').items()}, **{'ear_' + k: v for k, v in zanat('ZT_').items()},
+      **{'eye_' + k: v for k, v in zanat('ZE_').items()}}
+
+
+def organ(prefix, name, objs, group, fn=None, rel=0.008):
+    """mỗi bộ phận cơ thể người → khối liền ướt (Voxel Remesh + Displace + màu loang + Clearcoat/Subsurface);
+    bộ phận trong suốt (màng nhĩ, bao Bowman, phổi trong mờ) giữ nguyên để thấy bên trong"""
+    real = ZA.get(prefix + name)
+    if real is not None:
+        # cơ quan giải phẫu thật (Z-Anatomy, CC BY-SA 4.0) đã xử lý sẵn: bỏ hình tự dựng
+        for o in objs:
+            bpy.data.objects.remove(o, do_unlink=True) if hasattr(o, 'name') and o.name in bpy.data.objects else None
+        if name in ('lungs',):
+            from organs import ghost
+            ghost(real, 0.62)
+        return make(prefix + name, [real], group)
+    clear = any(m and m.blend_method == 'BLEND' for o in objs if hasattr(o.data, 'materials') for m in o.data.materials)
+    if group in ('dig', 'res', 'ear', 'neph') and not clear and not name.endswith('_done'):
+        objs = [organify(prefix + name + '_w', objs, fn or flesh_from(objs), rel=rel)]
     return make(prefix + name, objs, group)
 
 
@@ -80,14 +103,20 @@ PELV = mat('pelv', hexc('#F0D9A8'), rough=0.5)
 # ================================================================== tiêu hóa (nhìn thẳng; miệng ở y = 6,6, hậu môn ở y = 0,2)
 organ('dig_', 'mouth', [ell('m', (0, 6.6, 0.3), (0.55, 0.32, 0.4), FLESH), ell('t', (0, 6.55, 0.38), (0.35, 0.12, 0.3), SALMON)], 'dig')
 organ('dig_', 'esophagus', [tube('e', P((0, 6.3, 0.2), (0, 5.4, 0), (0.0, 4.6, 0.05)), 0.14, PINK)], 'dig')
-organ('dig_', 'stomach', [ell('s', (0.5, 3.9, 0.1), (0.75, 0.9, 0.55), SALMON)], 'dig')
-organ('dig_', 'liver', [ell('l', (-0.95, 4.1, 0.1), (1.2, 0.65, 0.6), LIVER)], 'dig')
-organ('dig_', 'gallbladder', [ell('g', (-0.55, 3.5, 0.5), (0.2, 0.3, 0.2), GALL)], 'dig')
-organ('dig_', 'pancreas', [ell('p', (0.2, 3.1, -0.1), (1.1, 0.17, 0.2), YEL)], 'dig')
+organ('dig_', 'stomach', [blob('s', [('C', (0.0, 4.55, 0.1), (0.45, 4.45, 0.1), 0.32), ('C', (0.45, 4.45, 0.1), (0.85, 3.95, 0.1), 0.55), ('C', (0.85, 3.95, 0.1), (0.6, 3.4, 0.1), 0.48), ('C', (0.6, 3.4, 0.1), (0.1, 3.35, 0.1), 0.3)], SALMON, res=0.04)], 'dig', veined('#D98478', '#9A3442', 4, 0.04))
+organ('dig_', 'liver', [blob('l', [('E', (-1.1, 4.15, 0.1), (0.95, 0.62, 0.6)), ('E', (-0.4, 4.35, 0.12), (0.7, 0.42, 0.45)), ('E', (0.2, 4.45, 0.12), (0.45, 0.22, 0.3))], LIVER, res=0.04)], 'dig', mottled('#6E2A1E', 0.14, 3, '#4A1A12', 9, 0.05))
+organ('dig_', 'gallbladder', [blob('g', [('E', (-0.55, 3.45, 0.5), (0.2, 0.26, 0.2)), ('C', (-0.55, 3.6, 0.5), (-0.5, 3.85, 0.45), 0.09)], GALL, res=0.02)], 'dig', mottled('#4F8A3A', 0.12, 5))
+organ('dig_', 'pancreas', [blob('p', [('E', (-0.6 + i * 0.2, 3.1 + 0.03 * math.sin(i * 2.1), -0.1), (0.14 - 0.008 * i, 0.15 - 0.007 * i, 0.15)) for i in range(10)], YEL, res=0.025)], 'dig', mottled('#E2B07A', 0.12, 9, '#C98A5A', 22, 0.08))
 SMALL = [(0.6, 3.0, 0.1), (0.65, 2.7, 0.1), (-0.6, 2.5, 0.1), (0.6, 2.2, 0.1), (-0.6, 1.9, 0.1), (0.6, 1.6, 0.1), (-0.5, 1.3, 0.1)]
-organ('dig_', 'small', [tube('si', P(*SMALL), 0.13, PINK)], 'dig')
+organ('dig_', 'small', [tube('si', P(*SMALL), 0.13, PINK)], 'dig', veined('#E4A090', '#A84452', 6, 0.04))
 LARGE = [(-1.15, 1.2, 0), (-1.15, 3.0, 0), (1.15, 3.0, 0), (1.15, 1.0, 0), (0.7, 0.55, 0), (0.0, 0.45, 0)]
-organ('dig_', 'large', [tube('li', P(*LARGE), 0.22, COLON)], 'dig')
+_li = []
+for _a, _b in zip(LARGE, LARGE[1:]):
+    _n = max(2, int(math.dist(_a, _b) / 0.26))
+    for _i in range(_n):
+        _t = _i / _n
+        _li.append(('E', tuple(_a[j] + (_b[j] - _a[j]) * _t for j in range(3)), (0.25, 0.25, 0.25)))
+organ('dig_', 'large', [blob('li', _li, COLON, res=0.03)], 'dig', veined('#C08468', '#8E4A3A', 5, 0.04))
 organ('dig_', 'anus', [lathe('a', [(0.1, 0.0), (0.26, 0.0), (0.3, 0.1), (0.26, 0.2), (0.1, 0.2)], T(0, 0.0, 0), FLESH, rot=(math.radians(90), 0, 0))], 'dig')
 
 # ================================================================== hô hấp (mũi ở y = 6,5, cơ hoành ở y = 0,9)
@@ -96,7 +125,9 @@ organ('res_', 'trachea', [tube('t', P((0, 6.0, 0.2), (0, 5.2, 0.1), (0, 4.3, 0))
 BRL = [(0, 4.3, 0), (-0.7, 3.7, 0), (-1.3, 3.1, 0), (-1.55, 2.4, 0)]
 BRR = [(0, 4.3, 0), (0.7, 3.7, 0), (1.3, 3.1, 0), (1.55, 2.4, 0)]
 organ('res_', 'bronchi', [tube('bl', P(*BRL), 0.14, TRACH), tube('br', P(*BRR), 0.14, TRACH)] + [tube('bs', P((sx * 0.7, 3.7, 0), (sx * 1.2, 3.9, 0), (sx * 1.7, 3.8, 0)), 0.07, TRACH) for sx in (-1, 1)] + [tube('bs2', P((sx * 1.3, 3.1, 0), (sx * 1.8, 3.0, 0.1), (sx * 2.0, 2.6, 0)), 0.07, TRACH) for sx in (-1, 1)], 'res')
-organ('res_', 'lungs', [ell('ll', (-1.55, 2.9, 0), (1.1, 1.75, 0.8), LUNG), ell('lr', (1.55, 2.9, 0), (1.1, 1.75, 0.8), LUNG)], 'res')
+# phổi thật (organs.py): thùy, rãnh liên thùy, lưới tiểu thùy; trong mờ để thấy phế quản và dòng khí bên trong
+from organs import ghost, lungs as real_lungs  # noqa: E402
+organ('res_', 'lungs', [ghost(o, 0.62) for o in real_lungs(at=(0, 1.15, 0), s=3.5, gap=0.16, rings=False)], 'res')
 alv = []
 import random
 rnd = random.Random(3)
@@ -128,6 +159,11 @@ organ('neph_', 'capillary', [tube('cp', P(*[(x + 0.22, y + 0.12, 0.15) for x, y,
 COLLP = [(2.3, 5.6, 0), (2.3, 4.2, 0), (2.3, 1.2, 0), (1.9, 0.5, 0)]
 organ('neph_', 'collecting', [tube('co', P(*COLLP), 0.2, COLL)], 'neph')
 organ('neph_', 'pelvis', [ell('p', (1.4, 0.15, 0), (0.85, 0.45, 0.5), PELV), tube('u', P((1.2, -0.2, 0), (0.6, -0.7, 0), (0.2, -1.4, 0)), 0.13, PELV)], 'neph')
+
+# ================================================================== mắt bổ đôi (giải phẫu thật Z-Anatomy, CC BY-SA 4.0): trục nhìn theo +x, giác mạc ở x ≈ −1,6, dây thần kinh thị giác về +x
+for _id in ('cornea', 'iris', 'lens', 'vitreous', 'retina', 'fovea', 'nerve', 'sclera'):
+    if 'eye_' + _id in ZA:
+        organ('eye_', _id, [], 'eye')
 
 # ================================================================== sinh vật và thiết bị
 LEAFG = mat('leafg', hexc('#3E9B4F'), rough=0.5)

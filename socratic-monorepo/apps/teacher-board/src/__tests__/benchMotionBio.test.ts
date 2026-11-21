@@ -88,5 +88,18 @@ describe('bài thực hành Sinh học không đứng yên: mỗi bài có chuy�
     differ('DNA_EXTRACT', {s: {grind: 'no'}}, {s: {grind: 'yes'}});
     differ('PIGMENT', {p: {ds: 4}}, {p: {ds: 10}});
     differ('METAMORPHOSIS', {p: {d: 0}}, {p: {d: 60}});
+  }, 30000);
+});
+
+describe('lựa chọn gắn với dụng cụ thật trên bàn (BENCH_PICK)', () => {
+  it('mọi chốt chạm trỏ tới đúng một lựa chọn có thật của bài Sinh; bài nhiều lựa chọn không để chồng vị trí', async () => {
+    const {BENCH_PICK} = await import('../utils/lab/hands/benchMoves');
+    for (const [id, picks] of Object.entries(BENCH_PICK)) {
+      const e = BIO_EXPERIMENTS.find((x) => x.id === id);
+      expect(e, `${id} không phải bài Sinh`).toBeTruthy();
+      const at = Object.entries(picks);
+      for (const [key] of at) expect(e!.choices?.some((c) => c.key === key), `${id}.${key} không có trong lựa chọn của bài`).toBe(true);
+      for (let i = 0; i < at.length; i++) for (let j = i + 1; j < at.length; j++) expect(Math.hypot(at[i][1][0] - at[j][1][0], at[i][1][2] - at[j][1][2]), `${id}: hai chốt quá gần nhau`).toBeGreaterThan(0.4);
+    }
   });
 });

@@ -166,6 +166,122 @@ describe('hình ghép vẽ tay → hình dựng có ràng buộc', () => {
   });
 });
 
+describe('cung tròn và cát tuyến vẽ tay', () => {
+  /** cung tay: tâm c, bán kính r, từ góc a0 tới a1 (radian, góc màn hình) */
+  const arc = (c: Pt, r: number, a0: number, a1: number, n = 50) => ({points: Array.from({length: n + 1}, (_, i) => {
+    const a = a0 + ((a1 - a0) * i) / n;
+    return P(c.x + r * Math.cos(a) + rnd() * 1.5, c.y + r * Math.sin(a) + rnd() * 1.5);
+  })});
+  const onC = (s: GeoScene, n: string, i = 0) => Math.abs(d2(s.pts[n], s.circles![i].center) - s.circles![i].r) / s.circles![i].r;
+  const nameAt = (s: GeoScene, anchors: Record<string, Pt>, p: Pt) => Object.keys(anchors).sort((a, b) => Math.hypot(anchors[a].x - p.x, anchors[a].y - p.y) - Math.hypot(anchors[b].x - p.x, anchors[b].y - p.y))[0];
+
+  it('cát tuyến MXY từ điểm ngoài (một nét từ M tới Y trên đường tròn): X là giao thứ hai, kéo M vẫn thẳng hàng và trên đường tròn', () => {
+    const O = P(330, 300), r = 120, M = P(720, 260);
+    const Y = P(O.x + r * Math.cos(2.9), O.y + r * Math.sin(2.9));
+    const ink = [circle(O, r), seg(M, Y), seg(O, M)];
+    const fig = sketchFigure(ink)!;
+    const s = fig.scene;
+    const [m, y] = [nameAt(s, fig.anchors, M), nameAt(s, fig.anchors, Y)];
+    const x = Object.entries(s.defs!).find(([, d]) => d.k === 'lcx' || d.k === 'lcint')?.[0];
+    expect(x, JSON.stringify(s.defs)).toBeTruthy();
+    expect(freePoints(s)).toContain(m);
+    for (const sc of [s, ...drags(s)]) {
+      expect(onC(sc, x!)).toBeLessThan(1e-6);
+      expect(onC(sc, y)).toBeLessThan(1e-6);
+      expect(collinear(sc, m, x!, y)).toBeLessThan(1e-6);
+      expect(d2(sc.pts[x!], sc.pts[y])).toBeGreaterThan(1e-3); // hai giao khác nhau
+    }
+  });
+
+  it('đường thẳng vẽ xuyên qua đường tròn (hai đầu ở ngoài): thêm đủ hai giao điểm, có công thức', () => {
+    const O = P(400, 300), r = 120;
+    const ink = [circle(O, r), seg(P(180, 230), P(650, 380)), seg(O, P(400, 180))];
+    const s = sketchFigure(ink)!.scene;
+    const hits = Object.entries(s.defs!).filter(([, d]) => d.k === 'lcint');
+    expect(hits).toHaveLength(2);
+    for (const sc of [s, ...drags(s)]) {
+      const c = sc.circles![0];
+      for (const [n, d] of hits) if (d.k === 'lcint') {
+        expect(Math.abs(d2(sc.pts[n], c.center) - c.r)).toBeLessThan(1e-6);
+        expect(collinear(sc, d.a, d.b, n)).toBeLessThan(1e-6);
+      }
+      expect(d2(sc.pts[hits[0][0]], sc.pts[hits[1][0]])).toBeGreaterThan(1e-3);
+    }
+  });
+
+  it('đường cao AD kéo dài cắt đường tròn ngoại tiếp tại K: D là chân đường cao, K là giao thứ hai', () => {
+    const O = P(460, 330), R = 190;
+    const at = (a: number) => P(O.x + R * Math.cos(a), O.y + R * Math.sin(a));
+    const [Ac, Bc, Cc] = [at(-1.25), at(2.75), at(0.35)];
+    const Dp = foot(Ac, Bc, Cc);
+    // K: giao thứ hai của AD với đường tròn
+    const u = {x: Dp.x - Ac.x, y: Dp.y - Ac.y};
+    const L = Math.hypot(u.x, u.y);
+    const ux = u.x / L, uy = u.y / L;
+    const tK = -2 * ((Ac.x - O.x) * ux + (Ac.y - O.y) * uy);
+    const K = P(Ac.x + ux * tK, Ac.y + uy * tK);
+    const ink = [circle(O, R), path([Ac, Bc, Cc, Ac]), seg(Ac, K)];
+    const fig = sketchFigure(ink)!;
+    const s = fig.scene;
+    const D = Object.entries(s.defs!).find(([, d]) => d.k === 'foot');
+    const Kn = Object.entries(s.defs!).find(([, d]) => d.k === 'lcx');
+    expect(D, JSON.stringify(s.defs)).toBeTruthy();
+    expect(Kn, JSON.stringify(s.defs)).toBeTruthy();
+    for (const sc of [s, ...drags(s)]) {
+      expect(perp(sc, 'A', D![0], 'B', 'C')).toBeLessThan(1e-6);
+      expect(collinear(sc, 'A', D![0], Kn![0])).toBeLessThan(1e-6);
+      expect(onC(sc, Kn![0])).toBeLessThan(1e-6);
+    }
+  });
+
+  it('nửa đường tròn đường kính AB + điểm C trên cung: C luôn trên nửa đường tròn, góc ACB vuông', () => {
+    const O = P(420, 360), r = 160;
+    const Ap = P(O.x - r, O.y), Bp = P(O.x + r, O.y), Cp = P(O.x + r * Math.cos(-2.1), O.y + r * Math.sin(-2.1));
+    const ink = [arc(O, r, Math.PI, 2 * Math.PI), seg(Ap, Bp), seg(Ap, Cp), seg(Cp, Bp)];
+    expect(circleFigureText(frameStrokes(ink))).toBeNull(); // trước đây: không nhận ra
+    const fig = sketchFigure(ink)!;
+    const s = fig.scene;
+    const c = s.circles![0];
+    expect(c.of?.f).toBe('semi');
+    const [a, b, cc] = [nameAt(s, fig.anchors, Ap), nameAt(s, fig.anchors, Bp), nameAt(s, fig.anchors, Cp)];
+    expect(s.defs![cc]?.k).toBe('onc');
+    const ang = (sc: GeoScene) => {
+      const [u, v] = [[sc.pts[a][0] - sc.pts[cc][0], sc.pts[a][1] - sc.pts[cc][1]], [sc.pts[b][0] - sc.pts[cc][0], sc.pts[b][1] - sc.pts[cc][1]]];
+      return Math.abs(u[0] * v[0] + u[1] * v[1]) / (Math.hypot(u[0], u[1]) * Math.hypot(v[0], v[1]));
+    };
+    for (const sc of [s, ...drags(s)]) {
+      expect(onC(sc, cc)).toBeLessThan(1e-6);
+      expect(ang(sc)).toBeLessThan(1e-6);
+    }
+    // cung vẽ ở nửa TRÊN (màn hình): điểm giữa cung dựng ra cũng ở phía trên AB
+    const placed = placeOnInk(s, fig.anchors);
+    const f = renderScene(placed.scene);
+    const arcPts = f.curves[0].pts;
+    expect(arcPts[Math.floor(arcPts.length / 2)].y + placed.origin.y).toBeLessThan(O.y - 0.5 * r);
+  });
+
+  it('cung AB tâm O có hai bán kính OA, OB: B luôn cách O bằng OA', () => {
+    const O = P(300, 400), r = 200;
+    const Ap = P(O.x + r * Math.cos(-0.3), O.y + r * Math.sin(-0.3)), Bp = P(O.x + r * Math.cos(-1.9), O.y + r * Math.sin(-1.9));
+    const ink = [arc(O, r, -0.3, -1.9), seg(O, Ap), seg(O, Bp)];
+    const fig = sketchFigure(ink)!;
+    const s = fig.scene;
+    expect(s.circles![0].of?.f).toBe('sector');
+    const [o, a, b] = [nameAt(s, fig.anchors, O), nameAt(s, fig.anchors, Ap), nameAt(s, fig.anchors, Bp)];
+    for (const sc of [s, ...drags(s)]) near1(d2(sc.pts[o], sc.pts[a]), d2(sc.pts[o], sc.pts[b]));
+  });
+
+  it('đường tròn vẽ bằng hai cung vẫn là đường tròn; nét chữ V, cạnh hơi phồng không phải cung', () => {
+    const O = P(400, 300), r = 130;
+    const s = sketchFigure([arc(O, r, 0, Math.PI + 0.1), arc(O, r, Math.PI, 2 * Math.PI + 0.1), seg(P(400, 170), P(400, 430))])!.scene;
+    expect(s.circles).toHaveLength(1);
+    expect(s.circles![0].arc).toBeUndefined();
+    const v = sketchFigure([path([P(200, 200), P(320, 420), P(440, 200)]), seg(P(200, 200), P(440, 200))])!.scene;
+    expect(v.circles ?? []).toHaveLength(0);
+  });
+});
+const near1 = (x: number, y: number) => expect(Math.abs(x - y)).toBeLessThan(1e-6);
+
 describe('cạnh vẽ hơi cong không thành đỉnh mới', () => {
   /** cạnh cong: điểm giữa lệch khỏi dây cung `bow` (tỉ lệ độ dài cạnh) */
   const bowed = (a: Pt, b: Pt, bow: number, n = 24) => {

@@ -2855,9 +2855,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     const circ = circleFigureText(shapeInk);
     // chỉ ra "đường tròn" trong khi còn nét khác chưa hiểu (đường cao, tiếp tuyến, đường chéo…) → để bộ nhận dạng hình ghép dựng đủ
     const bareCircle = circ === 'Cho đường tròn (O; 2)' && (detectCircleSketch(shapeInk)?.rest.length ?? 0) > 0;
-    if (circ && !bareCircle && put(circ)) return true;
     // hình ghép (cả hình của một bài): mọi đoạn, đường tròn, điểm chung, chân đường cao, giao điểm, tiếp điểm → một hình có ràng buộc, đặt khít lên chính các nét
     const fig = sketchFigure(shapeInk);
+    // có đường phụ (bán kính tới tiếp điểm, đường cao…) hay nhiều đường tròn/cung: bộ đọc "đường tròn + đa giác" sẽ bỏ mất chúng
+    const richFig = !!fig?.planar && (fig.scene.aux.length > 0 || (fig.scene.circles?.length ?? 0) > 1);
+    if (circ && !bareCircle && !richFig && put(circ)) return true;
     const putFig = () => {
       if (!fig) return false;
       const { scene, origin } = placeOnInk(fig.scene, fig.anchors);

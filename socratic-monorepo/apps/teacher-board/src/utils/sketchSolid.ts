@@ -601,14 +601,21 @@ export function frameStrokes<T extends {points: {x: number; y: number}[]}>(ink: 
   // cạnh NGẮN của hình (cạnh bên hình hộp dẹt, cạnh đáy chóp vẽ xa): nét gần thẳng, hai đầu chạm vào khung → vẫn là cạnh, không phải nhãn
   const near = (p: SketchPt, qs: T[]) => qs.some((q) => q.points.some((r) => dist(p, r) < 0.1 * span));
   const keep = new Set(big);
+  const ends = (q: T): [SketchPt, SketchPt] => [q.points[0], q.points[q.points.length - 1]];
+  const straight = (q: T) => q.points.length >= 2 && side(q) >= 0.12 * span && pathLength(q.points) <= 1.15 * dist(...ends(q));
+  // tâm các đường tròn của khung: bán kính vẽ từ tâm ra đường tròn là một phần của hình
+  const centers = big.map((q) => fitCircle(q.points)).filter((f): f is NonNullable<typeof f> => !!f && f.cover >= 300 && f.rms < 0.1 * f.r);
+  const atCenter = (p: SketchPt) => centers.some((f) => Math.hypot(p.x - f.cx, p.y - f.cy) < Math.max(12, 0.15 * f.r));
   for (let changed = true; changed; ) {
     changed = false;
     for (const q of ink) {
-      if (keep.has(q) || side(q) < 0.12 * span || q.points.length < 2) continue;
-      const [a, b] = [q.points[0], q.points[q.points.length - 1]];
-      const straight = pathLength(q.points) <= 1.15 * dist(a, b);
+      if (keep.has(q) || !straight(q)) continue;
+      const [a, b] = ends(q);
       const frame = [...keep];
-      if (straight && near(a, frame) && near(b, frame)) {
+      // đầu còn lại không chạm khung: chấp nhận khi ở tâm đường tròn, hoặc gặp đầu một nét thẳng khác cũng chạm khung (ba bán kính tới tâm nội tiếp…)
+      const meets = (p: SketchPt) => ink.some((o) => o !== q && straight(o) && ends(o).some((e, i) => dist(e, p) < 0.1 * span && (near(ends(o)[1 - i], frame) || atCenter(ends(o)[1 - i]))));
+      const ok = (p: SketchPt) => near(p, frame) || atCenter(p);
+      if ((ok(a) && ok(b)) || (ok(a) && meets(b)) || (ok(b) && meets(a))) {
         keep.add(q);
         changed = true;
       }

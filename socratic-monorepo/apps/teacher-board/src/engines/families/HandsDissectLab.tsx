@@ -1,7 +1,7 @@
 'use client';
 
 import React, {useReducer, useRef, useState} from 'react';
-import {DISSECT_BY_ID, TOOLS, TOOL_NAME, beatRate, current, dissectReducer, newDissect, stepDone, toolOf, type DAction} from '../../utils/lab/hands/dissect';
+import {DISSECT_BY_ID, TOOLS, TOOL_NAME, beatRate, current, dissectReducer, newDissect, optionalStep, stepDone, toolOf, type DAction} from '../../utils/lab/hands/dissect';
 import {BTN_GHOST} from './Controls';
 import type {DissectLive} from './HandsDissect3D';
 import type {HandsInput} from './handsKit';
@@ -57,13 +57,14 @@ export const DissectLab: React.FC<{id: string; Shell: React.FC<ShellProps>}> = (
       </div>
       <ol className="flex flex-col gap-1">
         {spec.steps.map((s, i) => {
-          const ok = stepDone(spec, st, i);
+          const opt = optionalStep(s);
+          const ok = s.kind === 'name' ? s.organs.every((o) => st.named.includes(o)) : stepDone(spec, st, i);
           const extra = s.kind === 'name' ? ` (${s.organs.filter((o) => st.named.includes(o)).length}/${s.organs.length})` : s.kind === 'pin' ? ` (${st.pins[i]?.length ?? 0}/${s.targets.length})` : s.kind === 'cut' && !ok && (st.cut[i] ?? 0) > 0 ? ` (${Math.round((st.cut[i] ?? 0) * 100)} %)` : '';
           return (
             <li key={i} data-testid={`dissect-step-${i}`} data-done={ok} className={`flex gap-2 rounded-lg px-2 py-1 ${i === cur ? 'bg-white font-semibold text-[#1D1B16]' : 'text-[#4B473D]'}`}>
-              <span className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${ok ? 'bg-[#1F7A4D] text-white' : i === cur ? 'bg-[#D9481C] text-white' : 'bg-[#1D1B16]/10'}`}>{ok ? '✓' : i + 1}</span>
+              <span className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${ok ? 'bg-[#1F7A4D] text-white' : opt ? 'border border-[#1D1B16]/25 text-[#4B473D]' : i === cur ? 'bg-[#D9481C] text-white' : 'bg-[#1D1B16]/10'}`}>{ok ? '✓' : opt ? 'i' : i + 1}</span>
               <span>
-                {s.do}
+                {opt ? <span className="font-normal italic text-[#4B473D]">Xem thêm (không bắt buộc): trỏ vào cơ quan để hiện tên và chức năng</span> : s.do}
                 {extra}
               </span>
             </li>

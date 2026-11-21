@@ -74,6 +74,8 @@ export interface DissectState {
 }
 export const newDissect = (): DissectState => ({tool: null, pins: {}, cut: {}, open: {}, named: [], drops: 0, warn: ''});
 
+/** bước chỉ để quan sát (gọi tên cơ quan): không bắt buộc, không tính là bước đang làm */
+export const optionalStep = (s: DStep): boolean => s.kind === 'name';
 export function stepDone(spec: DissectSpec, st: DissectState, i: number): boolean {
   const s = spec.steps[i];
   switch (s.kind) {
@@ -86,7 +88,8 @@ export function stepDone(spec: DissectSpec, st: DissectState, i: number): boolea
     case 'drop':
       return st.drops > 0;
     case 'name':
-      return s.organs.every((o) => st.named.includes(o));
+      // gọi tên cơ quan là phần QUAN SÁT tự do (thẻ tên + chức năng hiện khi trỏ / giữ tay trên cơ quan), không chặn bước sau
+      return true;
   }
 }
 /** bước đang làm = bước đầu tiên chưa xong; bằng số bước khi đã xong hết */

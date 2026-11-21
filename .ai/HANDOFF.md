@@ -2487,3 +2487,7 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 - Nơi dùng: `heart_model.py` (`heart_ext_*` + `heart_ext_cor`, `heart3d.ts` gắn mạch vành vào nhóm lv ở mặt ngoài, thôi vi bề mặt cho bản mặt ngoài, zoom 1,35), `board_parts4.py` (res_*, dig_*, ear_ossicles, eye_* mới), `dissect_parts.py` (HUMAN_o_*). Template `BIO_SENSE_ORGANS` có 3D (Scenes3DOrgans2 `FLOW_EYE`, `deco: ['sclera']`; AnatomyFlow `ANATOMY_3D`).
 - Đã xem: tim mặt ngoài trên bảng (chạm chọn đúng Tâm thất phải), mắt bổ đôi trên bảng; ảnh Blender của phổi, tiêu hóa, mẫu mổ. Chưa xem: mẫu mổ người trong /lab sau khi mổ (cần làm các bước); vành tai Z-Anatomy là mảng da rời nên giữ vành tai tự dựng.
 - Test teacher-board 3543/3543.
+
+## Bài mổ: gọi tên cơ quan thành tooltip, không bắt buộc
+- `dissect.ts`: `stepDone` của bước `name` luôn đúng (thêm `optionalStep`); cơ quan vẫn chỉ chạm được sau khi các bước trước làm xong (`reachable`). Trỏ / giữ tay trên cơ quan vẫn hiện thẻ tên + chức năng và ✓ như cũ.
+- `HandsDissectLab.tsx`: bước gọi tên hiện "Xem thêm (không bắt buộc)…" với huy hiệu "i", không phải số bước. Test mới: bỏ mọi lần gọi tên vẫn xong cả 5 bài.

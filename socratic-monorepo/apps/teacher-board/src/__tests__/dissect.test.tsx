@@ -77,6 +77,14 @@ describe('bài mổ / quan sát cấu tạo (Sinh)', () => {
     expect(st.warn).toBe('');
   });
 
+  it.each(DISSECTIONS.map((d) => [d.id]))('%s: gọi tên cơ quan không bắt buộc — bỏ qua mọi lần chỉ tên vẫn xong bài, cơ quan vẫn chỉ được sau khi lộ ra', (id) => {
+    const spec = DISSECT_BY_ID[id];
+    const st = run(spec, perfect(spec).filter((a) => a.t !== 'name'));
+    expect(current(spec, st)).toBe(spec.steps.length);
+    expect(st.named).toEqual([]);
+    for (const organ of Object.keys(spec.organs)) expect(reachable(spec, st, organ), organ).toBe(true);
+  });
+
   it('cầm sai dụng cụ, làm sai thứ tự, chỉ cơ quan chưa lộ ra: không tính và có lời nhắc', () => {
     const frog = DISSECT_BY_ID['dissect-frog'];
     let st = run(frog, [{t: 'tool', tool: 'scalpel'}, {t: 'pin', i: 0}]);

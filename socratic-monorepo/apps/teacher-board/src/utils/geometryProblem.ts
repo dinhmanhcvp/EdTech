@@ -588,7 +588,9 @@ export type GeoDef =
   /** đầu mút vẽ của giao tuyến hai mặt phẳng (a), (b): cách điểm gần trọng tâm các đỉnh một đoạn w·|a₁ − a₀| dọc giao tuyến */
   | {k: 'pp'; a: string[]; b: string[]; w: number}
   /** điểm trên đường tròn tâm o đi qua q, ở góc `ang` (radian, đo từ trục Ox) — kéo được trượt trên đường tròn */
-  | {k: 'onc'; o: string; q: string; ang: number};
+  | {k: 'onc'; o: string; q: string; ang: number}
+  /** giao điểm của hai đường tròn (o1, |o1q1|) và (o2, |o2q2|) (q rỗng thì bán kính r cố định); w = ±1: bên trái / phải của hướng o1→o2 */
+  | {k: 'ccx'; o1: string; q1: string; r1?: number; o2: string; q2: string; r2?: number; w: 1 | -1};
 
 /** Công thức `aff` của điểm P theo mặt (o, a, b): để P đi theo khi kéo các đỉnh đáy. */
 const SOLID_DEFS = new Set<GeoDef['k']>(['seg', 'foot', 'inter', 'calc', 'trans', 'refp', 'dil', 'aff', 'fpl', 'lpl', 'pp']);

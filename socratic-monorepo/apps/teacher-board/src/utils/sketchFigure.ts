@@ -40,14 +40,15 @@ type Role =
   | {k: 'foot'; p: number; l: number}
   | {k: 'seg'; l: number; t: number; fix?: true}
   | {k: 'tan'; p: number; ci: number; w: 1 | -1}
-  | {k: 'refp'; a: number; ci: number}
   | {k: 'onc'; ci: number}
   /** cát tuyến: giao (gần / xa theo hướng a→b) của đường thẳng ab với đường tròn */
   | {k: 'sec'; ci: number; a: number; b: number; w: 1 | 2}
   /** giao điểm còn lại của đường thẳng qua a và điểm b (b đã nằm trên đường tròn) */
   | {k: 'secx'; ci: number; a: number; b: number}
   /** giao của tiếp tuyến tại t với đường thẳng cd ("tiếp tuyến tại A cắt CD tại S") */
-  | {k: 'tanx'; ci: number; t: number; c: number; d: number};
+  | {k: 'tanx'; ci: number; t: number; c: number; d: number}
+  /** giao của hai đường tròn c1, c2; w = ±1: bên trái / phải hướng tâm c1 → tâm c2 (nhìn như toán) */
+  | {k: 'ccx'; c1: number; c2: number; w: 1 | -1};
 
 export interface SketchFigure {
   scene: GeoScene;
@@ -248,6 +249,28 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
       });
     }
   });
+  // hai đường tròn cắt nhau: hai giao điểm (đã có điểm vẽ ở đó — đầu dây chung — thì dùng điểm đó)
+  const ccAt = new Map<number, {a: number; b: number; w: 1 | -1}>();
+  circles.forEach((c1, i) =>
+    circles.forEach((c2, j) => {
+      if (j <= i || c1.arc || c2.arc) return;
+      const d = dist(c1.c, c2.c);
+      if (d < 1e-6 || d > c1.r + c2.r - 0.5 * rr || d < Math.abs(c1.r - c2.r) + 0.5 * rr) return; // rời nhau / gần tiếp xúc
+      const a = (d * d + c1.r * c1.r - c2.r * c2.r) / (2 * d);
+      const h = Math.sqrt(Math.max(0, c1.r * c1.r - a * a));
+      const u = {x: (c2.c.x - c1.c.x) / d, y: (c2.c.y - c1.c.y) / d};
+      for (const sg of [1, -1]) {
+        const X = {x: c1.c.x + u.x * a - u.y * h * sg, y: c1.c.y + u.y * a + u.x * h * sg};
+        let v = [...used].filter((k) => !centerOf.includes(k)).sort((p, q) => dist(V[p], X) - dist(V[q], X)).find((k) => dist(V[k], X) < rr);
+        if (v === undefined) {
+          V.push(X);
+          used.add((v = V.length - 1));
+        }
+        // y bảng hướng xuống: tích có hướng âm ở đây = bên trái khi nhìn như toán
+        ccAt.set(v, {a: i, b: j, w: crossZ(sub(c2.c, c1.c), sub(X, c1.c)) < 0 ? 1 : -1});
+      }
+    }),
+  );
   const onCirc = (v: number, ci: number) => v !== centerOf[ci] && Math.abs(dist(V[v], circles[ci].c) - circles[ci].r) < Math.max(rr, 0.12 * circles[ci].r);
   const interior = (v: number) =>
     lines
@@ -268,6 +291,13 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
     const ci = centerOf.indexOf(v);
     if (ci >= 0) {
       role.set(v, {k: 'center', ci});
+      continue;
+    }
+    const cc = ccAt.get(v);
+    // đỉnh của hình (nối tới điểm khác ngoài tâm và giao kia) nằm trên cả hai đường tròn: giữ tự do, hai đường tròn sẽ dựng đi qua nó
+    const structural = lines.some((l) => l.includes(v) && !centerOf.includes(l[0] === v ? l[1] : l[0]) && !ccAt.has(l[0] === v ? l[1] : l[0]));
+    if (cc && !structural) {
+      role.set(v, {k: 'ccx', c1: cc.a, c2: cc.b, w: cc.w});
       continue;
     }
     const inn = interior(v);
@@ -344,7 +374,7 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
     const r = role.get(v)!;
     return r.k === 'inter' ? [...lines[r.l1], ...lines[r.l2]] : r.k === 'foot' ? [r.p, ...lines[r.l]] : r.k === 'seg' ? [...lines[r.l]] : r.k === 'tanx' ? [r.t, r.c, r.d] : [];
   };
-  const fixedRole = (v: number) => ['tan', 'tanx', 'center', 'sec', 'secx', 'onc', 'refp'].includes(role.get(v)!.k);
+  const fixedRole = (v: number) => ['tan', 'tanx', 'center', 'sec', 'secx', 'onc', 'ccx'].includes(role.get(v)!.k);
   circles.forEach((c, ci) => {
     if (c.arc) return;
     lines.forEach(([a, b], li) => {
@@ -393,7 +423,7 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
   });
 
   // 7. loại đường tròn: ngoại tiếp (≥ 3 điểm tự do trên đó), nội tiếp tam giác, hoặc tâm O qua một điểm / bán kính cố định
-  type CircleKind = {f: 'circum'; n: number[]; all: number[]} | {f: 'in'; n: number[]} | {f: 'cp'; q: number} | {f: 'cr'} | {f: 'semi' | 'sector'; s: number; e: number};
+  type CircleKind = {f: 'circum'; n: number[]; all: number[]} | {f: 'in'; n: number[]} | {f: 'cp'; q: number} | {f: 'cr'} | {f: 'semi' | 'sector' | 'diam'; s: number; e: number};
   const ring = mainPolygon(V, lines, (v) => role.get(v)?.k === 'free');
   const TAU = 2 * Math.PI;
   const ckind: CircleKind[] = circles.map((c, ci) => {
@@ -411,12 +441,13 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
       free.filter((v) => v !== s && v !== e).forEach((v) => role.set(v, {k: 'onc', ci}));
       return {f: semi ? 'semi' : 'sector', s, e};
     }
-    // đường kính: đường qua tâm, hai đầu trên đường tròn → đầu sau là đối xứng của đầu trước qua tâm
-    for (const [a, b] of lines) {
-      if (free.length >= 3) break;
-      if (!free.includes(a) || !free.includes(b) || interior(centerOf[ci]).every((li) => key(...lines[li]) !== key(a, b))) continue;
-      role.set(b, {k: 'refp', a, ci});
-      free.splice(free.indexOf(b), 1);
+    // đường kính: đường qua tâm, hai đầu trên đường tròn → "đường tròn đường kính AB" (tâm là trung điểm, hai đầu kéo tự do)
+    if (free.length < 3) {
+      const dm = lines.find(([a, b]) => free.includes(a) && free.includes(b) && interior(centerOf[ci]).some((li) => key(...lines[li]) === key(a, b)));
+      if (dm) {
+        free.filter((v) => !dm.includes(v)).forEach((v) => role.set(v, {k: 'onc', ci}));
+        return {f: 'diam', s: dm[0], e: dm[1]};
+      }
     }
     if (free.length >= 3) return {f: 'circum', n: free.slice(0, 3), all: free};
     if (ring?.length === 3 && ring.every((v, i) => {
@@ -440,7 +471,7 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
   };
   ring?.forEach((v) => give(v, []));
   ckind.forEach((k, ci) => {
-    if (!name.has(centerOf[ci])) give(centerOf[ci], k.f === 'in' ? ['I', 'O', 'J'] : ['O', 'I', 'J', 'K']);
+    if (!name.has(centerOf[ci])) give(centerOf[ci], k.f === 'in' ? ['I', 'O', 'J'] : ['O', "O'", 'I', 'J', 'K']);
   });
   // đường cao: đi qua đỉnh p và chân đường vuông góc hạ từ p (chân là đầu nét hay nằm giữa đường kéo dài)
   const isAltitude = (li: number) => verts.some((x) => {
@@ -481,14 +512,14 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
     const minor = r.k === 'inter' && crossOf.has(v) && !namedCross(v);
     // trung điểm (cả chân đường vuông góc hạ từ tâm xuống dây) M, N; giao thứ hai với đường tròn K, N
     const midLike = (r.k === 'seg' && r.fix) || (r.k === 'foot' && centerOf.includes(r.p));
-    give(v, minor ? ['X', 'Y', 'Z', 'U', 'V', 'T'] : r.k === 'inter' ? (isAltitude(r.l1) && isAltitude(r.l2) ? ['H', 'I', 'K'] : isMedian(r.l1) && isMedian(r.l2) ? ['G', 'I', 'K'] : ['I', 'K', 'J']) : midLike ? ['M', 'N', 'P'] : r.k === 'secx' || r.k === 'sec' ? ['K', 'N', 'P', 'Q'] : []);
+    give(v, minor ? ['X', 'Y', 'Z', 'U', 'V', 'T'] : r.k === 'inter' ? ((isAltitude(r.l1) && isAltitude(r.l2)) || (!(diag(r.l1) && diag(r.l2)) && sinAng(dir(r.l1), dir(r.l2)) > Math.sin((84 * Math.PI) / 180)) ? ['H', 'I', 'K'] : isMedian(r.l1) && isMedian(r.l2) ? ['G', 'I', 'K'] : ['I', 'K', 'J']) : midLike ? ['M', 'N', 'P'] : r.k === 'secx' || r.k === 'sec' ? ['K', 'N', 'P', 'Q'] : []);
   }
 
   // 9. thứ tự dựng: điểm có công thức đứng sau các điểm nó dựa vào (công thức được tính lại theo đúng thứ tự này)
   /** điểm mà đường tròn thứ ci dựa vào (tâm + điểm cho bán kính) */
   const circDeps = (ci: number): number[] => {
     const k = ckind[ci];
-    return [centerOf[ci], ...(k.f === 'cp' ? [k.q] : k.f === 'circum' || k.f === 'in' ? k.n : k.f === 'semi' || k.f === 'sector' ? [k.s] : [])];
+    return [centerOf[ci], ...(k.f === 'cp' ? [k.q] : k.f === 'circum' || k.f === 'in' ? k.n : k.f === 'semi' || k.f === 'sector' || k.f === 'diam' ? [k.s] : [])];
   };
   const deps = (v: number): number[] => {
     const r = role.get(v)!;
@@ -496,13 +527,13 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
     if (r.k === 'foot') return [r.p, ...lines[r.l]];
     if (r.k === 'seg') return [...lines[r.l]];
     if (r.k === 'tan') return [r.p, ...circDeps(r.ci)];
-    if (r.k === 'refp') return [r.a, ...circDeps(r.ci)];
     if (r.k === 'onc') return circDeps(r.ci);
     if (r.k === 'sec' || r.k === 'secx') return [r.a, r.b, ...circDeps(r.ci)];
     if (r.k === 'tanx') return [r.t, r.c, r.d, ...circDeps(r.ci)];
+    if (r.k === 'ccx') return [...circDeps(r.c1), ...circDeps(r.c2)];
     if (r.k === 'center') {
       const k = ckind[r.ci];
-      return k.f === 'circum' || k.f === 'in' ? k.n : k.f === 'semi' ? [k.s, k.e] : [];
+      return k.f === 'circum' || k.f === 'in' ? k.n : k.f === 'semi' || k.f === 'diam' ? [k.s, k.e] : [];
     }
     return [];
   };
@@ -522,7 +553,7 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
   const P = (p: Pt): V3 => [+((p.x - x0) * k).toFixed(4), +((y1 - p.y) * k).toFixed(4), 0];
   const nm = (v: number) => name.get(v)!;
   const ln = (li: number) => lines[li].map(nm) as [string, string];
-  const free = order.filter((v) => role.get(v)!.k === 'free' || (role.get(v)!.k === 'center' && !['circum', 'in', 'semi'].includes(ckind[(role.get(v) as {ci: number}).ci].f)));
+  const free = order.filter((v) => role.get(v)!.k === 'free' || (role.get(v)!.k === 'center' && !['circum', 'in', 'semi', 'diam'].includes(ckind[(role.get(v) as {ci: number}).ci].f)));
   const fmt = (v: number) => `${nm(v)}(${P(V[v]).slice(0, 2).join(';')})`;
   const POLY = ['tam giác', 'tứ giác', 'ngũ giác', 'lục giác', 'thất giác', 'bát giác'];
   const base = ring ? `${POLY[ring.length - 3]} ${ring.map(nm).join('')}, ${ring.map(fmt).join(', ')}` : free.slice(0, 2).map(fmt).join(', ');
@@ -533,7 +564,7 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
   const loose = new Set(sc.loose ?? []);
   const circleRef = (ci: number) => {
     const kd = ckind[ci];
-    return kd.f === 'cp' ? nm(kd.q) : kd.f === 'circum' || kd.f === 'in' ? nm(kd.n[0]) : kd.f === 'semi' || kd.f === 'sector' ? nm(kd.s) : '';
+    return kd.f === 'cp' ? nm(kd.q) : kd.f === 'circum' || kd.f === 'in' ? nm(kd.n[0]) : kd.f === 'semi' || kd.f === 'sector' || kd.f === 'diam' ? nm(kd.s) : '';
   };
   for (const v of order) {
     const n = nm(v);
@@ -547,7 +578,6 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
     if (r.k === 'inter') defs[n] = {k: 'inter', a: ln(r.l1)[0], b: ln(r.l1)[1], c: ln(r.l2)[0], d: ln(r.l2)[1]};
     else if (r.k === 'foot') defs[n] = {k: 'foot', p: nm(r.p), a: ln(r.l)[0], b: ln(r.l)[1]};
     else if (r.k === 'seg') defs[n] = r.fix ? {k: 'seg', a: ln(r.l)[0], b: ln(r.l)[1], t: 0.5, fix: true} : {k: 'seg', a: ln(r.l)[0], b: ln(r.l)[1], t: Math.min(0.95, Math.max(0.05, r.t))};
-    else if (r.k === 'refp') defs[n] = {k: 'refp', p: nm(r.a), o: nm(centerOf[r.ci])};
     else if (r.k === 'onc') {
       const O = P(circles[r.ci].c);
       const Q = P(V[v]);
@@ -557,6 +587,9 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
       defs[n] = q ? {k: 'tan', p: nm(r.p), o: nm(centerOf[r.ci]), q, w: r.w} : {k: 'tan', p: nm(r.p), o: nm(centerOf[r.ci]), q: '', r: circles[r.ci].r * k, w: r.w};
     } else if (r.k === 'tanx') {
       defs[n] = {k: 'tanx', o: nm(centerOf[r.ci]), t: nm(r.t), c: nm(r.c), d: nm(r.d)};
+    } else if (r.k === 'ccx') {
+      const [q1, q2] = [circleRef(r.c1), circleRef(r.c2)];
+      defs[n] = {k: 'ccx', o1: nm(centerOf[r.c1]), q1, ...(q1 ? {} : {r1: circles[r.c1].r * k}), o2: nm(centerOf[r.c2]), q2, ...(q2 ? {} : {r2: circles[r.c2].r * k}), w: r.w};
     } else if (r.k === 'sec' || r.k === 'secx') {
       const q = circleRef(r.ci);
       const circ = q ? {o: nm(centerOf[r.ci]), q} : {o: nm(centerOf[r.ci]), q: '', r: circles[r.ci].r * k};
@@ -564,7 +597,7 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
     } else if (r.k === 'center') {
       const kd = ckind[r.ci];
       if (kd.f === 'circum' || kd.f === 'in') defs[n] = {k: 'calc', f: kd.f, n: kd.n.map(nm)};
-      else if (kd.f === 'semi') defs[n] = {k: 'calc', f: 'mid', n: [nm(kd.s), nm(kd.e)]};
+      else if (kd.f === 'semi' || kd.f === 'diam') defs[n] = {k: 'calc', f: 'mid', n: [nm(kd.s), nm(kd.e)]};
     }
     if (!defs[n] && !ring?.includes(v) && !Object.values(defs).some((d) => d.k === 'tan' && d.p === n)) loose.add(n);
   }
@@ -581,14 +614,14 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
     const kd = ckind[ci];
     const O = nm(centerOf[ci]);
     const of: GeoCircle['of'] =
-      kd.f === 'circum' || kd.f === 'in' ? {f: kd.f, n: kd.n.map(nm)} : kd.f === 'cp' ? {f: 'cp', n: [O, nm(kd.q)]} : kd.f === 'semi' ? {f: 'semi', n: [nm(kd.s), nm(kd.e)]} : kd.f === 'sector' ? {f: 'sector', n: [O, nm(kd.s), nm(kd.e)]} : {f: 'cr', n: [O]};
+      kd.f === 'circum' || kd.f === 'in' ? {f: kd.f, n: kd.n.map(nm)} : kd.f === 'cp' ? {f: 'cp', n: [O, nm(kd.q)]} : kd.f === 'semi' || kd.f === 'diam' ? {f: kd.f, n: [nm(kd.s), nm(kd.e)]} : kd.f === 'sector' ? {f: 'sector', n: [O, nm(kd.s), nm(kd.e)]} : {f: 'cr', n: [O]};
     const label =
       kd.f === 'circum'
         ? `đường tròn (${O}) ngoại tiếp ${(ring && kd.all.every((v) => ring.includes(v)) ? ring : kd.all).map(nm).join('')}`
         : kd.f === 'in'
           ? `đường tròn (${O}) nội tiếp ${kd.n.map(nm).join('')}`
-          : kd.f === 'semi'
-            ? `nửa đường tròn đường kính ${nm(kd.s)}${nm(kd.e)}`
+          : kd.f === 'semi' || kd.f === 'diam'
+            ? `${kd.f === 'semi' ? 'nửa ' : ''}đường tròn đường kính ${nm(kd.s)}${nm(kd.e)}`
             : kd.f === 'sector'
               ? `cung ${nm(kd.s)}${nm(kd.e)} tâm ${O}`
               : `đường tròn (${O})`;

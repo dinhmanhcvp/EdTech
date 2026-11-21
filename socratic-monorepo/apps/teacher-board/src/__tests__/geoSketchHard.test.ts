@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {hasDashedLine, placeOnInk, sketchFigure, type SketchFigure} from '../utils/sketchFigure';
-import {frameStrokes} from '../utils/sketchSolid';
+import {detectRoundSketch, frameStrokes} from '../utils/sketchSolid';
 import {circleFigureText, freePoints, moveFreePoint} from '../utils/geoTools';
 import {renderScene, type GeoScene} from '../utils/geometryProblem';
 
@@ -70,6 +70,8 @@ const at = (f: SketchFigure, p: Pt) => Object.keys(f.anchors).sort((a, b) => Mat
 const recognize = (ink: Ink): SketchFigure => {
   const frame = frameStrokes(ink);
   expect(frame.length, 'bộ lọc khung bỏ mất nét của hình').toBe(ink.filter((q) => q.points.length > 4).length);
+  // nhánh đầu tiên của bảng (khối tròn xoay, elip) không được giành mất
+  expect(detectRoundSketch(frame), 'bị đọc thành khối tròn xoay / elip').toBeNull();
   const f = sketchFigure(frame)!;
   expect(f, 'không nhận ra hình ghép').toBeTruthy();
   expect(f.planar).toBe(true);
@@ -301,5 +303,84 @@ describe('tứ giác có hai đường chéo, không đường tròn', () => {
     expect(hasDashedLine([seg(S, A), seg(S, B), seg(S, C), seg(A, B), seg(B, C), ...dashed(A, C)])).toBe(true);
     const ticks = [0, 1, 2].map((i) => ({points: [P(380 + i * 7, 280), P(380 + i * 7, 300)]}));
     expect(hasDashedLine([seg(A, B), seg(B, C), seg(C, A), label(A), label(B), ...ticks, {points: [P(300, 300), P(320, 300)]}, {points: [P(300, 308), P(320, 308)]}])).toBe(false);
+  });
+});
+
+describe('hai đường tròn cắt nhau', () => {
+  const cc = (O1: Pt, r1: number, O2: Pt, r2: number) => {
+    const d = Math.hypot(O2.x - O1.x, O2.y - O1.y);
+    const a = (d * d + r1 * r1 - r2 * r2) / (2 * d);
+    const h = Math.sqrt(r1 * r1 - a * a);
+    const u = {x: (O2.x - O1.x) / d, y: (O2.y - O1.y) / d};
+    return [P(O1.x + u.x * a - u.y * h, O1.y + u.y * a + u.x * h), P(O1.x + u.x * a + u.y * h, O1.y + u.y * a - u.x * h)];
+  };
+  it('chỉ hai đường tròn: thêm đủ hai giao điểm; kéo tâm mọi hướng hai giao điểm vẫn trên cả hai đường tròn', () => {
+    seed = 81;
+    const [O1, O2] = [P(330, 330), P(560, 360)];
+    const [X, Y] = cc(O1, 170, O2, 140);
+    const f = recognize([circle(O1, 170), circle(O2, 140)]);
+    const s = f.scene;
+    const [x, y, o1, o2] = [X, Y, O1, O2].map((p) => at(f, p));
+    expect(new Set([x, y, o1, o2]).size).toBe(4);
+    expect(s.defs![x]?.k).toBe('ccx');
+    expect(s.defs![y]?.k).toBe('ccx');
+    expect(freePoints(s)).toEqual(expect.arrayContaining([o1, o2]));
+    for (const sc of drags(s)) {
+      for (const p of [x, y]) {
+        expect(onC(sc, p, 0)).toBeLessThan(E);
+        expect(onC(sc, p, 1)).toBeLessThan(E);
+      }
+      expect(d2(sc.pts[x], sc.pts[y])).toBeGreaterThan(1e-3);
+    }
+    fitsInk(f);
+  });
+
+  it('hai đường tròn (O), (O′) cắt nhau tại A, B + dây chung AB + đoạn nối tâm OO′ + các bán kính: AB ⊥ OO′ tại H, H là trung điểm AB', () => {
+    seed = 83;
+    const [O1, O2] = [P(300, 320), P(580, 330)];
+    const [A, B] = cc(O1, 180, O2, 150);
+    const Hh = P((A.x + B.x) / 2, (A.y + B.y) / 2);
+    const f = recognize([circle(O1, 180), circle(O2, 150), seg(A, B), seg(O1, O2), seg(O1, A), seg(O2, A), seg(O1, B), seg(O2, B)]);
+    const s = f.scene;
+    const [a, b, o1, o2, h] = [A, B, O1, O2, Hh].map((p) => at(f, p));
+    expect(s.defs![a]?.k).toBe('ccx');
+    expect(s.defs![h]?.k).toBe('inter');
+    expect(s.hiddenLabels ?? []).not.toContain(h);
+    for (const sc of drags(s)) {
+      for (const p of [a, b]) for (const i of [0, 1]) expect(onC(sc, p, i)).toBeLessThan(E);
+      expect(cosLines(sc, a, b, o1, o2)).toBeLessThan(E);
+      expect(d2(sc.pts[h], sc.pts[a]) - d2(sc.pts[h], sc.pts[b])).toBeCloseTo(0, 6);
+    }
+    fitsInk(f);
+  });
+
+  it('tam giác nội tiếp (O) + đường tròn đường kính BC cắt AB, AC tại E, F: B, C vẫn là đỉnh tự do, đường tròn thứ hai luôn có đường kính BC', () => {
+    seed = 87;
+    const O = P(450, 330), R = 200;
+    const [A, B, C] = [on(O, R, -1.6), on(O, R, 2.7), on(O, R, 0.45)];
+    const M = P((B.x + C.x) / 2, (B.y + C.y) / 2);
+    const r2 = Math.hypot(B.x - M.x, B.y - M.y);
+    const Ee = second(M, B, A), F = second(M, C, A);
+    const f = recognize([circle(O, R), seg(A, B), seg(B, C), seg(C, A), circle(M, r2), seg(B, F), seg(C, Ee)]);
+    const s = f.scene;
+    expect(s.edges.map((e) => e.join('')).sort()).toEqual(['AB', 'BC', 'CA']);
+    const dm = s.circles!.findIndex((c) => c.of?.f === 'diam');
+    expect(dm, JSON.stringify(s.circles!.map((c) => c.of))).toBeGreaterThanOrEqual(0);
+    const [e, ff] = [Ee, F].map((p) => at(f, p));
+    for (const sc of drags(s)) {
+      for (const p of ['A', 'B', 'C']) expect(onC(sc, p, 1 - dm)).toBeLessThan(E);
+      for (const p of ['B', 'C', e, ff]) expect(onC(sc, p, dm)).toBeLessThan(E);
+      expect(col(sc, 'A', 'B', e)).toBeLessThan(E);
+      expect(col(sc, 'A', 'C', ff)).toBeLessThan(E);
+    }
+    fitsInk(f);
+  });
+
+  it('hai đường tròn rời nhau hoặc gần tiếp xúc: không thêm giao điểm', () => {
+    seed = 89;
+    const s1 = sketchFigure([circle(P(250, 300), 100), circle(P(520, 300), 110)])!.scene;
+    expect(Object.values(s1.defs ?? {}).some((d) => d.k === 'ccx')).toBe(false);
+    const s2 = sketchFigure([circle(P(250, 300), 100), circle(P(452, 300), 100)])!.scene;
+    expect(Object.values(s2.defs ?? {}).some((d) => d.k === 'ccx')).toBe(false);
   });
 });

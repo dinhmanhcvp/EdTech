@@ -403,6 +403,18 @@ function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
     const r = len(sub(Q, O));
     return [O[0] + r * Math.cos(d.ang), O[1] + r * Math.sin(d.ang), O[2]] as V3;
   }
+  if (d.k === 'ccx') {
+    const [A, B] = [g(d.o1), g(d.o2)];
+    if (!A || !B) return null;
+    const rad = (o: V3, q: string, r?: number) => (q ? (g(q) ? len(sub(g(q)!, o)) : NaN) : r ?? NaN);
+    const [r1, r2] = [rad(A, d.q1, d.r1), rad(B, d.q2, d.r2)];
+    const dd = Math.hypot(B[0] - A[0], B[1] - A[1]);
+    if (!(r1 > 0) || !(r2 > 0) || dd < 1e-12 || dd > r1 + r2 || dd < Math.abs(r1 - r2)) return null;
+    const a = (dd * dd + r1 * r1 - r2 * r2) / (2 * dd);
+    const h = Math.sqrt(Math.max(0, r1 * r1 - a * a));
+    const [ux, uy] = [(B[0] - A[0]) / dd, (B[1] - A[1]) / dd];
+    return [A[0] + ux * a - uy * h * d.w, A[1] + uy * a + ux * h * d.w, A[2]] as V3;
+  }
   if (d.k === 'pp') {
     const A = d.a.map(g);
     const B = d.b.map(g);
@@ -462,7 +474,7 @@ function calcDef(d: GeoDef, pts: Record<string, V3>): V3 | null {
 
 /** Các điểm mà công thức `d` dựa vào. */
 export const defDeps = (d: GeoDef): string[] =>
-  d.k === 'seg' ? [d.a, d.b] : d.k === 'vec' ? [d.p] : d.k === 'foot' || d.k === 'refl' || d.k === 'off' || d.k === 'trans' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.k === 'll' ? [d.p, d.a, d.b, d.q, d.c, d.d] : d.k === 'rad' ? [d.o, ...(d.q ? [d.q] : []), d.a, ...(d.b ? [d.b] : [])] : d.k === 'chd' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcint' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcx' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b, ...(d.ex ? [d.ex.replace('~', '')] : [])] : d.k === 'bisx' ? [d.v, d.a, d.c, d.p, d.q] : d.k === 'tt' ? [d.o, d.t, d.u] : d.k === 'tanpt' ? [d.o, d.t, ...(d.q ? [d.q] : [])] : d.k === 'pdist' ? [d.a, d.c, d.r, d.s] : d.k === 'tanx' ? [d.o, d.t, d.c, d.d] : d.k === 'refp' || d.k === 'rot' || d.k === 'dil' ? [d.p, d.o] : d.k === 'tan' ? [d.p, d.o, ...(d.q ? [d.q] : [])] : d.k === 'aff' ? [d.o, d.a, d.b] : d.k === 'fpl' ? [d.p, d.a, d.b, d.c] : d.k === 'lpl' ? [d.a, d.b, d.c, d.d, d.e] : d.k === 'pp' ? [...d.a, ...d.b] : d.k === 'onc' ? [d.o, d.q] : d.n;
+  d.k === 'seg' ? [d.a, d.b] : d.k === 'vec' ? [d.p] : d.k === 'foot' || d.k === 'refl' || d.k === 'off' || d.k === 'trans' ? [d.p, d.a, d.b] : d.k === 'inter' ? [d.a, d.b, d.c, d.d] : d.k === 'll' ? [d.p, d.a, d.b, d.q, d.c, d.d] : d.k === 'rad' ? [d.o, ...(d.q ? [d.q] : []), d.a, ...(d.b ? [d.b] : [])] : d.k === 'chd' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcint' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b] : d.k === 'lcx' ? [d.o, ...(d.q ? [d.q] : []), d.a, d.b, ...(d.ex ? [d.ex.replace('~', '')] : [])] : d.k === 'bisx' ? [d.v, d.a, d.c, d.p, d.q] : d.k === 'tt' ? [d.o, d.t, d.u] : d.k === 'tanpt' ? [d.o, d.t, ...(d.q ? [d.q] : [])] : d.k === 'pdist' ? [d.a, d.c, d.r, d.s] : d.k === 'tanx' ? [d.o, d.t, d.c, d.d] : d.k === 'refp' || d.k === 'rot' || d.k === 'dil' ? [d.p, d.o] : d.k === 'tan' ? [d.p, d.o, ...(d.q ? [d.q] : [])] : d.k === 'aff' ? [d.o, d.a, d.b] : d.k === 'fpl' ? [d.p, d.a, d.b, d.c] : d.k === 'lpl' ? [d.a, d.b, d.c, d.d, d.e] : d.k === 'pp' ? [...d.a, ...d.b] : d.k === 'onc' ? [d.o, d.q] : d.k === 'ccx' ? [d.o1, d.o2, ...(d.q1 ? [d.q1] : []), ...(d.q2 ? [d.q2] : [])] : d.n;
 
 /** Tính lại mọi điểm xác định theo điểm khác (điểm trên cạnh, chân đường vuông góc, trọng tâm, giao điểm…) và đường tròn gắn với chúng, theo thứ tự tạo ra. */
 export function applyDefs(sc: GeoScene): GeoScene {

@@ -281,7 +281,7 @@ const wireUp = (id: string, i: number) => {
 for (const [id, i] of [['EMF_INTERNAL_R', 0], ['EMF_INTERNAL_R', 1], ['OHM_LAW', 0], ['OHM_LAW', 1], ['CAPACITOR_RC', 0], ['CAPACITOR_RC', 1], ['TRANSFORMER', 0], ['TRANSFORMER', 1], ['EM_INDUCTION', 0], ['SPECIFIC_HEAT', 1], ['STANDING_WAVE', 0]] as const) wireUp(id, i);
 
 // các bước "Bật máy / đèn": bấm công tắc thật trên chính thiết bị (giữ nhãn và chỗ `at`)
-for (const [id, i] of [['SOUND_FREQUENCY', 1], ['SOUND_SPEED', 0], ['CELL_OBSERVE', 1], ['TRANSPIRATION', 1], ['LEAF_STARCH', 1], ['CIRCULATION', 2], ['CHROMOSOME_MUTATION', 1]] as const) {
+for (const [id, i] of [['SOUND_FREQUENCY', 1], ['SOUND_SPEED', 0], ['CELL_OBSERVE', 1], ['TRANSPIRATION', 1], ['LEAF_STARCH', 1], ['CIRCULATION', 2], ['CHROMOSOME_MUTATION', 1], ['PENDULUM_G', 1]] as const) {
   const st = BENCH_SETUP[id]?.[i];
   if (st) st.act = press(st.label, '', [0, 0, 0], st.at).act;
 }

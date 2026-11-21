@@ -341,13 +341,21 @@ export function runCircleLore(api: LoreApi, sentences: string[], st: State): num
       addAux(r[3], r[4]);
     }
 
+    // điểm ngoài đường tròn cách tâm cho trước ("OA = 2R", "AO = 3R"): đặt đúng khoảng cách đó, không có thì như cũ
+    const outAt = (n: string, x: number, y: number): V3 => {
+      const m = o ? new RegExp(`(?:${o}${n}|${n}${o})\\s*=\\s*(\\d+(?:[.,]\\d+)?)?\\s*R(?![A-Za-z'])`).exec(s) : null;
+      const k = m ? parseFloat((m[1] ?? '1').replace(',', '.')) / Math.hypot(x, y) : 1;
+      return add(oP!, [k * x * c!.r, k * y * c!.r, 0]);
+    };
     // ---- tiếp điểm kẻ từ điểm ngoài: giữ cho bộ dựng cũ; điểm ngoài ở xa chưa có thì đặt
     if (c && oP && (r = /(?:[Tt]ừ|[Qq]ua)\s*(?:một\s*)?(?:điểm\s*)?([A-Z]'?)\s*(?:cố định\s*)?(?:nằm\s*|ở\s*)?(?:bên\s*)?(?:ngoài|kẻ)/u.exec(s)) && !has(r[1]) && /ngoài/.test(s)) {
-      mk(r[1], add(oP, [2.4 * c.r, 0.1 * c.r, 0]), `${r[1]} ở ngoài đường tròn`);
+      mk(r[1], outAt(r[1], 2.4, 0.1), `${r[1]} ở ngoài đường tròn`);
     }
+    // ---- "điểm A nằm ngoài (O)" (không mở đầu bằng "Từ")
+    if (c && oP && (r = /điểm\s*([A-Z]'?)\s*(?:nằm\s*|ở\s*)(?:bên\s*)?ngoài/u.exec(s)) && !has(r[1])) mk(r[1], outAt(r[1], 2.4, 0.1), `${r[1]} ở ngoài đường tròn`);
 
     // ---- "tiếp tuyến AB, AC" mà A chưa có: A là điểm ngoài đường tròn
-    if (c && oP && (r = /tiếp tuyến\s*([A-Z]'?)([A-Z]'?)\s*(?:,|và)?\s*\1([A-Z]'?)/u.exec(s)) && !has(r[1])) mk(r[1], add(oP, [2.3 * c.r, 0.15 * c.r, 0]), `${r[1]} ở ngoài đường tròn`);
+    if (c && oP && (r = /tiếp tuyến\s*([A-Z]'?)([A-Z]'?)\s*(?:,|và)?\s*\1([A-Z]'?)/u.exec(s)) && !has(r[1])) mk(r[1], outAt(r[1], 2.3, 0.15), `${r[1]} ở ngoài đường tròn`);
 
     // ---- "O' đối xứng với O qua BC" / "qua điểm I"
     if ((r = /(?<![\p{L}A-Z])([A-Z]'?)\s*đối xứng\s*với\s*([A-Z]'?)\s*qua\s*(?:đường thẳng\s*|điểm\s*)?([A-Z]'?)([A-Z]'?)?(?![A-Za-z'])/u.exec(s)) && !has(r[1]) && has(r[2])) {

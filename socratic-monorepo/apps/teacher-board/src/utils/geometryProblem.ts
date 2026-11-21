@@ -60,6 +60,59 @@ const stripAccent = (w: string) => w.normalize('NFD').replace(/[̀-ͯ]/g, '').re
 const NO_ACCENT = new Map(KEYWORDS.map((k) => [stripAccent(k), k] as const).filter(([a, k]) => a !== k));
 const NO_ACCENT_RE = new RegExp(`(?<!\\p{L})(?:${[...NO_ACCENT.keys()].sort((a, b) => b.length - a.length).map((k) => k.replace(/ /g, '\\s+')).join('|')})(?!\\p{L})`, 'giu');
 
+/** Viết tắt hay gặp khi tóm tắt đề (gõ nhanh, chữ viết tay): tđ, pg, đcao, nt, ngt, đtnt, đtngt, đk, bk, tt, tg, hbh, hcn, hv, ht… */
+export function expandAbbrev(t0: string): string {
+  const W = (s: string) => new RegExp(`(?<![\\p{L}\\d])(?:${s})(?![\\p{L}])`, 'gu'); // chữ thường: chữ hoa (BK, TT, NT) là tên điểm
+  const hasCircle = /\(\s*[A-Za-z]'?\s*[;,)]|đường tròn/u.test(t0);
+  let t = t0;
+  t = t.replace(W('đtnt'), 'đường tròn nội tiếp').replace(W('đtngt'), 'đường tròn ngoại tiếp');
+  t = t.replace(W('tđ'), 'trung điểm').replace(W('pg'), 'phân giác').replace(W('đ\\.?\\s?cao|đg cao'), 'đường cao').replace(W('đk'), 'đường kính').replace(W('bk'), 'bán kính');
+  t = t.replace(W('ttuyến'), hasCircle ? 'tiếp tuyến' : 'trung tuyến').replace(W('tt'), hasCircle ? 'tiếp tuyến' : 'trung tuyến');
+  // "nt (O)", "tứ giác ABCD nt", "ngt (O)"
+  t = t.replace(/(?<![\p{L}])ngt(?=\s*(?:$|[,.;(]|đường tròn))/gu, 'ngoại tiếp').replace(/(?<![\p{L}])nt(?=\s*(?:$|[,.;(]|đường tròn))/gu, 'nội tiếp');
+  // tên hình viết tắt (cả chữ thường): tg abc, hbh abcd, hcn, hv, ht, htc, htv
+  const shapes: [string, string][] = [['htc', 'hình thang cân'], ['htv', 'hình thang vuông'], ['hbh', 'hình bình hành'], ['hcn', 'hình chữ nhật'], ['hv', 'hình vuông'], ['ht', 'hình thang']];
+  for (const [ab, full] of shapes) {
+    t = t.replace(new RegExp(`(?<![\\p{L}])${ab}\\s*(?=[A-Za-z]{4}(?![\\p{L}]))`, 'gu'), `${full} `);
+    t = t.replace(new RegExp(`(?<=(?:đáy|là|:)\\s*)${ab}(?![\\p{L}])`, 'gu'), full); // "đáy là hv cạnh a"
+  }
+  t = t.replace(/(?<![\p{L}])tg\s*(?=[A-Za-z]{3}(?![\p{L}]))/giu, 'tam giác ');
+  // "kẻ 2 tiếp tuyến", "3 đường cao"
+  t = t.replace(/(?<![\d.,])([23])\s+(?=tiếp tuyến|đường cao|đường trung tuyến|trung tuyến|đường phân giác|phân giác|đường chéo)/gu, (_m, d: string) => (d === '2' ? 'hai ' : 'ba '));
+  return t;
+}
+
+/** Từ không dấu gõ được bằng chữ thường nhưng KHÔNG phải tên điểm (từ trong từ khóa, đơn vị, hàm). */
+const NOT_POINT = new Set([
+  ...KEYWORDS.flatMap((k) => k.split(' ')).filter((w) => /^[a-z]+$/.test(w)),
+  ...'cho va voi la co ke ve ta em thi khi neu sao ba hai tia nhau cm mm dm km sin cos tan cot tg cotg log ln lim max min gt kl x y z'.split(' '),
+]);
+
+/**
+ * Đề gõ/viết toàn chữ thường ("tam giác abc, ab=ac, am là trung tuyến", "s.abcd", "nội tiếp (o)") → tên điểm thành chữ hoa.
+ * Chỉ chạy khi tên HÌNH trong đề viết thường; giữ chữ thường cho độ dài/biến ("cạnh a", "SA = a√2", "(O; r)", "2a").
+ */
+export function upperPointNames(t: string): string {
+  const lowerFigure =
+    /(?<![\p{L}])(?:tam giác|tứ giác|ngũ giác|lục giác|tứ diện|lăng trụ|hình [\p{L} ]{2,16}?)\s+[a-z]{3,8}(?![\p{L}'])/u.test(t) ||
+    /(?<![\p{L}])[a-z]\.[a-z]{3,4}(?![\p{L}])/u.test(t) ||
+    /\(\s*[a-z]\s*[;)]/.test(t);
+  if (!lowerFigure) return t;
+  return t.replace(/(?<![\p{L}\d'√\\])([a-z]{1,8})((?:')*)(?![\p{L}])/gu, (m: string, w: string, pr: string, at: number) => {
+    if (NOT_POINT.has(w)) return m;
+    if (w.length > 1 && new Set(w).size !== w.length) return m; // tên điểm ghép không lặp chữ ("ab", "abcd")
+    if (w.length === 1) {
+      const before = t.slice(Math.max(0, at - 12), at);
+      const after = t.slice(at + m.length, at + m.length + 3);
+      // giao điểm viết tắt "ac ∩ bd = i": vế phải là tên điểm
+      if (/(?:giao|cắt)\s*[a-zA-Z]{2}\s*=\s*$/u.test(before)) return w.toUpperCase() + pr;
+      // độ dài/biến: "cạnh a", "= a", "bằng a", "(O; r)", "bán kính r", "a√2", "a²"
+      if (/(?:=|bằng|cạnh|bên|kính|;|[+\-*/·<>])\s*$/u.test(before) || /^\s*[√²\d]/.test(after)) return m;
+    }
+    return w.toUpperCase() + pr;
+  });
+}
+
 export function normalizeProblem(raw: string): string {
   let t = raw || '';
   // chỉ khôi phục dấu ở đoạn KHÔNG thuộc cụm từ khóa đã có dấu ("trung điểm" không được thành "trùng điểm")
@@ -77,6 +130,7 @@ export function normalizeProblem(raw: string): string {
   t = t.replace(/(\d)\s*\^\s*\{?\s*(?:\\circ|°|0|o)\s*\}?/g, '$1°'); // 90^\circ, 90^0 (trước khi ^ bị coi là "góc")
   t = t.replace(/≡|\\equiv/g, ' trùng ').replace(/∈|\\in(?![a-z])/g, ' thuộc ').replace(/∠|\\widehat|\\angle|\^/g, ' góc ');
   t = t.replace(/[△Δ∆]|\\triangle|\\Delta/g, ' tam giác ').replace(/[⇒⟹→⟶]/g, ';').replace(/\\circ|°/g, '°').replace(/(\d)\s*độ(?![\p{L}])/gu, '$1°');
+  t = upperPointNames(expandAbbrev(t));
   // góc vuông viết bằng ký hiệu: "Â = 90°", "∠A = 90°", "góc BAC = 90°", "A = 90°" → "vuông tại A"
   t = t.replace(/[ÂĈÊĜĤÎĴÔŜÛŴŶẐ]|[A-Z]̂/g, (m) => ` góc ${m.normalize('NFD')[0]} `);
   t = t.replace(/góc\s*\{?\s*([A-Z])([A-Z])([A-Z])\s*\}?\s*=\s*90\s*°/g, ' vuông tại $2 ');
@@ -109,7 +163,56 @@ export function normalizeProblem(raw: string): string {
     t = t.replace(/^\s*([A-Z]{3})(?=\s*[,;])/, 'tam giác $1');
     t = t.replace(/^\s*([A-Z])([A-Z])\s+vuông góc\s+(?:với\s+)?\1([A-Z])\s*$/, 'tam giác $2$1$3 vuông tại $1');
   }
-  return t.replace(/[ \t]+/g, ' ');
+  return equalSidesToShape(t).replace(/[ \t]+/g, ' ');
+}
+
+/**
+ * Tóm tắt bằng đẳng thức → lời: "tam giác ABC, AB = AC" → "tam giác ABC cân tại A" (đã "vuông tại A" thì "vuông cân tại A");
+ * "AB = AC = BC" → đều; "M thuộc BC, MB = MC" → "M là trung điểm BC".
+ */
+export function equalSidesToShape(t0: string): string {
+  let t = t0;
+  const eqs = [...t.matchAll(/(?<![A-Z'])([A-Z]{2})\s*=\s*([A-Z]{2})(?:\s*=\s*([A-Z]{2}))?(?![A-Z'(\d])/g)].map((m) => m.slice(1).filter(Boolean).map((s) => s.split('').sort().join('')));
+  const tri = /tam giác\s*((?:[\p{Ll}]+\s+)*?)([A-Z])([A-Z])([A-Z])(?![A-Z'.])/u.exec(t);
+  if (tri) {
+    const vs = tri.slice(2, 5);
+    const end = tri.index + tri[0].length;
+    for (const sides of eqs) {
+      const ok = new Set(sides).size === sides.length && sides.every((s) => [...s].every((c) => vs.includes(c)));
+      if (!ok) continue;
+      if (sides.length === 3 && !/đều/.test(t)) {
+        t = `${t.slice(0, end)} đều${t.slice(end)}`;
+        break;
+      }
+      const P = [...sides[0]].find((c) => sides[1].includes(c));
+      if (!P || /cân|đều/.test(t)) continue;
+      const right = new RegExp(`vuông\\s*(?:tại|ở)\\s*${P}(?![A-Z'])`).exec(t);
+      t = right ? `${t.slice(0, right.index)}vuông cân tại ${P}${t.slice(right.index + right[0].length)}` : `${t.slice(0, end)} cân tại ${P}${t.slice(end)}`;
+      break;
+    }
+  }
+  // "AD là (đường) phân giác" → "phân giác AD" (đường cao/trung tuyến viết kiểu này đã hiểu)
+  // (không đụng câu cần chứng minh: "Chứng minh IK là phân giác của góc EIQ")
+  t = t.replace(/(?<![A-Z'])([A-Z]{2})\s*là\s*(?:đường\s*)?phân giác(?:\s*(?:trong\s*)?(?:của\s*)?(?:góc\s*)?[A-Z]{1,3})?(?![\p{L}A-Z])/gu, (w: string, xy: string, at: number) =>
+    /chứng minh|cm\b/i.test(t.slice(0, at).split(/[.;\n]/).pop() ?? '') ? w : `phân giác ${xy}`,
+  );
+  // "AB là đường kính": tam giác nội tiếp → vuông tại đỉnh còn lại; chỉ có đường tròn "(O; R)" → "(O) đường kính AB"
+  const dia = /(?<![A-Z'])([A-Z])([A-Z])\s*là\s*(?:một\s*)?đường kính(?:\s*của\s*(?:đường tròn\s*)?\(\s*[A-Z]\s*(?:;[^)]*)?\))?/u.exec(t);
+  if (dia) {
+    const third = tri ? tri.slice(2, 5).find((v) => v !== dia[1] && v !== dia[2]) : undefined;
+    if (tri && third && tri.slice(2, 5).includes(dia[1]) && tri.slice(2, 5).includes(dia[2]) && /nội tiếp/.test(t) && !/vuông/.test(t)) {
+      const end = tri.index + tri[0].length;
+      t = `${t.slice(0, end)} vuông tại ${third}${t.slice(end)}`;
+    } else if (!tri) {
+      const circ = /(?:đường tròn\s*)?\(\s*([A-Z])\s*(?:;[^)]*)?\)/u.exec(t);
+      if (circ && circ.index < dia.index) t = `${t.slice(0, circ.index)}đường tròn (${circ[1]}) đường kính ${dia[1]}${dia[2]}${t.slice(circ.index + circ[0].length, dia.index)}${t.slice(dia.index + dia[0].length)}`;
+    }
+  }
+  // "M thuộc (cạnh) BC" + "MB = MC" (viết kiểu nào cũng được) → trung điểm
+  t = t.replace(/(?<![A-Z'])([A-Z])\s*thuộc\s*(?:cạnh\s*|đoạn(?: thẳng)?\s*)?([A-Z])([A-Z])(?![A-Z'])/g, (w: string, p: string, x: string, y: string) =>
+    eqs.some((e) => e.length === 2 && e.includes([p, x].sort().join('')) && e.includes([p, y].sort().join(''))) ? `${p} là trung điểm ${x}${y}` : w,
+  );
+  return t;
 }
 
 // ------------------------------------------------------------------ biểu thức độ dài (a = 1)
@@ -241,6 +344,75 @@ function describeBase(text: string, names: string[]): BaseDesc {
   if (c) return {kind: 'tri_iso', at: c[1]};
   if (/tam giác[^;,]*đều|đều/.test(text) && !/chóp đều|lăng trụ đều/.test(text)) return {kind: 'tri_eq'};
   return {kind: 'tri'};
+}
+
+/**
+ * Tam giác có số đo GÓC trong đề ("góc B = 60°, góc C = 45°", "vuông tại A, góc B = 30°", "cân tại A, góc A = 120°", "góc A = 60°, AB = 4, AC = 6"):
+ * dựng đúng các góc đó, cạnh theo độ dài đã cho (hoặc mặc định). null khi đề không cho góc nào của tam giác.
+ */
+function triangleByAngles(text: string, names: string[], desc: BaseDesc, L: (a: string, b: string) => number | undefined): Record<string, P2> | null {
+  const ang: Record<string, number> = {};
+  const num = '(\\d+(?:[.,]\\d+)?)\\s*°';
+  for (const m of text.matchAll(new RegExp(`góc\\s*(${PT})\\s*(?:=|bằng)\\s*${num}`, 'g'))) if (names.includes(m[1])) ang[m[1]] = parseFloat(m[2].replace(',', '.'));
+  for (const m of text.matchAll(new RegExp(`góc\\s*(${PT})(${PT})(${PT})\\s*(?:=|bằng)\\s*${num}`, 'g')))
+    if ([m[1], m[2], m[3]].every((n) => names.includes(n)) && new Set([m[1], m[2], m[3]]).size === 3) ang[m[2]] = parseFloat(m[4].replace(',', '.'));
+  if (Object.keys(ang).length === 0) return null;
+  if (desc.kind === 'tri_right') ang[desc.at ?? names[0]] = 90;
+  if (desc.kind === 'tri_eq') return null;
+  if (desc.kind === 'tri_iso' || (desc.kind === 'tri_right' && desc.iso)) {
+    const apex = desc.at ?? names[0];
+    const [b1, b2] = names.filter((n) => n !== apex);
+    if (ang[apex] !== undefined) ang[b1] = ang[b2] = (180 - ang[apex]) / 2;
+    else if (ang[b1] !== undefined || ang[b2] !== undefined) {
+      ang[b1] = ang[b2] = ang[b1] ?? ang[b2];
+      ang[apex] = 180 - 2 * ang[b1];
+    }
+  }
+  const known = names.filter((n) => ang[n] !== undefined);
+  if (known.length === 2) ang[names.find((n) => ang[n] === undefined)!] = 180 - ang[known[0]] - ang[known[1]];
+  if (names.some((n) => ang[n] !== undefined && !(ang[n] > 0 && ang[n] < 180)) || (known.length >= 2 && names.some((n) => !(ang[n] > 0)))) return null;
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const [A, B, C] = names;
+  // đặt đỉnh V ở gốc, cạnh Vv1 trên trục hoành, v2 theo góc tại V
+  const place = (V: string, a: number, l1: number, l2: number): Record<string, P2> => {
+    const i = names.indexOf(V);
+    const [v1, v2] = [names[(i + 1) % 3], names[(i + 2) % 3]];
+    return {[V]: [0, 0], [v1]: [l1, 0], [v2]: [l2 * Math.cos(rad(a)), l2 * Math.sin(rad(a))]};
+  };
+  if (names.every((n) => ang[n] !== undefined)) {
+    // đủ ba góc: tỉ lệ theo định lí sin, lấy một cạnh đã biết làm thước (không có thì cạnh lớn nhất = 2,4)
+    const opp = (n: string) => names.filter((x) => x !== n);
+    const sideOf = (n: string) => L(opp(n)[0], opp(n)[1]);
+    const ref = names.find((n) => sideOf(n) !== undefined);
+    const k = ref ? sideOf(ref)! / Math.sin(rad(ang[ref])) : 2.4 / Math.max(...names.map((n) => Math.sin(rad(ang[n]))));
+    // cạnh AB = k·sin C, AC = k·sin B, góc tại A
+    return place(A, ang[A], k * Math.sin(rad(ang[C])), k * Math.sin(rad(ang[B])));
+  }
+  // một góc: hai cạnh kề lấy theo đề (thiếu thì mặc định)
+  const V = known[0];
+  const i = names.indexOf(V);
+  const [v1, v2] = [names[(i + 1) % 3], names[(i + 2) % 3]];
+  const l1 = L(V, v1) ?? 2;
+  const l2 = L(V, v2) ?? (L(V, v1) !== undefined ? l1 * 0.8 : 1.6);
+  return place(V, ang[V], l1, l2);
+}
+
+/** Tam giác thường có so sánh cạnh trong đề ("(AB < AC)", "AB > BC"): chọn hình mặc định đúng thứ tự đó (vẫn nhọn). null nếu đề không so sánh. */
+function triangleByOrder(text: string, names: string[]): Record<string, P2> | null {
+  const sides = new Set([0, 1, 2].map((i) => [names[i], names[(i + 1) % 3]].sort().join('')));
+  const rel: [string, string][] = []; // [nhỏ, lớn]
+  for (const m of text.matchAll(/(?<![A-Z'])([A-Z]{2})\s*([<>])\s*(?=([A-Z]{2})(?![A-Z']))/g)) {
+    const [a, b] = [m[1], m[3]].map((s) => s.split('').sort().join(''));
+    if (sides.has(a) && sides.has(b) && a !== b) rel.push(m[2] === '<' ? [a, b] : [b, a]);
+  }
+  if (!rel.length) return null;
+  const [A, B, C] = names;
+  for (const [cx, cy] of [[0.7, 1.4], [0.6, 2.1], [1.35, 1.7], [0.45, 1.6], [1.5, 2.3], [0.9, 2.5], [1.2, 1.1]]) {
+    const pts: Record<string, P2> = {[A]: [0, 0], [B]: [2, 0], [C]: [cx, cy]};
+    const len = (s: string) => Math.hypot(pts[s[0]][0] - pts[s[1]][0], pts[s[0]][1] - pts[s[1]][1]);
+    if (rel.every(([lo, hi]) => len(lo) < len(hi) - 0.05)) return pts;
+  }
+  return null;
 }
 
 /** Tọa độ phẳng của đa giác đáy theo loại, kích thước lấy từ L (độ dài các cạnh đã biết). */
@@ -887,7 +1059,11 @@ function buildFigure(text: string, notes: string[]): Model | null {
       : /tam giác\s*tù/.test(text)
         ? {kind: 'tri_obtuse'}
         : describeBase(text, names);
-    const c = baseCoords(desc, names, L, T.all, T.angle);
+    const noLengths = [0, 1, 2].every((i) => L(names[i], names[(i + 1) % 3]) === undefined);
+    const c =
+      (!useQuad && triangleByAngles(text, names, desc, L)) ||
+      (!useQuad && desc.kind === 'tri' && noLengths && triangleByOrder(text, names)) ||
+      baseCoords(desc, names, L, T.all, T.angle);
     const m = model(useQuad ? `${quad![1][0].toUpperCase()}${quad![1].slice(1)} ${names.join('')}` : `Tam giác ${names.join('')}`, 2);
     names.forEach((n) => put(m, n, [c[n][0], c[n][1], 0]));
     m.edges.push(...cycle(names));
@@ -939,7 +1115,10 @@ function buildFigure(text: string, notes: string[]): Model | null {
     } else m.circles.push({center: [0, 0, 0], normal: [0, 0, 1], r: R, part: 0, label: `đường tròn tâm ${O}`, own: true});
     const out = /(?:(?:[Tt]ừ|[Qq]ua)\s*(?:một\s*)?(?:điểm\s*)?|(?<![A-Za-z'])(?:điểm\s*)?)([A-Z]'?)\s*(?:là một điểm\s*)?(?:cố định\s*)?(?:nằm\s*|ở\s*)?(?:bên\s*)?ngoài/u.exec(text);
     if (out && !m.pts.has(out[1])) {
-      put(m, out[1], [2.1 * R, 1.2 * R, 0]);
+      // "OA = 2R": đúng khoảng cách tới tâm (mặc định ≈ 2,42R)
+      const kd = new RegExp(`(?:${O}${out[1]}|${out[1]}${O})\\s*=\\s*(\\d+(?:[.,]\\d+)?)?\\s*R(?![A-Za-z'])`).exec(text);
+      const f = kd ? parseFloat((kd[1] ?? '1').replace(',', '.')) / Math.hypot(2.1, 1.2) : 1;
+      put(m, out[1], [2.1 * R * f, 1.2 * R * f, 0]);
       m.marks.add(out[1]);
     }
     return m;

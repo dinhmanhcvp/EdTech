@@ -9,11 +9,12 @@ export const SUBJECTS = [
   {id: 'kt', label: 'Kĩ thuật – Công nghệ', color: '#D9481C'},
 ] as const;
 export type SubjectId = (typeof SUBJECTS)[number]['id'];
+import {DISSECTIONS} from '../dissect';
 
 const BY: Record<SubjectId, string[]> = {
   ly: ['balance', 'collision', 'thomson', 'eddy', 'photo', 'rutherford', 'matterwave', 'ligo', 'bec', 'optics', 'shock'],
   hoa: ['chem', 'chlorine', 'alkali', 'no2', 'titration', 'bz'],
-  sinh: ['gel', 'morgan', 'tweezers'],
+  sinh: ['gel', 'morgan', 'tweezers', ...DISSECTIONS.map((d) => d.id)],
   kt: ['three-phase', 'motor', 'engine', 'robot', 'drone', 'pc', 'cartpole', 'pid', 'differential', 'turbine', 'foc', 'stirling', 'harmonic', 'fatigue', 'quadruped', 'surgery', 'slam'],
 };
 export const SUBJECT_OF: Record<string, SubjectId> = Object.fromEntries((Object.keys(BY) as SubjectId[]).flatMap((s) => BY[s].map((id) => [id, s] as const)));

@@ -1,5 +1,6 @@
 import React from 'react';
 import {readFileSync} from 'fs';
+import {DISSECT_BY_ID} from '../utils/lab/hands/dissect';
 import {join} from 'path';
 import {describe, it, expect, afterEach} from 'vitest';
 import {render, cleanup, fireEvent} from '@testing-library/react';
@@ -39,6 +40,8 @@ describe('/lab: bài thực hành SGK là thí nghiệm 3D điều khiển bằn
     it(`${l.id}: có cảnh 3D (bộ dụng cụ Blender hoặc bàn hóa học 3D) và hướng dẫn`, () => {
       const chem = /^CHEM_LAB_(.+)$/.exec(l.id)?.[1];
       if (chem) return expect(EXPERIMENT_BY_ID[chem], 'bài của bàn hóa học 3D').toBeTruthy();
+      // bài mổ / quan sát cấu tạo: cảnh mổ riêng, mô hình và hướng dẫn kiểm ở dissect.test.tsx
+      if (l.id in DISSECT_BY_ID) return expect(DISSECT_BY_ID[l.id].steps.length).toBeGreaterThanOrEqual(3);
       const b = benchOf(l.id)!;
       expect(b, 'bài đo đạc').toBeTruthy();
       expect(GLB[b.file].has(`Set_${b.e.id}`), `Set_${b.e.id} trong bench-${b.file}.glb`).toBe(true);

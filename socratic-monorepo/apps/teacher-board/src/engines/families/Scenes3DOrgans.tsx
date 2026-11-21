@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {setLine, type Kit, type SceneDef} from './Stage3D';
 import {V, ball, group, mat, swarm} from './Scenes3DMore';
+import {blenderHeart} from './heart3d';
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 const smooth = (x: number) => {
@@ -60,55 +61,67 @@ const scaled = (m: THREE.Mesh, x: number, y: number, z: number, at: [number, num
   return m;
 };
 
+
+/** bản hình khối cũ của tim (dự phòng khi không tải được `heart.glb`) */
+function primitiveHeart(k: Kit, P: ReturnType<typeof parts>) {
+  const blue = '#3D7BE0';
+  const red = '#E0453A';
+  P.add('lung', scaled(ball('#F6B3CF', 1, {roughness: 0.6}), 2.1, 0.45, 0.75, [0, 2.3, 0]));
+  P.add('body', scaled(ball('#B8B2A7', 1, {roughness: 0.7}), 2.5, 0.4, 0.8, [0, -2.5, 0]));
+  P.add('vc', tube([V(-2, -2.2, 0), V(-2, 0.6, 0), V(-1.05, 0.6, 0)], 0.13, blue));
+  P.add('ra', scaled(ball('#93C5FD', 1), 0.55, 0.45, 0.45, [-0.65, 0.55, 0]));
+  P.add('rv', scaled(ball('#60A5FA', 1), 0.55, 0.7, 0.5, [-0.5, -0.4, 0.1]));
+  P.add('pa', tube([V(-0.35, -0.05, 0.2), V(-0.1, 0.95, 0.25), V(-0.6, 1.6, 0), V(-0.9, 2.1, 0)], 0.11, blue));
+  P.add('pv', tube([V(0.9, 2.1, 0), V(0.95, 1.3, 0), V(0.75, 0.85, 0)], 0.11, red));
+  P.add('la', scaled(ball('#FCA5A5', 1), 0.55, 0.45, 0.45, [0.65, 0.55, 0]));
+  P.add('lv', scaled(ball('#F87171', 1), 0.62, 0.8, 0.55, [0.5, -0.4, 0.1]));
+  P.add('aorta', tube([V(0.3, 0.0, 0.35), V(0.25, 1.3, 0.35), V(1.2, 1.55, 0.35), V(2, 0.8, 0), V(2, -2.2, 0)], 0.13, red));
+  for (const [id, x] of [['valve-r', -0.6], ['valve-l', 0.6]] as const) {
+    const v = Object.assign(new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.06, 12, 28), mat('#FACC15', {roughness: 0.3})), {castShadow: true});
+    v.rotation.x = Math.PI / 2;
+    v.position.set(x, 0.12, 0);
+    P.add(id, v);
+  }
+  // đường đi của máu: thân → tâm nhĩ P → tâm thất P → phổi → tâm nhĩ T → tâm thất T → động mạch chủ → thân
+  const path = new THREE.CatmullRomCurve3(
+    [[-2, -2.3, 0], [-2, 0.6, 0], [-0.65, 0.6, 0], [-0.6, 0.12, 0], [-0.5, -0.4, 0.1], [-0.2, 0.2, 0.2], [-0.6, 1.6, 0], [-0.9, 2.2, 0], [0.9, 2.2, 0], [0.95, 1.3, 0], [0.65, 0.6, 0], [0.6, 0.12, 0], [0.5, -0.4, 0.1], [0.25, 0.2, 0.35], [0.25, 1.3, 0.35], [1.2, 1.55, 0.35], [2, 0.8, 0], [2, -2.3, 0], [0, -2.6, 0]].map(([x, y, z]) => V(x, y, z)),
+    true,
+  );
+  const dark = swarm(12, 0.09, '#1F4FBF', {roughness: 0.2, emissive: '#1F4FBF', emissiveIntensity: 0.4});
+  const light = swarm(12, 0.09, '#FF3B2F', {roughness: 0.2, emissive: '#FF3B2F', emissiveIntensity: 0.4});
+  k.scene.add(dark, light);
+  const pt = V();
+  return (s: Record<string, string>) => {
+    const now = performance.now() / 1000;
+    let a = 0;
+    let b = 0;
+    const on = s.flow === '1';
+    if (on)
+      for (let i = 0; i < 12; i++) {
+        const u = (now * 0.045 + i / 12) % 1;
+        path.getPointAt(u, pt);
+        (u < 0.48 || u > 0.97 ? dark : light).at(u < 0.48 || u > 0.97 ? a++ : b++, pt.x, pt.y, pt.z);
+      }
+    dark.flush(a);
+    light.flush(b);
+  };
+}
+
 export const ORGAN_SCENES: Record<string, SceneDef> = {
   BIO_HEART_CIRCULATION: {
     noGrid: true,
     dist: 12,
-    target: [0, 0, 0],
+    target: [0, 0.3, 0],
     orbit: () => [0, 8],
     setup: (k) => {
       const P = parts(k);
-      const blue = '#3D7BE0';
-      const red = '#E0453A';
-      P.add('lung', scaled(ball('#F6B3CF', 1, {roughness: 0.6}), 2.1, 0.45, 0.75, [0, 2.3, 0]));
-      P.add('body', scaled(ball('#B8B2A7', 1, {roughness: 0.7}), 2.5, 0.4, 0.8, [0, -2.5, 0]));
-      P.add('vc', tube([V(-2, -2.2, 0), V(-2, 0.6, 0), V(-1.05, 0.6, 0)], 0.13, blue));
-      P.add('ra', scaled(ball('#93C5FD', 1), 0.55, 0.45, 0.45, [-0.65, 0.55, 0]));
-      P.add('rv', scaled(ball('#60A5FA', 1), 0.55, 0.7, 0.5, [-0.5, -0.4, 0.1]));
-      P.add('pa', tube([V(-0.35, -0.05, 0.2), V(-0.1, 0.95, 0.25), V(-0.6, 1.6, 0), V(-0.9, 2.1, 0)], 0.11, blue));
-      P.add('pv', tube([V(0.9, 2.1, 0), V(0.95, 1.3, 0), V(0.75, 0.85, 0)], 0.11, red));
-      P.add('la', scaled(ball('#FCA5A5', 1), 0.55, 0.45, 0.45, [0.65, 0.55, 0]));
-      P.add('lv', scaled(ball('#F87171', 1), 0.62, 0.8, 0.55, [0.5, -0.4, 0.1]));
-      P.add('aorta', tube([V(0.3, 0.0, 0.35), V(0.25, 1.3, 0.35), V(1.2, 1.55, 0.35), V(2, 0.8, 0), V(2, -2.2, 0)], 0.13, red));
-      for (const [id, x] of [['valve-r', -0.6], ['valve-l', 0.6]] as const) {
-        const v = Object.assign(new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.06, 12, 28), mat('#FACC15', {roughness: 0.3})), {castShadow: true});
-        v.rotation.x = Math.PI / 2;
-        v.position.set(x, 0.12, 0);
-        P.add(id, v);
-      }
-      // đường đi của máu: thân → tâm nhĩ P → tâm thất P → phổi → tâm nhĩ T → tâm thất T → động mạch chủ → thân
-      const path = new THREE.CatmullRomCurve3(
-        [[-2, -2.3, 0], [-2, 0.6, 0], [-0.65, 0.6, 0], [-0.6, 0.12, 0], [-0.5, -0.4, 0.1], [-0.2, 0.2, 0.2], [-0.6, 1.6, 0], [-0.9, 2.2, 0], [0.9, 2.2, 0], [0.95, 1.3, 0], [0.65, 0.6, 0], [0.6, 0.12, 0], [0.5, -0.4, 0.1], [0.25, 0.2, 0.35], [0.25, 1.3, 0.35], [1.2, 1.55, 0.35], [2, 0.8, 0], [2, -2.3, 0], [0, -2.6, 0]].map(([x, y, z]) => V(x, y, z)),
-        true,
-      );
-      const dark = swarm(12, 0.09, '#1F4FBF', {roughness: 0.2, emissive: '#1F4FBF', emissiveIntensity: 0.4});
-      const light = swarm(12, 0.09, '#FF3B2F', {roughness: 0.2, emissive: '#FF3B2F', emissiveIntensity: 0.4});
-      k.scene.add(dark, light);
-      const pt = V();
+      const hint = 'Chạm một bộ phận để xem chi tiết; kéo để xoay xem (xanh: máu nghèo O₂, đỏ: máu giàu O₂)';
+      const name = (s: Record<string, string>) => (id: string) => s[`L:${id}`] || s[`T:${id}`] || id;
+      // tim Blender cắt bổ, co bóp, van đóng mở; không tải được mô hình thì dùng bản hình khối cũ
+      let draw: (s: Record<string, string>) => void = blenderHeart(k, (id, o) => P.add(id, o), () => (draw = primitiveHeart(k, P)));
       return ({s}) => {
-        const now = performance.now() / 1000;
-        let a = 0;
-        let b = 0;
-        const on = s.flow === '1';
-        if (on)
-          for (let i = 0; i < 12; i++) {
-            const u = (now * 0.045 + i / 12) % 1;
-            path.getPointAt(u, pt);
-            (u < 0.48 || u > 0.97 ? dark : light).at(u < 0.48 || u > 0.97 ? a++ : b++, pt.x, pt.y, pt.z);
-          }
-        dark.flush(a);
-        light.flush(b);
-        P.paint(s.sel, (id) => s[`L:${id}`] ?? id, 'Chạm một bộ phận để xem chi tiết (xanh: máu nghèo O₂, đỏ: máu giàu O₂)');
+        draw(s);
+        P.paint(s.sel, name(s), hint);
       };
     },
   },

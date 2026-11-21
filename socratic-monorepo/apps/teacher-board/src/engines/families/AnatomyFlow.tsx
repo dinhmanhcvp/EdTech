@@ -51,7 +51,7 @@ export const AnatomyFlow: React.FC<{id: string; data: AnatomyData}> = ({id, data
         )}
         {has3d && in3d ? (
           <Suspense fallback={<div className="w-full aspect-[560/340] rounded-2xl border border-[#1D1B16]/15 bg-[#EEEAE0]" />}>
-            <Organ3D id={id} p={{}} s={{sel: sel ?? '', flow: flowOn ? '1' : '0', ...Object.fromEntries(data.parts.map((x) => [`L:${x.id}`, x.label]))}} onPick={(pid) => setSel((cur) => (pid && pid !== cur ? pid : null))} onFail={() => setIn3d(false)} />
+            <Organ3D id={id} p={{}} s={{sel: sel ?? '', flow: flowOn ? '1' : '0', ...Object.fromEntries(data.parts.flatMap((x) => [[`L:${x.id}`, x.label], [`T:${x.id}`, x.title]]))}} onPick={(pid) => setSel((cur) => (pid && pid !== cur ? pid : null))} onFail={() => setIn3d(false)} />
           </Suspense>
         ) : (
       <svg viewBox={`0 0 ${vw} ${vh}`} className="w-full max-h-[460px] rounded-2xl border border-[#1D1B16]/15">

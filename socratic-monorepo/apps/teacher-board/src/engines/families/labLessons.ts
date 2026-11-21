@@ -2,6 +2,7 @@
 import {ALL_EXPERIMENTS} from './HandsLab';
 import {PRESETS} from '../../utils/presets';
 import {SUBJECT_OF, type SubjectId} from '../../utils/lab/hands/sims/catalog';
+import {DISSECT_BY_ID} from '../../utils/lab/hands/dissect';
 
 const ENGINE_SUBJECT: Record<string, SubjectId> = {PHYSICS: 'ly', CHEMISTRY: 'hoa', BIOLOGY: 'sinh'};
 /** Hai nhóm bài trong mỗi môn; cả hai đều là thí nghiệm 3D điều khiển bằng tay. */
@@ -40,6 +41,7 @@ export const LESSONS: Lesson[] = [
   ...Object.entries(PRESETS)
     .filter(([id]) => /^(CHEM|PHYS|BIO)_LAB_/.test(id) && !(id in LAB_ALIAS))
     .map(([id, s]): Lesson => ({id, name: short(s.title), subject: ENGINE_SUBJECT[s.engine], kind: 'sgk'})),
-  ...ALL_EXPERIMENTS.map(([id, name]): Lesson => ({id, name, subject: SUBJECT_OF[id], kind: 'hands'})),
+  // bài mổ / quan sát cấu tạo của Sinh là bài thực hành trong SGK dù dựng bằng bộ thao tác tay
+  ...ALL_EXPERIMENTS.map(([id, name]): Lesson => ({id, name, subject: SUBJECT_OF[id], kind: id in DISSECT_BY_ID ? 'sgk' : 'hands'})),
 ];
 export const LESSON_BY_ID = new Map(LESSONS.map((l) => [l.id, l]));

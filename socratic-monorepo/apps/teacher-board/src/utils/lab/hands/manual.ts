@@ -6,6 +6,7 @@
 import {SIM_BY_ID} from './sims';
 import {OPS, knobParams} from './sims/ops';
 import {fmt, type SimSpec} from './sims/types';
+import {DISSECTIONS, TOOL_NAME, type DStep} from './dissect';
 
 export interface ManualStep {
   /** việc cần làm, nói bằng thao tác trên dụng cụ */
@@ -618,3 +619,23 @@ export const MANUAL: Record<string, Manual> = {
     conclude: 'Cộng dồn chuyển động luôn trôi; phải có mốc bên ngoài (nhận lại cảnh cũ) để sửa.',
   },
 };
+
+/** Hướng dẫn các bài mổ / quan sát cấu tạo (Sinh) sinh từ khai báo bài trong `dissect.ts`: mỗi bước một động tác bằng tay. */
+const DISSECT_HOW: Record<DStep['kind'], (s: DStep) => string[]> = {
+  pin: () => ['Lấy kim ghim ở khay dụng cụ bên phải: đưa tay tới kim rồi chụm một lần, kim ở lại trong tay.', 'Đưa kim tới từng vòng cam trên mẫu, chụm một lần để cắm kim.'],
+  cut: (s) => [`Lấy ${s.kind === 'cut' ? TOOL_NAME[s.tool].toLowerCase() : 'dao'} ở khay dụng cụ: chụm một lần, không cần giữ.`, 'Chụm ở vòng cam (đầu vạch chấm) và giữ chụm.', 'Kéo tay dọc vạch chấm tới cuối: lưỡi tự bám đường, lệch nhẹ vẫn cắt đúng; buông giữa chừng thì chụm lại ở chỗ đang dừng.'],
+  open: () => ['Lấy kẹp ở khay dụng cụ bằng một lần chụm.', 'Chụm vào vòng cam ở mép lớp, kéo tay ra xa quá nửa đường rồi buông: lớp tự lật hẳn.'],
+  drop: (s) => ['Lấy ống nhỏ giọt ở khay dụng cụ bằng một lần chụm.', `Đưa ống tới vòng cam phía trên ${s.kind === 'drop' ? 'cơ quan cần nhỏ' : 'mẫu'}, chụm một lần để nhỏ một giọt ${s.kind === 'drop' ? s.drug : ''}.`],
+  name: () => ['Đưa tay (không cần dụng cụ) tới từng cơ quan: thẻ tên và chức năng hiện ngay trên cơ quan.', 'Giữ yên tay chừng 1 giây hoặc chụm một lần để gọi tên; cơ quan đã gọi tên có nhãn ✓.'],
+};
+for (const d of DISSECTIONS)
+  MANUAL[d.id] = {
+    goal: d.goal,
+    tools: [
+      'Khay mổ phủ sáp ở giữa bàn; mẫu nằm sẵn trên khay.',
+      'Khay dụng cụ bên phải: dao mổ, kéo, kẹp, kim ghim, ống nhỏ giọt. Chụm một lần để cầm, chụm lại vào khay để đặt xuống; cũng chọn được bằng các nút ở tab Thao tác.',
+      'Vòng cam trên mẫu chỉ chỗ làm của bước hiện tại; dòng chữ góc dưới nói việc cần làm và dụng cụ cần cầm.',
+    ],
+    steps: d.steps.map((s) => ({do: s.do, why: s.why, how: DISSECT_HOW[s.kind](s), see: s.see})),
+    conclude: d.conclude,
+  };

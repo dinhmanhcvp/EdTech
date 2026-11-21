@@ -2,7 +2,7 @@
 
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
-import {BENCH_ACTION, BENCH_MOVES, BENCH_PICK, BENCH_SETUP, dragT, grabOf, isTimeUnit, type BenchMove} from '../../utils/lab/hands/benchMoves';
+import {BENCH_ACTION, BENCH_MOVES, BENCH_PICK, BENCH_PULL, BENCH_SETUP, dragT, grabOf, isTimeUnit, type BenchMove} from '../../utils/lab/hands/benchMoves';
 import {BENCH_FX, FX_PARTS} from './benchMotion';
 import {BIO_FX, BIO_FX_PARTS} from './benchMotionBio';
 import {bioRoom, graniteTop, handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
@@ -268,11 +268,20 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         return {g, ring, tag: k.label('', '#D9481C')};
       });
       const markWorld = new THREE.Vector3();
-      const nearMark = (nx: number, ny: number, reach: number) => {
-        if (setupDone()) return false;
+      // bước chuẩn bị = KÉO một vật (cục cam) từ mép bàn thả vào vòng cam trên dụng cụ: thao tác nắm–kéo–thả bằng tay, không bấm một nút
+      const puck = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 12), new THREE.MeshStandardMaterial({color: '#FF8A3D', emissive: '#FF8A3D', emissiveIntensity: 0.6, roughness: 0.4}));
+      puck.visible = false;
+      root.add(puck);
+      const puckTag = k.label('', '#D9481C');
+      let puckFor = -1;
+      let puckHeld = -1;
+      const puckW = new THREE.Vector3();
+      const puckAt = (nx: number, ny: number, reach: number) => {
+        if (setupDone() || !puck.visible) return false;
         root.updateMatrixWorld();
-        return P.distAt(nx, ny, root.localToWorld(markWorld.set(...setup[stage].at))) < reach;
+        return P.distAt(nx, ny, root.localToWorld(puckW.copy(puck.position))) < reach;
       };
+      const nearMark = puckAt;
       // mỗi lựa chọn của bài là một nút tròn: bấm = sang lựa chọn kế tiếp; nút cam lớn = một lần đo
       const cycle = (c: NonNullable<typeof e.choices>[number]) => {
         const at = c.options.findIndex((o) => o[0] === live.st.s[c.key]);
@@ -305,7 +314,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             press: () => cycle(c),
           }))
           .filter((_, i) => !BENCH_PICK[e.id]?.[e.choices![i].key]),
-        ...(e.columns.length ? [{at: MEASURE_AT, color: '#D9481C', r: 0.28, text: () => (setupDone() ? `${action} (lần ${live.st.rows.length + 1})` : `Bước ${stage + 1}/${setup.length}: ${setup[stage].label}`), press: () => (setupDone() ? live.dispatch({type: 'measure'}) : void (stage++, (flash = 0.5)))}] : []),
+        ...(e.columns.length ? [{at: MEASURE_AT, color: '#D9481C', r: 0.28, text: () => (setupDone() ? `${action} (lần ${live.st.rows.length + 1})` : `Bước ${stage + 1}/${setup.length}: ${setup[stage].label}`), press: () => (setupDone() ? live.dispatch({type: 'measure'}) : undefined)}] : []),
       ]);
       // bộ phận chỉ có sau khi mô hình tải xong nên danh sách lấy theo từng khung hình
       const unitText = (key: string) => `${fmt(live.st.p[key], 3)}${slider(key).unit ? ` ${slider(key).unit}` : ''}`;
@@ -375,8 +384,35 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         return hitAt(nx, ny) || (reach > 0 && ringAt.some(([c, s]) => hitAt(nx + (c * reach * 0.8) / k.camera.aspect, ny + s * reach * 0.8)));
       };
       const doTag = k.label('', '#1F7A4D');
+      // KÉO–THẢ vật chuyển động (BENCH_PULL): chụm vào vật, kéo lệch theo hướng của bài, thả ra thì thí nghiệm chạy
+      const pull = BENCH_PULL[e.id];
+      let pullHeld = -1;
+      let pullD = 0;
+      let pullFrom = 0;
+      const pullStart = new THREE.Vector3();
+      const pullPt = new THREE.Vector3();
+      const pullPlane = new THREE.Plane();
+      const pullDir = pull ? new THREE.Vector3(...pull.dir) : new THREE.Vector3();
+      const pullObj = () => (pull ? byN.get(pull.n)?.obj : undefined);
+      /** điểm của tia nhìn trên mặt phẳng đi qua `at`: nằm ngang khi kéo ngang, đứng (hướng về máy quay) khi kéo lên xuống */
+      const pullOn = (nx: number, ny: number, at: THREE.Vector3, out: THREE.Vector3) => {
+        pokeRay.setFromCamera(pokeV.set(nx, ny), k.camera);
+        pullPlane.setFromNormalAndCoplanarPoint(Math.abs(pullDir.y) > 0.5 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0), at);
+        return pokeRay.ray.intersectPlane(pullPlane, out) ?? out.copy(at);
+      };
+      const pullNear = (nx: number, ny: number, reach: number) => {
+        const o = pullObj();
+        if (!o || setupDone() === false) return false;
+        pokeRay.setFromCamera(pokeV.set(nx, ny), k.camera);
+        if (pokeRay.intersectObject(o, true).length) return true;
+        return P.distAt(nx, ny, doBox.setFromObject(o).getCenter(pullPt)) < reach;
+      };
+      const HOLD = 1.0;
+      const holdT: number[] = P.ptrs.map(() => 0);
+      const holdLock: boolean[] = P.ptrs.map(() => false);
+      let holdShow = 0;
       const doBox = new THREE.Box3();
-      P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny) || timerGrabs.grab(nx, ny) || nearMark(nx, ny, 0.1) || !!pickAt(nx, ny, 0.1) || (setupDone() && onMover(nx, ny)));
+      P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny) || timerGrabs.grab(nx, ny) || nearMark(nx, ny, 0.1) || !!pickAt(nx, ny, 0.1) || (setupDone() && (pull ? pullNear(nx, ny, 0.09) : onMover(nx, ny))));
 
       // chuyển động của bài: dụng cụ chạy theo quy luật vật lí của bài (benchMotion.ts)
       const fx = (BENCH_FX[e.id] ?? BIO_FX[e.id])?.({
@@ -425,26 +461,109 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           q.obj.rotation.set(0, 0, 0);
           q.obj.scale.set(1, 1, 1);
         }
+        holdShow = 0;
         P.ptrs.forEach((ptr) => {
           const {x, y} = ptr.ndc;
           const r = Math.max(0.09, ptr.reach); // cùng tầm với của con trỏ: chụm gần núm / nút thì vặn núm, không làm thí nghiệm
-          if (ptr.pressed && ptr.active && nearMark(x, y, Math.max(0.1, ptr.reach))) {
-            stage++;
-            flash = 0.5;
-            return;
+          if (!setupDone() && puck.visible) {
+            const n = P.ptrs.indexOf(ptr);
+            if (puckHeld < 0 && ptr.pressed && ptr.active && puckAt(x, y, Math.max(0.12, ptr.reach))) puckHeld = n;
+            if (puckHeld === n) {
+              if (ptr.active && ptr.down) {
+                const q = P.onPlane(x, y, root.localToWorld(puckW.set(0, 0.12, 0)).y, puckW);
+                root.worldToLocal(q);
+                puck.position.set(Math.max(-3, Math.min(3, q.x)), 0.12, Math.max(-1.6, Math.min(2.4, q.z)));
+                ptr.hot = true;
+              } else {
+                puckHeld = -1;
+                // vòng cam nằm trên dụng cụ (cao hơn mặt bàn): thả "vào vòng" tính theo khoảng cách trên màn hình tới vòng, không theo mặt bàn
+                root.updateMatrixWorld();
+                if (P.distAt(x, y, root.localToWorld(markWorld.set(...setup[stage].at))) < Math.max(0.14, ptr.reach * 0.9)) {
+                  stage++;
+                  flash = 0.5;
+                }
+              }
+              return;
+            }
           }
-          const pk = ptr.pressed && ptr.active ? pickAt(x, y, Math.max(0.1, ptr.reach)) : undefined;
+          const pk = ptr.pressed && ptr.active && !(pull && setupDone() && pullNear(x, y, 0.06)) ? pickAt(x, y, Math.max(0.1, ptr.reach)) : undefined;
           if (pk && pk.cool <= 0) {
             pk.cool = 0.5;
             cycle(pk.c);
             return;
           }
           if (pk) return;
-          if (!ptr.pressed || !ptr.active || !setupDone() || grabs.grab(x, y, r) || timerGrabs.grab(x, y, r) || sliders.grab(x, y) || buttons.grab(x, y, r) || !onMover(x, y, ptr.hand ? ptr.reach : 0)) return;
-          if (e.columns.length) live.dispatch({type: 'measure'});
-          else pokes++;
+          const n2 = P.ptrs.indexOf(ptr);
+          if (pull && setupDone()) {
+            const o = pullObj();
+            if (o && pullHeld < 0 && ptr.pressed && ptr.active && !grabs.grab(x, y, r) && !timerGrabs.grab(x, y, r) && !sliders.grab(x, y) && !buttons.grab(x, y, r) && pullNear(x, y, Math.max(0.1, ptr.reach))) {
+              pullHeld = n2;
+              pullFrom = 0;
+              root.updateMatrixWorld();
+              const w0 = o.getWorldPosition(new THREE.Vector3());
+              pullOn(x, y, w0, pullStart);
+            }
+            if (pullHeld === n2 && o) {
+              ptr.hot = true;
+              if (ptr.active && ptr.down) {
+                const w0 = o.getWorldPosition(new THREE.Vector3());
+                pullOn(x, y, w0, pullPt);
+                const dl = pullPt.sub(pullStart).divideScalar(root.scale.x);
+                pullD = Math.max(0, Math.min(pull.max, dl.dot(pullDir)));
+              } else {
+                pullHeld = -1;
+                if (pullD >= 0.2) {
+                  if (e.columns.length) live.dispatch({type: 'measure'});
+                  else pokes++;
+                }
+                pullFrom = pullD;
+                pullD = 0;
+              }
+            }
+            holdT[n2] = 0;
+            return;
+          }
+          const free = ptr.active && ptr.down && setupDone() && !grabs.grab(x, y, r) && !timerGrabs.grab(x, y, r) && !sliders.grab(x, y) && !buttons.grab(x, y, r) && onMover(x, y, ptr.hand ? ptr.reach : 0);
+          if (!free) {
+            holdT[n2] = 0;
+            holdLock[n2] = false;
+            return;
+          }
+          // làm thí nghiệm = GIỮ chụm trên dụng cụ ~1 s (vòng tiến độ), không phải bấm một lần: tay không bấm nhầm khi lướt qua
+          ptr.hot = true;
+          if (holdLock[n2]) return;
+          holdT[n2] += dt;
+          holdShow = Math.max(holdShow, holdT[n2] / HOLD);
+          if (holdT[n2] >= HOLD) {
+            holdLock[n2] = true;
+            holdT[n2] = 0;
+            if (e.columns.length) live.dispatch({type: 'measure'});
+            else pokes++;
+          }
         });
-        fx?.(dt, {p: live.st.p, s: live.st.s, rows: live.st.rows.length + pokes * 1000}, elapsed);
+        fx?.(dt, {p: live.st.p, s: live.st.s, rows: live.st.rows.length + pokes * 1000, idle: !!pull && live.st.rows.length + pokes === 0}, elapsed);
+        // vật đang được kéo: dịch theo tay; thả ra thì bật về nhanh (hiệu ứng của bài chạy từ đầu)
+        if (pull) {
+          const o = pullObj();
+          if (pullHeld < 0 && pullFrom > 0) pullFrom = Math.max(0, pullFrom - dt * 3.5);
+          const d = pullHeld >= 0 ? pullD : pullFrom;
+          if (o && d > 0) o.position.addScaledVector(pullDir, d);
+        }
+        // cục cam của bước chuẩn bị hiện tại: đặt ở mép bàn (phía người nhìn), kéo vào vòng cam
+        if (!setupDone()) {
+          if (puckFor !== stage) {
+            puckFor = stage;
+            const [ax, , az] = setup[stage].at;
+            puck.position.set(Math.max(-2.6, Math.min(2.6, ax + (ax < 0 ? 1.1 : -1.1))), 0.12, Math.min(1.7, Math.max(az + 0.9, 1.0)));
+          }
+          puck.visible = true;
+          puck.scale.setScalar(1 + 0.08 * Math.sin(elapsed * 6));
+          root.updateMatrixWorld();
+          puckTag(root.localToWorld(puckW.copy(puck.position)).setY(puckW.y + 0.35), undefined, `Kéo vào vòng cam: ${setup[stage].label}`);
+        } else {
+          puck.visible = false;
+          puckTag(null);
+        }
         // nhãn vàng trên dụng cụ có lựa chọn: ghi lựa chọn hiện tại
         for (const q of picks) {
           q.cool = Math.max(0, q.cool - dt);
@@ -464,10 +583,10 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         const tg = targets();
         if (tg.length && e.columns.length && setupDone()) {
           const at = doBox.setFromObject(tg[0]).getCenter(new THREE.Vector3());
-          doTag(at.setY(doBox.max.y + (tg[0] === setObj ? 0.35 : 0.5)), undefined, `Chạm để làm: ${action}`);
+          doTag(at.setY(doBox.max.y + (tg[0] === setObj ? 0.35 : 0.5)), undefined, pull ? (pullHeld >= 0 ? `Kéo ${Math.round((pullD / pull.max) * 100)} % — thả ra để: ${action.toLowerCase()}` : `Chụm vào ${pull.what}`) : holdShow > 0.02 ? `Đang ${action.toLowerCase()}… ${Math.round(Math.min(1, holdShow) * 100)} %` : `Giữ chụm để làm: ${action}`);
         } else doTag(null);
         const row = live.st.rows[live.st.rows.length - 1];
-        k.caption(!setupDone() ? `${e.lesson}\nChuẩn bị ${stage + 1}/${setup.length}: ${setup[stage].label} · chạm vào vòng cam trên dụng cụ` : row ? `Lần đo ${live.st.rows.length}: ${e.columns.map((c) => `${c.label} = ${fmt(row[c.key], c.digits ?? 2)}${c.unit ? ` ${c.unit}` : ''}`).join(' · ')}
+        k.caption(!setupDone() ? `${e.lesson}\nChuẩn bị ${stage + 1}/${setup.length}: ${setup[stage].label} · chụm cục cam rồi kéo thả vào vòng cam trên dụng cụ` : row ? `Lần đo ${live.st.rows.length}: ${e.columns.map((c) => `${c.label} = ${fmt(row[c.key], c.digits ?? 2)}${c.unit ? ` ${c.unit}` : ''}`).join(' · ')}
 Đổi điều kiện rồi làm lại để có lần đo tiếp` : `${e.lesson}
 Kéo bộ phận có vòng cam để chỉnh · vặn công tắc xoay để chọn${e.columns.length ? ` · chạm vào dụng cụ có nhãn xanh để ${action.toLowerCase()} và ghi số đo` : ''}`);
       };

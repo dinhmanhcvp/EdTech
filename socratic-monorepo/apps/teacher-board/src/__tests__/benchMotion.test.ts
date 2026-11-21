@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {describe, expect, it} from 'vitest';
 import {BENCH_FX, FX_PARTS, type FxCtx} from '../engines/families/benchMotion';
 import {LAB_ALIAS} from '../engines/families/labLessons';
-import {BENCH_MOVES} from '../utils/lab/hands/benchMoves';
+import {BENCH_MOVES, BENCH_PULL} from '../utils/lab/hands/benchMoves';
 import {PHYS_EXPERIMENTS} from '../utils/lab/phys/experiments';
 import {initialPhys} from '../utils/lab/phys/engine';
 
@@ -58,4 +58,15 @@ describe('bài thực hành Vật lí không đứng yên: mỗi bài có chuy�
       });
     });
   }
+
+  it('bài kéo–thả vật (BENCH_PULL): vật kéo là phần động tự do có trong tệp mô hình, hướng kéo đã chuẩn hoá, tầm kéo hợp lí', () => {
+    for (const [id, pl] of Object.entries(BENCH_PULL)) {
+      if (!PHYS_EXPERIMENTS.some((x) => x.id === id)) continue; // bài Sinh kiểm trong benchMotionBio.test.ts
+      expect(FX_PARTS[id]?.includes(pl.n), `${id}: vật ${pl.n} phải là phần động tự do của hiệu ứng`).toBe(true);
+      expect(nodes.has(`Mov_${id}_${pl.n}`), `Mov_${id}_${pl.n}`).toBe(true);
+      expect(Math.hypot(...pl.dir), id).toBeCloseTo(1, 5);
+      expect(pl.max).toBeGreaterThan(0.2);
+      expect(pl.max).toBeLessThan(1.5);
+    }
+  });
 });

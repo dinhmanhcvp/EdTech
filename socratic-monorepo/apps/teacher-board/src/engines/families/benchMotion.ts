@@ -9,6 +9,8 @@ import type {PhysExperiment} from '../../utils/lab/phys/types';
  * Bấm ĐO (một dòng mới vào bảng số liệu) cho chạy lại thí nghiệm từ đầu.
  */
 export interface FxLive {
+  /** bài kéo–thả vật để làm thí nghiệm: chưa làm lần nào thì vật đứng yên ở vị trí xuất phát, chờ tay kéo và thả */
+  idle?: boolean;
   p: Record<string, number>;
   s: Record<string, string>;
   rows: number;
@@ -149,10 +151,19 @@ export const cyc = (t: number, T: number) => (t % T) / T;
 export const restart = () => {
   let rows = -1;
   let t0 = 0;
+  let wasIdle = false;
   return (L: FxLive, T: number) => {
     if (L.rows !== rows) {
       if (rows >= 0) t0 = T;
       rows = L.rows;
+    }
+    if (L.idle) {
+      wasIdle = true;
+      return 0;
+    }
+    if (wasIdle) {
+      wasIdle = false;
+      t0 = T;
     }
     return T - t0;
   };

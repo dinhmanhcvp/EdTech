@@ -64,6 +64,28 @@ export const BENCH_MOVES: Record<string, BenchMove[]> = {
 };
 
 /**
+ * KÉO–THẢ vật chuyển động để làm thí nghiệm (thay cho "giữ chụm"): chụm vào vật `n`, kéo lệch theo hướng `dir` (hệ bộ dụng cụ, đã chuẩn hoá) tới `max`,
+ * thả ra ≥ 0,2 thì thí nghiệm chạy (xe lao đi, trụ thép rơi, bi lăn, khối gỗ bị kéo…). Vật dịch theo tay khi đang kéo rồi bật về chỗ cũ.
+ */
+export interface BenchPull {
+  n: number;
+  dir: [number, number, number];
+  max: number;
+  what: string;
+}
+export const BENCH_PULL: Record<string, BenchPull> = {
+  SPEED: {n: 2, dir: [-1, 0, 0], max: 0.8, what: 'xe lăn: kéo lùi rồi thả cho xe lao qua hai cổng quang'},
+  NEWTON2: {n: 2, dir: [-1, 0, 0], max: 0.8, what: 'xe lăn: kéo lùi rồi thả cho quả cân kéo xe đi'},
+  FREE_FALL_G: {n: 2, dir: [0, -1, 0], max: 0.45, what: 'trụ thép: kéo xuống khỏi nam châm rồi thả để rơi'},
+  PROJECTILE_HORIZONTAL: {n: 2, dir: [-1, 0, 0], max: 0.5, what: 'viên bi: kéo lùi lên máng rồi thả cho bi lăn xuống'},
+  FRICTION: {n: 2, dir: [1, 0, 0], max: 0.7, what: 'khối gỗ: kéo ra theo lực kế rồi thả'},
+  // Sinh
+  BIOMOLECULES: {n: 1, dir: [-1, 0, 0], max: 0.9, what: 'ống nhỏ giọt: kéo sang miệng ống mẫu rồi thả để nhỏ thuốc thử'},
+  QUADRAT: {n: 1, dir: [1, 0, 0], max: 1.0, what: 'khung ô 1 m × 1 m: kéo sang vị trí mới rồi thả để đặt khung'},
+  COMMUNITY: {n: 1, dir: [1, 0, 0], max: 1.0, what: 'khung ô tiêu chuẩn: kéo sang vị trí mới rồi thả để đặt khung'},
+};
+
+/**
  * Thao tác LÀM thí nghiệm của từng bài: học sinh chạm (chụm) vào chính dụng cụ để thực hiện, thí nghiệm chạy rồi số đo mới được ghi vào bảng.
  * Bài không có trong bảng (vd. quy tắc an toàn) không có phép đo.
  */
@@ -122,6 +144,16 @@ export const BENCH_ACTION: Record<string, string> = {
  * Toạ độ theo hệ của bộ dụng cụ Blender (`tools/lab-models/bench_parts.py`).
  */
 export const BENCH_PICK: Record<string, Record<string, [number, number, number]>> = {
+  // Vật lí: chọn dụng cụ ngay trên bàn (âm thoa, mặt phẳng, lò xo, điện trở, cuộn dây…)
+  ERROR_MEASURE: {inst: [-0.2, 0.2, 0.45]},
+  SOUND_FREQUENCY: {fork: [-1.8, 0.7, 0]},
+  SOUND_SPEED: {f: [-1.9, 0.7, 0]},
+  FRICTION: {surf: [-1.25, 0.16, 0.95]},
+  HOOKE: {spring: [0.3, 1.75, -0.2]},
+  OHM_LAW: {res: [-0.4, 0.3, 0.72]},
+  CAPACITOR_RC: {R: [-0.2, 0.22, 0.3]},
+  EM_INDUCTION: {N: [-0.6, 0.95, 0]},
+  TRANSFORMER: {ratio: [-0.5, 1.0, 0]},
   BIOMOLECULES: {sample: [-1.5, 0.62, 0], reagent: [0.45, 0.55, 0.5]},
   CELL_OBSERVE: {sample: [0.6, 0.12, 0.5], obj: [-0.6, 0.95, 0.05]},
   PLASMOLYSIS: {sol: [1.45, 0.4, -0.3]},

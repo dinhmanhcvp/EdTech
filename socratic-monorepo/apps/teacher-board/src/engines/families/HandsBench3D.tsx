@@ -3,13 +3,15 @@
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {BENCH_ACTION, BENCH_MOVES, BENCH_PICK, BENCH_PULL, BENCH_SETUP, dragT, grabOf, isTimeUnit, type BenchMove} from '../../utils/lab/hands/benchMoves';
+import {AUTO_FLAG, isToggle, pickProp, tintOf, trayLayout} from '../../utils/lab/hands/benchPick';
+import {OVER_R, wirePath, dropped, newSqueeze, newStir, pourStep, pourTilt, squash, squeezeStep, stirProgress, stirStep} from '../../utils/lab/hands/benchActs';
 import {BENCH_FX, FX_PARTS} from './benchMotion';
 import {BIO_FX, BIO_FX_PARTS} from './benchMotionBio';
 import {bioRoom, graniteTop, handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {dress, glassify, loadModel, partOf} from './labParts';
 import type {BenchLive} from './PhysBench';
-import {Stage3D, type Kit, type SceneDef} from './Stage3D';
+import {Stage3D, setLine, type Kit, type SceneDef} from './Stage3D';
 
 /** Cầu nối của bài thực hành SGK trong /lab: trạng thái đo đạc (do bảng điều khiển giữ) + tệp mô hình chứa bộ dụng cụ. */
 export type Bench3DLive = BenchLive & {file: 'phys' | 'bio'};
@@ -282,39 +284,374 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         return P.distAt(nx, ny, root.localToWorld(puckW.copy(puck.position))) < reach;
       };
       const nearMark = puckAt;
+      // ---- THAO TÁC THẬT (benchActs): vật thật từ `bench-props.glb` thay cho cục cam; đặt, rót, khuấy, bóp bóng bằng cử chỉ 2D
+      let propLib: THREE.Object3D | null = null;
+      void loadModel('/models/bench-props.glb')
+        .then((l) => {
+          propLib = l;
+        })
+        .catch(() => undefined);
+      const A = {for: -1, obj: null as THREE.Object3D | null, held: -1, prog: 0, tilt: 0.12, sq: 0, stir: newStir(), pump: newSqueeze(), lipH: 0.4};
+      const anims: {obj: THREE.Object3D; from: THREE.Vector3; to: THREE.Vector3; ry: number; t: number}[] = [];
+      const actTag = k.label('', '#D9481C');
+      const streamMat = new THREE.MeshStandardMaterial({color: '#9CD0F0', transparent: true, opacity: 0.85, roughness: 0.1});
+      const stream = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1, 10), streamMat);
+      stream.visible = false;
+      root.add(stream);
+      const pools = new Map<number, THREE.Mesh>();
+      const wires: {line: ReturnType<Kit['line']>; obj: THREE.Object3D; anchor: [number, number, number]; h: number}[] = [];
+      const aw = new THREE.Vector3();
+      const aq = new THREE.Vector3();
+      const curAct = () => (setupDone() ? undefined : setup[stage].act);
+      const localAt = (x: number, y: number, planeY: number) => {
+        root.updateMatrixWorld();
+        return root.worldToLocal(P.onPlane(x, y, root.localToWorld(aw.set(0, planeY, 0)).y, aq));
+      };
+      const worldPt = (v: THREE.Vector3) => {
+        root.updateMatrixWorld();
+        return root.localToWorld(aw.copy(v));
+      };
+      const goTo = (o: THREE.Object3D, to: THREE.Vector3, ry = 0) => {
+        o.rotation.x = o.rotation.z = 0;
+        anims.push({obj: o, from: o.position.clone(), to: to.clone(), ry, t: 0});
+      };
+      /** một bước thao tác xong: sang bước kế; vật cầm (lọ, chày) trả về chỗ cũ */
+      const actFinish = (home?: THREE.Vector3) => {
+        if (home && A.obj) goTo(A.obj, home);
+        A.held = -1;
+        stage++;
+        flash = 0.5;
+      };
+      const ensureProp = () => {
+        const a = curAct();
+        if (!a || A.for === stage || !propLib) return;
+        if (a.kind === 'press') {
+          A.for = stage;
+          A.obj = null;
+          return;
+        }
+        const sk = partOf(propLib, `Prop_${a.prop}`);
+        if (!sk) {
+          A.for = stage;
+          A.obj = null;
+          return actFinish(); // thiếu mô hình: bỏ qua bước, không để học sinh kẹt
+        }
+        glassify(sk.obj, 0.18);
+        sk.obj.position.set(...(a.kind === 'squeeze' ? setup[stage].at : a.from));
+        root.add(sk.obj);
+        const bb = new THREE.Box3().setFromObject(sk.obj);
+        if (a.kind === 'connect') {
+          // dây nối: một đầu cố định ở nguồn (mép bàn, dưới chỗ phích nằm), đầu kia theo đuôi phích; cập nhật mỗi khung hình ở `frameAct`
+          const line = k.line('#C4261A', 5, new Array(21 * 3).fill(0));
+          root.add(line);
+          wires.push({line, obj: sk.obj, anchor: [a.from[0], 0.05, a.from[2] + 0.55], h: new THREE.Box3().setFromObject(sk.obj).getSize(new THREE.Vector3()).y});
+        }
+        Object.assign(A, {for: stage, obj: sk.obj, held: -1, prog: 0, tilt: 0.12, sq: 0, stir: newStir(), pump: newSqueeze(), lipH: Math.max(0.2, bb.max.y - sk.obj.position.y)});
+      };
+      /** nhận một con trỏ cho bước thao tác thật; true = con trỏ đang dùng cho vật này */
+      const actInput = (ptr: (typeof P.ptrs)[number], n: number, dt: number): boolean => {
+        ensureProp();
+        const a = curAct();
+        if (a?.kind === 'press') {
+          // bấm công tắc: con trỏ ở vòng cam (đích đủ rộng cho tay) và chụm / nhấn một lần
+          const [px, py, pz] = setup[stage].at;
+          const onSwitch = ptr.active && P.distAt(ptr.ndc.x, ptr.ndc.y, worldPt(new THREE.Vector3(px, py, pz))) < Math.max(0.18, ptr.reach);
+          ptr.hot = ptr.hot || onSwitch;
+          if (ptr.pressed && onSwitch) {
+            actFinish();
+            return true;
+          }
+          return false;
+        }
+        const o = A.obj;
+        if (!a || !o || A.for !== stage) return false;
+        const {x, y} = ptr.ndc;
+        const r = Math.max(0.14, ptr.reach);
+        const [ax, ay, az] = setup[stage].at;
+        const home = new THREE.Vector3(...a.from);
+        const grab = o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0));
+        const nearProp = ptr.active && P.distAt(x, y, worldPt(grab)) < r;
+        if (A.held < 0 && ptr.pressed && nearProp) A.held = n;
+        if (A.held !== n) return false;
+        ptr.hot = true;
+        const down = ptr.active && ptr.down;
+        if (a.kind === 'squeeze') {
+          A.pump = squeezeStep(A.pump, down, true);
+          if (!down) A.held = -1;
+          if (A.pump.pumps >= (a.n ?? 5)) actFinish();
+          return true;
+        }
+        if (!down) {
+          // buông: đặt vật nếu thả đúng chỗ, còn lại trả về chỗ cũ (tiến độ rót / khuấy vẫn giữ)
+          if ((a.kind === 'place' || a.kind === 'connect') && dropped(P.distAt(x, y, worldPt(new THREE.Vector3(ax, ay, az))), Math.max(0.18, ptr.reach))) {
+            goTo(o, new THREE.Vector3(...(a.rest ?? [ax, ay, az])), a.rot ?? 0);
+            actFinish();
+            return true;
+          }
+          goTo(o, home);
+          A.held = -1;
+          return true;
+        }
+        // vị trí tay tính trên CÙNG mặt phẳng với vòng cam: tay đặt đúng vòng cam trên màn hình thì vật ở đúng trên chỗ đó
+        const h = localAt(x, y, ay);
+        const planeY = ay + (a.kind === 'pour' ? 0.55 : a.kind === 'stir' ? 0.1 : 0.25);
+        const hx = Math.max(-3.1, Math.min(3.1, h.x));
+        const hz = Math.max(-1.7, Math.min(2.6, h.z));
+        if (a.kind === 'place' || a.kind === 'connect') o.position.set(hx, ay + 0.2, hz);
+        else if (a.kind === 'pour') {
+          // vị trí tay = MIỆNG lọ; lọ nghiêng quanh miệng khi giữ trên dụng cụ đích
+          const over = Math.hypot(hx - ax, hz - az) < OVER_R;
+          A.tilt = pourTilt(A.tilt, over, true, dt);
+          A.prog = pourStep(A.prog, dt, over && A.tilt > 0.8, true, a.n ?? 2.2);
+          o.rotation.set(0, 0, A.tilt);
+          o.position.set(hx + A.lipH * Math.sin(A.tilt), planeY - A.lipH * Math.cos(A.tilt), hz);
+          if (A.prog >= 1) actFinish(home);
+        } else if (a.kind === 'stir') {
+          o.position.set(hx, ay + 0.02, hz);
+          o.rotation.set((hz - az) * 0.5, 0, -(hx - ax) * 0.5);
+          A.stir = stirStep(A.stir, hx, hz, ax, az, 0.05, 0.6);
+          A.prog = stirProgress(A.stir, a.n ?? 3);
+          if (A.prog >= 1) actFinish(home);
+        }
+        return true;
+      };
+      /** vật thật của bước hiện tại có đang dưới con trỏ không (để cảnh khoá xoay máy quay và nhận cú chụm / nhấn chuột) */
+      const actNear = (nx: number, ny: number, reach: number) => {
+        const pa = curAct();
+        if (pa?.kind === 'press') return P.distAt(nx, ny, worldPt(new THREE.Vector3(...setup[stage].at))) < Math.max(0.18, reach);
+        const o = A.obj;
+        if (!curAct() || !o || A.for !== stage) return false;
+        return A.held >= 0 || P.distAt(nx, ny, worldPt(o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0)))) < reach;
+      };
+      const frameAct = (dt: number, elapsed: number) => {
+        ensureProp();
+        for (let i = anims.length - 1; i >= 0; i--) {
+          const m = anims[i];
+          m.t = Math.min(1, m.t + dt / 0.3);
+          const u = m.t * m.t * (3 - 2 * m.t);
+          m.obj.position.lerpVectors(m.from, m.to, u);
+          m.obj.rotation.y += (m.ry - m.obj.rotation.y) * u;
+          if (m.t >= 1) anims.splice(i, 1);
+        }
+        // dây nối theo đuôi phích (cả phích đang cầm và phích đã nối xong)
+        for (const w of wires) setLine(w.line, wirePath(w.anchor, [w.obj.position.x, w.obj.position.y + w.h, w.obj.position.z]).flat());
+        const a = curAct();
+        const o = A.obj;
+        stream.visible = false;
+        if (a?.kind === 'press') {
+          const [px, py, pz] = setup[stage].at;
+          return actTag(worldPt(aw.set(px, py + 0.95, pz)), undefined, `${a.verb}: chụm một lần vào vòng cam (công tắc) để bật`);
+        }
+        if (!a || !o || A.for !== stage) return actTag(null);
+        const [ax, ay, az] = setup[stage].at;
+        if (A.held < 0 && a.kind === 'pour') A.tilt += (0.12 - A.tilt) * (1 - Math.exp(-dt * 7));
+        if (a.kind === 'squeeze') {
+          A.sq = squash(A.pump.down, A.sq, dt);
+          o.scale.set(1 + 0.14 * A.sq, 1 - 0.34 * A.sq, 1 + 0.14 * A.sq);
+        }
+        if (a.kind === 'pour') {
+          let pool = pools.get(stage);
+          if (!pool) {
+            pool = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 1, 24), new THREE.MeshStandardMaterial({color: a.color ?? '#9CD0F0', transparent: true, opacity: 0.75, roughness: 0.1}));
+            root.add(pool);
+            pools.set(stage, pool);
+          }
+          const ph = 0.02 + 0.2 * A.prog;
+          pool.visible = A.prog > 0;
+          pool.scale.set(1, ph, 1);
+          pool.position.set(ax, ay - 0.28 + ph / 2, az);
+          if (A.held >= 0 && A.tilt > 0.8 && A.prog < 1) {
+            const lipY = o.position.y + A.lipH * Math.cos(A.tilt);
+            const lipX = o.position.x - A.lipH * Math.sin(A.tilt);
+            const low = ay - 0.28 + ph;
+            streamMat.color.set(a.color ?? '#9CD0F0');
+            stream.visible = true;
+            stream.scale.set(1, Math.max(0.05, lipY - low), 1);
+            stream.position.set(lipX, (lipY + low) / 2, o.position.z);
+          }
+        }
+        const pct = Math.round(A.prog * 100);
+        const turns = Math.min(a.n ?? 3, Math.floor((A.stir.total / (2 * Math.PI)) * 10) / 10);
+        const hint =
+          a.kind === 'connect'
+            ? `${a.verb} dây: chụm phích, kéo tới vòng cam (chốt cần nối) rồi buông`
+          : a.kind === 'place'
+            ? `${a.verb}: chụm vật rồi kéo vào vòng cam và buông`
+            : a.kind === 'pour'
+              ? A.held >= 0 ? `Giữ yên miệng lọ trên vòng cam — đã rót ${pct} %` : `${a.verb}: chụm lọ, đưa miệng lọ tới vòng cam rồi giữ yên`
+              : a.kind === 'stir'
+                ? A.held >= 0 ? `Vẽ vòng tròn quanh vòng cam — ${turns}/${a.n ?? 3} vòng` : `${a.verb}: chụm chày (đũa), đưa vào vòng cam rồi vẽ vòng tròn`
+                : `${a.verb}: chụm giữ để bóp, nhả để phồng — ${A.pump.pumps}/${a.n ?? 5} nhịp`;
+        actTag(worldPt(aw.set(ax, ay + (a.kind === 'squeeze' ? 0.75 : 0.95) + 0.05 * Math.sin(elapsed * 4), az)), undefined, hint);
+      };
       // mỗi lựa chọn của bài là một nút tròn: bấm = sang lựa chọn kế tiếp; nút cam lớn = một lần đo
       const cycle = (c: NonNullable<typeof e.choices>[number]) => {
         const at = c.options.findIndex((o) => o[0] === live.st.s[c.key]);
         live.dispatch({type: 'choose', key: c.key, value: c.options[(at + 1) % c.options.length][0]});
       };
-      // lựa chọn gắn với dụng cụ thật (BENCH_PICK): vòng vàng nhỏ + nhãn ngay trên dụng cụ, chạm là đổi; không còn nút tròn ở mép bàn
-      const picks = (e.choices ?? []).flatMap((c) => {
-        const at = BENCH_PICK[e.id]?.[c.key];
-        if (!at) return [];
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.025, 8, 28).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({color: '#E3B341', transparent: true, opacity: 0.95, depthTest: false}));
-        ring.position.set(...at);
+      // ---- CHỌN phương án bằng VẬT THẬT (benchPick): mỗi phương án là một vật trên khay ở mép bàn; cầm một vật đặt vào vòng vàng ở dụng cụ để chọn
+      const choices = e.choices ?? [];
+      const targetOf = (c: (typeof choices)[number], i: number): [number, number, number] => BENCH_PICK[e.id]?.[c.key] ?? [-0.6 + i * 0.9, 0.2, 0.2];
+      const TRAY_Z = 2.0;
+      const toggles = choices.map((c) => isToggle(c.options.map((o) => o[1])));
+      // cờ do bước chuẩn bị đặt (AUTO_FLAG): không có vật, không có vòng; cảnh tự đặt "Rồi" khi bước làm xong
+      const autoStep = choices.map((c) => AUTO_FLAG[e.id]?.[c.key]);
+      const groups = choices.map((c, i) => (autoStep[i] !== undefined ? 0 : toggles[i] ? 1 : c.options.length));
+      const slotsX = trayLayout(groups);
+      type PickItem = {ci: number; opt: number; obj: THREE.Object3D | null; slot: THREE.Vector3; tag: ReturnType<typeof k.label>; held: boolean; label: string};
+      const pickItems: PickItem[] = choices.flatMap((c, ci) =>
+        slotsX[ci].map((x, j) => {
+          const opt = toggles[ci] ? 1 : j;
+          return {ci, opt, obj: null, slot: new THREE.Vector3(x, 0, TRAY_Z), tag: k.label('', '#8A6A12'), held: false, label: toggles[ci] ? `${c.label}: ${c.options[1][1]}` : c.options[opt][1]} as PickItem;
+        }),
+      );
+      const pickRings = choices.map((c, i) => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.028, 8, 32).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({color: '#E3B341', transparent: true, opacity: 0.95, depthTest: false}));
+        ring.position.set(...targetOf(c, i));
         ring.renderOrder = 5;
+        ring.visible = autoStep[i] === undefined;
         root.add(ring);
-        return [{c, at, ring, tag: k.label('', '#8A6A12'), cool: 0}];
+        return {ring, tag: k.label('', '#8A6A12')};
       });
+      if (pickItems.length) {
+        // khay: tấm lót sẫm dọc mép bàn phía người nhìn
+        const mat = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.012, 0.46), new THREE.MeshStandardMaterial({color: '#4A4E6E', roughness: 0.9, transparent: true, opacity: 0.28}));
+        mat.position.set(0, 0.01, TRAY_Z);
+        root.add(mat);
+      }
+      let pickFail = false;
+      const stateOn = (it: PickItem) => {
+        const c = choices[it.ci];
+        return live.st.s[c.key] === c.options[it.opt][0];
+      };
+      const choose = (it: PickItem, on: boolean) => {
+        const c = choices[it.ci];
+        const value = toggles[it.ci] ? c.options[on ? 1 : 0][0] : c.options[it.opt][0];
+        if (live.st.s[c.key] !== value) live.dispatch({type: 'choose', key: c.key, value});
+      };
+      // vật chọn nằm trên MẶT dụng cụ dưới vòng vàng: bắn tia từ vòng vàng xuống bộ dụng cụ lấy độ cao (không lơ lửng); chưa tải xong thì hạ 0,1
+      const surfRay = new THREE.Raycaster();
+      const surfCache = new Map<string, number>();
+      const surfaceAt = (tx: number, ty: number, tz: number): number => {
+        const key = `${tx},${ty},${tz}`;
+        if (surfCache.has(key)) return surfCache.get(key)!;
+        if (!setObj) return Math.max(0, ty - 0.1);
+        root.updateMatrixWorld(true);
+        surfRay.set(root.localToWorld(new THREE.Vector3(tx, ty + 0.15, tz)), new THREE.Vector3(0, -1, 0));
+        const h = surfRay.intersectObject(setObj, true)[0];
+        const y = h ? Math.max(0, root.worldToLocal(h.point.clone()).y) : 0;
+        surfCache.set(key, y);
+        return y;
+      };
+      const pickRest = (it: PickItem) => {
+        const [tx, ty, tz] = targetOf(choices[it.ci], it.ci);
+        return new THREE.Vector3(tx, surfaceAt(tx, ty, tz), tz);
+      };
+      const buildPickItems = () => {
+        if (!propLib || pickFail || pickItems.every((it) => it.obj)) return;
+        for (const it of pickItems) {
+          if (it.obj) continue;
+          const c = choices[it.ci];
+          const sk = partOf(propLib, `Prop_${pickProp(e.id, c.key, it.opt)}`);
+          if (!sk) {
+            pickFail = true; // thiếu mô hình: quay về cách chạm vòng vàng để đổi, không để học sinh kẹt
+            continue;
+          }
+          glassify(sk.obj, 0.2);
+          const col = new THREE.Color(tintOf(c.options[it.opt][1], it.opt));
+          for (const m of sk.mats) if (m.name === 'tint') m.color.copy(col);
+          sk.obj.position.copy(it.slot);
+          root.add(sk.obj);
+          it.obj = sk.obj;
+        }
+      };
       const pickWorld = new THREE.Vector3();
+      const pickGrab = (it: PickItem) => new THREE.Vector3().copy(it.obj!.position).add(new THREE.Vector3(0, 0.15, 0));
+      /** vật chọn dưới con trỏ (gần nhất trong tầm với) */
       const pickAt = (nx: number, ny: number, reach: number) => {
         root.updateMatrixWorld();
-        return picks.find((q) => P.distAt(nx, ny, root.localToWorld(pickWorld.set(...q.at))) < reach);
+        let best: PickItem | undefined;
+        let bd = reach;
+        for (const it of pickItems) {
+          if (!it.obj) continue;
+          const d = P.distAt(nx, ny, root.localToWorld(pickWorld.copy(pickGrab(it))));
+          if (d < bd) {
+            bd = d;
+            best = it;
+          }
+        }
+        return best;
       };
-      const buttons = pads(k, P, [
-        ...(e.choices ?? [])
-          .map((c, i) => ({
-            at: choiceAt(i),
-            color: '#E3B341',
-            r: 0.16,
-            side: true,
-            notch: (): [number, number] => [Math.max(0, c.options.findIndex((o) => o[0] === live.st.s[c.key])), c.options.length],
-            text: () => `${c.label}: ${c.options.find((o) => o[0] === live.st.s[c.key])?.[1] ?? ''}`,
-            press: () => cycle(c),
-          }))
-          .filter((_, i) => !BENCH_PICK[e.id]?.[e.choices![i].key]),
-      ]);
+      const pickRingAt = (nx: number, ny: number, reach: number) => {
+        root.updateMatrixWorld();
+        return pickFail ? pickRings.findIndex((q) => P.distAt(nx, ny, root.localToWorld(pickWorld.copy(q.ring.position))) < reach) : -1;
+      };
+      /** nhận một con trỏ cho việc chọn bằng vật; true = con trỏ đang cầm / vừa nhả một vật chọn */
+      const pickInput = (ptr: (typeof P.ptrs)[number], n: number): boolean => {
+        const {x, y} = ptr.ndc;
+        const down = ptr.active && ptr.down;
+        const held = pickItems.find((it) => it.held && pickHeldBy.get(it) === n);
+        if (held) {
+          ptr.hot = true;
+          if (down) {
+            const ci = held.ci;
+            const [, ty] = targetOf(choices[ci], ci);
+            const h = localAt(x, y, ty);
+            pickPos.set(Math.max(-3.1, Math.min(3.1, h.x)), ty + 0.22, Math.max(-1.7, Math.min(2.6, h.z)));
+            return true;
+          }
+          // buông: gần vòng vàng thì chọn phương án của vật này; không thì vật về chỗ (khay, hoặc vòng vàng nếu đang là phương án chọn)
+          const ci = held.ci;
+          const near = P.distAt(x, y, root.localToWorld(pickWorld.copy(pickRings[ci].ring.position))) < Math.max(0.2, ptr.reach);
+          held.held = false;
+          pickHeldBy.delete(held);
+          if (near) choose(held, true);
+          else if (toggles[ci]) choose(held, false);
+          return true;
+        }
+        if (!ptr.pressed || !ptr.active) return false;
+        const it = pickAt(x, y, Math.max(0.14, ptr.reach));
+        if (!it) return false;
+        it.held = true;
+        pickHeldBy.set(it, n);
+        pickPos.copy(it.obj!.position);
+        return true;
+      };
+      const pickHeldBy = new Map<PickItem, number>();
+      const pickPos = new THREE.Vector3();
+      const framePick = (dt: number) => {
+        buildPickItems();
+        const f = 1 - Math.exp(-dt * 12);
+        // cờ do bước chuẩn bị đặt: làm xong bước thì tự thành "Rồi"
+        choices.forEach((c, i) => {
+          const st = autoStep[i];
+          if (st !== undefined && stage > st && live.st.s[c.key] !== c.options[1][0]) live.dispatch({type: 'choose', key: c.key, value: c.options[1][0]});
+        });
+        const hovered = new Set(P.ptrs.filter((q) => q.active).map((q) => pickAt(q.ndc.x, q.ndc.y, 0.16)).filter(Boolean));
+        for (const it of pickItems) {
+          if (!it.obj) continue;
+          const on = stateOn(it);
+          const goal = it.held ? pickPos : on ? pickRest(it) : it.slot;
+          it.obj.position.lerp(goal, it.held ? 1 : f);
+          it.obj.rotation.set(0, 0, 0);
+          const c = choices[it.ci];
+          root.updateMatrixWorld();
+          // nhãn xen kẽ hai tầng và rút gọn cho khỏi chồng nhau; chỉ hiện đủ tên khi trỏ vào hoặc đang cầm
+          const full = it.held || hovered.has(it);
+          const short = it.label.length > 16 ? `${it.label.slice(0, 15)}…` : it.label;
+          it.tag(root.localToWorld(pickWorld.copy(it.obj.position).add(new THREE.Vector3(0, full ? 0.95 : 0.5 + (pickItems.indexOf(it) % 2) * 0.32, 0))), undefined, `${on ? '✓ ' : ''}${full ? it.label : short}`);
+          void c;
+        }
+        choices.forEach((c, i) => {
+          const cur = c.options.find((o) => o[0] === live.st.s[c.key])?.[1] ?? '';
+          const [tx, ty, tz] = targetOf(c, i);
+          root.updateMatrixWorld();
+          pickRings[i].ring.scale.setScalar(1 + 0.1 * Math.sin(performance.now() / 260 + i));
+          if (autoStep[i] !== undefined) return pickRings[i].tag(null);
+          pickRings[i].tag(root.localToWorld(pickWorld.set(tx, ty + 0.75, tz)), undefined, pickFail ? `${c.label}: ${cur} · chạm để đổi` : `Chọn "${c.label}": ${cur} — cầm một vật ở khay, đặt vào vòng vàng`);
+        });
+      };
+      const buttons = pads(k, P, []);
       // bộ phận chỉ có sau khi mô hình tải xong nên danh sách lấy theo từng khung hình
       const unitText = (key: string) => `${fmt(live.st.p[key], 3)}${slider(key).unit ? ` ${slider(key).unit}` : ''}`;
       // thông số thời gian: ĐỒNG HỒ HẸN GIỜ nằm trên bàn (Blender), chụm rồi kéo ngang để quay kim (một vòng 300° = cả thang)
@@ -490,7 +827,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       const holdLock: boolean[] = P.ptrs.map(() => false);
       let holdShow = 0;
       const doBox = new THREE.Box3();
-      P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny) || timerGrabs.grab(nx, ny) || nearMark(nx, ny, 0.1) || !!pickAt(nx, ny, 0.1) || levNear(nx, ny, 0.1) || (setupDone() && (pull ? pullNear(nx, ny, 0.09) : levOn ? false : onMover(nx, ny))));
+      P.grabWhen((nx, ny) => sliders.grab(nx, ny) || buttons.grab(nx, ny) || grabs.grab(nx, ny) || timerGrabs.grab(nx, ny) || nearMark(nx, ny, 0.1) || actNear(nx, ny, 0.12) || !!pickAt(nx, ny, 0.12) || pickRingAt(nx, ny, 0.1) >= 0 || levNear(nx, ny, 0.1) || (setupDone() && (pull ? pullNear(nx, ny, 0.09) : levOn ? false : onMover(nx, ny))));
 
       // chuyển động của bài: dụng cụ chạy theo quy luật vật lí của bài (benchMotion.ts)
       const fx = (BENCH_FX[e.id] ?? BIO_FX[e.id])?.({
@@ -543,6 +880,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         P.ptrs.forEach((ptr) => {
           const {x, y} = ptr.ndc;
           const r = Math.max(0.09, ptr.reach); // cùng tầm với của con trỏ: chụm gần núm / nút thì vặn núm, không làm thí nghiệm
+          if (!setupDone() && setup[stage].act && actInput(ptr, P.ptrs.indexOf(ptr), dt)) return;
           if (!setupDone() && puck.visible) {
             const n = P.ptrs.indexOf(ptr);
             if (puckHeld < 0 && ptr.pressed && ptr.active && puckAt(x, y, Math.max(0.12, ptr.reach))) puckHeld = n;
@@ -564,13 +902,13 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
               return;
             }
           }
-          const pk = ptr.pressed && ptr.active && !(pull && setupDone() && pullNear(x, y, 0.06)) ? pickAt(x, y, Math.max(0.1, ptr.reach)) : undefined;
-          if (pk && pk.cool <= 0) {
-            pk.cool = 0.5;
-            cycle(pk.c);
+          if (pickItems.length && pickInput(ptr, P.ptrs.indexOf(ptr))) return;
+          // thiếu mô hình vật chọn: chạm vòng vàng để đổi phương án kế tiếp (dự phòng)
+          const rk = ptr.pressed && ptr.active ? pickRingAt(x, y, Math.max(0.1, ptr.reach)) : -1;
+          if (rk >= 0) {
+            cycle(choices[rk]);
             return;
           }
-          if (pk) return;
           const n2 = P.ptrs.indexOf(ptr);
           if (levOn && setupDone()) {
             if (levHeld < 0 && ptr.pressed && ptr.active && !grabs.grab(x, y, r) && !timerGrabs.grab(x, y, r) && !sliders.grab(x, y) && !buttons.grab(x, y, r) && levNear(x, y, Math.max(0.12, ptr.reach))) levHeld = n2;
@@ -658,7 +996,8 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           } else levTag(null);
         }
         // cục cam của bước chuẩn bị hiện tại: đặt ở mép bàn (phía người nhìn), kéo vào vòng cam
-        if (!setupDone()) {
+        frameAct(dt, elapsed);
+        if (!setupDone() && !setup[stage].act) {
           if (puckFor !== stage) {
             puckFor = stage;
             const [ax, , az] = setup[stage].at;
@@ -673,12 +1012,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           puckTag(null);
         }
         // nhãn vàng trên dụng cụ có lựa chọn: ghi lựa chọn hiện tại
-        for (const q of picks) {
-          q.cool = Math.max(0, q.cool - dt);
-          q.ring.scale.setScalar(1 + 0.12 * Math.sin(elapsed * 4 + q.at[0]) + (q.cool > 0 ? q.cool * 0.6 : 0));
-          root.updateMatrixWorld();
-          q.tag(root.localToWorld(pickWorld.set(...q.at)).setY(pickWorld.y + 0.3), undefined, `${q.c.label}: ${q.c.options.find((o) => o[0] === live.st.s[q.c.key])?.[1] ?? ''} · chạm để đổi`);
-        }
+        framePick(dt);
         // nhãn xanh trên dụng cụ cần chạm: nói rõ thao tác của bài
         flash = Math.max(0, flash - dt);
         marks.forEach((m, i) => {
@@ -694,9 +1028,9 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           doTag(at.setY(doBox.max.y + (tg[0] === setObj ? 0.35 : 0.5)), undefined, pull ? (pullHeld >= 0 ? `Kéo ${Math.round((pullD / pull.max) * 100)} % — thả ra để: ${action.toLowerCase()}` : `Chụm vào ${pull.what}`) : holdShow > 0.02 ? `Đang ${action.toLowerCase()}… ${Math.round(Math.min(1, holdShow) * 100)} %` : `Giữ chụm để làm: ${action}`);
         } else doTag(null);
         const row = live.st.rows[live.st.rows.length - 1];
-        k.caption(!setupDone() ? `${e.lesson}\nChuẩn bị ${stage + 1}/${setup.length}: ${setup[stage].label} · chụm cục cam rồi kéo thả vào vòng cam trên dụng cụ` : row ? `Lần đo ${live.st.rows.length}: ${e.columns.map((c) => `${c.label} = ${fmt(row[c.key], c.digits ?? 2)}${c.unit ? ` ${c.unit}` : ''}`).join(' · ')}
+        k.caption(!setupDone() ? `${e.lesson}\nChuẩn bị ${stage + 1}/${setup.length}: ${setup[stage].label} · ${{place: 'chụm vật ở mép bàn, kéo vào vòng cam rồi buông', pour: 'chụm lọ, đưa miệng lọ tới vòng cam và giữ yên để rót', stir: 'chụm, đưa vào vòng cam rồi vẽ vòng tròn', squeeze: 'chụm giữ để bóp, nhả để phồng', connect: 'chụm phích có dây, kéo tới chốt cần nối rồi buông', press: 'chụm một lần vào công tắc (vòng cam) để bật'}[setup[stage].act?.kind ?? 'place'] ?? 'chụm cục cam rồi kéo thả vào vòng cam trên dụng cụ'}` : row ? `Lần đo ${live.st.rows.length}: ${e.columns.map((c) => `${c.label} = ${fmt(row[c.key], c.digits ?? 2)}${c.unit ? ` ${c.unit}` : ''}`).join(' · ')}
 Đổi điều kiện rồi làm lại để có lần đo tiếp` : `${e.lesson}
-Kéo bộ phận có vòng cam để chỉnh · vặn công tắc xoay để chọn${e.columns.length ? ` · chạm vào dụng cụ có nhãn xanh để ${action.toLowerCase()} và ghi số đo` : ''}`);
+Kéo bộ phận có vòng cam để chỉnh · cầm vật ở khay đặt vào vòng vàng để chọn${e.columns.length ? ` · chạm vào dụng cụ có nhãn xanh để ${action.toLowerCase()} và ghi số đo` : ''}`);
       };
     },
   };

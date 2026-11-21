@@ -2,6 +2,8 @@ import {BIO_BY_ID} from '../bio/experiments';
 import {PHYS_BY_ID} from '../phys/experiments';
 import type {PhysExperiment} from '../phys/types';
 import type {Manual} from './manual';
+import {isToggle} from './benchPick';
+import {connect, place, press, pour, squeeze, stir, type BenchAct} from './benchActs';
 
 /**
  * Phần động của bộ dụng cụ Blender (`tools/lab-models/bench_parts.py` → `bench-phys.glb`, `bench-bio.glb`) trong các bài thực hành SGK:
@@ -184,6 +186,8 @@ export const BENCH_PICK: Record<string, Record<string, [number, number, number]>
 export interface BenchStep {
   label: string;
   at: [number, number, number];
+  /** thao tác thật với vật thật (đặt, rót, khuấy, bóp bóng); bỏ trống = kéo cục cam vào vòng cam */
+  act?: BenchAct;
 }
 const sp = (label: string, x: number, y: number, z: number): BenchStep => ({label, at: [x, y, z]});
 export const BENCH_SETUP: Record<string, BenchStep[]> = {
@@ -235,6 +239,64 @@ export const BENCH_SETUP: Record<string, BenchStep[]> = {
   MINI_ECOSYSTEM: [sp('Rải cát, trồng cây thủy sinh', -0.5, 0.2, 0.2), sp('Thả cá vào bể, bật đèn', -0.5, 0.6, -0.2)],
 };
 
+/**
+ * Bước chuẩn bị làm THẬT bằng vật thật (xem `benchActs.ts`): đặt lam kính lên bàn kính, đặt giá ống vào bể, rót, khuấy, bóp bóng…
+ * Vật nằm sẵn ở mép bàn phía người nhìn (z = 1,6), gốc vật ở giữa đáy; `at` là chỗ đặt / miệng dụng cụ cần rót / tâm cối cần khuấy.
+ * Chỉ thay bước tương ứng; các bước khác của bài giữ nguyên.
+ */
+const edge = (x: number): [number, number, number] => [Math.max(-2.8, Math.min(2.8, x)), 0, 1.6];
+const WATER_C = '#8CC8F0';
+const withAct = (id: string, i: number, step: BenchStep) => {
+  const list = BENCH_SETUP[id];
+  if (list) list[i] = step;
+};
+// Sinh: đặt tiêu bản lên bàn kính (lam kính thật), đậy lamen, đặt giá ống vào bể, rót, nghiền, bóp bóng bơm
+withAct('CELL_OBSERVE', 0, place('Đặt tiêu bản lên bàn kính', 'slide', edge(0.2), [-0.6, 0.56, 0.08]));
+withAct('PLASMOLYSIS', 0, place('Đặt tiêu bản lên bàn kính', 'slide', edge(0.0), [-0.8, 0.56, 0.08]));
+withAct('PLASMOLYSIS', 1, place('Đậy lamen', 'cover', edge(0.6), [-0.78, 0.575, 0.08]));
+withAct('MITOSIS_SLIDE', 1, place('Đặt tiêu bản lên bàn kính', 'slide', edge(-0.6), [-1.4, 0.56, 0.08]));
+withAct('CHROMOSOME_MUTATION', 0, place('Đặt tiêu bản lên bàn kính', 'slide', edge(-0.8), [-1.6, 0.56, 0.08]));
+withAct('ENZYME', 0, place('Đặt giá ống vào bể ổn nhiệt', 'rack', edge(-0.4), [-0.9, 0.4, 0], {rest: [-0.9, 0.2, 0]}));
+withAct('ENZYME', 1, pour('Cho hồ tinh bột và enzyme vào ống', 'bottle', edge(-1.3), [-1.4, 0.65, 0], {color: '#EFE7D2'}));
+withAct('YOGURT', 1, pour('Rót sữa vào hũ, thêm men cái', 'jug', edge(-1.4), [-1.0, 0.55, 0], {color: '#F6F1E4'}));
+withAct('YOGURT', 0, place('Đặt hũ vào thùng ủ ấm', 'jar', edge(0.2), [-1.0, 0.4, 0], {rest: [-1.0, 0.09, 0]}));
+withAct('DNA_EXTRACT', 0, stir('Nghiền mẫu trong cối', 'pestle', edge(-1.4), [-2.2, 0.35, 0.2], {n: 3}));
+withAct('DNA_EXTRACT', 1, pour('Thêm nước rửa chén và muối', 'bottle', edge(2.2), [2.6, 0.45, -0.3], {color: '#BFE3F2'}));
+withAct('PIGMENT', 1, pour('Đổ dung môi vào ống đong', 'bottle', edge(2.0), [0.8, 0.2, 0], {color: '#E3B341'}));
+withAct('LEAF_STARCH', 0, place('Bọc giấy bạc lên một phần lá', 'foil', edge(-1.6), [-1.62, 0.95, 0.05], {rot: 0.4}));
+withAct('TREE_AGE', 0, place('Đặt lát cắt dưới kính lúp', 'disc', edge(-0.4), [-1.6, 0.3, 0.5], {rest: [-1.6, 0.06, 0.5]}));
+withAct('CIRCULATION', 1, squeeze('Bóp bóng bơm căng vòng bít', 'bulb', edge(-0.2), [-0.2, 0.3, 1.1], {n: 5}));
+BENCH_SETUP.CIRCULATION.push(sp('Bật máy đo huyết áp', 1.7, 0.6, 0));
+// Vật lí: rót nước vào nhiệt lượng kế / khay sóng, nhúng bình vào cốc
+withAct('SPECIFIC_HEAT', 0, pour('Đổ nước vào nhiệt lượng kế, cân', 'jug', edge(-1.2), [-0.4, 0.7, 0], {color: WATER_C}));
+withAct('LATENT_HEAT_FUSION', 0, pour('Cân nước ấm trong nhiệt lượng kế', 'jug', edge(-1.5), [-1.0, 0.7, 0], {color: WATER_C}));
+withAct('WAVE_INTERFERENCE', 0, pour('Đổ nước vào khay', 'jug', edge(-1.2), [0, 0.55, 0.4], {color: WATER_C}));
+withAct('CHARLES', 0, place('Nhúng bình khí vào cốc nước', 'flask', edge(-1.6), [-1.4, 0.7, 0], {rest: [-1.4, 0.24, 0]}));
+
+// Vật lí: bước NỐI DÂY làm bằng phích cắm có dây (giữ nhãn và chốt `at` đã có, chỉ đổi cách làm)
+const wireUp = (id: string, i: number) => {
+  const st = BENCH_SETUP[id]?.[i];
+  if (st) st.act = connect(st.label, 'plug', edge(st.at[0]), st.at).act;
+};
+for (const [id, i] of [['EMF_INTERNAL_R', 0], ['EMF_INTERNAL_R', 1], ['OHM_LAW', 0], ['OHM_LAW', 1], ['CAPACITOR_RC', 0], ['CAPACITOR_RC', 1], ['TRANSFORMER', 0], ['TRANSFORMER', 1], ['EM_INDUCTION', 0], ['SPECIFIC_HEAT', 1], ['STANDING_WAVE', 0]] as const) wireUp(id, i);
+
+// các bước "Bật máy / đèn": bấm công tắc thật trên chính thiết bị (giữ nhãn và chỗ `at`)
+for (const [id, i] of [['SOUND_FREQUENCY', 1], ['SOUND_SPEED', 0], ['CELL_OBSERVE', 1], ['TRANSPIRATION', 1], ['LEAF_STARCH', 1], ['CIRCULATION', 2], ['CHROMOSOME_MUTATION', 1]] as const) {
+  const st = BENCH_SETUP[id]?.[i];
+  if (st) st.act = press(st.label, '', [0, 0, 0], st.at).act;
+}
+
+/** cách làm bằng tay của từng kiểu thao tác thật (cho tab Hướng dẫn); chỉ cần chụm, kéo, giữ yên, vẽ vòng, chụm–nhả */
+const PROP_NAME: Record<string, string> = {slide: 'lam kính', cover: 'lamen', rack: 'giá ống nghiệm', bottle: 'lọ thuốc thử', jug: 'cốc nước', pestle: 'chày', rod: 'đũa thủy tinh', bulb: 'bóng bơm', flask: 'bình tam giác', disc: 'lát cắt thân cây', foil: 'lá nhôm', jar: 'hũ', plug: 'phích cắm'};
+const ACT_HOW: Record<BenchAct['kind'], (a: BenchAct) => string> = {
+  place: (a) => `Đặt ${PROP_NAME[a.prop] ?? 'vật'}: chụm vật đang nằm ở mép bàn gần bạn, kéo tới vòng cam rồi buông; thả lệch thì vật tự trở về chỗ cũ.`,
+  pour: (a) => `Rót từ ${PROP_NAME[a.prop] ?? 'lọ'}: chụm lọ, đưa MIỆNG LỌ tới vòng cam rồi giữ yên: lọ tự nghiêng và rót, giữ càng lâu càng được nhiều (cần chừng ${a.n ?? 2} giây); nhấc ra thì ngừng, phần đã rót vẫn còn.`,
+  stir: (a) => `Khuấy bằng ${PROP_NAME[a.prop] ?? 'dụng cụ'}: chụm, đưa đầu dụng cụ vào vòng cam rồi vẽ vòng tròn quanh tâm vòng (${a.n ?? 3} vòng, theo chiều nào cũng được); nhãn ghi số vòng đã khuấy.`,
+  press: () => 'Bật: đưa con trỏ tới vòng cam ở công tắc của thiết bị rồi chụm một lần (như bấm công tắc thật); vòng chớp sáng là đã bật.',
+  connect: () => 'Nối dây: chụm phích cắm có dây ở mép bàn (dây nối với nguồn), kéo tới vòng cam là chốt cần nối rồi buông; thả lệch thì phích tự về chỗ cũ.',
+  squeeze: (a) => `Bóp ${PROP_NAME[a.prop] ?? 'bóng'}: chụm giữ trên bóng để bóp, nhả ra cho phồng lại; mỗi lần chụm rồi nhả là một nhịp, cần ${a.n ?? 5} nhịp.`,
+};
+
 /** thông số THỜI GIAN (đơn vị s, phút, giờ, ngày): chỉnh bằng đồng hồ hẹn giờ trên bàn thay cho con trượt */
 export const isTimeUnit = (unit?: string): boolean => /^(s|phút|giờ|ngày)$/.test(unit ?? '');
 
@@ -270,9 +332,15 @@ export function benchManual(presetId: string): Manual | null {
             ? `Đồng hồ hẹn giờ "${p.label}" (mép bàn phía trước, bên trái): chụm vào đồng hồ rồi kéo ngang để quay kim; ${range}.`
             : `Núm vặn "${p.label}" (mép bàn phía trước, cùng hàng với đồng hồ hẹn giờ): chụm vào núm rồi kéo ngang, sang phải là tăng, vạch trên núm chỉ trên thang chia; ${range}.`;
       }),
-      ...(e.choices ?? []).map((c) => `Công tắc xoay "${c.label}" (mép bàn bên phải): chụm một lần để vặn sang nấc kế tiếp (${c.options.map((o) => o[1]).join(', ')}).`),
+      ...(e.choices ?? []).map((c) => {
+        const labels = c.options.map((o) => o[1]);
+        return isToggle(labels)
+          ? `Chọn "${c.label}": trên khay ở mép bàn có một vật (${labels[1]}); chụm cầm vật đó đặt vào vòng vàng ở dụng cụ là "${labels[1]}", nhấc ra để về khay là "${labels[0]}".`
+          : `Chọn "${c.label}": trên khay ở mép bàn bày từng phương án (${labels.join('; ')}); chụm cầm một vật rồi đặt vào vòng vàng ở dụng cụ để chọn, vật đang chọn tự về khay.`;
+      }),
       ...(b.file === 'phys' ? ['Dụng cụ tự chuyển động đúng theo quy luật của bài (xe lăn, bi rơi, con lắc đung đưa, dòng điện chạy, sóng lan…): chạm (chụm) vào vật đang chuyển động hoặc bấm ĐO để cho chạy lại từ đầu; kéo thanh trượt thì chuyển động đổi theo ngay.'] : []),
-      ...((BENCH_SETUP[e.id] ?? []).length ? [`CHUẨN BỊ (làm một lần, theo thứ tự): ${(BENCH_SETUP[e.id] ?? []).map((s, i) => `${i + 1}. ${s.label}`).join('; ')}. Mỗi bước là một vòng cam trên dụng cụ: chạm (chụm một lần) vào vòng đó để làm, xong bước này vòng sang bước kế.`] : []),
+      ...((BENCH_SETUP[e.id] ?? []).length ? [`CHUẨN BỊ (làm một lần, theo thứ tự): ${(BENCH_SETUP[e.id] ?? []).map((s, i) => `${i + 1}. ${s.label}`).join('; ')}. Mỗi bước là một vòng cam trên dụng cụ; xong bước này vòng sang bước kế.`] : []),
+      ...(BENCH_SETUP[e.id] ?? []).flatMap((s, i) => (s.act ? [`Bước ${i + 1} làm bằng vật thật: ${ACT_HOW[s.act.kind](s.act)}`] : [])),
       ...(e.columns.length ? [`LÀM thí nghiệm (sau khi chuẩn bị xong): chạm (chụm một lần) vào chính dụng cụ có nhãn xanh "${BENCH_ACTION[e.id] ?? 'Đo'}"; thí nghiệm chạy và một dòng số đo được ghi vào bảng ở tab Thao tác. Không với tới thì bấm nút cam ở mép bàn bên phải (mỗi lần bấm làm một bước).`] : []),
     ],
     steps: e.steps.map((s) => ({do: s.text, why: ''})),

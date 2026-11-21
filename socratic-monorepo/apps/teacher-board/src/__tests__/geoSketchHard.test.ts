@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {placeOnInk, sketchFigure, type SketchFigure} from '../utils/sketchFigure';
+import {hasDashedLine, placeOnInk, sketchFigure, type SketchFigure} from '../utils/sketchFigure';
 import {frameStrokes} from '../utils/sketchSolid';
 import {circleFigureText, freePoints, moveFreePoint} from '../utils/geoTools';
 import {renderScene, type GeoScene} from '../utils/geometryProblem';
@@ -80,13 +80,13 @@ const recognize = (ink: Ink): SketchFigure => {
   return f;
 };
 const visible = (s: GeoScene) => Object.keys(s.pts).filter((n) => !s.hiddenLabels?.includes(n));
-/** mọi điểm của hình dựng nằm khít chỗ đã vẽ (điểm tự do ≤ 12 px; điểm suy ra — giao ở xa phóng to sai số tay — ≤ 30 px) */
+/** mọi điểm của hình dựng nằm khít chỗ đã vẽ (≤ 12 px), kể cả điểm suy ra ở xa (giao của tiếp tuyến với đường kéo dài) */
 const fitsInk = (f: SketchFigure) => {
   const {scene, origin} = placeOnInk(f.scene, f.anchors);
   const fig = renderScene(scene);
   scene.order.forEach((n, i) => {
     const a = f.anchors[n];
-    if (a) expect(Math.hypot(fig.verts[i].x + origin.x - a.x, fig.verts[i].y + origin.y - a.y), `điểm ${n}`).toBeLessThan(scene.defs?.[n] ? 30 : 12);
+    if (a) expect(Math.hypot(fig.verts[i].x + origin.x - a.x, fig.verts[i].y + origin.y - a.y), `điểm ${n}`).toBeLessThan(12);
   });
 };
 
@@ -141,9 +141,9 @@ describe('hình ghép vẽ tay khó nhất', () => {
       expect(defs.some((d) => d.k === 'inter'), msg).toBe(true);
       expect(defs.some((d) => d.k === 'lcx'), msg).toBe(true);
       expect(f.scene.circles?.[0].of?.f, msg).toBe('circum');
-      const vis = visible(f.scene);
-      for (const x of ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'K', 'M', 'O']) expect(vis, msg).toContain(x);
-      expect(vis.length, msg).toBeLessThanOrEqual(11); // tâm O sát trung tuyến: chỗ cắt gần đó có thể hiện tên
+      // chỗ cắt tình cờ (tâm O sát trung tuyến) trên hình dựng không đồng quy thật → ẩn tên, chỉ còn đúng 10 điểm có tên
+      expect(visible(f.scene).sort(), msg).toEqual(['A', 'B', 'C', 'D', 'E', 'F', 'H', 'K', 'M', 'O']);
+      fitsInk(f);
     }
     J = 4;
   });
@@ -270,5 +270,36 @@ describe('hình ghép vẽ tay khó nhất', () => {
     expect(s.defs![o]).toMatchObject({k: 'calc', f: 'circum'});
     for (const sc of drags(s)) for (const x of ['A', 'B', 'C', 'D']) expect(onC(sc, x)).toBeLessThan(1e-5);
     fitsInk(f);
+  });
+});
+
+describe('tứ giác có hai đường chéo, không đường tròn', () => {
+  /** nét đứt: n gạch ngắn nối tiếp trên đoạn ab */
+  const dashed = (a: Pt, b: Pt, n = 6) => Array.from({length: n}, (_, i) => {
+    const [t0, t1] = [i / n, (i + 0.55) / n];
+    return {points: [0, 0.5, 1].map((k) => P(a.x + (b.x - a.x) * (t0 + (t1 - t0) * k), a.y + (b.y - a.y) * (t0 + (t1 - t0) * k)))};
+  });
+  it('hình bình hành + hai đường chéo vẽ liền: là tứ giác phẳng (không phải tứ diện), giao O của hai đường chéo, kéo đỉnh vẫn là hình bình hành', () => {
+    seed = 61;
+    const [A, B, C, D] = [P(200, 150), P(160, 420), P(620, 420), P(660, 150)];
+    const ink = [seg(A, B), seg(B, C), seg(C, D), seg(D, A), seg(A, C), seg(B, D)];
+    expect(hasDashedLine(ink)).toBe(false);
+    const f = sketchFigure(frameStrokes(ink))!;
+    expect(f.quadDiag).toBe(true);
+    const s = f.scene;
+    expect(s.edges.map((e) => e.join('')).sort()).toEqual(['AB', 'BC', 'CD', 'DA']);
+    const I = Object.keys(s.pts).find((x) => s.defs?.[x]?.k === 'inter')!;
+    expect(s.hiddenLabels ?? []).not.toContain(I);
+    for (const sc of drags(s)) {
+      expect(col(sc, 'A', 'C', I)).toBeLessThan(E);
+      expect(col(sc, 'B', 'D', I)).toBeLessThan(E);
+    }
+    fitsInk(f);
+  });
+  it('tứ diện vẽ có nét khuất đứt: nhận ra nét đứt (để đi đường hình khối); chữ nhãn, vạch đánh dấu cạnh không phải nét đứt', () => {
+    const [S, A, B, C] = [P(400, 80), P(180, 420), P(430, 500), P(650, 400)];
+    expect(hasDashedLine([seg(S, A), seg(S, B), seg(S, C), seg(A, B), seg(B, C), ...dashed(A, C)])).toBe(true);
+    const ticks = [0, 1, 2].map((i) => ({points: [P(380 + i * 7, 280), P(380 + i * 7, 300)]}));
+    expect(hasDashedLine([seg(A, B), seg(B, C), seg(C, A), label(A), label(B), ...ticks, {points: [P(300, 300), P(320, 300)]}, {points: [P(300, 308), P(320, 308)]}])).toBe(false);
   });
 });

@@ -55,6 +55,8 @@ export interface SketchFigure {
   anchors: Record<string, Pt>;
   /** có dấu hiệu chỉ hình PHẲNG mới có (đường tròn, nét dừng giữa cạnh khác: chân đường cao, trung tuyến…): ưu tiên hơn nhận dạng khối */
   planar: boolean;
+  /** tứ giác lồi có hai đường chéo cắt nhau (không có đường tròn thì dễ lẫn với tứ diện vẽ không nét khuất) */
+  quadDiag: boolean;
 }
 
 /** Đường tròn trong một nét (khép kín, đều, cong đều) — cùng tiêu chí với nhận dạng đường tròn đơn. */
@@ -452,11 +454,17 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
     const d = Math.abs(ring.indexOf(lines[li][0]) - ring.indexOf(lines[li][1]));
     return d !== 1 && d !== ring.length - 1;
   };
-  const namedCross = (v: number) => {
+  /** đường thứ ba trở đi đi (gần) qua giao điểm v theo nét vẽ */
+  const extraThrough = (v: number) => {
     const [l1, l2] = crossOf.get(v)!;
-    const through = lines.filter((l, li) => l.includes(v) || (interior(v).includes(li) && onLine(V[v], V[l[0]], V[l[1]]).d < Math.max(6, 0.3 * rr))).length;
-    return through >= 3 || (isAltitude(l1) && isAltitude(l2)) || (isMedian(l1) && isMedian(l2)) || sinAng(dir(l1), dir(l2)) > Math.sin((81 * Math.PI) / 180) || (diag(l1) && diag(l2)) || circles.some((_, ci) => onCirc(v, ci));
+    return lines.map((l, li) => ({l, li})).filter(({l, li}) => li !== l1 && li !== l2 && (l.includes(v) || (interior(v).includes(li) && onLine(V[v], V[l[0]], V[l[1]]).d < Math.max(6, 0.3 * rr))));
   };
+  /** lí do hiện tên không dựa vào "trông như đồng quy" */
+  const namedStrict = (v: number) => {
+    const [l1, l2] = crossOf.get(v)!;
+    return (isAltitude(l1) && isAltitude(l2)) || (isMedian(l1) && isMedian(l2)) || sinAng(dir(l1), dir(l2)) > Math.sin((81 * Math.PI) / 180) || (diag(l1) && diag(l2)) || circles.some((_, ci) => onCirc(v, ci));
+  };
+  const namedCross = (v: number) => namedStrict(v) || extraThrough(v).length > 0;
   // trung tuyến: từ một đỉnh tới trung điểm cạnh đối
   const isMedian = (li: number) => lines[li].some((x) => {
     const r = role.get(x)!;
@@ -588,25 +596,86 @@ export function sketchFigure(strokes: SketchStrokeLike[]): SketchFigure | null {
   });
   sc.circles = [...(sc.circles ?? []), ...circs];
   const bits = [ring ? `${POLY[ring.length - 3][0].toUpperCase()}${POLY[ring.length - 3].slice(1)} ${ring.map(nm).join('')}` : '', ...circs.map((c) => c.label)].filter(Boolean);
-  for (const v of crossOf.keys()) if (role.get(v)!.k === 'inter' && !namedCross(v)) sc.hiddenLabels = [...(sc.hiddenLabels ?? []), nm(v)];
   sc.title = bits.join(', ') || 'Hình vẽ tay';
   sc.parts = [{label: '', text: sc.title}];
   // điểm tự do thứ tư, thứ năm… trên đường tròn ngoại tiếp: đặt đúng lên đường tròn (vẽ tay chỉ gần đúng) để kéo đỉnh giữ đồng viên
-  let out = applyDefs(sc);
-  ckind.forEach((kd, ci) => {
-    if (kd.f !== 'circum') return;
-    const c = out.circles![out.circles!.length - circles.length + ci];
-    for (const v of kd.all.slice(3)) {
-      const p = out.pts[nm(v)];
-      const L = Math.hypot(p[0] - c.center[0], p[1] - c.center[1]) || 1;
-      out.pts[nm(v)] = [c.center[0] + ((p[0] - c.center[0]) * c.r) / L, c.center[1] + ((p[1] - c.center[1]) * c.r) / L, 0];
-    }
-  });
-  out = applyDefs(out);
+  const settle = (s0: GeoScene): GeoScene => {
+    const o = applyDefs(s0);
+    ckind.forEach((kd, ci) => {
+      if (kd.f !== 'circum') return;
+      const c = o.circles![o.circles!.length - circles.length + ci];
+      for (const v of kd.all.slice(3)) {
+        const p = o.pts[nm(v)];
+        const L = Math.hypot(p[0] - c.center[0], p[1] - c.center[1]) || 1;
+        o.pts[nm(v)] = [c.center[0] + ((p[0] - c.center[0]) * c.r) / L, c.center[1] + ((p[1] - c.center[1]) * c.r) / L, 0];
+      }
+    });
+    return applyDefs(o);
+  };
+  let out = settle(sc);
+  // khớp nét: nét tay không thỏa đúng các ràng buộc, nên điểm suy ra (giao ở xa, giao thứ hai…) lệch khỏi chỗ vẽ. Nhích nhẹ các điểm tự do
+  // (dò từng trục, bước giảm dần) để TỔNG độ lệch của mọi điểm so với nét nhỏ nhất; ràng buộc vẫn đúng tuyệt đối vì điểm suy ra tính lại theo công thức
+  const target = new Map(order.map((v) => [nm(v), P(V[v])] as const));
+  const err = (s: GeoScene) => [...target].reduce((e, [n, t]) => e + (s.pts[n] ? (s.pts[n][0] - t[0]) ** 2 + (s.pts[n][1] - t[1]) ** 2 : 0), 0);
+  const tunable = out.order.filter((n) => !out.defs?.[n] && target.has(n));
+  let best = err(out);
+  for (let step = 0.04, it = 0; step > 2e-4 && it < 60; it++) {
+    let improved = false;
+    for (const n of tunable)
+      for (const ax of [0, 1])
+        for (const sg of [1, -1]) {
+          const moved = [...out.pts[n]] as V3;
+          moved[ax] += sg * step;
+          const cand = settle({...out, pts: {...out.pts, [n]: moved}});
+          const e = err(cand);
+          if (e < best - 1e-12 && Object.values(cand.pts).every((p) => p.every(Number.isFinite))) {
+            best = e;
+            out = cand;
+            improved = true;
+          }
+        }
+    if (!improved) step /= 2;
+  }
+  // giao trông như đồng quy với đường thứ ba nhưng trên hình dựng KHÔNG đồng quy thật (tâm O nằm sát trung tuyến…): chỉ là chỗ cắt tình cờ → ẩn tên
+  const exactOn = (v: number, l: [number, number]) => {
+    const [A, B, X] = [out.pts[nm(l[0])], out.pts[nm(l[1])], out.pts[nm(v)]];
+    return Math.abs((B[0] - A[0]) * (X[1] - A[1]) - (B[1] - A[1]) * (X[0] - A[0])) <= 1e-6 * (Math.hypot(B[0] - A[0], B[1] - A[1]) * Math.hypot(X[0] - A[0], X[1] - A[1]) || 1);
+  };
+  for (const v of crossOf.keys()) {
+    if (role.get(v)!.k !== 'inter') continue;
+    if (!namedStrict(v) && !extraThrough(v).some(({l}) => l.includes(v) || exactOn(v, l))) out.hiddenLabels = [...(out.hiddenLabels ?? []), nm(v)];
+  }
   const anchors: Record<string, Pt> = {};
   for (const v of order) anchors[nm(v)] = {...V[v]};
   const planar = circles.length > 0 || [...role.values()].some((r) => r.k === 'foot' || r.k === 'seg');
-  return {scene: out, anchors, planar};
+  // tứ giác lồi có hai đường chéo cắt nhau: hình phẳng, trừ khi người vẽ có nét đứt (nét khuất của tứ diện) — nơi gọi kiểm nét đứt
+  const quadDiag = ring?.length === 4 && [...crossOf.values()].some(([l1, l2]) => diag(l1) && diag(l2));
+  return {scene: out, anchors, planar, quadDiag};
+}
+
+/**
+ * Có đường NÉT ĐỨT không (≥ 3 gạch ngắn, thẳng, cùng hướng, nối tiếp nhau trên một đường): dấu hiệu nét khuất của hình khối.
+ * Chữ nhãn (nét gấp), dấu bằng nhau, vạch đánh dấu cạnh (gạch song song đứng cạnh nhau) không tính.
+ */
+export function hasDashedLine(ink: SketchStrokeLike[]): boolean {
+  const all = ink.flatMap((s) => s.points);
+  if (all.length < 6) return false;
+  const span = Math.hypot(Math.max(...all.map((p) => p.x)) - Math.min(...all.map((p) => p.x)), Math.max(...all.map((p) => p.y)) - Math.min(...all.map((p) => p.y)));
+  const dashes = ink
+    .filter((s) => s.points.length >= 2)
+    .map((s) => ({a: s.points[0], b: s.points[s.points.length - 1], len: pathLen(s.points)}))
+    .filter((d) => d.len >= 0.012 * span && d.len <= 0.1 * span && d.len <= 1.2 * dist(d.a, d.b))
+    .map((d) => ({...d, m: {x: (d.a.x + d.b.x) / 2, y: (d.a.y + d.b.y) / 2}, u: sub(d.b, d.a)}));
+  for (const d of dashes) {
+    const along = dashes.filter((e) => {
+      if (e === d || sinAng(e.u, d.u) > 0.26) return false;
+      const o = onLine(e.m, d.a, d.b);
+      // cùng một đường (lệch ngang nhỏ) và nằm NỐI TIẾP theo hướng gạch (không đứng song song cạnh nhau)
+      return o.d < 0.03 * span && Math.abs(o.t - 0.5) * dist(d.a, d.b) > 0.6 * d.len;
+    });
+    if (along.length >= 2) return true;
+  }
+  return false;
 }
 
 /**

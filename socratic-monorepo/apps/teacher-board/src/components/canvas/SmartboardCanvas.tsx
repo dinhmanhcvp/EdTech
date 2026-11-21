@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
 import { routeLocally, matchStemModel, makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES, type SolidKind } from '../../utils/localRouter';
-import { sketchFigure, placeOnInk } from '../../utils/sketchFigure';
+import { sketchFigure, placeOnInk, hasDashedLine } from '../../utils/sketchFigure';
 import { detectSolidSketch, detectPlaneShapeFromStrokes, frameStrokes, recentSession, GEO_LIVE_IDLE_MS, detectCircleSketch, detectRoundSketch, ellipseStrokePoints, isShapeToolStroke, arrowStrokePoints, circleStrokePoints, recentShapeCluster, squareStrokePoints, triangleStrokePoints, type SketchWireGraph } from '../../utils/sketchSolid';
 import { buildSketchWire } from '../../utils/sketchWire';
 import { shapeFromBlueprint, solidWire, planeStats, VERTEX_LABELS } from '../../utils/inlineShape';
@@ -2870,6 +2870,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     };
     // nét dừng giữa cạnh khác (chân đường cao, trung tuyến) hay có đường tròn: hình phẳng, không để bộ nhận dạng khối đọc thành lăng trụ/tứ diện
     if (fig?.planar && putFig()) return true;
+    // tứ giác + hai đường chéo (không đường tròn): đồ thị giống tứ diện; tứ diện vẽ có nét khuất đứt, không có nét đứt thì là tứ giác phẳng
+    if (fig?.quadDiag && !hasDashedLine(ink) && putFig()) return true;
     if (ink.length >= 1) {
       const sk = detectSolidSketch(shapeInk);
       if (sk && sk.confidence >= 0.7) {

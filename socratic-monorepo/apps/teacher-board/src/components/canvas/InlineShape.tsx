@@ -162,7 +162,8 @@ export const InlineShape: React.FC<Props> = ({stroke, boardScale, picked, onChan
       className="absolute"
       style={{left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none'}}
     >
-      <div className="absolute" style={{left: `${(stroke.points[0].x / 1200) * 100}%`, top: `${(stroke.points[0].y / 675) * 100}%`, width: w * boardScale, height: h * boardScale}}>
+      {/* tọa độ bảng × tỉ lệ (dọc = ngang): bảng dài thêm xuống thì chiều cao không còn là 675, đặt theo % chiều cao sẽ lệch hình khỏi chỗ nét vẽ */}
+      <div className="absolute" style={{left: stroke.points[0].x * boardScale, top: stroke.points[0].y * boardScale, width: w * boardScale, height: h * boardScale}}>
         {picked && <div className="absolute -inset-1.5 rounded-md border-2 border-blue-500/80 pointer-events-none" />}
         {((partChips && partChips.length > 0 && onTogglePart) || onCoach) && (
           <div data-testid="geo-part-chips" className="absolute left-0 flex items-center gap-1.5" style={{top: '100%', marginTop: 8, pointerEvents: 'auto', whiteSpace: 'nowrap'}}>

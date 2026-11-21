@@ -414,12 +414,11 @@ export function detectPlaneShapeFromStrokes(strokes: SketchStrokeLike[]): Sketch
   if (!built) return null;
   const {graph: g, D} = built;
   if (D < 45) return null;
-  const V = g.verts.length;
   const E = g.edges.length;
-  if (V < 3 || V > 8 || E !== V) return null;
+  if (g.verts.length < 3 || g.verts.length > 8 || E !== g.verts.length) return null;
 
   // Mọi đỉnh trong đa giác đơn khép kín phải có bậc đúng bằng 2
-  const deg = new Array<number>(V).fill(0);
+  const deg = new Array<number>(g.verts.length).fill(0);
   for (const [a, b] of g.edges) {
     deg[a]++;
     deg[b]++;
@@ -427,9 +426,14 @@ export function detectPlaneShapeFromStrokes(strokes: SketchStrokeLike[]): Sketch
   if (!deg.every((d) => d === 2)) return null;
 
   // Sắp xếp các đỉnh theo chu trình khép kín ngược chiều kim đồng hồ trong hệ tọa độ toán học (y hướng lên)
-  const cx = g.verts.reduce((s, p) => s + p.x, 0) / V;
-  const cy = g.verts.reduce((s, p) => s + p.y, 0) / V;
-  const ordered = [...g.verts].sort((a, b) => Math.atan2(-(a.y - cy), a.x - cx) - Math.atan2(-(b.y - cy), b.x - cx));
+  const cx0 = g.verts.reduce((s, p) => s + p.x, 0) / g.verts.length;
+  const cy0 = g.verts.reduce((s, p) => s + p.y, 0) / g.verts.length;
+  const ordered = [...g.verts].sort((a, b) => Math.atan2(-(a.y - cy0), a.x - cx0) - Math.atan2(-(b.y - cy0), b.x - cx0));
+  // cạnh vẽ hơi cong (phồng tới ~11% dây cung) bị Douglas–Peucker bẻ làm hai: "đỉnh" có góc trong > 155° không phải đỉnh thật (bát giác đều 135°, ngũ giác lệch vẫn có góc ~153°)
+  dropFlatCorners(ordered, 155);
+  const V = ordered.length;
+  const cx = ordered.reduce((s, p) => s + p.x, 0) / V;
+  const cy = ordered.reduce((s, p) => s + p.y, 0) / V;
 
   // Tính độ dài các cạnh và các góc trong (độ)
   const sides: number[] = [];
@@ -569,6 +573,23 @@ export function detectPlaneShapeFromStrokes(strokes: SketchStrokeLike[]): Sketch
     sideLengths: sides.map((s) => Number((s * scale).toFixed(2))),
     note: `4 đỉnh, góc ${angles.map((a) => `${Math.round(a)}°`).join(' · ')}`,
   };
+}
+
+/** Bỏ (tại chỗ) các đỉnh của chu trình có góc trong lớn hơn `maxDeg`, góc bẹt nhất trước, giữ ít nhất 3 đỉnh. */
+export function dropFlatCorners(ring: SketchPt[], maxDeg: number): SketchPt[] {
+  const inner = (i: number) => {
+    const n = ring.length;
+    const [p, a, b] = [ring[i], ring[(i - 1 + n) % n], ring[(i + 1) % n]];
+    const c = ((a.x - p.x) * (b.x - p.x) + (a.y - p.y) * (b.y - p.y)) / ((dist(a, p) * dist(b, p)) || 1);
+    return (Math.acos(Math.max(-1, Math.min(1, c))) * 180) / Math.PI;
+  };
+  while (ring.length > 3) {
+    const angs = ring.map((_, i) => inner(i));
+    const k = angs.indexOf(Math.max(...angs));
+    if (angs[k] <= maxDeg) break;
+    ring.splice(k, 1);
+  }
+  return ring;
 }
 
 /** Các nét LỚN của hình (khung hình); bỏ nhãn đỉnh, dấu góc vuông, dấu bằng nhau… viết kèm. Không có nét nào đủ lớn thì giữ nguyên tất cả. */
@@ -895,6 +916,26 @@ export const strokeTime = (s: {id?: string}): number | null => {
   const m = /^[a-z]+-(\d{12,14})-/.exec(s.id ?? '');
   return m ? Number(m[1]) : null;
 };
+
+/** Chế độ Trực quan hình học: dừng tay chừng này mới chuyển nét thành hình (để kịp vẽ đủ cả hình: đường cao, đường tròn, tiếp tuyến…). */
+export const GEO_LIVE_IDLE_MS = 2500;
+
+/**
+ * Các nét của LẦN VẼ vừa rồi: đi ngược từ nét mới nhất, nét trước còn thuộc lần vẽ nếu kết thúc không quá `gapMs` trước nét sau nó.
+ * Vẽ cả một hình phức tạp lâu bao nhiêu cũng gom đủ; nét cũ (vẽ từ lần trước, đã dừng tay lâu) không bị gom.
+ */
+export function recentSession<T extends {id?: string}>(strokes: T[], gapMs = GEO_LIVE_IDLE_MS + 4000): T[] {
+  let i = strokes.length - 1;
+  let t = i >= 0 ? strokeTime(strokes[i]) : null;
+  if (t === null) return strokes;
+  while (i > 0) {
+    const tp = strokeTime(strokes[i - 1]);
+    if (tp !== null && t - tp > gapMs) break;
+    i--;
+    if (tp !== null) t = tp;
+  }
+  return strokes.slice(i);
+}
 
 /** Chỉ các nét vẽ trong `windowMs` cuối (tính từ nét mới nhất): nét cũ nằm chồng chỗ vẽ mới không bị gom vào hình mới. */
 export function recentInTime<T extends {id?: string}>(strokes: T[], windowMs = 15000): T[] {

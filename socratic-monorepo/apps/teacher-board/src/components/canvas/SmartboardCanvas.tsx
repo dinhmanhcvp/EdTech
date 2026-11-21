@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Stroke, Point, filterEnclosedStrokes } from '../../utils/lassoGeometry';
 import { exportIsolatedWebp } from '../../utils/isolatedExporter';
 import { routeLocally, matchStemModel, makeSolidBlueprint, makePlaneGeometryBlueprint, SOLID_TITLES, type SolidKind } from '../../utils/localRouter';
-import { detectSolidSketch, detectPlaneShapeFromStrokes, frameStrokes, recentInTime, detectCircleSketch, detectRoundSketch, ellipseStrokePoints, isShapeToolStroke, arrowStrokePoints, circleStrokePoints, recentShapeCluster, squareStrokePoints, triangleStrokePoints, type SketchWireGraph } from '../../utils/sketchSolid';
+import { sketchFigure, placeOnInk } from '../../utils/sketchFigure';
+import { detectSolidSketch, detectPlaneShapeFromStrokes, frameStrokes, recentSession, GEO_LIVE_IDLE_MS, detectCircleSketch, detectRoundSketch, ellipseStrokePoints, isShapeToolStroke, arrowStrokePoints, circleStrokePoints, recentShapeCluster, squareStrokePoints, triangleStrokePoints, type SketchWireGraph } from '../../utils/sketchSolid';
 import { buildSketchWire } from '../../utils/sketchWire';
 import { shapeFromBlueprint, solidWire, planeStats, VERTEX_LABELS } from '../../utils/inlineShape';
 import { drawConstructsOnCtx, evalConstructs } from '../../utils/planeConstruct';
@@ -573,6 +574,15 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       if (autoGeoTimerRef.current) clearTimeout(autoGeoTimerRef.current);
     };
   }, []);
+  /** Chế độ Trực quan: chuyển CẢ cụm nét của lần vẽ vừa rồi (các nét vẽ liền nhau, chạm/gần nhau) thành một hình. */
+  const convertLiveNow = () => {
+    if (autoGeoTimerRef.current) clearTimeout(autoGeoTimerRef.current);
+    autoGeoTimerRef.current = null;
+    // chỉ cụm nét vừa vẽ (chạm/gần nét cuối), không gom chữ viết cũ ở chỗ khác rồi xóa mất khi thay bằng hình
+    const recent = recentShapeCluster(recentSession(strokesRef.current.slice(-60).filter((s) => !s.typeset)));
+    // cùng đường nhận dạng với "Vẽ hình" của AI hub → hình giữ tính chất khi tương tác
+    if (recent.length >= 1) liveConvertRef.current?.(recent);
+  };
   const isDraggingHoloRef = useRef(false);
   const holoDragStartRef = useRef<{ startX: number; startY: number; origX: number; origY: number }>({
     startX: 0,
@@ -1468,6 +1478,11 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     if (e.pointerType === 'pen') lastPenAtRef.current = performance.now();
     if (e.pointerType === 'touch' && performance.now() - lastPenAtRef.current < 1500) return;
     if (gestureRef.current.active) return;
+    // đang vẽ tiếp hình ở chế độ Trực quan: chưa chuyển (hẹn lại khi nhấc bút)
+    if (tool === 'PEN' && autoGeoTimerRef.current) {
+      clearTimeout(autoGeoTimerRef.current);
+      autoGeoTimerRef.current = null;
+    }
     // Di chuyển bảng: công cụ Tay, giữ Space, hoặc chuột giữa
     if (tool === 'PAN' || spaceDownRef.current || (e.pointerType === 'mouse' && e.button === 1)) {
       e.preventDefault();
@@ -1716,15 +1731,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
       // Chế độ trực quan hình học tự động: nhận diện và chuyển nét vẽ thành hình tương tác tại chỗ
       if (isGeometryLiveMode) {
         if (autoGeoTimerRef.current) clearTimeout(autoGeoTimerRef.current);
-        autoGeoTimerRef.current = setTimeout(() => {
-          const allCur = strokesRef.current;
-          if (allCur.length >= 1) {
-            // chỉ cụm nét vừa vẽ (chạm/gần nét cuối), không gom chữ viết cũ ở chỗ khác rồi xóa mất khi thay bằng hình
-            const recent = recentShapeCluster(recentInTime(allCur.slice(-12).filter((s) => !s.typeset)));
-            // cùng đường nhận dạng với "Vẽ hình" của AI hub → hình giữ tính chất khi tương tác
-            if (recent.length >= 1) liveConvertRef.current?.(recent);
-          }
-        }, 850);
+        // chờ vẽ ĐỦ cả hình: chỉ chuyển khi dừng tay GEO_LIVE_IDLE_MS (đặt bút xuống vẽ tiếp là hủy hẹn giờ), không chuyển ngay khi vừa khép một tam giác/đường tròn
+        autoGeoTimerRef.current = setTimeout(convertLiveNow, GEO_LIVE_IDLE_MS);
       }
     } else if (tool === 'LASSO') {
       // Magic Lasso Vector Hit-testing (Forgiving: >=25% points OR >=30% BBox overlap + 24px pad)
@@ -2845,7 +2853,21 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
     if (rd && put(roundSolidText(rd))) return true;
     // đường tròn vẽ tay (kèm đường kính / bán kính / đa giác nội tiếp / tam giác ngoại tiếp): trước đây không nhận ra
     const circ = circleFigureText(shapeInk);
-    if (circ && put(circ)) return true;
+    // chỉ ra "đường tròn" trong khi còn nét khác chưa hiểu (đường cao, tiếp tuyến, đường chéo…) → để bộ nhận dạng hình ghép dựng đủ
+    const bareCircle = circ === 'Cho đường tròn (O; 2)' && (detectCircleSketch(shapeInk)?.rest.length ?? 0) > 0;
+    if (circ && !bareCircle && put(circ)) return true;
+    // hình ghép (cả hình của một bài): mọi đoạn, đường tròn, điểm chung, chân đường cao, giao điểm, tiếp điểm → một hình có ràng buộc, đặt khít lên chính các nét
+    const fig = sketchFigure(shapeInk);
+    const putFig = () => {
+      if (!fig) return false;
+      const { scene, origin } = placeOnInk(fig.scene, fig.anchors);
+      insertGeoFigure(scene, scene.parts.length - 1, scene.title, origin, ids);
+      setFormulaInput('');
+      setIsLoading(false);
+      return true;
+    };
+    // nét dừng giữa cạnh khác (chân đường cao, trung tuyến) hay có đường tròn: hình phẳng, không để bộ nhận dạng khối đọc thành lăng trụ/tứ diện
+    if (fig?.planar && putFig()) return true;
     if (ink.length >= 1) {
       const sk = detectSolidSketch(shapeInk);
       if (sk && sk.confidence >= 0.7) {
@@ -2860,6 +2882,8 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
         return true;
       }
     }
+    if (putFig()) return true;
+    if (bareCircle && put(circ)) return true;
     return false;
   };
   liveConvertRef.current = convertSketchToFigure; // bộ hẹn giờ của chế độ trực quan gọi bản mới nhất, không giữ state cũ
@@ -3964,10 +3988,19 @@ export const SmartboardCanvas: React.FC<SmartboardCanvasProps> = ({
           {isGeometryLiveMode && (
             <div
               data-testid="geo-live-mode-badge"
-              className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-1.5 whitespace-nowrap rounded-full bg-blue-600/95 backdrop-blur-md text-white text-xs font-semibold shadow-lg border border-blue-400/40 animate-in fade-in"
+              className="absolute top-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-1.5 whitespace-nowrap rounded-full bg-blue-600/95 backdrop-blur-md text-white text-xs font-semibold shadow-lg border border-blue-400/40 animate-in fade-in"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-              <span>Trực quan hình học: vẽ xong, hình tự thành mô hình</span>
+              <span>Trực quan hình học: vẽ đủ cả hình rồi dừng tay, hình tự thành mô hình</span>
+              <button
+                type="button"
+                data-testid="geo-live-convert-now"
+                onClick={convertLiveNow}
+                className="ml-1 px-2 py-0.5 rounded-full bg-white/20 hover:bg-white/30 cursor-pointer transition"
+                title="Chuyển ngay các nét vừa vẽ thành hình"
+              >
+                Thành hình
+              </button>
               <button
                 type="button"
                 data-testid="geo-live-mode-close"

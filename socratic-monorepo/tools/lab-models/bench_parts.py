@@ -258,6 +258,16 @@ def bottle(x, z, m=L_BROWN, cap=INK, r=0.1, h=0.3):
     return o
 
 
+def stakes(cx, hx, hz):
+    """bộ 4 cọc gỗ (cắm ở bốn góc khu vực): thân sơn cam, dải băng trắng gần đầu, đầu vát nhọn"""
+    o = []
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            x, z = cx + sx * hx, sz * hz
+            o += [C(0.02, 0.4, x, 0.2, z, ORANGE, seg=8), C(0.0, 0.06, x, 0.03, z, ORANGE, r2=0.02, seg=8), C(0.023, 0.05, x, 0.34, z, WHITE, seg=8)]
+    return o
+
+
 def burner(x, z):
     """đèn cồn"""
     return [LA([(0, 0), (0.16, 0), (0.18, 0.06), (0.12, 0.16), (0.05, 0.2), (0.05, 0.24), (0, 0.24)], x, 0, z, GLASS), C(0.1, 0.05, x, 0.07, z, L_VIOLET), C(0.02, 0.06, x, 0.27, z, WHITE),
@@ -765,16 +775,18 @@ def bio():
     part('Mov_MODIFICATION_2', rows[1], pivot=(0, 0.272, 0.45))
 
     # QUADRAT: thảm cỏ, khung ô 1 m × 1 m, cọc, thước dây, phiếu ghi
-    o = patch(-0.6, 0, 3.4, 1.9, 5, 2) + [C(0.02, 0.4, -0.8 + sx * 1.5, 0.2, sz * 0.85, ORANGE, seg=8) for sx in (-1, 1) for sz in (-1, 1)]
+    o = patch(-0.6, 0, 3.4, 1.9, 5, 2)
     o += clipboard(2.2, 0.3, -0.2) + [C(0.16, 0.08, 2.1, 0.04, -0.6, YELLOW, seg=24), B(0.5, 0.004, 0.06, 2.45, 0.02, -0.6, WHITE, 0)]
     part('Set_QUADRAT', o)
     part('Mov_QUADRAT_1', quadrat(0, 0, 0.9))
+    part('Mov_QUADRAT_2', stakes(-0.8, 1.5, 0.85), pivot=(0, 0, 0))  # bộ 4 cọc quanh khu vực: học sinh mang ra rồi cắm
 
     # COMMUNITY: thảm thực vật nhiều loài, khung ô, khóa định loại, phiếu ghi
     o = patch(-0.6, 0, 3.6, 1.9, 9, 5) + [C(0.03, 0.5, -1.9, 0.3, -0.6, mat('trunk', hexc('#5A3A1E'), rough=0.9), seg=8), S(0.28, -1.9, 0.7, -0.6, LEAF), C(0.03, 0.4, 0.9, 0.25, 0.6, mat('trunk2', hexc('#5A3A1E'), rough=0.9), seg=8), S(0.22, 0.9, 0.55, 0.6, LEAF2)]
     o += clipboard(2.3, 0.4, -0.2) + [B(0.5, 0.05, 0.7, 2.2, 0.025, -0.5, GREENM, 0.01), B(0.46, 0.006, 0.66, 2.2, 0.052, -0.5, PAPER, 0)]
     part('Set_COMMUNITY', o)
     part('Mov_COMMUNITY_1', quadrat(0, 0, 1.0))
+    part('Mov_COMMUNITY_2', stakes(-0.6, 1.6, 0.85), pivot=(0, 0, 0))
 
     # MINI_ECOSYSTEM: bể kính có cát, cây thủy sinh (động theo số cây), cá, ốc, đèn, máy đo oxygen hòa tan
     o = tank(-0.5, 0, 2.4, 0.9, 1.0, 0.8, WATER) + [B(2.3, 0.08, 0.9, -0.5, 0.07, 0, SAND, 0)]

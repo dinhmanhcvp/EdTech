@@ -15,8 +15,8 @@ export const BIO_FX_PARTS: Record<string, number[]> = {
   METAMORPHOSIS: [1],
   DNA_EXTRACT: [1],
   MODIFICATION: [1, 2],
-  QUADRAT: [1],
-  COMMUNITY: [1],
+  QUADRAT: [1, 2],
+  COMMUNITY: [1, 2],
 };
 
 // ------------------------------------------------------------------ dụng cụ vẽ nhỏ

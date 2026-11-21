@@ -304,6 +304,16 @@ withAct('VIRUS_SURVEY', 0, place('Phát phiếu khảo sát', 'paper', edge(-0.7
 withAct('VIRUS_SURVEY', 1, place('Thu phiếu về bàn tổng hợp', 'paper', edge(0.1), [0.7, 0.35, 0.2]));
 withAct('CIRCULATION', 0, place('Quấn vòng bít vào cánh tay', 'cuff', edge(-0.4), [-1.3, 0.4, 0], {rest: [-1.3, 0.3, 0]}));
 
+// Sinh thái: mang BỘ 4 CỌC (phần động `Mov_*_2`) ra cắm quanh khu vực; vòng cam ở giữa khu vực
+for (const [id, cx] of [['QUADRAT', -0.8], ['COMMUNITY', -0.6]] as const) {
+  const st = BENCH_SETUP[id]?.[0];
+  if (st) {
+    st.at = [cx, 0.3, 0];
+    fit(id, 0, 2);
+    st.act!.from[2] = 2.0; // hai cọc sau phải nằm NGOÀI thảm cỏ (cọc ở z ∓0,85 so với tâm bộ cọc): mang ra mép bàn rồi mới cắm
+  }
+}
+
 /** cách làm bằng tay của từng kiểu thao tác thật (cho tab Hướng dẫn); chỉ cần chụm, kéo, giữ yên, vẽ vòng, chụm–nhả */
 const PROP_NAME: Record<string, string> = {slide: 'lam kính', cover: 'lamen', rack: 'giá ống nghiệm', bottle: 'lọ thuốc thử', jug: 'cốc nước', pestle: 'chày', rod: 'đũa thủy tinh', bulb: 'bóng bơm', flask: 'bình tam giác', disc: 'lát cắt thân cây', foil: 'lá nhôm', jar: 'hũ', plug: 'phích cắm', cuff: 'vòng bít', paper: 'tờ phiếu'};
 const ACT_HOW: Record<BenchAct['kind'], (a: BenchAct) => string> = {

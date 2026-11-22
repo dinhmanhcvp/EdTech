@@ -628,6 +628,22 @@ const DISSECT_HOW: Record<DStep['kind'], (s: DStep) => string[]> = {
   drop: (s) => ['Lấy ống nhỏ giọt ở khay dụng cụ bằng một lần chụm.', `Đưa ống tới vòng cam phía trên ${s.kind === 'drop' ? 'cơ quan cần nhỏ' : 'mẫu'}, chụm một lần để nhỏ một giọt ${s.kind === 'drop' ? s.drug : ''}.`],
   name: () => ['Đưa tay (không cần dụng cụ) tới từng cơ quan: thẻ tên và chức năng hiện ngay trên cơ quan.', 'Giữ yên tay chừng 1 giây hoặc chụm một lần để gọi tên; cơ quan đã gọi tên có nhãn ✓.'],
 };
+MANUAL['med-imaging'] = {
+  goal: 'Đọc ảnh CT / MRI ba chiều: xem đồng bộ ba lát cắt chuẩn (ngang, đứng ngang, đứng dọc) và khối 3D tái tạo, chỉnh cửa sổ đậm độ, đo kích thước tổn thương (mm) và thể tích (cm³), xuất số đo.',
+  tools: [
+    'Bốn ô ảnh: lát ngang (trên trái), khối 3D (trên phải), lát đứng ngang (dưới trái), lát đứng dọc (dưới phải). Dấu chữ thập xanh trên mỗi lát là vị trí của hai lát kia.',
+    'Dữ liệu: phantom ngực tổng hợp mở sẵn (có một khối u ~13 mm ở phổi phải, bên trái ảnh); nút "Mở tệp" đọc NIfTI (.nii, .nii.gz) hoặc nhiều tệp DICOM không nén của cùng một chuỗi ảnh.',
+    'Bàn tay qua camera: con trỏ vàng là điểm giữa đầu ngón cái và ngón trỏ, chụm = bấm, giữ chụm và kéo = kéo. Chọn công cụ ở bảng bên phải.',
+  ],
+  steps: [
+    st('Cuộn lát cắt và đặt dấu chữ thập', 'Ba lát cắt vuông góc nhau cho biết chính xác vị trí một cấu trúc trong không gian ba chiều.', ['Chọn "Cuộn lát".', 'Chụm vào một điểm trên một ô: hai ô kia nhảy tới lát đi qua điểm đó.', 'Giữ chụm và kéo lên / xuống để lướt qua các lát của ô đó.'], 'Số lát ở góc ô thay đổi; mặt cắt tương ứng trong khối 3D dời theo.'),
+    st('Chỉnh cửa sổ đậm độ', 'CT đo đậm độ theo đơn vị Hounsfield (không khí −1000, nước 0, xương +400 trở lên); mắt chỉ phân biệt được vài chục mức xám nên phải chọn "cửa sổ" cho mô cần xem.', ['Bấm một cửa sổ có sẵn: Phổi, Mô mềm, Xương, Mạch.', 'Hoặc chọn "Độ tương phản" rồi chụm kéo: ngang đổi độ rộng, dọc đổi mức.'], 'Cửa sổ Phổi thấy rõ nhu mô và khối u; cửa sổ Xương làm nổi cột sống và xương sườn.'),
+    st('Đo đường kính khối u', 'Kích thước tổn thương (mm) là tiêu chí chính để theo dõi và phân loại.', ['Chọn "Đo khoảng cách".', 'Chụm một lần ở mép này, một lần ở mép đối diện của khối u.'], 'Đường vàng và số mm hiện trên ảnh và trong danh sách đo.'),
+    st('Phân vùng và tính thể tích', 'Loang từ một điểm qua các voxel cùng khoảng đậm độ: đếm voxel nhân thể tích một voxel ra cm³.', ['Chọn "Phân vùng".', 'Chụm một lần vào giữa khối u.', 'Nếu báo tràn ra mô xung quanh: kéo thanh khoảng đậm độ nhỏ lại rồi chụm lại.'], 'Khối u tô đỏ trên ba lát, hiện khối đỏ trong ô 3D, thể tích cm³ và kích thước hộp bao.'),
+    st('Xoay khối 3D và xuất số đo', 'Khối tái tạo (bề mặt da hoặc xương + tổn thương) cho thấy quan hệ không gian của tổn thương với cấu trúc quanh nó.', ['Chọn "Xoay 3D", chụm kéo trên ô 3D (chuột thì kéo trực tiếp).', 'Đổi bề mặt Da / Xương / Tắt.', 'Bấm "Xuất số đo (JSON)".'], 'Tệp JSON chứa kích thước voxel, các khoảng cách và thể tích vùng phân đoạn.'),
+  ],
+  conclude: 'Ảnh cắt lớp là khối số đo đậm độ trong không gian: đọc theo ba mặt phẳng vuông góc, chọn cửa sổ phù hợp với mô cần xem, và mọi số đo (mm, cm³) đều quy về kích thước voxel. Phân vùng theo đậm độ chỉ là bước khởi đầu; không dùng để chẩn đoán.',
+};
 MANUAL['heart-surgery'] = {
   goal: 'Quan sát cấu tạo tim người bằng mặt cắt và bóc từng lớp, rồi làm một ca mở màng ngoài tim có hướng dẫn: rạch đúng đường giải phẫu, tránh động mạch vành, xử lí chảy máu, hút sạch, khâu đóng; theo dõi sinh hiệu trên monitor.',
   tools: [

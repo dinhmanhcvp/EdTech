@@ -20,7 +20,7 @@ export interface Vitals {
   /** thể tích còn thiếu (mL): bằng máu mất trừ phần dịch đã truyền bù; sinh hiệu đáp ứng theo phần thiếu này */
   deficit: number;
 }
-export const VITALS0: Vitals = {hr: 72, sys: 120, dia: 78, spo2: 98, loss: 0, deficit: 0};
+export const VITALS0: Vitals = {hr: 72, sys: 120, dia: 80, spo2: 99, loss: 0, deficit: 0};
 /** truyền dịch bù khi đã cầm máu (mL/s, cùng thang thời gian phóng đại với tốc độ chảy máu) */
 export const INFUSE = 25;
 /**
@@ -28,7 +28,7 @@ export const INFUSE = 25;
  * 1500–2000 mL huyết áp tâm thu tụt; > 2000 mL tim rất nhanh, huyết áp thấp, SpO₂ giảm. Bảng [mất máu, nhịp tim, HA tâm thu, SpO₂].
  */
 const SHOCK: [number, number, number, number][] = [
-  [0, 72, 120, 98],
+  [0, 72, 120, 99],
   [750, 96, 118, 98],
   [1500, 118, 104, 96],
   [2000, 136, 86, 93],
@@ -42,7 +42,7 @@ export function vitalsGoal(loss: number): Omit<Vitals, 'loss' | 'deficit'> {
   const t = Math.min(1, Math.max(0, (loss - a[0]) / (b[0] - a[0])));
   const hr = a[1] + (b[1] - a[1]) * t;
   const sys = a[2] + (b[2] - a[2]) * t;
-  return {hr, sys, dia: sys * 0.65, spo2: a[3] + (b[3] - a[3]) * t};
+  return {hr, sys, dia: (sys * 2) / 3, spo2: a[3] + (b[3] - a[3]) * t};
 }
 /**
  * Một bước thời gian: máu mất theo `bleed` (mL/s); hết chảy thì truyền dịch bù phần thiếu (`INFUSE`). Chỉ số trôi dần về mức đáp ứng của phần thiếu
@@ -92,8 +92,11 @@ export const SURG_TOOLS: SurgTool[] = ['scalpel', 'clamp', 'suction', 'needle'];
 export const SURG_NAME: Record<SurgTool, string> = {scalpel: 'Dao mổ', clamp: 'Kẹp cầm máu', suction: 'Ống hút', needle: 'Kim khâu'};
 /** đường rạch màng ngoài tim (x, z trên mặt trước, hệ cảnh): dọc thất phải, song song và cách động mạch liên thất trước ~0,35 */
 export const INCISION: [number, number][] = [[-0.55, -0.55], [-0.5, -0.15], [-0.42, 0.25], [-0.32, 0.65], [-0.18, 1.05], [-0.02, 1.38]];
-/** tốc độ chảy máu khi đứt nhánh động mạch vành (mL/s). shortcut: phóng đại ~5 lần để thấy phản ứng sinh lí trong vài chục giây; mô phỏng thật thì hạ xuống */
-export const NICK_BLEED = 22;
+/** loại mạch bị đứt: động mạch phun thành tia theo nhịp tim, tĩnh mạch rỉ đều */
+export type Vessel = 'artery' | 'vein';
+/** tốc độ chảy máu khi đứt (mL/s). shortcut: phóng đại ~5 lần để thấy phản ứng sinh lí trong vài chục giây; mô phỏng thật thì hạ xuống */
+export const BLEED: Record<Vessel, number> = {artery: 22, vein: 7};
+export const NICK_BLEED = BLEED.artery;
 /** dịch màng ngoài tim tràn ra khi rạch hết (mL) */
 export const PERI_FLUID = 40;
 /** trường mổ còn quá lượng này (mL) thì phải hút trước khi làm tiếp */
@@ -107,6 +110,8 @@ export interface SurgState {
   incision: number;
   /** điểm đứt mạch (hệ cảnh), null = chưa biến chứng */
   nick: [number, number, number] | null;
+  /** mạch bị đứt */
+  vessel: Vessel;
   clamped: boolean;
   /** máu + dịch đọng trong trường mổ (mL) */
   field: number;
@@ -117,7 +122,7 @@ export interface SurgState {
   complications: number;
   warn: string;
 }
-export const newSurg = (): SurgState => ({tool: null, incision: 0, nick: null, clamped: false, field: 0, bloody: 0, suture: 0, vitals: VITALS0, complications: 0, warn: ''});
+export const newSurg = (): SurgState => ({tool: null, incision: 0, nick: null, vessel: 'artery', clamped: false, field: 0, bloody: 0, suture: 0, vitals: VITALS0, complications: 0, warn: ''});
 export type SurgStep = 'incise' | 'clamp' | 'suction' | 'suture' | 'done';
 export function surgStep(s: SurgState): SurgStep {
   if (s.nick && !s.clamped) return 'clamp';
@@ -134,12 +139,12 @@ export const STEP_DO: Record<SurgStep, string> = {
   suture: 'Khâu đóng màng ngoài tim dọc đường rạch',
   done: 'Ca mổ hoàn tất',
 };
-export const bleedRate = (s: SurgState) => (s.nick && !s.clamped ? NICK_BLEED : 0);
+export const bleedRate = (s: SurgState) => (s.nick && !s.clamped ? BLEED[s.vessel] : 0);
 
 export type SAction =
   | {t: 'tool'; tool: SurgTool | null}
   | {t: 'cut'; s: number}
-  | {t: 'nick'; at: [number, number, number]}
+  | {t: 'nick'; at: [number, number, number]; vessel?: Vessel}
   | {t: 'clamp'; ok: boolean}
   | {t: 'suck'; dt: number}
   | {t: 'sew'; s: number}
@@ -169,7 +174,14 @@ export function surgReducer(s: SurgState, a: SAction): SurgState {
     }
     case 'nick':
       if (s.nick && !s.clamped) return s;
-      return {...s, nick: a.at, clamped: false, complications: s.complications + 1, warn: 'Biến chứng: lưỡi dao chạm động mạch liên thất trước, máu phun theo nhịp tim! Đổi sang kẹp cầm máu và kẹp ngay chỗ đứt.'};
+      return {
+        ...s,
+        nick: a.at,
+        vessel: a.vessel ?? 'artery',
+        clamped: false,
+        complications: s.complications + 1,
+        warn: a.vessel === 'vein' ? 'Biến chứng: lưỡi dao cắt vào tĩnh mạch tim, máu đỏ sẫm rỉ đều! Đổi sang kẹp cầm máu và kẹp chỗ rỉ máu.' : 'Biến chứng: lưỡi dao chạm động mạch liên thất trước, máu đỏ tươi phun theo nhịp tim! Đổi sang kẹp cầm máu và kẹp ngay chỗ đứt.',
+      };
     case 'clamp':
       if (step !== 'clamp' || s.tool !== 'clamp') return s;
       return a.ok ? {...s, clamped: true, warn: ''} : {...s, warn: 'Kẹp trượt: phải kẹp đúng chỗ máu phun (vòng đỏ nhấp nháy).'};
@@ -187,5 +199,5 @@ export function surgReducer(s: SurgState, a: SAction): SurgState {
 export function debrief(s: SurgState): string {
   const ml = Math.round(s.vitals.loss);
   if (!s.complications) return `Ca mổ sạch: không chạm mạch vành, mất máu ${ml} mL. Đường rạch song song và cách xa động mạch liên thất trước là đúng kĩ thuật.`;
-  return `Có ${s.complications} biến chứng chạm mạch vành, mất ${ml} mL máu${ml > 750 ? ' (đủ gây sốc mất máu độ II: tim nhanh bù trừ)' : ''}. Rạch đúng vạch, cách xa rãnh liên thất trước để tránh động mạch vành.`;
+  return `Có ${s.complications} biến chứng chạm mạch vành (lần cuối: ${s.vessel === 'vein' ? 'tĩnh mạch, rỉ chậm' : 'động mạch, phun theo nhịp'}), mất ${ml} mL máu${ml > 750 ? ' (đủ gây sốc mất máu độ II: tim nhanh bù trừ)' : ''}. Rạch đúng vạch, cách xa rãnh liên thất trước để tránh động mạch vành.`;
 }

@@ -50,10 +50,10 @@ const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({l
       const g = ac.createGain();
       o.frequency.value = hz;
       g.gain.setValueAtTime(0.06, ac.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.09);
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.06);
       o.connect(g).connect(ac.destination);
       o.start();
-      o.stop(ac.currentTime + 0.1);
+      o.stop(ac.currentTime + 0.065);
     };
     let ui = 0;
     const frame = (now: number) => {
@@ -67,9 +67,9 @@ const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({l
         phase += (dt * v.hr) / 60;
         if (phase >= 1) {
           phase -= 1;
-          // tiếng bíp cao dần khi SpO₂ giảm, như máy thật
+          // bíp 880 Hz, 60 ms mỗi nhịp; SpO₂ < 92 % thì hạ xuống 660 Hz như monitor phòng mổ
           if (soundRef.current && now - lastBeep > 200) {
-            beep(700 + (v.spo2 - 85) * 18);
+            beep(v.spo2 < 92 ? 660 : 880);
             lastBeep = now;
           }
         }

@@ -78,6 +78,8 @@ peri = blob('SH_peri', [(k, c, (s[0] * 1.07 + 0.04, s[1] * 1.05 + 0.04, s[2] * 1
             [('C', (0.12, 0.3, -0.05), (0.12, 1.05, 0.0), 0.24), ('C', (-0.1, 0.3, 0.3), (0.0, 1.0, 0.4), 0.22), ('C', (-0.8, 0.6, 0.05), (-0.82, 1.05, 0.05), 0.2)], PERI, res=0.03)
 roughen(peri, 0.006, 0.3)
 colored(peri, lambda p, n: blend(tint('#F1E9DE', 1 + 0.05 * fbm(p, 6)), tint('#E8CF8E'), max(0.0, fbm(p, 3) - 0.25) * 1.2), rough=0.18, coat=0.95)
+dec = peri.modifiers.new('dec', 'DECIMATE')  # màng trong mờ, không cần lưới dày: bớt tam giác cho tia chọn mỗi khung hình
+dec.ratio = 0.3
 sol = peri.modifiers.new('sol', 'SOLIDIFY')
 sol.thickness = 0.012
 sol.offset = 0

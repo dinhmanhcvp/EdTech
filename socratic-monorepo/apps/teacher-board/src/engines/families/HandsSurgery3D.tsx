@@ -6,6 +6,7 @@ import {cutAdvance, pointAt} from '../../utils/lab/hands/dissect';
 import {INCISION, LAYERS, SURG_NAME, SURG_TOOLS, STEP_DO, STEP_TOOL, peelable, surgStep, type SAction, type SurgState, type SurgTool} from '../../utils/lab/hands/surgery';
 import {cardiacPhase} from './heart3d';
 import {handPointers, type HandsInput} from './handsKit';
+import {oneEuro} from '../../utils/lab/hands/handTracker';
 import {glassify, loadModel} from './labParts';
 import {wetAll} from './tissueShader';
 import {Stage3D, setLine, type SceneDef} from './Stage3D';
@@ -145,11 +146,12 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
       const pickable: THREE.Object3D[] = [];
       let periMat: THREE.MeshStandardMaterial | null = null;
       const ladPts: THREE.Vector3[] = [];
+      const veinPts: THREE.Vector3[] = [];
       const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 100);
       const card = k.card(ORANGE);
       k.caption('Đang tải tim phẫu thuật…');
 
-      // ---- nắp lát cắt (stencil): các mặt của khối kín đảo bit stencil khi tia đi qua (chẵn lẻ) → bên trong khối = khác 0 → vẽ nắp cơ tim
+      // ---- nắp lát cắt (stencil): mặt sau / mặt trước của khối kín cộng / trừ stencil → bên trong khối = khác 0 → vẽ nắp cơ tim
       const cap = new THREE.Mesh(
         new THREE.PlaneGeometry(9, 9),
         new THREE.MeshStandardMaterial({map: muscleTexture(), color: '#C25A64', roughness: 0.55, side: THREE.DoubleSide, stencilWrite: true, stencilRef: 0, stencilFunc: THREE.NotEqualStencilFunc, stencilFail: THREE.ReplaceStencilOp, stencilZFail: THREE.ReplaceStencilOp, stencilZPass: THREE.ReplaceStencilOp}),
@@ -165,12 +167,15 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         o.traverse((c) => {
           const m = c as THREE.Mesh;
           if (!m.isMesh || m.userData.stencil) return;
-          const s = new THREE.Mesh(m.geometry, new THREE.MeshBasicMaterial({colorWrite: false, depthWrite: false, depthTest: false, side: THREE.DoubleSide, clippingPlanes: [plane], stencilWrite: true, stencilFunc: THREE.AlwaysStencilFunc, stencilFail: THREE.InvertStencilOp, stencilZFail: THREE.InvertStencilOp, stencilZPass: THREE.InvertStencilOp}));
-          s.userData.stencil = true;
-          s.renderOrder = 1;
-          s.raycast = () => {};
-          writers.push(s);
-          m.add(s);
+          // hai lượt: mặt sau +1, mặt trước −1 (quấn vòng) → trong khối kín còn lại khác 0; khối chồng nhau vẫn đúng
+          for (const [side, op] of [[THREE.BackSide, THREE.IncrementWrapStencilOp], [THREE.FrontSide, THREE.DecrementWrapStencilOp]] as const) {
+            const s = new THREE.Mesh(m.geometry, new THREE.MeshBasicMaterial({colorWrite: false, depthWrite: false, depthTest: false, side, clippingPlanes: [plane], stencilWrite: true, stencilFunc: THREE.AlwaysStencilFunc, stencilFail: op, stencilZFail: op, stencilZPass: op}));
+            s.userData.stencil = true;
+            s.renderOrder = 1;
+            s.raycast = () => {};
+            writers.push(s);
+            m.add(s);
+          }
         });
 
       // ---- màng ngoài tim: rạch thật (bỏ điểm ảnh dọc đường rạch đã đi qua, mép tách hé) và khâu lại (đoạn đã khâu khép kín)
@@ -197,7 +202,10 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
             );
           sh.fragmentShader = sh.fragmentShader
             .replace('#include <common>', '#include <common>\nuniform float uProg;\nuniform float uSew;\nuniform float uHalf;\nvarying float vCutD;\nvarying float vCutT;')
-            .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nif (vCutT <= uProg && vCutT >= uSew && vCutD < uHalf) discard;');
+            .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nif (vCutT <= uProg && vCutT >= uSew && vCutD < uHalf) discard;\nfloat wet = (vCutT <= uProg && vCutT >= uSew) ? smoothstep(uHalf * 2.6, uHalf, vCutD) : 0.0;')
+            // mép rạch ướt máu: đỏ thẫm, đục, bóng (nhám 0,1)
+            .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.42, 0.04, 0.06), wet);\ndiffuseColor.a = mix(diffuseColor.a, 1.0, wet);')
+            .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.1, wet);');
         };
         m.needsUpdate = true;
       };
@@ -274,6 +282,13 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
             const pos = m.geometry.getAttribute('position');
             for (let i = 0; i < pos.count; i += 6) ladPts.push(m.localToWorld(new THREE.Vector3().fromBufferAttribute(pos, i)));
           });
+          // tĩnh mạch tim lớn (vật liệu `cv` trong `SH_cor`): cắt vào thì rỉ máu tĩnh mạch
+          nodes.get('SH_cor')?.traverse((c) => {
+            const m = c as THREE.Mesh;
+            if (!m.isMesh || (m.material as THREE.Material).name !== 'cv') return;
+            const pos = m.geometry.getAttribute('position');
+            for (let i = 0; i < pos.count; i += 6) veinPts.push(m.localToWorld(new THREE.Vector3().fromBufferAttribute(pos, i)));
+          });
           // đường rạch dán lên mặt màng ngoài tim; đưa về hệ của lưới màng để shader bỏ điểm ảnh đúng chỗ
           layCut();
           const pm = (() => {
@@ -285,7 +300,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           })();
           if (pm) peri.path.forEach((q, i) => q.copy(pm.worldToLocal(cutPts[Math.round((i / (PATH_N - 1)) * (N_CUT - 1))].clone())));
           ready = true;
-          if (process.env.NODE_ENV !== 'production') (window as unknown as {__surgScene?: object}).__surgScene = {cap, writers, plane, nodes, k};
+          if (process.env.NODE_ENV !== 'production') (window as unknown as {__surgScene?: object}).__surgScene = {cap, writers, plane, nodes, k, drops};
         })
         .catch(() => k.caption('Không tải được mô hình (models/surgery-heart.glb). Tải lại trang để thử lại.'));
 
@@ -358,14 +373,20 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
       };
 
       // ---- máu: tia phun theo nhịp tim ở chỗ đứt mạch, vũng dịch trong khoang ngực, kẹp đã đặt
-      const NB = 160;
-      const drops = new THREE.InstancedMesh(new THREE.SphereGeometry(0.028, 8, 6), new THREE.MeshPhysicalMaterial({color: '#8E0F18', roughness: 0.15, clearcoat: 1}), NB);
+      // một InstancedMesh cho mọi giọt (một lần vẽ); giọt kéo dài theo vận tốc
+      const NB = 300;
+      const dropMat = new THREE.MeshPhysicalMaterial({color: '#D90429', roughness: 0.15, clearcoat: 1});
+      const drops = new THREE.InstancedMesh(new THREE.SphereGeometry(0.022, 8, 6), dropMat, NB);
       drops.frustumCulled = false;
       drops.count = 0;
       k.scene.add(drops);
       const parts = Array.from({length: NB}, () => ({p: new THREE.Vector3(), v: new THREE.Vector3(), life: 0}));
-      let spawnAt = 0;
+      let spawnAcc = 0;
       const m4 = new THREE.Matrix4();
+      const UP = new THREE.Vector3(0, 1, 0);
+      const sc = new THREE.Vector3();
+      const tipF = [0, 1, 2].map(() => oneEuro(1.0, 0.6));
+      let tipTool: SurgTool | null = null;
       const pool = new THREE.Mesh(new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2), new THREE.MeshPhysicalMaterial({color: '#E9D27A', roughness: 0.3, clearcoat: 0.5, clearcoatRoughness: 0.2, transparent: true, opacity: 0.92}));
       pool.scale.set(2.2, 1, 2.7);
       pool.position.set(0, -0.6, 0.15);
@@ -487,6 +508,8 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
             drag[n] = null;
             continue;
           }
+          // một tia mỗi con trỏ mỗi khung (lưới tim ~300 nghìn tam giác): các bước dưới dùng lại kết quả
+          const hp = hitParts(p.ndc.x, p.ndc.y);
           if (slice) {
             // cắt lớp: tay xòe di chuyển là mặt cắt đi theo (chụm một lần để khóa / mở khóa); chuột / ngón tay kéo trên tim
             if (p.hand && p.pressed) live.slice.locked = !live.slice.locked;
@@ -516,7 +539,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
                 drag[n] = null;
               }
             } else {
-              const h = hitParts(p.ndc.x, p.ndc.y);
+              const h = hp;
               const part = partOf(h?.object ?? null);
               const {next, back} = peelable(live.peeled);
               let i = layerOf(part);
@@ -538,7 +561,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           } else {
             // phẫu thuật
             const tray = onTray(p.ndc.x, p.ndc.y);
-            const h = hitParts(p.ndc.x, p.ndc.y);
+            const h = hp;
             const hit = h ? h.point.clone() : P.onPlane(p.ndc.x, p.ndc.y, 0.3, new THREE.Vector3());
             if (dg?.kind === 'cut') {
               p.hot = true;
@@ -546,18 +569,21 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
               dg.prog = r.s;
               blade = new THREE.Vector3(r.at[0], surfaceY(r.at[0], r.at[1]), r.at[1]);
               if (!dg.sew) {
-                // vùng cấm: tay (không phải lưỡi đã bám đường) đi sát động mạch liên thất trước → đứt mạch
+                // vùng cấm: tay (không phải lưỡi đã bám đường) đi sát động mạch liên thất trước hoặc tĩnh mạch tim lớn → đứt mạch
                 let bd = Infinity;
                 let bp: THREE.Vector3 | null = null;
-                for (const q of ladPts) {
-                  const d = Math.hypot(q.x - hit.x, q.z - hit.z);
-                  if (d < bd) {
-                    bd = d;
-                    bp = q;
+                let kind: 'artery' | 'vein' = 'artery';
+                for (const [pts, kd, r] of [[ladPts, 'artery', 0.11], [veinPts, 'vein', 0.09]] as const)
+                  for (const q of pts) {
+                    const d = Math.hypot(q.x - hit.x, q.z - hit.z) - r;
+                    if (d < bd) {
+                      bd = d;
+                      bp = q;
+                      kind = kd;
+                    }
                   }
-                }
-                if (bp && bd < 0.11 && !(st.nick && !st.clamped)) {
-                  live.dispatch({t: 'nick', at: [bp.x, bp.y, bp.z]});
+                if (bp && bd < 0 && !(st.nick && !st.clamped)) {
+                  live.dispatch({t: 'nick', at: [bp.x, bp.y, bp.z], vessel: kind});
                   drag[n] = null;
                   continue;
                 }
@@ -589,7 +615,8 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           }
           // chỉ vào bộ phận: thẻ tên + chức năng; cắt lớp mà tia gặp mặt cắt trước (trong khối tim) thì gọi tên vùng lát cắt đi qua
           if (!drag[n] && !hoverPart) {
-            const h = hitParts(p.ndc.x, p.ndc.y);
+            const h = hp;
+            ray.setFromCamera(v2.set(p.ndc.x, p.ndc.y), k.camera);
             const x = slice ? ray.ray.intersectPlane(plane, new THREE.Vector3()) : null;
             if (x && heartBox?.containsPoint(x) && (!h || h.distance > ray.ray.origin.distanceTo(x) + 0.02)) {
               const lp = heart.worldToLocal(x.clone());
@@ -607,7 +634,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
             }
           }
           if (!lead || p.hand) {
-            const h = hitParts(p.ndc.x, p.ndc.y);
+            const h = hp;
             lead = h ? h.point.clone() : P.onPlane(p.ndc.x, p.ndc.y, 0.3, new THREE.Vector3());
             leadDown = p.down;
           }
@@ -629,7 +656,14 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         for (const [t, o] of tools) {
           const held = mode === 'surgery' && st.tool === t;
           if (held) {
-            const tip = blade ?? lead ?? lastTool;
+            if (tipTool !== t) {
+              tipTool = t;
+              tipF.forEach((_, i) => (tipF[i] = oneEuro(1.0, 0.6)));
+            }
+            // lọc One Euro cho mũi dụng cụ theo tay: chậm thì lọc mạnh (đường dao thẳng), nhanh thì nhẹ (không trễ); lưỡi đang bám đường rạch thì không cần
+            const raw = blade ?? lead ?? lastTool;
+            const ts = now / 1000;
+            const tip = raw && !blade ? new THREE.Vector3(tipF[0](raw.x, ts), tipF[1](raw.y, ts), tipF[2](raw.z, ts)) : raw;
             if (tip) {
               lastTool = (lastTool ?? new THREE.Vector3()).copy(tip);
               o.position.set(tip.x, tip.y + (blade || leadDown ? 0.02 : 0.25), tip.z);
@@ -655,25 +689,34 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
 
         // ---- máu phun theo nhịp ở chỗ đứt mạch
         const bleeding = surg && !!st.nick && !st.clamped;
-        if (bleeding && now - spawnAt > period * 1000 * 0.5 && ventricles > 0.6) {
-          spawnAt = now;
-          let made = 0;
+        // động mạch: tia đỏ tươi, vận tốc đầu v0 = vbase·(1 + 0,6·max(0, sin(2π·BPM/60·t))) nên phun dồn theo nhịp; tĩnh mạch: đỏ sẫm, rỉ chậm, trườn trên mặt mô
+        const artery = st.vessel === 'artery';
+        if (bleeding) {
+          dropMat.color.set(artery ? '#D90429' : '#6A040F');
+          spawnAcc += dt * (artery ? 90 : 18);
+          const pulse = 1 + 0.6 * Math.max(0, Math.sin(2 * Math.PI * (st.vitals.hr / 60) * (now / 1000)));
           for (const q of parts) {
-            if (q.life > 0 || made >= 14) continue;
-            made++;
+            if (spawnAcc < 1) break;
+            if (q.life > 0) continue;
+            spawnAcc -= 1;
             q.life = 1;
             q.p.set(...st.nick!);
-            q.v.set((Math.random() - 0.5) * 0.9, 1.6 + Math.random() * 1.3, (Math.random() - 0.5) * 0.9);
+            if (artery) q.v.set((Math.random() - 0.5) * 0.35, 1.5 * pulse + Math.random() * 0.3, 0.25 + (Math.random() - 0.5) * 0.35);
+            else q.v.set((Math.random() - 0.5) * 0.25, 0.05 + Math.random() * 0.1, 0.15 + Math.random() * 0.15);
           }
+          spawnAcc = Math.min(spawnAcc, 3);
         }
         let nd = 0;
         for (const q of parts) {
           if (q.life <= 0) continue;
-          q.v.y -= 6 * dt;
+          q.v.y -= (artery ? 6 : 1.2) * dt;
           q.p.addScaledVector(q.v, dt);
-          q.life -= dt * 0.9;
+          q.life -= dt * (artery ? 0.9 : 0.45);
           if (q.p.y < -0.3) q.life = 0;
-          if (q.life > 0) drops.setMatrixAt(nd++, m4.makeTranslation(q.p.x, q.p.y, q.p.z));
+          if (q.life <= 0) continue;
+          const sp = q.v.length();
+          qt.setFromUnitVectors(UP, sp > 1e-3 ? w3.copy(q.v).divideScalar(sp) : UP);
+          drops.setMatrixAt(nd++, m4.compose(q.p, qt, sc.set(1, 1 + sp * 0.9, 1)));
         }
         drops.count = nd;
         drops.instanceMatrix.needsUpdate = true;

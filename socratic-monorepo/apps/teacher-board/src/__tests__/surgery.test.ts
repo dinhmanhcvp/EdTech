@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {FIELD_OK, LAYERS, NICK_BLEED, PERI_FLUID, VITALS0, alarms, debrief, newSurg, peelable, surgReducer, surgStep, vitalsGoal, vitalsStep, type SAction, type SurgState} from '../utils/lab/hands/surgery';
+import {BLEED, FIELD_OK, LAYERS, NICK_BLEED, PERI_FLUID, VITALS0, alarms, debrief, newSurg, peelable, surgReducer, surgStep, vitalsGoal, vitalsStep, type SAction, type SurgState} from '../utils/lab/hands/surgery';
 import {MANUAL} from '../utils/lab/hands/manual';
 import {SUBJECT_OF} from '../utils/lab/hands/sims/catalog';
 
@@ -70,6 +70,15 @@ describe('ca mở màng ngoài tim', () => {
     expect(s.vitals.loss).toBe(loss);
     expect(['suction', 'incise']).toContain(surgStep(s));
     expect(debrief(s)).toMatch(/1 biến chứng/);
+  });
+  it('cắt vào tĩnh mạch: rỉ chậm hơn động mạch, vẫn phải kẹp', () => {
+    let s = run(newSurg(), {t: 'tool', tool: 'scalpel'}, {t: 'cut', s: 0.3}, {t: 'nick', at: [0, 0.7, 0.3], vessel: 'vein'});
+    expect(s.vessel).toBe('vein');
+    expect(s.warn).toMatch(/tĩnh mạch/);
+    expect(surgStep(s)).toBe('clamp');
+    s = tick(s, 10);
+    expect(s.vitals.loss).toBeGreaterThan(BLEED.vein * 9);
+    expect(s.vitals.loss).toBeLessThan(BLEED.artery * 9);
   });
   it('sai dụng cụ thì nhắc đúng dụng cụ cần', () => {
     const s = run(newSurg(), {t: 'tool', tool: 'needle'}, {t: 'wrong'});

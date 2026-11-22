@@ -143,6 +143,11 @@ vessel('SH_vc', [([(-0.8, 0.85, 0.05), (-0.85, 1.4, 0.05), (-0.88, 1.85, 0.05)],
 vessel('SH_pv', [([(0.45, 0.75, -0.45), (0.95, 0.9, -0.55), (1.3, 1.0, -0.55)], 0.07), ([(0.45, 0.55, -0.45), (0.95, 0.45, -0.55), (1.3, 0.4, -0.55)], 0.07),
                  ([(0.3, 0.8, -0.5), (0.0, 1.0, -0.7), (-0.3, 1.1, -0.75)], 0.065)], '#C98E8E')
 
+def B3(name, size, loc, material, bevel=0.012):
+    """hộp với kích thước theo trục three.js (rộng x, cao y, sâu z); `box` của kit nhận kích thước theo trục Blender"""
+    return box(name, (size[0], size[2], size[1]), loc, material, bevel=bevel)
+
+
 # ================================================================== trường mổ (toạ độ cảnh: tim nằm ngửa ở gốc, mặt trước lên, đáy tim về −z)
 WET = tissue('cavity', '#FFFFFF', rough=0.3, coat=0.7, vcol=True)
 bowl = lathe('bowl', [(0.0, -1.05), (1.0, -1.0), (1.8, -0.8), (2.3, -0.35), (2.45, 0.1), (2.5, 0.22)], T(0, 0, -0.2), WET, steps=64)
@@ -157,27 +162,27 @@ BONE = tissue('sternum', '#E9E0CC', rough=0.55, coat=0.2)
 FAT = tissue('fat', '#E8CF8A', rough=0.4, coat=0.5)
 SKIN = tissue('skin', '#D9A487', rough=0.5, coat=0.2)
 for sx in (-1, 1):
-    field += [box('st', (0.22, 0.2, 5.2), T(sx * 2.45, 0.12, -0.2), BONE, bevel=0.05), box('ft', (0.3, 0.06, 5.4), T(sx * 2.7, 0.24, -0.2), FAT, bevel=0.03),
-              box('sk', (0.4, 0.05, 5.6), T(sx * 2.95, 0.27, -0.2), SKIN, bevel=0.02)]
+    field += [B3('st', (0.22, 0.2, 5.2), T(sx * 2.45, 0.12, -0.2), BONE, bevel=0.05), B3('ft', (0.3, 0.06, 5.4), T(sx * 2.7, 0.24, -0.2), FAT, bevel=0.03),
+              B3('sk', (0.4, 0.05, 5.6), T(sx * 2.95, 0.27, -0.2), SKIN, bevel=0.02)]
 DRAPE = mat('drape', hexc('#2F6F6A'), rough=0.95)
-dr = box('drape', (11.0, 0.04, 9.0), T(0, 0.3, 0), DRAPE, bevel=0)
-boolean(dr, box('hole', (6.4, 1.0, 5.8), T(0, 0.3, -0.2), DRAPE, bevel=0), 'DIFFERENCE')
+dr = B3('drape', (11.0, 0.04, 9.0), T(0, 0.3, 0), DRAPE, bevel=0)
+boolean(dr, B3('hole', (6.4, 1.0, 5.8), T(0, 0.3, -0.2), DRAPE, bevel=0), 'DIFFERENCE')
 field.append(dr)
 STEEL = mat('steel', (0.66, 0.68, 0.72), metallic=1, rough=0.22)
 DARK = mat('dark', hexc('#2B2F3A'), metallic=0.3, rough=0.5)
 # banh ngực: hai lưỡi cong ôm mép xương ức, thanh răng ở phía đầu, tay quay
 for sx in (-1, 1):
-    field += [box('blade', (0.08, 0.7, 1.4), T(sx * 2.62, 0.02, -0.8), STEEL, bevel=0.02), box('arm', (0.5, 0.08, 0.16), T(sx * 2.8, 0.38, -2.35), STEEL, bevel=0.02),
-              box('up', (0.08, 0.5, 0.16), T(sx * 2.62, 0.2, -1.6), STEEL, bevel=0.02), box('lnk', (0.08, 0.08, 0.9), T(sx * 2.62, 0.4, -1.95), STEEL, bevel=0.02)]
-field.append(box('rack', (6.6, 0.1, 0.22), T(0, 0.42, -2.45), STEEL, bevel=0.02))
+    field += [B3('blade', (0.08, 0.7, 1.4), T(sx * 2.62, 0.02, -0.8), STEEL, bevel=0.02), B3('arm', (0.5, 0.08, 0.16), T(sx * 2.8, 0.38, -2.35), STEEL, bevel=0.02),
+              B3('up', (0.08, 0.5, 0.16), T(sx * 2.62, 0.2, -1.6), STEEL, bevel=0.02), B3('lnk', (0.08, 0.08, 0.9), T(sx * 2.62, 0.4, -1.95), STEEL, bevel=0.02)]
+field.append(B3('rack', (6.6, 0.1, 0.22), T(0, 0.42, -2.45), STEEL, bevel=0.02))
 for i in range(30):
-    field.append(box('tooth', (0.06, 0.06, 0.05), T(-3.0 + i * 0.2, 0.5, -2.36), STEEL, bevel=0.01))
-field += [cyl('crank', 0.09, 0.3, T(2.95, 0.55, -2.45), STEEL), box('handle', (0.08, 0.08, 0.45), T(2.95, 0.72, -2.25), DARK, bevel=0.02)]
+    field.append(B3('tooth', (0.06, 0.06, 0.05), T(-3.0 + i * 0.2, 0.5, -2.36), STEEL, bevel=0.01))
+field += [cyl('crank', 0.09, 0.3, T(2.95, 0.55, -2.45), STEEL), B3('handle', (0.08, 0.08, 0.45), T(2.95, 0.72, -2.25), DARK, bevel=0.02)]
 # khay Mayo bên phải (dụng cụ nằm ở y = 0,36, z = −1,2 / −0,4 / 0,4 / 1,2)
 CLOTH = mat('cloth', hexc('#1E5A55'), rough=0.95)
-field += [box('mayo', (1.5, 0.05, 3.6), T(3.9, 0.3, 0.2), STEEL, bevel=0.02), box('mcl', (1.4, 0.012, 3.5), T(3.9, 0.33, 0.2), CLOTH, bevel=0.004)]
+field += [B3('mayo', (1.5, 0.05, 3.6), T(3.9, 0.3, 0.2), STEEL, bevel=0.02), B3('mcl', (1.4, 0.012, 3.5), T(3.9, 0.33, 0.2), CLOTH, bevel=0.004)]
 for sx in (-1, 1):
-    field += [box('mr', (0.05, 0.1, 3.6), T(3.9 + sx * 0.73, 0.34, 0.2), STEEL, bevel=0.015)]
+    field += [B3('mr', (0.05, 0.1, 3.6), T(3.9 + sx * 0.73, 0.34, 0.2), STEEL, bevel=0.015)]
 piece('SH_field', field, (0, 0, 0))
 
 # ================================================================== dụng cụ (mũi ở gốc, thân dọc +x, nằm ngang)
@@ -193,11 +198,11 @@ def scissor_frame(jaw_len, ring_x, gold=False):
         o.append(tube('sh', [T(jaw_len, 0.03, sz * 0.02), T(ring_x * 0.6, 0.03, sz * 0.06), T(ring_x - 0.08, 0.03, sz * 0.12)], 0.02, STEEL))
         bpy.ops.mesh.primitive_torus_add(major_radius=0.085, minor_radius=0.022, location=T(ring_x, 0.03, sz * 0.15))
         o.append(finish(bpy.context.object, GOLD if gold else STEEL))
-        o.append(box('rat', (0.12, 0.03, 0.03), T(ring_x - 0.16, 0.03, sz * 0.09), STEEL, bevel=0.008))
-    o.append(box('lock', (0.08, 0.05, 0.07), T(jaw_len, 0.03, 0), STEEL, bevel=0.012))
+        o.append(B3('rat', (0.12, 0.03, 0.03), T(ring_x - 0.16, 0.03, sz * 0.09), STEEL, bevel=0.008))
+    o.append(B3('lock', (0.08, 0.05, 0.07), T(jaw_len, 0.03, 0), STEEL, bevel=0.012))
     o.append(cyl('pin', 0.02, 0.07, T(jaw_len, 0.03, 0), EDGE))
     for i in range(6):
-        o.append(box('ser', (0.008, 0.02, 0.03), T(0.02 + i * jaw_len * 0.12, 0.05, 0), EDGE, bevel=0.002))
+        o.append(B3('ser', (0.008, 0.02, 0.03), T(0.02 + i * jaw_len * 0.12, 0.05, 0), EDGE, bevel=0.002))
     return o
 
 

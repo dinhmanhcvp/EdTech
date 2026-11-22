@@ -106,8 +106,8 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
     floor: true,
     room: true,
     stencil: true,
-    dist: 6.4,
-    target: [0.5, -0.1, 0.4],
+    dist: 6.9,
+    target: [0.95, -0.1, 0.4],
     orbit: () => [0, 42],
     setup: (k) => {
       const P = handPointers(k, input, 0.5);
@@ -218,11 +218,14 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           };
           const field = take(lib.getObjectByName('SH_field'), k.scene);
           if (field) {
-            wetAll(field, 6, 0.0012, 0.3);
-            // lòng khoang ngực tối hơn tim để tim nổi lên dưới đèn mổ
+            // bóng ướt chỉ cho mô (khoang ngực, phổi, mép vết mổ); khăn và thép giữ mặt mờ để dụng cụ nổi trên khay
             field.traverse((c) => {
               const m = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
-              if (m?.name?.startsWith('bowl')) m.color.set('#7A4848');
+              if (!m) return;
+              if (/^(bowl|lg|fat|skin|sternum)/.test(m.name)) wetAll(c, 6, 0.0012, 0.3);
+              // lòng khoang ngực tối hơn tim để tim nổi lên dưới đèn mổ
+              if (m.name.startsWith('bowl')) m.color.set('#7A4848');
+              if (m.name === 'cloth') m.color.set('#174A46');
             });
           }
           for (const src of lib.children) {
@@ -247,7 +250,10 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           if (p) {
             periMat = matsOf(p)[0] ?? null;
             if (periMat) {
-              Object.assign(periMat, {transparent: true, opacity: 0.5, depthWrite: false});
+              // màng mỏng trong như giấy bóng: chỉ hai lớp mặt của túi chồng nhau đã đủ đục, nên độ đục thấp và chỉ vẽ mặt ngoài
+              Object.assign(periMat, {transparent: true, opacity: 0.3, depthWrite: false, side: THREE.FrontSide});
+              periMat.color.set('#F6DDD2');
+              if ('clearcoat' in periMat) Object.assign(periMat, {clearcoat: 1, clearcoatRoughness: 0.08});
               periShader(periMat);
             }
           }
@@ -644,7 +650,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         // khâu xong thì đoạn khâu khép kín; đang mở hết thì mép banh rộng hơn (khâu treo màng ngoài tim)
         peri.sew.value = surg ? sewLive : 0;
         peri.half.value = st.incision >= 1 ? 0.075 : 0.035;
-        if (periMat) periMat.opacity = surg ? 0.42 : 0.45;
+        if (periMat) periMat.opacity = surg ? 0.32 : 0.3;
         drawCut(cutLive, sewLive, surg);
 
         // ---- máu phun theo nhịp ở chỗ đứt mạch

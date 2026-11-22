@@ -224,6 +224,20 @@ for i in range(6):
     sk.append(finish(bpy.context.object, YK))
 sk.append(tube('hose', [T(1.05, 0.14, 0), T(1.3, 0.1, 0.05), T(1.6, 0.04, 0.2)], 0.03, mat('hose', (0.9, 0.95, 0.97), rough=0.15, alpha=0.4)))
 piece('TOOL_suction', sk, (0, 0, 0))
+# bút đốt điện: lưỡi dẹt thép ở mũi, thân nhựa vàng hai nút bấm (cắt / đốt), dây cáp xám
+PEN = mat('pen', hexc('#E8C64A'), rough=0.45)
+cp = [B3('blade', (0.16, 0.01, 0.03), T(0.08, 0.04, 0), EDGE, bevel=0.004), cyl('col', 0.018, 0.06, T(0.18, 0.04, 0), STEEL, rot=(0, math.radians(90), 0)),
+      tube('body', [T(0.2, 0.04, 0), T(0.45, 0.06, 0), T(0.8, 0.08, 0)], 0.034, PEN),
+      B3('btnY', (0.06, 0.02, 0.03), T(0.42, 0.1, 0), mat('btnY', hexc('#F2E04A'), rough=0.3), bevel=0.008),
+      B3('btnB', (0.06, 0.02, 0.03), T(0.52, 0.105, 0), mat('btnB', hexc('#2F6FD0'), rough=0.3), bevel=0.008),
+      tube('cable', [T(0.8, 0.08, 0), T(1.05, 0.06, 0.06), T(1.4, 0.03, 0.2)], 0.014, mat('cable', hexc('#8A8F98'), rough=0.6))]
+piece('TOOL_cautery', cp, (0, 0, 0))
+# banh tay (kiểu hai đầu): bản thép dẹt, đầu móc gập vuông xuống để móc mép vết mổ, cán có lỗ
+rt = [B3('hook', (0.05, 0.16, 0.16), T(0.0, -0.06, 0), STEEL, bevel=0.01), B3('shaft', (0.9, 0.025, 0.14), T(0.45, 0.02, 0), STEEL, bevel=0.01),
+      B3('hook2', (0.05, 0.12, 0.12), T(0.9, -0.04, 0), STEEL, bevel=0.01)]
+for i in range(3):
+    rt.append(cyl('hole', 0.025, 0.03, T(0.3 + i * 0.15, 0.03, 0), DARK))
+piece('TOOL_retractor', rt, (0, 0, 0))
 
 bpy.data.objects.remove(probe, do_unlink=True)
 for o in list(bpy.data.objects):

@@ -1,0 +1,119 @@
+import {describe, expect, it} from 'vitest';
+import {Thread, Tissue, type TissueSpec} from '../utils/lab/hands/xpbd';
+import {Fluid} from '../utils/lab/hands/pbf';
+
+const SMALL: TissueSpec = {
+  nx: 10,
+  nz: 6,
+  rows: [
+    {h: 0.15, layer: 0},
+    {h: 0.13, layer: 1},
+    {h: 0.08, layer: 2},
+  ],
+  sx: 1.25,
+  sz: 0.75,
+};
+const run = (t: Tissue, frames: number) => {
+  for (let f = 0; f < frames; f++) t.step(1 / 60);
+};
+const p = (t: Tissue, v: number): [number, number, number] => [t.pos[v * 3], t.pos[v * 3 + 1], t.pos[v * 3 + 2]];
+
+describe('mô tứ diện XPBD', () => {
+  it('lưới đúng số phần tử, thể tích bằng khối, mặt ngoài kín và hướng ra ngoài', () => {
+    const t = new Tissue(SMALL);
+    expect(t.alive.length).toBe(10 * 6 * 3 * 6);
+    expect(Math.abs(t.volume())).toBeCloseTo(1.25 * 0.75 * 0.36, 3);
+    const b = t.boundary();
+    expect(b.tri.length / 3).toBe(2 * (2 * 10 * 6 + 2 * 10 * 3 + 2 * 6 * 3));
+    // mọi mặt nằm trên đỉnh khối có pháp tuyến hướng lên
+    let up = 0;
+    for (let f = 0; f < b.tri.length / 3; f++) {
+      const [a, c, d] = [0, 1, 2].map((n) => p(t, b.tri[f * 3 + n]));
+      if (Math.min(a[1], c[1], d[1]) < 0.359) continue;
+      const ny = (c[2] - a[2]) * (d[0] - a[0]) - (c[0] - a[0]) * (d[2] - a[2]);
+      expect(ny).toBeGreaterThan(0);
+      up++;
+    }
+    expect(up).toBe(2 * 10 * 6);
+  });
+  it('dưới trọng lực mô gần như không nén (thể tích lệch < 3 %)', () => {
+    const t = new Tissue(SMALL);
+    const v0 = Math.abs(t.volume());
+    run(t, 60);
+    expect(Math.abs(Math.abs(t.volume()) - v0) / v0).toBeLessThan(0.03);
+  });
+  it('rạch: xoá phần tử thật, rạch lại cùng chỗ thì sâu thêm; da căng làm mép banh ra', () => {
+    const t = new Tissue(SMALL);
+    run(t, 30);
+    const L = t.vid(4, 3, 3);
+    const R = t.vid(6, 3, 3);
+    const d0 = Math.hypot(t.pos[L * 3] - t.pos[R * 3], t.pos[L * 3 + 2] - t.pos[R * 3 + 2]);
+    for (let k = 1; k < 5; k++) expect(t.cut(5, k)).toBe(2);
+    expect(t.topRow(5, 3)).toBe(1);
+    expect(t.cut(5, 3)).toBe(1); // nhát thứ hai vào mỡ
+    expect(t.topRow(5, 3)).toBe(0);
+    run(t, 90);
+    const d1 = Math.hypot(t.pos[L * 3] - t.pos[R * 3], t.pos[L * 3 + 2] - t.pos[R * 3 + 2]);
+    expect(d1).toBeGreaterThan(d0 * 1.03);
+    expect(t.boundary().tri.length).toBeGreaterThan(new Tissue(SMALL).boundary().tri.length);
+  });
+  it('kéo quá ngưỡng thì mô rách', () => {
+    const t = new Tissue(SMALL);
+    const v = t.vid(5, 3, 3);
+    t.attaches.push({v, target: [p(t, v)[0], 1.6, p(t, v)[2]], compliance: 0});
+    let torn = 0;
+    for (let f = 0; f < 60; f++) {
+      t.step(1 / 60);
+      torn += t.tear();
+    }
+    expect(torn).toBeGreaterThan(0);
+  });
+  it('dao đốt: nhiệt lan sang đỉnh lân cận và để lại vết cháy', () => {
+    const t = new Tissue(SMALL);
+    const v = t.vid(5, 3, 3);
+    t.cauterize(p(t, v), 0.05, 3);
+    const nb = t.nbr[v][0];
+    for (let f = 0; f < 10; f++) t.diffuseHeat(1 / 60);
+    expect(t.heat[nb]).toBeGreaterThan(0);
+    expect(t.burned[v]).toBeGreaterThan(1);
+  });
+  it('mũi khâu kéo hai mép khép lại', () => {
+    const t = new Tissue(SMALL);
+    for (let k = 1; k < 5; k++) t.cut(5, k);
+    run(t, 60);
+    const a = t.vid(5, 3, 3);
+    const b = t.vid(6, 3, 3);
+    const before = t.dist(a, b);
+    t.stitches.push({a, b, rest: before, goal: 0.02});
+    let torn = 0;
+    for (let f = 0; f < 120; f++) {
+      t.step(1 / 60);
+      torn += t.tear();
+    }
+    expect(t.dist(a, b)).toBeLessThan(before * 0.6);
+    // thắt vừa tay: không xé mép mô quanh mũi khâu
+    expect(torn).toBe(0);
+  });
+});
+
+describe('sợi chỉ và máu', () => {
+  it('sợi chỉ không giãn khi kéo', () => {
+    const th = new Thread(20, 0.05, [0, 0.5, 0]);
+    for (let f = 0; f < 60; f++) th.step(1 / 60, [0, 0.5, 0], [0.6, 0.9, 0.2]);
+    expect(th.length()).toBeLessThan(19 * 0.05 * 1.08);
+    expect(th.length()).toBeGreaterThan(0.6);
+  });
+  it('máu đọng trong hốc (thấp hơn mép) và ống hút xoá hạt', () => {
+    const f = new Fluid(400, 0.07, [-1, 1, -1, 1]);
+    // hốc rộng 0,4 sâu 0,3 giữa mặt phẳng cao 0,3
+    const floor = (x: number) => (Math.abs(x) < 0.2 ? 0 : 0.3);
+    for (let i = 0; i < 120; i++) f.add((i % 6) * 0.03 - 0.08, 0.5 + Math.floor(i / 36) * 0.03, (Math.floor(i / 6) % 6) * 0.03 - 0.08, 0, 0, 0);
+    for (let s = 0; s < 120; s++) f.step(1 / 60, floor);
+    let inside = 0;
+    for (let i = 0; i < f.n; i++) if (Math.abs(f.pos[i * 3]) < 0.22 && f.pos[i * 3 + 1] < 0.32) inside++;
+    expect(inside / f.n).toBeGreaterThan(0.8);
+    const n0 = f.n;
+    expect(f.suck(0, 0.1, 0, 0.25)).toBeGreaterThan(0);
+    expect(f.n).toBeLessThan(n0);
+  });
+});

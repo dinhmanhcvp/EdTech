@@ -628,6 +628,23 @@ const DISSECT_HOW: Record<DStep['kind'], (s: DStep) => string[]> = {
   drop: (s) => ['Lấy ống nhỏ giọt ở khay dụng cụ bằng một lần chụm.', `Đưa ống tới vòng cam phía trên ${s.kind === 'drop' ? 'cơ quan cần nhỏ' : 'mẫu'}, chụm một lần để nhỏ một giọt ${s.kind === 'drop' ? s.drug : ''}.`],
   name: () => ['Đưa tay (không cần dụng cụ) tới từng cơ quan: thẻ tên và chức năng hiện ngay trên cơ quan.', 'Giữ yên tay chừng 1 giây hoặc chụm một lần để gọi tên; cơ quan đã gọi tên có nhãn ✓.'],
 };
+MANUAL['soft-tissue'] = {
+  goal: 'Tập các thao tác ngoại khoa cơ bản trên khối mô ba lớp mô phỏng vật lý: rạch vào sâu từng lớp, vén mô bằng hai tay, tìm mạch máu, cầm máu (đốt điện, kẹp mạch), hút máu đọng và khâu đóng vết mổ.',
+  tools: [
+    'Khối mô trên bàn: da (trên, dai và căng sẵn), mỡ vàng (mềm, dễ tách), cơ đỏ (có thớ dọc). Trong lớp mỡ có một động mạch (đỏ) và một tĩnh mạch (xanh tím) chạy dọc khối.',
+    'Khay bên phải: dao mổ, kẹp phẫu tích, banh, ống hút, dao đốt điện, kẹp mạch, kim chỉ. Mỗi tay cầm một dụng cụ: chụm vào dụng cụ trên khay để đổi; cũng chọn được bằng nút ở tab Thao tác.',
+    'Chuột dùng dụng cụ của tay 1. Tay 2 thường cầm banh hoặc kẹp để vén mép vết mổ.',
+  ],
+  steps: [
+    st('Rạch da', 'Da căng sẵn nên vừa rạch qua, hai mép tự banh ra; lớp mỡ vàng lộ ở đáy.', ['Tay 1 cầm dao mổ.', 'Chụm trên mặt da và kéo một đường dài.'], 'Đường rạch có mép da hồng, đáy vàng.'),
+    st('Vào lớp mỡ và vén mép', 'Mỗi nhát chỉ cắt một lớp; rạch lại cùng đường để vào sâu. Banh giữ mép để thấy đáy hốc.', ['Rạch lại theo đúng đường cũ.', 'Tay 2 cầm banh: chụm vào mép vết mổ, kéo sang bên rồi buông, banh ở lại.'], 'Hốc mổ sâu hơn, một mép bị banh kéo căng.'),
+    st('Bóc tách lộ mạch', 'Mạch nằm trong lớp mỡ: rạch nông dần và vén để thấy mà không cắt trúng.', ['Rạch tiếp từng nhát nông dọc hốc.', 'Kéo vén mỡ bằng kẹp; kéo quá mạnh thì mô rách (bảng báo đỏ).'], 'Thấy ống mạch đỏ / tím trong đáy hốc.'),
+    st('Cầm máu', 'Mao mạch rỉ máu ở mỗi nhát vào mỡ và cơ; đốt điện làm đông. Động mạch đứt thì phun theo nhịp tim, đốt không đủ, phải kẹp.', ['Dao đốt: giữ chụm trên chỗ rỉ máu.', 'Nếu đứt mạch: kẹp mạch chụm một lần ở đầu mạch.'], 'Bảng "Đang chảy" về "không".'),
+    st('Hút sạch máu đọng', 'Máu đọng ở đáy hốc che mất mạch và mép; hút sạch mới khâu được.', ['Ống hút: giữ chụm trên vũng máu.'], 'Máu đọng hốc mổ < 5 mL.'),
+    st('Khâu đóng', 'Mỗi mũi xuyên qua hai mép rồi thắt lại, kéo hai mép khép sát.', ['Tay 1 cầm kim chỉ.', 'Chụm một lần ở mép bên này, một lần ở mép đối diện; làm ít nhất 3 mũi dọc vết mổ.'], 'Các mũi chỉ tím ngang vết mổ, mép khép lại.'),
+  ],
+  conclude: 'Mỗi lớp mô có tính chất cơ học riêng: da dai và căng (vết rạch tự há), mỡ mềm dễ tách và dễ rách, cơ có thớ. Thao tác đúng là rạch từng lớp, vén vừa lực, cầm máu ngay (đốt mao mạch, kẹp động mạch), giữ trường mổ sạch rồi khâu khép mép.',
+};
 MANUAL['med-imaging'] = {
   goal: 'Đọc ảnh CT / MRI ba chiều: xem đồng bộ ba lát cắt chuẩn (ngang, đứng ngang, đứng dọc) và khối 3D tái tạo, chỉnh cửa sổ đậm độ, đo kích thước tổn thương (mm) và thể tích (cm³), xuất số đo.',
   tools: [

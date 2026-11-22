@@ -14,7 +14,7 @@ import {DISSECTIONS} from '../dissect';
 const BY: Record<SubjectId, string[]> = {
   ly: ['balance', 'collision', 'thomson', 'eddy', 'photo', 'rutherford', 'matterwave', 'ligo', 'bec', 'optics', 'shock'],
   hoa: ['chem', 'chlorine', 'alkali', 'no2', 'titration', 'bz'],
-  sinh: ['gel', 'morgan', 'tweezers', ...DISSECTIONS.map((d) => d.id)],
+  sinh: ['gel', 'morgan', 'tweezers', ...DISSECTIONS.map((d) => d.id), 'heart-surgery'],
   kt: ['three-phase', 'motor', 'engine', 'robot', 'drone', 'pc', 'cartpole', 'pid', 'differential', 'turbine', 'foc', 'stirling', 'harmonic', 'fatigue', 'quadruped', 'surgery', 'slam'],
 };
 export const SUBJECT_OF: Record<string, SubjectId> = Object.fromEntries((Object.keys(BY) as SubjectId[]).flatMap((s) => BY[s].map((id) => [id, s] as const)));

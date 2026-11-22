@@ -39,6 +39,7 @@ import {benchOf} from '../../utils/lab/hands/benchMoves';
 import type {Bench3DLive} from './HandsBench3D';
 import {PhysBench} from './PhysBench';
 import {DissectLab} from './HandsDissectLab';
+import {SurgeryLab} from './HandsSurgeryLab';
 import {DISSECTIONS, DISSECT_BY_ID} from '../../utils/lab/hands/dissect';
 
 const ThreePhase3D = React.lazy(() => import('./HandsThreePhase3D'));
@@ -63,7 +64,7 @@ export const EXPERIMENTS = [
   ['cartpole', 'Con lắc ngược'],
 ] as const;
 export type Experiment = (typeof EXPERIMENTS)[number][0] | (typeof SIMS)[number]['id'];
-export const ALL_EXPERIMENTS: readonly (readonly [string, string])[] = [...EXPERIMENTS, ...SIMS.map((s) => [s.id, s.name] as const), ...DISSECTIONS.map((d) => [d.id, d.name] as const)];
+export const ALL_EXPERIMENTS: readonly (readonly [string, string])[] = [...EXPERIMENTS, ...SIMS.map((s) => [s.id, s.name] as const), ...DISSECTIONS.map((d) => [d.id, d.name] as const), ['heart-surgery', 'Phẫu thuật tim: cắt lớp, bóc lớp, mổ có monitor']];
 
 const LIVE_WARNING = 'Cắt aptomat trước khi chạm vào dây: mạch đang có điện!';
 const RATED: [number, string][] = [
@@ -1402,7 +1403,7 @@ export const HandsLab: React.FC<{experiment?: string}> = ({experiment = 'three-p
     );
   return (
   <LabIdContext.Provider value={experiment}>
-    {experiment in DISSECT_BY_ID ? <DissectLab key={experiment} id={experiment} Shell={HandsShell} /> : experiment in SIM_BY_ID ? <SimLab key={experiment} id={experiment} /> : experiment === 'chem' ? <ChemLab /> : experiment === 'balance' ? <BalanceLab Shell={HandsShell} /> : experiment === 'three-phase' ? <ThreePhaseLab /> : experiment === 'optics' ? <OpticsLab /> : experiment === 'tweezers' ? <TweezersLab /> : experiment === 'cartpole' ? <CartPoleLab /> : <AssemblyLab key={experiment} kind={experiment as AssemblyKind} />}
+    {experiment in DISSECT_BY_ID ? <DissectLab key={experiment} id={experiment} Shell={HandsShell} /> : experiment === 'heart-surgery' ? <SurgeryLab Shell={HandsShell} /> : experiment in SIM_BY_ID ? <SimLab key={experiment} id={experiment} /> : experiment === 'chem' ? <ChemLab /> : experiment === 'balance' ? <BalanceLab Shell={HandsShell} /> : experiment === 'three-phase' ? <ThreePhaseLab /> : experiment === 'optics' ? <OpticsLab /> : experiment === 'tweezers' ? <TweezersLab /> : experiment === 'cartpole' ? <CartPoleLab /> : <AssemblyLab key={experiment} kind={experiment as AssemblyKind} />}
   </LabIdContext.Provider>
   );
 };

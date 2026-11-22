@@ -628,6 +628,23 @@ const DISSECT_HOW: Record<DStep['kind'], (s: DStep) => string[]> = {
   drop: (s) => ['Lấy ống nhỏ giọt ở khay dụng cụ bằng một lần chụm.', `Đưa ống tới vòng cam phía trên ${s.kind === 'drop' ? 'cơ quan cần nhỏ' : 'mẫu'}, chụm một lần để nhỏ một giọt ${s.kind === 'drop' ? s.drug : ''}.`],
   name: () => ['Đưa tay (không cần dụng cụ) tới từng cơ quan: thẻ tên và chức năng hiện ngay trên cơ quan.', 'Giữ yên tay chừng 1 giây hoặc chụm một lần để gọi tên; cơ quan đã gọi tên có nhãn ✓.'],
 };
+MANUAL['heart-surgery'] = {
+  goal: 'Quan sát cấu tạo tim người bằng mặt cắt và bóc từng lớp, rồi làm một ca mở màng ngoài tim có hướng dẫn: rạch đúng đường giải phẫu, tránh động mạch vành, xử lí chảy máu, hút sạch, khâu đóng; theo dõi sinh hiệu trên monitor.',
+  tools: [
+    'Tim nằm ngửa trong khoang ngực đã banh, mặt trước hướng lên; khay Mayo bên phải có dao mổ, kẹp cầm máu, ống hút, kim khâu.',
+    'Monitor sinh hiệu ở góc dưới trái: điện tim, nhịp tim, huyết áp, SpO₂, lượng máu mất; bíp theo từng nhịp (bấm "Tắt tiếng" nếu cần).',
+    'Ba nút chế độ ở tab Thao tác: Cắt lớp, Bóc lớp, Phẫu thuật. Mọi dụng cụ và lớp đều có nút tương ứng để dùng khi chưa có camera.',
+  ],
+  steps: [
+    st('Cắt lớp: chọn hướng mặt cắt (Bốn buồng, Ngang, Dọc) rồi dời mặt cắt qua tim', 'Nắp lát cắt tô kín phần cơ bị cắt nên thấy thật độ dày thành: thất trái dày gấp ~3 lần thất phải, vách liên thất ngăn hoàn toàn hai thất.', ['Xòe bàn tay trước camera: đưa ngang để dời mặt cắt, đưa lên / xuống để nghiêng mặt cắt.', 'Chụm một lần để khóa lát cắt rồi bỏ tay ra quan sát; chụm lần nữa để mở khóa.', 'Chuột hoặc ngón tay: kéo trên tim.'], 'Mặt cắt hồng có vân cơ, bốn khoang sẫm là lòng bốn buồng; chỉ vào lát cắt để đọc tên vùng.'),
+    st('Bóc lớp: màng ngoài tim → mạch vành → thành trước → bốn van', 'Mỗi lớp bóc ra nằm tách rời bên cạnh (xem tách rời); lớp ngoài chưa bóc thì chưa chạm được lớp trong, đúng trình tự giải phẫu từ ngoài vào.', ['Chụm vào vòng cam (hoặc vào chính lớp ngoài cùng), kéo tay ra xa quá một phần ba đường rồi buông: lớp tự bay ra.', 'Kéo lớp vừa bóc về phía tim để lắp lại.'], 'Sau thành trước thấy lòng bốn buồng; bốn van tách ra cuối cùng.'),
+    st('Phẫu thuật 1: lấy dao mổ, rạch màng ngoài tim theo vạch chấm', 'Đường rạch chạy dọc thất phải, song song và cách xa rãnh liên thất trước, nơi động mạch liên thất trước nằm.', ['Đưa tay tới dao trên khay Mayo, chụm một lần để cầm.', 'Chụm ở vòng cam rồi kéo dọc vạch chấm tới cuối: lưỡi bám đường, mép màng tách ra.', 'Đi lệch sang rãnh giữa hai thất là chạm vùng cấm.'], 'Màng ngoài tim hé ra theo đường rạch, dịch vàng trong chảy ra khoang ngực.'),
+    st('Nếu dao chạm động mạch vành: đổi sang kẹp cầm máu, kẹp đúng chỗ máu phun', 'Máu phun theo nhịp tim; mất máu làm tim đập nhanh bù và huyết áp tụt dần trên monitor. Kẹp đúng điểm thì máu ngừng và sinh hiệu ổn định lại.', ['Lấy kẹp cầm máu ở khay.', 'Đưa kẹp tới vòng đỏ nhấp nháy rồi chụm một lần.'], 'Tia máu ngừng, monitor hết báo "Đang chảy".'),
+    st('Hút sạch máu và dịch trong trường mổ', 'Trường mổ sạch mới nhìn rõ đường rạch để khâu.', ['Lấy ống hút ở khay.', 'Đưa đầu hút xuống vũng dịch quanh tim (vòng cam), chụm và giữ cho tới khi vũng cạn.'], 'Vũng dịch nhỏ dần rồi biến mất.'),
+    st('Khâu đóng màng ngoài tim dọc đường rạch', 'Khâu vắt từ đầu tới cuối đường rạch, các mũi chéo đều nhau.', ['Lấy kim khâu ở khay.', 'Chụm ở vòng cam rồi kéo dọc đường rạch tới cuối.'], 'Mũi chỉ tím chạy hết đường rạch, mép màng khép lại; hiện nhận xét ca mổ.'),
+  ],
+  conclude: 'Tim có màng ngoài tim bọc ngoài, mạch vành nuôi cơ tim, thành cơ dày mỏng khác nhau theo áp lực mỗi buồng phải tạo, và bốn van giữ máu một chiều. Phẫu thuật phải theo đúng mốc giải phẫu: chạm động mạch vành gây chảy máu nhanh, cơ thể bù bằng tăng nhịp tim cho tới khi huyết áp không giữ được nữa.',
+};
 for (const d of DISSECTIONS)
   MANUAL[d.id] = {
     goal: d.goal,

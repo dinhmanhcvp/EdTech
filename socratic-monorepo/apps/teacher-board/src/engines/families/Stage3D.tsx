@@ -111,6 +111,8 @@ export interface SceneDef {
   /** góc ngang, góc cao (độ) lấy từ thanh trượt: đổi thì đặt lại máy quay, sau đó người dùng vẫn kéo tự do */
   orbit?: (v: View3) => [number, number];
   setup: (k: Kit) => (v: View3) => void;
+  /** cần bộ đệm stencil (nắp lát cắt kín khi cắt bằng mặt phẳng): mặc định tắt cho nhẹ */
+  stencil?: boolean;
 }
 
 const rad = (d: number) => (d * Math.PI) / 180;
@@ -164,7 +166,9 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
     if (!el) return;
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({antialias: true});
+      renderer = new THREE.WebGLRenderer({antialias: true, stencil: !!def.stencil});
+      // vật liệu có `clippingPlanes` riêng (cắt lớp cơ quan) chỉ có tác dụng khi bật cắt cục bộ
+      renderer.localClippingEnabled = true;
     } catch {
       onFail();
       return;

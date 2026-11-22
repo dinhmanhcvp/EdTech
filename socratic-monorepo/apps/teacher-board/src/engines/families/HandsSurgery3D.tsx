@@ -1,0 +1,745 @@
+'use client';
+
+import React, {useMemo} from 'react';
+import * as THREE from 'three';
+import {cutAdvance, pointAt} from '../../utils/lab/hands/dissect';
+import {INCISION, LAYERS, SURG_NAME, SURG_TOOLS, STEP_DO, STEP_TOOL, peelable, surgStep, type SAction, type SurgState, type SurgTool} from '../../utils/lab/hands/surgery';
+import {cardiacPhase} from './heart3d';
+import {handPointers, type HandsInput} from './handsKit';
+import {glassify, loadModel} from './labParts';
+import {wetAll} from './tissueShader';
+import {Stage3D, setLine, type SceneDef} from './Stage3D';
+
+export type SurgMode = 'slice' | 'peel' | 'surgery';
+export type SliceAxis = 'front' | 'short' | 'side';
+/** trạng thái dùng chung giữa bảng React và cảnh (React ghi, cảnh đọc mỗi khung hình; cảnh gọi lại qua các hàm) */
+export interface SurgeryLive {
+  mode: SurgMode;
+  st: SurgState;
+  dispatch: (a: SAction) => void;
+  peeled: number;
+  setPeeled: (n: number) => void;
+  slice: {axis: SliceAxis; off: number; tilt: number; locked: boolean};
+}
+
+const ORANGE = '#D9481C';
+/** dụng cụ trên khay Mayo bên phải: mũi ở x = 3,25, thân dọc +x */
+const SLOT: Record<SurgTool, number> = {scalpel: -1.2, clamp: -0.4, suction: 0.4, needle: 1.2};
+const TRAY_X = 3.25;
+const TRAY_Y = 0.36;
+const HOLD: Record<SurgTool, THREE.Euler> = {
+  scalpel: new THREE.Euler(0, -0.6, 0.6, 'YXZ'),
+  clamp: new THREE.Euler(0, -0.6, 0.5, 'YXZ'),
+  suction: new THREE.Euler(0, -0.6, 0.75, 'YXZ'),
+  needle: new THREE.Euler(0, -0.6, 0.5, 'YXZ'),
+};
+/** tên và chức năng khi chỉ vào một bộ phận (nút GLB) */
+const INFO: Record<string, [string, string]> = {
+  SH_peri: ['Màng ngoài tim', 'Túi hai lá bọc tim, giữa hai lá có ít dịch giúp tim co bóp trơn.'],
+  SH_lad: ['Động mạch liên thất trước', 'Nhánh lớn nhất của động mạch vành trái, nuôi thành trước và vách liên thất. Vùng cấm của dao mổ.'],
+  SH_cor: ['Mạch vành', 'Động mạch vành phải, các nhánh chéo và tĩnh mạch tim lớn trên mặt trước.'],
+  SH_valve_tri: ['Van ba lá', 'Van nhĩ–thất phải; dây chằng nối cơ nhú giữ van không lật lên nhĩ khi thất co.'],
+  SH_valve_mit: ['Van hai lá', 'Van nhĩ–thất trái: chỉ cho máu đi từ nhĩ trái xuống thất trái.'],
+  SH_valve_ao: ['Van động mạch chủ', 'Van tổ chim ba túi ở gốc động mạch chủ: đóng khi thất giãn để máu không chảy ngược.'],
+  SH_valve_pa: ['Van động mạch phổi', 'Van tổ chim ba túi ở gốc động mạch phổi.'],
+  SH_aorta: ['Động mạch chủ', 'Đưa máu giàu O₂ từ thất trái đi khắp cơ thể; thành dày, đàn hồi.'],
+  SH_pa: ['Động mạch phổi', 'Đưa máu nghèo O₂ từ thất phải lên hai phổi.'],
+  SH_vc: ['Tĩnh mạch chủ', 'Tĩnh mạch chủ trên và dưới đưa máu nghèo O₂ về nhĩ phải.'],
+  SH_pv: ['Tĩnh mạch phổi', 'Đưa máu giàu O₂ từ phổi về nhĩ trái.'],
+};
+/** thành tim: gọi tên theo vùng (toạ độ của tim đứng: x < 0,05 là bên phải cơ thể, y > 0,22 là tầng nhĩ) */
+const wallName = (lx: number, ly: number) => `${ly > 0.22 ? 'Tâm nhĩ' : 'Tâm thất'} ${lx < 0.05 ? 'phải' : 'trái'}`;
+const WALL_FN: Record<string, string> = {
+  'Tâm nhĩ phải': 'Thành mỏng; nhận máu nghèo O₂ từ tĩnh mạch chủ.',
+  'Tâm nhĩ trái': 'Nhận máu giàu O₂ từ tĩnh mạch phổi.',
+  'Tâm thất phải': 'Thành mỏng hơn thất trái: chỉ bơm máu lên phổi, áp lực thấp.',
+  'Tâm thất trái': 'Thành dày nhất (gấp ~3 lần thất phải): bơm máu đi khắp cơ thể với áp lực cao.',
+};
+const SLICE_NOTE: Record<SliceAxis, string> = {
+  front: 'Mặt cắt bốn buồng (song song mặt trước): thấy cùng lúc hai nhĩ, hai thất, vách liên thất và hai van nhĩ–thất.',
+  short: 'Mặt cắt ngang trục ngắn: thất trái tròn, thành dày; thất phải hình lưỡi liềm ôm bên phải.',
+  side: 'Mặt cắt dọc trái–phải: thấy đường máu từ thất ra gốc động mạch.',
+};
+/** dải lệch của mặt cắt theo từng hướng (hệ cảnh) */
+const RANGE: Record<SliceAxis, [number, number]> = {front: [-0.7, 0.85], short: [-1.6, 1.4], side: [-1.2, 1.4]};
+const N_CUT = 48;
+const PATH_N = 24;
+
+type Mats = THREE.MeshStandardMaterial[];
+const matsOf = (o: THREE.Object3D): Mats => {
+  const out: Mats = [];
+  o.traverse((c) => {
+    const m = c as THREE.Mesh;
+    if (m.isMesh) out.push(m.material as THREE.MeshStandardMaterial);
+  });
+  return out;
+};
+
+/** vân cơ tim cho nắp lát cắt: sợi cơ xoắn, đỏ hồng, vài mạch nhỏ */
+function muscleTexture(): THREE.Texture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#A8404A';
+  g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 520; i++) {
+    const y = (i * 37) % 256;
+    const x = (i * 91) % 256;
+    g.strokeStyle = i % 3 ? 'rgba(140,40,52,0.55)' : 'rgba(196,96,104,0.5)';
+    g.lineWidth = 1 + (i % 3);
+    g.beginPath();
+    g.moveTo(x - 30, y);
+    g.bezierCurveTo(x - 10, y - 6, x + 10, y + 6, x + 30, y);
+    g.stroke();
+  }
+  g.fillStyle = 'rgba(232,207,146,0.6)';
+  for (let i = 0; i < 18; i++) g.fillRect((i * 53) % 256, (i * 29) % 256, 3, 2);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(8, 8);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
+  return {
+    floor: true,
+    room: true,
+    stencil: true,
+    dist: 6.4,
+    target: [0.5, -0.1, 0.4],
+    orbit: () => [0, 42],
+    setup: (k) => {
+      const P = handPointers(k, input, 0.5);
+      const ray = new THREE.Raycaster();
+      const v2 = new THREE.Vector2();
+      const v3 = new THREE.Vector3();
+      const w3 = new THREE.Vector3();
+      const qt = new THREE.Quaternion();
+      const box = new THREE.Box3();
+      const DOWN = new THREE.Vector3(0, -1, 0);
+
+      // đèn mổ: chùm sáng trắng ấm từ trên chiếu thẳng vào trường mổ
+      const lamp = new THREE.SpotLight('#FFF4E6', 28, 18, 0.5, 0.45, 1.4);
+      lamp.position.set(0.4, 8, 2.5);
+      lamp.target.position.set(0, 0, 0.2);
+      lamp.castShadow = true;
+      lamp.shadow.mapSize.set(1024, 1024);
+      k.scene.add(lamp, lamp.target);
+
+      // tim nằm ngửa: nhóm `heart` xoay −90° quanh x (mặt trước lên trời); nhóm `beat` co bóp quanh tâm tim
+      const heart = new THREE.Group();
+      heart.rotation.x = -Math.PI / 2;
+      k.scene.add(heart);
+      const BEAT_C = new THREE.Vector3(0.05, -0.3, 0);
+      const beat = new THREE.Group();
+      beat.position.copy(BEAT_C);
+      heart.add(beat);
+
+      let ready = false;
+      const nodes = new Map<string, THREE.Object3D>();
+      const home = new Map<string, THREE.Vector3>();
+      const tools = new Map<SurgTool, THREE.Object3D>();
+      const toolMats = new Map<SurgTool, Mats>();
+      const toolTags = new Map<SurgTool, ReturnType<typeof k.label>>();
+      const pickable: THREE.Object3D[] = [];
+      let periMat: THREE.MeshStandardMaterial | null = null;
+      const ladPts: THREE.Vector3[] = [];
+      const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 100);
+      const card = k.card(ORANGE);
+      k.caption('Đang tải tim phẫu thuật…');
+
+      // ---- nắp lát cắt (stencil): các mặt của khối kín đảo bit stencil khi tia đi qua (chẵn lẻ) → bên trong khối = khác 0 → vẽ nắp cơ tim
+      const cap = new THREE.Mesh(
+        new THREE.PlaneGeometry(9, 9),
+        new THREE.MeshStandardMaterial({map: muscleTexture(), color: '#C25A64', roughness: 0.55, side: THREE.DoubleSide, stencilWrite: true, stencilRef: 0, stencilFunc: THREE.NotEqualStencilFunc, stencilFail: THREE.ReplaceStencilOp, stencilZFail: THREE.ReplaceStencilOp, stencilZPass: THREE.ReplaceStencilOp}),
+      );
+      cap.renderOrder = 2;
+      cap.visible = false;
+      k.scene.add(cap);
+      const frame = k.line(ORANGE, 2, new Array(15).fill(0));
+      frame.visible = false;
+      k.scene.add(frame);
+      const writers: THREE.Mesh[] = [];
+      const stencilOf = (o: THREE.Object3D) =>
+        o.traverse((c) => {
+          const m = c as THREE.Mesh;
+          if (!m.isMesh || m.userData.stencil) return;
+          const s = new THREE.Mesh(m.geometry, new THREE.MeshBasicMaterial({colorWrite: false, depthWrite: false, depthTest: false, side: THREE.DoubleSide, clippingPlanes: [plane], stencilWrite: true, stencilFunc: THREE.AlwaysStencilFunc, stencilFail: THREE.InvertStencilOp, stencilZFail: THREE.InvertStencilOp, stencilZPass: THREE.InvertStencilOp}));
+          s.userData.stencil = true;
+          s.renderOrder = 1;
+          s.raycast = () => {};
+          writers.push(s);
+          m.add(s);
+        });
+
+      // ---- màng ngoài tim: rạch thật (bỏ điểm ảnh dọc đường rạch đã đi qua, mép tách hé) và khâu lại (đoạn đã khâu khép kín)
+      const peri = {path: Array.from({length: PATH_N}, () => new THREE.Vector3()), prog: {value: 0}, sew: {value: 0}, half: {value: 0.03}};
+      const periShader = (m: THREE.MeshStandardMaterial) => {
+        m.onBeforeCompile = (sh) => {
+          Object.assign(sh.uniforms, {uPath: {value: peri.path}, uProg: peri.prog, uSew: peri.sew, uHalf: peri.half});
+          sh.vertexShader = sh.vertexShader
+            .replace('#include <common>', `#include <common>\nuniform vec3 uPath[${PATH_N}];\nuniform float uProg;\nuniform float uSew;\nuniform float uHalf;\nvarying float vCutD;\nvarying float vCutT;`)
+            .replace(
+              '#include <begin_vertex>',
+              `#include <begin_vertex>
+              float bd = 1e3; float bt = 0.0;
+              for (int i = 0; i < ${PATH_N - 1}; i++) {
+                vec3 a = uPath[i]; vec3 b = uPath[i + 1]; vec3 ab = b - a;
+                float h = clamp(dot(transformed - a, ab) / max(dot(ab, ab), 1e-6), 0.0, 1.0);
+                float d = length(transformed - a - ab * h);
+                if (d < bd) { bd = d; bt = (float(i) + h) / ${(PATH_N - 1).toFixed(1)}; }
+              }
+              vCutD = bd; vCutT = bt;
+              // mép rạch hé ra: đỉnh gần đường rạch (đoạn đã rạch, chưa khâu) bị đẩy sang hai bên và lún nhẹ
+              float open = (bt <= uProg && bt >= uSew) ? smoothstep(uHalf * 3.0, 0.0, bd) : 0.0;
+              transformed -= objectNormal * open * 0.03;`,
+            );
+          sh.fragmentShader = sh.fragmentShader
+            .replace('#include <common>', '#include <common>\nuniform float uProg;\nuniform float uSew;\nuniform float uHalf;\nvarying float vCutD;\nvarying float vCutT;')
+            .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nif (vCutT <= uProg && vCutT >= uSew && vCutD < uHalf) discard;');
+        };
+        m.needsUpdate = true;
+      };
+
+      void Promise.all([loadModel('/models/surgery-heart.glb'), loadModel('/models/dissect-parts.glb')])
+        .then(([lib, dlib]) => {
+          const take = (src: THREE.Object3D | undefined, parent: THREE.Object3D) => {
+            if (!src) return null;
+            const o = src.clone(true);
+            o.traverse((c) => {
+              const m = c as THREE.Mesh;
+              if (!m.isMesh) return;
+              m.material = (m.material as THREE.Material).clone();
+              m.castShadow = m.receiveShadow = true;
+            });
+            parent.add(o);
+            return o;
+          };
+          const field = take(lib.getObjectByName('SH_field'), k.scene);
+          if (field) {
+            wetAll(field, 6, 0.0012, 0.3);
+            // lòng khoang ngực tối hơn tim để tim nổi lên dưới đèn mổ
+            field.traverse((c) => {
+              const m = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+              if (m?.name?.startsWith('bowl')) m.color.set('#7A4848');
+            });
+          }
+          for (const src of lib.children) {
+            if (!src.name.startsWith('SH_') || src.name === 'SH_field') continue;
+            // màng ngoài tim không co theo tim (đường rạch phải đứng yên); còn lại đập trong nhóm `beat`
+            const o = take(src, src.name === 'SH_peri' ? heart : beat)!;
+            if (src.name !== 'SH_peri') o.position.sub(BEAT_C);
+            o.userData.part = src.name;
+            nodes.set(src.name, o);
+            home.set(src.name, o.position.clone());
+            pickable.push(o);
+            matsOf(o).forEach((m) => (m.clippingPlanes = [plane]));
+          }
+          for (const id of ['SH_wall_front', 'SH_wall_back']) {
+            const o = nodes.get(id);
+            if (o) {
+              stencilOf(o);
+              wetAll(o, 9, 0.0015, 0.3);
+            }
+          }
+          const p = nodes.get('SH_peri');
+          if (p) {
+            periMat = matsOf(p)[0] ?? null;
+            if (periMat) {
+              Object.assign(periMat, {transparent: true, opacity: 0.5, depthWrite: false});
+              periShader(periMat);
+            }
+          }
+          const t = {scalpel: dlib.getObjectByName('TOOL_scalpel'), clamp: lib.getObjectByName('TOOL_clamp'), suction: lib.getObjectByName('TOOL_suction'), needle: lib.getObjectByName('TOOL_needle')};
+          for (const id of SURG_TOOLS) {
+            const o = take(t[id], k.scene);
+            if (!o) continue;
+            if (id === 'suction') glassify(o, 0.35);
+            tools.set(id, o);
+            toolMats.set(id, matsOf(o));
+            toolTags.set(id, k.label(SURG_NAME[id], '#F3EFE6', true));
+          }
+          k.scene.updateMatrixWorld(true);
+          // điểm của động mạch liên thất trước (vùng cấm): lấy mẫu đỉnh lưới, hệ thế giới
+          nodes.get('SH_lad')?.traverse((c) => {
+            const m = c as THREE.Mesh;
+            if (!m.isMesh) return;
+            const pos = m.geometry.getAttribute('position');
+            for (let i = 0; i < pos.count; i += 6) ladPts.push(m.localToWorld(new THREE.Vector3().fromBufferAttribute(pos, i)));
+          });
+          // đường rạch dán lên mặt màng ngoài tim; đưa về hệ của lưới màng để shader bỏ điểm ảnh đúng chỗ
+          layCut();
+          const pm = (() => {
+            let mesh: THREE.Mesh | null = null;
+            p?.traverse((c) => {
+              if ((c as THREE.Mesh).isMesh && !mesh) mesh = c as THREE.Mesh;
+            });
+            return mesh as THREE.Mesh | null;
+          })();
+          if (pm) peri.path.forEach((q, i) => q.copy(pm.worldToLocal(cutPts[Math.round((i / (PATH_N - 1)) * (N_CUT - 1))].clone())));
+          ready = true;
+          if (process.env.NODE_ENV !== 'production') (window as unknown as {__surgScene?: object}).__surgScene = {cap, writers, plane, nodes, k};
+        })
+        .catch(() => k.caption('Không tải được mô hình (models/surgery-heart.glb). Tải lại trang để thử lại.'));
+
+      const visibleParts = () => pickable.filter((o) => o.visible);
+      const hitParts = (nx: number, ny: number) => {
+        ray.setFromCamera(v2.set(nx, ny), k.camera);
+        return ray.intersectObjects(visibleParts(), true).find((h) => !h.object.userData.stencil && plane.distanceToPoint(h.point) >= -0.001) ?? null;
+      };
+      const partOf = (o: THREE.Object3D | null) => {
+        for (let p = o; p; p = p.parent) if (p.userData.part) return p.userData.part as string;
+        return null;
+      };
+      const surfaceY = (x: number, z: number) => {
+        ray.set(v3.set(x, 6, z), DOWN);
+        return ray.intersectObjects(visibleParts(), true)[0]?.point.y ?? 0.5;
+      };
+
+      // ---- đường rạch: vạch chấm (chưa rạch), đường đỏ ướt (đã rạch), mũi khâu chéo
+      const cutPts: THREE.Vector3[] = [];
+      const layCut = () => {
+        cutPts.length = 0;
+        for (let j = 0; j < N_CUT; j++) {
+          const [x, z] = pointAt(INCISION, j / (N_CUT - 1));
+          cutPts.push(new THREE.Vector3(x, surfaceY(x, z) + 0.006, z));
+        }
+      };
+      const at = (u: number, out: THREE.Vector3) => {
+        const f = Math.max(0, Math.min(1, u)) * (N_CUT - 1);
+        const j = Math.min(Math.floor(f), N_CUT - 2);
+        return out.copy(cutPts[j]).lerp(cutPts[j + 1], f - j);
+      };
+      const dash = k.line('#FBF9F4', 3, new Array(N_CUT * 6).fill(0), true);
+      Object.assign(dash.material, {transparent: true, opacity: 0.85, depthTest: false});
+      dash.renderOrder = 4;
+      const stitches = k.line('#6A4BC0', 3, new Array(40 * 6).fill(0), true);
+      stitches.renderOrder = 4;
+      k.scene.add(dash, stitches);
+      let drawn = '';
+      const drawCut = (prog: number, sew: number, show: boolean) => {
+        dash.visible = show && prog < 1;
+        stitches.visible = show && sew > 0;
+        const key = `${prog.toFixed(3)}:${sew.toFixed(3)}:${show}`;
+        if (!show || !cutPts.length || key === drawn) return;
+        drawn = key;
+        const d: number[] = [];
+        for (let j = 0; j < N_CUT; j++) {
+          const u0 = Math.max(j / N_CUT, prog);
+          const u1 = Math.max((j + 0.5) / N_CUT, prog);
+          at(u0, v3);
+          d.push(v3.x, v3.y, v3.z);
+          at(u1, v3);
+          d.push(v3.x, v3.y, v3.z);
+        }
+        setLine(dash, d);
+        // mũi khâu vắt: mỗi mũi một nét chéo qua đường rạch
+        const s: number[] = [];
+        for (let i = 0; i < 40; i++) {
+          const u = (i + 0.5) / 40;
+          if (u > sew) {
+            s.push(0, -9, 0, 0, -9, 0);
+            continue;
+          }
+          at(u, v3);
+          at(Math.min(1, u + 0.02), w3).sub(v3).normalize();
+          const sx = -w3.z * 0.07;
+          const sz = w3.x * 0.07;
+          s.push(v3.x - sx - w3.x * 0.03, v3.y + 0.01, v3.z - sz - w3.z * 0.03, v3.x + sx + w3.x * 0.03, v3.y + 0.01, v3.z + sz + w3.z * 0.03);
+        }
+        setLine(stitches, s);
+      };
+
+      // ---- máu: tia phun theo nhịp tim ở chỗ đứt mạch, vũng dịch trong khoang ngực, kẹp đã đặt
+      const NB = 160;
+      const drops = new THREE.InstancedMesh(new THREE.SphereGeometry(0.028, 8, 6), new THREE.MeshPhysicalMaterial({color: '#8E0F18', roughness: 0.15, clearcoat: 1}), NB);
+      drops.frustumCulled = false;
+      drops.count = 0;
+      k.scene.add(drops);
+      const parts = Array.from({length: NB}, () => ({p: new THREE.Vector3(), v: new THREE.Vector3(), life: 0}));
+      let spawnAt = 0;
+      const m4 = new THREE.Matrix4();
+      const pool = new THREE.Mesh(new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2), new THREE.MeshPhysicalMaterial({color: '#E9D27A', roughness: 0.3, clearcoat: 0.5, clearcoatRoughness: 0.2, transparent: true, opacity: 0.92}));
+      pool.scale.set(2.2, 1, 2.7);
+      pool.position.set(0, -0.6, 0.15);
+      pool.visible = false;
+      k.scene.add(pool);
+      const poolCol = new THREE.Color();
+      let placedClamp: THREE.Object3D | null = null;
+
+      const rings = Array.from({length: 2}, (_, i) => {
+        const r = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.022, 10, 36).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({color: i ? '#E0202A' : ORANGE, depthTest: false, transparent: true}));
+        r.renderOrder = 5;
+        r.visible = false;
+        k.scene.add(r);
+        return r;
+      });
+
+      // ---- bóc lớp
+      const shownPeel = LAYERS.map(() => 0);
+      const layerOf = (part: string | null) => LAYERS.findIndex((l) => part && l.nodes.includes(part));
+      const outLocal = LAYERS.map((l) => {
+        const q = heart.quaternion.clone().invert();
+        return new THREE.Vector3(...l.out).applyQuaternion(q);
+      });
+      const gripOf = (i: number, out: THREE.Vector3) => {
+        box.makeEmpty();
+        for (const n of LAYERS[i].nodes) {
+          const o = nodes.get(n);
+          if (o) box.expandByObject(o);
+        }
+        box.getCenter(out);
+        out.y = box.max.y + 0.05;
+        return out;
+      };
+
+      // ---- con trỏ
+      type Drag = {kind: 'peel'; i: number; start: THREE.Vector3; a0: number; a: number; dir: THREE.Vector2; len: number} | {kind: 'cut'; prog: number; sent: number; sew: boolean} | {kind: 'slice'} | {kind: 'suck'};
+      const drag: (Drag | null)[] = P.ptrs.map(() => null);
+      let lastTool: THREE.Vector3 | null = null;
+      let last = performance.now();
+      let heartBox: THREE.Box3 | null = null;
+      const center = new THREE.Vector3();
+
+      const overHeart = (nx: number, ny: number) => {
+        if (!heartBox) return false;
+        heartBox.getCenter(center);
+        const r = heartBox.getSize(v3).length() * 0.5;
+        return P.distAt(nx, ny, center) < 0.42 * (r / 2.2);
+      };
+      const onTray = (nx: number, ny: number) => {
+        const q = P.onPlane(nx, ny, TRAY_Y, v3);
+        return q.x > TRAY_X - 0.2 && q.x < TRAY_X + 1.5 && Math.abs(q.z - 0.2) < 1.8 ? SURG_TOOLS.reduce((a, t) => (Math.abs(q.z - SLOT[t]) < Math.abs(q.z - SLOT[a]) ? t : a)) : null;
+      };
+      P.grabWhen((nx, ny) => {
+        if (!ready) return false;
+        if (live.mode === 'slice') return overHeart(nx, ny);
+        if (live.mode === 'peel') {
+          const h = hitParts(nx, ny);
+          const {next, back} = peelable(live.peeled);
+          const i = layerOf(partOf(h?.object ?? null));
+          return (i >= 0 && (i === next || i === back)) || (next !== null && P.distAt(nx, ny, gripOf(next, w3)) < 0.16);
+        }
+        return !!onTray(nx, ny) || (!!live.st.tool && Math.abs(P.onPlane(nx, ny, 0.3, v3).x) < 3 && Math.abs(v3.z) < 3);
+      });
+
+      const applySlice = () => {
+        const s = live.slice;
+        const n = s.axis === 'front' ? new THREE.Vector3(0, -1, 0) : s.axis === 'short' ? new THREE.Vector3(0, 0, -1) : new THREE.Vector3(-1, 0, 0);
+        const tiltAxis = s.axis === 'front' ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+        n.applyQuaternion(qt.setFromAxisAngle(tiltAxis, s.tilt)).normalize();
+        // giữ phía mặt phẳng hướng về người nhìn: phần bị cắt bỏ là phần gần máy quay
+        plane.setFromNormalAndCoplanarPoint(n, w3.set(s.axis === 'side' ? s.off : 0, s.axis === 'front' ? s.off : 0, s.axis === 'short' ? s.off : 0));
+        cap.position.copy(plane.coplanarPoint(v3));
+        cap.lookAt(v3.clone().add(n));
+        const u = new THREE.Vector3(0, 1, 0).cross(n);
+        if (u.lengthSq() < 1e-3) u.set(1, 0, 0);
+        u.normalize().multiplyScalar(1.9);
+        const vv = n.clone().cross(u).normalize().multiplyScalar(1.9);
+        const c = cap.position;
+        const corners = [[1, 1], [-1, 1], [-1, -1], [1, -1], [1, 1]].flatMap(([a, b]) => [c.x + u.x * a + vv.x * b, c.y + u.y * a + vv.y * b, c.z + u.z * a + vv.z * b]);
+        setLine(frame, corners);
+      };
+
+      return () => {
+        const now = performance.now();
+        const dt = Math.min((now - last) / 1000, 0.05);
+        last = now;
+        P.step(1);
+        if (!ready) return;
+        const mode = live.mode;
+        const st = live.st;
+        const step = surgStep(st);
+        if (!heartBox) heartBox = new THREE.Box3().setFromObject(beat);
+
+        // ---- nhịp tim theo monitor
+        const period = 60 / Math.max(30, st.vitals.hr);
+        const {atria, ventricles} = cardiacPhase(now / 1000, period);
+        beat.scale.set(1 - 0.03 * ventricles - 0.01 * atria, 1 - 0.02 * ventricles, 1 - 0.03 * ventricles);
+
+        // ---- hiện / ẩn theo chế độ
+        const slice = mode === 'slice';
+        cap.visible = frame.visible = slice;
+        if (slice) applySlice();
+        else plane.set(v3.set(0, -1, 0), 100);
+        const periNode = nodes.get('SH_peri');
+        if (periNode) periNode.visible = mode !== 'slice';
+        for (const o of tools.values()) o.visible = mode === 'surgery';
+        for (const [id, tg] of toolTags) tg(mode === 'surgery' ? w3.set(TRAY_X + 0.55, TRAY_Y, SLOT[id] + 0.3) : null);
+        for (const w of writers) w.visible = slice;
+        if (mode === 'surgery') live.dispatch({t: 'tick', dt});
+
+        // ---- con trỏ
+        let lead: THREE.Vector3 | null = null;
+        let leadDown = false;
+        let blade: THREE.Vector3 | null = null;
+        let hoverPart: {name: string; fn: string; at: THREE.Vector3} | null = null;
+        for (const [n, p] of P.ptrs.entries()) {
+          const dg = drag[n];
+          if (!p.active) {
+            drag[n] = null;
+            continue;
+          }
+          if (slice) {
+            // cắt lớp: tay xòe di chuyển là mặt cắt đi theo (chụm một lần để khóa / mở khóa); chuột / ngón tay kéo trên tim
+            if (p.hand && p.pressed) live.slice.locked = !live.slice.locked;
+            const follow = p.hand ? !live.slice.locked && !p.down : p.down && (dg?.kind === 'slice' || (p.pressed && overHeart(p.ndc.x, p.ndc.y)));
+            if (!p.hand && p.pressed && overHeart(p.ndc.x, p.ndc.y)) drag[n] = {kind: 'slice'};
+            if (!p.down && !p.hand) drag[n] = null;
+            if (follow && heartBox) {
+              heartBox.getCenter(center).project(k.camera);
+              const [lo, hi] = RANGE[live.slice.axis];
+              const ux = Math.max(-1, Math.min(1, (p.ndc.x - center.x) / 0.45));
+              const uy = Math.max(-1, Math.min(1, (p.ndc.y - center.y) / 0.45));
+              // trục ngang màn hình → vị trí mặt cắt, trục dọc → góc nghiêng (±40°)
+              live.slice.off = lo + ((ux + 1) / 2) * (hi - lo);
+              live.slice.tilt = uy * 0.7;
+              p.hot = true;
+            }
+          } else if (mode === 'peel') {
+            if (dg?.kind === 'peel') {
+              p.hot = true;
+              const q = P.onPlane(p.ndc.x, p.ndc.y, dg.start.y, w3);
+              dg.a = Math.max(0, Math.min(1, dg.a0 + ((q.x - dg.start.x) * dg.dir.x + (q.z - dg.start.z) * dg.dir.y) / dg.len));
+              shownPeel[dg.i] = dg.a;
+              if (!p.down) {
+                const was = dg.i < live.peeled;
+                if (!was && dg.a > 0.35) live.setPeeled(dg.i + 1);
+                else if (was && dg.a < 0.65) live.setPeeled(dg.i);
+                drag[n] = null;
+              }
+            } else {
+              const h = hitParts(p.ndc.x, p.ndc.y);
+              const part = partOf(h?.object ?? null);
+              const {next, back} = peelable(live.peeled);
+              let i = layerOf(part);
+              if (next !== null && i !== next && i !== back && P.distAt(p.ndc.x, p.ndc.y, gripOf(next, w3)) < p.reach) i = next;
+              p.hot = i >= 0 && (i === next || i === back);
+              if (p.pressed && i >= 0) {
+                if (i !== next && i !== back) live.dispatch({t: 'wrong', msg: `Bóc ${LAYERS[peelable(live.peeled).next ?? 0].name.toLowerCase()} trước: lớp ngoài chưa bóc thì chưa chạm được lớp trong.`});
+                else {
+                  const start = P.onPlane(p.ndc.x, p.ndc.y, gripOf(i, w3).y, new THREE.Vector3());
+                  const o = LAYERS[i].out;
+                  const len = Math.max(0.6, Math.hypot(o[0], o[2]));
+                  const dir = new THREE.Vector2(o[0], o[2]);
+                  // lớp bay thẳng lên (không có hướng ngang): kéo về phía người xem để bóc
+                  if (dir.length() < 0.3) dir.set(0, 1);
+                  drag[n] = {kind: 'peel', i, start, a0: shownPeel[i], a: shownPeel[i], dir: dir.normalize(), len};
+                }
+              }
+            }
+          } else {
+            // phẫu thuật
+            const tray = onTray(p.ndc.x, p.ndc.y);
+            const h = hitParts(p.ndc.x, p.ndc.y);
+            const hit = h ? h.point.clone() : P.onPlane(p.ndc.x, p.ndc.y, 0.3, new THREE.Vector3());
+            if (dg?.kind === 'cut') {
+              p.hot = true;
+              const r = cutAdvance(INCISION, dg.prog, hit.x, hit.z, 0.45, 0.6);
+              dg.prog = r.s;
+              blade = new THREE.Vector3(r.at[0], surfaceY(r.at[0], r.at[1]), r.at[1]);
+              if (!dg.sew) {
+                // vùng cấm: tay (không phải lưỡi đã bám đường) đi sát động mạch liên thất trước → đứt mạch
+                let bd = Infinity;
+                let bp: THREE.Vector3 | null = null;
+                for (const q of ladPts) {
+                  const d = Math.hypot(q.x - hit.x, q.z - hit.z);
+                  if (d < bd) {
+                    bd = d;
+                    bp = q;
+                  }
+                }
+                if (bp && bd < 0.11 && !(st.nick && !st.clamped)) {
+                  live.dispatch({t: 'nick', at: [bp.x, bp.y, bp.z]});
+                  drag[n] = null;
+                  continue;
+                }
+              }
+              if (r.s - dg.sent >= 0.03 || (r.s >= 0.97 && dg.sent < 1) || (!p.down && r.s > dg.sent)) {
+                dg.sent = r.s >= 0.97 ? 1 : r.s;
+                live.dispatch(dg.sew ? {t: 'sew', s: dg.sent} : {t: 'cut', s: dg.sent});
+              }
+              if (!p.down) drag[n] = null;
+            } else if (dg?.kind === 'suck') {
+              p.hot = true;
+              live.dispatch({t: 'suck', dt});
+              if (!p.down) drag[n] = null;
+            } else {
+              p.hot = !!tray || !!st.tool;
+              if (p.pressed) {
+                if (tray) live.dispatch({t: 'tool', tool: st.tool === tray ? null : tray});
+                else if (st.tool && step !== 'done' && st.tool !== STEP_TOOL[step]) live.dispatch({t: 'wrong'});
+                else if (step === 'incise' || step === 'suture') {
+                  const sew = step === 'suture';
+                  const prog = sew ? st.suture : st.incision;
+                  const r = cutAdvance(INCISION, prog, hit.x, hit.z, 0.45, 0.6);
+                  if (r.d < 0.45) drag[n] = {kind: 'cut', prog, sent: prog, sew};
+                } else if (step === 'clamp' && st.nick) {
+                  live.dispatch({t: 'clamp', ok: Math.hypot(hit.x - st.nick[0], hit.z - st.nick[2]) < 0.3 || P.distAt(p.ndc.x, p.ndc.y, v3.set(...st.nick)) < p.reach});
+                } else if (step === 'suction' && st.tool === 'suction') drag[n] = {kind: 'suck'};
+              }
+            }
+          }
+          // chỉ vào bộ phận: thẻ tên + chức năng; cắt lớp mà tia gặp mặt cắt trước (trong khối tim) thì gọi tên vùng lát cắt đi qua
+          if (!drag[n] && !hoverPart) {
+            const h = hitParts(p.ndc.x, p.ndc.y);
+            const x = slice ? ray.ray.intersectPlane(plane, new THREE.Vector3()) : null;
+            if (x && heartBox?.containsPoint(x) && (!h || h.distance > ray.ray.origin.distanceTo(x) + 0.02)) {
+              const lp = heart.worldToLocal(x.clone());
+              const nm = wallName(lp.x, lp.y);
+              hoverPart = {name: `Lát cắt qua ${nm.toLowerCase()}`, fn: `${WALL_FN[nm]} Vùng hồng có vân là cơ tim bị cắt; khoang sẫm là lòng buồng.`, at: x};
+            } else {
+            const part = partOf(h?.object ?? null);
+            if (h && part) {
+              if (part.startsWith('SH_wall')) {
+                const lp = heart.worldToLocal(h.point.clone());
+                const nm = wallName(lp.x, lp.y);
+                hoverPart = {name: nm, fn: WALL_FN[nm], at: h.point.clone()};
+              } else if (INFO[part]) hoverPart = {name: INFO[part][0], fn: INFO[part][1], at: h.point.clone()};
+            }
+            }
+          }
+          if (!lead || p.hand) {
+            const h = hitParts(p.ndc.x, p.ndc.y);
+            lead = h ? h.point.clone() : P.onPlane(p.ndc.x, p.ndc.y, 0.3, new THREE.Vector3());
+            leadDown = p.down;
+          }
+        }
+
+        // ---- bóc lớp: lớp trượt ra / về theo trạng thái đã chốt
+        LAYERS.forEach((l, i) => {
+          const dragging = drag.some((d) => d?.kind === 'peel' && d.i === i);
+          const goal = mode === 'peel' ? (i < live.peeled ? 1 : 0) : 0;
+          if (!dragging) shownPeel[i] += (goal - shownPeel[i]) * (1 - Math.exp(-dt * 6));
+          const a = shownPeel[i] * shownPeel[i] * (3 - 2 * shownPeel[i]);
+          for (const n of l.nodes) {
+            const o = nodes.get(n);
+            if (o) o.position.copy(home.get(n)!).addScaledVector(outLocal[i], a);
+          }
+        });
+
+        // ---- dụng cụ
+        for (const [t, o] of tools) {
+          const held = mode === 'surgery' && st.tool === t;
+          if (held) {
+            const tip = blade ?? lead ?? lastTool;
+            if (tip) {
+              lastTool = (lastTool ?? new THREE.Vector3()).copy(tip);
+              o.position.set(tip.x, tip.y + (blade || leadDown ? 0.02 : 0.25), tip.z);
+            }
+            o.quaternion.setFromEuler(HOLD[t]);
+          } else {
+            o.position.set(TRAY_X, TRAY_Y, SLOT[t]);
+            o.quaternion.identity();
+          }
+          toolMats.get(t)!.forEach((m) => m.emissive?.set(held ? '#5A2A10' : '#000000'));
+        }
+
+        // ---- màng ngoài tim: rạch / khâu
+        const surg = mode === 'surgery';
+        const cutLive = drag.reduce((m, d) => (d?.kind === 'cut' && !d.sew ? Math.max(m, d.prog) : m), st.incision);
+        const sewLive = drag.reduce((m, d) => (d?.kind === 'cut' && d.sew ? Math.max(m, d.prog) : m), st.suture);
+        peri.prog.value = surg ? cutLive : 0;
+        // khâu xong thì đoạn khâu khép kín; đang mở hết thì mép banh rộng hơn (khâu treo màng ngoài tim)
+        peri.sew.value = surg ? sewLive : 0;
+        peri.half.value = st.incision >= 1 ? 0.075 : 0.035;
+        if (periMat) periMat.opacity = surg ? 0.42 : 0.45;
+        drawCut(cutLive, sewLive, surg);
+
+        // ---- máu phun theo nhịp ở chỗ đứt mạch
+        const bleeding = surg && !!st.nick && !st.clamped;
+        if (bleeding && now - spawnAt > period * 1000 * 0.5 && ventricles > 0.6) {
+          spawnAt = now;
+          let made = 0;
+          for (const q of parts) {
+            if (q.life > 0 || made >= 14) continue;
+            made++;
+            q.life = 1;
+            q.p.set(...st.nick!);
+            q.v.set((Math.random() - 0.5) * 0.9, 1.6 + Math.random() * 1.3, (Math.random() - 0.5) * 0.9);
+          }
+        }
+        let nd = 0;
+        for (const q of parts) {
+          if (q.life <= 0) continue;
+          q.v.y -= 6 * dt;
+          q.p.addScaledVector(q.v, dt);
+          q.life -= dt * 0.9;
+          if (q.p.y < -0.3) q.life = 0;
+          if (q.life > 0) drops.setMatrixAt(nd++, m4.makeTranslation(q.p.x, q.p.y, q.p.z));
+        }
+        drops.count = nd;
+        drops.instanceMatrix.needsUpdate = true;
+        // vũng dịch: dâng theo lượng, màu từ vàng trong (dịch màng ngoài tim) tới đỏ sẫm (máu)
+        pool.visible = surg && st.field > 0.5;
+        if (pool.visible) {
+          const f = Math.min(1, st.field / 160);
+          // dịch đọng ở đáy khoang quanh tim: rộng và dâng dần theo lượng (40 mL dịch màng ngoài tim chỉ là một vũng nhỏ)
+          pool.position.y = -0.62 + 0.4 * f;
+          pool.scale.set(1.0 + 1.2 * f, 1, 1.3 + 1.4 * f);
+          (pool.material as THREE.MeshPhysicalMaterial).color.copy(poolCol.set('#E9D27A').lerp(new THREE.Color('#3E0307'), Math.min(1, st.bloody * 1.6)));
+        }
+        // kẹp đã đặt nằm lại ở chỗ đứt mạch
+        if (surg && st.clamped && st.nick && !placedClamp && tools.get('clamp')) {
+          placedClamp = tools.get('clamp')!.clone(true);
+          placedClamp.position.set(st.nick[0], st.nick[1] + 0.02, st.nick[2]);
+          placedClamp.rotation.set(0, -0.9, 0.35, 'YXZ');
+          k.scene.add(placedClamp);
+        }
+        if (placedClamp) placedClamp.visible = surg && st.clamped;
+
+        // ---- vòng chỉ chỗ làm
+        const pulse = 1 + 0.12 * Math.sin(now / 180);
+        const spot: (THREE.Vector3 | null)[] = [null, null];
+        if (surg && !drag.some(Boolean)) {
+          if (step === 'incise' && cutPts.length) spot[0] = at(st.incision, new THREE.Vector3());
+          else if (step === 'suture' && cutPts.length) spot[0] = at(st.suture, new THREE.Vector3());
+          else if (step === 'suction') spot[0] = new THREE.Vector3(0.9, pool.position.y + 0.05, 1.5);
+        }
+        if (bleeding) spot[1] = new THREE.Vector3(...st.nick!).add(v3.set(0, 0.04, 0));
+        if (mode === 'peel') {
+          const {next} = peelable(live.peeled);
+          if (next !== null && !drag.some(Boolean)) spot[0] = gripOf(next, new THREE.Vector3());
+        }
+        rings.forEach((r, i) => {
+          r.visible = !!spot[i];
+          if (spot[i]) {
+            r.position.copy(spot[i]!);
+            r.scale.setScalar(i ? 1 + 0.3 * ventricles : pulse);
+          }
+        });
+
+        // ---- thẻ thông tin + chú thích
+        if (hoverPart) card(hoverPart.at.add(v3.set(0, 0.25, 0)), [{t: 'h', a: hoverPart.name}, {t: 'p', a: hoverPart.fn}]);
+        else card(null);
+        const how =
+          mode === 'slice'
+            ? `${SLICE_NOTE[live.slice.axis]}\nTay xòe đưa ngang để dời mặt cắt, đưa lên / xuống để nghiêng; chụm một lần để ${live.slice.locked ? 'mở khóa' : 'khóa'} lát cắt. Chuột: kéo trên tim.`
+            : mode === 'peel'
+              ? (() => {
+                  const {next} = peelable(live.peeled);
+                  return next === null ? 'Đã bóc hết bốn lớp (xem tách rời). Kéo lớp vừa bóc về chỗ cũ để lắp lại.' : `Lớp ngoài cùng: ${LAYERS[next].name.toLowerCase()}. Chụm vào vòng cam (hoặc vào chính lớp đó) rồi kéo ra quá một phần ba đường để bóc.`;
+                })()
+              : step === 'done'
+                ? 'Ca mổ hoàn tất. Đưa tay lên từng bộ phận để xem tên và chức năng.'
+                : st.tool !== STEP_TOOL[step]
+                  ? `Lấy ${SURG_NAME[STEP_TOOL[step]].toLowerCase()} ở khay Mayo bên phải: đưa tay tới rồi chụm một lần.`
+                  : step === 'incise'
+                    ? 'Chụm ở vòng cam rồi kéo dọc vạch chấm: lưỡi bám đường; đi lệch sang rãnh giữa hai thất sẽ cắt trúng động mạch vành.'
+                    : step === 'clamp'
+                      ? 'Đưa kẹp tới vòng đỏ (chỗ máu phun) và chụm một lần để kẹp.'
+                      : step === 'suction'
+                        ? 'Đưa ống hút xuống vũng dịch quanh tim, chụm và giữ để hút.'
+                        : 'Chụm ở vòng cam rồi kéo dọc đường rạch để khâu vắt.';
+        k.caption(`${mode === 'surgery' ? `${STEP_DO[step]}` : mode === 'peel' ? 'Bóc tách từng lớp' : 'Cắt lớp thời gian thực'}\n${st.warn && mode !== 'slice' ? st.warn : how}`);
+      };
+    },
+  };
+}
+
+const HandsSurgery3D: React.FC<{input: HandsInput; live: SurgeryLive; onFail: () => void}> = ({input, live, onFail}) => {
+  const def = useMemo(() => makeDef(input, live), [input, live]);
+  return <Stage3D fill def={def} p={{}} t={0} s={{}} onFail={onFail} />;
+};
+export default HandsSurgery3D;

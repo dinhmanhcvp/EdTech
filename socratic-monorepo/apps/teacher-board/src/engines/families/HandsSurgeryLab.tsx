@@ -1,9 +1,9 @@
 'use client';
 
 import React, {useEffect, useReducer, useRef, useState} from 'react';
-import {LAYERS, SURG_NAME, SURG_TOOLS, STEP_DO, STEP_TOOL, alarms, bleedRate, debrief, newSurg, surgReducer, surgStep, type SAction} from '../../utils/lab/hands/surgery';
+import {CHECKLIST, GAUZE_TOTAL, LAYERS, SURG_NAME, SURG_TOOLS, STEP_DO, STEP_TOOL, alarms, bleedRate, capnoAt, debrief, ecgAt, mapOf, newSurg, plethAt, surgReducer, surgStep, type CheckPhase, type SAction} from '../../utils/lab/hands/surgery';
 import {BTN_GHOST} from './Controls';
-import type {SliceAxis, SurgMode, SurgeryLive} from './HandsSurgery3D';
+import type {OrView, SliceAxis, SurgMode, SurgeryLive} from './HandsSurgery3D';
 import type {HandsInput} from './handsKit';
 
 const Surgery3D = React.lazy(() => import('./HandsSurgery3D'));
@@ -19,8 +19,18 @@ const AXES: [SliceAxis, string][] = [
   ['short', 'Ngang'],
   ['side', 'Dọc'],
 ];
+const VIEW_NAME: [OrView, string][] = [
+  ['field', 'Trường mổ'],
+  ['room', 'Toàn phòng'],
+];
+/** ba làn sóng của monitor: [màu, tâm làn (phần chiều cao), biên độ] */
+const LANES: [string, number, number][] = [
+  ['#46F08C', 0.2, 0.15],
+  ['#7AD8F7', 0.62, 0.2],
+  ['#F7E27A', 0.96, 0.22],
+];
 
-/** monitor sinh hiệu nhỏ ở góc cảnh: điện tim chạy, nhịp, huyết áp, SpO₂, máu mất; bíp theo từng nhịp (nhanh dần khi tim nhanh) */
+/** monitor gây mê ở góc cảnh: điện tim, sóng mạch, sóng CO₂ chạy; nhịp, huyết áp, SpO₂, EtCO₂, thân nhiệt, máu mất; bíp theo từng nhịp, tiếng trầm dần khi SpO₂ giảm */
 const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({live}) => {
   const cv = useRef<HTMLCanvasElement>(null);
   const [, tick] = useReducer((x: number) => x + 1, 0);
@@ -30,8 +40,9 @@ const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({l
   useEffect(() => {
     let raf = 0;
     let x = 0;
-    let prevY = 23;
+    let prevY = [0, 0, 0];
     let phase = 0;
+    let breath = 0;
     let lastBeep = 0;
     let last = performance.now();
     let ac: AudioContext | null = null;
@@ -67,26 +78,28 @@ const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({l
         phase += (dt * v.hr) / 60;
         if (phase >= 1) {
           phase -= 1;
-          // bíp 880 Hz, 60 ms mỗi nhịp; SpO₂ < 92 % thì hạ xuống 660 Hz như monitor phòng mổ
+          // bíp 60 ms mỗi nhịp; cao độ giảm theo SpO₂ như monitor phòng mổ, nghe được mà không cần nhìn
           if (soundRef.current && now - lastBeep > 200) {
-            beep(v.spo2 < 92 ? 660 : 880);
+            beep(Math.max(520, 880 - (99 - v.spo2) * 30));
             lastBeep = now;
           }
         }
-        // điện tim (P–QRS–T) theo pha của nhịp
-        const f = phase;
-        const y = f < 0.1 ? -0.12 * Math.sin((f / 0.1) * Math.PI) : f < 0.16 ? 0 : f < 0.18 ? 0.15 : f < 0.21 ? -1 : f < 0.24 ? 0.35 : f < 0.42 ? 0 : f < 0.56 ? -0.25 * Math.sin(((f - 0.42) / 0.14) * Math.PI) : 0;
+        breath = (breath + (dt * v.rr) / 60) % 1;
+        const vals = [ecgAt(phase), -plethAt(phase), -capnoAt(breath) * (v.etco2 / 40)];
         const nx = (x + dt * 70) % W;
         c.fillStyle = '#05130F';
         c.fillRect(x, 0, Math.max(6, nx - x + 6), H);
-        c.strokeStyle = alarms(v).length ? '#FF6B5A' : '#46F08C';
-        c.lineWidth = 2;
-        c.beginPath();
-        c.moveTo(x, prevY);
-        const py = H / 2 + y * H * 0.38;
-        if (nx > x) c.lineTo(nx, py);
-        c.stroke();
-        prevY = py;
+        c.lineWidth = 1.6;
+        const ys = LANES.map(([col, y0, a], i) => {
+          const py = H * y0 + vals[i] * H * a;
+          c.strokeStyle = i === 0 && alarms(v).length ? '#FF6B5A' : col;
+          c.beginPath();
+          c.moveTo(x, prevY[i] || py);
+          if (nx > x) c.lineTo(nx, py);
+          c.stroke();
+          return py;
+        });
+        prevY = ys;
         x = nx < x ? 0 : nx;
       }
       // chữ số cập nhật 4 lần mỗi giây
@@ -114,7 +127,7 @@ const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({l
           {sound ? 'Tắt tiếng' : 'Bật tiếng'}
         </button>
       </div>
-      <canvas ref={cv} width={220} height={46} className="mt-1 block h-[46px] w-[220px] rounded bg-[#05130F]" />
+      <canvas ref={cv} width={220} height={92} className="mt-1 block h-[92px] w-[220px] rounded bg-[#05130F]" />
       <div className="mt-1 grid grid-cols-3 gap-1">
         <span>
           <b className={`block text-lg leading-none ${v.hr > 110 ? 'text-[#FF6B5A]' : 'text-[#46F08C]'}`}>{Math.round(v.hr)}</b>nhịp/phút
@@ -128,6 +141,14 @@ const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({l
         <span>
           <b className={`block text-lg leading-none ${v.spo2 < 94 ? 'text-[#FF6B5A]' : 'text-[#7AD8F7]'}`}>{Math.round(v.spo2)}</b>SpO₂ %
         </span>
+      </div>
+      <div className="mt-1 flex justify-between text-[10px] text-[#CFE9DC]/80">
+        <span data-testid="vitals-map">MAP {Math.round(mapOf(v))}</span>
+        <span data-testid="vitals-etco2" className={v.etco2 < 25 ? 'text-[#FF6B5A]' : 'text-[#F7E27A]'}>
+          EtCO₂ {Math.round(v.etco2)}
+        </span>
+        <span>NT {v.rr}</span>
+        <span>{v.temp.toFixed(1)}°C</span>
       </div>
       <div className="mt-1 flex justify-between text-[10px] text-[#CFE9DC]/80">
         <span>Mất máu {Math.round(v.loss)} mL</span>
@@ -148,7 +169,8 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
   const [epoch, setEpoch] = useState(0);
   const live = useRef<SurgeryLive>({
     mode: 'slice',
-    st: newSurg(),
+    st: newSurg(true),
+    view: 'field',
     peeled: 0,
     slice: {axis: 'front', off: 0.0, tilt: 0, locked: false},
     dispatch: (a: SAction) => {
@@ -177,19 +199,30 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
     redraw();
   };
 
+  const phase: CheckPhase | null = step === 'signin' || step === 'timeout' || step === 'signout' ? step : null;
+  const need = step === 'done' ? null : STEP_TOOL[step];
+
   return (
     <Shell
-      hint="Cắt lớp: tay xòe dời mặt cắt. Bóc lớp: chụm vào lớp ngoài cùng rồi kéo ra. Phẫu thuật: lấy dụng cụ ở khay bên phải bằng một lần chụm, làm theo vòng cam."
+      hint="Cắt lớp: tay xòe dời mặt cắt. Bóc lớp: chụm vào lớp ngoài cùng rồi kéo ra. Phẫu thuật: hoàn thành bảng kiểm, lấy dụng cụ ở khay bên phải bằng một lần chụm, làm theo vòng cam."
       render={(input, onFail) => <Surgery3D key={epoch} input={input} live={L} onFail={onFail} />}
       lens={<VitalsMonitor live={live} />}
     >
       <p className="leading-relaxed text-[#4B473D]">
         <b className="block font-semibold text-[#1D1B16]">Nhiệm vụ · Sinh 11, bài 9–11 (tuần hoàn)</b>
-        Quan sát cấu tạo tim người bằng mặt cắt và bóc từng lớp, rồi thực hiện một ca mở màng ngoài tim có hướng dẫn: rạch đúng đường giải phẫu, xử lí biến chứng chảy máu, hút sạch, khâu đóng.
+        Quan sát cấu tạo tim người bằng mặt cắt và bóc từng lớp, rồi thực hiện một ca mở màng ngoài tim trong phòng mổ: làm bảng kiểm an toàn, rạch đúng đường giải phẫu, xử lí chảy máu, hút sạch, đếm gạc, khâu đóng.
       </p>
       <div role="tablist" aria-label="Chế độ" className="flex gap-1.5">
         {MODES.map(([m, name]) => (
           <button key={m} type="button" role="tab" data-testid={`surg-mode-${m}`} aria-selected={L.mode === m} onClick={() => setMode(m)} className={PILL(L.mode === m)}>
+            {name}
+          </button>
+        ))}
+      </div>
+
+      <div role="group" aria-label="Góc nhìn" className="flex gap-1.5">
+        {VIEW_NAME.map(([v, name]) => (
+          <button key={v} type="button" data-testid={`surg-view-${v}`} aria-pressed={L.view === v} onClick={() => { L.view = v; redraw(); }} className={PILL(L.view === v)}>
             {name}
           </button>
         ))}
@@ -239,15 +272,41 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
         <>
           <div data-testid="surg-status" data-step={step} className={`rounded-xl px-3 py-2 leading-relaxed ${step === 'done' ? 'bg-[#1F7A4D]/[.09]' : 'bg-[#1D1B16]/[.05]'}`}>
             <b className={`block font-semibold ${step === 'done' ? 'text-[#1F7A4D]' : ''}`}>{STEP_DO[step]}</b>
-            {step !== 'done' && (
+            {need && (
               <span>
-                Cần: {SURG_NAME[STEP_TOOL[step]].toLowerCase()} · đang cầm: {st.tool ? SURG_NAME[st.tool].toLowerCase() : 'tay không'}
+                Cần: {SURG_NAME[need].toLowerCase()} · đang cầm: {st.tool ? SURG_NAME[st.tool].toLowerCase() : 'tay không'}
               </span>
             )}
             {step === 'incise' && st.incision > 0 && <span className="block">Đã rạch {Math.round(st.incision * 100)} %</span>}
             {step === 'suture' && st.suture > 0 && <span className="block">Đã khâu {Math.round(st.suture * 100)} %</span>}
             {step === 'suction' && <span className="block">Còn {Math.round(st.field)} mL dịch trong trường mổ</span>}
           </div>
+          {phase && (
+            <fieldset data-testid="surg-checklist" data-phase={phase} className="flex flex-col gap-1 rounded-xl bg-white px-3 py-2">
+              <legend className="px-1 text-xs font-semibold">Bảng kiểm WHO · {CHECKLIST[phase].name}</legend>
+              {CHECKLIST[phase].items.map((item, i) => (
+                <label key={item} className="flex min-h-[32px] items-center gap-2 text-xs">
+                  <input type="checkbox" data-testid={`surg-check-${i}`} checked={st.checks[phase][i]} onChange={() => L.dispatch({t: 'check', phase, i})} className="h-4 w-4 shrink-0 accent-[#1F7A4D]" />
+                  {item}
+                </label>
+              ))}
+            </fieldset>
+          )}
+          {step === 'count' && (
+            <div data-testid="surg-count" data-gauze={st.gauze} className="flex flex-col gap-1.5 rounded-xl bg-white px-3 py-2">
+              <span className="text-xs">
+                Gạc mở ra {GAUZE_TOTAL} · trên khay {GAUZE_TOTAL - st.gauze} · <b className={st.gauze ? 'text-[#C4261A]' : 'text-[#1F7A4D]'}>trong khoang {st.gauze}</b>
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                <button type="button" data-testid="surg-gauze-out" disabled={!st.gauze} onClick={() => L.dispatch({t: 'gauzeOut'})} className={BTN_GHOST}>
+                  Lấy một miếng gạc
+                </button>
+                <button type="button" data-testid="surg-count-ok" onClick={() => L.dispatch({t: 'count'})} className={BTN_GHOST}>
+                  Xác nhận đếm đủ
+                </button>
+              </div>
+            </div>
+          )}
           {st.warn && (
             <p data-testid="surg-warn" role="alert" className="rounded-xl bg-[#C4261A]/[.08] px-3 py-2 font-medium text-[#C4261A]">
               {st.warn}
@@ -255,7 +314,7 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
           )}
           <div role="group" aria-label="Dụng cụ đang cầm" className="flex flex-wrap gap-1.5">
             {SURG_TOOLS.map((t) => (
-              <button key={t} type="button" data-testid={`surg-tool-${t}`} aria-pressed={st.tool === t} onClick={() => L.dispatch({t: 'tool', tool: st.tool === t ? null : t})} className={`${PILL(st.tool === t)} ${step !== 'done' && STEP_TOOL[step] === t && st.tool !== t ? 'ring-2 ring-[#D9481C]' : ''}`}>
+              <button key={t} type="button" data-testid={`surg-tool-${t}`} aria-pressed={st.tool === t} onClick={() => L.dispatch({t: 'tool', tool: st.tool === t ? null : t})} className={`${PILL(st.tool === t)} ${need === t && st.tool !== t ? 'ring-2 ring-[#D9481C]' : ''}`}>
                 {SURG_NAME[t]}
               </button>
             ))}
@@ -266,7 +325,7 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
               {debrief(st)}
             </p>
           )}
-          <p className="leading-relaxed text-[#4B473D]">Mô phỏng học tập, không phải hướng dẫn phẫu thuật thật. Tốc độ mất máu được phóng đại để thấy phản ứng sinh lí (tim nhanh bù, huyết áp tụt) trong vài chục giây.</p>
+          <p className="leading-relaxed text-[#4B473D]">Mô phỏng học tập, không phải hướng dẫn phẫu thuật thật. Bảng kiểm rút gọn từ Bảng kiểm An toàn Phẫu thuật của WHO. Tốc độ mất máu được phóng đại để thấy phản ứng sinh lí (tim nhanh bù, huyết áp tụt, EtCO₂ giảm) trong vài chục giây.</p>
           <button type="button" data-testid="surg-reset" onClick={() => { L.dispatch({t: 'reset'}); setEpoch((e) => e + 1); }} className={BTN_GHOST}>
             Mổ lại từ đầu
           </button>

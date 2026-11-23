@@ -1,3 +1,38 @@
+# 2026-11-23 (5) — `/lab`: ca "Cắt túi mật" có bóc tách thật trong `laparo` (`apps/teacher-board`)
+- **Bốn chặng** (`laparo.ts`, task `chole`, `CHOLE_PHASES`): mở phúc mạc tới khi cửa sổ giữa ống và động mạch mở ≥ 85 %; 3 clip + cắt ống; 3 clip + cắt động mạch; bóc dải nối túi mật với gan ≥ 92 %. Cổng phải đặt gần đường giữa (`trocarsOf`), ống soi dịch trái để thấy đáy túi mật.
+- **Lưới cắt** `utils/lab/hands/lapDissect.ts`: `burnCells`, `pruneIslands` (mảnh không còn dính mép thì rơi), `clearedIn`, `bandUV` / `bandXZ`. Cảnh dựng lại chỉ số tam giác khi ô đổi (`cellSurface`), mép đốt sạm, màng và dải đi theo mô mềm.
+- **Động mạch đi theo mô**: `arteryNow`, `ductTip`, `arteryTip` trong `LapInput` (đã gỡ giới hạn của mục (4)). Cắt động mạch xóa tam giác thật và hai đầu co lại. Đốt lấn vào gan là lỗi và gây rỉ máu. Bóc xong, túi mật cùng đoạn ống nhấc khỏi giường gan.
+- Kiểm tra: tsc sạch; vitest toàn monorepo xanh; đã chạy trọn ca bốn chặng trên trình duyệt bằng sự kiện con trỏ (100/100, không lỗi). **Chưa thử webcam hai tay.** Build production đạt cho `teacher-board`, `student-app`, `teacher-console` (`/lab` tải đầu 703 kB); đã chạy `next start` và mở `laparo`, `heart-surgery`, `soft-tissue`, `dissect-frog`: mô hình tải đủ, không lỗi shader (lúc thử không bật AI Engine nên các lời gọi API trả 500). Chưa deploy. Ngưỡng và trình tự là mô hình học tập, chưa được bác sĩ ngoại khoa kiểm định.
+- Giới hạn: lưới gan và túi mật không bị khoét (bóc tách diễn ra trên màng và dải riêng); giường gan là lớp hình; chưa có bước cho túi mật vào túi lấy bệnh phẩm; ống soi chưa điều khiển được. Chưa commit.
+
+# 2026-11-23 (4) — `/lab`: mô biến dạng, móc đốt, máu và khói trong bài `laparo` (`apps/teacher-board`, `tools/lab-models`)
+- **Lõi** `utils/lab/hands/lapSoft.ts` (không phụ thuộc three): `SoftBody` = hạt + ràng buộc khoảng cách + lực về chỗ cũ, ấn lún, cầm kéo, `cutX`; `sampleCloud`, `linkWithin`, `buildSkin`, `applySkin` cho lưới bám hạt. Kéo xa hơn `TEAR_PULL` (0,95) thì rách.
+- **Cảnh** `HandsLaparo3D.tsx`: ba thân mềm (gan; ống + túi mật; ống mật chủ + động mạch + mỡ). Vân mô dính theo `aRest`. Sau khi cắt, hai nửa ống tách và co lại. Chỉ tính lại lưới khi thân còn chuyển động.
+- **Luật** `laparo.ts`: thêm `hook` (móc đốt), `bleed`, `loss`, `burn`, `sealed`. Chạm động mạch hoặc kéo rách thì chảy máu 9 mL/s; đang chảy thì không kẹp, không cắt được; giữ móc đốt 0,8 s để cầm; móc chạm ống là lỗi; máu mất trừ tối đa 12 điểm an toàn.
+- **Mô hình**: `lap-anatomy.glb` thêm `LT_hook_a|b`.
+- Kiểm tra: tsc sạch; vitest 213 tệp / 3810 ca xanh; đã chạy trọn ca bằng sự kiện con trỏ trên trình duyệt (kẹp kéo, đốt động mạch, cầm máu, 3 clip, cắt). **Chưa thử webcam hai tay, chưa build production.** Khung trình duyệt bị ẩn nên số đo thời gian khung chỉ để tham khảo.
+- Giới hạn: `ARTERY` trong luật là đường lúc nghỉ, chưa đi theo mô khi bị kéo; chỉ ống tách đôi thật, gan và túi mật chưa bị cắt lưới (vết đốt là decal); máu là hạt + vũng decal, chưa phải chất lỏng. Chưa commit.
+
+# 2026-11-23 (3) — `/lab`: nâng độ thật hình ảnh các bài mổ (`laparo`, `heart-surgery`, `soft-tissue`, `dissect-*`)
+- **Lớp dùng chung** `engines/families/surgLook.ts`: `bakeOrgan` nướng vân mô một lần (vi mạch, tiểu thùy, thớ, mỡ) thành texture lát liền; `organify` / `organAll` chiếu ba hướng, thêm màng ướt và tán xạ dưới bề mặt; `surgPost('scope'|'open')` là hậu kỳ (lóa, méo thấu kính, rìa tối). `Stage3D` có thêm `def.post` tùy chọn; cảnh không khai báo vẫn vẽ như cũ.
+- **Nội soi**: `tools/lab-models/lap_anatomy.py` → `public/models/lap-anatomy.glb` (0,22 MB): gan, túi mật, ống mật chủ, động mạch, mỡ, đại tràng, tá tràng, mạc nối, dây chằng; đầu dụng cụ Maryland / kìm clip / kéo, clip titan. Bài kẹp cắt đổi vị trí clip cho đúng giải phẫu: hai clip phía người bệnh, một clip phía túi mật (`CLIP_X`, `CUT_X`).
+- **Mổ mở**: mô khối dùng `aRest` / `aKind` nên vân dính theo mô khi kéo; khăn có cửa sổ và phòng mổ ở `soft-tissue`; hoa giữ `wetAll` vì không phải mô động vật.
+- **Hiệu năng** (Intel UHD 770, 1024×768, bản dev, đo CPU + GPU bằng `readPixels`): bản đầu ~99 ms/khung; sau khi nướng vân, bớt lưới, bậc GPU yếu (`isLowGpu`: một hướng chiếu, độ phân giải 0,72, không MSAA) còn ~33 ms, bài đối chứng `pid` ~31 ms. Khung trình duyệt bị ẩn nên không đo được FPS thật.
+- Kiểm tra: tsc sạch; vitest 212 tệp / 3798 ca xanh. Chưa thử webcam hai tay, chưa build production, chưa thử trên card rời. Mô hình ếch, cá, người vẫn là hình cũ, chỉ đổi vật liệu. Chưa commit.
+
+# 2026-11-23 (2) — `/lab`: phòng mổ cho `heart-surgery` + bài mới `laparo` (trạm tập nội soi) (`apps/teacher-board`, `tools/lab-models`)
+- **Phòng mổ**: `tools/lab-models/or_room.py` → `public/models/or-room.glb` (0,18 MB; `OR_shell|table|drape|lamps|anesthesia|iv|carts`, 1 đơn vị ≈ 5,5 cm). Hai góc nhìn Trường mổ / Toàn phòng; màn hình monitor trên máy gây mê vẽ trực tiếp.
+- **Quy trình** (`surgery.ts`, `newSurg(true)` ở giao diện; `newSurg()` giữ luồng kỹ thuật cũ): bảng kiểm WHO rút gọn 3 chặng, đếm gạc trước khi đóng, EtCO₂ / MAP / nhịp thở / thân nhiệt, sóng điện tim + mạch + CO₂.
+- **Nội soi** `/lab?bai=laparo`: `utils/lab/hands/laparo.ts` (điểm tựa trocar đảo chiều, `lapStep`, `lapScore`), `HandsLaparo3D.tsx`, `HandsLaparoLab.tsx`. Ba bài: định vị hai tay, chuyển vòng, kẹp và cắt ống. Chấm thời gian 30, đường đi 30, an toàn 40; đạt ≥ 70. Chuột: Space đổi tay, bấm để khóa kẹp ở bước cần giữ.
+- Lấy LAP Mentor làm chuẩn tham chiếu về loại kỹ năng theo yêu cầu người dùng; không dùng tên, hình, nội dung của sản phẩm đó trong app. `BENCH` do dự án tự đặt, CHƯA kiểm định.
+- Kiểm tra: tsc sạch; vitest 211 tệp / 3795 ca xanh; đã chạy bằng chuột thật cả ca mổ tim (qua `dispatch` và nút) và bài chuyển vòng, kẹp cắt. **Chưa thử hai tay qua webcam; chưa chạy build production.**
+- Chưa làm: phản hồi lực (cần phần cứng), điều khiển ống soi, mô biến dạng trong nội soi (nối `xpbd.ts`), ca thủ thuật đầy đủ (cắt túi mật), lưu lịch sử điểm theo học viên. Chưa commit.
+
+# 2026-11-23 — Pull `a2442a6` và review toàn project (không sửa mã sản phẩm)
+- Pull fast-forward 55 commit; giữ nguyên thay đổi chưa commit (`stash@{0}` là bản sao dự phòng của `HANDOFF.md` + `demo-state.json`).
+- Kiểm tra sau `npm install` (lockfile không đổi): tsc teacher-board, student-app, teacher-console, types, ui sạch; vitest 210 tệp / 3780 ca xanh; pytest 584 xanh. Chưa chạy build production, chưa thử giao diện và camera tay thật.
+- Rủi ro chính: `render.yaml` không đặt `STUDENT_CONTEXT_REQUIRE_AUTH=true` nên `/api/v1/student/*` mở khi deploy theo blueprint; chưa có CI chạy test; nguồn gốc số liệu N = 412 và nhật ký nghiên cứu ghi lùi ngày cần đối chiếu minh chứng gốc trước khi nộp.
+
 # 2026-11-22 (10) — `/lab`: bài "Mổ mô mềm" theo vật lý mô (`apps/teacher-board`, `tools/lab-models`)
 - **Bài mới** `soft-tissue` (môn Sinh; router `HandsLab.tsx`; Hướng dẫn `MANUAL['soft-tissue']`). Mở: `/lab?bai=soft-tissue`.
 - **Mô** `utils/lab/hands/xpbd.ts`: khối tứ diện 24×16 ô × 5 hàng (cơ 2, mỡ 2, da 1; mỗi ô 6 tứ diện chia theo đường chéo 0–7), XPBD 6 bước con: cạnh (độ mềm theo lớp; cơ cứng hơn dọc thớ x; da căng sẵn 7 %) + thể tích tứ diện + gắn đỉnh. Rạch = xoá ô (mỗi nhát một hàng, rạch lại cùng đường thì sâu thêm); mặt ngoài = mặt thuộc đúng một tứ diện sống (khoá số). Kéo quá `TEAR` theo lớp thì cạnh đứt → xoá tứ diện kề. Nhiệt dao đốt trên đỉnh, lan theo cạnh, `burned` đổi màu (trắng → xém). Mũi khâu = ràng buộc khoảng cách rút dần về 0,05. `Thread`: chuỗi hạt không giãn có độ uốn. Đo (node): bước mô 8,6 ms, mặt ngoài 5 ms, máu 600 hạt 2,6 ms.

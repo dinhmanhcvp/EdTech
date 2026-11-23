@@ -3,16 +3,17 @@
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {cutAdvance, pointAt} from '../../utils/lab/hands/dissect';
-import {INCISION, LAYERS, SURG_NAME, SURG_TOOLS, STEP_DO, STEP_TOOL, peelable, surgStep, type SAction, type SurgState, type SurgTool} from '../../utils/lab/hands/surgery';
+import {INCISION, LAYERS, SURG_NAME, SURG_TOOLS, STEP_DO, STEP_TOOL, alarms, capnoAt, ecgAt, mapOf, peelable, plethAt, surgStep, type SAction, type SurgState, type SurgTool} from '../../utils/lab/hands/surgery';
 import {cardiacPhase} from './heart3d';
 import {handPointers, type HandsInput} from './handsKit';
 import {oneEuro} from '../../utils/lab/hands/handTracker';
 import {glassify, loadModel} from './labParts';
-import {wetAll} from './tissueShader';
+import {clothTexture, organAll, surgPost} from './surgLook';
 import {Stage3D, setLine, type SceneDef} from './Stage3D';
 
 export type SurgMode = 'slice' | 'peel' | 'surgery';
 export type SliceAxis = 'front' | 'short' | 'side';
+export type OrView = 'field' | 'room';
 /** trạng thái dùng chung giữa bảng React và cảnh (React ghi, cảnh đọc mỗi khung hình; cảnh gọi lại qua các hàm) */
 export interface SurgeryLive {
   mode: SurgMode;
@@ -21,6 +22,8 @@ export interface SurgeryLive {
   peeled: number;
   setPeeled: (n: number) => void;
   slice: {axis: SliceAxis; off: number; tilt: number; locked: boolean};
+  /** góc nhìn: trường mổ (phẫu thuật viên) hoặc toàn phòng */
+  view: OrView;
 }
 
 const ORANGE = '#D9481C';
@@ -63,6 +66,15 @@ const SLICE_NOTE: Record<SliceAxis, string> = {
 };
 /** dải lệch của mặt cắt theo từng hướng (hệ cảnh) */
 const RANGE: Record<SliceAxis, [number, number]> = {front: [-0.7, 0.85], short: [-1.6, 1.4], side: [-1.2, 1.4]};
+/** chỗ đặt gạc quanh tim trong khoang (x, z); độ cao lấy theo mặt khoang lúc nạp */
+const GAUZE_AT: [number, number][] = [[-1.75, 1.45], [1.8, 1.25], [-1.7, -1.2], [1.75, -1.0], [-1.1, 2.1], [1.15, 2.05], [0, 2.5], [-2.0, 0.2], [2.05, 0.15], [0.1, -2.1]];
+/** máy quay và điểm nhìn của hai góc nhìn; `field` trùng góc mở đầu của `def` */
+const VIEWS: Record<OrView, {cam: THREE.Vector3; at: THREE.Vector3}> = {
+  field: {cam: new THREE.Vector3(0.95, 4.52, 5.53), at: new THREE.Vector3(0.95, -0.1, 0.4)},
+  room: {cam: new THREE.Vector3(31, 15, 21), at: new THREE.Vector3(-3, 1, -3)},
+};
+/** vị trí màn hình monitor trên khung của máy gây mê (`OR_anesthesia`) */
+const SCREEN_AT: [number, number, number] = [-15.5, 17.6, -20.78];
 const N_CUT = 48;
 const PATH_N = 24;
 
@@ -102,11 +114,85 @@ function muscleTexture(): THREE.Texture {
   return t;
 }
 
+/** gạc: sợi đan trắng, thấm máu ở giữa */
+function gauzeTexture(): THREE.Texture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#F4F0E8';
+  g.fillRect(0, 0, 128, 128);
+  g.strokeStyle = 'rgba(150,140,125,0.35)';
+  for (let i = 0; i < 128; i += 4) {
+    g.beginPath();
+    g.moveTo(i, 0);
+    g.lineTo(i, 128);
+    g.moveTo(0, i);
+    g.lineTo(128, i);
+    g.stroke();
+  }
+  const r = g.createRadialGradient(62, 70, 6, 64, 64, 58);
+  r.addColorStop(0, 'rgba(122,10,20,0.85)');
+  r.addColorStop(0.6, 'rgba(160,24,32,0.45)');
+  r.addColorStop(1, 'rgba(160,24,32,0)');
+  g.fillStyle = r;
+  g.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** vẽ màn hình monitor gắn trên máy gây mê: ba sóng cuộn theo thời gian và các chỉ số */
+function drawScreen(g: CanvasRenderingContext2D, v: SurgState['vitals'], time: number) {
+  const W = g.canvas.width;
+  const H = g.canvas.height;
+  g.fillStyle = '#04100C';
+  g.fillRect(0, 0, W, H);
+  const plot = W * 0.62;
+  const traces: [string, (t: number) => number, number, number][] = [
+    ['#46F08C', (t) => ecgAt((t * v.hr) / 60 % 1), H * 0.2, H * 0.14],
+    ['#7AD8F7', (t) => -plethAt((t * v.hr) / 60 % 1), H * 0.58, H * 0.17],
+    ['#F7E27A', (t) => -capnoAt((t * v.rr) / 60 % 1) * (v.etco2 / 40), H * 0.92, H * 0.2],
+  ];
+  g.lineWidth = 2;
+  for (const [col, fn, y0, a] of traces) {
+    g.strokeStyle = col;
+    g.beginPath();
+    for (let x = 0; x <= plot; x += 2) {
+      const y = y0 + fn(time - ((plot - x) / plot) * 4) * a;
+      if (x) g.lineTo(x, y);
+      else g.moveTo(x, y);
+    }
+    g.stroke();
+  }
+  const rows: [string, string, string][] = [
+    ['HR', String(Math.round(v.hr)), v.hr > 110 ? '#FF6B5A' : '#46F08C'],
+    ['ABP', `${Math.round(v.sys)}/${Math.round(v.dia)}`, v.sys < 90 ? '#FF6B5A' : '#F7A8A0'],
+    ['SpO₂', String(Math.round(v.spo2)), v.spo2 < 94 ? '#FF6B5A' : '#7AD8F7'],
+    ['EtCO₂', String(Math.round(v.etco2)), v.etco2 < 25 ? '#FF6B5A' : '#F7E27A'],
+  ];
+  rows.forEach(([k, val, col], i) => {
+    const y = 8 + (i * H) / 4;
+    g.fillStyle = col;
+    g.font = '600 18px monospace';
+    g.fillText(k, plot + 12, y + 16);
+    g.font = '700 46px monospace';
+    g.fillText(val, plot + 12, y + 60);
+  });
+  if (alarms(v).length) {
+    g.fillStyle = 'rgba(255,70,50,0.9)';
+    g.fillRect(0, 0, plot, 26);
+    g.fillStyle = '#FFF';
+    g.font = '700 18px monospace';
+    g.fillText(alarms(v)[0], 8, 19);
+  }
+}
+
 function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
   return {
     floor: true,
     room: true,
     stencil: true,
+    post: surgPost('open'),
     dist: 6.9,
     target: [0.95, -0.1, 0.4],
     orbit: () => [0, 42],
@@ -120,13 +206,34 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
       const box = new THREE.Box3();
       const DOWN = new THREE.Vector3(0, -1, 0);
 
+      // phòng rộng ~5 m: mở tầm nhìn xa của máy quay, bỏ sương để thấy hết tường
+      k.scene.background = new THREE.Color('#B9CCC6');
+      k.scene.fog = null;
+      k.camera.far = 220;
+      k.camera.updateProjectionMatrix();
+      k.controls.maxDistance = 42;
       // đèn mổ: chùm sáng trắng ấm từ trên chiếu thẳng vào trường mổ
-      const lamp = new THREE.SpotLight('#FFF4E6', 28, 18, 0.5, 0.45, 1.4);
+      const lamp = new THREE.SpotLight('#FFF4E6', 20, 18, 0.5, 0.45, 1.4);
       lamp.position.set(0.4, 8, 2.5);
       lamp.target.position.set(0, 0, 0.2);
       lamp.castShadow = true;
       lamp.shadow.mapSize.set(1024, 1024);
       k.scene.add(lamp, lamp.target);
+      const lamp2 = new THREE.SpotLight('#F4F8FF', 7, 18, 0.55, 0.6, 1.4);
+      lamp2.position.set(3.6, 7.5, -2.2);
+      lamp2.target.position.set(0, 0, 0.2);
+      k.scene.add(lamp2, lamp2.target);
+      // màn hình monitor trong phòng
+      const screenCv = document.createElement('canvas');
+      screenCv.width = 512;
+      screenCv.height = 340;
+      const screenTex = new THREE.CanvasTexture(screenCv);
+      screenTex.colorSpace = THREE.SRGBColorSpace;
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(13, 8.7), new THREE.MeshBasicMaterial({map: screenTex, toneMapped: false}));
+      screen.position.set(...SCREEN_AT);
+      screen.visible = false;
+      k.scene.add(screen);
+      let screenAt = 0;
 
       // tim nằm ngửa: nhóm `heart` xoay −90° quanh x (mặt trước lên trời); nhóm `beat` co bóp quanh tâm tim
       const heart = new THREE.Group();
@@ -210,8 +317,9 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         m.needsUpdate = true;
       };
 
-      void Promise.all([loadModel('/models/surgery-heart.glb'), loadModel('/models/dissect-parts.glb')])
-        .then(([lib, dlib]) => {
+      // thiếu mô hình phòng thì vẫn mổ được trên nền trơn
+      void Promise.all([loadModel('/models/surgery-heart.glb'), loadModel('/models/dissect-parts.glb'), loadModel('/models/or-room.glb').catch(() => null)])
+        .then(([lib, dlib, room]) => {
           const take = (src: THREE.Object3D | undefined, parent: THREE.Object3D) => {
             if (!src) return null;
             const o = src.clone(true);
@@ -224,16 +332,27 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
             parent.add(o);
             return o;
           };
+          for (const src of room?.children ?? []) {
+            if (!src.name.startsWith('OR_')) continue;
+            const o = take(src, k.scene);
+            // tường, sàn, trần chỉ nhận bóng; đèn mổ không chắn chùm sáng của chính nó
+            if (src.name === 'OR_shell' || src.name === 'OR_lamps') o?.traverse((c) => (c.castShadow = false));
+          }
+          screen.visible = !!room;
           const field = take(lib.getObjectByName('SH_field'), k.scene);
           if (field) {
             // bóng ướt chỉ cho mô (khoang ngực, phổi, mép vết mổ); khăn và thép giữ mặt mờ để dụng cụ nổi trên khay
             field.traverse((c) => {
               const m = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
               if (!m) return;
-              if (/^(bowl|lg|fat|skin|sternum)/.test(m.name)) wetAll(c, 6, 0.0012, 0.3);
+              if (/^(bowl|lg|fat|skin)/.test(m.name)) organAll(c, 'peritoneum', 0.8);
               // lòng khoang ngực tối hơn tim để tim nổi lên dưới đèn mổ
               if (m.name.startsWith('bowl')) m.color.set('#7A4848');
-              if (m.name === 'cloth') m.color.set('#174A46');
+              if (m.name === 'cloth' || m.name === 'drape') {
+                m.color.set(m.name === 'cloth' ? '#174A46' : '#2A6661');
+                m.map = clothTexture('#FFFFFF', 10);
+                m.needsUpdate = true;
+              }
             });
           }
           for (const src of lib.children) {
@@ -251,15 +370,16 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
             const o = nodes.get(id);
             if (o) {
               stencilOf(o);
-              wetAll(o, 9, 0.0015, 0.3);
             }
           }
+          // mọi phần của tim trừ màng ngoài (trong suốt, có shader rạch riêng)
+          for (const [id, o] of nodes) if (id !== 'SH_peri') organAll(o, 'heart');
           const p = nodes.get('SH_peri');
           if (p) {
             periMat = matsOf(p)[0] ?? null;
             if (periMat) {
               // màng mỏng trong như giấy bóng: chỉ hai lớp mặt của túi chồng nhau đã đủ đục, nên độ đục thấp và chỉ vẽ mặt ngoài
-              Object.assign(periMat, {transparent: true, opacity: 0.3, depthWrite: false, side: THREE.FrontSide});
+              Object.assign(periMat, {transparent: true, opacity: 0.16, depthWrite: false, side: THREE.FrontSide});
               periMat.color.set('#F6DDD2');
               if ('clearcoat' in periMat) Object.assign(periMat, {clearcoat: 1, clearcoatRoughness: 0.08});
               periShader(periMat);
@@ -291,6 +411,12 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           });
           // đường rạch dán lên mặt màng ngoài tim; đưa về hệ của lưới màng để shader bỏ điểm ảnh đúng chỗ
           layCut();
+          if (field)
+            gauzes.forEach((g, i) => {
+              const [x, z] = GAUZE_AT[i];
+              ray.set(v3.set(x, 4, z), DOWN);
+              g.position.set(x, (ray.intersectObject(field, true)[0]?.point.y ?? -0.3) + 0.05, z);
+            });
           const pm = (() => {
             let mesh: THREE.Mesh | null = null;
             p?.traverse((c) => {
@@ -403,6 +529,37 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         return r;
       });
 
+      // ---- gạc trong khoang: `gz` = chỗ đang có gạc (lấy đúng miếng được chỉ vào)
+      const gauzeMat = new THREE.MeshStandardMaterial({map: gauzeTexture(), roughness: 0.95, side: THREE.DoubleSide});
+      const gauzes = GAUZE_AT.map(([x, z], i) => {
+        const geo = new THREE.PlaneGeometry(0.66, 0.6, 10, 10).rotateX(-Math.PI / 2);
+        const pos = geo.getAttribute('position');
+        for (let j = 0; j < pos.count; j++) pos.setY(j, 0.025 * Math.sin(pos.getX(j) * 17 + i) * Math.cos(pos.getZ(j) * 13 + i * 2));
+        geo.computeVertexNormals();
+        const m = new THREE.Mesh(geo, gauzeMat);
+        m.position.set(x, -0.3, z);
+        m.rotation.y = i * 1.3;
+        m.castShadow = m.receiveShadow = true;
+        m.visible = false;
+        k.scene.add(m);
+        return m;
+      });
+      const gz: number[] = [];
+      const nearGauze = (nx: number, ny: number, reach: number) => {
+        let best = -1;
+        let bd = reach;
+        for (const j of gz) {
+          const d = P.distAt(nx, ny, gauzes[j].position);
+          if (d < bd) {
+            bd = d;
+            best = j;
+          }
+        }
+        return best;
+      };
+      let curView: OrView = live.view;
+      let tween = 0;
+
       // ---- bóc lớp
       const shownPeel = LAYERS.map(() => 0);
       const layerOf = (part: string | null) => LAYERS.findIndex((l) => part && l.nodes.includes(part));
@@ -448,6 +605,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           const i = layerOf(partOf(h?.object ?? null));
           return (i >= 0 && (i === next || i === back)) || (next !== null && P.distAt(nx, ny, gripOf(next, w3)) < 0.16);
         }
+        if (surgStep(live.st) === 'count' && nearGauze(nx, ny, 0.12) >= 0) return true;
         return !!onTray(nx, ny) || (!!live.st.tool && Math.abs(P.onPlane(nx, ny, 0.3, v3).x) < 3 && Math.abs(v3.z) < 3);
       });
 
@@ -480,6 +638,30 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         const step = surgStep(st);
         if (!heartBox) heartBox = new THREE.Box3().setFromObject(beat);
 
+        // ---- đổi góc nhìn: máy quay trôi tới rồi trả lại cho người dùng xoay tự do
+        if (live.view !== curView) {
+          curView = live.view;
+          tween = 1;
+        }
+        if (tween > 0) {
+          const e = 1 - Math.exp(-dt * 5);
+          k.camera.position.lerp(VIEWS[curView].cam, e);
+          k.controls.target.lerp(VIEWS[curView].at, e);
+          tween -= dt / 1.2;
+          if (tween <= 0) {
+            k.camera.position.copy(VIEWS[curView].cam);
+            k.controls.target.copy(VIEWS[curView].at);
+          }
+        }
+        if (screen.visible && now - screenAt > 80) {
+          screenAt = now;
+          drawScreen(screenCv.getContext('2d')!, st.vitals, now / 1000);
+          screenTex.needsUpdate = true;
+        }
+        while (gz.length < st.gauze) gz.push(gauzes.findIndex((_, j) => !gz.includes(j)));
+        while (gz.length > st.gauze) gz.pop();
+        gauzes.forEach((g, j) => (g.visible = mode === 'surgery' && gz.includes(j)));
+
         // ---- nhịp tim theo monitor
         const period = 60 / Math.max(30, st.vitals.hr);
         const {atria, ventricles} = cardiacPhase(now / 1000, period);
@@ -493,7 +675,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         const periNode = nodes.get('SH_peri');
         if (periNode) periNode.visible = mode !== 'slice';
         for (const o of tools.values()) o.visible = mode === 'surgery';
-        for (const [id, tg] of toolTags) tg(mode === 'surgery' ? w3.set(TRAY_X + 0.55, TRAY_Y, SLOT[id] + 0.3) : null);
+        for (const [id, tg] of toolTags) tg(mode === 'surgery' && curView === 'field' ? w3.set(TRAY_X + 0.55, TRAY_Y, SLOT[id] + 0.3) : null);
         for (const w of writers) w.visible = slice;
         if (mode === 'surgery') live.dispatch({t: 'tick', dt});
 
@@ -601,7 +783,13 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
               p.hot = !!tray || !!st.tool;
               if (p.pressed) {
                 if (tray) live.dispatch({t: 'tool', tool: st.tool === tray ? null : tray});
-                else if (st.tool && step !== 'done' && st.tool !== STEP_TOOL[step]) live.dispatch({t: 'wrong'});
+                else if (step === 'count') {
+                  const j = nearGauze(p.ndc.x, p.ndc.y, Math.max(p.reach, 0.1));
+                  if (j >= 0) {
+                    gz.splice(gz.indexOf(j), 1);
+                    live.dispatch({t: 'gauzeOut'});
+                  }
+                } else if (st.tool && step !== 'done' && STEP_TOOL[step] && st.tool !== STEP_TOOL[step]) live.dispatch({t: 'wrong'});
                 else if (step === 'incise' || step === 'suture') {
                   const sew = step === 'suture';
                   const prog = sew ? st.suture : st.incision;
@@ -684,7 +872,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         // khâu xong thì đoạn khâu khép kín; đang mở hết thì mép banh rộng hơn (khâu treo màng ngoài tim)
         peri.sew.value = surg ? sewLive : 0;
         peri.half.value = st.incision >= 1 ? 0.075 : 0.035;
-        if (periMat) periMat.opacity = surg ? 0.32 : 0.3;
+        if (periMat) periMat.opacity = surg ? 0.2 : 0.16;
         drawCut(cutLive, sewLive, surg);
 
         // ---- máu phun theo nhịp ở chỗ đứt mạch
@@ -745,6 +933,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           if (step === 'incise' && cutPts.length) spot[0] = at(st.incision, new THREE.Vector3());
           else if (step === 'suture' && cutPts.length) spot[0] = at(st.suture, new THREE.Vector3());
           else if (step === 'suction') spot[0] = new THREE.Vector3(0.9, pool.position.y + 0.05, 1.5);
+          else if (step === 'count' && gz.length) spot[0] = gauzes[gz[0]].position.clone().setY(gauzes[gz[0]].position.y + 0.06);
         }
         if (bleeding) spot[1] = new THREE.Vector3(...st.nick!).add(v3.set(0, 0.04, 0));
         if (mode === 'peel') {
@@ -772,8 +961,14 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
                 })()
               : step === 'done'
                 ? 'Ca mổ hoàn tất. Đưa tay lên từng bộ phận để xem tên và chức năng.'
+                : step === 'signin' || step === 'timeout' || step === 'signout'
+                  ? 'Cả kíp đọc to và đánh dấu từng mục ở bảng kiểm trong tab Thao tác.'
+                  : step === 'count'
+                    ? gz.length
+                      ? `Còn ${gz.length} miếng gạc trong khoang: chỉ vào từng miếng rồi chụm một lần để lấy ra.`
+                      : 'Đã lấy hết gạc. Bấm "Xác nhận đếm đủ" ở tab Thao tác.'
                 : st.tool !== STEP_TOOL[step]
-                  ? `Lấy ${SURG_NAME[STEP_TOOL[step]].toLowerCase()} ở khay Mayo bên phải: đưa tay tới rồi chụm một lần.`
+                  ? `Lấy ${SURG_NAME[STEP_TOOL[step]!].toLowerCase()} ở khay Mayo bên phải: đưa tay tới rồi chụm một lần.`
                   : step === 'incise'
                     ? 'Chụm ở vòng cam rồi kéo dọc vạch chấm: lưỡi bám đường; đi lệch sang rãnh giữa hai thất sẽ cắt trúng động mạch vành.'
                     : step === 'clamp'

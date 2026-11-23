@@ -662,21 +662,42 @@ MANUAL['med-imaging'] = {
   conclude: 'Ảnh cắt lớp là khối số đo đậm độ trong không gian: đọc theo ba mặt phẳng vuông góc, chọn cửa sổ phù hợp với mô cần xem, và mọi số đo (mm, cm³) đều quy về kích thước voxel. Phân vùng theo đậm độ chỉ là bước khởi đầu; không dùng để chẩn đoán.',
 };
 MANUAL['heart-surgery'] = {
-  goal: 'Quan sát cấu tạo tim người bằng mặt cắt và bóc từng lớp, rồi làm một ca mở màng ngoài tim có hướng dẫn: rạch đúng đường giải phẫu, tránh động mạch vành, xử lí chảy máu, hút sạch, khâu đóng; theo dõi sinh hiệu trên monitor.',
+  goal: 'Quan sát cấu tạo tim người bằng mặt cắt và bóc từng lớp, rồi làm một ca mở màng ngoài tim trong phòng mổ: làm bảng kiểm an toàn, rạch đúng đường giải phẫu, tránh động mạch vành, xử lí chảy máu, hút sạch, đếm gạc, khâu đóng; theo dõi sinh hiệu trên monitor.',
   tools: [
     'Tim nằm ngửa trong khoang ngực đã banh, mặt trước hướng lên; khay Mayo bên phải có dao mổ, kẹp cầm máu, ống hút, kim khâu.',
-    'Monitor sinh hiệu ở góc dưới trái: điện tim, nhịp tim, huyết áp, SpO₂, lượng máu mất; bíp theo từng nhịp (bấm "Tắt tiếng" nếu cần).',
+    'Monitor gây mê ở góc dưới phải: điện tim, sóng mạch, sóng CO₂, nhịp tim, huyết áp, SpO₂, EtCO₂, thân nhiệt, lượng máu mất; bíp theo từng nhịp, tiếng trầm dần khi SpO₂ giảm (bấm "Tắt tiếng" nếu cần).',
+    'Hai góc nhìn: Trường mổ (như phẫu thuật viên) và Toàn phòng (bàn mổ, đèn mổ, máy gây mê, cột truyền, bàn dụng cụ).',
     'Ba nút chế độ ở tab Thao tác: Cắt lớp, Bóc lớp, Phẫu thuật. Mọi dụng cụ và lớp đều có nút tương ứng để dùng khi chưa có camera.',
   ],
   steps: [
     st('Cắt lớp: chọn hướng mặt cắt (Bốn buồng, Ngang, Dọc) rồi dời mặt cắt qua tim', 'Nắp lát cắt tô kín phần cơ bị cắt nên thấy thật độ dày thành: thất trái dày gấp ~3 lần thất phải, vách liên thất ngăn hoàn toàn hai thất.', ['Xòe bàn tay trước camera: đưa ngang để dời mặt cắt, đưa lên / xuống để nghiêng mặt cắt.', 'Chụm một lần để khóa lát cắt rồi bỏ tay ra quan sát; chụm lần nữa để mở khóa.', 'Chuột hoặc ngón tay: kéo trên tim.'], 'Mặt cắt hồng có vân cơ, bốn khoang sẫm là lòng bốn buồng; chỉ vào lát cắt để đọc tên vùng.'),
     st('Bóc lớp: màng ngoài tim → mạch vành → thành trước → bốn van', 'Mỗi lớp bóc ra nằm tách rời bên cạnh (xem tách rời); lớp ngoài chưa bóc thì chưa chạm được lớp trong, đúng trình tự giải phẫu từ ngoài vào.', ['Chụm vào vòng cam (hoặc vào chính lớp ngoài cùng), kéo tay ra xa quá một phần ba đường rồi buông: lớp tự bay ra.', 'Kéo lớp vừa bóc về phía tim để lắp lại.'], 'Sau thành trước thấy lòng bốn buồng; bốn van tách ra cuối cùng.'),
+    st('Phẫu thuật: làm hai chặng đầu của bảng kiểm an toàn', 'Bảng kiểm An toàn Phẫu thuật của WHO buộc cả kíp xác nhận đúng người bệnh, đúng vị trí và các nguy cơ trước khi gây mê và trước khi rạch.', ['Đọc và đánh dấu từng mục "Trước khi gây mê".', 'Đánh dấu tiếp từng mục "Trước khi rạch".'], 'Hết bảng kiểm mới rạch được.'),
     st('Phẫu thuật 1: lấy dao mổ, rạch màng ngoài tim theo vạch chấm', 'Đường rạch chạy dọc thất phải, song song và cách xa rãnh liên thất trước, nơi động mạch liên thất trước nằm.', ['Đưa tay tới dao trên khay Mayo, chụm một lần để cầm.', 'Chụm ở vòng cam rồi kéo dọc vạch chấm tới cuối: lưỡi bám đường, mép màng tách ra.', 'Đi lệch sang rãnh giữa hai thất là chạm vùng cấm.'], 'Màng ngoài tim hé ra theo đường rạch, dịch vàng trong chảy ra khoang ngực.'),
     st('Nếu dao chạm động mạch vành: đổi sang kẹp cầm máu, kẹp đúng chỗ máu phun', 'Máu phun theo nhịp tim; mất máu làm tim đập nhanh bù và huyết áp tụt dần trên monitor. Kẹp đúng điểm thì máu ngừng và sinh hiệu ổn định lại.', ['Lấy kẹp cầm máu ở khay.', 'Đưa kẹp tới vòng đỏ nhấp nháy rồi chụm một lần.'], 'Tia máu ngừng, monitor hết báo "Đang chảy".'),
     st('Hút sạch máu và dịch trong trường mổ', 'Trường mổ sạch mới nhìn rõ đường rạch để khâu.', ['Lấy ống hút ở khay.', 'Đưa đầu hút xuống vũng dịch quanh tim (vòng cam), chụm và giữ cho tới khi vũng cạn.'], 'Vũng dịch nhỏ dần rồi biến mất.'),
-    st('Khâu đóng màng ngoài tim dọc đường rạch', 'Khâu vắt từ đầu tới cuối đường rạch, các mũi chéo đều nhau.', ['Lấy kim khâu ở khay.', 'Chụm ở vòng cam rồi kéo dọc đường rạch tới cuối.'], 'Mũi chỉ tím chạy hết đường rạch, mép màng khép lại; hiện nhận xét ca mổ.'),
+    st('Lấy hết gạc và đếm trước khi đóng', 'Gạc sót trong cơ thể là sai sót nghiêm trọng nhưng phòng được: số gạc lấy ra phải bằng số đã mở.', ['Chỉ vào từng miếng gạc trong khoang rồi chụm một lần (hoặc bấm "Lấy một miếng gạc").', 'Bấm "Xác nhận đếm đủ".'], 'Còn gạc thì báo đếm lệch và chưa cho khâu.'),
+    st('Khâu đóng màng ngoài tim dọc đường rạch', 'Khâu vắt từ đầu tới cuối đường rạch, các mũi chéo đều nhau.', ['Lấy kim khâu ở khay.', 'Chụm ở vòng cam rồi kéo dọc đường rạch tới cuối.'], 'Mũi chỉ tím chạy hết đường rạch, mép màng khép lại.'),
+    st('Hoàn tất chặng cuối của bảng kiểm', 'Trước khi rời phòng, kíp xác nhận tên phẫu thuật, số đếm, bệnh phẩm và điểm cần theo dõi sau mổ.', ['Đánh dấu từng mục "Trước khi rời phòng".'], 'Hiện nhận xét ca mổ: thời gian, máu mất, biến chứng, đếm gạc.'),
   ],
   conclude: 'Tim có màng ngoài tim bọc ngoài, mạch vành nuôi cơ tim, thành cơ dày mỏng khác nhau theo áp lực mỗi buồng phải tạo, và bốn van giữ máu một chiều. Phẫu thuật phải theo đúng mốc giải phẫu: chạm động mạch vành gây chảy máu nhanh, cơ thể bù bằng tăng nhịp tim cho tới khi huyết áp không giữ được nữa.',
+};
+MANUAL.laparo = {
+  goal: 'Làm quen kỹ năng nền của phẫu thuật nội soi: nhìn qua màn hình, điều khiển dụng cụ dài qua điểm tựa ở thành bụng, phối hợp hai tay, và tự đánh giá bằng chỉ số thao tác.',
+  tools: [
+    'Khung hình là ống soi nhìn vào ổ bụng; nguồn sáng đi cùng ống soi nên giữa sáng, mép tối.',
+    'Hai dụng cụ dài đi qua hai trocar: tay trái viền xanh, tay phải viền vàng. Tay sang phải thì mũi sang trái, tay đưa ra xa thì mũi về gần.',
+    'Webcam: mỗi bàn tay một dụng cụ, chụm để kẹp. Chuột: phím Space đổi tay; ở bước cần giữ vật, bấm một lần để khóa kẹp, bấm lần nữa để nhả.',
+  ],
+  steps: [
+    st('Định vị hai tay', 'Hiệu ứng điểm tựa làm chuyển động của mũi ngược với tay; não cần luyện để quen.', ['Nhìn màu mục tiêu đang sáng để biết dùng tay nào.', 'Đưa mũi dụng cụ tới mục tiêu rồi chụm một lần.'], 'Mục tiêu biến mất và mục tiêu tiếp theo sáng lên.'),
+    st('Chuyển vòng qua hai tay', 'Chuyển vật giữa hai dụng cụ rèn phối hợp hai tay và ước lượng độ sâu trên màn hình phẳng.', ['Tay trái chụm vào một vòng đỏ và giữ.', 'Đưa vòng ra giữa, tay phải chụm vào vòng, rồi tay trái nhả.', 'Đưa tới chốt vàng và nhả tay phải.'], 'Đủ 6 vòng trên chốt vàng.'),
+    st('Kẹp và cắt ống', 'Ống phải được kéo căng và kẹp đủ trước khi cắt; cắt khi chưa kẹp đủ gây rò và chảy máu.', ['Tay trái giữ ống ở vòng cam.', 'Tay phải chọn kìm đặt clip, chụm ở từng vạch vàng.', 'Đổi sang kéo, chụm ở đoạn giữa hai nhóm clip.'], 'Ống tách đôi, hai đầu đều có clip.'),
+    st('Xử lí mô mềm và chảy máu', 'Mô lún khi ấn, đi theo khi kẹp và đàn hồi khi buông; kéo quá xa làm rách mô. Móc đốt có khói và để lại vết cháy; chạm động mạch thì chảy máu, chạm ống thì gây bỏng.', ['Kẹp vào túi mật hoặc ống và kéo vừa lực.', 'Nếu máu chảy: tay phải chọn móc đốt, giữ chụm vào đúng chỗ chảy tới khi ngừng.'], 'Máu ngừng chảy, ô "Máu mất" không tăng nữa.'),
+    st('Ca cắt túi mật: bốn chặng', 'Mở màng phúc mạc để thấy riêng ống và động mạch trước khi kẹp là cách giảm nguy cơ cắt nhầm đường mật. Sau khi cắt hai cấu trúc này, túi mật được bóc khỏi giường gan.', ['Móc đốt: giữ chụm, quét vùng giữa ống và động mạch tới khi mở đủ.', 'Tay trái giữ ống; đặt 3 clip rồi cắt ống.', 'Đặt 3 clip lên động mạch rồi cắt.', 'Tay trái kéo túi mật, móc đốt quét dọc dải mô nối, không lấn sang gan.'], 'Túi mật rời khỏi giường gan, không còn điểm chảy máu.'),
+    st('Đọc điểm và tập lại', 'Tiến bộ thể hiện ở thời gian ngắn hơn, đường đi gọn hơn và ít lỗi hơn.', ['Xem điểm thời gian, tiết kiệm đường đi và an toàn.', 'Bấm "Tập lại bài này" để cải thiện phần thấp nhất.'], 'Đạt từ 70/100 và không có lỗi cắt khi thiếu clip.'),
+  ],
+  conclude: 'Phẫu thuật nội soi giảm tổn thương thành bụng nhưng khó hơn mổ mở: nhìn gián tiếp, chuyển động đảo chiều và phối hợp hai tay đều cần luyện tập có đo lường. Bài này chỉ tập kỹ năng nền, không thay thế đào tạo y khoa.',
 };
 for (const d of DISSECTIONS)
   MANUAL[d.id] = {

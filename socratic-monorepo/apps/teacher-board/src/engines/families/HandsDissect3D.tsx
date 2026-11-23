@@ -7,6 +7,7 @@ import {handPointers, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {glassify, loadModel} from './labParts';
 import {wetAll} from './tissueShader';
+import {organAll, surgPost} from './surgLook';
 import {Stage3D, setLine, type SceneDef} from './Stage3D';
 
 /** Trạng thái bài mổ dùng chung giữa bảng điều khiển React và cảnh 3D (React ghi mỗi lần vẽ, cảnh đọc mỗi khung hình). */
@@ -46,6 +47,7 @@ function makeDef(input: HandsInput, live: DissectLive): SceneDef {
   return {
     floor: true,
     room: true,
+    post: surgPost('open'),
     // mỗi mẫu một khung nhìn: gần hơn với mẫu nhỏ (tim, hoa) để thấy chi tiết, khay dụng cụ vẫn còn trong khung
     dist: {FROG: 6.2, PIG: 5.8, FISH: 5.4, FLOWER: 5.0, HUMAN: 7.2}[live.spec.model],
     target: {FROG: [0.9, 0, 0.2], PIG: [0.5, 0, 0.2], FISH: [0.9, 0, 0.15], FLOWER: [0.9, 0, 0.1], HUMAN: [0.8, 0, 0.2]}[live.spec.model] as [number, number, number],
@@ -169,7 +171,8 @@ function makeDef(input: HandsInput, live: DissectLive): SceneDef {
           for (const o of organs.values()) surfaceObjs.push(o.obj);
           // mô sống: gợn và độ bóng loang trong shader; gợn mịn hơn với mẫu nhỏ (hoa, ếch, cá)
           const [fine, depth] = {FROG: [22, 0.0022], PIG: [12, 0.0018], FISH: [14, 0.0012], FLOWER: [30, 0.0015], HUMAN: [8, 0.0004]}[M];
-          for (const o of [...surfaceObjs.slice(1), ...[...organs.values()].map((x) => x.obj)]) wetAll(o, fine, depth, 0.35);
+          // hoa là mô thực vật nên không có vi mạch; các mẫu động vật dùng mô sống chung
+          for (const o of [...surfaceObjs.slice(1), ...[...organs.values()].map((x) => x.obj)]) M === 'FLOWER' ? wetAll(o, fine, depth, 0.35) : organAll(o, 'muscle', 0.8);
           ready = true;
         })
         .catch(() => k.caption('Không tải được mẫu mổ (models/dissect-parts.glb). Tải lại trang để thử lại.'));

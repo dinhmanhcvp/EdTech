@@ -7,6 +7,7 @@ import {Thread, Tissue, type Layer} from '../../utils/lab/hands/xpbd';
 import {handPointers, type HandsInput} from './handsKit';
 import {glassify, loadModel} from './labParts';
 import {Stage3D, setLine, type SceneDef} from './Stage3D';
+import {addOrRoom, clothTexture, organify, surgPost} from './surgLook';
 
 export type TTool = 'scalpel' | 'forceps' | 'retractor' | 'suction' | 'cautery' | 'clamp' | 'needle';
 export const TTOOLS: TTool[] = ['scalpel', 'forceps', 'retractor', 'suction', 'cautery', 'clamp', 'needle'];
@@ -68,6 +69,7 @@ function makeDef(input: HandsInput, live: TissueLive): SceneDef {
   return {
     floor: true,
     room: true,
+    post: surgPost('open'),
     dist: 5.4,
     target: [0.5, 0.2, 0.25],
     orbit: () => [0, 52],
@@ -82,7 +84,8 @@ function makeDef(input: HandsInput, live: TissueLive): SceneDef {
       const tmp: [number, number, number] = [0, 0, 0];
 
       // bàn mổ + khăn
-      const table = new THREE.Mesh(new THREE.BoxGeometry(6, 0.1, 4), new THREE.MeshStandardMaterial({color: '#2F6F6A', roughness: 0.95}));
+      const table = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.1, 7.2), new THREE.MeshStandardMaterial({color: '#2A6661', map: clothTexture('#FFFFFF', 7), roughness: 0.95}));
+      addOrRoom(k, 0.8, -0.26);
       table.position.y = -0.05;
       table.receiveShadow = true;
       k.scene.add(table);
@@ -97,6 +100,24 @@ function makeDef(input: HandsInput, live: TissueLive): SceneDef {
       const mesh = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({vertexColors: true, roughness: 0.38, clearcoat: 0.7, clearcoatRoughness: 0.25, sheen: 0.3, sheenColor: new THREE.Color('#FF8A7A')}));
       mesh.castShadow = mesh.receiveShadow = true;
       k.scene.add(mesh);
+      // vân mô dính theo toạ độ nghỉ: kéo giãn thì vân giãn theo, không trôi trên mặt
+      organify(mesh.material as THREE.Material, 'block', true);
+      const rest0 = tissue.pos.slice();
+      // khăn có cửa sổ: dốc từ mép da xuống bàn, chỉ để lộ vùng mổ như khi trải khăn thật
+      {
+        const box3 = new THREE.Box3().setFromArray(rest0);
+        const [x0, x1, z0, z1, top] = [box3.min.x - 0.012, box3.max.x + 0.012, box3.min.z - 0.012, box3.max.z + 0.012, box3.max.y + 0.006];
+        const o = 0.16;
+        const ring = [[x0, top, z0], [x1, top, z0], [x1, top, z1], [x0, top, z1], [x0 - o, 0.01, z0 - o], [x1 + o, 0.01, z0 - o], [x1 + o, 0.01, z1 + o], [x0 - o, 0.01, z1 + o]];
+        const fen = new THREE.BufferGeometry();
+        fen.setAttribute('position', new THREE.Float32BufferAttribute(ring.flat(), 3));
+        fen.setAttribute('uv', new THREE.Float32BufferAttribute(ring.flatMap(([x, , z]) => [x, z]), 2));
+        fen.setIndex([0, 4, 1, 1, 4, 5, 1, 5, 2, 2, 5, 6, 2, 6, 3, 3, 6, 7, 3, 7, 0, 0, 7, 4]);
+        fen.computeVertexNormals();
+        const drape = new THREE.Mesh(fen, new THREE.MeshStandardMaterial({color: '#245B57', map: clothTexture('#FFFFFF', 1), roughness: 0.95, side: THREE.DoubleSide}));
+        drape.receiveShadow = true;
+        k.scene.add(drape);
+      }
       let bnd = tissue.boundary();
       let topo = -1;
       let posA = new Float32Array(0);
@@ -115,6 +136,17 @@ function makeDef(input: HandsInput, live: TissueLive): SceneDef {
         geo.setAttribute('position', new THREE.BufferAttribute(posA, 3));
         geo.setAttribute('color', new THREE.BufferAttribute(colA, 3));
         geo.setAttribute('normal', new THREE.BufferAttribute(norA, 3));
+        const restA = new Float32Array(n * 3);
+        const kindA = new Float32Array(n);
+        for (let q = 0; q < n; q++) {
+          const v = bnd.tri[q];
+          restA[q * 3] = rest0[v * 3];
+          restA[q * 3 + 1] = rest0[v * 3 + 1];
+          restA[q * 3 + 2] = rest0[v * 3 + 2];
+          kindA[q] = bnd.layer[Math.floor(q / 3)];
+        }
+        geo.setAttribute('aRest', new THREE.BufferAttribute(restA, 3));
+        geo.setAttribute('aKind', new THREE.BufferAttribute(kindA, 1));
       };
       const refresh = () => {
         if (tissue.topo !== topo) {

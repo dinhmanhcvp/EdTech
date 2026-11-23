@@ -113,6 +113,8 @@ export interface SceneDef {
   setup: (k: Kit) => (v: View3) => void;
   /** cần bộ đệm stencil (nắp lát cắt kín khi cắt bằng mặt phẳng): mặc định tắt cho nhẹ */
   stencil?: boolean;
+  /** hậu kỳ riêng của cảnh (thay cho vẽ thẳng ra màn hình); không khai báo thì giữ đường vẽ cũ */
+  post?: (renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) => {render(): void; setSize(w: number, h: number): void; dispose(): void};
 }
 
 const rad = (d: number) => (d * Math.PI) / 180;
@@ -361,11 +363,13 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       },
     };
     const update = def.setup(kit);
+    const post = def.post?.(renderer, scene, camera) ?? null;
 
     const resize = () => {
       const w = el.clientWidth || 560;
       const h = el.clientHeight || 340;
       renderer.setSize(w, h, false);
+      post?.setSize(w, h);
       camera.aspect = w / h;
       // thu cảnh vào phần còn trống bên trái bảng điều khiển (k < 1) và căn giữa theo chiều dọc: không bị cắt mép như khi chỉ dời ảnh
       const free = w - Math.min(shiftRef.current, w * 0.45);
@@ -487,7 +491,8 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       }
       controls.update();
       scene.updateMatrixWorld();
-      renderer.render(scene, camera);
+      if (post) post.render();
+      else renderer.render(scene, camera);
       const shown: typeof labels = [];
       for (const L of labels) {
         if (L.on) v.copy(L.pos).project(camera);
@@ -518,6 +523,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
         for (const mat of ([] as THREE.Material[]).concat(m.material ?? [])) mat.dispose();
       });
       pmrem.dispose();
+      post?.dispose();
       renderer.dispose();
       renderer.forceContextLoss(); // giải phóng ngữ cảnh WebGL ngay (không chờ GC): đổi bài nhiều lần không làm cạn ngữ cảnh của trình duyệt
       renderer.domElement.remove();

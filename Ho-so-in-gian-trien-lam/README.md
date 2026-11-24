@@ -24,7 +24,7 @@ Tệp `*_DUONG-CAT.pdf` là đường bế (nét hồng), không in.
 
 1. **Hỏi BTC loại lều và đo:** chiều cao mép mái (đang giả định 2 500) và bề rộng trong cột (2 920). Khác thì sửa mục `leu` trong `config.json`: cổng, backdrop và cánh tự đổi kích thước.
 2. **Điền mọi ô `[ ... ]`** trong `config.json`: số gian, tên trường, tên thành viên, mốc thời gian, số liệu thử nghiệm, liên hệ.
-3. **Logo và ảnh:** chép vào `assets/` rồi ghi tên tệp vào `logoBTC`, `logoTruong`, `thanhVien[].anh`, `cauChuyen[].anh`.
+3. **Logo và ảnh:** chép vào `assets/` rồi ghi tên tệp vào `logoBTC` (Sở GD&ĐT), `logoDonVi` (UBND phường Phúc Yên), `thanhVien[].anh`.
    - Logo Sở GD&ĐT Phú Thọ và UBND phường Phúc Yên: chỉ dùng file chính thức.
    - Ảnh in khổ lớn: cạnh ngắn tối thiểu 1 500 px.
 4. **Link QR:** điền `qrDungThu` (trang dùng thử) và `qrLienHe` (form liên hệ). Mã QR được tạo thật từ link.

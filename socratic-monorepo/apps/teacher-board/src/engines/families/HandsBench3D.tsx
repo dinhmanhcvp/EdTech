@@ -332,7 +332,18 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       stream.visible = false;
       root.add(stream);
       const pools = new Map<number, THREE.Mesh>();
-      const wires: {line: ReturnType<Kit['line']>; obj: THREE.Object3D; anchor: [number, number, number]; h: number}[] = [];
+      /** dây điện / ống mềm: ống tròn võng từ cực cố định (`anchor`) tới đuôi phích; chỉ dựng lại hình khi hai đầu đổi chỗ */
+      const wires: {mesh: THREE.Mesh; obj: THREE.Object3D; anchor: [number, number, number]; h: number; r: number; key: string}[] = [];
+      const cableMats = new Map<string, THREE.MeshStandardMaterial>();
+      const cableMat = (c: {color: string; opacity?: number}) => {
+        const k2 = `${c.color}|${c.opacity ?? 1}`;
+        let m = cableMats.get(k2);
+        if (!m) {
+          m = new THREE.MeshStandardMaterial({color: c.color, roughness: 0.45, metalness: 0.05, transparent: (c.opacity ?? 1) < 1, opacity: c.opacity ?? 1});
+          cableMats.set(k2, m);
+        }
+        return m;
+      };
       const aw = new THREE.Vector3();
       const aq = new THREE.Vector3();
       const curAct = () => (setupDone() ? undefined : setup[stage].act);
@@ -363,6 +374,25 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           A.obj = null;
           return;
         }
+        if (a.kind === 'turn') {
+          // ốc tai hồng trên ren ở đầu thanh: trục ren dọc theo thanh (x), học sinh vặn quanh trục đó
+          const nut = new THREE.Group();
+          const steel = new THREE.MeshStandardMaterial({color: '#C9CCD2', metalness: 0.85, roughness: 0.28});
+          const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.3, 12).rotateZ(Math.PI / 2), steel);
+          const hex = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 6).rotateZ(Math.PI / 2), steel);
+          const wing = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.2, 0.035), steel);
+          wing.position.x = 0.0;
+          nut.add(rod, hex, wing);
+          nut.position.set(...setup[stage].at);
+          // ốc nằm TRÊN thanh: gắn vào chính phần động bị chỉnh để nghiêng / dao động cùng thanh
+          const host = a.tilt ? byN.get(a.tilt.part)?.obj : undefined;
+          if (host) {
+            nut.position.sub(host.position);
+            host.add(nut);
+          } else root.add(nut);
+          Object.assign(A, {part: false, for: stage, obj: nut, held: -1, prog: 0, tilt: 0.12, sq: 0, stir: newStir(), pump: newSqueeze(), lipH: 0});
+          return;
+        }
         if (a.part !== undefined) {
           if (!setLoaded) return;
           const q = byN.get(a.part);
@@ -386,13 +416,18 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         // rót thuốc / hạt / cát: chất trong lọ lấy màu của thứ sắp rót
         if (a.kind === 'pour' && a.color) for (const m of sk.mats) if (m.name === 'tint') m.color.set(a.color);
         sk.obj.position.set(...(a.kind === 'squeeze' ? setup[stage].at : a.from));
-        root.add(sk.obj);
+        // phích chuối thật nhỏ hơn đồng hồ nhiều: thu lại để cắm vừa cực
+        if (a.kind === 'connect' && a.prop === 'plug') sk.obj.scale.setScalar(0.55);
+        // hộp bao đo TRƯỚC khi gắn vào bộ dụng cụ (bộ dụng cụ được phóng ×0,9–1,7): mọi kích thước dưới đây theo hệ của bộ dụng cụ
         const bb = new THREE.Box3().setFromObject(sk.obj);
+        root.add(sk.obj);
         if (a.kind === 'connect') {
-          // dây nối: một đầu cố định ở nguồn (mép bàn, dưới chỗ phích nằm), đầu kia theo đuôi phích; cập nhật mỗi khung hình ở `frameAct`
-          const line = k.line('#C4261A', 5, new Array(21 * 3).fill(0));
-          root.add(line);
-          wires.push({line, obj: sk.obj, anchor: [a.from[0], 0.05, a.from[2] + 0.55], h: new THREE.Box3().setFromObject(sk.obj).getSize(new THREE.Vector3()).y});
+          // dây nối: một đầu cố định ở cực của thiết bị (`src`), đầu kia theo đuôi phích / đầu ống; cập nhật ở `frameAct`
+          const c = a.cable ?? {color: '#C4261A', r: 0.014};
+          const mesh = new THREE.Mesh(new THREE.BufferGeometry(), cableMat(c));
+          mesh.castShadow = true;
+          root.add(mesh);
+          wires.push({mesh, obj: sk.obj, anchor: a.src ?? [a.from[0], 0.05, a.from[2] + 0.55], h: bb.max.y - sk.obj.position.y, r: c.r, key: ''});
         }
         Object.assign(A, {part: false, for: stage, obj: sk.obj, held: -1, prog: 0, tilt: 0.12, sq: 0, stir: newStir(), pump: newSqueeze(), lipH: Math.max(0.2, bb.max.y - sk.obj.position.y)});
       };
@@ -418,12 +453,26 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         const [ax, ay, az] = setup[stage].at;
         const home = new THREE.Vector3(...a.from);
         // trong vòng lặp con trỏ các phần động vừa được đặt lại về vị trí gốc (độ lệch `off` được cộng ở cuối khung hình): tâm thật = tâm gốc + off
-        const grab = A.part ? localCenter(o).add(A.off) : o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0));
+        const grab = A.part ? localCenter(o).add(A.off) : o.parent !== root ? nutAt.clone() : o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0));
         const nearProp = ptr.active && P.distAt(x, y, worldPt(grab)) < r;
         if (A.held < 0 && ptr.pressed && nearProp) A.held = n;
         if (A.held !== n) return false;
         ptr.hot = true;
         const down = ptr.active && ptr.down;
+        if (a.kind === 'turn') {
+          // vặn: tay vẽ vòng quanh ốc (trên mặt phẳng ngang qua ốc); ốc quay theo góc đã quét, đủ số vòng thì xong
+          if (!down) {
+            A.held = -1;
+            return true;
+          }
+          const h = localAt(x, y, ay);
+          const c = o.parent !== root ? nutAt : new THREE.Vector3(ax, ay, az);
+          A.stir = stirStep(A.stir, h.x, h.z, c.x, c.z, 0.03, 0.9);
+          A.prog = stirProgress(A.stir, a.n ?? 2);
+          o.rotation.x = A.stir.total;
+          if (A.prog >= 1) actFinish();
+          return true;
+        }
         if (a.kind === 'squeeze') {
           A.pump = squeezeStep(A.pump, down, true);
           if (!down) A.held = -1;
@@ -489,13 +538,30 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         if (pa?.kind === 'press') return P.distAt(nx, ny, worldPt(new THREE.Vector3(...setup[stage].at))) < Math.max(0.18, reach);
         const o = A.obj;
         if (!curAct() || !o || A.for !== stage) return false;
-        return A.held >= 0 || P.distAt(nx, ny, worldPt(A.part ? localCenter(o) : o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0)))) < reach;
+        return A.held >= 0 || P.distAt(nx, ny, worldPt(A.part ? localCenter(o) : o.parent !== root ? nutAt.clone() : o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0)))) < reach;
       };
       // chỉ khi phát triển: chỗ cầm của vật bước hiện tại (hệ bộ dụng cụ) cho máy dò trình duyệt kéo thử từng bước chuẩn bị
       if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined')
-        Object.assign((window as unknown as {__bench: object}).__bench, {grabPt: () => (A.obj && A.for === stage ? (A.part ? localCenter(A.obj) : A.obj.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0))) : null)});
+        Object.assign((window as unknown as {__bench: object}).__bench, {grabPt: () => (A.obj && A.for === stage ? (A.part ? localCenter(A.obj) : A.obj.parent !== root ? nutAt.clone() : A.obj.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0))) : null)});
+      /** góc lệch còn lại của phần bị chỉnh bằng vặn ốc (thanh đòn chưa cân bằng) */
+      let tiltNow = 0;
+      /** chỗ ốc ĐANG HIỆN (hệ bộ dụng cụ), lấy sau khi thanh đã nghiêng xong khung trước: vòng con trỏ đầu khung đặt lại thanh về thẳng nên không đọc trực tiếp được */
+      const nutAt = new THREE.Vector3();
+      const tiltStep = setup.findIndex((st) => st.act?.kind === 'turn' && st.act.tilt);
       const frameAct = (dt: number, elapsed: number) => {
         ensureProp();
+        if (tiltStep >= 0) {
+          const tl = setup[tiltStep].act!.tilt!;
+          if (stage < tiltStep) tiltNow = tl.angle;
+          else if (stage > tiltStep) tiltNow = 0;
+          const bar = byN.get(tl.part)?.obj;
+          if (bar) bar.rotation.z += tiltNow;
+          const nut = A.for === tiltStep ? A.obj : null;
+          if (nut && nut.parent !== root) {
+            nut.updateWorldMatrix(true, false);
+            root.worldToLocal(nut.getWorldPosition(nutAt));
+          }
+        }
         for (let i = anims.length - 1; i >= 0; i--) {
           const m = anims[i];
           m.t = Math.min(1, m.t + dt / 0.3);
@@ -511,7 +577,15 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         for (let i = partAnims.length - 1; i >= 0; i--) if (partAnims[i].t >= 1) partAnims.splice(i, 1);
         for (const [po, off] of partOffs) po.position.add(off);
         // dây nối theo đuôi phích (cả phích đang cầm và phích đã nối xong)
-        for (const w of wires) setLine(w.line, wirePath(w.anchor, [w.obj.position.x, w.obj.position.y + w.h, w.obj.position.z]).flat());
+        for (const w of wires) {
+          const tail: [number, number, number] = [w.obj.position.x, w.obj.position.y + w.h * 0.92, w.obj.position.z];
+          const key = tail.map((x) => x.toFixed(3)).join();
+          if (key === w.key) continue;
+          w.key = key;
+          const curve = new THREE.CatmullRomCurve3(wirePath(w.anchor, tail, 16).map((q) => new THREE.Vector3(...q)));
+          w.mesh.geometry.dispose();
+          w.mesh.geometry = new THREE.TubeGeometry(curve, 40, w.r, 8, false);
+        }
         const a = curAct();
         const o = A.obj;
         stream.visible = false;
@@ -547,11 +621,16 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             stream.position.set(lipX, (lipY + low) / 2, o.position.z);
           }
         }
+        if (a.kind === 'turn' && a.tilt) tiltNow = a.tilt.angle * (1 - A.prog);
         const pct = Math.round(A.prog * 100);
         const turns = Math.min(a.n ?? 3, Math.floor((A.stir.total / (2 * Math.PI)) * 10) / 10);
         const hint =
           a.kind === 'connect'
-            ? `${a.verb} dây: chụm phích, kéo tới vòng cam (chốt cần nối) rồi buông`
+            ? a.prop === 'nozzle'
+              ? `${a.verb} ống: chụm đầu ống, kéo tới núm (vòng cam) rồi buông`
+              : `Nối dây: chụm phích, kéo tới vòng cam (chốt cần nối) rồi buông`
+          : a.kind === 'turn'
+            ? A.held >= 0 ? `Vẽ vòng tròn quanh ốc — ${turns}/${a.n ?? 2} vòng` : `${a.verb}: chụm vào ốc (vòng cam) rồi vẽ vòng tròn quanh ốc`
           : a.kind === 'place'
             ? `${a.verb}: chụm vật rồi kéo vào vòng cam và buông`
             : a.kind === 'pour'
@@ -1106,7 +1185,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           doTag(at.setY(doBox.max.y + (tg[0] === setObj ? 0.35 : 0.5)), undefined, pull ? (pullHeld >= 0 ? `Kéo ${Math.round((pullD / pull.max) * 100)} % — thả ra để: ${action.toLowerCase()}` : `Chụm vào ${pull.what}`) : holdShow > 0.02 ? `Đang ${action.toLowerCase()}… ${Math.round(Math.min(1, holdShow) * 100)} %` : `Giữ chụm để làm: ${action}`);
         } else doTag(null);
         const row = live.st.rows[live.st.rows.length - 1];
-        k.caption(!setupDone() ? `${e.lesson}\nChuẩn bị ${stage + 1}/${setup.length}: ${setup[stage].label} · ${{place: 'chụm vật ở mép bàn, kéo vào vòng cam rồi buông', pour: 'chụm lọ, đưa miệng lọ tới vòng cam và giữ yên để rót', stir: 'chụm, đưa vào vòng cam rồi vẽ vòng tròn', squeeze: 'chụm giữ để bóp, nhả để phồng', connect: 'chụm phích có dây, kéo tới chốt cần nối rồi buông', press: 'chụm một lần vào công tắc (vòng cam) để bật'}[setup[stage].act?.kind ?? 'place'] ?? 'chụm cục cam rồi kéo thả vào vòng cam trên dụng cụ'}` : row ? `Lần đo ${live.st.rows.length}: ${e.columns.map((c) => `${c.label} = ${fmt(row[c.key], c.digits ?? 2)}${c.unit ? ` ${c.unit}` : ''}`).join(' · ')}
+        k.caption(!setupDone() ? `${e.lesson}\nChuẩn bị ${stage + 1}/${setup.length}: ${setup[stage].label} · ${{place: 'chụm vật ở mép bàn, kéo vào vòng cam rồi buông', pour: 'chụm lọ, đưa miệng lọ tới vòng cam và giữ yên để rót', stir: 'chụm, đưa vào vòng cam rồi vẽ vòng tròn', squeeze: 'chụm giữ để bóp, nhả để phồng', connect: 'chụm phích / đầu ống, kéo tới chốt (núm) cần nối rồi buông', press: 'chụm một lần vào công tắc (vòng cam) để bật', turn: 'chụm vào ốc rồi vẽ vòng tròn quanh ốc để vặn'}[setup[stage].act?.kind ?? 'place'] ?? 'chụm cục cam rồi kéo thả vào vòng cam trên dụng cụ'}` : row ? `Lần đo ${live.st.rows.length}: ${e.columns.map((c) => `${c.label} = ${fmt(row[c.key], c.digits ?? 2)}${c.unit ? ` ${c.unit}` : ''}`).join(' · ')}
 Đổi điều kiện rồi làm lại để có lần đo tiếp` : `${e.lesson}
 Kéo bộ phận có vòng cam để chỉnh · cầm vật ở khay đặt vào vòng vàng để chọn${e.columns.length ? ` · ${pull ? `kéo ${pull.what.split(':')[0]} rồi thả` : levOn ? (knife ? 'gạt khóa dao xuống' : 'gạt cần trượt sang ô xanh') : 'giữ chụm trên dụng cụ'} để ${action.toLowerCase()} và ghi số đo` : ''}`);
       };

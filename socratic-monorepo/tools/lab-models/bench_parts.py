@@ -478,7 +478,7 @@ def phys():
     o = battery(-2.3, 0.2) + meter(-0.9, -0.5, 'A', RED, 0.3) + meter(0.2, -0.5, 'V', BLUE, -0.2) + switch(-2.2, -0.6)
     o += [B(1.6, 0.06, 0.3, 1.7, 0.03, 0.3, PANEL, 0.01), C(0.1, 1.3, 1.7, 0.2, 0.3, CREAM, 'x'), C(0.012, 1.5, 1.7, 0.42, 0.3, CHROME, 'x'), B(0.06, 0.4, 0.2, 0.95, 0.23, 0.3, IRON, 0.01), B(0.06, 0.4, 0.2, 2.45, 0.23, 0.3, IRON, 0.01)]
     o += [C(0.102, 0.012, 1.1 + i * 0.05, 0.2, 0.3, COPPER, 'x') for i in range(25)]
-    o += [wire((-2.3, 0.46, 0.2), (-2.08, 0.1, -0.6)), wire((-2.32, 0.1, -0.6), (-1.1, 0.56, -0.5)), wire((-0.7, 0.56, -0.5), (0.95, 0.4, 0.3), INK), wire((0, 0.56, -0.5), (2.45, 0.4, 0.3), BLUE, -0.2)]
+    o += [wire((-2.3, 0.46, 0.2), (-2.08, 0.1, -0.6)), wire((-0.7, 0.56, -0.5), (0.95, 0.4, 0.3), INK)]  # hai dây còn lại học sinh tự nối (benchMoves: connect)
     part('Set_EMF_INTERNAL_R', o)
     part('Mov_EMF_INTERNAL_R_2', needle(-0.9, -0.5, RED), pivot=(-0.9, 0.2, -0.37))
     part('Mov_EMF_INTERNAL_R_3', needle(0.2, -0.5, BLUE), pivot=(0.2, 0.2, -0.37))
@@ -520,13 +520,14 @@ def phys():
     # BOYLE: xi lanh thủy tinh đứng, pit-tông (động), áp kế, thước chia
     o = [B(0.9, 0.08, 0.7, 0, 0.04, 0, IRON, 0.02), C(0.26, 1.5, 0, 0.83, 0, GLASS, seg=32), C(0.28, 0.06, 0, 0.11, 0, CHROME), C(0.28, 0.04, 0, 1.6, 0, CHROME)]
     o += [B(0.006, 0.004, 0.006, 0.262, 0.25 + i * 0.06, 0.0, INK, 0) for i in range(22)] + [B(0.05, 0.004, 0.006, 0.27, 0.25 + i * 0.3, 0.0, INK, 0) for i in range(5)]
+    o += [C(0.035, 0.1, 0.3, 0.2, 0, BRASS, 'x')]  # núm ra ở đáy xi lanh để cắm ống áp kế
+    o += [C(0.34, 0.12, 1.2, 0.75, 0, CHROME, 'z', seg=36), C(0.3, 0.012, 1.2, 0.75, 0.061, CREAM, 'z', seg=36), B(0.012, 0.24, 0.006, 1.27, 0.82, 0.07, RED, 0, rz=-0.6), TX('kPa', 0.07, 1.2, 0.6, 0.07), C(0.03, 0.2, 1.2, 0.38, 0, BRASS), B(0.3, 0.3, 0.2, 1.2, 0.15, 0, IRON, 0.02)]  # áp kế đứng trên đế, núm đồng ở chân để nối ống
     part('Set_BOYLE', o)
-    part('Mov_BOYLE_2', [TB([(0.26, 0.2, 0), (0.7, 0.2, 0), (1.2, 0.5, 0)], 0.025, RUBBER), C(0.34, 0.12, 1.2, 0.75, 0, CHROME, 'z', seg=36), C(0.3, 0.012, 1.2, 0.75, 0.061, CREAM, 'z', seg=36), B(0.012, 0.24, 0.006, 1.27, 0.82, 0.07, RED, 0, rz=-0.6), TX('kPa', 0.07, 1.2, 0.6, 0.07)], pivot=(0.8, 0.2, 0))  # áp kế có ống: lắp khít vào đầu xi lanh
     part('Mov_BOYLE_1', [C(0.245, 0.1, 0, 0, 0, RUBBER, seg=32), C(0.03, 1.2, 0, 0.6, 0, CHROME), C(0.2, 0.04, 0, 1.22, 0, BAKELITE)], pivot=(0, 0, 0))
 
     # OHM_LAW: nguồn chỉnh được, điện trở, ampe kế, vôn kế
     o = psu(-2.2, -0.2, '5.0 V', knob=False) + resistor(-0.4, 0.5) + resistor(-0.4, 0.95, BLUE) + meter(0.7, -0.4, 'A', RED, 0.2) + meter(1.9, -0.4, 'V', BLUE, 0.4)
-    o += [wire((-2.4, 0.12, 0.14), (-0.6, 0.14, 0.5)), wire((-0.2, 0.14, 0.5), (0.5, 0.56, -0.4), RED, 0.15), wire((0.9, 0.56, -0.4), (-2.1, 0.12, 0.14), INK, 0.5), wire((-0.6, 0.14, 0.5), (1.7, 0.56, -0.4), BLUE, -0.5), wire((-0.2, 0.14, 0.5), (2.1, 0.56, -0.4), BLUE, 0.6)]
+    o += [wire((-2.4, 0.12, 0.14), (-0.6, 0.14, 0.5)), wire((0.9, 0.56, -0.4), (-2.1, 0.12, 0.14), INK, 0.5), wire((-0.2, 0.14, 0.5), (2.1, 0.56, -0.4), BLUE, 0.6)]  # R→ampe kế và R→vôn kế: học sinh tự nối
     part('Set_OHM_LAW', o)
     part('Mov_OHM_LAW_9', knob(-1.9, 0.34, 0.13), pivot=(-1.9, 0.34, 0.13))
     part('Mov_OHM_LAW_1', needle(0.7, -0.4, RED), pivot=(0.7, 0.2, -0.27))
@@ -534,7 +535,7 @@ def phys():
 
     # SPECIFIC_HEAT: nhiệt lượng kế, nguồn nung, nhiệt kế, đồng hồ, cân
     o = calorimeter(-0.4, 0) + psu(-2.1, -0.2, '40 W') + stopwatch(1.0, 0.6, False) + digital(2.1, -0.1, '200.0 g', 0.9, True) + up(beaker(2.1, -0.1, 0.2, 0.3), 0.26)
-    o += [wire((-2.3, 0.12, 0.14), (-0.5, 0.62, 0), RED, 0.3), wire((-2.0, 0.12, 0.14), (-0.3, 0.62, 0.05), INK, 0.45)]
+    o += [wire((-2.0, 0.12, 0.14), (-0.3, 0.62, 0.05), INK, 0.45)]  # điện trở nung→cực đỏ nguồn: học sinh tự cắm
     part('Set_SPECIFIC_HEAT', o)
     part('Mov_SPECIFIC_HEAT_1', swhand(1.0, 0.6), pivot=(1.0, 0.066, 0.6))
 
@@ -548,7 +549,7 @@ def phys():
 
     # EM_INDUCTION: cuộn dây, nam châm thẳng (động), milivôn kế
     o = [B(1.0, 0.06, 0.8, -0.6, 0.03, 0, PANEL, 0.01), C(0.36, 0.7, -0.6, 0.5, 0, COPPER, 'x', seg=36), C(0.4, 0.04, -0.97, 0.5, 0, BAKELITE, 'x', seg=36), C(0.4, 0.04, -0.23, 0.5, 0, BAKELITE, 'x', seg=36), B(0.3, 0.14, 0.5, -0.6, 0.1, 0, WOOD, 0.01)]
-    o += meter(1.9, -0.4, 'mV', BLUE, 0.3) + [wire((-0.9, 0.2, 0.3), (1.7, 0.56, -0.4), RED, 0.5), wire((-0.3, 0.2, 0.3), (2.1, 0.56, -0.4), INK, 0.3)]
+    o += meter(1.9, -0.4, 'mV', BLUE, 0.3) + [wire((-0.3, 0.2, 0.3), (2.1, 0.56, -0.4), INK, 0.3)]  # cuộn dây→cực đỏ milivôn kế: học sinh tự nối
     part('Set_EM_INDUCTION', o)
     part('Mov_EM_INDUCTION_2', needle(1.9, -0.4, BLUE), pivot=(1.9, 0.2, -0.27))
     part('Mov_EM_INDUCTION_1', [B(0.45, 0.14, 0.14, -0.225, 0.5, 0, RED, 0.01), B(0.45, 0.14, 0.14, 0.225, 0.5, 0, BLUE, 0.01), TX('N', 0.1, -0.22, 0.5, 0.075, WHITE), TX('S', 0.1, 0.22, 0.5, 0.075, WHITE)], pivot=(0, 0, 0))
@@ -575,7 +576,7 @@ def phys():
 
     # CAPACITOR_RC: bảng mạch có tụ và điện trở, nguồn 6 V, vôn kế, đồng hồ bấm giây, khóa
     o = [B(1.4, 0.05, 0.9, -0.5, 0.025, 0.1, GREENM, 0.01), C(0.14, 0.4, -0.8, 0.25, 0, BLUE), C(0.142, 0.05, -0.8, 0.4, 0, CHROME), TX('100 µF', 0.07, -0.8, 0.22, 0.145, WHITE)] + resistor(-0.2, 0.3) + switch(-0.5, -0.25)
-    o += psu(-2.3, -0.2, '6.0 V') + meter(1.2, -0.4, 'V', BLUE, 0.1) + stopwatch(2.3, 0.5, False) + [wire((-2.5, 0.12, 0.14), (-0.62, 0.1, -0.25)), wire((-0.38, 0.1, -0.25), (-0.4, 0.14, 0.3), RED, 0.1), wire((-0.8, 0.46, 0), (1.0, 0.56, -0.4), BLUE, 0.5), wire((-2.2, 0.12, 0.14), (1.4, 0.56, -0.4), INK, 0.9)]
+    o += psu(-2.3, -0.2, '6.0 V') + meter(1.2, -0.4, 'V', BLUE, 0.1) + stopwatch(2.3, 0.5, False) + [wire((-2.5, 0.12, 0.14), (-0.62, 0.1, -0.25)), wire((-2.2, 0.12, 0.14), (1.4, 0.56, -0.4), INK, 0.9)]  # khóa→điện trở và tụ→vôn kế: học sinh tự nối
     part('Set_CAPACITOR_RC', o)
     part('Mov_CAPACITOR_RC_1', needle(1.2, -0.4, BLUE), pivot=(1.2, 0.2, -0.27))
     part('Mov_CAPACITOR_RC_2', swhand(2.3, 0.5), pivot=(2.3, 0.066, 0.5))
@@ -605,7 +606,7 @@ def phys():
     o = [B(0.3, 0.9, 0.3, -0.5, 0.6, 0, IRON, 0.01), B(0.3, 0.9, 0.3, 0.5, 0.6, 0, IRON, 0.01), B(1.3, 0.3, 0.3, 0, 0.15, 0, IRON, 0.01), B(1.3, 0.25, 0.3, 0, 1.17, 0, IRON, 0.01)]
     o += [B(0.31, 0.004, 0.31, sx, 0.2 + i * 0.1, 0, STEEL, 0) for sx in (-0.5, 0.5) for i in range(9)]
     o += [C(0.3, 0.5, -0.5, 0.6, 0, COPPER, seg=32), C(0.34, 0.03, -0.5, 0.86, 0, BAKELITE, seg=32), C(0.34, 0.03, -0.5, 0.34, 0, BAKELITE, seg=32), C(0.3, 0.5, 0.5, 0.6, 0, BLUE, seg=32), C(0.34, 0.03, 0.5, 0.86, 0, BAKELITE, seg=32), C(0.34, 0.03, 0.5, 0.34, 0, BAKELITE, seg=32)]
-    o += psu(-2.3, -0.1, '6 V ~', knob=False) + meter(-1.3, 0.7, 'V~', RED, 0.1) + meter(1.9, -0.1, 'V~', BLUE, 0.5) + [wire((-2.5, 0.12, 0.24), (-0.8, 0.5, 0.2)), wire((-2.2, 0.12, 0.24), (-0.8, 0.7, 0.2), INK, 0.4), wire((0.8, 0.5, 0.2), (1.7, 0.56, -0.1), BLUE), wire((0.8, 0.7, 0.2), (2.1, 0.56, -0.1), BLUE, 0.4)]
+    o += psu(-2.3, -0.1, '6 V ~', knob=False) + meter(-1.3, 0.7, 'V~', RED, 0.1) + meter(1.9, -0.1, 'V~', BLUE, 0.5) + [wire((-2.2, 0.12, 0.24), (-0.8, 0.7, 0.2), INK, 0.4), wire((0.8, 0.7, 0.2), (2.1, 0.56, -0.1), BLUE, 0.4)]  # nguồn→sơ cấp và thứ cấp→vôn kế: học sinh tự nối
     part('Set_TRANSFORMER', o)
     part('Mov_TRANSFORMER_9', knob(-2.0, 0.34, 0.23), pivot=(-2.0, 0.34, 0.23))
     part('Mov_TRANSFORMER_1', needle(-1.3, 0.7, RED), pivot=(-1.3, 0.2, 0.83))
@@ -705,14 +706,13 @@ def bio():
 
     # SEED_RESPIRATION: hai bình kín (hạt sống / hạt luộc) nối ống sang nước vôi trong, bể ổn nhiệt, cảm biến CO₂
     o = tank(-1.0, 0, 2.0, 0.45, 0.9, 0.7, WATER, 0.12) + [B(2.1, 0.12, 1.0, -1.0, 0.06, 0, CASE, 0.02)]
-    hose = []
     for i, (sx, m) in enumerate(((-1.5, LEAF2), (-0.5, mat('boiled', hexc('#B59A6A'))))):
         o += [LA([(0, 0), (0.28, 0), (0.3, 0.3), (0.12, 0.5), (0.12, 0.62), (0, 0.62)], sx, 0.16, 0, GLASS), C(0.13, 0.06, sx, 0.8, 0, RUBBER)] + [S(0.05, sx + 0.12 * math.cos(k * 1.1), 0.22 + 0.04 * (k % 3), 0.12 * math.sin(k * 1.1), m) for k in range(12)]
-        hose.append(TB([(sx, 0.82, 0), (sx, 1.1, 0), (sx + 0.3, 1.2, 0.3), (1.0 + i * 0.5, 1.0, 0.3), (1.0 + i * 0.5, 0.3, 0.3)], 0.015, GLASS))
+        o += [C(0.012, 0.16, sx, 0.9, 0, GLASS, seg=10)]  # ống thủy tinh ngắn xuyên nút bình (đầu nối ống mềm)
         o += ttube(1.0 + i * 0.5, 0.05, 0.3, liq('lime%d' % i, '#F4F4F0' if i == 0 else '#CFE3F0', 0.8 if i == 0 else 0.4), 0.6)
     o += [B(0.9, 0.06, 0.4, 1.25, 0.03, 0.3, WOOD, 0.01), B(0.7, 0.4, 0.3, 2.3, 0.2, -0.3, CASE, 0.02), B(0.4, 0.14, 0.012, 2.3, 0.24, -0.149, DARK, 0), B(1.2, 0.03, 0.012, -1.0, 0.06, 0.502, INK, 0)]
     part('Set_SEED_RESPIRATION', o)
-    part('Mov_SEED_RESPIRATION_2', hose, pivot=(0.1, 0.82, 0.15))  # hai ống dẫn khí: nối từ nút bình sang ống nước vôi
+    # hai ống dẫn khí từ nút bình sang ống nước vôi: học sinh tự nối (benchMoves: connect, ống mềm do cảnh vẽ)
     part('Mov_SEED_RESPIRATION_1', [B(0.08, 0.1, 0.07, 0, 0.06, 0.53, ORANGE, 0.01)])
 
     # CIRCULATION: cánh tay mô hình trên gối, vòng bít, máy đo huyết áp, đồng hồ bấm giây

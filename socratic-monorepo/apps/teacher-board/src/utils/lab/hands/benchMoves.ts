@@ -3,7 +3,7 @@ import {PHYS_BY_ID} from '../phys/experiments';
 import type {PhysExperiment} from '../phys/types';
 import type {Manual} from './manual';
 import {isToggle} from './benchPick';
-import {connect, place, press, pour, squeeze, stir, type BenchAct} from './benchActs';
+import {connect, place, press, pour, squeeze, stir, turn, type BenchAct} from './benchActs';
 
 /**
  * Phần động của bộ dụng cụ Blender (`tools/lab-models/bench_parts.py` → `bench-phys.glb`, `bench-bio.glb`) trong các bài thực hành SGK:
@@ -276,12 +276,45 @@ withAct('LATENT_HEAT_FUSION', 0, pour('Cân nước ấm trong nhiệt lượng 
 withAct('WAVE_INTERFERENCE', 0, pour('Đổ nước vào khay', 'jug', edge(-1.2), [0, 0.55, 0.4], {color: WATER_C}));
 withAct('CHARLES', 0, place('Nhúng bình khí vào cốc nước', 'flask', edge(-1.6), [-1.4, 0.7, 0], {rest: [-1.4, 0.24, 0]}));
 
-// Vật lí: bước NỐI DÂY làm bằng phích cắm có dây (giữ nhãn và chốt `at` đã có, chỉ đổi cách làm)
-const wireUp = (id: string, i: number) => {
+// Vật lí: bước NỐI DÂY làm bằng phích cắm có dây. Mỗi dây có đầu CỐ ĐỊNH ở cực của thiết bị (`src`) và chốt cần cắm (`at`) đúng như mạch trong
+// bộ dụng cụ Blender (`bench_parts.py` đã bỏ đúng những dây này khỏi hình tĩnh nên không bị trùng). Dây đỏ = cực dương, đen = cực âm, xanh = nhánh vôn kế.
+type P3 = [number, number, number];
+const RED_W = {color: '#C4261A', r: 0.014};
+const BLK_W = {color: '#1D1B16', r: 0.014};
+const BLU_W = {color: '#2459C9', r: 0.014};
+const wireUp = (id: string, i: number, src: P3, to: P3, cable = RED_W, label?: string) => {
   const st = BENCH_SETUP[id]?.[i];
-  if (st) st.act = connect(st.label, 'plug', edge(st.at[0]), st.at).act;
+  if (!st) return;
+  st.at = to;
+  if (label) st.label = label;
+  st.act = connect(st.label, 'plug', edge(to[0] + (to[0] < src[0] ? -0.6 : 0.6)), to, {src, cable}).act;
 };
-for (const [id, i] of [['EMF_INTERNAL_R', 0], ['EMF_INTERNAL_R', 1], ['OHM_LAW', 0], ['OHM_LAW', 1], ['CAPACITOR_RC', 0], ['CAPACITOR_RC', 1], ['TRANSFORMER', 0], ['TRANSFORMER', 1], ['EM_INDUCTION', 0], ['SPECIFIC_HEAT', 1], ['STANDING_WAVE', 0]] as const) wireUp(id, i);
+wireUp('EMF_INTERNAL_R', 0, [-2.32, 0.1, -0.6], [-1.1, 0.56, -0.5], RED_W, 'Nối khóa K tới cực (+) ampe kế');
+wireUp('EMF_INTERNAL_R', 1, [2.45, 0.4, 0.3], [0, 0.56, -0.5], BLU_W, 'Nối biến trở tới vôn kế');
+wireUp('OHM_LAW', 0, [-0.2, 0.14, 0.5], [0.5, 0.56, -0.4], RED_W, 'Mắc điện trở nối tiếp ampe kế');
+wireUp('OHM_LAW', 1, [-0.6, 0.14, 0.5], [1.7, 0.56, -0.4], BLU_W, 'Mắc vôn kế song song với điện trở');
+wireUp('CAPACITOR_RC', 0, [-0.38, 0.1, -0.25], [-0.4, 0.14, 0.3], RED_W, 'Mắc khóa K nối tiếp điện trở');
+wireUp('CAPACITOR_RC', 1, [-0.8, 0.46, 0], [1.0, 0.56, -0.4], BLU_W, 'Mắc vôn kế song song với tụ');
+wireUp('TRANSFORMER', 0, [-2.5, 0.12, 0.24], [-0.8, 0.5, 0.2], RED_W, 'Mắc cuộn sơ cấp vào nguồn xoay chiều');
+wireUp('TRANSFORMER', 1, [0.8, 0.5, 0.2], [1.7, 0.56, -0.1], BLU_W, 'Mắc vôn kế vào cuộn thứ cấp');
+wireUp('EM_INDUCTION', 0, [-0.9, 0.2, 0.3], [1.7, 0.56, -0.4], RED_W, 'Nối cuộn dây với milivôn kế');
+wireUp('SPECIFIC_HEAT', 1, [-0.5, 0.62, 0], [-2.3, 0.12, 0.14], RED_W, 'Cắm điện trở nung vào cực (+) nguồn');
+// sợi dây đàn hồi của bài sóng dừng: đầu kia đã vắt qua ròng rọc, học sinh buộc đầu này vào cần rung của máy phát
+wireUp('STANDING_WAVE', 0, [2.0, 0.66, 0], [-1.9, 0.78, 0], {color: '#EDE7D6', r: 0.007}, 'Buộc dây vào cần rung của máy phát');
+void BLK_W;
+
+// Ống mềm: một đầu đã gắn vào thiết bị, học sinh cầm ĐẦU ỐNG còn lại cắm khít vào núm (áp kế ↔ xi lanh; nút bình hạt ↔ ống nước vôi)
+const HOSE = {color: '#2B2C30', r: 0.03};
+const SILICONE = {color: '#D9E6EC', r: 0.026, opacity: 0.55};
+const hoseUp = (id: string, i: number, label: string, src: P3, to: P3, cable: {color: string; r: number; opacity?: number}) => {
+  const list = BENCH_SETUP[id];
+  if (!list) return;
+  list[i] = connect(label, 'nozzle', edge(to[0] + (to[0] < src[0] ? -0.7 : 0.7)), to, {src, cable, verb: 'Cắm'});
+};
+hoseUp('BOYLE', 0, 'Cắm ống áp kế khít vào núm xi lanh', [1.05, 0.2, 0], [0.36, 0.2, 0], HOSE);
+BENCH_SETUP.SEED_RESPIRATION.splice(2, 0, sp('', 0, 0, 0));
+hoseUp('SEED_RESPIRATION', 1, 'Nối ống dẫn khí bình hạt sống → ống nước vôi 1', [-1.5, 0.98, 0], [1.0, 0.66, 0.3], SILICONE);
+hoseUp('SEED_RESPIRATION', 2, 'Nối ống dẫn khí bình hạt luộc → ống nước vôi 2', [-0.5, 0.98, 0], [1.5, 0.66, 0.3], SILICONE);
 
 // các bước "Bật máy / đèn": bấm công tắc thật trên chính thiết bị (giữ nhãn và chỗ `at`)
 for (const [id, i] of [['SOUND_FREQUENCY', 1], ['SOUND_SPEED', 0], ['CELL_OBSERVE', 1], ['TRANSPIRATION', 1], ['LEAF_STARCH', 1], ['CIRCULATION', 2], ['CHROMOSOME_MUTATION', 1], ['PENDULUM_G', 1]] as const) {
@@ -316,7 +349,6 @@ for (const [id, i, part] of [
   ['SOUND_SPEED', 1, 1], // thước dọc ống
   ['FRICTION', 1, 4], // lực kế
   ['HOOKE', 1, 3], // thước đứng
-  ['BOYLE', 0, 2], // áp kế có ống nối
   ['CHARLES', 1, 2], // nhiệt kế
   ['WAVE_INTERFERENCE', 1, 1], // thanh hai mũi nhọn
   ['STANDING_WAVE', 1, 1], // dây + quả cân
@@ -324,7 +356,6 @@ for (const [id, i, part] of [
   ['BIOMOLECULES', 0, 3], // giá ống mẫu
   ['BIOMOLECULES', 1, 4], // bốn lọ thuốc thử
   ['TRANSPIRATION', 0, 2], // túi nilon
-  ['SEED_RESPIRATION', 1, 2], // ống dẫn khí
   ['APICAL_DOMINANCE', 1, 3], // kéo
   ['TREE_AGE', 1, 2], // thước
   ['METAMORPHOSIS', 1, 2], // kính lúp + thước
@@ -336,7 +367,9 @@ withAct('APICAL_DOMINANCE', 0, place('Cắm thẻ đánh dấu nhóm cây đối
 withAct('MODIFICATION', 0, place('Cắm thẻ chia hai hàng giống A, B', 'card', edge(-2.0), [-2.75, 0.3, 0.05], {rest: [-2.75, 0, 0.05], rot: Math.PI / 2}));
 withAct('METAMORPHOSIS', 0, pour('Đổ nước sạch vào bể nuôi', 'jug', edge(-0.4), [-1.4, 0.65, 0], {color: WATER_C}));
 withAct('MINI_ECOSYSTEM', 1, pour('Thả cá vào bể (rót cả cốc nước có cá)', 'jug', edge(0.6), [-0.5, 0.6, -0.2], {color: WATER_C}));
-for (const [id, i] of [['LEVER_MOMENT', 0], ['TROPISM', 1], ['MINI_ECOSYSTEM', 2]] as const) {
+// thanh đòn lúc đầu lệch (đầu phải chúc xuống); cầm ốc cân bằng ở đầu thanh và vặn đủ 2 vòng thì thanh về nằm ngang
+withAct('LEVER_MOMENT', 0, turn('Vặn ốc cân bằng cho thanh nằm ngang', '', [0, 0, 0], [1.86, 1.5, 0], {n: 2, tilt: {part: 2, angle: -0.14}}));
+for (const [id, i] of [['TROPISM', 1], ['MINI_ECOSYSTEM', 2]] as const) {
   const st = BENCH_SETUP[id]?.[i];
   if (st) st.act = press(st.label, '', [0, 0, 0], st.at).act;
 }
@@ -352,13 +385,17 @@ for (const [id, cx] of [['QUADRAT', -0.8], ['COMMUNITY', -0.6]] as const) {
 }
 
 /** cách làm bằng tay của từng kiểu thao tác thật (cho tab Hướng dẫn); chỉ cần chụm, kéo, giữ yên, vẽ vòng, chụm–nhả */
-const PROP_NAME: Record<string, string> = {slide: 'lam kính', cover: 'lamen', rack: 'giá ống nghiệm', bottle: 'lọ thuốc thử', jug: 'cốc nước', pestle: 'chày', rod: 'đũa thủy tinh', bulb: 'bóng bơm', flask: 'bình tam giác', disc: 'lát cắt thân cây', foil: 'lá nhôm', jar: 'hũ', plug: 'phích cắm', cuff: 'vòng bít', paper: 'tờ phiếu', towel: 'giấy thấm', card: 'thẻ', pot: 'chậu cây'};
+const PROP_NAME: Record<string, string> = {slide: 'lam kính', cover: 'lamen', rack: 'giá ống nghiệm', bottle: 'lọ thuốc thử', jug: 'cốc nước', pestle: 'chày', rod: 'đũa thủy tinh', bulb: 'bóng bơm', flask: 'bình tam giác', disc: 'lát cắt thân cây', foil: 'lá nhôm', jar: 'hũ', plug: 'phích cắm', cuff: 'vòng bít', paper: 'tờ phiếu', towel: 'giấy thấm', card: 'thẻ', pot: 'chậu cây', nozzle: 'đầu ống mềm'};
 const ACT_HOW: Record<BenchAct['kind'], (a: BenchAct) => string> = {
   place: (a) => a.part !== undefined ? 'Đặt đúng chỗ: chụm bộ phận của dụng cụ (đang để ở mép bàn gần bạn), kéo tới vòng cam rồi buông; thả lệch thì bộ phận tự về mép bàn.' : `Đặt ${PROP_NAME[a.prop] ?? 'vật'}: chụm vật đang nằm ở mép bàn gần bạn, kéo tới vòng cam rồi buông; thả lệch thì vật tự trở về chỗ cũ.`,
   pour: (a) => `Rót từ ${PROP_NAME[a.prop] ?? 'lọ'}: chụm lọ, đưa MIỆNG LỌ tới vòng cam rồi giữ yên: lọ tự nghiêng và rót, giữ càng lâu càng được nhiều (cần chừng ${a.n ?? 2} giây); nhấc ra thì ngừng, phần đã rót vẫn còn.`,
   stir: (a) => `${a.verb} bằng ${PROP_NAME[a.prop] ?? 'dụng cụ'}: chụm, đưa vật vào vòng cam rồi vẽ vòng tròn quanh tâm vòng (${a.n ?? 3} vòng, theo chiều nào cũng được); nhãn ghi số vòng đã ${a.verb.toLowerCase()}.`,
   press: () => 'Bật: đưa con trỏ tới vòng cam ở công tắc của thiết bị rồi chụm một lần (như bấm công tắc thật); vòng chớp sáng là đã bật.',
-  connect: () => 'Nối dây: chụm phích cắm có dây ở mép bàn (dây nối với nguồn), kéo tới vòng cam là chốt cần nối rồi buông; thả lệch thì phích tự về chỗ cũ.',
+  connect: (a) =>
+    a.prop === 'nozzle'
+      ? 'Cắm ống: một đầu ống đã gắn sẵn vào thiết bị; chụm đầu ống còn lại ở mép bàn, kéo tới núm (vòng cam) rồi buông để cắm khít; thả lệch thì ống tự về chỗ cũ.'
+      : 'Nối dây: dây đã gắn sẵn một đầu vào cực của thiết bị; chụm phích ở đầu kia (nằm ở mép bàn), kéo tới chốt cần nối (vòng cam) rồi buông; thả lệch thì phích tự về chỗ cũ.',
+  turn: (a) => `Vặn ốc: chụm vào ốc (vòng cam) rồi vẽ vòng tròn quanh ốc, đủ ${a.n ?? 2} vòng thì xong; thanh dịch dần theo từng vòng vặn.`,
   squeeze: (a) => `Bóp ${PROP_NAME[a.prop] ?? 'bóng'}: chụm giữ trên bóng để bóp, nhả ra cho phồng lại; mỗi lần chụm rồi nhả là một nhịp, cần ${a.n ?? 5} nhịp.`,
 };
 

@@ -74,16 +74,35 @@ describe('thao tác thật trong bước chuẩn bị (đặt, rót, khuấy, b�
     const acts = Object.entries(BENCH_SETUP).flatMap(([id, steps]) => steps.filter((s) => s.act).map((s) => [id, s] as const));
     expect(acts.length).toBeGreaterThanOrEqual(28);
     const kinds = new Set(acts.map(([, s]) => s.act!.kind));
-    expect([...kinds].sort()).toEqual(['connect', 'pour', 'place', 'press', 'squeeze', 'stir'].sort());
+    expect([...kinds].sort()).toEqual(['connect', 'pour', 'place', 'press', 'squeeze', 'stir', 'turn'].sort());
     for (const [id, s] of acts) {
       const a = s.act!;
-      if (a.kind === 'press' || a.part !== undefined) continue; // bấm công tắc / dùng phần động có sẵn: không có vật trong bench-props.glb
+      if (a.kind === 'press' || a.kind === 'turn' || a.part !== undefined) continue; // bấm công tắc / vặn ốc trên dụng cụ / dùng phần động có sẵn: không có vật trong bench-props.glb
       expect(g.has(`Prop_${a.prop}`), `${id}: ${a.prop}`).toBe(true);
       for (const v of [a.from[0], s.at[0]]) expect(Math.abs(v), id).toBeLessThanOrEqual(3.1);
       expect(a.from[2], `${id} vật nằm ở mép bàn phía người nhìn`).toBeGreaterThanOrEqual(1.3);
       if (a.kind === 'stir') expect(a.n ?? 3, id).toBeGreaterThanOrEqual(2);
       if (a.kind === 'pour') expect(a.color, id).toBeTruthy();
     }
+  });
+
+  it('nối dây / cắm ống: dây có đầu cố định ở cực thiết bị (không kéo về mép bàn), đầu ống mềm có trong bench-props.glb; vặn ốc có thanh bị chỉnh', () => {
+    const g = nodes('bench-props.glb');
+    expect(g.has('Prop_nozzle')).toBe(true);
+    const conns = Object.entries(BENCH_SETUP).flatMap(([id, steps]) => steps.filter((s) => s.act?.kind === 'connect').map((s) => [id, s] as const));
+    expect(conns.length).toBeGreaterThanOrEqual(14);
+    for (const [id, s] of conns) {
+      const a = s.act!;
+      expect(a.src, `${id}: ${s.label}`).toBeDefined();
+      expect(a.cable?.r, id).toBeGreaterThan(0);
+      expect(a.src![2], `${id}: đầu cố định nằm trên dụng cụ, không ở mép bàn`).toBeLessThan(1.0);
+      expect(Math.hypot(a.src![0] - s.at[0], a.src![2] - s.at[2]), `${id}: hai đầu dây khác chỗ`).toBeGreaterThan(0.3);
+    }
+    expect(conns.filter(([, s]) => s.act!.prop === 'nozzle').map(([id]) => id).sort()).toEqual(['BOYLE', 'SEED_RESPIRATION', 'SEED_RESPIRATION']);
+    const lever = BENCH_SETUP.LEVER_MOMENT[0].act!;
+    expect(lever.kind).toBe('turn');
+    expect(lever.tilt?.part).toBe(2);
+    expect(lever.n ?? 0).toBeGreaterThanOrEqual(1);
   });
 
   it('bước dùng phần động có sẵn: phần đó có trong bộ dụng cụ (cảnh tự nạp mọi phần mà bước chuẩn bị cầm)', () => {

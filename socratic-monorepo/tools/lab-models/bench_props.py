@@ -120,6 +120,10 @@ pl = [C(0.022, 0.16, 0, 0.08, 0, BRASS, seg=16), C(0.05, 0.2, 0, 0.26, 0, PLUGM,
 pl += [C(0.056, 0.012, 0, 0.2 + i * 0.05, 0, PLUGM, seg=24) for i in range(4)]
 prop('plug', pl)
 
+# đầu ống mềm (ống cao su / silicone nối áp kế, ống dẫn khí): gốc ở ĐẦU DƯỚI là miệng ống, đoạn ống ngắn đi lên; phần ống còn lại do cảnh vẽ nối về nguồn
+HOSEM = mat('hose', hexc('#2B2C30'), rough=0.55)
+prop('nozzle', [LA([(0.0, 0.0), (0.03, 0.0), (0.034, 0.01), (0.034, 0.05), (0.028, 0.05), (0.028, 0.012), (0.0, 0.012)], BRASS if 'BRASS' in globals() else STEELP), C(0.04, 0.3, 0, 0.2, 0, HOSEM, seg=20, bevel=0.006), C(0.044, 0.04, 0, 0.07, 0, HOSEM, seg=20)])
+
 # ---- vật để CHỌN phương án (cầm từng cái lên, đặt vào chỗ dùng): vật liệu `tint` do cảnh tô màu theo phương án
 STEELP = mat('steelp', (0.7, 0.72, 0.76), metallic=1, rough=0.3)
 COPPERP = mat('copperp', (0.72, 0.36, 0.2), metallic=1, rough=0.3)

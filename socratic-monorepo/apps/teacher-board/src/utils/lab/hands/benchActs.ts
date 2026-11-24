@@ -7,7 +7,7 @@
  *  - `squeeze`: chụm vào bóng giữ để bóp, nhả ra cho phồng lại: mỗi lần chụm–nhả là một nhịp bơm.
  * Mọi đích đều rộng ≥ tầm với của tay (0,16) để tay run vẫn trúng.
  */
-export type ActKind = 'place' | 'pour' | 'stir' | 'squeeze' | 'connect' | 'press';
+export type ActKind = 'place' | 'pour' | 'stir' | 'squeeze' | 'connect' | 'press' | 'turn';
 export interface BenchAct {
   kind: ActKind;
   /** tên vật trong `bench-props.glb` (nút `Prop_<tên>`) */
@@ -26,6 +26,12 @@ export interface BenchAct {
   part?: number;
   /** nhãn động từ của chỉ dẫn trên cảnh: "Rót", "Khuấy", "Bóp bóng", "Đặt" */
   verb: string;
+  /** connect: đầu CỐ ĐỊNH của dây / ống (cực của thiết bị nguồn); dây võng từ đây tới đuôi phích / đầu ống học sinh cầm */
+  src?: [number, number, number];
+  /** connect: kiểu dây — màu, bán kính (đơn vị cảnh), độ trong (ống silicone) */
+  cable?: {color: string; r: number; opacity?: number};
+  /** turn: phần động bị chỉnh theo số vòng vặn (thanh đòn nghiêng `angle` rad lúc đầu, về 0 khi vặn đủ) */
+  tilt?: {part: number; angle: number};
 }
 const act = (kind: ActKind, verb: string) => (label: string, prop: string, from: [number, number, number], at: [number, number, number], o: Partial<BenchAct> = {}) => ({label, at, act: {kind, verb, prop, from, ...o} as BenchAct});
 export const place = act('place', 'Đặt');
@@ -36,6 +42,8 @@ export const squeeze = act('squeeze', 'Bóp');
 export const connect = act('connect', 'Nối');
 /** bật máy / đèn: chụm một lần vào công tắc (vòng cam trên chính thiết bị); không có vật để cầm */
 export const press = act('press', 'Bật');
+/** vặn ốc / núm: cầm vào ốc (vòng cam) rồi vẽ vòng tròn quanh nó, đủ `n` vòng là chỉnh xong */
+export const turn = act('turn', 'Vặn');
 /** dây nối: các điểm (x, y, z) của dây đi từ nguồn `a` tới đuôi phích `b`, võng xuống theo trọng lực và không chui xuống mặt bàn */
 export function wirePath(a: [number, number, number], b: [number, number, number], n = 20): [number, number, number][] {
   const len = Math.hypot(b[0] - a[0], b[2] - a[2]);

@@ -109,6 +109,7 @@ button { cursor: pointer; }
       <button type="button" data-mode="day" aria-pressed="true">Ban ngày</button>
       <button type="button" data-mode="evening" aria-pressed="false">Chiều tối</button>
     </div>
+    <label class="chk" for="optRecess">Thụt gian trước <input type="number" id="optRecess" step="50" value="400" style="width:70px;background:var(--bg);border:1px solid var(--line2);border-radius:6px;padding:4px 6px"> mm</label>
     <label class="chk" for="optStep">Bậc lùi <input type="number" id="optStep" step="50" value="600" style="width:76px;background:var(--bg);border:1px solid var(--line2);border-radius:6px;padding:4px 6px"> mm</label>
     <label class="chk"><input type="checkbox" id="optNeighbors" checked> Gian bên cạnh</label>
     <label class="chk"><input type="checkbox" id="optRoof" checked> Mái lều</label>
@@ -138,7 +139,7 @@ button { cursor: pointer; }
       <div class="sec" id="inspector"></div>
       <div class="sec">
         <h2>Ý tưởng khối nổi</h2>
-        <div class="idea"><b>Vách thụt in quảng bá</b><p>Ba bề mặt tự giãn theo "Bậc lùi": vách thụt 1 (sản phẩm 2), vách thụt 2 (Socratic) và vách sân trước gian 1. Bấm vào vách để sửa tên, thông điệp, số liệu (mỗi dòng "số|nhãn"), giải thưởng, QR.</p></div>
+        <div class="idea"><b>Vách thụt in quảng bá</b><p>Bốn bề mặt tự giãn theo "Bậc lùi" và "Thụt gian trước": vách thụt 1 (sản phẩm 2), vách thụt 2 (Socratic), vách thụt 3 ở mép phải gian 3 (sản phẩm 3) và vách sân trước gian 1. Bấm vào vách để sửa tên, thông điệp, số liệu (mỗi dòng "số|nhãn"), giải thưởng, QR.</p></div>
         <div class="idea"><b>Ba gian xếp bậc</b><p>Gian 1 lùi sâu nhất, gian 2 lùi vừa, gian 3 sát lối đi. Mỗi bậc lộ ra một mặt hông quay về phía khách đi tới từ bên trái, in tên sản phẩm cỡ lớn. Chỉnh "Bậc lùi" trên thanh công cụ; nhập số âm để đảo chiều.</p></div>
         <div class="idea"><b>Trạm Lab 3D: camera nhìn từ trên xuống</b><p>Webcam treo trên tay cần, chúc thẳng xuống bàn thao tác cao 950 mm. Khách đứng trước bàn, đưa tay trên mặt bàn và nhìn màn. Camera chỉ thấy tay trên nền tối, không thấy người phía sau. Vùng xanh là tầm nhìn camera.</p></div>
         <div class="idea"><b>Vì sao dồn ra mặt tiền</b><p>Hai gian bên cạnh dựng vách kín và ít khách bước vào trong, nên chỉ mặt tiền, biển vẫy và cờ là được nhìn thấy. Bấm “Đi tới từ trái” hoặc “Đi tới từ phải” để xem.</p></div>
@@ -173,7 +174,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 const M = 0.001; // mm → m
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FONT = { sans: '"Plus Jakarta Sans", system-ui, sans-serif', mono: '"JetBrains Mono", ui-monospace, monospace', serif: 'Newsreader, Georgia, serif' };
-const STORE = 'svb-booth-studio-v9'; // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
+const STORE = 'svb-booth-studio-v10'; // v10: gian trước cũng thụt để có vách quảng bá // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
 const MARK_HOOK = 'M31.8 39.7 A30 30 0 1 1 75 76 Q60 83 60 93', MARK_IRIS = 'M46.8 45.2 A14 14 0 0 1 73.2 45.2';
 // // v4: mặt tiền = bảng viết 65" + trạm Lab 3D qua webcam
 
@@ -197,6 +198,7 @@ const DEFAULT = () => [
   { id: 'R-wall', type: 'panel', booth: 'R', name: 'Gian 3 · Mặt tiền lưới kỹ thuật (hông in)', x: 3000, y: 0, z: 1180, ry: 0, w: 2900, h: 2200, d: 600, color: '#15110D', accent: '#FF7A2B', emissive: 0.3, pattern: 'grid', layout: 'plain', text: '[Sản phẩm 3] |đang cập nhật', sub: 'Phong cách: khối công nghiệp, cam', side: '[SẢN PHẨM 3]' },
   { id: 'R-hex', type: 'hexwall', booth: 'R', name: 'Gian 3 · Cụm lục giác cam', x: 2150, y: 350, z: 1480, ry: 0, w: 900, h: 1350, d: 140, color: '#1E1612', accent: '#FF7A2B', emissive: 1.3, cell: 110 },
   { id: 'R-relief', type: 'relief', booth: 'R', name: 'Gian 3 · Chữ nổi', x: 3420, y: 1800, z: 1482, ry: 0, w: 1700, h: 200, d: 60, color: '#F5F2EA', accent: '#FF7A2B', emissive: 0.7, text: '[TÊN SẢN PHẨM 3]' },
+  { id: 'vt-front', type: 'promo', slot: 'front', locked: true, name: 'Vách thụt 3 · quảng bá sản phẩm 3', x: 0, y: 0, z: 0, ry: 0, w: 400, h: 2200, d: 60, color: '#15110D', accent: '#FF7A2B', pattern: 'grid', glyph: '3', title: '[TÊN SẢN PHẨM 3]', text: '[Thông điệp |sản phẩm 3]', sub: '[Số liệu]|[nhãn]\n[Số liệu]|[nhãn]', award: '[GIẢI THƯỞNG]', qr: false },
   { id: 'R-blade', type: 'blade', name: 'SP3 · Biển vẫy', x: 4500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#14100C', accent: '#FF7A2B', emissive: 1.8, glyph: '3', text: '[TÊN SẢN PHẨM 3]' },
   { id: 'R-flag', type: 'flag', name: 'SP3 · Cờ buồm', x: 4560, y: 0, z: 1560, ry: 80, w: 700, h: 3500, d: 30, color: '#14100C', accent: '#FF7A2B', text: '[SP 3]', sub: '' },
   { id: 'all-led', type: 'strip', name: 'Dải LED chung 9 m mép trước', x: 0, y: 0, z: 1530, ry: 90, w: 30, h: 8, d: 8950, accent: '#E8EBF1', emissive: 1.8 },
@@ -862,10 +864,12 @@ B.overcam = (o, g) => {
 
 // ---------------- vách thụt: mặt hông lộ ra theo bậc ----------------
 function promoSlot(slot) {
-  const st = Number(settings.step) || 0, A = Math.abs(st) * M; if (A < 0.1) return null; const pos = st > 0, F = 1.48;
-  const fDeep = F - 2 * A, fMid = F - A;
+  const st = Number(settings.step) || 0, A = Math.abs(st) * M, rc = Math.max(0, Number(settings.recess) || 0) * M; const pos = st >= 0, F = 1.48, fFront = F - rc;
+  const fDeep = fFront - 2 * A, fMid = fFront - A;
+  if (slot === 'front') return rc < 0.1 ? null : { x: pos ? 4.47 : -4.47, z0: fFront, z1: F, nx: pos ? -1 : 1 };
+  if (A < 0.1) return null;
   if (slot === 'deep') return { x: pos ? -1.45 - 0.006 : 1.45 + 0.006, z0: fDeep, z1: fMid, nx: pos ? -1 : 1 };
-  if (slot === 'mid') return { x: pos ? 1.55 - 0.006 : -1.55 + 0.006, z0: fMid, z1: F, nx: pos ? -1 : 1 };
+  if (slot === 'mid') return { x: pos ? 1.55 - 0.006 : -1.55 + 0.006, z0: fMid, z1: fFront, nx: pos ? -1 : 1 };
   return { x: pos ? -4.47 : 4.47, z0: fDeep, z1: F, nx: pos ? 1 : -1 };
 }
 function paintPromo(o, W) {
@@ -896,7 +900,7 @@ B.promo = (o, g) => {
   const thick = (o.d || 6) * M; const m = new THREE.Mesh(new THREE.BoxGeometry(L, H, thick), [MAT.std('#111'), MAT.std('#111'), MAT.std('#111'), MAT.std('#111'), mat, MAT.std(shade(o.color, -0.3))]);
   m.rotation.y = sl.nx > 0 ? Math.PI / 2 : -Math.PI / 2; m.position.set(sl.x + sl.nx * (thick / 2 - 0.003), H / 2, (sl.z0 + sl.z1) / 2); m.castShadow = true; g.add(m);
   const led = box(0.012, H - 0.3, 0.012, MAT.glow(o.accent, 2)); led.position.set(sl.x + sl.nx * (thick + 0.004), H / 2, sl.z1 - 0.03); g.add(led);
-  if (o.slot === 'court') { const ft = box(0.4, 0.03, 0.06, MAT.std('#1A1B1F', { metalness: 0.5 })); [-0.35, 0.35].forEach((f) => { const q = ft.clone(); q.position.set(sl.x + sl.nx * 0.2, 0.015, (sl.z0 + sl.z1) / 2 + f * L); g.add(q); }); }
+  if (o.slot === 'court' || o.slot === 'front') { const ft = box(0.4, 0.03, 0.06, MAT.std('#1A1B1F', { metalness: 0.5 })); [-0.35, 0.35].forEach((f) => { const q = ft.clone(); q.position.set(sl.x + sl.nx * 0.2, 0.015, (sl.z0 + sl.z1) / 2 + f * L); g.add(q); }); }
 };
 
 // ---------------- cảnh ----------------
@@ -922,7 +926,7 @@ tc.addEventListener('dragging-changed', (e) => { orbit.enabled = !e.value; if (!
 tc.addEventListener('objectChange', () => { const o = selObj(); const gobj = tc.object; if (!o || !gobj) return; o.x = Math.round(gobj.position.x / M); o.y = Math.round(gobj.position.y / M); o.z = Math.round(gobj.position.z / M) - zoff(o); o.ry = Math.round(THREE.MathUtils.radToDeg(gobj.rotation.y)); updateDims(); syncInspectorNums(); });
 
 // ---------------- trạng thái ----------------
-let objects = DEFAULT(); let settings = { mode: 'day', neighbors: true, roof: true, people: true, cam: 'pavilion', step: 600 }; let selected = null; const history = [];
+let objects = DEFAULT(); let settings = { mode: 'day', neighbors: true, roof: true, people: true, cam: 'pavilion', step: 600, recess: 400 }; let selected = null; const history = [];
 try { const s = JSON.parse(localStorage.getItem(STORE) || 'null'); if (s && Array.isArray(s.objects)) { objects = s.objects; settings = { ...settings, ...(s.settings || {}) }; } } catch (e) {}
 const groups = new Map();
 const selObj = () => objects.find((o) => o.id === selected);
@@ -930,7 +934,7 @@ let saveT; function save() { clearTimeout(saveT); saveT = setTimeout(() => { try
 let lastSnap = JSON.stringify(objects); function commit() { const now = JSON.stringify(objects); if (now !== lastSnap) { history.push(lastSnap); if (history.length > 60) history.shift(); lastSnap = now; save(); renderLayers(); } }
 
 function dispose(gr) { gr.traverse((m) => { if (m.geometry) m.geometry.dispose(); const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : []; mats.forEach((mt) => { ['map', 'emissiveMap', 'alphaMap'].forEach((k) => mt[k] && mt[k].dispose()); mt.dispose(); }); }); }
-function zoff(o) { const st = Number(settings.step) || 0; if (o.booth === 'L') return -2 * Math.max(st, 0); if (o.booth === 'C') return -Math.abs(st); if (o.booth === 'R') return -2 * Math.max(-st, 0); return 0; }
+function zoff(o) { const st = Number(settings.step) || 0, rc = Math.max(0, Number(settings.recess) || 0); if (o.booth === 'L') return -rc - 2 * Math.max(st, 0); if (o.booth === 'C') return -rc - Math.abs(st); if (o.booth === 'R') return -rc - 2 * Math.max(-st, 0); return 0; }
 function build(o) {
   const old = groups.get(o.id); if (old) { if (tc.object === old) tc.detach(); root.remove(old); dispose(old); }
   const g = new THREE.Group(); g.userData.id = o.id; (B[o.type] || (() => {}))(o, g);
@@ -1051,6 +1055,7 @@ document.querySelectorAll('[data-cam]').forEach((b) => (b.onclick = () => setCam
 document.querySelectorAll('[data-mode]').forEach((b) => (b.onclick = () => { settings.mode = b.dataset.mode; applyMode(); save(); }));
 document.querySelectorAll('[data-tool]').forEach((b) => (b.onclick = () => setTool(b.dataset.tool)));
 function setTool(t) { tc.setMode(t); tc.showX = t === 'translate'; tc.showZ = t === 'translate'; tc.showY = true; document.querySelectorAll('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === t))); }
+$('#optRecess').value = settings.recess ?? 400; $('#optRecess').onchange = (e) => { settings.recess = Math.max(0, Number(e.target.value) || 0); rebuildAll(); select(selected); save(); renderInspector(); toast('Gian trước thụt ' + settings.recess + ' mm'); };
 $('#optStep').value = settings.step ?? 600; $('#optStep').onchange = (e) => { settings.step = Number(e.target.value) || 0; rebuildAll(); select(selected); save(); renderInspector(); toast('Bậc lùi ' + settings.step + ' mm: gian 1 lùi ' + (2 * Math.max(settings.step, 0)) + ', gian 2 lùi ' + Math.abs(settings.step) + ' mm'); };
 $('#optNeighbors').checked = settings.neighbors; $('#optRoof').checked = settings.roof; $('#optPeople').checked = settings.people;
 $('#optNeighbors').onchange = (e) => { settings.neighbors = e.target.checked; objects.forEach((o) => groups.get(o.id) && (groups.get(o.id).visible = visibleOf(o))); save(); };

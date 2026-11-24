@@ -46,10 +46,12 @@
   },
 
   "bacLui": 600,
+  "thutGianTruoc": 400,
   "vachThut": {
     "_ghiChu": "Mặt hông lộ ra khi 3 gian xếp bậc. Rộng = bacLui (vách sân trước = 2 × bacLui), cao 2 200. Mỗi dòng soLieu: 'số|nhãn'. Tiêu đề: phần sau dấu | in nghiêng màu nhấn.",
     "vt1": { "ten": "[TÊN SẢN PHẨM 2]", "thongDiep": "[Thông điệp chính |sản phẩm 2]", "soLieu": ["[Số liệu 1]|[nhãn ngắn]", "[Số liệu 2]|[nhãn ngắn]"], "giai": "[GIẢI THƯỞNG]", "qr": false, "mau": "#2BB3A3", "nen": "#0A1C1C" },
     "vt2": { "ten": "Socratic Vision Board", "thongDiep": "Bảng lớp |biết hỏi lại.", "soLieu": ["<16 ms|độ trễ nét viết · ink latency", "10|mô phỏng STEM · simulations", "37|bài Lab bằng tay · hand labs", "4 mức|gợi mở, không lộ đáp án · Socratic hints"], "giai": "GIẢI NHẤT CẤP TỈNH", "qr": true, "logo": true, "mau": "#2F6BFF", "mauNhat": "#8FB0F5", "nen": "#0B0D13" },
+    "vt3": { "ten": "[TÊN SẢN PHẨM 3]", "thongDiep": "[Thông điệp |sản phẩm 3]", "soLieu": ["[Số liệu]|[nhãn]", "[Số liệu]|[nhãn]"], "giai": "[GIẢI THƯỞNG]", "qr": false, "mau": "#FF7A2B", "nen": "#15110D" },
     "san1": { "ten": "[TÊN SẢN PHẨM 2]", "thongDiep": "[Vấn đề sản phẩm giải quyết] |[một câu]", "soLieu": ["[Điểm nổi bật 1]|[mô tả ngắn]", "[Điểm nổi bật 2]|[mô tả ngắn]", "[Điểm nổi bật 3]|[mô tả ngắn]"], "giai": "[GIẢI THƯỞNG]", "qr": true, "mau": "#2BB3A3", "nen": "#0A1C1C" }
   },
 

@@ -1,3 +1,7 @@
+# 2026-11-24 (11) — Gian trước cũng thụt, thêm vách thụt 3
+- Studio khóa lưu v10: `settings.recess` (ô "Thụt gian trước", mặc định 400) cộng vào `zoff` của cả ba gian; slot promo mới `front` = vách ở mép ngoài sân trước gian trước (rộng = recess, quay về phía khách đi tới). Mặc định: gian 3 lùi 400, Socratic 1 000, gian 1 1 600.
+- Hồ sơ in: `config.thutGianTruoc` + `vachThut.vt3` → VT3 (400 × 2200, vách đứng riêng); VT-SAN rộng 2 × bậc + thụt (1 600). 37 hạng mục.
+
 # 2026-11-24 (10) — Vách thụt in quảng bá (mặt hông lộ ra theo bậc)
 - Studio khóa lưu v9: type `promo` với `slot: 'deep'|'mid'|'court'`, `promoSlot()` tự tính vị trí/bề rộng từ `settings.step` (đảo chiều khi bậc âm). deep = mặt hông Socratic lộ sau gian 1 (quảng bá SP2), mid = mặt hông gian 3 lộ sau Socratic (quảng bá Socratic), court = vách mới ở mép sân trước gian 1 (2 × bậc). Bố cục in: biểu tượng + tên, thông điệp, số liệu "số|nhãn", dải giải thưởng, QR, băng chân, LED dọc mép.
 - Hồ sơ in: `config.bacLui` + `config.vachThut` → VT1, VT2 (600 × 2200) và VT-SAN (1200 × 2200, có khung + chân T). 36 hạng mục.

@@ -1,0 +1,839 @@
+<title>Socratic Booth Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Bố cục: thanh công cụ trên · cột lớp bên trái · khung 3D ở giữa · bảng thuộc tính bên phải. Một giao diện tối có chủ đích (studio dựng hình). */
+:root {
+  --bg: #0B0C0F; --panel: #121419; --panel2: #171A21; --line: #252A34; --line2: #313847;
+  --fg: #E8EBF1; --mute: #949BAA; --dim: #6B7280;
+  --accent: #3D7BFF; --accent-weak: rgba(61,123,255,.16); --orange: #FF6A2B;
+  --sans: 'Plus Jakarta Sans', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace; --serif: 'Newsreader', Georgia, serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font: 13px/1.45 var(--sans); }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.brand { display: flex; align-items: center; gap: 10px; margin-right: 6px; }
+.brand-mark { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--fg); display: grid; place-items: center; font: 400 18px/1 var(--serif); color: var(--orange); }
+.brand b { font-weight: 800; letter-spacing: -.01em; font-size: 15px; }
+.brand span { font: 500 11px var(--mono); color: var(--mute); letter-spacing: .08em; }
+.seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 8px; overflow: hidden; }
+.seg button { background: transparent; border: 0; padding: 6px 10px; color: var(--mute); border-right: 1px solid var(--line2); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent-weak); color: var(--fg); }
+.btn { background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 6px 11px; color: var(--fg); display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover { border-color: #46506A; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chk { display: inline-flex; align-items: center; gap: 6px; color: var(--mute); }
+.spacer { flex: 1; }
+.main { display: grid; grid-template-columns: 250px minmax(0, 1fr) 300px; min-height: 0; }
+.side { background: var(--panel); border-right: 1px solid var(--line); overflow: auto; min-height: 0; }
+.side.right { border-right: 0; border-left: 1px solid var(--line); }
+.sec { padding: 14px; border-bottom: 1px solid var(--line); }
+.sec h2 { margin: 0 0 10px; font: 600 11px var(--mono); letter-spacing: .1em; color: var(--mute); text-transform: uppercase; }
+.layers { display: flex; flex-direction: column; gap: 2px; }
+.layer { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 4px; border-radius: 6px; }
+.layer > button.pick { text-align: left; background: transparent; border: 0; padding: 6px 8px; border-radius: 6px; display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--fg); }
+.layer > button.pick span.n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer > button.pick i { font-style: normal; font: 500 10px var(--mono); color: var(--dim); flex: none; }
+.layer.sel { background: var(--accent-weak); }
+.layer:hover:not(.sel) { background: var(--panel2); }
+.icon-btn { width: 28px; height: 28px; display: grid; place-items: center; border: 0; background: transparent; color: var(--mute); border-radius: 6px; }
+.icon-btn:hover { background: var(--panel2); color: var(--fg); }
+.icon-btn[aria-pressed="false"] { opacity: .45; }
+.lib { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.lib button { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px; text-align: left; color: var(--fg); display: flex; flex-direction: column; gap: 2px; }
+.lib button:hover { border-color: var(--accent); }
+.lib button small { color: var(--mute); font-size: 11px; line-height: 1.3; }
+.view { position: relative; min-height: 0; background: #000; }
+.view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.hud { position: absolute; left: 12px; bottom: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; pointer-events: none; flex-wrap: wrap; }
+.hud .tip { background: rgba(11,12,15,.72); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; color: var(--mute); font-size: 12px; backdrop-filter: blur(6px); }
+.hud .dims { font: 500 12px var(--mono); color: var(--fg); }
+.tools { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 6px; }
+.tools .seg { background: rgba(11,12,15,.75); flex-direction: column; }
+.tools .seg button { border-right: 0; border-bottom: 1px solid var(--line2); padding: 8px; }
+.tools .seg button:last-child { border-bottom: 0; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--mute); font: 500 12px var(--mono); letter-spacing: .1em; }
+.field { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 8px; margin-bottom: 8px; }
+.field label { color: var(--mute); font-size: 12px; }
+.field input[type="number"], .field input[type="text"], .field select, .field textarea { width: 100%; background: var(--bg); border: 1px solid var(--line2); border-radius: 6px; padding: 5px 7px; font-variant-numeric: tabular-nums; }
+.field textarea { min-height: 70px; resize: vertical; font-size: 12px; }
+.field input[type="color"] { width: 100%; height: 30px; background: var(--bg); border: 1px solid var(--line2); border-radius: 6px; padding: 2px; }
+.field input[type="range"] { width: 100%; accent-color: var(--accent); }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.trio input { width: 100%; background: var(--bg); border: 1px solid var(--line2); border-radius: 6px; padding: 5px 6px; font-variant-numeric: tabular-nums; }
+.hint { color: var(--dim); font-size: 11.5px; line-height: 1.45; }
+.sel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.sel-head h3 { margin: 0; font-size: 15px; font-weight: 700; }
+.tag { font: 500 10px var(--mono); color: var(--accent); background: var(--accent-weak); border-radius: 4px; padding: 2px 6px; letter-spacing: .06em; }
+.row-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.idea { border-left: 0; padding: 0; margin: 0 0 10px; }
+.idea b { display: block; font-size: 12.5px; }
+.idea p { margin: 2px 0 0; color: var(--mute); font-size: 12px; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.modal .box { width: min(760px, 100%); max-height: 90vh; overflow: auto; background: var(--panel); border: 1px solid var(--line2); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.modal h3 { margin: 0; font-size: 16px; }
+.modal textarea { width: 100%; min-height: 300px; background: var(--bg); border: 1px solid var(--line2); border-radius: 8px; padding: 10px; font: 12px/1.4 var(--mono); }
+.modal img { width: 100%; border-radius: 8px; border: 1px solid var(--line2); }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--panel2); border: 1px solid var(--line2); padding: 8px 14px; border-radius: 8px; z-index: 60; }
+@media (max-width: 1000px) {
+  .app { height: auto; min-height: 100%; }
+  .main { grid-template-columns: 1fr; }
+  .view { height: 62vh; order: -1; }
+  .side, .side.right { border: 0; border-top: 1px solid var(--line); overflow: visible; }
+  .top, .sec { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="brand-mark" aria-hidden="true">?</div><div><b>Socratic Booth Studio</b><br><span>GIAN LỀU 3 × 3 m · AIROC 2026</span></div></div>
+    <div class="seg" role="group" aria-label="Góc nhìn">
+      <button type="button" data-cam="aisle" aria-pressed="true">Lối đi</button>
+      <button type="button" data-cam="threeq" aria-pressed="false">Góc 3/4</button>
+      <button type="button" data-cam="top" aria-pressed="false">Trên cao</button>
+      <button type="button" data-cam="inside" aria-pressed="false">Trong gian</button>
+    </div>
+    <div class="seg" role="group" aria-label="Ánh sáng">
+      <button type="button" data-mode="day" aria-pressed="true">Ban ngày</button>
+      <button type="button" data-mode="evening" aria-pressed="false">Chiều tối</button>
+    </div>
+    <label class="chk"><input type="checkbox" id="optNeighbors" checked> Gian bên cạnh</label>
+    <label class="chk"><input type="checkbox" id="optRoof" checked> Mái lều</label>
+    <label class="chk"><input type="checkbox" id="optPeople" checked> Người</label>
+    <div class="spacer"></div>
+    <button type="button" class="btn" id="btnUndo" title="Ctrl+Z">Hoàn tác</button>
+    <button type="button" class="btn" id="btnShot">Chụp ảnh</button>
+    <button type="button" class="btn" id="btnJson">Xuất / Nhập</button>
+    <button type="button" class="btn" id="btnReset">Đặt lại</button>
+  </header>
+  <div class="main">
+    <aside class="side" aria-label="Các khối trong gian">
+      <div class="sec"><h2>Các khối trong gian</h2><div class="layers" id="layers"></div></div>
+      <div class="sec"><h2>Thêm khối</h2><div class="lib" id="lib"></div></div>
+    </aside>
+    <div class="view" id="view">
+      <div class="loading" id="loading">ĐANG DỰNG GIAN 3D…</div>
+      <div class="tools">
+        <div class="seg" role="group" aria-label="Công cụ">
+          <button type="button" data-tool="translate" aria-pressed="true" title="Di chuyển (W)" aria-label="Di chuyển"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg></button>
+          <button type="button" data-tool="rotate" aria-pressed="false" title="Xoay (E)" aria-label="Xoay"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg></button>
+        </div>
+      </div>
+      <div class="hud"><div class="tip" id="tip">Kéo để xoay · chuột phải để dời · cuộn để phóng · bấm vào khối để chọn</div><div class="tip dims" id="dims" hidden></div></div>
+    </div>
+    <aside class="side right" aria-label="Thuộc tính">
+      <div class="sec" id="inspector"></div>
+      <div class="sec">
+        <h2>Ý tưởng khối nổi</h2>
+        <div class="idea"><b>Chữ nổi hắt sáng</b><p>Ba lớp: chữ trắng, thân màu nhấn, quầng sáng phía sau. Gắn trên đầu khung cổng.</p></div>
+        <div class="idea"><b>Đèn hiệu dấu hỏi</b><p>Vòng LED đứng và dấu "?" 3D trên đỉnh totem, quay chậm, ngay sát lối đi.</p></div>
+        <div class="idea"><b>Cụm lục giác nổi</b><p>Module fomex lục giác nhô 30–120 mm, vài ô có đèn, gắn lên backdrop.</p></div>
+        <div class="idea"><b>Lõi AI khối kính</b><p>Hộp mica trong trên bục, khối đa diện phát sáng xoay bên trong.</p></div>
+        <div class="idea"><b>Quạt hologram 3D</b><p>Quạt LED quay tạo hình nổi giữa không trung, hút mắt từ xa.</p></div>
+        <div class="idea"><b>Vòng hào quang treo</b><p>Vòng LED Ø1,3 m treo trên vùng demo, chiếu sáng vòng "Đứng đây" dưới sàn.</p></div>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="modal" id="modal" hidden></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const M = 0.001; // mm → m
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FONT = { sans: '"Plus Jakarta Sans", system-ui, sans-serif', mono: '"JetBrains Mono", ui-monospace, monospace', serif: 'Newsreader, Georgia, serif' };
+const STORE = 'svb-booth-studio-v1';
+
+// ---------------- dữ liệu mặc định ----------------
+const DEFAULT = () => [
+  { id: 'tent', type: 'tent', name: 'Lều BTC 3 × 3', x: 0, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'GIAN HÀNG [SỐ]', locked: true },
+  { id: 'nbL', type: 'neighbor', name: 'Gian bên trái', x: -3000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#E6A34A', accent: '#3F8F6E', text: 'GIAN HÀNG 02', locked: true, group: 'context' },
+  { id: 'nbR', type: 'neighbor', name: 'Gian bên phải', x: 3000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#3A6EA5', accent: '#C8553D', text: 'GIAN HÀNG 04', locked: true, group: 'context' },
+  { id: 'floor', type: 'floor', name: 'Thảm in mạch điện', x: 0, y: 0, z: 0, ry: 0, w: 3000, h: 12, d: 3000, color: '#0D0F15', accent: '#2F6BFF', emissive: 0.9, pattern: 'circuit' },
+  { id: 'ceil', type: 'ceiling', name: 'Trần vải đen đèn sao', x: 0, y: 2470, z: 0, ry: 0, w: 2960, h: 10, d: 2960, color: '#07080B', accent: '#D6E4FF', emissive: 1.2 },
+  { id: 'bd', type: 'panel', name: 'Backdrop', x: 0, y: 0, z: -1440, ry: 0, w: 2900, h: 2300, d: 60, color: '#0C0F18', accent: '#2F6BFF', emissive: 0.25, pattern: 'contour', layout: 'hero', text: 'Bảng lớp biết |hỏi lại.', sub: 'The classroom board that asks back.' },
+  { id: 'wL', type: 'panel', name: 'Cánh trái', x: -1440, y: 0, z: -1030, ry: 90, w: 900, h: 2300, d: 50, color: '#0C0F18', accent: '#2F6BFF', emissive: 0.2, pattern: 'hex', layout: 'story', startNo: 1, text: '// HÀNH TRÌNH · OUR JOURNEY', sub: 'Vấn đề\n~The problem\nHọc sinh chép lời giải mà không hiểu vì sao. Thầy cô không đủ thời gian hỏi lại từng em.\n[Số liệu khảo sát của nhóm]\n\nGiải pháp\n~Our solution\nBảng lớp biết hỏi lại: học sinh viết tay, AI dựng mô phỏng STEM và đặt câu hỏi gợi mở.' },
+  { id: 'wR', type: 'panel', name: 'Cánh phải', x: 1440, y: 0, z: -1030, ry: -90, w: 900, h: 2300, d: 50, color: '#0C0F18', accent: '#2F6BFF', emissive: 0.2, pattern: 'hex', layout: 'story', startNo: 3, text: '// CÔNG NGHỆ & LỘ TRÌNH', sub: 'Công nghệ\n~Technology\nNhận diện chữ viết tay ngay trên máy, suy luận tất định, gia sư Socratic 4 mức, theo dõi mức hiểu BKT.\n\nThử nghiệm\n~Pilot\n[Số lớp] lớp, [số học sinh] học sinh tại [trường].\n\nLộ trình\n~Roadmap\n[Năm]: thử nghiệm · [Năm]: các trường trong tỉnh.' },
+  { id: 'hex', type: 'hexwall', name: 'Cụm lục giác nổi', x: -1060, y: 640, z: -1400, ry: 0, w: 600, h: 1100, d: 120, color: '#141823', accent: '#2F6BFF', emissive: 1.4, cell: 90 },
+  { id: 's65', type: 'screen', name: 'Màn 65"', x: -250, y: 995, z: -1150, ry: 0, w: 1444, h: 812, d: 60, variant: 'board', stand: true },
+  { id: 's43', type: 'screen', name: 'Màn 43" dọc', x: 920, y: 875, z: -1150, ry: 0, w: 540, h: 950, d: 60, variant: 'pipeline', stand: true },
+  { id: 'halo', type: 'halo', name: 'Vòng hào quang treo', x: -250, y: 2330, z: -380, ry: 0, w: 1300, h: 40, d: 1300, accent: '#3D7BFF', emissive: 2.2 },
+  { id: 'decal', type: 'decal', name: 'Decal "Đứng đây"', x: -250, y: 0, z: -380, ry: 0, w: 800, h: 4, d: 800, accent: '#3D7BFF', text: 'ĐỨNG ĐÂY' },
+  { id: 'holo', type: 'holo', name: 'Quạt hologram 3D', x: -1120, y: 0, z: -180, ry: 25, w: 560, h: 1750, d: 560, accent: '#5B8CFF', emissive: 2 },
+  { id: 'core', type: 'aicore', name: 'Lõi AI khối kính', x: 1110, y: 0, z: -220, ry: -20, w: 420, h: 1320, d: 420, accent: '#3D7BFF', emissive: 2, color: '#0B0C10' },
+  { id: 'portal', type: 'portal', name: 'Khung cổng LED', x: 0, y: 0, z: 900, ry: 0, w: 2900, h: 2400, d: 200, band: 350, bar: 300, radius: 250, color: '#0A0B0F', accent: '#3D7BFF', emissive: 2.4, text: '', sub: 'BẢNG TƯƠNG TÁC THÔNG MINH · SMART INTERACTIVE BOARD FOR STEM' },
+  { id: 'relief', type: 'relief', name: 'Chữ nổi hắt sáng', x: 60, y: 2160, z: 1020, ry: 0, w: 1800, h: 200, d: 60, color: '#F5F2EA', accent: '#3D7BFF', emissive: 1.6, text: 'Socratic Vision Board' },
+  { id: 'totem', type: 'totem', name: 'Totem tam giác', x: -1180, y: 0, z: 1200, ry: 0, w: 600, h: 1700, d: 600, color: '#0B0C10', accent: '#FF6A2B', text: 'GIẢI NHẤT', sub: 'cấp tỉnh · 1st Prize, Provincial' },
+  { id: 'beacon', type: 'beacon', name: 'Đèn hiệu ? 3D', x: -1180, y: 1730, z: 1200, ry: 0, w: 480, h: 480, d: 80, color: '#FF6A2B', accent: '#3D7BFF', emissive: 2 },
+  { id: 'counter', type: 'counter', name: 'Quầy + tháp mica', x: 750, y: 0, z: 1230, ry: 0, w: 1000, h: 1000, d: 500, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.6, text: 'Bảng lớp |biết hỏi lại.', sub: 'Watch the AI think, layer by layer.' },
+  { id: 'stripL', type: 'strip', name: 'Dải LED dẫn lối trái', x: -820, y: 0, z: 1160, ry: 0, w: 30, h: 8, d: 900, accent: '#3D7BFF', emissive: 2.5 },
+  { id: 'stripR', type: 'strip', name: 'Dải LED dẫn lối phải', x: 200, y: 0, z: 1160, ry: 0, w: 30, h: 8, d: 900, accent: '#3D7BFF', emissive: 2.5 },
+  { id: 'flagL', type: 'flag', name: 'Cờ buồm trái', x: -1520, y: 0, z: 1520, ry: -40, w: 700, h: 3500, d: 30, color: '#0B0C10', accent: '#2F6BFF', text: 'SOCRATIC' },
+  { id: 'flagR', type: 'flag', name: 'Cờ buồm phải', x: 1520, y: 0, z: 1520, ry: 40, w: 700, h: 3500, d: 30, color: '#0B0C10', accent: '#2F6BFF', text: 'SOCRATIC' },
+  { id: 'p1', type: 'person', name: 'Người (tỉ lệ)', x: -2300, y: 0, z: 2600, ry: 30, w: 450, h: 1680, d: 300, color: '#4A5466', group: 'people' },
+  { id: 'p2', type: 'person', name: 'Người (tỉ lệ)', x: 2100, y: 0, z: 3100, ry: -20, w: 450, h: 1600, d: 300, color: '#6A4A4A', group: 'people' },
+  { id: 'p3', type: 'person', name: 'Người (tỉ lệ)', x: -620, y: 0, z: 320, ry: 160, w: 450, h: 1720, d: 300, color: '#3E5A4A', group: 'people' },
+];
+
+const LIB = [
+  { type: 'relief', label: 'Chữ nổi', note: 'nhiều lớp, hắt sáng', o: { w: 1400, h: 180, d: 60, y: 1500, color: '#F5F2EA', accent: '#3D7BFF', emissive: 1.6, text: 'AI · STEM · EDTECH' } },
+  { type: 'beacon', label: 'Đèn hiệu ?', note: 'vòng LED + dấu hỏi 3D', o: { w: 500, h: 500, d: 80, y: 1200, color: '#FF6A2B', accent: '#3D7BFF', emissive: 2 } },
+  { type: 'hexwall', label: 'Lục giác nổi', note: 'module nhô, có đèn', o: { w: 600, h: 800, d: 120, y: 800, color: '#141823', accent: '#2F6BFF', emissive: 1.4, cell: 90 } },
+  { type: 'halo', label: 'Vòng treo', note: 'vòng LED nằm ngang', o: { w: 1000, h: 40, d: 1000, y: 2300, accent: '#3D7BFF', emissive: 2 } },
+  { type: 'aicore', label: 'Lõi AI', note: 'bục + khối kính', o: { w: 400, h: 1300, d: 400, accent: '#3D7BFF', emissive: 2, color: '#0B0C10' } },
+  { type: 'holo', label: 'Hologram', note: 'quạt 3D trên chân', o: { w: 560, h: 1700, d: 560, accent: '#5B8CFF', emissive: 2 } },
+  { type: 'panel', label: 'Tấm in', note: 'fomex, bạt, họa tiết', o: { w: 900, h: 1800, d: 40, color: '#0C0F18', accent: '#2F6BFF', emissive: 0.2, pattern: 'circuit', layout: 'plain', text: 'Tiêu đề', sub: 'Dòng phụ' } },
+  { type: 'screen', label: 'Màn hình', note: 'ngang hoặc dọc', o: { w: 1218, h: 685, d: 60, y: 1000, variant: 'pipeline', stand: true } },
+  { type: 'totem', label: 'Totem', note: 'tam giác 3 mặt', o: { w: 600, h: 1850, d: 600, color: '#0B0C10', accent: '#FF6A2B', text: 'GIẢI NHẤT', sub: 'cấp tỉnh' } },
+  { type: 'counter', label: 'Quầy', note: 'kèm tháp mica', o: { w: 1000, h: 1000, d: 500, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.6, text: 'Mời bạn |thử.', sub: 'Try it.' } },
+  { type: 'strip', label: 'Dải LED', note: 'dẫn lối trên sàn', o: { w: 30, h: 8, d: 900, accent: '#3D7BFF', emissive: 2.5 } },
+  { type: 'flag', label: 'Cờ buồm', note: 'cao 3,5 m', o: { w: 700, h: 3500, d: 30, color: '#0B0C10', accent: '#2F6BFF', text: 'SOCRATIC' } },
+  { type: 'decal', label: 'Decal sàn', note: 'vòng Ø800', o: { w: 800, h: 4, d: 800, accent: '#3D7BFF', text: 'ĐỨNG ĐÂY' } },
+  { type: 'person', label: 'Người', note: 'để so tỉ lệ', o: { w: 450, h: 1650, d: 300, color: '#4A5466' } },
+];
+const TYPE_LABEL = { tent: 'LỀU', neighbor: 'BÊN', floor: 'SÀN', ceiling: 'TRẦN', panel: 'TẤM', hexwall: 'LỤC GIÁC', screen: 'MÀN', halo: 'VÒNG', decal: 'DECAL', holo: 'HOLO', aicore: 'LÕI AI', portal: 'CỔNG', relief: 'CHỮ NỔI', totem: 'TOTEM', beacon: 'ĐÈN HIỆU', counter: 'QUẦY', strip: 'LED', flag: 'CỜ', person: 'NGƯỜI' };
+
+// ---------------- tiện ích ----------------
+function hash(s) { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rng(seed) { let a = hash(seed); return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function rgb(hex) { const n = parseInt(hex.replace('#', ''), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+function rgba(hex, a) { const [r, g, b] = rgb(hex); return `rgba(${r},${g},${b},${a})`; }
+function shade(hex, f) { const [r, g, b] = rgb(hex); const m = (v) => Math.max(0, Math.min(255, Math.round(f >= 0 ? v + (255 - v) * f : v * (1 + f)))); return '#' + [m(r), m(g), m(b)].map((v) => v.toString(16).padStart(2, '0')).join(''); }
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+function makeCanvas(wmm, hmm, maxPx = 2048, minK = 0.25) {
+  const k = clamp(Math.min(maxPx / wmm, maxPx / hmm, 0.7), minK, 2);
+  const c = document.createElement('canvas'); c.width = Math.max(8, Math.round(wmm * k)); c.height = Math.max(8, Math.round(hmm * k));
+  const ctx = c.getContext('2d'); ctx.scale(c.width / wmm, c.height / hmm); // vẽ theo đơn vị mm
+  return { c, ctx, k: c.width / wmm };
+}
+function tex(c, srgb = true) { const t = new THREE.CanvasTexture(c); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.needsUpdate = true; return t; }
+function fitFont(ctx, txt, weightFamily, size, maxW) { let s = size; ctx.font = `${weightFamily.replace('{s}', s)}`; while (ctx.measureText(txt).width > maxW && s > 6) { s *= 0.94; ctx.font = weightFamily.replace('{s}', s); } return s; }
+function wrap(ctx, txt, maxW) { const words = String(txt).split(/\s+/); const lines = []; let cur = ''; for (const w of words) { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; } if (cur) lines.push(cur); return lines; }
+
+// ---------------- họa tiết ----------------
+function bgBase(ctx, W, H, color, accent, glow = 0.14) {
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, shade(color, 0.07)); g.addColorStop(1, shade(color, -0.35));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const r = ctx.createRadialGradient(W * 0.28, H * 0.22, 10, W * 0.28, H * 0.22, Math.max(W, H) * 0.7);
+  r.addColorStop(0, rgba(accent, glow)); r.addColorStop(1, rgba(accent, 0)); ctx.fillStyle = r; ctx.fillRect(0, 0, W, H);
+}
+function pContour(ctx, W, H, accent, seed, a = 0.2) {
+  const R = rng(seed + 'c'); const n = Math.round(H / 34); const p = [R() * 6, R() * 6, R() * 6];
+  ctx.lineWidth = 1.4; for (let i = -4; i < n + 4; i++) {
+    ctx.strokeStyle = rgba(accent, a * (i % 5 === 0 ? 1.7 : 1)); ctx.beginPath();
+    for (let x = 0; x <= W; x += 18) { const y = i * 34 + 60 * Math.sin(x / 420 + p[0] + i * 0.07) + 34 * Math.sin(x / 190 + p[1] - i * 0.11) + 18 * Math.sin(x / 90 + p[2]); x ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke();
+  }
+}
+function pCircuit(ctx, W, H, accent, seed, a = 0.32, lw = 2.2) {
+  const R = rng(seed + 'p'); const g = 20; const n = Math.round((W * H) / 52000);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (let i = 0; i < n; i++) {
+    let x = Math.round((R() * W) / g) * g, y = Math.round((R() * H) / g) * g; const segs = 2 + Math.floor(R() * 4);
+    const alpha = a * (0.45 + R() * 0.8); ctx.strokeStyle = rgba(accent, alpha); ctx.lineWidth = lw * (R() < 0.15 ? 2 : 1);
+    ctx.beginPath(); ctx.moveTo(x, y); let dir = Math.floor(R() * 4);
+    for (let s = 0; s < segs; s++) {
+      const L = (2 + Math.floor(R() * 9)) * g; const diag = R() < 0.35;
+      const dx = [1, 0, -1, 0][dir], dy = [0, 1, 0, -1][dir];
+      if (diag) { const d2 = (dir + (R() < 0.5 ? 1 : 3)) % 4; x += (dx + [1, 0, -1, 0][d2]) * L * 0.5; y += (dy + [0, 1, 0, -1][d2]) * L * 0.5; dir = d2; }
+      else { x += dx * L; y += dy * L; dir = (dir + (R() < 0.5 ? 1 : 3)) % 4; }
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke(); ctx.fillStyle = rgba(accent, Math.min(1, alpha * 2.2)); ctx.beginPath(); ctx.arc(x, y, lw * 2.6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = rgba(accent, alpha); ctx.beginPath(); ctx.arc(x, y, lw * 5, 0, Math.PI * 2); ctx.stroke();
+  }
+}
+function pHex(ctx, W, H, accent, seed, a = 0.16, s = 70) {
+  const R = rng(seed + 'h'); const hw = s * Math.sqrt(3);
+  for (let row = -1; row * s * 1.5 < H + s; row++) for (let col = -1; col * hw < W + hw; col++) {
+    const cx = col * hw + (row % 2 ? hw / 2 : 0), cy = row * s * 1.5; ctx.beginPath();
+    for (let k = 0; k < 6; k++) { const ang = Math.PI / 6 + (k * Math.PI) / 3; const px = cx + s * 0.94 * Math.cos(ang), py = cy + s * 0.94 * Math.sin(ang); k ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+    ctx.closePath(); const r = R(); if (r < 0.07) { ctx.fillStyle = rgba(accent, a * 1.4); ctx.fill(); } ctx.strokeStyle = rgba(accent, a * (r < 0.25 ? 1.6 : 0.7)); ctx.lineWidth = 1.2; ctx.stroke();
+  }
+}
+function pDots(ctx, W, H, color, a = 0.16, s = 25) { ctx.fillStyle = rgba(color, a); for (let y = s / 2; y < H; y += s) for (let x = s / 2; x < W; x += s) { ctx.beginPath(); ctx.arc(x, y, 1.6, 0, Math.PI * 2); ctx.fill(); } }
+function pGrid(ctx, W, H, color, a = 0.07) { ctx.lineWidth = 1; for (let x = 0; x <= W; x += 50) { ctx.strokeStyle = rgba(color, x % 250 ? a : a * 2.2); ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); } for (let y = 0; y <= H; y += 50) { ctx.strokeStyle = rgba(color, y % 250 ? a : a * 2.2); ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); } }
+function pattern(ctx, W, H, kind, accent, seed) {
+  if (kind === 'circuit') { pDots(ctx, W, H, '#ffffff', 0.05); pCircuit(ctx, W, H, accent, seed); }
+  else if (kind === 'contour') { pContour(ctx, W, H, accent, seed, 0.16); pCircuit(ctx, W, H, accent, seed, 0.14, 1.6); }
+  else if (kind === 'hex') { pHex(ctx, W, H, accent, seed); }
+  else if (kind === 'dots') { pDots(ctx, W, H, accent, 0.22, 22); }
+  else if (kind === 'grid') { pGrid(ctx, W, H, accent, 0.08); }
+}
+function rulers(ctx, W, H, color) {
+  ctx.strokeStyle = rgba(color, 0.55); ctx.fillStyle = rgba(color, 0.6); ctx.lineWidth = 1.4; ctx.font = `500 16px ${FONT.mono}`;
+  for (let y = 0; y <= H; y += 50) { const L = y % 500 === 0 ? 34 : y % 100 === 0 ? 20 : 11; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(L, y); ctx.stroke(); if (y % 500 === 0 && y > 0 && y < H) ctx.fillText(String(y), 40, y + 5); }
+  for (let x = 0; x <= W; x += 50) { const L = x % 500 === 0 ? 34 : x % 100 === 0 ? 20 : 11; ctx.beginPath(); ctx.moveTo(x, H - 150); ctx.lineTo(x, H - 150 - L); ctx.stroke(); }
+}
+function corners(ctx, W, H, m, L, color, lw = 4) { ctx.strokeStyle = color; ctx.lineWidth = lw; [[m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1]].forEach(([x, y, sx, sy]) => { ctx.beginPath(); ctx.moveTo(x, y + sy * L); ctx.lineTo(x, y); ctx.lineTo(x + sx * L, y); ctx.stroke(); }); }
+function band(ctx, W, H, accent, txt, h = 150) {
+  ctx.fillStyle = accent; ctx.fillRect(0, H - h, W, h);
+  ctx.save(); ctx.beginPath(); ctx.rect(0, H - h, W, h); ctx.clip(); ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 10;
+  for (let x = -h; x < W + h; x += 46) { ctx.beginPath(); ctx.moveTo(x, H - h); ctx.lineTo(x + h * 0.6, H); ctx.stroke(); } ctx.restore();
+  ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.font = `600 30px ${FONT.mono}`; let t = ''; while (ctx.measureText(t).width < W + 400) t += txt; ctx.fillText(t, 40, H - h / 2 + 10);
+}
+function splitHead(ctx, text, x, y, size, maxW, fg, acc) {
+  const [a, b = ''] = String(text).split('|');
+  let s = size; const measure = () => { ctx.font = `800 ${s}px ${FONT.sans}`; const wa = ctx.measureText(a).width; ctx.font = `italic 400 ${s * 1.08}px ${FONT.serif}`; return wa + ctx.measureText(b).width; };
+  while (measure() > maxW && s > 10) s *= 0.95;
+  ctx.font = `800 ${s}px ${FONT.sans}`; ctx.fillStyle = fg; ctx.fillText(a, x, y); const wa = ctx.measureText(a).width;
+  ctx.font = `italic 400 ${s * 1.08}px ${FONT.serif}`; ctx.fillStyle = acc; ctx.fillText(b, x + wa, y); return s;
+}
+function ringQ(ctx, cx, cy, r, ring, q, lw) { ctx.strokeStyle = ring; ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = q; ctx.font = `400 ${r * 1.45}px ${FONT.serif}`; ctx.textAlign = 'center'; ctx.fillText('?', cx, cy + r * 0.5); ctx.textAlign = 'left'; }
+function chips(ctx, x, y, w, h, gap, accent, active = 0) {
+  const L = ['Nét mực', 'Nhận diện', 'Suy luận', 'Hỏi Socratic', 'Ghi nhớ'], E = ['Ink', 'Recognition', 'Reasoning', 'Socratic', 'Knowledge'], V = ['<16 ms', '<15 ms', 'tất định', '4 mức', 'BKT'];
+  for (let i = 0; i < 5; i++) {
+    const yy = y + i * (h + gap); const on = i === active; ctx.lineWidth = 2.4;
+    ctx.fillStyle = on ? accent : 'rgba(255,255,255,0.03)'; ctx.strokeStyle = i === 3 ? '#FF8A5B' : shade(accent, 0.35);
+    roundRect(ctx, x, yy, w, h, h * 0.22); ctx.fill(); if (!on) ctx.stroke();
+    ctx.fillStyle = on ? '#fff' : shade(accent, 0.45); ctx.font = `500 ${h * 0.36}px ${FONT.mono}`; ctx.fillText('0' + (i + 1), x + h * 0.35, yy + h * 0.62);
+    ctx.fillStyle = '#fff'; ctx.font = `700 ${h * 0.4}px ${FONT.sans}`; ctx.fillText(L[i], x + h * 1.25, yy + h * 0.62);
+    const lw = ctx.measureText(L[i]).width; ctx.fillStyle = on ? 'rgba(255,255,255,.8)' : '#A8A29E'; ctx.font = `italic 400 ${h * 0.36}px ${FONT.serif}`; ctx.fillText('· ' + E[i], x + h * 1.25 + lw + 10, yy + h * 0.62);
+    ctx.font = `500 ${h * 0.32}px ${FONT.mono}`; ctx.textAlign = 'right'; ctx.fillText(V[i], x + w - h * 0.35, yy + h * 0.62); ctx.textAlign = 'left';
+  }
+}
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+// ---------------- vẽ bề mặt in ----------------
+function paintPanel(o) {
+  const W = o.w, H = o.h; const { c, ctx } = makeCanvas(W, H);
+  const acc = o.accent || '#2F6BFF', accL = shade(acc, 0.45), fg = '#F5F2EA';
+  bgBase(ctx, W, H, o.color || '#0C0F18', acc); pattern(ctx, W, H, o.pattern || 'plain', acc, o.id);
+  if (o.layout === 'hero') {
+    ctx.save(); ctx.globalAlpha = 0.07; ringQ(ctx, W * 0.62, H * 0.47, 560, '#ffffff', '#ffffff', 26); ctx.restore();
+    rulers(ctx, W, H, accL); corners(ctx, W, H - 150, 40, 70, rgba('#ffffff', 0.45));
+    ctx.fillStyle = accL; ctx.font = `500 22px ${FONT.mono}`; ctx.fillText('// AI · STEM · EDTECH — STEM CARNIVAL · AIROC 2026 INTERNATIONAL', 90, 80);
+    splitHead(ctx, o.text, 88, 215, 118, W - 900, fg, accL);
+    ctx.fillStyle = '#C9C5BB'; ctx.font = `italic 400 58px ${FONT.serif}`; ctx.fillText(o.sub || '', 92, 300);
+    const R = rng(o.id + 'm'); const met = [['<16', 'ms', 'độ trễ nét viết', 'ink latency'], ['<15', 'ms', 'nhận diện tại chỗ', 'on-device recognition'], ['10', '', 'mô phỏng STEM', 'STEM simulations'], ['37', '', 'bài Lab bằng tay', 'hand-tracked labs']];
+    met.forEach(([n, u, v, e], i) => {
+      const y = 560 + i * 215; ctx.strokeStyle = 'rgba(255,255,255,.16)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(90, y); ctx.lineTo(470, y); ctx.stroke();
+      ctx.fillStyle = fg; ctx.font = `500 66px ${FONT.mono}`; ctx.fillText(n, 90, y + 78); const nw = ctx.measureText(n).width; ctx.fillStyle = '#A8A29E'; ctx.font = `500 30px ${FONT.mono}`; ctx.fillText(u, 100 + nw, y + 78);
+      ctx.fillStyle = '#D9D6CE'; ctx.font = `600 21px ${FONT.sans}`; ctx.fillText(v, 90, y + 118); ctx.fillStyle = '#A8A29E'; ctx.font = `italic 400 19px ${FONT.serif}`; ctx.fillText(e, 90, y + 146);
+      for (let b = 0; b < 12; b++) { const bh = 12 + R() * 46; ctx.fillStyle = rgba(acc, b === 11 ? 1 : 0.45); ctx.fillRect(300 + b * 14, y + 82 - bh, 9, bh); }
+    });
+    const sx = W / 2 - 250 - 722; ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3; roundRect(ctx, sx, H - 960, 1444, 112, 14); ctx.stroke();
+    ctx.fillStyle = fg; ctx.font = `700 36px ${FONT.sans}`; ctx.fillText('Thử: viết một phương trình', sx + 30, H - 912); ctx.fillStyle = '#C9C5BB'; ctx.font = `italic 400 26px ${FONT.serif}`; ctx.fillText('Try it: write any equation', sx + 30, H - 874);
+    ctx.fillStyle = '#FF8A5B'; ctx.font = `500 24px ${FONT.mono}`; ctx.textAlign = 'right'; ctx.fillText('bút · pen ↓', sx + 1414, H - 896); ctx.textAlign = 'left';
+    const rx = W - 690; ctx.fillStyle = '#A8A29E'; ctx.font = `500 17px ${FONT.mono}`; ctx.fillText('ĐƠN VỊ TRƯNG BÀY · EXHIBITOR', rx, 80);
+    ctx.fillStyle = fg; ctx.font = `700 34px ${FONT.sans}`; ctx.fillText('UBND phường Phúc Yên', rx, 128); ctx.fillStyle = '#C9C5BB'; ctx.font = `italic 400 22px ${FONT.serif}`; ctx.fillText('Students of Phuc Yen Ward', rx, 162);
+    ctx.fillStyle = '#A8A29E'; ctx.font = `500 19px ${FONT.sans}`; ctx.fillText('Ươm mầm: Sở GD&ĐT Phú Thọ', rx, 200);
+    ctx.fillStyle = '#FF8A5B'; ctx.font = `700 19px ${FONT.mono}`; ctx.fillText('● GIẢI NHẤT CẤP TỈNH · 1ST PRIZE', rx, 240);
+    band(ctx, W, H, acc, 'SOCRATIC VISION BOARD  ·  AI  ·  STEM  ·  EDTECH  ·  ');
+  } else if (o.layout === 'story') {
+    corners(ctx, W, H - 150, 30, 50, rgba('#ffffff', 0.4), 3); ctx.fillStyle = accL; ctx.font = `500 19px ${FONT.mono}`; ctx.fillText(o.text || '', 70, 76);
+    const blocks = String(o.sub || '').split(/\n\s*\n/).filter(Boolean); const top = 130, bot = H - 210; const bh = (bot - top) / Math.max(1, blocks.length);
+    blocks.forEach((b, i) => {
+      const lines = b.split('\n'); const y0 = top + i * bh; const no = (o.startNo || 1) + i; const big = bh > 650 ? 1 : 0.78;
+      ctx.strokeStyle = 'rgba(255,255,255,.16)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(70, y0); ctx.lineTo(W - 70, y0); ctx.stroke();
+      ctx.fillStyle = no === 1 || no === 5 ? '#FF6A2B' : (no === 4 ? '#FF8A5B' : accL); ctx.font = `400 ${170 * big}px ${FONT.serif}`; ctx.fillText(String(no).padStart(2, '0'), 66, y0 + 160 * big);
+      const tx = 70 + ctx.measureText('00').width + 24; ctx.fillStyle = '#F5F2EA'; ctx.font = `800 ${66 * big}px ${FONT.sans}`; ctx.fillText(lines[0] || '', tx, y0 + 100 * big);
+      let y = y0 + 210 * big; lines.slice(1).forEach((ln) => {
+        if (ln.startsWith('~')) { if (y < y0 + 220 * big) { ctx.fillStyle = '#C9C5BB'; ctx.font = `italic 400 ${40 * big}px ${FONT.serif}`; ctx.fillText(ln.slice(1), tx, y0 + 150 * big); return; } ctx.fillStyle = '#A8A29E'; ctx.font = `italic 400 ${22 * big}px ${FONT.serif}`; }
+        else if (/^\[.*\]$/.test(ln)) { ctx.fillStyle = '#FF8A5B'; ctx.font = `600 ${22 * big}px ${FONT.sans}`; }
+        else { ctx.fillStyle = '#E6E4DD'; ctx.font = `500 ${25 * big}px ${FONT.sans}`; }
+        wrap(ctx, ln.replace(/^~/, ''), W - 150).forEach((l) => { ctx.fillText(l, 72, y); y += 36 * big; }); y += 10;
+      });
+    });
+    band(ctx, W, H, acc, 'SOCRATIC  ·  ');
+  } else {
+    corners(ctx, W, H, 24, 50, rgba('#ffffff', 0.4), 3);
+    ctx.textAlign = 'center'; const s = fitFont(ctx, (o.text || '').replace('|', ''), `800 {s}px ${FONT.sans}`, Math.min(W, H) * 0.14, W - 120);
+    splitHeadCenter(ctx, o.text || '', W / 2, H * 0.45, s, fg, accL);
+    ctx.fillStyle = '#C9C5BB'; ctx.font = `italic 400 ${s * 0.5}px ${FONT.serif}`; ctx.fillText(o.sub || '', W / 2, H * 0.45 + s * 0.9); ctx.textAlign = 'left';
+  }
+  return c;
+}
+function splitHeadCenter(ctx, text, cx, y, s, fg, acc) {
+  const [a, b = ''] = String(text).split('|'); ctx.textAlign = 'left';
+  ctx.font = `800 ${s}px ${FONT.sans}`; const wa = ctx.measureText(a).width; ctx.font = `italic 400 ${s * 1.08}px ${FONT.serif}`; const wb = ctx.measureText(b).width;
+  let x = cx - (wa + wb) / 2; ctx.font = `800 ${s}px ${FONT.sans}`; ctx.fillStyle = fg; ctx.fillText(a, x, y); ctx.font = `italic 400 ${s * 1.08}px ${FONT.serif}`; ctx.fillStyle = acc; ctx.fillText(b, x + wa, y); ctx.textAlign = 'center';
+}
+function paintPortal(o) {
+  const W = o.w, H = o.h, band = o.band, bar = o.bar; const { c, ctx } = makeCanvas(W, H, 2048);
+  const acc = o.accent, accL = shade(acc, 0.45);
+  ctx.fillStyle = o.color; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(255,255,255,.035)'; ctx.lineWidth = 2; for (let x = -H; x < W; x += 9) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + H, H); ctx.stroke(); }
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, band); ctx.clip(); pCircuit(ctx, W, band, acc, o.id, 0.16, 1.8); ctx.restore();
+  ctx.fillStyle = '#9097A6'; ctx.font = `500 18px ${FONT.mono}`; ctx.fillText('STEM CARNIVAL · AIROC 2026 INTERNATIONAL', 60, 46); ctx.textAlign = 'right'; ctx.fillText('GIAN · BOOTH [SỐ]', W - 60, 46); ctx.textAlign = 'left';
+  if (o.text) { ctx.textAlign = 'center'; const s = fitFont(ctx, o.text, `800 {s}px ${FONT.sans}`, band * 0.38, W - 800); ctx.fillStyle = '#F5F2EA'; ctx.fillText(o.text, W / 2, band * 0.58); ctx.textAlign = 'left'; }
+  ctx.fillStyle = accL; ctx.font = `500 20px ${FONT.mono}`; ctx.textAlign = 'center'; ctx.fillText(o.sub || '', W / 2, band - 26); ctx.textAlign = 'left';
+  // thước và số lớp dọc hai chân
+  for (let y = band + 60; y < H - 40; y += 50) { const L = (y - band) % 250 < 50 ? 40 : 18; ctx.strokeStyle = rgba(accL, 0.5); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bar - 30, y); ctx.lineTo(bar - 30 - L, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(W - bar + 30, y); ctx.lineTo(W - bar + 30 + L, y); ctx.stroke(); }
+  ['01 NÉT MỰC', '02 NHẬN DIỆN', '03 SUY LUẬN', '04 HỎI LẠI', '05 GHI NHỚ'].forEach((t, i) => { const y = band + 330 + i * 300; ctx.fillStyle = i === 3 ? '#FF8A5B' : accL; ctx.font = `600 30px ${FONT.mono}`; ctx.fillText(t.slice(0, 2), 40, y); ctx.fillStyle = '#9097A6'; ctx.font = `500 17px ${FONT.mono}`; ctx.fillText(t.slice(3), 40, y + 28); });
+  ctx.save(); ctx.translate(W - bar / 2 + 6, H - 140); ctx.rotate(-Math.PI / 2); ctx.fillStyle = '#F5F2EA'; ctx.font = `800 62px ${FONT.sans}`; ctx.fillText('AI · STEM · EDTECH', 0, 0); ctx.restore();
+  ctx.save(); ctx.translate(bar / 2 + 24, H - 70); ctx.rotate(-Math.PI / 2); ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = `500 20px ${FONT.mono}`; ctx.fillText('SOCRATIC VISION BOARD · PHÚC YÊN · PHÚ THỌ', 0, 0); ctx.restore();
+  return c;
+}
+function paintCounter(o) {
+  const W = o.w, H = o.h; const { c, ctx } = makeCanvas(W, H, 1400); const acc = o.accent, accL = shade(acc, 0.45);
+  bgBase(ctx, W, H, o.color, acc, 0.12); pDots(ctx, W, H, '#ffffff', 0.06, 20); pCircuit(ctx, W, H, acc, o.id, 0.18, 1.6);
+  ctx.fillStyle = '#FF6A2B'; ctx.font = `400 ${H * 0.86}px ${FONT.serif}`; ctx.fillText('?', W * 0.66, H * 0.8);
+  ctx.fillStyle = accL; ctx.font = `500 18px ${FONT.mono}`; ctx.fillText('// XEM AI NGHĨ · WATCH THE AI THINK', 60, 80);
+  const s = Math.min(92, W * 0.09); const [a, b = ''] = String(o.text).split('|'); ctx.fillStyle = '#F5F2EA'; ctx.font = `800 ${s}px ${FONT.sans}`; ctx.fillText(a, 60, 190); ctx.fillStyle = accL; ctx.font = `italic 400 ${s * 1.06}px ${FONT.serif}`; ctx.fillText(b, 60, 190 + s * 1.05);
+  ctx.fillStyle = '#C9C5BB'; ctx.font = `italic 400 32px ${FONT.serif}`; ctx.fillText(o.sub || '', 62, 190 + s * 2.1);
+  chips(ctx, 60, 470, Math.min(560, W * 0.56), 56, 12, acc, 2);
+  band(ctx, W, H, acc, 'AI · STEM · EDTECH  ·  ', 120);
+  return c;
+}
+function paintSeal(r = 220) {
+  const D = r * 2; const { c, ctx } = makeCanvas(D, D, 700, 1); ctx.fillStyle = '#FF6A2B'; ctx.beginPath(); ctx.arc(r, r, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#121212'; ctx.beginPath(); ctx.arc(r, r, r - 70, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#FF9A70'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(r, r, r - 82, 0, Math.PI * 2); ctx.stroke();
+  const txt = 'STUDENT STARTUP IDEAS COMPETITION 2026–2027 · 1ST PRIZE · PROVINCIAL · '; ctx.fillStyle = '#fff'; ctx.font = `600 21px ${FONT.mono}`; ctx.textAlign = 'center';
+  const per = (Math.PI * 2) / txt.length; for (let i = 0; i < txt.length; i++) { const ang = -Math.PI / 2 + i * per; ctx.save(); ctx.translate(r + (r - 38) * Math.cos(ang), r + (r - 38) * Math.sin(ang)); ctx.rotate(ang + Math.PI / 2); ctx.fillText(txt[i], 0, 7); ctx.restore(); }
+  ctx.fillStyle = '#FF9A70'; ctx.font = `500 22px ${FONT.mono}`; ctx.fillText('2026–2027', r, r - 82); ctx.fillStyle = '#fff'; ctx.font = `800 70px ${FONT.sans}`; ctx.fillText('GIẢI', r, r - 4); ctx.fillText('NHẤT', r, r + 66); ctx.font = `600 26px ${FONT.sans}`; ctx.fillText('cấp tỉnh', r, r + 108); ctx.textAlign = 'left';
+  return c;
+}
+function paintTotem(o) {
+  const F = o.w, H = o.h; const { c, ctx } = makeCanvas(F * 3, H, 2048); const acc = o.accent, blue = '#2F6BFF', blueL = '#8FB0F5';
+  for (let f = 0; f < 3; f++) {
+    ctx.save(); ctx.translate(f * F, 0); ctx.beginPath(); ctx.rect(0, 0, F, H); ctx.clip();
+    bgBase(ctx, F, H, o.color, f === 1 ? acc : blue, 0.16); pContour(ctx, F, H, f === 1 ? acc : blue, o.id + f, 0.14);
+    corners(ctx, F, H - 150, 24, 40, 'rgba(255,255,255,.4)', 3);
+    if (f === 0) {
+      ctx.fillStyle = blueL; ctx.font = `500 18px ${FONT.mono}`; ctx.fillText('// SOCRATIC VISION BOARD', 44, 560);
+      ctx.fillStyle = '#F5F2EA'; ctx.font = `800 86px ${FONT.sans}`; ctx.fillText('Bảng lớp', 44, 660); ctx.fillText('biết', 44, 750); ctx.fillStyle = blueL; ctx.font = `italic 400 92px ${FONT.serif}`; ctx.fillText('hỏi lại.', 44 + 200, 750);
+      ctx.fillStyle = '#C9C5BB'; ctx.font = `italic 400 36px ${FONT.serif}`; ctx.fillText('The board that asks back.', 46, 810);
+      chips(ctx, 44, 880, F - 88, 58, 12, blue, 0);
+      ctx.fillStyle = '#F5F2EA'; ctx.font = `700 30px ${FONT.sans}`; ctx.fillText('Mời vào thử →', 44, H - 260); ctx.fillStyle = blueL; ctx.font = `italic 400 26px ${FONT.serif}`; ctx.fillText('Step inside and try it', 44, H - 222);
+    } else if (f === 1) {
+      ctx.fillStyle = '#A8A29E'; ctx.font = `500 18px ${FONT.mono}`; ctx.fillText('GIẢI THƯỞNG · AWARD', 44, 130);
+      const s = fitFont(ctx, o.text || '', `800 {s}px ${FONT.sans}`, 130, F - 88); const words = String(o.text || '').split(' ');
+      ctx.fillStyle = acc; ctx.font = `800 ${Math.min(130, s * 1.6)}px ${FONT.sans}`; words.forEach((wd, i) => ctx.fillText(wd, 44, 260 + i * 125));
+      const yy = 260 + words.length * 125 + 10; ctx.fillStyle = '#F5F2EA'; ctx.font = `600 36px ${FONT.sans}`; wrap(ctx, o.sub || '', F - 88).forEach((l, i) => ctx.fillText(l, 44, yy + i * 46));
+      ctx.strokeStyle = 'rgba(255,255,255,.16)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(44, 900); ctx.lineTo(F - 44, 900); ctx.stroke();
+      ctx.fillStyle = '#E6E4DD'; ctx.font = `600 27px ${FONT.sans}`; wrap(ctx, 'Cuộc thi học sinh, sinh viên với ý tưởng khởi nghiệp năm học 2026–2027', F - 88).forEach((l, i) => ctx.fillText(l, 44, 960 + i * 38));
+      ctx.fillStyle = '#A8A29E'; ctx.font = `italic 400 22px ${FONT.serif}`; ctx.fillText('Student Startup Ideas Competition', 44, 1110);
+      ctx.fillStyle = '#F5F2EA'; ctx.font = `700 28px ${FONT.sans}`; ctx.fillText('Học sinh phường Phúc Yên', 44, H - 270); ctx.fillStyle = '#C9C5BB'; ctx.font = `italic 400 22px ${FONT.serif}`; ctx.fillText('Students of Phuc Yen Ward', 44, H - 236);
+    } else {
+      ctx.fillStyle = blueL; ctx.font = `500 18px ${FONT.mono}`; ctx.fillText('// THỬ NGAY · TRY IT NOW', 44, 130);
+      ctx.fillStyle = '#F5F2EA'; ctx.font = `800 84px ${FONT.sans}`; ctx.fillText('Quét', 44, 240); ctx.fillText('để thử.', 44, 330); ctx.fillStyle = blueL; ctx.font = `italic 400 44px ${FONT.serif}`; ctx.fillText('Scan to try.', 46, 392);
+      const q = F - 88, qy = 450; ctx.fillStyle = '#fff'; ctx.fillRect(44, qy, q, q); const R = rng('qr'); const n = 25, ms = (q - 40) / n; ctx.fillStyle = '#111';
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { const fin = (a, b) => i >= a && i < a + 7 && j >= b && j < b + 7; if (fin(0, 0) || fin(0, n - 7) || fin(n - 7, 0)) continue; if (R() < 0.48) ctx.fillRect(64 + i * ms, qy + 20 + j * ms, ms, ms); }
+      [[0, 0], [0, n - 7], [n - 7, 0]].forEach(([a, b]) => { ctx.fillRect(64 + a * ms, qy + 20 + b * ms, 7 * ms, 7 * ms); ctx.fillStyle = '#fff'; ctx.fillRect(64 + (a + 1) * ms, qy + 20 + (b + 1) * ms, 5 * ms, 5 * ms); ctx.fillStyle = '#111'; ctx.fillRect(64 + (a + 2) * ms, qy + 20 + (b + 2) * ms, 3 * ms, 3 * ms); });
+      ctx.fillStyle = '#E6E4DD'; ctx.font = `600 27px ${FONT.sans}`; wrap(ctx, 'Gia sư Socratic trên điện thoại, không cần cài đặt.', F - 88).forEach((l, i) => ctx.fillText(l, 44, qy + q + 70 + i * 38));
+    }
+    band(ctx, F, H, f === 1 ? acc : blue, 'SOCRATIC  ·  ', 130);
+    ctx.restore();
+  }
+  return c;
+}
+function paintScreen(o, active = 0) {
+  const W = o.w, H = o.h; const { c, ctx } = makeCanvas(W, H, 1600);
+  if (o.variant === 'board') {
+    ctx.fillStyle = '#FBF9F4'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = '#ECE8DF'; ctx.lineWidth = 1.5; for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); } for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    ctx.fillStyle = '#1D1B16'; roundRect(ctx, 24, 24, 360, 52, 26); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = `600 22px ${FONT.sans}`; ctx.fillText('✎  Bút   ◯ Lasso   ⌫', 46, 58);
+    ctx.fillStyle = '#1D1B16'; ctx.font = `italic 400 ${H * 0.11}px ${FONT.serif}`; ctx.fillText('y = x² − 4x + 3', W * 0.06, H * 0.3);
+    ctx.setLineDash([14, 10]); ctx.strokeStyle = '#D9481C'; ctx.lineWidth = 4; roundRect(ctx, W * 0.045, H * 0.17, W * 0.42, H * 0.17, 12); ctx.stroke(); ctx.setLineDash([]);
+    const ox = W * 0.56, oy = H * 0.82; ctx.strokeStyle = '#1D1B16'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(ox - 30, oy); ctx.lineTo(W * 0.96, oy); ctx.moveTo(ox, oy + 30); ctx.lineTo(ox, H * 0.12); ctx.stroke();
+    ctx.strokeStyle = '#2459C9'; ctx.lineWidth = 7; ctx.beginPath(); for (let i = 0; i <= 60; i++) { const xv = -0.6 + (4.6 * i) / 60; const yv = xv * xv - 4 * xv + 3; const px = ox + xv * W * 0.08, py = oy - (yv + 1) * H * 0.1 - H * 0.02; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.stroke();
+    ctx.fillStyle = '#D9481C'; ctx.beginPath(); ctx.arc(ox + 2 * W * 0.08, oy - H * 0.02, 12, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#2459C9'; roundRect(ctx, W * 0.06, H * 0.5, W * 0.4, H * 0.1, H * 0.05); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = `600 ${H * 0.042}px ${FONT.sans}`; ctx.fillText('Đỉnh parabol nằm ở đâu?', W * 0.085, H * 0.567);
+    ctx.fillStyle = '#57534E'; ctx.font = `italic 400 ${H * 0.036}px ${FONT.serif}`; ctx.fillText('Em thử dùng −b / 2a xem?', W * 0.06, H * 0.68);
+  } else {
+    ctx.fillStyle = '#0B0C10'; ctx.fillRect(0, 0, W, H); pGrid(ctx, W, H, '#2F6BFF', 0.06);
+    ctx.fillStyle = '#8FB0F5'; ctx.font = `500 ${W * 0.04}px ${FONT.mono}`; ctx.fillText('HỘP KÍNH · LIVE', W * 0.07, H * 0.07);
+    ctx.fillStyle = '#3FB97A'; ctx.beginPath(); ctx.arc(W * 0.9, H * 0.06, W * 0.016, 0, Math.PI * 2); ctx.fill();
+    chips(ctx, W * 0.06, H * 0.12, W * 0.88, H * 0.1, H * 0.025, '#2F6BFF', active);
+    ctx.strokeStyle = '#8FB0F5'; ctx.lineWidth = 3; ctx.beginPath(); for (let x = 0; x <= W * 0.88; x += 6) { const y = H * 0.84 + Math.sin(x / 22 + active) * H * 0.03 * Math.sin(x / 140); x ? ctx.lineTo(W * 0.06 + x, y) : ctx.moveTo(W * 0.06 + x, y); } ctx.stroke();
+    ctx.fillStyle = '#A8A29E'; ctx.font = `500 ${W * 0.032}px ${FONT.mono}`; ctx.fillText('độ tin cậy 0,92 · "2" không phải "Z"', W * 0.06, H * 0.93);
+  }
+  return c;
+}
+function paintFlag(o) {
+  const W = o.w, H = o.h * 0.8; const { c, ctx } = makeCanvas(W, H, 1600); const acc = o.accent, accL = shade(acc, 0.45);
+  bgBase(ctx, W, H, o.color, acc, 0.18); pContour(ctx, W, H, acc, o.id, 0.16); ctx.fillStyle = acc; ctx.fillRect(W - 90, 0, 90, H);
+  ringQ(ctx, W * 0.42, H * 0.12, W * 0.24, '#F5F2EA', '#FF6A2B', 14);
+  ctx.save(); ctx.translate(W * 0.62, H * 0.92); ctx.rotate(-Math.PI / 2); ctx.fillStyle = '#F5F2EA'; ctx.font = `800 ${W * 0.27}px ${FONT.sans}`; ctx.fillText(o.text || '', 0, 0); const tw = ctx.measureText(o.text || '').width; ctx.fillStyle = accL; ctx.font = `italic 400 ${W * 0.28}px ${FONT.serif}`; ctx.fillText(' vision', tw, 0); ctx.restore();
+  return c;
+}
+function paintDecal(o) {
+  const D = o.w; const { c, ctx } = makeCanvas(D, D, 1024); const r = D / 2; ctx.clearRect(0, 0, D, D);
+  ctx.fillStyle = o.accent; ctx.beginPath(); ctx.arc(r, r, r, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#0B0C10'; ctx.beginPath(); ctx.arc(r, r, r - 55, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = rgba(o.accent, 0.5); ctx.lineWidth = 3; for (let a = 0; a < 72; a++) { const ang = (a / 72) * Math.PI * 2; const L = a % 6 ? 14 : 30; ctx.beginPath(); ctx.moveTo(r + (r - 70) * Math.cos(ang), r + (r - 70) * Math.sin(ang)); ctx.lineTo(r + (r - 70 - L) * Math.cos(ang), r + (r - 70 - L) * Math.sin(ang)); ctx.stroke(); }
+  ctx.textAlign = 'center'; ctx.fillStyle = shade(o.accent, 0.45); ctx.font = `600 30px ${FONT.mono}`; ctx.fillText('▲ MÀN HÌNH · SCREEN', r, r - 160);
+  ctx.fillStyle = '#F5F2EA'; ctx.font = `800 ${fitFont(ctx, o.text, `800 {s}px ${FONT.sans}`, 112, D - 220)}px ${FONT.sans}`; ctx.fillText(o.text || '', r, r + 20); ctx.fillStyle = shade(o.accent, 0.45); ctx.font = `italic 400 64px ${FONT.serif}`; ctx.fillText('Stand here', r, r + 100); ctx.textAlign = 'left';
+  return c;
+}
+function paintFloor(o, emissiveOnly) {
+  const { c, ctx } = makeCanvas(o.w, o.d, 2048);
+  if (emissiveOnly) { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, o.w, o.d); pCircuit(ctx, o.w, o.d, o.accent, o.id, 0.9, 3.2); return c; }
+  ctx.fillStyle = o.color; ctx.fillRect(0, 0, o.w, o.d); const R = rng(o.id + 'f'); for (let i = 0; i < 9000; i++) { ctx.fillStyle = `rgba(255,255,255,${R() * 0.035})`; ctx.fillRect(R() * o.w, R() * o.d, 3, 3); }
+  pCircuit(ctx, o.w, o.d, o.accent, o.id, 0.55, 3.2); return c;
+}
+function paintStars(o, emissiveOnly) {
+  const { c, ctx } = makeCanvas(o.w, o.d, 1024); ctx.fillStyle = emissiveOnly ? '#000' : o.color; ctx.fillRect(0, 0, o.w, o.d);
+  const R = rng(o.id + 's'); for (let i = 0; i < 520; i++) { const a = 0.35 + R() * 0.65; ctx.fillStyle = `rgba(255,255,255,${emissiveOnly ? a : a * 0.5})`; ctx.beginPath(); ctx.arc(R() * o.w, R() * o.d, 2 + R() * 4, 0, Math.PI * 2); ctx.fill(); }
+  return c;
+}
+function paintValance(text, accent, wmm) { const { c, ctx } = makeCanvas(wmm, 220, 1024); ctx.fillStyle = accent; ctx.fillRect(0, 0, wmm, 220); ctx.fillStyle = '#fff'; ctx.font = `700 92px ${FONT.sans}`; ctx.textAlign = 'center'; ctx.fillText(text || '', wmm / 2, 145); return c; }
+function textMask(txt, wmm, hmm, blur = 0) {
+  const { c, ctx } = makeCanvas(wmm, hmm, 2048, 0.6); ctx.clearRect(0, 0, wmm, hmm); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (blur) ctx.filter = `blur(${blur}px)`; const s = fitFont(ctx, txt, `800 {s}px ${FONT.sans}`, hmm * 0.92, wmm * 0.98); ctx.font = `800 ${s}px ${FONT.sans}`; ctx.fillText(txt, wmm / 2, hmm * 0.54); return c;
+}
+
+// ---------------- vật liệu ----------------
+const MAT = {
+  std: (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.05, ...o }),
+  glow: (color, e) => new THREE.MeshStandardMaterial({ color: shade(color, -0.2), emissive: color, emissiveIntensity: e, roughness: 0.4 }),
+};
+
+// ---------------- dựng từng loại khối ----------------
+const B = {};
+const box = (w, h, d, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.castShadow = true; m.receiveShadow = true; return m; };
+B.tent = (o, g) => {
+  const W = o.w * M, D = o.d * M, H = o.h * M; const post = MAT.std('#B9BABD', { metalness: 0.6, roughness: 0.35 });
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, H, 12), post); p.position.set((sx * W) / 2, H / 2, (sz * D) / 2); p.castShadow = true; g.add(p); });
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(W / Math.SQRT2, 0.8, 4, 1, true), new THREE.MeshStandardMaterial({ color: o.color, roughness: 0.9, side: THREE.DoubleSide }));
+  roof.rotation.y = Math.PI / 4; roof.position.y = H + 0.4; roof.castShadow = true; roof.receiveShadow = true; roof.userData.roof = true; g.add(roof);
+  const vt = tex(paintValance(o.text, o.accent, o.w)); const vm = new THREE.MeshStandardMaterial({ map: vt, roughness: 0.8 }); const vs = MAT.std(o.accent, { roughness: 0.8 });
+  const vf = box(W, 0.22, 0.01, [vs, vs, vs, vs, vm, vs]); vf.position.set(0, H - 0.11, D / 2); g.add(vf);
+  const vb = box(W, 0.22, 0.01, vs); vb.position.set(0, H - 0.11, -D / 2); g.add(vb);
+  const vl = box(0.01, 0.22, D, vs); vl.position.set(-W / 2, H - 0.11, 0); g.add(vl); const vr = vl.clone(); vr.position.x = W / 2; g.add(vr);
+};
+B.neighbor = (o, g) => {
+  B.tent({ ...o, color: '#F5F5F2', accent: '#1E4FB0' }, g); const W = o.w * M, D = o.d * M;
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(W, D), MAT.std('#E8E6E0')); fl.rotation.x = -Math.PI / 2; fl.position.y = 0.005; fl.receiveShadow = true; g.add(fl);
+  const back = box(W - 0.2, 2.3, 0.04, MAT.std('#FAFAF8')); back.position.set(0, 1.15, -D / 2 + 0.1); g.add(back);
+  const t1 = box(0.6, 1.95, 0.05, MAT.std(o.color)); t1.position.set(-0.85, 0.975, -D / 2 + 0.35); g.add(t1);
+  const t2 = box(0.6, 1.95, 0.05, MAT.std(o.accent)); t2.position.set(0.85, 0.975, -D / 2 + 0.35); g.add(t2);
+  const tb = box(1.8, 0.75, 0.6, MAT.std('#FFFFFF', { roughness: 0.9 })); tb.position.set(0, 0.375, 0.1); g.add(tb);
+};
+B.floor = (o, g) => {
+  const t = tex(paintFloor(o)); const e = tex(paintFloor(o, true));
+  const m = new THREE.Mesh(new THREE.BoxGeometry(o.w * M, o.h * M, o.d * M), new THREE.MeshStandardMaterial({ map: t, emissiveMap: e, emissive: o.accent, emissiveIntensity: o.emissive ?? 0.8, roughness: 0.95 }));
+  m.position.y = (o.h * M) / 2; m.receiveShadow = true; g.add(m);
+};
+B.ceiling = (o, g) => {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(o.w * M, o.d * M), new THREE.MeshStandardMaterial({ map: tex(paintStars(o)), emissiveMap: tex(paintStars(o, true)), emissive: o.accent, emissiveIntensity: o.emissive ?? 1, roughness: 1, side: THREE.DoubleSide }));
+  m.rotation.x = Math.PI / 2; g.add(m);
+};
+B.panel = (o, g) => {
+  const front = tex(paintPanel(o)); const side = MAT.std(shade(o.color || '#0C0F18', -0.3));
+  const fm = new THREE.MeshStandardMaterial({ map: front, roughness: 0.75, emissiveMap: front, emissive: '#ffffff', emissiveIntensity: o.emissive ?? 0.2 });
+  const m = box(o.w * M, o.h * M, o.d * M, [side, side, side, side, fm, side]); m.position.y = (o.h * M) / 2; g.add(m);
+  const legs = MAT.std('#202227', { metalness: 0.5 }); [-1, 1].forEach((s) => { const f = box(0.06, 0.03, 0.5, legs); f.position.set((s * o.w * M) / 2.6, 0.015, 0.25); g.add(f); });
+};
+B.hexwall = (o, g) => {
+  const R = rng(o.id + 'hx'); const r = (o.cell || 90) * M, hw = r * Math.sqrt(3); const W = o.w * M, H = o.h * M; const dark = MAT.std(o.color, { roughness: 0.45, metalness: 0.3 });
+  const glows = []; for (let row = 0; row * r * 1.5 <= H; row++) for (let col = 0; col * hw <= W; col++) {
+    const cx = col * hw + (row % 2 ? hw / 2 : 0) - W / 2, cy = row * r * 1.5; if (cx > W / 2 || cx < -W / 2 || R() < 0.12) continue;
+    const dep = (30 + R() * ((o.d || 120) - 30)) * M; const lit = R() < 0.28; const mat = lit ? MAT.glow(o.accent, (o.emissive ?? 1) * (0.6 + R())) : dark;
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.94, r * 0.94, dep, 6), mat); m.rotation.x = Math.PI / 2; m.rotation.y = Math.PI / 6; m.position.set(cx, cy + r, dep / 2); m.castShadow = true; g.add(m);
+    if (lit) glows.push({ mat, base: mat.emissiveIntensity, ph: R() * 6 });
+  }
+  g.userData.tick = (t) => { if (REDUCED) return; glows.forEach((q) => (q.mat.emissiveIntensity = q.base * (0.6 + 0.4 * Math.sin(t * 1.4 + q.ph)))); };
+};
+B.screen = (o, g) => {
+  const W = o.w * M, H = o.h * M; const bez = box(W + 0.03, H + 0.03, (o.d || 60) * M, MAT.std('#0A0A0B', { roughness: 0.3, metalness: 0.4 })); bez.position.y = H / 2; g.add(bez);
+  const c = paintScreen(o); const t = tex(c); const s = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ map: t, toneMapped: true })); s.position.set(0, H / 2, ((o.d || 60) * M) / 2 + 0.002); g.add(s);
+  if (o.stand) { const p = box(0.06, o.y * M, 0.06, MAT.std('#2A2B2F', { metalness: 0.6 })); p.position.set(0, -(o.y * M) / 2, -0.06); g.add(p); const b = box(Math.min(W, 0.8), 0.04, 0.5, MAT.std('#2A2B2F', { metalness: 0.6 })); b.position.set(0, -o.y * M + 0.02, 0); g.add(b); }
+  if (o.variant === 'pipeline') { let last = -1; g.userData.tick = (t) => { const a = Math.floor(t / 1.6) % 5; if (a !== last && !REDUCED) { last = a; const nc = paintScreen(o, a); t0(nc); } }; const t0 = (nc) => { c.getContext('2d').drawImage(nc, 0, 0); t.needsUpdate = true; }; }
+};
+B.halo = (o, g) => {
+  const R = (o.w * M) / 2; const m1 = new THREE.Mesh(new THREE.TorusGeometry(R, 0.022, 16, 160), MAT.glow(o.accent, o.emissive ?? 2)); m1.rotation.x = Math.PI / 2; g.add(m1);
+  const m2 = new THREE.Mesh(new THREE.TorusGeometry(R * 0.86, 0.006, 8, 160), MAT.glow('#CFE0FF', (o.emissive ?? 2) * 0.6)); m2.rotation.x = Math.PI / 2; g.add(m2);
+  const seg = new THREE.Group(); for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2; const s = box(0.04, 0.012, 0.012, MAT.glow('#ffffff', 1.5)); s.position.set(Math.cos(a) * R * 0.86, -0.005, Math.sin(a) * R * 0.86); s.rotation.y = -a; seg.add(s); } g.add(seg);
+  const cable = MAT.std('#555'); for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2; const L = 0.16; const c = new THREE.Mesh(new THREE.CylinderGeometry(0.002, 0.002, L), cable); c.position.set(Math.cos(a) * R, L / 2, Math.sin(a) * R); g.add(c); }
+  g.userData.tick = (t) => { if (!REDUCED) seg.rotation.y = t * 0.25; };
+};
+B.decal = (o, g) => { const m = new THREE.Mesh(new THREE.CircleGeometry((o.w * M) / 2, 96), new THREE.MeshStandardMaterial({ map: tex(paintDecal(o)), transparent: true, roughness: 0.6 })); m.rotation.x = -Math.PI / 2; m.position.y = 0.014; m.receiveShadow = true; g.add(m); };
+function qMark(height, color, e) {
+  const grp = new THREE.Group(); const pts = [[-0.26, 0.6], [-0.24, 0.76], [-0.12, 0.87], [0.04, 0.9], [0.19, 0.84], [0.27, 0.71], [0.25, 0.58], [0.15, 0.48], [0.04, 0.4], [0, 0.31], [0, 0.22]].map(([x, y]) => new THREE.Vector3(x * height, y * height, 0));
+  const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: e * 0.45, roughness: 0.28, metalness: 0.35 }); const r = 0.07 * height;
+  grp.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'centripetal'), 80, r, 20), mat));
+  const cap1 = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 14), mat); cap1.position.copy(pts[0]); grp.add(cap1); const cap2 = cap1.clone(); cap2.position.copy(pts[pts.length - 1]); grp.add(cap2);
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(r * 1.15, 24, 16), mat); dot.position.set(0, 0.06 * height, 0); grp.add(dot); grp.traverse((m) => (m.castShadow = true)); return grp;
+}
+B.beacon = (o, g) => {
+  const D = o.w * M; const ring = new THREE.Mesh(new THREE.TorusGeometry(D / 2, 0.028, 18, 140), MAT.glow(o.accent, o.emissive ?? 2)); ring.position.y = D / 2 + 0.03; g.add(ring);
+  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(D / 2 - 0.05, 0.006, 8, 140), MAT.glow('#CFE0FF', (o.emissive ?? 2) * 0.5)); ring2.position.y = D / 2 + 0.03; g.add(ring2);
+  const q = qMark(D * 0.74, o.color, o.emissive ?? 2); q.position.set(0, 0.03 + D * 0.13, 0); g.add(q);
+  const neck = box(0.05, 0.05, 0.05, MAT.std('#222')); neck.position.y = 0.015; g.add(neck);
+  g.userData.tick = (t) => { if (!REDUCED) { q.rotation.y = Math.sin(t * 0.7) * 0.55; ring2.rotation.y = t * 0.6; } };
+};
+B.relief = (o, g) => {
+  const W = o.w * M, H = o.h * M, Dp = (o.d || 60) * M; const mask = tex(textMask(o.text, o.w, o.h), false); const blur = tex(textMask(o.text, o.w * 1.15, o.h * 2.2, 18), false);
+  const halo = new THREE.Mesh(new THREE.PlaneGeometry(W * 1.15, H * 2.2), new THREE.MeshBasicMaterial({ color: new THREE.Color(o.accent).multiplyScalar(1 + (o.emissive ?? 1.5)), alphaMap: blur, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); halo.position.set(0, H / 2, -0.005); g.add(halo);
+  const n = 7; for (let i = 0; i < n; i++) { const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshStandardMaterial({ color: shade(o.accent, -0.35), alphaMap: mask, alphaTest: 0.5, roughness: 0.5, side: THREE.DoubleSide })); m.position.set(0, H / 2, (i / (n - 1)) * Dp * 0.92); g.add(m); }
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshStandardMaterial({ color: o.color, alphaMap: mask, alphaTest: 0.5, roughness: 0.35, emissive: o.color, emissiveIntensity: (o.emissive ?? 1.5) * 0.18 })); f.position.set(0, H / 2, Dp); g.add(f);
+};
+B.portal = (o, g) => {
+  const W = o.w * M, H = o.h * M, D = o.d * M, band = o.band * M, bar = o.bar * M, R = o.radius * M; const s = new THREE.Shape();
+  s.moveTo(-W / 2, 0); s.lineTo(-W / 2, H); s.lineTo(W / 2, H); s.lineTo(W / 2, 0); s.lineTo(W / 2 - bar, 0); s.lineTo(W / 2 - bar, H - band - R);
+  s.absarc(W / 2 - bar - R, H - band - R, R, 0, Math.PI / 2, false); s.lineTo(-W / 2 + bar + R, H - band); s.absarc(-W / 2 + bar + R, H - band - R, R, Math.PI / 2, Math.PI, false); s.lineTo(-W / 2 + bar, 0); s.lineTo(-W / 2, 0);
+  const geo = new THREE.ExtrudeGeometry(s, { depth: D, bevelEnabled: true, bevelSize: 0.008, bevelThickness: 0.008, bevelSegments: 2, curveSegments: 24 });
+  const t = tex(paintPortal(o)); t.repeat.set(1 / W, 1 / H); t.offset.set(0.5, 0); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+  const cap = new THREE.MeshStandardMaterial({ map: t, roughness: 0.45, metalness: 0.25 }); const side = MAT.std(o.color, { roughness: 0.4, metalness: 0.4 });
+  const m = new THREE.Mesh(geo, [cap, side]); m.position.z = -D / 2; m.castShadow = true; m.receiveShadow = true; g.add(m);
+  const off = 0.022; const pts = []; const xr = W / 2 - bar - off, xl = -W / 2 + bar + off;
+  for (let y = 0.02; y < H - band - R; y += 0.1) pts.push(new THREE.Vector3(xr, y, 0)); for (let i = 0; i <= 16; i++) { const a = (i / 16) * (Math.PI / 2); pts.push(new THREE.Vector3(W / 2 - bar - R + (R - off) * Math.cos(a), H - band - R + (R - off) * Math.sin(a), 0)); }
+  for (let i = 0; i <= 16; i++) { const a = Math.PI / 2 + (i / 16) * (Math.PI / 2); pts.push(new THREE.Vector3(-W / 2 + bar + R + (R - off) * Math.cos(a), H - band - R + (R - off) * Math.sin(a), 0)); } for (let y = H - band - R - 0.1; y >= 0.02; y -= 0.1) pts.push(new THREE.Vector3(xl, y, 0));
+  const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.1); const led = new THREE.Mesh(new THREE.TubeGeometry(curve, 400, 0.011, 10), MAT.glow(o.accent, o.emissive ?? 2)); led.position.z = D / 2 + 0.01; g.add(led);
+  const led2 = led.clone(); led2.material = MAT.glow(o.accent, (o.emissive ?? 2) * 0.6); led2.position.z = -D / 2 - 0.01; g.add(led2);
+  const outline = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, 0.012, 0.012), MAT.glow(o.accent, (o.emissive ?? 2) * 0.7)); outline.position.set(0, H + 0.006, D / 2); g.add(outline);
+  [-1, 1].forEach((sx) => { const f = box(bar + 0.1, 0.02, 0.4, MAT.std('#1A1B1F', { metalness: 0.5 })); f.position.set(sx * (W / 2 - bar / 2), 0.01, 0); g.add(f); });
+};
+B.totem = (o, g) => {
+  const F = o.w * M, H = o.h * M, r = F / Math.sqrt(3); const t = tex(paintTotem(o));
+  const geo = new THREE.CylinderGeometry(r, r, H, 3, 1, false, -Math.PI / 3); const side = new THREE.MeshStandardMaterial({ map: t, roughness: 0.6, emissiveMap: t, emissive: '#ffffff', emissiveIntensity: 0.18 }); const capm = MAT.std('#141518', { metalness: 0.4 });
+  const m = new THREE.Mesh(geo, [side, capm, capm]); m.position.y = H / 2; m.castShadow = true; m.receiveShadow = true; g.add(m);
+  const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.03, 64), [MAT.std('#FF6A2B'), new THREE.MeshStandardMaterial({ map: tex(paintSeal()), roughness: 0.5 }), MAT.std('#FF6A2B')]);
+  seal.rotation.x = Math.PI / 2; seal.rotation.y = Math.PI; seal.position.set(0, H - 0.31, r / 2 + 0.03); seal.rotation.set(Math.PI / 2, 0, 0); seal.castShadow = true; g.add(seal);
+  const base = box(F * 1.05, 0.06, F * 0.95, MAT.std('#16171A', { metalness: 0.5 })); base.position.y = 0.03; g.add(base);
+};
+B.counter = (o, g) => {
+  const W = o.w * M, H = o.h * M, D = o.d * M; const t = tex(paintCounter(o)); const dark = MAT.std(o.color, { roughness: 0.4, metalness: 0.2 });
+  const fm = new THREE.MeshStandardMaterial({ map: t, roughness: 0.55, emissiveMap: t, emissive: '#ffffff', emissiveIntensity: 0.15 });
+  const body = box(W, H - 0.08, D, [dark, dark, dark, dark, fm, dark]); body.position.y = 0.08 + (H - 0.08) / 2; g.add(body);
+  const top = box(W + 0.04, 0.04, D + 0.04, MAT.std('#111216', { roughness: 0.25, metalness: 0.5 })); top.position.y = H + 0.02; g.add(top);
+  const plinth = box(W - 0.06, 0.08, D - 0.06, MAT.std('#050506')); plinth.position.y = 0.04; g.add(plinth);
+  const ledL = box(W - 0.06, 0.01, 0.01, MAT.glow(o.accent, o.emissive ?? 1.6)); ledL.position.set(0, 0.075, D / 2 - 0.02); g.add(ledL);
+  const tower = new THREE.Group(); tower.position.set(0, H + 0.04, -0.02); g.add(tower); const base = box(0.38, 0.05, 0.3, MAT.std('#0A0A0B')); base.position.y = 0.025; tower.add(base);
+  const plates = []; [0.12, 0.145, 0.17, 0.195, 0.22].forEach((h, i) => {
+    const mat = new THREE.MeshPhysicalMaterial({ color: '#dfe8ff', transparent: true, opacity: 0.16, roughness: 0.05, metalness: 0, emissive: o.accent, emissiveIntensity: 0, side: THREE.DoubleSide });
+    const p = new THREE.Mesh(new THREE.BoxGeometry(0.3, h, 0.005), mat); p.position.set(0, 0.05 + h / 2, 0.11 - i * 0.05); tower.add(p);
+    const edge = new THREE.LineSegments(new THREE.EdgesGeometry(p.geometry), new THREE.LineBasicMaterial({ color: o.accent, transparent: true, opacity: 0.5 })); edge.position.copy(p.position); tower.add(edge); plates.push({ mat, edge });
+  });
+  g.userData.tick = (t) => { const a = Math.floor(t / 0.8) % 5; plates.forEach((p, i) => { p.mat.emissiveIntensity = i === a ? (o.emissive ?? 1.6) * 1.2 : 0.02; p.mat.opacity = i === a ? 0.45 : 0.14; p.edge.material.opacity = i === a ? 1 : 0.35; }); };
+};
+B.strip = (o, g) => { const m = box(o.w * M, o.h * M, o.d * M, MAT.glow(o.accent, o.emissive ?? 2.5)); m.position.y = (o.h * M) / 2 + 0.012; m.castShadow = false; g.add(m); };
+B.flag = (o, g) => {
+  const H = o.h * M, W = o.w * M; const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, H, 10), MAT.std('#6E6E6A', { metalness: 0.5 })); pole.position.y = H / 2; g.add(pole);
+  const s = new THREE.Shape(); const h0 = H * 0.2; s.moveTo(0, h0); s.lineTo(0, H * 0.99); s.quadraticCurveTo(W * 0.7, H * 1.0, W * 0.95, H * 0.88); s.lineTo(W, h0 + 0.1); s.lineTo(W * 0.9, h0); s.lineTo(0, h0);
+  const geo = new THREE.ShapeGeometry(s, 24); const t = tex(paintFlag(o)); t.repeat.set(1 / W, 1 / (H * 0.8)); t.offset.set(0, -h0 / (H * 0.8));
+  const sail = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: t, side: THREE.DoubleSide, roughness: 0.8, emissiveMap: t, emissive: '#ffffff', emissiveIntensity: 0.12 })); sail.position.x = 0.02; sail.castShadow = true; g.add(sail);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.08, 24), MAT.std('#8FB0F5', { roughness: 0.3, transparent: true, opacity: 0.85 })); base.position.y = 0.04; g.add(base);
+  g.userData.tick = (t) => { if (!REDUCED) sail.rotation.y = Math.sin(t * 0.9 + hash(o.id) % 7) * 0.12; };
+};
+B.aicore = (o, g) => {
+  const S = o.w * M, H = o.h * M, plH = H - S; const pl = box(S * 1.1, plH, S * 1.1, MAT.std(o.color || '#0B0C10', { roughness: 0.35, metalness: 0.3 })); pl.position.y = plH / 2; g.add(pl);
+  const e = new THREE.LineSegments(new THREE.EdgesGeometry(pl.geometry), new THREE.LineBasicMaterial({ color: o.accent })); e.position.copy(pl.position); g.add(e);
+  const lab = new THREE.Mesh(new THREE.PlaneGeometry(S, 0.08), new THREE.MeshBasicMaterial({ map: tex(paintValance('LÕI AI · AI CORE', '#111318', 1600), true) })); lab.position.set(0, plH - 0.12, (S * 1.1) / 2 + 0.002); g.add(lab);
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(S, S, S), new THREE.MeshPhysicalMaterial({ color: '#ffffff', transmission: 0.92, roughness: 0.04, thickness: 0.05, transparent: true, opacity: 0.35, ior: 1.45 })); glass.position.y = plH + S / 2; g.add(glass);
+  const ge = new THREE.LineSegments(new THREE.EdgesGeometry(glass.geometry), new THREE.LineBasicMaterial({ color: '#CFE0FF', transparent: true, opacity: 0.8 })); ge.position.copy(glass.position); g.add(ge);
+  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(S * 0.26, 1), new THREE.MeshStandardMaterial({ color: o.accent, emissive: o.accent, emissiveIntensity: o.emissive ?? 2, wireframe: true })); core.position.copy(glass.position); g.add(core);
+  const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(S * 0.12, 0), MAT.glow('#ffffff', (o.emissive ?? 2) * 0.8)); inner.position.copy(glass.position); g.add(inner);
+  g.userData.tick = (t) => { if (!REDUCED) { core.rotation.y = t * 0.5; core.rotation.x = t * 0.2; inner.rotation.y = -t; } };
+};
+B.holo = (o, g) => {
+  const H = o.h * M, D = o.w * M; const pole = box(0.04, H, 0.04, MAT.std('#2A2B2F', { metalness: 0.6 })); pole.position.y = H / 2; g.add(pole); const base = box(0.4, 0.03, 0.4, MAT.std('#2A2B2F')); base.position.y = 0.015; g.add(base);
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.05, 20), MAT.std('#111')); hub.rotation.x = Math.PI / 2; hub.position.set(0, H, 0.04); g.add(hub);
+  const blades = new THREE.Mesh(new THREE.CircleGeometry(D / 2, 64), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.04, side: THREE.DoubleSide })); blades.position.set(0, H, 0.07); g.add(blades);
+  const { c, ctx } = makeCanvas(600, 600, 600, 1); const gr = ctx.createRadialGradient(300, 300, 20, 300, 300, 300); gr.addColorStop(0, rgba(o.accent, 0.5)); gr.addColorStop(1, rgba(o.accent, 0)); ctx.fillStyle = gr; ctx.fillRect(0, 0, 600, 600);
+  ringQ(ctx, 300, 300, 200, '#ffffff', '#FF8A5B', 16); ctx.strokeStyle = rgba('#ffffff', 0.6); ctx.lineWidth = 3; for (let i = 0; i < 36; i++) { const a = (i / 36) * Math.PI * 2; ctx.beginPath(); ctx.moveTo(300 + 240 * Math.cos(a), 300 + 240 * Math.sin(a)); ctx.lineTo(300 + 262 * Math.cos(a), 300 + 262 * Math.sin(a)); ctx.stroke(); }
+  const holo = new THREE.Mesh(new THREE.PlaneGeometry(D, D), new THREE.MeshBasicMaterial({ map: tex(c), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, color: new THREE.Color('#ffffff').multiplyScalar(1 + (o.emissive ?? 2) * 0.5) })); holo.position.set(0, H, 0.09); g.add(holo);
+  g.userData.tick = (t) => { if (!REDUCED) { holo.rotation.y = Math.sin(t * 0.8) * 0.5; holo.material.opacity = 0.85 + 0.15 * Math.sin(t * 9); } };
+};
+B.person = (o, g) => {
+  const H = o.h * M; const mat = MAT.std(o.color || '#4A5466', { roughness: 0.9 }); const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, H - 0.62, 6, 16), mat); body.position.y = (H - 0.24) / 2 + 0.02; body.scale.z = 0.65; body.castShadow = true; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 20, 14), mat); head.position.y = H - 0.11; head.castShadow = true; g.add(head);
+};
+
+// ---------------- cảnh ----------------
+const view = document.getElementById('view');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+view.prepend(renderer.domElement);
+const scene = new THREE.Scene(); const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 200);
+const pmrem = new THREE.PMREMGenerator(renderer); const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+const hemi = new THREE.HemisphereLight('#ffffff', '#8a8478', 1.1); scene.add(hemi);
+const sun = new THREE.DirectionalLight('#fff6e8', 2.4); sun.position.set(-6, 11, 9); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 40 }); sun.shadow.bias = -0.0004; scene.add(sun);
+const spots = []; [[-1.1, 2.35, 0.7, -0.6, 1.2, -1.5], [1.1, 2.35, 0.7, 0.6, 1.2, -1.5], [0, 2.4, 1.4, 0.75, 1.0, 1.25]].forEach(([x, y, z, tx, ty, tz]) => { const s = new THREE.SpotLight('#ffe7c4', 0, 7, 0.55, 0.6, 1.4); s.position.set(x, y, z); s.target.position.set(tx, ty, tz); scene.add(s, s.target); spots.push(s); });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), (() => { const { c, ctx } = makeCanvas(4000, 4000, 1024); ctx.fillStyle = '#CDC8BD'; ctx.fillRect(0, 0, 4000, 4000); const R = rng('g'); for (let i = 0; i < 6000; i++) { ctx.fillStyle = `rgba(0,0,0,${R() * 0.05})`; ctx.fillRect(R() * 4000, R() * 4000, 6, 6); } ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = 6; for (let x = 0; x <= 4000; x += 1000) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 4000); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, x); ctx.lineTo(4000, x); ctx.stroke(); } const t = tex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(20, 20); return new THREE.MeshStandardMaterial({ map: t, roughness: 0.95 }); })());
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const root = new THREE.Group(); scene.add(root);
+
+const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { samples: 4, type: THREE.HalfFloatType }));
+composer.addPass(new RenderPass(scene, camera)); const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.35, 0.5, 0.9); composer.addPass(bloom); composer.addPass(new OutputPass());
+
+const orbit = new OrbitControls(camera, renderer.domElement); orbit.enableDamping = true; orbit.maxPolarAngle = Math.PI * 0.495; orbit.minDistance = 0.6; orbit.maxDistance = 30;
+const tc = new TransformControls(camera, renderer.domElement); tc.setTranslationSnap(0.05); tc.setRotationSnap(THREE.MathUtils.degToRad(15)); tc.setSize(0.8); scene.add(tc);
+tc.addEventListener('dragging-changed', (e) => { orbit.enabled = !e.value; if (!e.value) commit(); });
+tc.addEventListener('objectChange', () => { const o = selObj(); const gobj = tc.object; if (!o || !gobj) return; o.x = Math.round(gobj.position.x / M); o.y = Math.round(gobj.position.y / M); o.z = Math.round(gobj.position.z / M); o.ry = Math.round(THREE.MathUtils.radToDeg(gobj.rotation.y)); updateDims(); syncInspectorNums(); });
+
+// ---------------- trạng thái ----------------
+let objects = DEFAULT(); let settings = { mode: 'day', neighbors: true, roof: true, people: true, cam: 'aisle' }; let selected = null; const history = [];
+try { const s = JSON.parse(localStorage.getItem(STORE) || 'null'); if (s && Array.isArray(s.objects)) { objects = s.objects; settings = { ...settings, ...(s.settings || {}) }; } } catch (e) {}
+const groups = new Map();
+const selObj = () => objects.find((o) => o.id === selected);
+let saveT; function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(STORE, JSON.stringify({ objects, settings })); } catch (e) {} }, 300); }
+let lastSnap = JSON.stringify(objects); function commit() { const now = JSON.stringify(objects); if (now !== lastSnap) { history.push(lastSnap); if (history.length > 60) history.shift(); lastSnap = now; save(); renderLayers(); } }
+
+function dispose(gr) { gr.traverse((m) => { if (m.geometry) m.geometry.dispose(); const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : []; mats.forEach((mt) => { ['map', 'emissiveMap', 'alphaMap'].forEach((k) => mt[k] && mt[k].dispose()); mt.dispose(); }); }); }
+function build(o) {
+  const old = groups.get(o.id); if (old) { if (tc.object === old) tc.detach(); root.remove(old); dispose(old); }
+  const g = new THREE.Group(); g.userData.id = o.id; (B[o.type] || (() => {}))(o, g);
+  g.position.set(o.x * M, o.y * M, o.z * M); g.rotation.y = THREE.MathUtils.degToRad(o.ry || 0);
+  g.traverse((m) => { if (m.isMesh) { m.userData.id = o.id; if (m.castShadow === undefined) m.castShadow = true; } });
+  g.visible = visibleOf(o); root.add(g); groups.set(o.id, g); if (selected === o.id && !o.locked) tc.attach(g); return g;
+}
+function visibleOf(o) { if (o.visible === false) return false; if (o.group === 'context' && !settings.neighbors) return false; if (o.group === 'people' && !settings.people) return false; return true; }
+function applyRoof() { root.traverse((m) => { if (m.userData.roof) m.visible = settings.roof; }); }
+function rebuildAll() { for (const [id, g] of groups) { root.remove(g); dispose(g); } groups.clear(); objects.forEach(build); applyRoof(); }
+
+function applyMode() {
+  const day = settings.mode === 'day';
+  scene.background = new THREE.Color(day ? '#DCE6EE' : '#0A1020'); scene.fog = new THREE.Fog(day ? '#DCE6EE' : '#0A1020', 18, 60);
+  scene.environment = day ? envTex : null; hemi.intensity = day ? 0.65 : 0.12; hemi.color.set(day ? '#ffffff' : '#7F95C9'); sun.intensity = day ? 2.1 : 0; spots.forEach((s) => (s.intensity = day ? 2 : 14));
+  bloom.strength = day ? 0.32 : 1.05; bloom.threshold = day ? 0.92 : 0.55; bloom.radius = day ? 0.45 : 0.65; renderer.toneMappingExposure = day ? 0.82 : 1.15;
+  document.querySelectorAll('[data-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === settings.mode)));
+}
+
+// ---------------- máy quay ----------------
+const CAMS = { aisle: [[0.5, 1.7, 7.9], [0, 1.3, 0]], threeq: [[5.6, 3.1, 6.4], [0, 1.1, 0]], top: [[0.01, 9.5, 0.9], [0, 0, 0]], inside: [[0.95, 1.6, 0.75], [-0.4, 1.35, -1.5]] };
+let camAnim = null; function setCam(k, instant) {
+  settings.cam = k; const [p, t] = CAMS[k]; document.querySelectorAll('[data-cam]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cam === k)));
+  if (k === 'top' && settings.roof) { settings.roof = false; document.getElementById('optRoof').checked = false; applyRoof(); }
+  const to = { p: new THREE.Vector3(...p), t: new THREE.Vector3(...t) }; if (instant || REDUCED) { camera.position.copy(to.p); orbit.target.copy(to.t); orbit.update(); return; }
+  camAnim = { from: { p: camera.position.clone(), t: orbit.target.clone() }, to, s: performance.now() };
+}
+
+// ---------------- chọn khối ----------------
+const ray = new THREE.Raycaster(); const ptr = new THREE.Vector2(); let down = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5 || tc.dragging) return; const r = renderer.domElement.getBoundingClientRect();
+  ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ptr, camera);
+  const hits = ray.intersectObjects(root.children, true).filter((h) => h.object.visible && isShown(h.object)); select(hits.length ? hits[0].object.userData.id : null);
+});
+function isShown(obj) { let o = obj; while (o) { if (!o.visible) return false; o = o.parent; } return true; }
+function select(id) { selected = id; const o = selObj(); tc.detach(); if (o && !o.locked) tc.attach(groups.get(id)); renderLayers(); renderInspector(); updateDims(); }
+function updateDims() { const o = selObj(); const el = document.getElementById('dims'); if (!o) { el.hidden = true; return; } el.hidden = false; el.textContent = `${o.name} · ${o.w} × ${o.h} × ${o.d} mm · x ${o.x} y ${o.y} z ${o.z}`; }
+
+// ---------------- giao diện ----------------
+const $ = (s) => document.querySelector(s);
+const ICON_EYE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const ICON_LOCK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+function renderLayers() {
+  const el = $('#layers'); el.innerHTML = '';
+  objects.forEach((o) => {
+    const row = document.createElement('div'); row.className = 'layer' + (o.id === selected ? ' sel' : '');
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'pick'; b.innerHTML = `<span class="n"></span><i>${TYPE_LABEL[o.type] || ''}</i>`; b.querySelector('.n').textContent = o.name; b.onclick = () => select(o.id);
+    const eye = document.createElement('button'); eye.type = 'button'; eye.className = 'icon-btn'; eye.innerHTML = ICON_EYE; eye.setAttribute('aria-label', 'Ẩn hoặc hiện ' + o.name); eye.setAttribute('aria-pressed', String(o.visible !== false));
+    eye.onclick = () => { o.visible = o.visible === false; groups.get(o.id).visible = visibleOf(o); commit(); };
+    const lock = document.createElement('button'); lock.type = 'button'; lock.className = 'icon-btn'; lock.innerHTML = ICON_LOCK; lock.setAttribute('aria-label', 'Khóa hoặc mở khóa ' + o.name); lock.setAttribute('aria-pressed', String(!!o.locked));
+    lock.onclick = () => { o.locked = !o.locked; if (o.id === selected) select(o.id); commit(); };
+    row.append(b, eye, lock); el.append(row);
+  });
+}
+function renderLib() {
+  const el = $('#lib'); LIB.forEach((it) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = `<b></b><small></small>`; b.querySelector('b').textContent = it.label; b.querySelector('small').textContent = it.note; b.onclick = () => addObj(it); el.append(b); });
+}
+function addObj(it) {
+  const t = orbit.target; const id = it.type + '-' + Math.random().toString(36).slice(2, 7);
+  const o = { id, type: it.type, name: it.label, x: Math.round(t.x / M / 50) * 50, y: it.o.y ?? 0, z: Math.round(t.z / M / 50) * 50, ry: 0, w: 500, h: 500, d: 100, ...JSON.parse(JSON.stringify(it.o)) };
+  objects.push(o); build(o); commit(); select(id); toast('Đã thêm: ' + it.label);
+}
+const FIELDS = {
+  panel: ['layout', 'pattern', 'text', 'sub', 'startNo', 'color', 'accent', 'emissive'], portal: ['band', 'bar', 'radius', 'text', 'sub', 'color', 'accent', 'emissive'], relief: ['text', 'color', 'accent', 'emissive'],
+  totem: ['text', 'sub', 'color', 'accent'], beacon: ['color', 'accent', 'emissive'], counter: ['text', 'sub', 'color', 'accent', 'emissive'], screen: ['variant', 'stand'], hexwall: ['cell', 'color', 'accent', 'emissive'],
+  floor: ['color', 'accent', 'emissive'], ceiling: ['color', 'accent', 'emissive'], halo: ['accent', 'emissive'], aicore: ['color', 'accent', 'emissive'], holo: ['accent', 'emissive'], strip: ['accent', 'emissive'],
+  decal: ['text', 'accent'], flag: ['text', 'color', 'accent'], tent: ['text', 'color', 'accent'], neighbor: ['color', 'accent'], person: ['color'],
+};
+const FLABEL = { layout: 'Bố cục', pattern: 'Họa tiết', text: 'Chữ chính', sub: 'Chữ phụ', startNo: 'Số bắt đầu', color: 'Màu nền', accent: 'Màu nhấn', emissive: 'Độ sáng', band: 'Băng tên', bar: 'Bề chân', radius: 'Bo góc', variant: 'Nội dung', stand: 'Chân đứng', cell: 'Cỡ ô' };
+const OPTS = { layout: [['hero', 'Backdrop chính'], ['story', 'Câu chuyện'], ['plain', 'Tiêu đề giữa']], pattern: [['contour', 'Đồng mức + mạch'], ['circuit', 'Mạch điện'], ['hex', 'Lục giác'], ['dots', 'Lưới điểm'], ['grid', 'Lưới kỹ thuật'], ['plain', 'Trơn']], variant: [['board', 'Bảng viết tay'], ['pipeline', 'Hộp kính 5 lớp']] };
+function renderInspector() {
+  const el = $('#inspector'); const o = selObj();
+  if (!o) { el.innerHTML = `<h2>Thuộc tính</h2><p class="hint">Bấm vào một khối trong khung 3D hoặc trong danh sách bên trái để chỉnh. Kéo mũi tên để di chuyển (bước 50 mm), vòng tròn để xoay (bước 15°).</p><p class="hint">Phím tắt: W di chuyển · E xoay · Delete xóa · Ctrl+D nhân bản · Ctrl+Z hoàn tác · F lấy nét vào khối.</p>`; return; }
+  el.innerHTML = `<div class="sel-head"><h3></h3><span class="tag">${TYPE_LABEL[o.type] || o.type}</span></div>
+  <div class="field"><label for="f-name">Tên</label><input type="text" id="f-name"></div>
+  <div class="field"><label>Vị trí mm</label><div class="trio"><input type="number" id="f-x" step="50" aria-label="x"><input type="number" id="f-y" step="50" aria-label="cao"><input type="number" id="f-z" step="50" aria-label="sâu"></div></div>
+  <div class="field"><label>Cỡ mm</label><div class="trio"><input type="number" id="f-w" step="10" aria-label="rộng"><input type="number" id="f-h" step="10" aria-label="cao"><input type="number" id="f-d" step="10" aria-label="sâu"></div></div>
+  <div class="field"><label for="f-ry">Xoay °</label><input type="number" id="f-ry" step="15"></div><div id="extra"></div>
+  ${o.locked ? '<p class="hint">Khối đang khóa: mở khóa ở danh sách bên trái để kéo trong 3D.</p>' : ''}
+  <div class="row-btns"><button type="button" class="btn" id="b-focus">Lấy nét</button><button type="button" class="btn" id="b-dup">Nhân bản</button><button type="button" class="btn" id="b-del">Xóa</button></div>`;
+  el.querySelector('h3').textContent = o.name;
+  const bind = (id, key, num) => { const inp = el.querySelector('#' + id); inp.value = o[key] ?? ''; inp.addEventListener('change', () => { o[key] = num ? Number(inp.value) || 0 : inp.value; if (key === 'name') { el.querySelector('h3').textContent = o.name; } else build(o); applyRoof(); commit(); updateDims(); }); };
+  bind('f-name', 'name'); ['x', 'y', 'z', 'w', 'h', 'd', 'ry'].forEach((k) => bind('f-' + k, k, true));
+  const ex = el.querySelector('#extra');
+  (FIELDS[o.type] || []).forEach((k) => {
+    const id = 'f-' + k; const wrapEl = document.createElement('div'); wrapEl.className = 'field'; let input;
+    if (OPTS[k]) { input = document.createElement('select'); OPTS[k].forEach(([v, l]) => { const op = document.createElement('option'); op.value = v; op.textContent = l; input.append(op); }); input.value = o[k] || OPTS[k][0][0]; }
+    else if (k === 'text' || k === 'sub') { input = document.createElement('textarea'); input.value = o[k] || ''; }
+    else if (k === 'color' || k === 'accent') { input = document.createElement('input'); input.type = 'color'; input.value = o[k] || '#000000'; }
+    else if (k === 'emissive') { input = document.createElement('input'); input.type = 'range'; input.min = 0; input.max = 3; input.step = 0.05; input.value = o[k] ?? 1; }
+    else if (k === 'stand') { input = document.createElement('input'); input.type = 'checkbox'; input.checked = !!o[k]; }
+    else { input = document.createElement('input'); input.type = 'number'; input.step = 10; input.value = o[k] ?? ''; }
+    input.id = id; const lab = document.createElement('label'); lab.htmlFor = id; lab.textContent = FLABEL[k] || k; wrapEl.append(lab, input); ex.append(wrapEl);
+    const ev = input.type === 'color' || input.type === 'range' ? 'input' : 'change';
+    input.addEventListener(ev, () => { o[k] = input.type === 'checkbox' ? input.checked : (input.type === 'number' || input.type === 'range') ? Number(input.value) : input.value; build(o); });
+    input.addEventListener('change', commit);
+  });
+  if ((FIELDS[o.type] || []).includes('text')) { const h = document.createElement('p'); h.className = 'hint'; h.textContent = o.type === 'panel' && o.layout === 'story' ? 'Mỗi khối cách nhau một dòng trống. Dòng đầu là tiêu đề, dòng bắt đầu bằng ~ là tiếng Anh.' : 'Dùng dấu | để chuyển phần sau sang chữ nghiêng màu nhấn.'; ex.append(h); }
+  el.querySelector('#b-focus').onclick = () => focusSel(); el.querySelector('#b-dup').onclick = () => dup(); el.querySelector('#b-del').onclick = () => del();
+}
+function syncInspectorNums() { const o = selObj(); if (!o) return; ['x', 'y', 'z', 'ry'].forEach((k) => { const i = document.getElementById('f-' + k); if (i && document.activeElement !== i) i.value = o[k]; }); }
+function focusSel() { const g = groups.get(selected); if (!g) return; const bx = new THREE.Box3().setFromObject(g); const c = bx.getCenter(new THREE.Vector3()); const s = bx.getSize(new THREE.Vector3()).length(); const dir = camera.position.clone().sub(orbit.target).normalize(); camAnim = { from: { p: camera.position.clone(), t: orbit.target.clone() }, to: { p: c.clone().add(dir.multiplyScalar(Math.max(1.4, s * 1.4))), t: c }, s: performance.now() }; }
+function dup() { const o = selObj(); if (!o) return; const n = { ...JSON.parse(JSON.stringify(o)), id: o.type + '-' + Math.random().toString(36).slice(2, 7), name: o.name + ' (bản sao)', x: o.x + 200, locked: false }; objects.push(n); build(n); commit(); select(n.id); }
+function del() { const o = selObj(); if (!o) return; const g = groups.get(o.id); tc.detach(); root.remove(g); dispose(g); groups.delete(o.id); objects = objects.filter((x) => x !== o); selected = null; commit(); renderInspector(); updateDims(); toast('Đã xóa. Ctrl+Z để lấy lại.'); }
+function undo() { const prev = history.pop(); if (!prev) { toast('Không còn bước để hoàn tác.'); return; } objects = JSON.parse(prev); lastSnap = prev; save(); rebuildAll(); if (!selObj()) selected = null; select(selected); }
+function toast(msg) { const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg; document.body.append(t); setTimeout(() => t.remove(), 2200); }
+function modal(html, onReady) { const m = $('#modal'); m.innerHTML = `<div class="box" role="dialog" aria-modal="true">${html}</div>`; m.hidden = false; m.onclick = (e) => { if (e.target === m) m.hidden = true; }; onReady && onReady(m); m.querySelector('[data-close]')?.addEventListener('click', () => (m.hidden = true)); }
+
+document.querySelectorAll('[data-cam]').forEach((b) => (b.onclick = () => setCam(b.dataset.cam)));
+document.querySelectorAll('[data-mode]').forEach((b) => (b.onclick = () => { settings.mode = b.dataset.mode; applyMode(); save(); }));
+document.querySelectorAll('[data-tool]').forEach((b) => (b.onclick = () => setTool(b.dataset.tool)));
+function setTool(t) { tc.setMode(t); tc.showX = t === 'translate'; tc.showZ = t === 'translate'; tc.showY = true; document.querySelectorAll('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === t))); }
+$('#optNeighbors').checked = settings.neighbors; $('#optRoof').checked = settings.roof; $('#optPeople').checked = settings.people;
+$('#optNeighbors').onchange = (e) => { settings.neighbors = e.target.checked; objects.forEach((o) => groups.get(o.id) && (groups.get(o.id).visible = visibleOf(o))); save(); };
+$('#optPeople').onchange = (e) => { settings.people = e.target.checked; objects.forEach((o) => groups.get(o.id) && (groups.get(o.id).visible = visibleOf(o))); save(); };
+$('#optRoof').onchange = (e) => { settings.roof = e.target.checked; applyRoof(); save(); };
+$('#btnUndo').onclick = undo;
+$('#btnReset').onclick = () => modal(`<h3>Đặt lại thiết kế gốc?</h3><p class="hint">Mọi chỉnh sửa trên trình duyệt này sẽ được thay bằng bố cục gốc. Nên xuất JSON trước nếu muốn giữ.</p><div class="row-btns"><button type="button" class="btn primary" id="rs-ok">Đặt lại</button><button type="button" class="btn" data-close>Hủy</button></div>`, (m) => { m.querySelector('#rs-ok').onclick = () => { history.push(JSON.stringify(objects)); objects = DEFAULT(); lastSnap = JSON.stringify(objects); selected = null; rebuildAll(); save(); renderLayers(); renderInspector(); m.hidden = true; toast('Đã đặt lại bố cục gốc.'); }; });
+$('#btnJson').onclick = () => modal(`<h3>Xuất / nhập bố cục</h3><p class="hint">Sao chép đoạn JSON để lưu hoặc gửi cho nhóm. Muốn nạp bố cục khác: dán JSON vào ô rồi bấm Áp dụng.</p><textarea id="js-area" spellcheck="false"></textarea><div class="row-btns"><button type="button" class="btn primary" id="js-copy">Sao chép</button><button type="button" class="btn" id="js-apply">Áp dụng JSON</button><button type="button" class="btn" data-close>Đóng</button></div><p class="hint" id="js-msg" role="status"></p>`, (m) => {
+  const ta = m.querySelector('#js-area'); ta.value = JSON.stringify({ version: 1, objects }, null, 1); const msg = m.querySelector('#js-msg');
+  m.querySelector('#js-copy').onclick = async () => { try { await navigator.clipboard.writeText(ta.value); msg.textContent = 'Đã sao chép.'; } catch (e) { ta.select(); msg.textContent = 'Trình duyệt không cho sao chép tự động: đoạn JSON đã được bôi đen, nhấn Ctrl+C.'; } };
+  m.querySelector('#js-apply').onclick = () => { try { const d = JSON.parse(ta.value); const arr = Array.isArray(d) ? d : d.objects; if (!Array.isArray(arr) || !arr.every((x) => x && x.id && x.type)) throw new Error(); history.push(JSON.stringify(objects)); objects = arr; lastSnap = JSON.stringify(objects); selected = null; rebuildAll(); save(); renderLayers(); renderInspector(); m.hidden = true; toast('Đã nạp bố cục.'); } catch (e) { msg.textContent = 'JSON không hợp lệ: cần một danh sách khối, mỗi khối có id và type.'; } };
+});
+$('#btnShot').onclick = () => { tc.visible = false; composer.render(); const url = renderer.domElement.toDataURL('image/png'); tc.visible = true; modal(`<h3>Ảnh chụp khung 3D</h3><img alt="Ảnh chụp gian 3D" src="${url}"><p class="hint">Bấm chuột phải vào ảnh, chọn Lưu ảnh. Đổi góc nhìn và chế độ ánh sáng trước khi chụp để có nhiều ảnh.</p><div class="row-btns"><button type="button" class="btn" data-close>Đóng</button></div>`); };
+addEventListener('keydown', (e) => {
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+  else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') { e.preventDefault(); dup(); }
+  else if (e.key === 'Delete' || e.key === 'Backspace') { if (selected) { e.preventDefault(); del(); } }
+  else if (e.key === 'w' || e.key === 'W') setTool('translate'); else if (e.key === 'e' || e.key === 'E') setTool('rotate'); else if (e.key === 'f' || e.key === 'F') focusSel(); else if (e.key === 'Escape') select(null);
+});
+
+function resize() { const r = view.getBoundingClientRect(); const w = Math.max(1, r.width), h = Math.max(1, r.height); renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(view);
+
+const clock = new THREE.Clock();
+function loop() {
+  requestAnimationFrame(loop); const t = clock.getElapsedTime();
+  if (camAnim) { const k = Math.min(1, (performance.now() - camAnim.s) / 900); const e = 1 - Math.pow(1 - k, 3); camera.position.lerpVectors(camAnim.from.p, camAnim.to.p, e); orbit.target.lerpVectors(camAnim.from.t, camAnim.to.t, e); if (k >= 1) camAnim = null; }
+  orbit.update(); for (const g of groups.values()) if (g.visible && g.userData.tick) g.userData.tick(t); composer.render();
+}
+
+async function start() {
+  const fonts = [`800 40px ${FONT.sans}`, `700 40px ${FONT.sans}`, `600 40px ${FONT.sans}`, `500 40px ${FONT.sans}`, `italic 400 40px ${FONT.serif}`, `400 40px ${FONT.serif}`, `500 40px ${FONT.mono}`, `600 40px ${FONT.mono}`];
+  try { await Promise.race([Promise.all(fonts.map((f) => document.fonts.load(f, 'Bảng lớp biết hỏi lại ẢẤỆ ?'))), new Promise((r) => setTimeout(r, 3000))]); } catch (e) {}
+  resize(); rebuildAll(); applyMode(); setCam(settings.cam || 'aisle', true); renderLayers(); renderLib(); renderInspector(); setTool('translate');
+  document.getElementById('loading').remove(); loop();
+}
+start();
+</script>

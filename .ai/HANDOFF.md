@@ -1,3 +1,8 @@
+# 2026-11-24 (3) — Studio 3D chỉnh được cho gian lều AIROC (`Ho-so-in-gian-trien-lam/studio-3d/booth-studio.html`)
+- Trang three.js 0.160.0 (importmap jsDelivr; máy dựng không tải được jsDelivr nên thử cục bộ bằng bản npm cùng phiên bản). Đã xuất bản thành artifact riêng.
+- Dữ liệu = danh sách khối {id,type,x,y,z (mm, y = đáy),ry,w,h,d,color,accent,emissive,pattern,layout,text,sub,...}; mỗi `type` có hàm dựng trong `B.*`; bề mặt in vẽ bằng canvas theo mm (họa tiết mạch, đồng mức, lục giác, thước cạnh, ngoặc góc). Lưu localStorage, xuất/nhập JSON, hoàn tác 60 bước, TransformControls (bước 50 mm / 15°), bloom ngày/tối.
+- Khối nổi mới: chữ nổi nhiều lớp hắt sáng, đèn hiệu ? 3D trên totem, cụm lục giác, lõi AI khối kính, quạt hologram, vòng hào quang treo, dải LED dẫn lối, trần sao. CHƯA đồng bộ sang file in PDF (build.js vẫn là bản tối giản trước).
+
 # 2026-11-24 (2) — Hồ sơ in chuyển sang gian lều AIROC 2026 (`Ho-so-in-gian-trien-lam/`)
 - Theo công văn Sở GD&ĐT (STEM Carnival, VCK AIROC 2026 Quốc tế, Nhà thi đấu Phú Thọ; lắp 13h30–16h30 28/11, trưng bày 6h30–17h00 29/11; đơn vị UBND phường Phúc Yên; Giải Nhất cấp tỉnh): gian là LỀU BẠT 3×3 NGOÀI TRỜI, không có vách chuẩn → bỏ bộ phủ vách V-*, T01–T05, F01.
 - Bộ mới (26 PDF, song ngữ Việt–Anh): BD backdrop, K-DAU/K-CHAN khung cổng chữ U bo góc R250 (có đường cắt CNC), C-TRONG-T/P + C-NGOAI cánh, TT-A/B/C totem tam giác, Q-TRUOC/Q-HONG, CO cờ buồm, HH huy hiệu Giải Nhất Ø440 (gắn nổi trên totem), D01, A5 Việt/Anh, ST, TD1–4, M01–05. Kích thước tính từ `config.leu` (cao mép mái 2500, rộng trong cột 2920 — giả định, cần đo).

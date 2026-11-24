@@ -1,3 +1,7 @@
+# 2026-11-24 (4) — Kiosk ốp màn 65" ở mép trước gian (studio + file in)
+- Người dùng chọn: kiosk ốp kín màn 65" và chân đế bánh xe, đặt mép trước quay ra lối đi. Studio: type `kiosk` (scrW/scrH/scrD/gap/bottom/mount stand|vesa/xray), `kioskSpec()` tính ô khoét = màn + khe; bố cục mặc định đổi (khóa lưu v2): khung cổng ẩn, totem + đèn hiệu vào trong bên phải, quầy dọc cánh phải, lõi AI giữa backdrop.
+- File in: `config.kiosk` (đang giả định viền ngoài 1490 × 900 — PHẢI đo màn thật) → KO-TRUOC 1720 × 2140 (+ _DUONG-CAT có kích thước ô khoét) và KO-HONG ×2. Bảng 10/11 trên canvas vẫn là phương án khung cổng cũ.
+
 # 2026-11-24 (3) — Studio 3D chỉnh được cho gian lều AIROC (`Ho-so-in-gian-trien-lam/studio-3d/booth-studio.html`)
 - Trang three.js 0.160.0 (importmap jsDelivr; máy dựng không tải được jsDelivr nên thử cục bộ bằng bản npm cùng phiên bản). Đã xuất bản thành artifact riêng.
 - Dữ liệu = danh sách khối {id,type,x,y,z (mm, y = đáy),ry,w,h,d,color,accent,emissive,pattern,layout,text,sub,...}; mỗi `type` có hàm dựng trong `B.*`; bề mặt in vẽ bằng canvas theo mm (họa tiết mạch, đồng mức, lục giác, thước cạnh, ngoặc góc). Lưu localStorage, xuất/nhập JSON, hoàn tác 60 bước, TransformControls (bước 50 mm / 15°), bloom ngày/tối.

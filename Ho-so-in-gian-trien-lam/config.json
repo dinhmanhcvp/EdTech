@@ -27,6 +27,12 @@
   "logoDonVi": "",
   "logoBTC": "",
 
+  "kiosk": {
+    "_ghiChu": "Đo VIỀN NGOÀI THẬT của màn 65 inch (thước cuộn, đo cả viền cảm ứng). Ô khoét = màn + khe mỗi phía. Mặt kiosk phẳng với mặt viền màn.",
+    "rong": 1720, "cao": 2200, "sau": 720,
+    "manRong": 1490, "manCao": 900, "khe": 5, "dayMan": 900
+  },
+
   "leu": {
     "_ghiChu": "Đo lều thật khi nhận mặt bằng: chiều cao mép mái (phía trong cột) quyết định chiều cao khung cổng và backdrop.",
     "caoMepMai": 2500,

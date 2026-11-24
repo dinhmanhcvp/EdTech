@@ -192,6 +192,35 @@ function artWingOut() {
     A(60, BH - 260, WW - 120, mono(20, C.mute, 'AI · STEM · EDTECH', 'text-align:center')) + blueBand(WW, BH - 150);
 }
 
+// Kiosk ốp màn 65": mặt trước khoét ô khít viền màn, hai hông
+const KO = cfg.kiosk, KICK = 60;
+function koSpec() { const cutW = KO.manRong + 2 * KO.khe, cutH = KO.manCao + 2 * KO.khe, panelH = KO.cao - KICK; const cutX = (KO.rong - cutW) / 2, cutYb = KO.dayMan - KO.khe - KICK; return { cutW, cutH, panelH, cutX, cutTop: panelH - cutYb - cutH, cutYb }; }
+function artKioskFront() {
+  const k = koSpec(), W = KO.rong, H = k.panelH, x0 = k.cutX, x1 = x0 + k.cutW, yT = k.cutTop, yB = yT + k.cutH;
+  const br = (x, y, sx, sy) => `<div style="position:absolute;left:${sx > 0 ? x : x - 70}mm;top:${sy > 0 ? y : y - 70}mm;width:70mm;height:70mm;${sx > 0 ? 'border-left' : 'border-right'}:4mm solid rgba(255,255,255,.55);${sy > 0 ? 'border-top' : 'border-bottom'}:4mm solid rgba(255,255,255,.55)"></div>`;
+  let ticks = ''; for (let y = yT; y <= yB; y += 25) { const l = (y - yT) % 100 === 0 ? 22 : 10; ticks += `<div style="position:absolute;left:${x0 - 40 - l}mm;top:${y}mm;width:${l}mm;height:1.6mm;background:${C.blueL};opacity:.6"></div><div style="position:absolute;left:${x1 + 40}mm;top:${y}mm;width:${l}mm;height:1.6mm;background:${C.blueL};opacity:.6"></div>`; }
+  return grid(W, H, 50, C.gridD, 0.5) + ticks + br(x0 - 26, yT - 26, 1, 1) + br(x1 + 26, yT - 26, -1, 1) + br(x0 - 26, yB + 26, 1, -1) + br(x1 + 26, yB + 26, -1, -1) +
+    A(50, 34, 1200, mono(18, C.blueL, '// SOCRATIC VISION BOARD · STEM CARNIVAL AIROC 2026')) +
+    A(W - 650, 34, 600, mono(18, C.blueL, `LIVE · ${KO.manRong} × ${KO.manCao}`, 'text-align:right')) +
+    A(60, yB + 130, W - 120, `<div style="font:800 88mm/1 'Plus Jakarta Sans';letter-spacing:-.03em;color:${C.fg};white-space:nowrap">Viết thử <i style="font:italic 400 94mm 'Newsreader';color:${C.blueL}">lên bảng.</i></div>${en(34, C.mute2, 'Try writing on the board. The AI will ask you back.', 'margin-top:14mm')}`) +
+    A(x1 - 300, yB + 50, 300, mono(22, C.orangeL, 'bút · pen ↑', 'text-align:right')) +
+    A(60, H - 260, W - 120, `<div style="display:flex;gap:14mm">${['Nhận diện tại chỗ · &lt;15 ms', 'Gợi mở 4 mức', 'Chạy ngoại tuyến'].map((t) => `<span style="border:1.6mm solid ${C.blueL};border-radius:23mm;padding:9mm 18mm;font:500 19mm 'JetBrains Mono';color:${C.fg}">${t}</span>`).join('')}</div>`) +
+    blueBand(W, H - 120);
+}
+function dieKioskFront() {
+  const k = koSpec(), W = KO.rong, H = k.panelH;
+  return `<svg viewBox="0 0 ${W} ${H}" style="position:absolute;inset:0;width:${W}mm;height:${H}mm"><rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="#EC008C" stroke-width="0.5"/><rect x="${k.cutX}" y="${k.cutTop}" width="${k.cutW}" height="${k.cutH}" fill="none" stroke="#EC008C" stroke-width="0.5"/>
+  <g stroke="#EC008C" stroke-width="0.4"><line x1="${k.cutX}" y1="${k.cutTop - 60}" x2="${k.cutX + k.cutW}" y2="${k.cutTop - 60}"/><line x1="${k.cutX - 60}" y1="${k.cutTop}" x2="${k.cutX - 60}" y2="${k.cutTop + k.cutH}"/><line x1="${W - 40}" y1="${k.cutTop + k.cutH}" x2="${W - 40}" y2="${H}"/></g></svg>
+  <div style="position:absolute;left:${k.cutX}mm;top:${k.cutTop - 100}mm;width:${k.cutW}mm;text-align:center;font:600 26mm 'JetBrains Mono';color:#EC008C">Ô KHOÉT ${k.cutW} × ${k.cutH} (màn ${KO.manRong} × ${KO.manCao} + khe ${KO.khe})</div>
+  <div style="position:absolute;left:${W - 720}mm;top:${k.cutTop + k.cutH + 40}mm;width:660mm;text-align:right;font:600 22mm/1.4 'JetBrains Mono';color:#EC008C">mép dưới ô cách đáy tấm ${k.cutYb}<br>đáy tấm cách sàn ${KICK} (chân lùi)<br>mép dưới ô cách sàn ${KO.dayMan - KO.khe}</div>
+  <div style="position:absolute;left:${k.cutX}mm;top:${k.cutTop + k.cutH / 2 - 60}mm;width:${k.cutW}mm;text-align:center;font:700 34mm/1.4 'Plus Jakarta Sans';color:#EC008C">ĐO LẠI VIỀN NGOÀI MÀN THẬT TRƯỚC KHI CẮT<br><span style="font-size:24mm;font-weight:500">không để mép ô đè lên viền cảm ứng</span></div>`;
+}
+function artKioskSide() {
+  const W = KO.sau, H = KO.cao - KICK;
+  return grid(W, H, 50, C.gridD, 0.5) + `<div style="position:absolute;left:${W * 0.58}mm;top:${H - 260}mm;width:0;height:0"><div style="position:absolute;transform-origin:left top;transform:rotate(-90deg);white-space:nowrap;font:800 ${W * 0.2}mm 'Plus Jakarta Sans';color:${C.fg}">SOCRATIC <i style="font:italic 400 ${W * 0.21}mm 'Newsreader';color:${C.blueL}">vision</i></div></div>` +
+    `<div style="position:absolute;left:${W - 76}mm;top:250mm;width:14mm;height:${H - 500}mm;border:1mm dashed #EC008C;box-sizing:border-box"></div>` + blueBand(W, H - 120);
+}
+
 // Totem tam giác: 3 mặt 600 × 2200
 const TW = 600, TH = 2200;
 function artTotemA() {
@@ -321,6 +350,8 @@ async function items() {
   CUR = 'C-TRONG'; add({ group: '01-khung-va-bat', code: 'C-TRONG-T', name: 'Cánh trái — mặt trong', w: WW, h: BH, bleed: 50, bg: C.ink, html: artWingIn('L'), mat: 'Bạt hiflex in UV', fin: 'Căng khung sắt hộp 900 × ' + BH, qty: 1, where: 'Cánh trái, mặt nhìn vào gian' });
   add({ group: '01-khung-va-bat', code: 'C-TRONG-P', name: 'Cánh phải — mặt trong', w: WW, h: BH, bleed: 50, bg: C.ink, html: artWingIn('R'), mat: 'Bạt hiflex in UV', fin: 'Căng khung sắt hộp 900 × ' + BH, qty: 1, where: 'Cánh phải, mặt nhìn vào gian' });
   CUR = 'C-NGOAI'; add({ group: '01-khung-va-bat', code: 'C-NGOAI', name: 'Cánh — mặt ngoài', w: WW, h: BH, bleed: 50, bg: C.ink, html: artWingOut(), mat: 'Bạt hiflex in UV', fin: 'Căng mặt ngoài 2 cánh', qty: 2, where: 'Mặt ngoài 2 cánh' });
+  CUR = 'KO'; { const k = koSpec(); add({ group: '01-khung-va-bat', code: 'KO-TRUOC', name: 'Kiosk ốp màn — mặt trước (khoét ô màn)', w: KO.rong, h: k.panelH, bleed: 10, bg: C.ink, html: artKioskFront(), die: dieKioskFront(), mat: 'Decal PP in UV cán mờ trên ACP/fomex 10 mm, cắt CNC ô màn', fin: `Ô khoét ${k.cutW} × ${k.cutH}, mép dưới ô cách sàn ${KO.dayMan - KO.khe}; mặt tấm phẳng với mặt viền màn ±5`, qty: 1, where: 'Kiosk mép trước, quay ra lối đi' }); }
+  add({ group: '01-khung-va-bat', code: 'KO-HONG', name: 'Kiosk ốp màn — mặt hông', w: KO.sau, h: KO.cao - KICK, bleed: 10, bg: C.ink, html: artKioskSide(), mat: 'Decal PP in UV cán mờ trên fomex 10 mm', fin: 'Khe LED dọc 14 mm (nét đứt hồng) phay sẵn, gắn LED neon', qty: 2, where: 'Hai hông kiosk' });
   CUR = 'TT'; add({ group: '01-khung-va-bat', code: 'TT-A', name: 'Totem tam giác — mặt A', w: TW, h: TH, bleed: 10, bg: C.ink, html: artTotemA(), mat: 'Decal PP in UV trên fomex 5 mm', fin: 'Dán lên khung tam giác sắt, đế đổ cát 15 kg', qty: 1, where: 'Góc trước trái, ngoài cổng' });
   add({ group: '01-khung-va-bat', code: 'TT-B', name: 'Totem tam giác — mặt B (giải thưởng)', w: TW, h: TH, bleed: 10, bg: C.ink, html: artTotemB(), mat: 'Decal PP in UV trên fomex 5 mm', fin: 'Như mặt A', qty: 1, where: 'Mặt hướng lối đi chính' });
   add({ group: '01-khung-va-bat', code: 'TT-C', name: 'Totem tam giác — mặt C (QR)', w: TW, h: TH, bleed: 10, bg: C.ink, html: await artTotemC(), mat: 'Decal PP in UV trên fomex 5 mm', fin: 'Như mặt A', qty: 1, where: 'Mặt hướng vào gian' });

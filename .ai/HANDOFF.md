@@ -1,3 +1,9 @@
+# 2026-11-24 — Hồ sơ in ấn gian triển lãm (`Ho-so-in-gian-trien-lam/`, bounded context media mới, không import runtime)
+- Bộ sinh file in 1:1: `config.json` (số gian, trường, thành viên, câu chuyện, link QR, logo/ảnh trong `assets/`, kích thước tấm vách) → `npm run build` (Playwright + `qrcode`) → `out/`: 29 PDF vector (9 tấm phủ vách 950×2350 tràn 10, F01 fascia, S01 standee, Q01 ốp quầy, D01 decal sàn + đường bế, T01–T05 tấm Format, A5 2 mặt, sticker + đường bế, 4 thẻ đeo, 5 tấm mica laser) + `00_BANG-KE-IN-AN.pdf` (vật liệu, gia công, SL, vị trí, CMYK tham khảo, trạng thái từng file) + `xem-truoc/*.png`.
+- Font tải về `fonts/` (OFL). Ô `[ ... ]`, ảnh/logo/QR còn trống được dựng thành ô giữ chỗ và bảng kê ghi "CHƯA ĐỦ" — chưa được gửi in khi còn ô này.
+- Lưu ý Chromium: chữ > ~1000 px bị bỏ khi xuất PDF (kể cả `<text>` SVG thu phóng) → hình cỡ lớn vẽ bằng path (dấu "?" ở Q01).
+- Kích thước vách 950×2350 là giả định, cần đo thực tế. `out/` là file sinh ra; `node_modules/`, `.tmp/` đã gitignore.
+
 # 2026-11-22 (10) — `/lab`: bài "Mổ mô mềm" theo vật lý mô (`apps/teacher-board`, `tools/lab-models`)
 - **Bài mới** `soft-tissue` (môn Sinh; router `HandsLab.tsx`; Hướng dẫn `MANUAL['soft-tissue']`). Mở: `/lab?bai=soft-tissue`.
 - **Mô** `utils/lab/hands/xpbd.ts`: khối tứ diện 24×16 ô × 5 hàng (cơ 2, mỡ 2, da 1; mỗi ô 6 tứ diện chia theo đường chéo 0–7), XPBD 6 bước con: cạnh (độ mềm theo lớp; cơ cứng hơn dọc thớ x; da căng sẵn 7 %) + thể tích tứ diện + gắn đỉnh. Rạch = xoá ô (mỗi nhát một hàng, rạch lại cùng đường thì sâu thêm); mặt ngoài = mặt thuộc đúng một tứ diện sống (khoá số). Kéo quá `TEAR` theo lớp thì cạnh đứt → xoá tứ diện kề. Nhiệt dao đốt trên đỉnh, lan theo cạnh, `burned` đổi màu (trắng → xém). Mũi khâu = ràng buộc khoảng cách rút dần về 0,05. `Thread`: chuỗi hạt không giãn có độ uốn. Đo (node): bước mô 8,6 ms, mặt ngoài 5 ms, máu 600 hạt 2,6 ms.

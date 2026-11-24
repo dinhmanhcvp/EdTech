@@ -1,0 +1,7 @@
+{
+  "name": "ho-so-in-gian-trien-lam",
+  "private": true,
+  "description": "Sinh file in 1:1 cho gian triển lãm Socratic Vision Board",
+  "scripts": { "build": "node build.js" },
+  "dependencies": { "qrcode": "1.5.4" }
+}

@@ -69,13 +69,16 @@ function corners(w, h, m, len, th, color) {
 }
 const A = (x, y, w, inner, extra = '') => `<div style="position:absolute;left:${x}mm;top:${y}mm;${w ? `width:${w}mm;` : ''}${extra}">${inner}</div>`;
 const mono = (size, color, txt, extra = '') => `<div style="font:500 ${size}mm/1.2 'JetBrains Mono';letter-spacing:.08em;color:${color};${extra}">${txt}</div>`;
-function ringLogo(d, color, q) {
-  return `<div style="width:${d}mm;height:${d}mm;border-radius:50%;border:${d * 0.06}mm solid ${color};box-sizing:border-box;display:flex;align-items:center;justify-content:center;font:400 ${d * 0.68}mm/1 'Newsreader';color:${q}">?</div>`;
+// Logo mới (2026-11-24): móc "?" = ống kính, cung xanh = con ngươi / lượt đáp, chấm cam = câu hỏi. Đường nét lấy từ logo/build-logo.js.
+const MARK_HOOK = 'M31.8 39.7 A30 30 0 1 1 75 76 Q60 83 60 93', MARK_IRIS = 'M46.8 45.2 A14 14 0 0 1 73.2 45.2';
+function markSVG(h, hook, dot = C.orange, iris = C.blue) {
+  return `<svg viewBox="0 0 120 124" style="width:${h * 120 / 124}mm;height:${h}mm;display:block;flex:none"><path d="${MARK_HOOK}" fill="none" stroke="${hook}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><path d="${MARK_IRIS}" fill="none" stroke="${iris}" stroke-width="7.5" stroke-linecap="round"/><circle cx="60" cy="109" r="8.2" fill="${dot}"/></svg>`;
 }
+function ringLogo(d, color, q) { return `<div style="width:${d}mm;height:${d}mm;display:flex;align-items:center;justify-content:center">${markSVG(d * 0.92, color, q, color === C.ink2 || color === C.ink ? C.blue : C.blueL)}</div>`; }
 function wordmark(size, color, q = C.orange) {
-  return `<div style="display:flex;align-items:center;gap:${size * 0.35}mm">${ringLogo(size * 1.25, color, q)}<div style="font:800 ${size}mm/1 'Plus Jakarta Sans';letter-spacing:-.015em;color:${color};white-space:nowrap">Socratic Vision Board</div></div>`;
+  const sub = color === C.ink2 || color === C.ink ? C.blue : C.blueL;
+  return `<div style="display:flex;align-items:center;gap:${size * 0.32}mm">${markSVG(size * 1.55, color, q, sub)}<div><div style="font:800 ${size}mm/0.95 'Plus Jakarta Sans';letter-spacing:-.025em;color:${color};white-space:nowrap">Socratic</div><div style="font:600 ${size * 0.26}mm/1 'JetBrains Mono';letter-spacing:.36em;color:${sub};margin-top:${size * 0.16}mm;white-space:nowrap">VISION BOARD</div></div></div>`;
 }
-
 // ---------- khung trang: tràn lề, dấu cắt, dòng thông tin ----------
 function pageHTML(spec, inner) {
   const { w, h, bleed: b, marks, bg } = spec;
@@ -231,7 +234,7 @@ function artBlade() {
   const letters = [...txt].map((ch, i) => `<div style="position:absolute;left:${r}mm;top:${r}mm;width:0;height:0;transform:rotate(${i * per}deg)"><div style="position:absolute;left:-10mm;top:${-r + 40}mm;width:20mm;text-align:center;font:700 30mm 'JetBrains Mono';color:${C.fg}">${esc(ch)}</div></div>`).join('');
   return `<div style="position:absolute;left:-5mm;top:-5mm;width:${D + 10}mm;height:${D + 10}mm;border-radius:50%;background:${C.blue}"></div>
   <div style="position:absolute;left:34mm;top:34mm;width:${D - 68}mm;height:${D - 68}mm;border-radius:50%;background:${C.ink};overflow:hidden">${grid(D - 68, D - 68, 30, C.gridD, 0.6)}</div>
-  ${letters}<div style="position:absolute;left:${r - 120}mm;top:${r - 190}mm;width:240mm">${bigQ(240, 400, C.orange)}</div>`;
+  ${letters}<div style="position:absolute;left:${r - 150}mm;top:${r - 175}mm">${markSVG(340, C.fg, C.orange, C.blueL)}</div>`;
 }
 
 // Totem tam giác: 3 mặt 600 × 2200

@@ -1,3 +1,9 @@
+# 2026-11-24 (7) — Logo mới, QR demo, cụm 3 gian
+- Logo mới (`Ho-so-in-gian-trien-lam/logo/build-logo.js` → `logo/out/`): móc "?" = cung ống kính r30 (nét 13), cung xanh con ngươi r14, chấm cam; chữ "Socratic" (Plus Jakarta Sans 800) + "VISION BOARD" (JetBrains Mono 600, giãn .36em) đã chuyển thành path bằng opentype.js. Đường nét lưu `mark-paths.json`, dùng lại trong build.js (`markSVG`) và studio (`ringQ` → Path2D).
+- QR `https://svb-stem.vercel.app` (config.qrDungThu): bản trơn mức M và bản có logo mức H; đã giải mã thử bằng OpenCV ra đúng link. Máy dựng không mở được vercel.app nên chưa kiểm tra trang.
+- Studio khóa lưu v5: 3 lều liền nhau, Socratic giữa (mặt tiền + 2 biển vẫy), trái SP2 "cổng vòm xanh ngọc" (portal radius 700, `legs: false`), phải SP3 "khối công nghiệp cam" (vách lưới + lục giác + chữ nổi), bục trưng bày (`aicore` có `text`), biển vẫy có `glyph`/`text`, cờ có `sub`; dải LED chung 9 m. Hồ sơ in CHƯA có file cho SP2/SP3.
+- Logo đơn vị: chưa tải về (chỉ tìm nguồn). Trang chính thức cuộc thi: airoc.space.
+
 # 2026-11-24 (6) — Trạm Lab 3D qua webcam ở mặt tiền phải
 - Studio (khóa lưu v4): mặt tiền = bảng viết 65" (1 580, viền hông 40) + trạm Lab 3D (1 320, màn 50" ngang đáy 1 000, `variant: 'lab'`, `guide`, `cam` webcam + đèn 4000K, `showCam` vùng nhìn 78° × 48° chúc 15°); vòng "Giơ tay" cách 1,1 m; huy hiệu góc trên phải; tháp mica dời sang bảng viết; hologram ẩn.
 - `/lab` thật: `numHands: 2`, camera 640×360, chỉ chạy trên localhost/https, WASM + mô hình tải từ CDN lần đầu (`handTracker.ts`). README hồ sơ in có mục vận hành. CHƯA làm: chế độ triển lãm (chỉ nhận tay gần nhất, tự quay về bài đầu khi không có người, mô hình chép cục bộ).

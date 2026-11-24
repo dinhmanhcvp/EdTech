@@ -4,6 +4,9 @@
  */
 import type {P3} from './laparo';
 
+/** độ dài vectơ 3 chiều; `Math.hypot` chậm hơn nhiều lần trong vòng giải nóng của V8 */
+const len3 = (x: number, y: number, z: number) => Math.sqrt(x * x + y * y + z * z);
+
 /** kéo xa chỗ cũ quá mức này thì mô rách */
 export const TEAR_PULL = 0.95;
 const MAX_MOVE = 1.25;
@@ -43,7 +46,7 @@ export class SoftBody {
 
   private span(a: number, b: number) {
     const p = this.pos;
-    return Math.hypot(p[a * 3] - p[b * 3], p[a * 3 + 1] - p[b * 3 + 1], p[a * 3 + 2] - p[b * 3 + 2]);
+    return len3(p[a * 3] - p[b * 3], p[a * 3 + 1] - p[b * 3 + 1], p[a * 3 + 2] - p[b * 3 + 2]);
   }
   get edgeCount() {
     return this.edges.length;
@@ -57,7 +60,7 @@ export class SoftBody {
     let best = -1;
     let bd = reach;
     for (let i = 0; i < this.n; i++) {
-      const d = Math.hypot(this.pos[i * 3] - at[0], this.pos[i * 3 + 1] - at[1], this.pos[i * 3 + 2] - at[2]);
+      const d = len3(this.pos[i * 3] - at[0], this.pos[i * 3 + 1] - at[1], this.pos[i * 3 + 2] - at[2]);
       if (d < bd) {
         bd = d;
         best = i;
@@ -78,7 +81,7 @@ export class SoftBody {
     const g = this.held.get(h);
     if (!g) return 0;
     const i = g.i * 3;
-    return Math.hypot(this.pos[i] - this.home[i], this.pos[i + 1] - this.home[i + 1], this.pos[i + 2] - this.home[i + 2]);
+    return len3(this.pos[i] - this.home[i], this.pos[i + 1] - this.home[i + 1], this.pos[i + 2] - this.home[i + 2]);
   }
   heldPoint(h: number): P3 | null {
     const g = this.held.get(h);
@@ -121,7 +124,7 @@ export class SoftBody {
           const dx = pos[b] - pos[a];
           const dy = pos[b + 1] - pos[a + 1];
           const dz = pos[b + 2] - pos[a + 2];
-          const L = Math.hypot(dx, dy, dz) || 1e-6;
+          const L = len3(dx, dy, dz) || 1e-6;
           const f = (0.32 * (L - this.lens[e])) / L;
           pos[a] += dx * f;
           pos[a + 1] += dy * f;
@@ -158,7 +161,7 @@ export class SoftBody {
       const dx = pos[i] - home[i];
       const dy = pos[i + 1] - home[i + 1];
       const dz = pos[i + 2] - home[i + 2];
-      const d = Math.hypot(dx, dy, dz);
+      const d = len3(dx, dy, dz);
       if (d > MAX_MOVE) {
         const q = MAX_MOVE / d;
         pos[i] = home[i] + dx * q;
@@ -203,7 +206,7 @@ export function linkWithin(pts: ArrayLike<number>, r: number, base = 0): Edge[] 
         for (let c = -1; c <= 1; c++)
           for (const j of grid.get(`${cell(x) + a},${cell(y) + b},${cell(z) + c}`) ?? []) {
             if (j <= i) continue;
-            if (Math.hypot(pts[j * 3] - x, pts[j * 3 + 1] - y, pts[j * 3 + 2] - z) <= r) out.push([i + base, j + base]);
+            if (len3(pts[j * 3] - x, pts[j * 3 + 1] - y, pts[j * 3 + 2] - z) <= r) out.push([i + base, j + base]);
           }
   }
   return out;

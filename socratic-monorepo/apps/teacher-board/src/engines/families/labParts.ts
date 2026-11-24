@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader.js';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {markBVH} from './fastRaycast';
 
 /**
  * Thư viện bộ phận dựng bằng Blender (`tools/lab-models/*.py` → `public/models/*.glb`), tải một lần cho mỗi tệp.
@@ -19,7 +20,17 @@ export function gltfLoader(): GLTFLoader {
 export function loadModel(url: string): Promise<THREE.Group> {
   let p = cache.get(url);
   if (!p) {
-    p = new Promise<THREE.Group>((resolve, reject) => gltfLoader().load(assetUrl(url), (g) => resolve(g.scene), undefined, reject));
+    p = new Promise<THREE.Group>((resolve, reject) =>
+      gltfLoader().load(
+        assetUrl(url),
+        (g) => {
+          markBVH(g.scene); // tia trỏ / chạm vào mô hình dùng cây bao (dựng lười ở lần bắn đầu)
+          resolve(g.scene);
+        },
+        undefined,
+        reject,
+      ),
+    );
     cache.set(url, p);
   }
   return p;

@@ -1,3 +1,6 @@
+/** độ dài vectơ 3 chiều; `Math.hypot` chậm hơn nhiều lần trong vòng giải nóng của V8 */
+const len3 = (x: number, y: number, z: number) => Math.sqrt(x * x + y * y + z * z);
+
 /**
  * Mô mềm cho bài "Mổ mô mềm" (/lab): khối tứ diện ba lớp (cơ ở dưới, mỡ, da trên cùng) giải bằng XPBD (động lực học dựa trên vị trí mở rộng):
  *  - ràng buộc độ dài cạnh (độ mềm `compliance` riêng từng lớp; cơ cứng hơn theo hướng thớ x; da căng sẵn) và ràng buộc thể tích tứ diện (mô gần như không nén);
@@ -9,6 +12,10 @@
  * Đây là mô hình XPBD tứ diện chạy thời gian thực trong trình duyệt, không phải phần tử hữu hạn đầy đủ.
  * Toạ độ cảnh: x (dài khối), y lên, z (rộng khối); mặt bàn y = 0.
  */
+
+/** ngưỡng ngủ của bộ giải mô: vận tốc đỉnh (đơn vị cảnh/giây) và số bước liên tiếp đứng yên */
+export const SLEEP_V = 0.004;
+export const SLEEP_N = 30;
 
 export type Layer = 0 | 1 | 2; // 0 cơ, 1 mỡ, 2 da
 export const LAYER_NAME = ['Cơ', 'Mỡ', 'Da'] as const;
@@ -199,7 +206,7 @@ export class Tissue {
   }
   dist(u: number, w: number) {
     const p = this.pos;
-    return Math.hypot(p[u * 3] - p[w * 3], p[u * 3 + 1] - p[w * 3 + 1], p[u * 3 + 2] - p[w * 3 + 2]);
+    return len3(p[u * 3] - p[w * 3], p[u * 3 + 1] - p[w * 3 + 1], p[u * 3 + 2] - p[w * 3 + 2]);
   }
   tetVolume(t: number) {
     const p = this.pos;
@@ -280,8 +287,38 @@ export class Tissue {
     return rows[j].layer;
   }
 
+  /**
+   * NGỦ: mô không bị cầm / kéo / cắt / khâu và đã đứng yên (mọi đỉnh chậm hơn `SLEEP_V`) suốt `SLEEP_N` bước thì bỏ qua bước giải
+   * (bộ giải là phần tốn nhất của bài mổ mô mềm). Bất cứ thay đổi nào của điểm ghim, mũi khâu, tứ diện hay trọng lực đều đánh thức ngay.
+   */
+  asleep = false;
+  private calm = 0;
+  private lastSig = NaN;
+  /** chữ ký các tác động bên ngoài: đổi là phải giải lại */
+  private signature(): number {
+    let s = this.topo * 1e6 + this.attaches.length * 1e3 + this.stitches.length * 7 + this.gravity;
+    for (const a of this.attaches) s += Math.round((a.target[0] * 3 + a.target[1] * 5 + a.target[2] * 7) * 1e4) + a.v;
+    for (const st of this.stitches) s += Math.round(st.rest * 1e4);
+    return s;
+  }
+  /** đánh thức (ví dụ khi cảnh sửa thẳng `pos`) */
+  wake() {
+    this.calm = 0;
+    this.asleep = false;
+  }
   /** một bước thời gian: `sub` bước con XPBD, mỗi bước con một lượt giải mọi ràng buộc */
   step(dt: number, sub = 6) {
+    const sig = this.signature();
+    if (sig !== this.lastSig) {
+      this.lastSig = sig;
+      this.calm = 0;
+    }
+    if (this.calm >= SLEEP_N) {
+      this.asleep = true;
+      for (const st of this.stitches) st.rest += (st.goal - st.rest) * Math.min(1, dt * 3);
+      return;
+    }
+    this.asleep = false;
     const h = dt / sub;
     const {pos, prev, vel, invMass} = this;
     for (let s = 0; s < sub; s++) {
@@ -310,6 +347,9 @@ export class Tissue {
       }
     }
     for (const st of this.stitches) st.rest += (st.goal - st.rest) * Math.min(1, dt * 3);
+    let vmax = 0;
+    for (let i = 0; i < vel.length; i++) vmax = Math.max(vmax, Math.abs(vel[i]));
+    this.calm = vmax < SLEEP_V ? this.calm + 1 : 0;
   }
   private pull(u: number, w: number, rest: number, comp: number, h: number) {
     const p = this.pos;
@@ -320,7 +360,7 @@ export class Tissue {
     const dx = p[u * 3] - p[w * 3];
     const dy = p[u * 3 + 1] - p[w * 3 + 1];
     const dz = p[u * 3 + 2] - p[w * 3 + 2];
-    const L = Math.hypot(dx, dy, dz);
+    const L = len3(dx, dy, dz);
     if (L < 1e-9) return;
     const C = L - rest;
     const lam = -C / (W + comp / (h * h));
@@ -422,7 +462,7 @@ export class Tissue {
   /** dao đốt: nung các đỉnh trong bán kính r quanh điểm; nhiệt lan theo cạnh và nguội dần; `burned` giữ mức cao nhất đã đạt */
   cauterize(at: [number, number, number], r: number, amount: number) {
     for (let v = 0; v < this.nv; v++) {
-      const d = Math.hypot(this.pos[v * 3] - at[0], this.pos[v * 3 + 1] - at[1], this.pos[v * 3 + 2] - at[2]);
+      const d = len3(this.pos[v * 3] - at[0], this.pos[v * 3 + 1] - at[1], this.pos[v * 3 + 2] - at[2]);
       if (d < r) this.heat[v] += amount * (1 - d / r);
     }
   }
@@ -482,7 +522,7 @@ export class Tissue {
     for (let t = 0; t < this.alive.length; t++) if (this.alive[t]) for (let n = 0; n < 4; n++) used[this.tets[t * 4 + n]] = 1;
     for (let v = 0; v < this.nv; v++) {
       if (!used[v]) continue;
-      const d = Math.hypot(this.pos[v * 3] - at[0], this.pos[v * 3 + 1] - at[1], this.pos[v * 3 + 2] - at[2]);
+      const d = len3(this.pos[v * 3] - at[0], this.pos[v * 3 + 1] - at[1], this.pos[v * 3 + 2] - at[2]);
       if (d < bd) {
         bd = d;
         best = v;
@@ -560,7 +600,7 @@ export class Thread {
         const dx = p[i * 3 + 3] - p[i * 3];
         const dy = p[i * 3 + 4] - p[i * 3 + 1];
         const dz = p[i * 3 + 5] - p[i * 3 + 2];
-        const L = Math.hypot(dx, dy, dz) || 1e-9;
+        const L = len3(dx, dy, dz) || 1e-9;
         const C = (L - this.seg) / L;
         const wa = fixA ? 0 : 1;
         const wb = fixB ? 0 : 1;
@@ -581,7 +621,7 @@ export class Thread {
   }
   length() {
     let s = 0;
-    for (let i = 0; i < this.n - 1; i++) s += Math.hypot(this.pos[i * 3 + 3] - this.pos[i * 3], this.pos[i * 3 + 4] - this.pos[i * 3 + 1], this.pos[i * 3 + 5] - this.pos[i * 3 + 2]);
+    for (let i = 0; i < this.n - 1; i++) s += len3(this.pos[i * 3 + 3] - this.pos[i * 3], this.pos[i * 3 + 4] - this.pos[i * 3 + 1], this.pos[i * 3 + 5] - this.pos[i * 3 + 2]);
     return s;
   }
 }

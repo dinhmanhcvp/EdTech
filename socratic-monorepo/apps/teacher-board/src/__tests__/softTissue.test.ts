@@ -19,6 +19,19 @@ const run = (t: Tissue, frames: number) => {
 const p = (t: Tissue, v: number): [number, number, number] => [t.pos[v * 3], t.pos[v * 3 + 1], t.pos[v * 3 + 2]];
 
 describe('mô tứ diện XPBD', () => {
+  it('mô đứng yên thì NGỦ (bỏ qua bước giải), cầm vào là thức dậy và đi theo tay', () => {
+    const t = new Tissue(SMALL);
+    for (let i = 0; i < 400 && !t.asleep; i++) t.step(1 / 60, 4);
+    expect(t.asleep).toBe(true);
+    const before = Float32Array.from(t.pos);
+    t.step(1 / 60, 4);
+    expect(Array.from(t.pos)).toEqual(Array.from(before)); // ngủ: không đổi gì
+    const v = t.vid(2, SMALL.rows.length, 2);
+    t.attaches.push({v, target: [t.pos[v * 3], t.pos[v * 3 + 1] + 0.3, t.pos[v * 3 + 2]], compliance: 1e-4});
+    for (let i = 0; i < 20; i++) t.step(1 / 60, 4);
+    expect(t.asleep).toBe(false);
+    expect(Math.abs(t.pos[v * 3 + 1] - before[v * 3 + 1])).toBeGreaterThan(0.01); // giải lại: đỉnh bị cầm đã dịch
+  });
   it('lưới đúng số phần tử, thể tích bằng khối, mặt ngoài kín và hướng ra ngoài', () => {
     const t = new Tissue(SMALL);
     expect(t.alive.length).toBe(10 * 6 * 3 * 6);

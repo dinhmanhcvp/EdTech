@@ -57,15 +57,17 @@ const moved = (r: Rect, dx: number, dy: number): Rect => ({left: r.left + dx, ri
  * Nhãn và thẻ nổi không được đè lên nhau hay tràn ra ngoài khung: giữ trong khung nhìn (cách mép 4 px); nhãn đè lên nhãn đã đặt thì nhích xuống ngay dưới,
  * không còn chỗ thì tạm ẩn khung hình này. Thẻ (tính chất, phản ứng) được đặt trước nhãn; giữa các nhãn, nhãn tạo trước được ưu tiên.
  */
-export function declutter(box: HTMLElement, shown: {el: HTMLElement; card?: boolean}[]): void {
-  const B = box.getBoundingClientRect();
-  if (!B.width) return; // môi trường không có bố cục (kiểm thử)
-  // vùng giao diện cố định (dải số đo, bảng điều khiển, ô chọn bài, chú thích) coi như đã có chỗ: nhãn tránh ra, không nằm dưới chúng
-  const taken: Rect[] = Array.from(document.querySelectorAll('[data-avoid-labels]')).map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0);
-  const order = [...shown].sort((a, b) => Number(!!b.card) - Number(!!a.card));
-  for (const L of order) {
-    const r = L.el.getBoundingClientRect();
-    if (!r.width) continue;
+/**
+ * Lõi xếp nhãn (thuần số, không chạm DOM): `B` là khung, `taken` là vùng giao diện cố định, `items` là hộp bao từng nhãn ở chỗ chiếu.
+ * Trả độ dời (dx, dy) hoặc `hide` cho từng nhãn theo đúng thứ tự `items`.
+ */
+export function layoutLabels(B: Rect, taken0: Rect[], items: {r: Rect; card?: boolean}[]): {dx: number; dy: number; hide: boolean}[] {
+  const taken = [...taken0];
+  const out = items.map(() => ({dx: 0, dy: 0, hide: false}));
+  const order = items.map((_, i) => i).sort((a, b) => Number(!!items[b].card) - Number(!!items[a].card));
+  for (const i of order) {
+    const r = items[i].r;
+    if (r.right - r.left <= 0) continue;
     let dx = 0;
     let dy = 0;
     if (r.top < B.top + 4) dy = B.top + 4 - r.top;
@@ -84,15 +86,36 @@ export function declutter(box: HTMLElement, shown: {el: HTMLElement; card?: bool
       }
     }
     if (t) {
+      out[i].hide = true;
+      continue;
+    }
+    out[i] = {dx, dy, hide: false};
+    taken.push(q);
+  }
+  return out;
+}
+
+/**
+ * Nhãn và thẻ nổi không được đè lên nhau hay tràn ra ngoài khung: giữ trong khung nhìn (cách mép 4 px); nhãn đè lên nhãn đã đặt thì nhích xuống ngay dưới,
+ * không còn chỗ thì tạm ẩn khung hình này. Thẻ (tính chất, phản ứng) được đặt trước nhãn; giữa các nhãn, nhãn tạo trước được ưu tiên.
+ * Bản đọc DOM (dùng trong kiểm thử và nơi không có kích thước đệm); cảnh 3D dùng `layoutLabels` với kích thước đã đệm để không ép tính bố cục mỗi khung.
+ */
+export function declutter(box: HTMLElement, shown: {el: HTMLElement; card?: boolean}[]): void {
+  const B = box.getBoundingClientRect();
+  if (!B.width) return; // môi trường không có bố cục (kiểm thử)
+  const taken: Rect[] = Array.from(document.querySelectorAll('[data-avoid-labels]')).map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0);
+  const res = layoutLabels(B, taken, shown.map((L) => ({r: L.el.getBoundingClientRect(), card: L.card})));
+  shown.forEach((L, i) => {
+    const {dx, dy, hide} = res[i];
+    if (hide) {
       L.el.style.opacity = '0';
       L.el.dataset.crowd = '1'; // bị ẩn vì chật chỗ (dò lỗi bố cục đọc thuộc tính này)
-      continue;
+      return;
     }
     delete L.el.dataset.crowd;
     if (dx) L.el.style.left = `calc(${L.el.style.left} + ${dx}px)`;
     if (dy) L.el.style.top = `calc(${L.el.style.top} + ${dy}px)`;
-    taken.push(q);
-  }
+  });
 }
 
 export interface SceneDef {
@@ -175,7 +198,8 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       onFail();
       return;
     }
-    renderer.setPixelRatio(QUALITY.ratio || Math.min(window.devicePixelRatio || 1, 2));
+    // màn hình mật độ cao (DPR 2–3): vẽ ở ×1,5 là đủ nét cho cảnh 3D có khử răng cưa, mà ít điểm ảnh hơn ×2 tới 44 %
+    renderer.setPixelRatio(QUALITY.ratio || Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.shadowMap.enabled = QUALITY.shadows;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -232,7 +256,8 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
     };
     camera.position.set(0, 0, 1e4); // chưa đặt: place() sẽ dùng def.dist
 
-    const labels: {el: HTMLElement; pos: THREE.Vector3; on: boolean; card?: boolean}[] = [];
+    /** nhãn nổi: `ay` = phần chiều cao nhãn nằm trên điểm neo (theo lớp -translate-y cũ), `w`/`h` kích thước đệm, `dirty` = chữ vừa đổi, cần đo lại */
+    const labels: {el: HTMLElement; pos: THREE.Vector3; on: boolean; card?: boolean; ay: number; w: number; h: number; dirty: boolean; op: string; tx: string}[] = [];
     let capText = '';
     const pickers: THREE.Object3D[] = [];
     const ray = new THREE.Raycaster();
@@ -297,10 +322,13 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
         sp.append(tn);
         sp.style.opacity = '0';
         el.append(sp);
-        const L = {el: sp, pos: new THREE.Vector3(), on: false};
+        const L = {el: sp, pos: new THREE.Vector3(), on: false, ay: plain ? 1.3 : 2, w: 0, h: 0, dirty: true, op: '0', tx: ''};
         labels.push(L);
         return (at, parent, next) => {
-          if (next !== undefined && tn.data !== next) tn.data = next;
+          if (next !== undefined && tn.data !== next) {
+            tn.data = next;
+            L.dirty = true;
+          }
           L.on = !!at;
           if (at) {
             L.pos.copy(at);
@@ -314,7 +342,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
         if (color) root.style.borderTop = `3px solid ${color}`;
         root.style.opacity = '0';
         el.append(root);
-        const L = {el: root, pos: new THREE.Vector3(), on: false, card: true};
+        const L = {el: root, pos: new THREE.Vector3(), on: false, card: true, ay: 1, w: 0, h: 0, dirty: true, op: '0', tx: ''};
         labels.push(L);
         let last = '';
         return (at, rows) => {
@@ -322,6 +350,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
             const key = JSON.stringify(rows);
             if (key !== last) {
               last = key;
+              L.dirty = true;
               root.replaceChildren(
                 ...rows.map((r) => {
                   const d = document.createElement('div');
@@ -364,6 +393,8 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
     };
     const update = def.setup(kit);
     const post = def.post?.(renderer, scene, camera) ?? null;
+    // chỉ khi phát triển: máy đo hiệu năng đọc số lệnh vẽ / tam giác (`renderer.info`) của cảnh đang mở
+    if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') (window as unknown as {__stage?: unknown}).__stage = {renderer, scene, camera, post: !!post};
 
     const resize = () => {
       const w = el.clientWidth || 560;
@@ -456,15 +487,78 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
     let sampled = 0;
     const degrade = () => {
       const cur = renderer.getPixelRatio();
-      if (cur > 1.01) QUALITY.ratio = Math.max(1, cur > 1.5 ? 1.5 : 1);
-      else if (cur > 0.8) QUALITY.ratio = 0.75;
+      // thứ tự hạ: độ phân giải về ×1 → tắt bóng đổ (đỡ một lượt vẽ cả cảnh, ít thấy khác) → ×0,75 (mờ hơn, để cuối)
+      if (cur > 1.01) QUALITY.ratio = 1;
       else if (QUALITY.shadows) {
+        QUALITY.ratio = cur;
         QUALITY.shadows = false;
         renderer.shadowMap.enabled = false;
         scene.traverse((o) => ((o as THREE.Mesh).material && (((o as THREE.Mesh).material as THREE.Material).needsUpdate = true)));
-      } else return;
+      } else if (cur > 0.8) QUALITY.ratio = 0.75;
+      else return;
       renderer.setPixelRatio(QUALITY.ratio);
       resize();
+    };
+    // NHÃN NỔI không ép trình duyệt tính lại bố cục mỗi khung: kích thước nhãn chỉ đo khi chữ đổi (đọc trước mọi lần ghi), vùng giao diện cố định
+    // đo lại 4 lần/giây, chỗ đặt tính bằng số rồi ghi một lần bằng `transform` (chỉ ghép lớp, không bố cục lại); độ mờ chỉ ghi khi đổi.
+    let takenAt = -1e9;
+    let taken: Rect[] = [];
+    const setOp = (L: (typeof labels)[number], op: string) => {
+      if (L.op !== op) L.el.style.opacity = L.op = op;
+    };
+    const placeLabels = () => {
+      if (!labels.length) return;
+      const W = el.clientWidth;
+      const H = el.clientHeight;
+      if (!W) return;
+      const nowT = performance.now();
+      if (nowT - takenAt > 250) {
+        takenAt = nowT;
+        const B = el.getBoundingClientRect();
+        taken = Array.from(document.querySelectorAll('[data-avoid-labels]'))
+          .map((e) => e.getBoundingClientRect())
+          .filter((r) => r.width > 0)
+          .map((r) => ({left: r.left - B.left, right: r.right - B.left, top: r.top - B.top, bottom: r.bottom - B.top}));
+      }
+      for (const L of labels)
+        if (L.dirty && L.on) {
+          if (!L.tx) {
+            // bỏ neo kiểu cũ (left/top % + lớp -translate): từ nay chỉ dùng transform tính sẵn
+            L.el.style.left = L.el.style.top = '0';
+            L.el.style.translate = 'none';
+            L.el.style.willChange = 'transform';
+          }
+          L.w = L.el.offsetWidth;
+          L.h = L.el.offsetHeight;
+          L.dirty = false;
+        }
+      const shown: (typeof labels)[number][] = [];
+      const items: {r: Rect; card?: boolean}[] = [];
+      for (const L of labels) {
+        if (L.on) v.copy(L.pos).project(camera);
+        if (!(L.on && v.z < 1) || !L.w) {
+          setOp(L, '0');
+          if (L.el.dataset.crowd) delete L.el.dataset.crowd;
+          continue;
+        }
+        const x = ((v.x + 1) / 2) * W - L.w / 2;
+        const y = ((1 - v.y) / 2) * H - L.ay * L.h;
+        shown.push(L);
+        items.push({r: {left: x, top: y, right: x + L.w, bottom: y + L.h}, card: L.card});
+      }
+      const res = layoutLabels({left: 0, top: 0, right: W, bottom: H}, taken, items);
+      shown.forEach((L, i) => {
+        const {dx, dy, hide} = res[i];
+        if (hide) {
+          setOp(L, '0');
+          L.el.dataset.crowd = '1'; // bị ẩn vì chật chỗ (dò lỗi bố cục đọc thuộc tính này)
+          return;
+        }
+        if (L.el.dataset.crowd) delete L.el.dataset.crowd;
+        const tx = `translate3d(${Math.round(items[i].r.left + dx)}px,${Math.round(items[i].r.top + dy)}px,0)`;
+        if (tx !== L.tx) L.el.style.transform = L.tx = tx;
+        setOp(L, '1');
+      });
     };
     const frame = () => {
       raf = requestAnimationFrame(frame);
@@ -473,9 +567,10 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       lastFrameAt = tnow;
       if (ft < 250) {
         avgMs += (ft - avgMs) * 0.05;
-        if (++sampled >= 150) {
+        // đo 90 khung (~1,5 s) rồi xét; dưới ~40 khung/giây là hạ một bậc (trước: 150 khung, dưới 30 khung/giây, nên lag kéo dài vài giây mỗi bậc)
+        if (++sampled >= 90) {
           sampled = 0;
-          if (avgMs > 32) degrade();
+          if (avgMs > 25) degrade();
         }
       }
       const {p: q, t: t0, s: s0, at} = live.current;
@@ -493,19 +588,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       scene.updateMatrixWorld();
       if (post) post.render();
       else renderer.render(scene, camera);
-      const shown: typeof labels = [];
-      for (const L of labels) {
-        if (L.on) v.copy(L.pos).project(camera);
-        const show = L.on && v.z < 1;
-        L.el.style.opacity = show ? '1' : '0';
-        if (!show) delete L.el.dataset.crowd;
-        if (show) {
-          L.el.style.left = `${((v.x + 1) / 2) * 100}%`;
-          L.el.style.top = `${((1 - v.y) / 2) * 100}%`;
-          shown.push(L);
-        }
-      }
-      declutter(el, shown);
+      placeLabels();
     };
     frame();
 

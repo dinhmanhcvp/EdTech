@@ -1,3 +1,6 @@
+/** độ dài vectơ 3 chiều; `Math.hypot` chậm hơn nhiều lần trong vòng giải nóng của V8 */
+const len3 = (x: number, y: number, z: number) => Math.sqrt(x * x + y * y + z * z);
+
 /**
  * Máu trong trường mổ: chất lỏng hạt dựa trên vị trí (PBF: ràng buộc mật độ theo hạt nhân SPH, lưới băm để tìm láng giềng).
  * Hạt rơi xuống mặt mô (hàm `floor(x, z)` lấy từ mặt trên cột mô còn sống) nên đọng lại trong hốc rạch và tràn ra khi đầy.
@@ -65,7 +68,7 @@ export class Fluid {
   suck(x: number, y: number, z: number, r: number): number {
     let n = 0;
     for (let i = this.n - 1; i >= 0; i--) {
-      if (Math.hypot(this.pos[i * 3] - x, this.pos[i * 3 + 1] - y, this.pos[i * 3 + 2] - z) < r) {
+      if (len3(this.pos[i * 3] - x, this.pos[i * 3 + 1] - y, this.pos[i * 3 + 2] - z) < r) {
         this.remove(i);
         n++;
       }

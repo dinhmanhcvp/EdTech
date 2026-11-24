@@ -76,6 +76,7 @@ function makeDef(input: HandsInput, live: TissueLive): SceneDef {
     setup: (k) => {
       const P = handPointers(k, input, 0.65);
       const tissue = new Tissue();
+      if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') (window as unknown as {__tissueBody?: Tissue}).__tissueBody = tissue; // chỉ khi phát triển: máy dò đọc trạng thái mô
       const fluid = new Fluid(900, 0.07, [-2.0, 2.0, -1.4, 1.4]);
       const thread = new Thread(22, 0.045, [0.5, 0.9, 0.5]);
       const ray = new THREE.Raycaster();
@@ -148,7 +149,13 @@ function makeDef(input: HandsInput, live: TissueLive): SceneDef {
         geo.setAttribute('aRest', new THREE.BufferAttribute(restA, 3));
         geo.setAttribute('aKind', new THREE.BufferAttribute(kindA, 1));
       };
+      let lastBurn = -1;
       const refresh = () => {
+        // mô đang ngủ, không đổi hình, không cháy thêm: lưới trên GPU vẫn đúng, khỏi tính lại pháp tuyến / màu
+        let burnSum = 0;
+        for (let v = 0; v < tissue.nv; v++) burnSum += tissue.burned[v];
+        if (tissue.asleep && tissue.topo === topo && burnSum === lastBurn) return;
+        lastBurn = burnSum;
         if (tissue.topo !== topo) {
           topo = tissue.topo;
           rebuild();
@@ -169,11 +176,15 @@ function makeDef(input: HandsInput, live: TissueLive): SceneDef {
           const nx = uy * wz - uz * wy;
           const ny = uz * wx - ux * wz;
           const nz = ux * wy - uy * wx;
-          for (const q of [a, b, c]) {
-            vn[q] += nx;
-            vn[q + 1] += ny;
-            vn[q + 2] += nz;
-          }
+          vn[a] += nx;
+          vn[a + 1] += ny;
+          vn[a + 2] += nz;
+          vn[b] += nx;
+          vn[b + 1] += ny;
+          vn[b + 2] += nz;
+          vn[c] += nx;
+          vn[c + 1] += ny;
+          vn[c + 2] += nz;
         }
         for (let n = 0; n < tri.length; n++) {
           const v = tri[n];

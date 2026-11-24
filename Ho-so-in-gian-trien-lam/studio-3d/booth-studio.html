@@ -138,6 +138,7 @@ button { cursor: pointer; }
       <div class="sec" id="inspector"></div>
       <div class="sec">
         <h2>Ý tưởng khối nổi</h2>
+        <div class="idea"><b>Vách thụt in quảng bá</b><p>Ba bề mặt tự giãn theo "Bậc lùi": vách thụt 1 (sản phẩm 2), vách thụt 2 (Socratic) và vách sân trước gian 1. Bấm vào vách để sửa tên, thông điệp, số liệu (mỗi dòng "số|nhãn"), giải thưởng, QR.</p></div>
         <div class="idea"><b>Ba gian xếp bậc</b><p>Gian 1 lùi sâu nhất, gian 2 lùi vừa, gian 3 sát lối đi. Mỗi bậc lộ ra một mặt hông quay về phía khách đi tới từ bên trái, in tên sản phẩm cỡ lớn. Chỉnh "Bậc lùi" trên thanh công cụ; nhập số âm để đảo chiều.</p></div>
         <div class="idea"><b>Trạm Lab 3D: camera nhìn từ trên xuống</b><p>Webcam treo trên tay cần, chúc thẳng xuống bàn thao tác cao 950 mm. Khách đứng trước bàn, đưa tay trên mặt bàn và nhìn màn. Camera chỉ thấy tay trên nền tối, không thấy người phía sau. Vùng xanh là tầm nhìn camera.</p></div>
         <div class="idea"><b>Vì sao dồn ra mặt tiền</b><p>Hai gian bên cạnh dựng vách kín và ít khách bước vào trong, nên chỉ mặt tiền, biển vẫy và cờ là được nhìn thấy. Bấm “Đi tới từ trái” hoặc “Đi tới từ phải” để xem.</p></div>
@@ -172,7 +173,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 const M = 0.001; // mm → m
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FONT = { sans: '"Plus Jakarta Sans", system-ui, sans-serif', mono: '"JetBrains Mono", ui-monospace, monospace', serif: 'Newsreader, Georgia, serif' };
-const STORE = 'svb-booth-studio-v7'; // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
+const STORE = 'svb-booth-studio-v9'; // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
 const MARK_HOOK = 'M31.8 39.7 A30 30 0 1 1 75 76 Q60 83 60 93', MARK_IRIS = 'M46.8 45.2 A14 14 0 0 1 73.2 45.2';
 // // v4: mặt tiền = bảng viết 65" + trạm Lab 3D qua webcam
 
@@ -187,6 +188,9 @@ const DEFAULT = () => [
   { id: 'L-face', type: 'panel', booth: 'L', name: 'Gian 1 · Mặt tiền đặc (hông in)', x: -3000, y: 0, z: 1050, ry: 0, w: 2900, h: 2200, d: 600, color: '#0A1C1C', accent: '#2BB3A3', emissive: 0.3, pattern: 'hex', layout: 'plain', text: '[Sản phẩm 2] |đang cập nhật', sub: 'Phong cách: cổng vòm, xanh ngọc', side: '[SẢN PHẨM 2]' },
   { id: 'L-portal', type: 'portal', booth: 'L', name: 'Gian 1 · Khung vòm LED ốp mặt tiền', x: -3000, y: 0, z: 1420, ry: 0, w: 2900, h: 2200, d: 120, band: 380, bar: 260, radius: 700, legs: false, color: '#081414', accent: '#2BB3A3', emissive: 2.2, text: '[TÊN SẢN PHẨM 2]', sub: '[ĐƠN VỊ · GIẢI THƯỞNG]' },
   { id: 'L-ped', type: 'aicore', booth: 'L', name: 'Gian 1 · Bục trưng bày ở sân trước', x: -3000, y: 0, z: 2020, ry: 0, w: 480, h: 1250, d: 480, accent: '#2BB3A3', emissive: 1.6, color: '#0A1414', text: 'SẢN PHẨM MẪU · PROTOTYPE' },
+  { id: 'vt-deep', type: 'promo', slot: 'deep', locked: true, name: 'Vách thụt 1 · quảng bá sản phẩm 2', x: 0, y: 0, z: 0, ry: 0, w: 600, h: 2200, d: 6, color: '#0A1C1C', accent: '#2BB3A3', pattern: 'hex', glyph: '2', title: '[TÊN SẢN PHẨM 2]', text: '[Thông điệp chính |sản phẩm 2]', sub: '[Số liệu 1]|[nhãn ngắn]\n[Số liệu 2]|[nhãn ngắn]', award: '[GIẢI THƯỞNG]', qr: false },
+  { id: 'vt-mid', type: 'promo', slot: 'mid', locked: true, name: 'Vách thụt 2 · quảng bá Socratic', x: 0, y: 0, z: 0, ry: 0, w: 600, h: 2200, d: 6, color: '#0B0D13', accent: '#3D7BFF', pattern: 'contour', logo: true, title: 'Socratic Vision Board', text: 'Bảng lớp |biết hỏi lại.', sub: '<16 ms|độ trễ nét viết · ink latency\n10|mô phỏng STEM · simulations\n37|bài Lab bằng tay · hand labs\n4 mức|gợi mở, không lộ đáp án', award: 'GIẢI NHẤT CẤP TỈNH', qr: true },
+  { id: 'vt-court', type: 'promo', slot: 'court', locked: true, name: 'Vách sân trước gian 1 · câu chuyện sản phẩm 2', x: 0, y: 0, z: 0, ry: 0, w: 1200, h: 2200, d: 60, color: '#0A1C1C', accent: '#2BB3A3', pattern: 'hex', glyph: '2', title: '[TÊN SẢN PHẨM 2]', text: '[Vấn đề sản phẩm giải quyết] |[một câu]', sub: '[Điểm nổi bật 1]|[mô tả ngắn]\n[Điểm nổi bật 2]|[mô tả ngắn]\n[Điểm nổi bật 3]|[mô tả ngắn]', award: '[GIẢI THƯỞNG]', qr: true },
   { id: 'L-blade', type: 'blade', name: 'SP2 · Biển vẫy', x: -4500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#081414', accent: '#2BB3A3', emissive: 1.8, glyph: '2', text: '[TÊN SẢN PHẨM 2]' },
   { id: 'L-flag', type: 'flag', name: 'SP2 · Cờ buồm', x: -4560, y: 0, z: 1560, ry: -80, w: 700, h: 3500, d: 30, color: '#081414', accent: '#2BB3A3', text: '[SP 2]', sub: '' },
   { id: 'R-floor', type: 'floor', name: 'SP3 · Thảm graphite', x: 3000, y: 0, z: 0, ry: 0, w: 3000, h: 12, d: 3000, color: '#14110E', accent: '#FF7A2B', emissive: 0.45, pattern: 'circuit' },
@@ -244,7 +248,7 @@ const LIB = [
   { type: 'decal', label: 'Decal sàn', note: 'vòng Ø800', o: { w: 800, h: 4, d: 800, accent: '#3D7BFF', text: 'ĐỨNG ĐÂY' } },
   { type: 'person', label: 'Người', note: 'để so tỉ lệ', o: { w: 450, h: 1650, d: 300, color: '#4A5466' } },
 ];
-const TYPE_LABEL = { handdesk: 'BÀN TAY', overcam: 'CAMERA', seal: 'HUY HIỆU', tower: 'THÁP', blade: 'BIỂN VẪY', kiosk: 'MẶT TIỀN', tent: 'LỀU', neighbor: 'BÊN', floor: 'SÀN', ceiling: 'TRẦN', panel: 'TẤM', hexwall: 'LỤC GIÁC', screen: 'MÀN', halo: 'VÒNG', decal: 'DECAL', holo: 'HOLO', aicore: 'LÕI AI', portal: 'CỔNG', relief: 'CHỮ NỔI', totem: 'TOTEM', beacon: 'ĐÈN HIỆU', counter: 'QUẦY', strip: 'LED', flag: 'CỜ', person: 'NGƯỜI' };
+const TYPE_LABEL = { promo: 'VÁCH THỤT',  handdesk: 'BÀN TAY', overcam: 'CAMERA', seal: 'HUY HIỆU', tower: 'THÁP', blade: 'BIỂN VẪY', kiosk: 'MẶT TIỀN', tent: 'LỀU', neighbor: 'BÊN', floor: 'SÀN', ceiling: 'TRẦN', panel: 'TẤM', hexwall: 'LỤC GIÁC', screen: 'MÀN', halo: 'VÒNG', decal: 'DECAL', holo: 'HOLO', aicore: 'LÕI AI', portal: 'CỔNG', relief: 'CHỮ NỔI', totem: 'TOTEM', beacon: 'ĐÈN HIỆU', counter: 'QUẦY', strip: 'LED', flag: 'CỜ', person: 'NGƯỜI' };
 
 // ---------------- tiện ích ----------------
 function hash(s) { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -856,6 +860,45 @@ B.overcam = (o, g) => {
     fr.position.set(0, Hc - 0.016, arm + 0.02); fr.userData.noPick = true; g.add(fr); }
 };
 
+// ---------------- vách thụt: mặt hông lộ ra theo bậc ----------------
+function promoSlot(slot) {
+  const st = Number(settings.step) || 0, A = Math.abs(st) * M; if (A < 0.1) return null; const pos = st > 0, F = 1.48;
+  const fDeep = F - 2 * A, fMid = F - A;
+  if (slot === 'deep') return { x: pos ? -1.45 - 0.006 : 1.45 + 0.006, z0: fDeep, z1: fMid, nx: pos ? -1 : 1 };
+  if (slot === 'mid') return { x: pos ? 1.55 - 0.006 : -1.55 + 0.006, z0: fMid, z1: F, nx: pos ? -1 : 1 };
+  return { x: pos ? -4.47 : 4.47, z0: fDeep, z1: F, nx: pos ? 1 : -1 };
+}
+function paintPromo(o, W) {
+  const H = o.h; const { c, ctx } = makeCanvas(W, H, 2048); const acc = o.accent, accL = shade(acc, 0.45), fg = '#F5F2EA', m = Math.max(40, W * 0.07), cw = W - 2 * m;
+  bgBase(ctx, W, H, o.color, acc, 0.18); pattern(ctx, W, H, o.pattern || 'contour', acc, o.id); corners(ctx, W, H - 120, 22, 50, 'rgba(255,255,255,.45)', 3);
+  let y = 90; const ic = Math.min(110, cw * 0.28);
+  if (o.logo) ringQ(ctx, m + ic / 2, y + ic / 2, ic / 2, '#F5F2EA', '#FF6A2B', 0);
+  else if (o.glyph) { ctx.strokeStyle = acc; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(m + ic / 2, y + ic / 2, ic / 2 - 3, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = accL; ctx.textAlign = 'center'; ctx.font = `800 ${ic * 0.6}px ${FONT.sans}`; ctx.fillText(o.glyph, m + ic / 2, y + ic * 0.72); ctx.textAlign = 'left'; }
+  ctx.fillStyle = accL; const ts = fitFont(ctx, (o.title || '').toUpperCase(), `600 {s}px ${FONT.mono}`, 24, cw - ic - 20); ctx.font = `600 ${ts}px ${FONT.mono}`; wrap(ctx, (o.title || '').toUpperCase(), cw - ic - 20).slice(0, 2).forEach((l, i) => ctx.fillText(l, m + ic + 20, y + ic * 0.45 + i * (ts + 8)));
+  y += ic + 90; const [a, b = ''] = String(o.text || '').split('|'); const hs = Math.min(118, cw * 0.19);
+  ctx.font = `800 ${hs}px ${FONT.sans}`; ctx.fillStyle = fg; wrap(ctx, a.trim(), cw).forEach((l) => { ctx.fillText(l, m, y); y += hs * 1.02; });
+  ctx.font = `italic 400 ${hs * 1.06}px ${FONT.serif}`; ctx.fillStyle = accL; wrap(ctx, b.trim(), cw).forEach((l) => { ctx.fillText(l, m, y); y += hs * 1.06; });
+  y += 50; const rows = String(o.sub || '').split('\n').filter(Boolean); const vs = Math.min(84, cw * 0.15);
+  rows.forEach((r) => { const [v, lab = ''] = r.split('|'); ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(m, y); ctx.lineTo(W - m, y); ctx.stroke();
+    ctx.fillStyle = fg; ctx.font = `500 ${fitFont(ctx, v, `500 {s}px ${FONT.mono}`, vs, cw)}px ${FONT.mono}`; ctx.fillText(v, m, y + vs + 14); ctx.fillStyle = '#C9C5BB'; ctx.font = `500 ${Math.max(18, vs * 0.28)}px ${FONT.sans}`;
+    wrap(ctx, lab, cw).slice(0, 2).forEach((l, i) => ctx.fillText(l, m, y + vs + 52 + i * 30)); y += vs + 110; });
+  const qs = o.qr ? Math.min(300, cw * 0.62) : 0; const bottom = H - 150;
+  if (o.award) { const ay = bottom - qs - (o.qr ? 110 : 20) - 70; ctx.fillStyle = '#FF6A2B'; roundRect(ctx, m, ay, cw, 64, 32); ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = `800 ${fitFont(ctx, o.award, `800 {s}px ${FONT.sans}`, 28, cw - 40)}px ${FONT.sans}`; ctx.fillText(o.award, m + cw / 2, ay + 43); ctx.textAlign = 'left'; }
+  if (o.qr) { const qx = m, qy = bottom - qs - 60; ctx.fillStyle = '#fff'; ctx.fillRect(qx, qy, qs, qs); const Rq = rng('pq' + o.id); const n = 25, ms = (qs - 24) / n; ctx.fillStyle = '#111';
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { if ((i < 7 && j < 7) || (i < 7 && j > n - 8) || (i > n - 8 && j < 7)) continue; if (Rq() < 0.48) ctx.fillRect(qx + 12 + i * ms, qy + 12 + j * ms, ms, ms); }
+    [[0, 0], [0, n - 7], [n - 7, 0]].forEach(([p, q]) => { ctx.fillStyle = '#111'; ctx.fillRect(qx + 12 + p * ms, qy + 12 + q * ms, 7 * ms, 7 * ms); ctx.fillStyle = '#fff'; ctx.fillRect(qx + 12 + (p + 1) * ms, qy + 12 + (q + 1) * ms, 5 * ms, 5 * ms); ctx.fillStyle = '#111'; ctx.fillRect(qx + 12 + (p + 2) * ms, qy + 12 + (q + 2) * ms, 3 * ms, 3 * ms); });
+    ctx.fillStyle = fg; ctx.font = `700 26px ${FONT.sans}`; ctx.fillText('Quét để thử · Scan', qx, qy + qs + 40); }
+  band(ctx, W, H, acc, (o.title || '') + '  ·  ', 120); return c;
+}
+B.promo = (o, g) => {
+  const sl = promoSlot(o.slot); if (!sl) return; const L = sl.z1 - sl.z0, H = o.h * M; o.w = Math.round(L / M);
+  const t = tex(paintPromo(o, o.w)); const mat = new THREE.MeshStandardMaterial({ map: t, roughness: 0.6, emissiveMap: t, emissive: '#ffffff', emissiveIntensity: 0.18 });
+  const thick = (o.d || 6) * M; const m = new THREE.Mesh(new THREE.BoxGeometry(L, H, thick), [MAT.std('#111'), MAT.std('#111'), MAT.std('#111'), MAT.std('#111'), mat, MAT.std(shade(o.color, -0.3))]);
+  m.rotation.y = sl.nx > 0 ? Math.PI / 2 : -Math.PI / 2; m.position.set(sl.x + sl.nx * (thick / 2 - 0.003), H / 2, (sl.z0 + sl.z1) / 2); m.castShadow = true; g.add(m);
+  const led = box(0.012, H - 0.3, 0.012, MAT.glow(o.accent, 2)); led.position.set(sl.x + sl.nx * (thick + 0.004), H / 2, sl.z1 - 0.03); g.add(led);
+  if (o.slot === 'court') { const ft = box(0.4, 0.03, 0.06, MAT.std('#1A1B1F', { metalness: 0.5 })); [-0.35, 0.35].forEach((f) => { const q = ft.clone(); q.position.set(sl.x + sl.nx * 0.2, 0.015, (sl.z0 + sl.z1) / 2 + f * L); g.add(q); }); }
+};
+
 // ---------------- cảnh ----------------
 const view = document.getElementById('view');
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -953,6 +996,7 @@ function addObj(it) {
   objects.push(o); build(o); commit(); select(id); toast('Đã thêm: ' + it.label);
 }
 const FIELDS = {
+  promo: ['title', 'text', 'sub', 'award', 'glyph', 'logo', 'qr', 'pattern', 'color', 'accent'],
   handdesk: ['color', 'accent', 'emissive'], overcam: ['arm', 'fov', 'vfov', 'target', 'showCam', 'accent', 'emissive'],
   kiosk: ['scrW', 'scrH', 'scrD', 'gap', 'bottom', 'offX', 'variant', 'tray', 'qr', 'guide', 'cam', 'showCam', 'mount', 'xray', 'pattern', 'text', 'sub', 'color', 'accent', 'emissive'],
   panel: ['side', 'layout', 'pattern', 'text', 'sub', 'startNo', 'color', 'accent', 'emissive'], portal: ['band', 'bar', 'radius', 'legs', 'text', 'sub', 'color', 'accent', 'emissive'], relief: ['text', 'color', 'accent', 'emissive'],
@@ -961,7 +1005,7 @@ const FIELDS = {
   decal: ['text', 'accent'], flag: ['text', 'sub', 'color', 'accent'], tent: ['text', 'color', 'accent'], neighbor: ['walls', 'color', 'accent'], person: ['color'],
   seal: [], tower: ['accent', 'emissive'], blade: ['text', 'glyph', 'arm', 'color', 'accent', 'emissive'],
 };
-const FLABEL = { side: 'Chữ mặt hông',  fov: 'Góc ngang °', vfov: 'Góc dọc °', target: 'Mặt bàn cao',  glyph: 'Ký tự giữa', legs: 'Chữ ở chân', guide: 'Hướng dẫn tay', cam: 'Webcam + đèn', showCam: 'Vùng camera', offX: 'Lệch ô ngang', tray: 'Khay bút', qr: 'Mã QR', arm: 'Tay vươn', walls: 'Vách kín', scrW: 'Màn rộng', scrH: 'Màn cao', scrD: 'Màn dày', gap: 'Khe hở', bottom: 'Đáy màn', mount: 'Cách đỡ', xray: 'Nhìn xuyên', layout: 'Bố cục', pattern: 'Họa tiết', text: 'Chữ chính', sub: 'Chữ phụ', startNo: 'Số bắt đầu', color: 'Màu nền', accent: 'Màu nhấn', emissive: 'Độ sáng', band: 'Băng tên', bar: 'Bề chân', radius: 'Bo góc', variant: 'Nội dung', stand: 'Chân đứng', cell: 'Cỡ ô' };
+const FLABEL = { title: 'Tên', award: 'Giải thưởng', logo: 'Dùng logo',  side: 'Chữ mặt hông',  fov: 'Góc ngang °', vfov: 'Góc dọc °', target: 'Mặt bàn cao',  glyph: 'Ký tự giữa', legs: 'Chữ ở chân', guide: 'Hướng dẫn tay', cam: 'Webcam + đèn', showCam: 'Vùng camera', offX: 'Lệch ô ngang', tray: 'Khay bút', qr: 'Mã QR', arm: 'Tay vươn', walls: 'Vách kín', scrW: 'Màn rộng', scrH: 'Màn cao', scrD: 'Màn dày', gap: 'Khe hở', bottom: 'Đáy màn', mount: 'Cách đỡ', xray: 'Nhìn xuyên', layout: 'Bố cục', pattern: 'Họa tiết', text: 'Chữ chính', sub: 'Chữ phụ', startNo: 'Số bắt đầu', color: 'Màu nền', accent: 'Màu nhấn', emissive: 'Độ sáng', band: 'Băng tên', bar: 'Bề chân', radius: 'Bo góc', variant: 'Nội dung', stand: 'Chân đứng', cell: 'Cỡ ô' };
 const OPTS = { layout: [['hero', 'Backdrop chính'], ['story', 'Câu chuyện'], ['plain', 'Tiêu đề giữa']], pattern: [['contour', 'Đồng mức + mạch'], ['circuit', 'Mạch điện'], ['hex', 'Lục giác'], ['dots', 'Lưới điểm'], ['grid', 'Lưới kỹ thuật'], ['plain', 'Trơn']], variant: [['board', 'Bảng viết tay'], ['pipeline', 'Hộp kính 5 lớp'], ['lab', 'Lab 3D cử chỉ tay']], mount: [['stand', 'Chân đế bánh xe bên trong'], ['vesa', 'Treo VESA lên khung'], ['wall', 'Gắn lên mặt tiền'], ['pole', 'Chân đứng riêng']] };
 function renderInspector() {
   const el = $('#inspector'); const o = selObj();
@@ -980,11 +1024,11 @@ function renderInspector() {
   (FIELDS[o.type] || []).forEach((k) => {
     const id = 'f-' + k; const wrapEl = document.createElement('div'); wrapEl.className = 'field'; let input;
     if (OPTS[k]) { input = document.createElement('select'); OPTS[k].forEach(([v, l]) => { const op = document.createElement('option'); op.value = v; op.textContent = l; input.append(op); }); input.value = o[k] || OPTS[k][0][0]; }
-    else if (k === 'glyph' || k === 'side') { input = document.createElement('input'); input.type = 'text'; input.value = o[k] || ''; }
+    else if (k === 'glyph' || k === 'side' || k === 'title' || k === 'award') { input = document.createElement('input'); input.type = 'text'; input.value = o[k] || ''; }
     else if (k === 'text' || k === 'sub') { input = document.createElement('textarea'); input.value = o[k] || ''; }
     else if (k === 'color' || k === 'accent') { input = document.createElement('input'); input.type = 'color'; input.value = o[k] || '#000000'; }
     else if (k === 'emissive') { input = document.createElement('input'); input.type = 'range'; input.min = 0; input.max = 3; input.step = 0.05; input.value = o[k] ?? 1; }
-    else if (['stand', 'xray', 'tray', 'qr', 'walls', 'guide', 'cam', 'showCam', 'legs'].includes(k)) { input = document.createElement('input'); input.type = 'checkbox'; input.checked = !!o[k]; }
+    else if (['stand', 'xray', 'tray', 'qr', 'walls', 'guide', 'cam', 'showCam', 'legs', 'logo'].includes(k)) { input = document.createElement('input'); input.type = 'checkbox'; input.checked = !!o[k]; }
     else { input = document.createElement('input'); input.type = 'number'; input.step = 10; input.value = o[k] ?? ''; }
     input.id = id; const lab = document.createElement('label'); lab.htmlFor = id; lab.textContent = FLABEL[k] || k; wrapEl.append(lab, input); ex.append(wrapEl);
     const ev = input.type === 'color' || input.type === 'range' ? 'input' : 'change';
@@ -1007,7 +1051,7 @@ document.querySelectorAll('[data-cam]').forEach((b) => (b.onclick = () => setCam
 document.querySelectorAll('[data-mode]').forEach((b) => (b.onclick = () => { settings.mode = b.dataset.mode; applyMode(); save(); }));
 document.querySelectorAll('[data-tool]').forEach((b) => (b.onclick = () => setTool(b.dataset.tool)));
 function setTool(t) { tc.setMode(t); tc.showX = t === 'translate'; tc.showZ = t === 'translate'; tc.showY = true; document.querySelectorAll('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === t))); }
-$('#optStep').value = settings.step ?? 600; $('#optStep').onchange = (e) => { settings.step = Number(e.target.value) || 0; rebuildAll(); select(selected); save(); toast('Bậc lùi ' + settings.step + ' mm: gian 1 lùi ' + (2 * Math.max(settings.step, 0)) + ', gian 2 lùi ' + Math.abs(settings.step) + ' mm'); };
+$('#optStep').value = settings.step ?? 600; $('#optStep').onchange = (e) => { settings.step = Number(e.target.value) || 0; rebuildAll(); select(selected); save(); renderInspector(); toast('Bậc lùi ' + settings.step + ' mm: gian 1 lùi ' + (2 * Math.max(settings.step, 0)) + ', gian 2 lùi ' + Math.abs(settings.step) + ' mm'); };
 $('#optNeighbors').checked = settings.neighbors; $('#optRoof').checked = settings.roof; $('#optPeople').checked = settings.people;
 $('#optNeighbors').onchange = (e) => { settings.neighbors = e.target.checked; objects.forEach((o) => groups.get(o.id) && (groups.get(o.id).visible = visibleOf(o))); save(); };
 $('#optPeople').onchange = (e) => { settings.people = e.target.checked; objects.forEach((o) => groups.get(o.id) && (groups.get(o.id).visible = visibleOf(o))); save(); };

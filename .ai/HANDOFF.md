@@ -1,3 +1,7 @@
+# 2026-11-24 (10) — Vách thụt in quảng bá (mặt hông lộ ra theo bậc)
+- Studio khóa lưu v9: type `promo` với `slot: 'deep'|'mid'|'court'`, `promoSlot()` tự tính vị trí/bề rộng từ `settings.step` (đảo chiều khi bậc âm). deep = mặt hông Socratic lộ sau gian 1 (quảng bá SP2), mid = mặt hông gian 3 lộ sau Socratic (quảng bá Socratic), court = vách mới ở mép sân trước gian 1 (2 × bậc). Bố cục in: biểu tượng + tên, thông điệp, số liệu "số|nhãn", dải giải thưởng, QR, băng chân, LED dọc mép.
+- Hồ sơ in: `config.bacLui` + `config.vachThut` → VT1, VT2 (600 × 2200) và VT-SAN (1200 × 2200, có khung + chân T). 36 hạng mục.
+
 # 2026-11-24 (9) — Ba gian xếp bậc, chỉ trang trí mặt ngoài
 - Studio khóa lưu v7: khối có `booth: 'L'|'C'|'R'`; `settings.step` (ô "Bậc lùi", mặc định 600 mm) → `zoff()`: gian 1 (trái) lùi 2 × bậc, gian 2 Socratic lùi 1 × bậc, gian 3 sát lối; số âm đảo chiều. Kéo thả trừ lại `zoff` khi ghi `o.z`.
 - Bỏ nội thất: trần ẩn; gian 1 = mặt tiền đặc `panel` sâu 600 (mặt hông in chữ `side` + khe LED) + khung vòm `portal` ốp ngoài + bục ở sân trước; gian 3 = mặt tiền lưới sâu 600 + lục giác + chữ nổi (bỏ bục). Góc "Đi tới" dời ra giữa lối (z 5 m).

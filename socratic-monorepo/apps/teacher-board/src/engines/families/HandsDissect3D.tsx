@@ -3,7 +3,7 @@
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {TOOLS, TOOL_NAME, beatRate, current, cutAdvance, pointAt, reachable, toolOf, type DAction, type DissectSpec, type DissectState, type Flap, type ToolId} from '../../utils/lab/hands/dissect';
-import {handPointers, labRoom, type HandsInput} from './handsKit';
+import {bioRoom, graniteTop, handPointers, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {glassify, loadModel} from './labParts';
 import {wetAll} from './tissueShader';
@@ -47,14 +47,16 @@ function makeDef(input: HandsInput, live: DissectLive): SceneDef {
   return {
     floor: true,
     room: true,
+    bright: true,
     post: surgPost('open'),
     // mỗi mẫu một khung nhìn: gần hơn với mẫu nhỏ (tim, hoa) để thấy chi tiết, khay dụng cụ vẫn còn trong khung
     dist: {FROG: 6.2, PIG: 5.8, FISH: 5.4, FLOWER: 5.0, HUMAN: 7.2}[live.spec.model],
     target: {FROG: [0.9, 0, 0.2], PIG: [0.5, 0, 0.2], FISH: [0.9, 0, 0.15], FLOWER: [0.9, 0, 0.1], HUMAN: [0.8, 0, 0.2]}[live.spec.model] as [number, number, number],
     orbit: () => [0, 56],
     setup: (k) => {
-      labRoom(k, [10.6, 5.6, 0.7, 0]);
-      solid(k.scene, new THREE.BoxGeometry(10.6, 0.12, 5.6), '#1C1F4A', {rough: 0.9, x: 0.7, y: -0.27, z: 0});
+      // phòng thí nghiệm Sinh sáng, bàn đá đen như bài thực hành Sinh (trước: phòng tối, bàn xanh đậm nên mẫu mổ như lơ lửng trong khoảng trống)
+      bioRoom(k, [10.6, 5.6, 0.7, 0]);
+      graniteTop(k, [10.6, 5.6, 0.7, 0], -0.27);
       const P = handPointers(k, input, 0.5);
       const spec = live.spec;
       const ray = new THREE.Raycaster();
@@ -119,7 +121,7 @@ function makeDef(input: HandsInput, live: DissectLive): SceneDef {
             if (t === 'dropper') glassify(o, 0.25);
             o.position.set(TRAY_X, 0.04, SLOT[t]);
             // tên dụng cụ ngay trên khăn, cạnh chỗ để
-            k.label(TOOL_NAME[t], '#1D1B16', true)(new THREE.Vector3(TRAY_X + 0.62, 0.03, SLOT[t] + 0.34));
+            k.label(TOOL_NAME[t], '#F3EFE6', true, 12)(new THREE.Vector3(TRAY_X + 0.62, 0.03, SLOT[t] + 0.34));
             tools.set(t, o);
             toolMats.set(t, matsOf(o));
           }

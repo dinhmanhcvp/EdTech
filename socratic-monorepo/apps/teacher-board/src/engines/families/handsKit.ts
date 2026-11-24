@@ -87,7 +87,7 @@ const rnd = (i: number) => {
 };
 
 /** mặt bàn đá granite đen lấm tấm (bàn thí nghiệm Sinh) */
-export function graniteTop(k: Kit, [w, d, cx, cz]: [number, number, number, number]) {
+export function graniteTop(k: Kit, [w, d, cx, cz]: [number, number, number, number], y = -0.056) {
   const map = paint(512, 512, (g, W, H) => {
     g.fillStyle = '#1B1C1F';
     g.fillRect(0, 0, W, H);
@@ -99,12 +99,12 @@ export function graniteTop(k: Kit, [w, d, cx, cz]: [number, number, number, numb
     }
   }, 3);
   const top = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, d), new THREE.MeshStandardMaterial({color: '#FFFFFF', map, roughness: 0.32, metalness: 0.05}));
-  top.position.set(cx, -0.056, cz);
+  top.position.set(cx, y, cz);
   top.receiveShadow = true;
   k.scene.add(top);
   // mép bàn bo đen mờ
   const edge = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, 0.05, 0.06), new THREE.MeshStandardMaterial({color: '#0E0F11', roughness: 0.5}));
-  edge.position.set(cx, -0.09, cz + d / 2);
+  edge.position.set(cx, y - 0.034, cz + d / 2);
   k.scene.add(edge);
 }
 

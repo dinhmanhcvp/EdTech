@@ -2,7 +2,7 @@
 
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
-import {ANCHOR, ARTERY, ART_CLIP_X, ART_CUT_X, CHOLE_PHASES, CLIP_X, CUT_X, LAP_TASKS, NO_GO, PEGS_FROM, PEGS_GOAL, RIGHT_TOOL_NAME, TARGETS, TIP_HIGH, TIP_LOW, TUBE_X, TUBE_Y, handleOf, lapStep, tipOf, trocarsOf, type LapState, type LapTaskId, type P3, type RightTool} from '../../utils/lab/hands/laparo';
+import {ANCHOR, ARTERY, ART_CLIP_X, ART_CUT_X, BAG_AT, CHOLE_PHASES, clampScope, CLIP_X, CUT_X, LAP_TASKS, NO_GO, PEGS_FROM, PEGS_GOAL, RIGHT_TOOL_NAME, TARGETS, TIP_HIGH, TIP_LOW, TUBE_X, TUBE_Y, handleOf, lapStep, tipOf, trocarsOf, type LapState, type LapTaskId, type P3, type RightTool} from '../../utils/lab/hands/laparo';
 import {BAND, BAND_A, BAND_B, BAND_LEN, MEMB, WINDOW, bandUV, bandXZ, clearedIn, columnCleared, firstAlive, type CellGrid} from '../../utils/lab/hands/lapDissect';
 import {SoftBody, TEAR_PULL, applySkin, buildSkin, linkWithin, sampleCloud, type Edge, type Skin, type SoftTip} from '../../utils/lab/hands/lapSoft';
 import {handPointers, type HandsInput} from './handsKit';
@@ -16,6 +16,8 @@ export interface LaparoLive {
   /** chuột điều khiển tay nào */
   mouseHand: 0 | 1;
   right: RightTool;
+  /** ống soi do người phụ mổ cầm: phóng (1 = khung chuẩn, nhỏ hơn = gần hơn) và lia tâm nhìn trên mặt làm việc */
+  scope?: {zoom: number; x: number; z: number};
 }
 
 const ORANGE = '#D9481C';
@@ -210,6 +212,12 @@ function makeDef(input: HandsInput, live: LaparoLive): SceneDef {
       // ca cắt túi mật: ống soi dịch sang trái để thấy cả đáy túi mật
       const camX = live.st.task === 'chole' ? -1.55 : 0;
       k.controls.target.x += camX;
+      // ống soi điều khiển được: giữ khung gốc rồi mỗi khung cộng độ phóng / lia (mượt, như người phụ mổ đưa ống soi từ từ)
+      // khung gốc chỉ có sau khi Stage3D đặt máy quay (sau lần cập nhật đầu): lấy ở khung thứ hai
+      let camBase: THREE.Vector3 | null = null;
+      let camDir: THREE.Vector3 | null = null;
+      let camFrames = 0;
+      const camNow = {zoom: 1, x: 0, z: 0};
 
       // nguồn sáng duy nhất đi cùng ống soi: sáng ở giữa, tối dần ra mép như hình nội soi thật
       const scope = new THREE.SpotLight('#FFF1E2', 95, 20, 0.72, 0.75, 1.5);
@@ -413,6 +421,28 @@ function makeDef(input: HandsInput, live: LaparoLive): SceneDef {
       goalRing.renderOrder = 5;
       k.scene.add(goalRing);
 
+      // ---- TÚI LẤY BỆNH PHẨM (endobag): túi nhựa trong, miệng giữ mở bằng vòng kim loại đàn hồi, dây rút luồn ra cổng rốn
+      const bag = new THREE.Group();
+      const pouchM = new THREE.MeshPhysicalMaterial({color: '#DCE7EE', transparent: true, opacity: 0.58, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.1, side: THREE.DoubleSide, depthWrite: false});
+      const pouch = new THREE.Mesh(new THREE.LatheGeometry([[0.0, -0.98], [0.16, -0.95], [0.32, -0.82], [0.43, -0.6], [0.48, -0.32], [0.47, -0.08], [0.45, 0]].map(([x, y]) => new THREE.Vector2(x, y)), 36), pouchM);
+      // nếp nhăn của túi nhựa: dải mờ chạy dọc thân túi
+      for (let i = 0; i < 7; i++) {
+        const crease = new THREE.Mesh(new THREE.PlaneGeometry(0.03, 0.8), new THREE.MeshBasicMaterial({color: '#FFFFFF', transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide}));
+        const a = (i / 7) * Math.PI * 2;
+        crease.position.set(Math.cos(a) * 0.44, -0.42, Math.sin(a) * 0.44);
+        crease.lookAt(0, -0.42, 0);
+        pouch.add(crease);
+      }
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.026, 10, 48).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({color: '#AFC3D3', metalness: 0.7, roughness: 0.3}));
+      const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 1, 6), new THREE.MeshStandardMaterial({color: '#EDE7D6', roughness: 0.8}));
+      bag.add(pouch, rim);
+      bag.position.set(BAG_AT[0], BAG_AT[1] + 0.2, BAG_AT[2]);
+      bag.rotation.x = 1.15; // túi nằm ngả trên mặt mô, thân túi về phía sau, miệng mở hướng lên ống soi
+      bag.visible = false;
+      k.scene.add(bag, cord);
+      const cordTop = new THREE.Vector3(0.6, 4, 2.4); // cổng rốn
+      let bagClose = 0;
+
       const tools = [makeTool(k, HAND_COL[0]), makeTool(k, HAND_COL[1])];
       // giải phẫu chi tiết; chưa tải được thì giữ các khối đơn giản ở trên. Vùng tam giác gan mật chỉ hiện ở bài kẹp cắt
       const fieldParts: THREE.Object3D[] = [];
@@ -427,6 +457,21 @@ function makeDef(input: HandsInput, live: LaparoLive): SceneDef {
       const released = new Set<number>();
       let didArtery = false;
       let specimenOut = false;
+      /** hạt của bệnh phẩm (túi mật + nửa ống phía túi mật) và hình dạng lúc bắt đầu mang đi */
+      const specIdx = (b: SoftBody) => Array.from({length: b.n}, (_, i) => i).filter((i) => i >= CHAIN || chainX(i) < SPLIT);
+      let carry: {idx: number[]; shape: Float32Array} | null = null;
+      const gbC = new THREE.Vector3();
+      const gbCenter = (): P3 | undefined => {
+        const b = biliary?.body;
+        if (!b) return undefined;
+        gbC.set(0, 0, 0);
+        for (let i = CHAIN; i < b.n; i++) gbC.add(v8.set(b.pos[i * 3], b.pos[i * 3 + 1], b.pos[i * 3 + 2]));
+        gbC.divideScalar(Math.max(1, b.n - CHAIN));
+        return [gbC.x, gbC.y, gbC.z];
+      };
+      const v8 = new THREE.Vector3();
+      // chỉ khi phát triển: máy dò trình duyệt đọc tâm túi mật để kéo thử chặng cho vào túi
+      if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') (window as unknown as {__lapScene?: unknown}).__lapScene = {gbCenter};
       const collect = (o: THREE.Object3D) => {
         const out: THREE.Mesh[] = [];
         o.traverse((c) => (c as THREE.Mesh).isMesh && out.push(c as THREE.Mesh));
@@ -618,7 +663,9 @@ function makeDef(input: HandsInput, live: LaparoLive): SceneDef {
         if (!softs.length) return null;
         let tear: P3 | null = null;
         for (const h of [0, 1] as const) {
-          if (grip[h] && !prevGrip[h] && clipTask && (h === 0 || live.right === 'grasper')) for (const s of softs) if (s.body.grasp(h, tips[h], 0.36)) break;
+          // chặng cho vào túi: túi mật đã rời gan, kẹp chỉ cầm bệnh phẩm (cảnh tự mang theo mũi kẹp), không cầm nhầm gan / giường gan mà kéo rách
+          const bagging = live.st.phase === 'bag';
+          if (grip[h] && !prevGrip[h] && clipTask && !bagging && (h === 0 || live.right === 'grasper')) for (const s of softs) if (s.body.grasp(h, tips[h], 0.36)) break;
           if (!grip[h]) softs.forEach((s) => s.body.release(h));
           prevGrip[h] = grip[h];
         }
@@ -664,8 +711,21 @@ function makeDef(input: HandsInput, live: LaparoLive): SceneDef {
         last = now;
         P.step(1);
         k.controls.enabled = false;
+        const want = clampScope(live.scope ?? {zoom: 1, x: 0, z: 0});
+        const ease = 1 - Math.exp(-dt * 6);
+        camNow.zoom += (want.zoom - camNow.zoom) * ease;
+        camNow.x += (want.x - camNow.x) * ease;
+        camNow.z += (want.z - camNow.z) * ease;
+        if (++camFrames === 2) {
+          camBase = k.controls.target.clone();
+          camDir = k.camera.position.clone().sub(camBase);
+        }
+        if (camBase && camDir) {
+          k.controls.target.set(camBase.x + camNow.x, camBase.y, camBase.z + camNow.z);
+          k.camera.position.copy(k.controls.target).addScaledVector(camDir, camNow.zoom);
+        }
         scope.position.copy(k.camera.position);
-        scope.target.position.set(camX, 0, 0);
+        scope.target.position.set(camX + camNow.x, 0, camNow.z);
 
         const grip: [boolean, boolean] = [false, false];
         for (const h of [0, 1] as const) {
@@ -693,8 +753,41 @@ function makeDef(input: HandsInput, live: LaparoLive): SceneDef {
         const tips: [P3, P3] = [tipOf(ports[0], handle[0][0], handle[0][1], yOf(0)), tipOf(ports[1], handle[1][0], handle[1][1], yOf(1))];
         const tear = stepSoft(dt, tips, grip, clipTask);
         const arteryNow = clipTask ? arteryPath() : undefined;
-        live.st = lapStep(live.st, {dt, tips, grip, right: live.right, tear, arteryNow, ductTip: clipTask ? ductRest(tips[1]) : undefined, arteryTip: clipTask ? arteryRest(tips[1], arteryNow) : undefined});
+        const wasHeld = live.st.gbHeld;
+        live.st = lapStep(live.st, {dt, tips, grip, right: live.right, tear, arteryNow, ductTip: clipTask ? ductRest(tips[1]) : undefined, arteryTip: clipTask ? arteryRest(tips[1], arteryNow) : undefined, gb: live.st.phase === 'bag' ? gbCenter() : undefined});
         const st = live.st;
+        // mang túi mật theo mũi kẹp trái: chỗ mô muốn về = mũi kẹp + hình dạng lúc kẹp (không kéo giãn nên không rách)
+        const bb = biliary?.body;
+        if (bb && st.gbHeld && !wasHeld) {
+          const c = gbCenter()!;
+          const idx = specIdx(bb);
+          carry = {idx, shape: Float32Array.from(idx.flatMap((i) => [bb.pos[i * 3] - c[0], bb.pos[i * 3 + 1] - c[1], bb.pos[i * 3 + 2] - c[2]]))};
+          for (const i of idx) bb.setPull(i, 0.3);
+        }
+        if (bb && carry) {
+          const follow = st.gbHeld;
+          carry.idx.forEach((i, n) => {
+            if (follow) {
+              bb.home[i * 3] = tips[0][0] + carry!.shape[n * 3];
+              bb.home[i * 3 + 1] = tips[0][1] + 0.12 + carry!.shape[n * 3 + 1];
+              bb.home[i * 3 + 2] = tips[0][2] + carry!.shape[n * 3 + 2];
+            } else if (!st.bagged) bb.home[i * 3 + 1] = Math.max(0.55, bb.pos[i * 3 + 1] - 0.3); // tuột kẹp: rơi xuống mặt gan
+          });
+          if (!follow) carry = null;
+        }
+        // túi lấy bệnh phẩm: hiện ở chặng cuối; cho túi mật vào xong thì miệng túi thắt lại, bệnh phẩm khuất trong túi
+        bag.visible = st.task === 'chole' && (st.phase === 'bag' || st.bagged);
+        cord.visible = bag.visible;
+        bagClose += ((st.bagged ? 1 : 0) - bagClose) * (1 - Math.exp(-dt * 3));
+        rim.scale.setScalar(1 - 0.82 * bagClose);
+        pouch.scale.set(1 - 0.25 * bagClose, 1 + 0.08 * bagClose, 1 - 0.25 * bagClose);
+        bag.position.set(BAG_AT[0], BAG_AT[1] + 0.2 + 0.5 * bagClose, BAG_AT[2]);
+        if (cord.visible) {
+          v8.set(0, 0, 0).applyMatrix4(rim.matrixWorld);
+          cord.position.copy(v8).add(cordTop).multiplyScalar(0.5);
+          cord.scale.set(1, v8.distanceTo(cordTop), 1);
+          cord.quaternion.setFromUnitVectors(up5, v6.copy(cordTop).sub(v8).normalize());
+        }
 
         tools[0].update(tips[0], ports[0], openAmt[0], 'grasper');
         tools[1].update(tips[1], ports[1], openAmt[1], clipTask ? live.right : 'grasper');
@@ -703,10 +796,13 @@ function makeDef(input: HandsInput, live: LaparoLive): SceneDef {
         skills.visible = !clipTask;
         duct.visible = clipTask;
         fieldParts.forEach((o) => (o.visible = clipTask));
+        // túi mật (và nửa ống phía túi mật) đã nằm trong túi lấy bệnh phẩm: khuất đi khi miệng túi thắt lại; nửa ống phía người bệnh (có clip) ở lại
+        if (st.bagged && biliary) for (const m of biliary.meshes) if (m.geo !== biliary.meshes[1].geo) for (const o of softMeshes) if (o.geometry === m.geo) o.visible = bagClose < 0.6;
         const chole = task === 'chole';
         cholePart.visible = chole;
         // bóc xong thì các sợi mô sót lại rời cùng túi mật
-        band.mesh.visible = !st.done;
+        const freed = st.phase === 'bag' || st.done;
+        band.mesh.visible = !freed;
         // ---- ô vừa bị đốt: dựng lại lưới, phần túi mật đã bóc thì rời khỏi chỗ bám
         if (st.memb !== shownMemb) {
           shownMemb = st.memb;
@@ -731,7 +827,7 @@ function makeDef(input: HandsInput, live: LaparoLive): SceneDef {
         }
         (fossa.material as THREE.MeshPhysicalMaterial).opacity = chole && st.phase === 'bed' ? clearedIn(st.band, BAND) : 0;
         // bóc xong: túi mật cùng đoạn ống đã cắt nhấc hẳn khỏi giường gan
-        if (chole && st.done && !st.bled && !specimenOut && biliary) {
+        if (chole && freed && !st.bled && !specimenOut && biliary) {
           specimenOut = true;
           const b = biliary.body;
           for (let i = 0; i < b.n; i++) {
@@ -875,6 +971,12 @@ function makeDef(input: HandsInput, live: LaparoLive): SceneDef {
           if (st.phase === 'expose') {
             const f = firstAlive(st.memb, MEMB, WINDOW);
             if (f) goal = [f[0], 0.5, f[1]];
+          } else if (st.phase === 'cvs') {
+            if (!st.cvs[0] && biliary) onChain(biliary.body, -1.0, v7);
+            else onArtery(-1.0, v7);
+            goal = [v7.x, v7.y, v7.z];
+          } else if (st.phase === 'bag') {
+            goal = st.gbHeld ? BAG_AT : (gbCenter() ?? null);
           } else if (st.phase === 'artery' && st.artClips.every(Boolean)) {
             onArtery((ART_CUT_X[0] + ART_CUT_X[1]) / 2, v7);
             goal = [v7.x, v7.y, v7.z];
@@ -898,7 +1000,7 @@ function makeDef(input: HandsInput, live: LaparoLive): SceneDef {
             : task === 'transfer'
               ? `Đã đặt ${st.rings.filter((r) => r.placed).length}/${st.rings.length} vòng. Trái nhấc, chuyển sang phải ở giữa, phải đặt vào chốt vàng.`
               : task === 'chole' && !st.bleed
-                ? `${CHOLE_PHASES.findIndex((p) => p.id === st.phase) + 1}/4 · ${CHOLE_PHASES.find((p) => p.id === st.phase)!.how}`
+                ? `${CHOLE_PHASES.findIndex((p) => p.id === st.phase) + 1}/${CHOLE_PHASES.length} · ${CHOLE_PHASES.find((p) => p.id === st.phase)!.how}`
               : st.bleed
                 ? `Đang chảy máu. Tay phải chọn móc đốt, giữ vào chỗ chảy (đã đốt ${Math.round((st.bleed.coag / 0.8) * 100)} %).`
                 : `Tay phải: ${RIGHT_TOOL_NAME[live.right].toLowerCase()}. Clip ${st.clips.filter(Boolean).length}/3. Tay trái giữ vòng cam để kéo căng.`;

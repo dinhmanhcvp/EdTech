@@ -13,14 +13,16 @@ export const LAP_TASKS: {id: LapTaskId; name: string; goal: string}[] = [
   {id: 'touch', name: 'Định vị hai tay', goal: 'Chạm lần lượt 8 mục tiêu bằng đúng dụng cụ được tô màu.'},
   {id: 'transfer', name: 'Chuyển vòng qua hai tay', goal: 'Nhấc vòng bằng tay trái, chuyển sang tay phải giữa không trung rồi đặt vào chốt bên phải.'},
   {id: 'clip', name: 'Kẹp và cắt ống', goal: 'Tay trái kéo căng ống, tay phải đặt đủ 3 clip rồi cắt giữa hai nhóm clip. Nếu mô chảy máu thì dùng móc đốt cầm máu trước.'},
-  {id: 'chole', name: 'Cắt túi mật', goal: 'Ca đủ bốn chặng: mở màng phúc mạc, kẹp cắt ống túi mật, kẹp cắt động mạch, bóc túi mật khỏi giường gan.'},
+  {id: 'chole', name: 'Cắt túi mật', goal: 'Ca đủ sáu chặng: mở màng phúc mạc, xác nhận góc nhìn an toàn (CVS), kẹp cắt ống túi mật, kẹp cắt động mạch, bóc túi mật khỏi giường gan, cho túi mật vào túi lấy bệnh phẩm.'},
 ];
-export type CholePhase = 'expose' | 'duct' | 'artery' | 'bed';
+export type CholePhase = 'expose' | 'cvs' | 'duct' | 'artery' | 'bed' | 'bag';
 export const CHOLE_PHASES: {id: CholePhase; name: string; how: string}[] = [
   {id: 'expose', name: 'Mở phúc mạc, làm lộ cửa sổ an toàn', how: 'Móc đốt: giữ chụm và quét vùng giữa ống và động mạch, không chạm vào hai cấu trúc đó.'},
+  {id: 'cvs', name: 'Xác nhận góc nhìn an toàn (CVS)', how: 'Kẹp phẫu tích (tay phải) chạm lần lượt vào ống túi mật và động mạch túi mật: chỉ hai cấu trúc này đi vào túi mật thì mới được kẹp.'},
   {id: 'duct', name: 'Kẹp và cắt ống túi mật', how: 'Tay trái giữ ống ở vòng cam. Đặt đủ 3 clip rồi đổi sang kéo, cắt giữa hai nhóm clip.'},
   {id: 'artery', name: 'Kẹp và cắt động mạch túi mật', how: 'Đặt đủ 3 clip lên động mạch rồi dùng kéo cắt ở đoạn giữa.'},
   {id: 'bed', name: 'Bóc túi mật khỏi giường gan', how: 'Tay trái kéo túi mật, móc đốt quét dọc dải mô nối. Không đốt lấn sang gan.'},
+  {id: 'bag', name: 'Cho túi mật vào túi lấy bệnh phẩm', how: 'Tay trái kẹp túi mật đã bóc, đưa vào miệng túi (vòng cam) rồi nhả: túi tự thắt miệng để rút ra qua lỗ trocar.'},
 ];
 export const RIGHT_TOOL_NAME: Record<RightTool, string> = {grasper: 'Kẹp phẫu tích', clip: 'Kìm đặt clip', scissors: 'Kéo nội soi', hook: 'Móc đốt điện'};
 
@@ -42,6 +44,14 @@ export const handleOf = (nx: number, ny: number): [number, number] => [nx * 2.1,
 
 const dist = (a: P3, b: P3) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 const distXZ = (a: P3, b: P3) => Math.hypot(a[0] - b[0], a[2] - b[2]);
+
+/** ống soi (người phụ mổ cầm): giới hạn: không đưa sát quá (mờ, mất định hướng) hay lùi quá xa khỏi vùng mổ */
+export const SCOPE_LIMIT = {zoom: [0.55, 1.25] as [number, number], x: 1.8, z: 1.3};
+export const clampScope = (s: {zoom: number; x: number; z: number}) => ({
+  zoom: Math.min(SCOPE_LIMIT.zoom[1], Math.max(SCOPE_LIMIT.zoom[0], s.zoom)),
+  x: Math.max(-SCOPE_LIMIT.x, Math.min(SCOPE_LIMIT.x, s.x)),
+  z: Math.max(-SCOPE_LIMIT.z, Math.min(SCOPE_LIMIT.z, s.z)),
+});
 
 // ------------------------------------------------------------------ bố cục bài
 export const TARGETS: {at: P3; hand: 0 | 1}[] = [
@@ -75,6 +85,11 @@ export const COAG_TIME = 0.8;
 /** clip trên động mạch: hai ở phía người bệnh, một ở phía túi mật; cắt ở đoạn giữa */
 export const ART_CLIP_X = [0.62, 0.3, -0.6];
 export const ART_CUT_X: [number, number] = [-0.4, 0.12];
+/** miệng túi lấy bệnh phẩm (đưa vào qua cổng rốn, mở ở hạ sườn phải, trong tầm tay trái) và bán kính nhận khi nhả túi mật */
+export const BAG_AT: P3 = [-1.7, 0.55, 1.35];
+export const BAG_R = 0.55;
+/** CVS: mũi kẹp cách cấu trúc bao xa thì tính là đã chạm xác nhận */
+export const CVS_R = 0.16;
 
 export interface Ring {
   pos: P3;
@@ -121,6 +136,11 @@ export interface LapState {
   artCut: boolean;
   /** móc đang lấn vào gan */
   deep: boolean;
+  /** CVS đã xác nhận: [ống túi mật, động mạch túi mật] */
+  cvs: [boolean, boolean];
+  /** tay trái đang kẹp túi mật đã bóc; túi mật đã nằm trong túi lấy bệnh phẩm */
+  gbHeld: boolean;
+  bagged: boolean;
 }
 export const newLap = (task: LapTaskId): LapState => ({
   task,
@@ -149,6 +169,9 @@ export const newLap = (task: LapTaskId): LapState => ({
   artClips: ART_CLIP_X.map(() => false),
   artCut: false,
   deep: false,
+  cvs: [false, false],
+  gbHeld: false,
+  bagged: false,
 });
 export interface LapInput {
   dt: number;
@@ -162,7 +185,11 @@ export interface LapInput {
   /** mũi phải quy về vị trí nghỉ của ống / động mạch để xét đúng chỗ khi mô đang bị kéo lệch */
   ductTip?: P3;
   arteryTip?: P3;
+  /** tâm túi mật đã bóc (cảnh tính từ thân mềm); không có thì coi như ở chỗ nhấc lên mặc định */
+  gb?: P3;
 }
+/** túi mật sau khi bóc nằm nhấc lên khỏi giường gan quanh điểm này (khi cảnh không báo tâm thật) */
+export const GB_FREE: P3 = [-3.4, 1.2, 0.55];
 
 /** khoảng cách trên mặt xz tới đường động mạch */
 export function arteryDist(p: P3, path: [number, number][] = ARTERY): number {
@@ -340,6 +367,49 @@ function stepArtery(n: LapState, inp: LapInput, pressed: boolean[]) {
   n.warn = '';
 }
 
+/**
+ * Góc nhìn an toàn (Critical View of Safety, Strasberg): trước khi kẹp bất cứ thứ gì phải thấy rõ CHỈ HAI cấu trúc đi vào túi mật.
+ * Học sinh dùng kẹp phẫu tích chạm xác nhận từng cấu trúc; chạm bằng dụng cụ khác (móc đốt, kéo, kìm clip) không được tính.
+ */
+function stepCvs(n: LapState, inp: LapInput, pressed: boolean[]) {
+  if (!pressed[1]) return;
+  if (inp.right !== 'grasper') {
+    n.warn = 'Xác nhận CVS bằng kẹp phẫu tích (không dùng móc đốt, kéo hay kìm clip để chạm thử).';
+    return;
+  }
+  const d = inp.ductTip ?? inp.tips[1];
+  const onDuct = Math.abs(d[2]) < CVS_R && d[0] > TUBE_X[0] && d[0] < CUT_X[1] + 0.6;
+  const onArt = arteryDist(inp.arteryTip ?? inp.tips[1]) < CVS_R;
+  if (!onDuct && !onArt) return;
+  n.cvs = [n.cvs[0] || onDuct, n.cvs[1] || (onArt && !onDuct)];
+  n.warn = n.cvs[0] && !n.cvs[1] ? 'Đã thấy ống túi mật. Chạm tiếp động mạch túi mật.' : !n.cvs[0] ? 'Đã thấy động mạch túi mật. Chạm tiếp ống túi mật.' : '';
+  if (n.cvs[0] && n.cvs[1]) {
+    n.phase = 'duct';
+    n.warn = 'Đạt góc nhìn an toàn: chỉ hai cấu trúc đi vào túi mật. Bắt đầu kẹp ống.';
+  }
+}
+
+/** cho túi mật vào túi lấy bệnh phẩm: tay trái kẹp túi mật, mang tới miệng túi rồi nhả */
+function stepBag(n: LapState, inp: LapInput, pressed: boolean[]) {
+  const gb = inp.gb ?? GB_FREE;
+  // dụng cụ đi trên mặt phẳng làm việc còn túi mật đã nhấc khỏi giường gan: xét theo mặt ngang
+  if (pressed[0] && !n.gbHeld && distXZ(inp.tips[0], gb) < 0.7) {
+    n.gbHeld = true;
+    n.warn = '';
+  }
+  if (n.gbHeld && !inp.grip[0]) {
+    n.gbHeld = false;
+    if (distXZ(inp.tips[0], BAG_AT) < BAG_R) {
+      n.bagged = true;
+      n.done = true;
+      n.warn = '';
+    } else {
+      n.errors.drop++;
+      n.warn = 'Túi mật tuột khỏi kẹp ngoài túi: kẹp lại rồi nhả ngay trong miệng túi.';
+    }
+  }
+}
+
 function stepChole(n: LapState, inp: LapInput, pressed: boolean[]) {
   if (n.phase === 'duct') {
     stepClip(n, inp, pressed);
@@ -357,11 +427,13 @@ function stepChole(n: LapState, inp: LapInput, pressed: boolean[]) {
       const next = burnCells(n.memb, MEMB, tip[0], tip[2], 0.13);
       if (next !== n.memb) n.memb = pruneIslands(next, MEMB);
       if (clearedIn(n.memb, MEMB, WINDOW) >= 0.85) {
-        n.phase = 'duct';
+        n.phase = 'cvs';
         n.warn = '';
       }
     }
-  } else if (n.phase === 'artery') stepArtery(n, inp, pressed);
+  } else if (n.phase === 'cvs') stepCvs(n, inp, pressed);
+  else if (n.phase === 'artery') stepArtery(n, inp, pressed);
+  else if (n.phase === 'bag') stepBag(n, inp, pressed);
   else {
     const [u, v] = bandUV(tip[0], tip[2]);
     const inBed = u > -0.2 && u < BAND_LEN + 0.2;
@@ -375,7 +447,7 @@ function stepChole(n: LapState, inp: LapInput, pressed: boolean[]) {
     if (hookOn && !deep && inBed) {
       n.band = burnCells(n.band, BAND, u, v, 0.11);
       if (clearedIn(n.band, BAND) >= 0.92) {
-        n.done = true;
+        n.phase = 'bag';
         n.warn = '';
       }
     }

@@ -387,6 +387,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       caption: (text) => {
         if (text === capText || !cap.current) return;
         capText = text;
+        if (!text) return void cap.current.replaceChildren(); // không có chú thích: để khung rỗng thật sự (lớp `empty:hidden` ẩn nó)
         const [head, ...rest] = text.split('\n');
         cap.current.replaceChildren(Object.assign(document.createElement('b'), {className: 'block text-[13px] font-semibold', textContent: head}), ...rest.map((r) => Object.assign(document.createElement('span'), {className: 'block text-xs opacity-75', textContent: r})));
       },

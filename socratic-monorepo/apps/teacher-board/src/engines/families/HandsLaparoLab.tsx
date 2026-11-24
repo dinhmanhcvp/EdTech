@@ -1,7 +1,7 @@
 'use client';
 
 import React, {useEffect, useReducer, useRef, useState} from 'react';
-import {BENCH, CHOLE_PHASES, LAP_TASKS, PASS_SCORE, RIGHT_TOOL_NAME, lapScore, newLap, type LapTaskId, type RightTool} from '../../utils/lab/hands/laparo';
+import {clampScope, BENCH, CHOLE_PHASES, LAP_TASKS, PASS_SCORE, RIGHT_TOOL_NAME, lapScore, newLap, type LapTaskId, type RightTool} from '../../utils/lab/hands/laparo';
 import {BAND, MEMB, WINDOW, clearedIn} from '../../utils/lab/hands/lapDissect';
 import {BTN_GHOST} from './Controls';
 import type {LaparoLive} from './HandsLaparo3D';
@@ -43,13 +43,41 @@ export const LaparoLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => {
   }, []);
   useEffect(() => {
     const swap = (e: KeyboardEvent) => {
-      if (e.code !== 'Space' || (e.target as HTMLElement | null)?.closest?.('input, textarea, select')) return;
+      if ((e.target as HTMLElement | null)?.closest?.('input, textarea, select')) return;
+      // ống soi: mũi tên lia tâm nhìn, +/− (hoặc PageUp/PageDown) đưa ống soi vào / ra, 0 về khung chuẩn
+      const sc = live.scope ?? {zoom: 1, x: 0, z: 0};
+      const PAN: Record<string, [number, number]> = {ArrowLeft: [-0.25, 0], ArrowRight: [0.25, 0], ArrowUp: [0, -0.25], ArrowDown: [0, 0.25]};
+      if (PAN[e.code]) {
+        e.preventDefault();
+        live.scope = clampScope({...sc, x: sc.x + PAN[e.code][0], z: sc.z + PAN[e.code][1]});
+        return;
+      }
+      if (e.key === '+' || e.key === '=' || e.code === 'PageUp' || e.key === '-' || e.code === 'PageDown') {
+        e.preventDefault();
+        live.scope = clampScope({...sc, zoom: sc.zoom * (e.key === '+' || e.key === '=' || e.code === 'PageUp' ? 0.88 : 1.14)});
+        return;
+      }
+      if (e.key === '0') {
+        live.scope = {zoom: 1, x: 0, z: 0};
+        return;
+      }
+      if (e.code !== 'Space') return;
       e.preventDefault();
       live.mouseHand = live.mouseHand ? 0 : 1;
       tick();
     };
+    // lăn chuột trên cảnh = đưa ống soi vào / ra (Stage3D chặn lăn để không cuộn trang; nghe ở pha bắt)
+    const wheel = (e: WheelEvent) => {
+      if (!(e.target as HTMLElement | null)?.closest?.('[data-testid=scene-3d]')) return;
+      const sc = live.scope ?? {zoom: 1, x: 0, z: 0};
+      live.scope = clampScope({...sc, zoom: sc.zoom * Math.exp(e.deltaY * 0.0012)});
+    };
     window.addEventListener('keydown', swap);
-    return () => window.removeEventListener('keydown', swap);
+    window.addEventListener('wheel', wheel, {capture: true, passive: true});
+    return () => {
+      window.removeEventListener('keydown', swap);
+      window.removeEventListener('wheel', wheel, {capture: true});
+    };
   }, [live]);
   if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') (window as unknown as {__laparo?: LaparoLive}).__laparo = live;
   const s = live.st;
@@ -57,6 +85,7 @@ export const LaparoLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => {
   const b = BENCH[s.task];
   const restart = (task: LapTaskId) => {
     live.st = newLap(task);
+    live.scope = {zoom: 1, x: 0, z: 0};
     live.right = task === 'clip' ? 'clip' : task === 'chole' ? 'hook' : 'grasper';
     live.mouseHand = task === 'clip' || task === 'chole' ? 1 : 0;
     setEpoch((e) => e + 1);
@@ -64,7 +93,7 @@ export const LaparoLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => {
   const task = LAP_TASKS.find((t) => t.id === s.task)!;
   return (
     <Shell
-      hint="Mỗi tay điều khiển một dụng cụ qua điểm tựa ở thành bụng: tay sang phải thì mũi sang trái. Chụm để kẹp, nhả để buông. Dùng chuột: Space đổi tay; ở bước cần giữ, bấm một lần để khóa kẹp, bấm lần nữa để nhả."
+      hint="Mỗi tay điều khiển một dụng cụ qua điểm tựa ở thành bụng: tay sang phải thì mũi sang trái. Chụm để kẹp, nhả để buông. Dùng chuột: Space đổi tay; ở bước cần giữ, bấm một lần để khóa kẹp, bấm lần nữa để nhả. Ống soi (người phụ mổ): lăn chuột hoặc +/− để đưa vào / ra, phím mũi tên để lia, 0 về khung chuẩn."
       render={(input, onFail) => <Laparo3D key={epoch} input={input} live={live} onFail={onFail} />}
       lens={<ScopeFrame live={live} />}
     >
@@ -93,7 +122,7 @@ export const LaparoLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => {
             const at = CHOLE_PHASES.findIndex((q) => q.id === s.phase);
             const ok = i < at || (s.done && !s.bled);
             const now = i === at && !s.done;
-            const pct = p.id === 'expose' ? clearedIn(s.memb, MEMB, WINDOW) / 0.85 : p.id === 'bed' ? clearedIn(s.band, BAND) / 0.92 : 0;
+            const pct = p.id === 'expose' ? clearedIn(s.memb, MEMB, WINDOW) / 0.85 : p.id === 'cvs' ? s.cvs.filter(Boolean).length / 2 : p.id === 'bed' ? clearedIn(s.band, BAND) / 0.92 : p.id === 'bag' ? (s.bagged ? 1 : s.gbHeld ? 0.5 : 0) : 0;
             return (
               <li key={p.id} className={`flex gap-2 rounded-lg px-2 py-1 text-xs ${now ? 'bg-white font-semibold' : ''}`}>
                 <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${ok ? 'bg-[#1F7A4D] text-white' : now ? 'bg-[#D9481C] text-white' : 'bg-[#1D1B16]/10'}`}>{ok ? '✓' : i + 1}</span>

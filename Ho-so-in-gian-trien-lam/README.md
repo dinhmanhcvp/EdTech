@@ -46,8 +46,9 @@ Tệp `*_DUONG-CAT.pdf` là đường bế (nét hồng), không in.
 
 ## Vận hành trạm Lab 3D qua webcam (mặt tiền phải)
 
-- **Thiết bị:** màn 50" nằm ngang (đáy cách sàn 1 000), webcam 1080p góc rộng khoảng 78° đặt giữa mép trên màn, chúc xuống khoảng 15°, đèn LED 4000K dài 560 mm ngay trên webcam chiếu vào tay khách. Laptop có GPU tốt vì nhận diện tay chạy trên GPU.
-- **Chạy:** trên laptop của trạm, trong `socratic-monorepo` chạy `npm run dev`, mở Chrome tại `http://localhost:3001/lab?bai=heart-surgery` (camera chỉ bật được trên localhost hoặc https), bấm F11 toàn màn hình.
+- **Bố trí:** màn 50" lùi vào 440 mm thành hốc, đáy màn cách sàn 1 150. Phía trước là **bàn thao tác cao 950** (mặt in tối, cán MỜ). **Webcam treo trên tay cần thép** vươn ra 230 mm từ đỉnh mặt tiền, cao khoảng 2 080, **nhìn thẳng xuống mặt bàn**, có vòng đèn 4000K quanh camera chiếu sáng tay.
+- **Webcam:** 1080p, góc ngang khoảng 60–70° (góc rộng hơn thì tay nhỏ trong khung). Ở độ cao này camera bao khoảng 1,4 × 0,8 m mặt bàn và không thấy người đứng phía sau.
+- **Khớp hướng tay:** bật camera trong Lab, đưa tay sang phải. Nếu hình tay chạy sang trái thì tích "Lật trái–phải"; đẩy tay về phía màn mà hình đi xuống thì tích "Lật trên–dưới". Lab tự nhớ lựa chọn trên máy đó.
+- **Chạy:** trên laptop của trạm, trong `socratic-monorepo` chạy `npm run dev`, mở Chrome tại `http://localhost:3001/lab?bai=heart-surgery` (camera chỉ bật được trên localhost hoặc https), bấm F11.
 - **Mạng:** lần bật camera đầu tiên phải tải mô hình nhận diện tay từ jsDelivr và Google Storage. Mở thử ít nhất một lần khi có mạng vào sáng 29/11, hoặc chép hai tệp này vào `public/` theo ghi chú đầu `apps/teacher-board/src/utils/lab/hands/handTracker.ts`.
-- **Chỗ đứng:** khách đứng ở vòng "Giơ tay" cách mặt tiền khoảng 1,1 m. Lab nhận tối đa 2 bàn tay: chỉnh góc chúc của camera để khung hình chỉ lấy người đang chơi, không lấy người đứng sau. Kiểm tra bằng khung hình camera trong Lab trước giờ mở cửa.
 - **Bài gợi ý cho khách thử nhanh (1–2 phút):** `heart-surgery`, `soft-tissue`, `chem`, `robot`, `drone`. Thử từng bài trên đúng máy của trạm trước ngày triển lãm.

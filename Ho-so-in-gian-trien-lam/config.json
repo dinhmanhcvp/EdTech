@@ -36,8 +36,13 @@
   "kiosk2": {
     "_ghiChu": "Mặt tiền phải: trạm Lab 3D, màn 50 inch nằm ngang + webcam + đèn chiếu tay. Đo viền ngoài thật của màn 50.",
     "rong": 1320, "cao": 2200, "sau": 720,
-    "manRong": 1120, "manCao": 650, "khe": 5, "dayMan": 1000, "lechNgang": 0,
-    "tieuDe": "Thí nghiệm ", "tieuDeNghieng": "bằng tay.", "phu": "No touching: raise your hands to the camera.", "khayBut": false, "huongDanTay": true
+    "manRong": 1120, "manCao": 650, "khe": 5, "dayMan": 1150, "lechNgang": 0,
+    "tieuDe": "Thí nghiệm ", "tieuDeNghieng": "bằng tay.", "phu": "Hands over the table. The camera watches from above.", "khayBut": false, "huongDanTay": true
+  },
+
+  "banThaoTac": {
+    "_ghiChu": "Bàn thao tác trước trạm Lab, camera treo trên nhìn thẳng xuống. Mặt bàn in nền tối MỜ để camera nhận tay tốt và không lóa.",
+    "rong": 1100, "sau": 440, "cao": 950
   },
 
   "leu": {

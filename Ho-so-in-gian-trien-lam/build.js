@@ -237,6 +237,21 @@ function artBlade() {
   ${letters}<div style="position:absolute;left:${r - 150}mm;top:${r - 175}mm">${markSVG(340, C.fg, C.orange, C.blueL)}</div>`;
 }
 
+// Bàn thao tác Lab: mặt trên (vùng đặt tay) + mặt trước
+async function artDeskTop() {
+  const T = cfg.banThaoTac, W = T.rong, D = T.sau, pw = W * 0.64, ph = D - 60;
+  const br = (x, y, sx, sy) => `<div style="position:absolute;left:${sx > 0 ? x : x - 46}mm;top:${sy > 0 ? y : y - 46}mm;width:46mm;height:46mm;${sx > 0 ? 'border-left' : 'border-right'}:3mm solid ${C.blueL};${sy > 0 ? 'border-top' : 'border-bottom'}:3mm solid ${C.blueL}"></div>`;
+  return grid(W, D, 20, C.gridD, 0.4) + br(40, 30, 1, 1) + br(40 + pw, 30, -1, 1) + br(40, 30 + ph, 1, -1) + br(40 + pw, 30 + ph, -1, -1) +
+    A(40, 70, pw, `<div style="text-align:center;font:800 34mm 'Plus Jakarta Sans';color:${C.fg}">ĐẶT TAY Ở ĐÂY</div>${en(24, C.blueL, 'Hands here · camera above', 'text-align:center;margin-top:4mm')}`) +
+    A(80, D - 150, pw - 80, `<div style="display:flex;gap:12mm">${['Chụm · pinch', 'Kéo · move', 'Mở tay · open'].map((t) => `<div style="flex:1;border:2mm solid ${C.blueL};border-radius:12mm;padding:16mm 0;text-align:center;font:700 22mm 'Plus Jakarta Sans';color:${C.fg}">${t}</div>`).join('')}</div>`) +
+    A(40 + pw + 40, 40, W - pw - 120, (await qr(cfg.qrDungThu, Math.min(W - pw - 120, D - 120), 'qrDungThu')) + `<div style="text-align:center;font:700 20mm 'Plus Jakarta Sans';color:${C.fg};margin-top:8mm">Quét để thử</div>`);
+}
+function artDeskFront() {
+  const T = cfg.banThaoTac, W = T.rong, H = T.cao - 60;
+  return grid(W, H, 50, C.gridD, 0.5) + A(50, 50, W - 100, mono(18, C.blueL, '// LAB 3D · HAND TRACKING · 37 BÀI')) +
+    A(50, 110, W - 100, `<div style="font:800 64mm/1 'Plus Jakarta Sans';color:${C.fg}">Không cần chạm.</div>${en(40, C.blueL, 'Just move your hands.', 'margin-top:8mm')}`) + blueBand(W, H - 110);
+}
+
 // Totem tam giác: 3 mặt 600 × 2200
 const TW = 600, TH = 2200;
 function artTotemA() {
@@ -371,6 +386,8 @@ async function items() {
     add({ group: '01-khung-va-bat', code: code + '-TRUOC', name: ten + ' (mặt trước, khoét ô màn)', w: KO.rong, h: k.panelH, bleed: 10, bg: C.ink, html: await artKioskFront(KO, q), die: dieKioskFront(KO), mat: 'Decal PP in UV cán mờ trên ACP/fomex 10 mm, cắt CNC ô màn', fin: `Ô khoét ${k.cutW} × ${k.cutH}, mép dưới ô cách sàn ${KO.dayMan - KO.khe}; mặt tấm phẳng với mặt viền màn ±5`, qty: 1, where: 'Mặt tiền, sát mép trước lều' });
     add({ group: '01-khung-va-bat', code: code + '-HONG', name: ten + ' (mặt hông)', w: KO.sau, h: KO.cao - KICK, bleed: 10, bg: C.ink, html: artKioskSide(KO), mat: 'Decal PP in UV cán mờ trên fomex 10 mm', fin: 'Khe LED dọc 14 mm (nét đứt hồng) phay sẵn', qty: 1, where: key === 'kiosk' ? 'Hông trái mặt tiền' : 'Hông phải mặt tiền' });
   }
+  CUR = 'BT'; add({ group: '01-khung-va-bat', code: 'BT-MAT', name: 'Bàn thao tác Lab — mặt trên (vùng đặt tay)', w: cfg.banThaoTac.rong, h: cfg.banThaoTac.sau, bleed: 10, bg: '#0A0B0F', html: await artDeskTop(), mat: 'Decal PP in UV cán MỜ chống lóa (không cán bóng) trên MDF/ACP', fin: 'Gấp mép 10 mm; mặt bàn cao 950, camera treo trên cao 2 080 nhìn thẳng xuống', qty: 1, where: 'Trước trạm Lab 3D, mặt tiền phải' });
+  add({ group: '01-khung-va-bat', code: 'BT-TRUOC', name: 'Bàn thao tác Lab — mặt trước', w: cfg.banThaoTac.rong, h: cfg.banThaoTac.cao - 60, bleed: 10, bg: C.ink, html: artDeskFront(), mat: 'Decal PP in UV cán mờ', fin: 'Chân lùi 60, dải LED dưới mép mặt bàn', qty: 1, where: 'Mặt trước bàn thao tác' });
   CUR = 'BV'; add({ group: '01-khung-va-bat', code: 'BV', name: 'Biển vẫy hộp đèn tròn Ø640 (mỗi mặt)', w: 640, h: 640, bleed: 5, bg: '#fff', html: artBlade(), die: dieCircle(640), mat: 'Bạt xuyên sáng (backlit) hoặc mica sữa in UV, hộp đèn LED 2 mặt dày 60', fin: 'Bế tròn; tay vươn 450 kẹp vào cột trước của lều, đáy biển cao 2 500', qty: 4, where: '2 biển × 2 mặt, ở 2 cột trước, vuông góc lối đi' });
   CUR = 'TT'; add({ group: '01-khung-va-bat', code: 'TT-A', name: 'Totem tam giác — mặt A', w: TW, h: TH, bleed: 10, bg: C.ink, html: artTotemA(), mat: 'Decal PP in UV trên fomex 5 mm', fin: 'Dán lên khung tam giác sắt, đế đổ cát 15 kg', qty: 1, where: 'Góc trước trái, ngoài cổng' });
   add({ group: '01-khung-va-bat', code: 'TT-B', name: 'Totem tam giác — mặt B (giải thưởng)', w: TW, h: TH, bleed: 10, bg: C.ink, html: artTotemB(), mat: 'Decal PP in UV trên fomex 5 mm', fin: 'Như mặt A', qty: 1, where: 'Mặt hướng lối đi chính' });

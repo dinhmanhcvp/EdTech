@@ -1,3 +1,8 @@
+# 2026-11-24 (8) — Webcam Lab treo trên, nhìn xuống bàn thao tác
+- `/lab` đã hỗ trợ sẵn camera trên cao nhìn xuống (gợi ý trong `HandsLab.tsx`; nút "Lật trái–phải"/"Lật trên–dưới" lưu localStorage) → không sửa mã ứng dụng.
+- Studio khóa lưu v6: trạm Lab lùi thành hốc (kiosk2 z 680, đáy màn 1 150), `handdesk` bàn thao tác 1100 × 440 cao 950 (mặt in tối mờ), `overcam` tay cần + webcam cao 2 080 nhìn xuống, góc 65° × 40°, vùng nhìn hiển thị tới mặt bàn.
+- Hồ sơ in: `config.banThaoTac` → BT-MAT (cán MỜ) và BT-TRUOC; KO2 đáy màn 1 150. 33 hạng mục. README cập nhật vận hành.
+
 # 2026-11-24 (7) — Logo mới, QR demo, cụm 3 gian
 - Logo mới (`Ho-so-in-gian-trien-lam/logo/build-logo.js` → `logo/out/`): móc "?" = cung ống kính r30 (nét 13), cung xanh con ngươi r14, chấm cam; chữ "Socratic" (Plus Jakarta Sans 800) + "VISION BOARD" (JetBrains Mono 600, giãn .36em) đã chuyển thành path bằng opentype.js. Đường nét lưu `mark-paths.json`, dùng lại trong build.js (`markSVG`) và studio (`ringQ` → Path2D).
 - QR `https://svb-stem.vercel.app` (config.qrDungThu): bản trơn mức M và bản có logo mức H; đã giải mã thử bằng OpenCV ra đúng link. Máy dựng không mở được vercel.app nên chưa kiểm tra trang.

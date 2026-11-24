@@ -1,4 +1,6 @@
-# Hồ sơ in ấn — gian triển lãm Socratic Vision Board (3 × 3 m)
+# Hồ sơ in ấn — gian lều 3 × 3 m, STEM Carnival · AIROC 2026 International
+
+Nhà thi đấu thể thao Phú Thọ · lắp 13h30–16h30 ngày 28/11/2026 · trưng bày 6h30–17h00 ngày 29/11/2026 · đơn vị trưng bày: UBND phường Phúc Yên.
 
 Bộ file in tỷ lệ 1:1 để gửi đơn vị in ấn quảng cáo, kèm bảng kê hạng mục. Toàn bộ file được sinh từ `config.json`, nên chỉ cần điền thông tin thật rồi chạy lại là xong.
 
@@ -9,19 +11,21 @@ Gửi nguyên thư mục `out/`:
 | Thư mục | Nội dung |
 |---|---|
 | `00_BANG-KE-IN-AN.pdf` | Bảng kê: mã, kích thước, tràn lề, vật liệu, gia công, số lượng, vị trí, trạng thái file, mã màu CMYK |
-| `01-kho-lon/` | In khổ lớn: phủ 3 vách (mỗi vách 3 tấm), bảng tên cửa gian, standee, ốp quầy, decal sàn, 5 tấm câu chuyện |
-| `02-an-pham-nho/` | Tờ A5 hai mặt, sticker, 4 thẻ đeo (có dấu cắt) |
+| `01-khung-va-bat/` | Backdrop BD (bạt căng khung, biên 50), khung cổng K-DAU + K-CHAN (fomex CNC, có đường cắt), 2 cánh mặt trong + mặt ngoài, totem 3 mặt TT-A/B/C, quầy Q-TRUOC/Q-HONG, cờ buồm CO, huy hiệu HH, decal sàn D01 |
+| `02-an-pham-nho/` | Tờ A5 song ngữ (mặt Việt, mặt Anh), sticker, 4 thẻ đeo (có dấu cắt) |
 | `03-mica-laser/` | 5 tấm mica cho tháp 5 lớp: nét đỏ 0,01 mm là đường cắt, nét đen là phần khắc |
 | `xem-truoc/` | Ảnh PNG xem nhanh từng hạng mục |
+
+Bản vẽ khung (kích thước, vật liệu, đối trọng, trình tự lắp 3 giờ) nằm ở bảng 11 trên canvas thiết kế.
 
 Tệp `*_DUONG-CAT.pdf` là đường bế (nét hồng), không in.
 
 ## Trước khi gửi in
 
-1. **Đo vách thật tại gian.** File đang làm theo tấm nhìn thấy 950 × 2 350 mm, 3 tấm mỗi vách. Nếu khác, sửa mục `vach` trong `config.json`.
+1. **Hỏi BTC loại lều và đo:** chiều cao mép mái (đang giả định 2 500) và bề rộng trong cột (2 920). Khác thì sửa mục `leu` trong `config.json`: cổng, backdrop và cánh tự đổi kích thước.
 2. **Điền mọi ô `[ ... ]`** trong `config.json`: số gian, tên trường, tên thành viên, mốc thời gian, số liệu thử nghiệm, liên hệ.
 3. **Logo và ảnh:** chép vào `assets/` rồi ghi tên tệp vào `logoBTC`, `logoTruong`, `thanhVien[].anh`, `cauChuyen[].anh`.
-   - Logo Sở GD&ĐT Phú Thọ: chỉ dùng file chính thức do Ban tổ chức cấp.
+   - Logo Sở GD&ĐT Phú Thọ và UBND phường Phúc Yên: chỉ dùng file chính thức.
    - Ảnh in khổ lớn: cạnh ngắn tối thiểu 1 500 px.
 4. **Link QR:** điền `qrDungThu` (trang dùng thử) và `qrLienHe` (form liên hệ). Mã QR được tạo thật từ link.
 5. **Chạy lại** (cần Node 18+ và Playwright có Chromium):

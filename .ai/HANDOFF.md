@@ -1,3 +1,9 @@
+# 2026-11-24 (2) — Hồ sơ in chuyển sang gian lều AIROC 2026 (`Ho-so-in-gian-trien-lam/`)
+- Theo công văn Sở GD&ĐT (STEM Carnival, VCK AIROC 2026 Quốc tế, Nhà thi đấu Phú Thọ; lắp 13h30–16h30 28/11, trưng bày 6h30–17h00 29/11; đơn vị UBND phường Phúc Yên; Giải Nhất cấp tỉnh): gian là LỀU BẠT 3×3 NGOÀI TRỜI, không có vách chuẩn → bỏ bộ phủ vách V-*, T01–T05, F01.
+- Bộ mới (26 PDF, song ngữ Việt–Anh): BD backdrop, K-DAU/K-CHAN khung cổng chữ U bo góc R250 (có đường cắt CNC), C-TRONG-T/P + C-NGOAI cánh, TT-A/B/C totem tam giác, Q-TRUOC/Q-HONG, CO cờ buồm, HH huy hiệu Giải Nhất Ø440 (gắn nổi trên totem), D01, A5 Việt/Anh, ST, TD1–4, M01–05. Kích thước tính từ `config.leu` (cao mép mái 2500, rộng trong cột 2920 — giả định, cần đo).
+- Băng tên cổng 350 để lòng cổng 2050: tia nhìn mắt 1,6 m cách 3 m tới đỉnh backdrop đi qua cổng ở ≈2000.
+- Canvas thiết kế thêm bảng 10 (phối cảnh CSS 3D từ lối đi) và 11 (bản vẽ khung, vật tư, lắp 3 giờ); bảng 09 cập nhật.
+
 # 2026-11-24 — Hồ sơ in ấn gian triển lãm (`Ho-so-in-gian-trien-lam/`, bounded context media mới, không import runtime)
 - Bộ sinh file in 1:1: `config.json` (số gian, trường, thành viên, câu chuyện, link QR, logo/ảnh trong `assets/`, kích thước tấm vách) → `npm run build` (Playwright + `qrcode`) → `out/`: 29 PDF vector (9 tấm phủ vách 950×2350 tràn 10, F01 fascia, S01 standee, Q01 ốp quầy, D01 decal sàn + đường bế, T01–T05 tấm Format, A5 2 mặt, sticker + đường bế, 4 thẻ đeo, 5 tấm mica laser) + `00_BANG-KE-IN-AN.pdf` (vật liệu, gia công, SL, vị trí, CMYK tham khảo, trạng thái từng file) + `xem-truoc/*.png`.
 - Font tải về `fonts/` (OFL). Ô `[ ... ]`, ảnh/logo/QR còn trống được dựng thành ô giữ chỗ và bảng kê ghi "CHƯA ĐỦ" — chưa được gửi in khi còn ô này.

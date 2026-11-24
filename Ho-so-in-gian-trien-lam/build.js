@@ -103,165 +103,193 @@ ${cm}
 </div></div></body></html>`;
 }
 
-// ---------- vách ----------
-const VW = cfg.vach.rongTam, VH = cfg.vach.caoTam, VN = cfg.vach.soTam;
-const WALL_W = VW * VN;
-const SKIRT_TOP = VH - 150; // chân vách xanh cao 150 mm
-
-function artBack(q) {
-  const x1 = 120, x2 = VW + 50, x3 = 2 * VW + 60;
-  const metrics = [['&lt;16', ' ms', 'độ trễ nét viết'], ['&lt;15', ' ms', 'nhận diện tại chỗ'], ['10', '', 'mô phỏng STEM nâng cao'], ['37', '', 'bài Lab điều khiển bằng tay']]
-    .map(([n, u, l]) => `<div style="border-top:1.5mm solid ${C.line};padding-top:16mm;margin-bottom:34mm"><div style="font:500 82mm/1 'JetBrains Mono';letter-spacing:-.02em;color:${C.fg}">${n}<span style="font-size:38mm;color:${C.mute}">${u}</span></div><div style="font:500 24mm/1.3 'Plus Jakarta Sans';color:${C.mute};margin-top:8mm">${l}</div></div>`).join('');
-  const layers = ['Nét mực', 'Nhận diện', 'Suy luận', 'Hỏi Socratic', 'Ghi nhớ']
-    .map((l, i) => A(x3, 600 + i * 165, 190, `<div style="display:flex;align-items:baseline;gap:6mm"><span style="font:600 30mm 'JetBrains Mono';color:${i === 3 ? C.orangeL : C.blueL}">0${i + 1}</span></div><div style="font:500 19mm/1.2 'Plus Jakarta Sans';color:${C.mute2}">${l}</div><div style="position:absolute;left:150mm;top:18mm;width:${2150 - x3 - 160}mm;height:1.5mm;background:${C.line}"></div>`)).join('');
-  return grid(WALL_W, VH, 100, C.gridD, 0.6) + corners(WALL_W, VH - 150, 60, 80, 4, '#6E6A62') +
-    // ô 1
-    A(x1, 150, 760, mono(22, C.blueL, '// TRIỂN LÃM CÔNG NGHỆ · KHỞI NGHIỆP')) +
-    A(x1, 205, 800, `<div style="font:800 100mm/1.02 'Plus Jakarta Sans';letter-spacing:-.03em;color:${C.fg};white-space:nowrap">Viết một câu.</div><div style="font:italic 400 108mm/1.02 'Newsreader';color:${C.blueL};white-space:nowrap">Xem AI nghĩ.</div>`) +
-    A(x1, 470, 400, `<div style="font:500 24mm/1.4 'Plus Jakarta Sans';color:${C.mute2}">Bảng tương tác AI biết hỏi lại học sinh, không đưa sẵn đáp án.</div>`) +
-    A(x1, 720, 380, metrics) +
-    // ô 2
-    A(x2, 150, 850, wordmark(54, C.fg)) +
-    A(x2, 470, 850, mono(20, C.mute, 'FIG.01 — BẢNG TƯƠNG TÁC · PHIÊN TRỰC TIẾP')) +
-    A(x2, 1430, 850, `<div style="border:2mm solid #57534E;border-radius:10mm;padding:22mm 28mm;display:flex;justify-content:space-between;align-items:center"><span style="font:700 38mm 'Plus Jakarta Sans';color:${C.fg}">Thử: viết một phương trình</span><span style="font:500 24mm 'JetBrains Mono';color:${C.orangeL}">bút ở đây ↓</span></div>`) +
-    // ô 3
-    A(x3, 150, 830, mono(22, C.blueL, '// HỘP KÍNH · PIPELINE')) +
-    A(x3, 205, 830, `<div style="font:400 66mm/1.06 'Newsreader';color:${C.fg}">Nhìn AI nghĩ,<br><i style="color:${C.blueL}">từng lớp một.</i></div>`) +
-    layers +
-    A(x3, 1620, 830, mono(20, C.mute, 'ƯƠM MẦM BỞI') + `<div style="font:700 38mm/1.2 'Plus Jakarta Sans';color:${C.fg};margin-top:8mm">Sở Giáo dục và Đào tạo Phú Thọ</div>`) +
-    A(x3, 1800, 830, `<div style="display:flex;gap:26mm;align-items:center">${img(cfg.logoBTC, 'LOGO BTC (file chính thức)', 230, 230, true)}<div style="font:500 26mm/1.4 'Plus Jakarta Sans';color:${C.mute2}">Dự án khởi nghiệp học sinh<br><b style="color:${C.fg}">${T(cfg.tenTruong)}</b></div></div>`) +
-    `<div style="position:absolute;left:-40mm;top:${SKIRT_TOP}mm;width:${WALL_W + 80}mm;height:200mm;background:${C.blue}"></div>`;
+// ---------- kích thước theo lều 3 × 3 m (sửa trong config.leu) ----------
+const LEU = cfg.leu;
+const PW = LEU.rongTrongCot - 20;      // bề rộng khung cổng và backdrop
+const PH = LEU.caoMepMai - 100;        // cao khung cổng
+const BH = LEU.caoMepMai - 200;        // cao backdrop và cánh
+const HEAD = 700, BAR = 300, BAND = 350, R = 250; // đầu cổng, bề rộng chân, băng tên, bán kính bo góc
+const LEG = PH - HEAD;
+const WW = 900;                         // bề rộng cánh
+const blueBand = (w, top) => `<div style="position:absolute;left:-80mm;top:${top}mm;width:${w + 160}mm;height:300mm;background:${C.blue}"></div>`;
+const en = (size, color, txt, extra = '') => `<div style="font:italic 400 ${size}mm/1.25 'Newsreader';color:${color};${extra}">${txt}</div>`;
+const pipe = ['Nét mực', 'Nhận diện', 'Suy luận', 'Hỏi Socratic', 'Ghi nhớ'];
+const pipeEn = ['Ink', 'Recognition', 'Reasoning', 'Socratic questions', 'Knowledge tracing'];
+const pipeV = ['&lt;16 ms', '&lt;15 ms', 'tất định', '4 mức', 'BKT'];
+function pipeBars(w, fs, gap) {
+  return pipe.map((p, k) => `<div style="display:flex;align-items:center;gap:${fs * 0.6}mm;border-radius:${fs * 0.25}mm;padding:${fs * 0.45}mm ${fs * 0.7}mm;margin-bottom:${gap}mm;${k === 0 ? `background:${C.blue}` : `border:${fs * 0.08}mm solid ${k === 3 ? C.orangeL : C.blueL}`}">
+    <span style="font:500 ${fs * 0.8}mm 'JetBrains Mono';color:${k === 0 ? '#DCE6FB' : (k === 3 ? C.orangeL : C.blueL)}">0${k + 1}</span>
+    <span style="font:700 ${fs}mm 'Plus Jakarta Sans';color:#fff;flex:1">${p} <span style="font:italic 400 ${fs * 0.85}mm 'Newsreader';color:${k === 0 ? '#DCE6FB' : C.mute2}">· ${pipeEn[k]}</span></span>
+    <span style="font:500 ${fs * 0.75}mm 'JetBrains Mono';color:${k === 0 ? '#fff' : C.mute2}">${pipeV[k]}</span></div>`).join('');
 }
+const bigQ = (w, h, color) => `<svg viewBox="0 0 60 100" style="width:${w}mm;height:${h}mm;display:block"><path d="M13 30 C13 9, 47 9, 47 30 C47 46, 30 46, 30 62 V68" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="30" cy="85" r="6" fill="${color}"/></svg>`;
 
-async function artLeft() {
-  const st = cfg.cauChuyen;
-  const cx = [35 + 210, 495 + 210, VW + 35 + 210, VW + 495 + 210, 2 * VW + 35 + 210];
-  const dotC = [C.orange, C.ink2, C.blue, C.ink2, C.orange];
-  const tl = cx.map((x, i) => A(x - 18, 1862, 36, `<div style="width:36mm;height:36mm;border-radius:50%;background:${dotC[i]}"></div>`) +
-    A(x - 200, 1925, 400, `<div style="text-align:center;font:500 20mm/1.3 'JetBrains Mono';color:${C.text2}">${T(st[i].moc)}</div>`)).join('');
-  const x3 = 2 * VW + 485;
-  return grid(WALL_W, VH, 100, C.gridL, 0.6) +
-    A(70, 80, 800, mono(20, C.text3, '// HÀNH TRÌNH KHỞI NGHIỆP')) +
-    A(70, 140, 860, `<div style="font:400 88mm/1 'Newsreader';color:${C.ink2};white-space:nowrap">Bắt đầu từ</div>`) +
-    A(VW + 70, 140, 860, `<div style="font:italic 400 88mm/1 'Newsreader';color:${C.orange};white-space:nowrap">một tiết học</div>`) +
-    A(2 * VW + 70, 140, 860, `<div style="font:italic 400 88mm/1 'Newsreader';color:${C.orange};white-space:nowrap">ở Phú Thọ.</div>`) +
-    A(x3, 380, VW - 485 - 50, `<div style="font:800 40mm/1.1 'Plus Jakarta Sans';color:${C.ink2}">Nhóm đang tìm</div>
-      ${['Mentor đồng hành', 'Lớp học thử nghiệm', 'Tài trợ thiết bị'].map((t, i) => `<div style="display:flex;gap:10mm;margin-top:22mm;align-items:baseline"><span style="font:600 26mm 'JetBrains Mono';color:${C.orange}">0${i + 1}</span><span style="font:600 28mm/1.25 'Plus Jakarta Sans';color:${C.ink2}">${t}</span></div>`).join('')}
-      <div style="margin-top:70mm">${await qr(cfg.qrLienHe, 240, 'qrLienHe')}</div>
-      <div style="font:500 20mm/1.35 'Plus Jakarta Sans';color:${C.text2};margin-top:14mm">Quét để liên hệ nhóm<br><b style="color:${C.ink2}">${T(cfg.lienHe)}</b></div>`) +
-    `<div style="position:absolute;left:35mm;top:1877mm;width:${WALL_W - 70}mm;height:6mm;background:${C.ink2}"></div>` + tl +
-    `<div style="position:absolute;left:-40mm;top:${SKIRT_TOP}mm;width:${WALL_W + 80}mm;height:200mm;background:${C.blue}"></div>`;
-}
-
-async function artRight() {
-  const tv = cfg.thanhVien;
-  const cells = tv.map((m, i) => {
-    const col = i % 2, row = Math.floor(i / 2);
-    return A(70 + col * 430, 430 + row * 640, 390, img(m.anh, `ẢNH ${m.ten}`, 390, 490, false) +
-      `<div style="font:700 30mm/1.2 'Plus Jakarta Sans';color:${C.ink2};margin-top:14mm">${T(m.ten)}</div><div style="font:500 20mm/1.3 'Plus Jakarta Sans';color:${C.text3}">${esc(m.vai)} · ${T(m.lop)}</div>`);
-  }).join('');
-  const x2 = VW + 70, x3 = 2 * VW + 70;
-  return grid(WALL_W, VH, 100, C.gridL, 0.6) +
-    A(70, 80, 800, mono(20, C.text3, '// ĐỘI NGŨ')) +
-    A(70, 140, 860, `<div style="font:400 88mm/1 'Newsreader';color:${C.ink2}">Những người<br><i style="color:${C.blue}">làm ra nó.</i></div>`) + cells +
-    A(x2, 80, 800, mono(20, C.text3, '// ĐỒNG HÀNH')) +
-    A(x2, 140, 860, `<div style="font:400 88mm/1 'Newsreader';color:${C.ink2}">Được ươm mầm<br><i style="color:${C.blue}">tại Phú Thọ.</i></div>`) +
-    A(x2, 470, 820, `<div style="display:flex;gap:30mm;align-items:center">${img(cfg.logoBTC, 'LOGO BTC (file chính thức)', 260, 260, false)}<div><div style="font:700 34mm/1.25 'Plus Jakarta Sans';color:${C.ink2}">Sở Giáo dục và Đào tạo Phú Thọ</div><div style="font:500 22mm/1.4 'Plus Jakarta Sans';color:${C.text3};margin-top:8mm">Đơn vị bảo trợ và ươm mầm</div></div></div>`) +
-    A(x2, 840, 820, `<div style="border-top:1.5mm solid ${C.ink2};padding-top:24mm">${mono(20, C.text3, 'GIÁO VIÊN HƯỚNG DẪN')}<div style="font:700 40mm/1.25 'Plus Jakarta Sans';color:${C.ink2};margin-top:10mm">${T(cfg.giaoVienHuongDan)}</div></div>`) +
-    A(x2, 1180, 820, `<div style="border-top:1.5mm solid ${C.ink2};padding-top:24mm;display:flex;gap:30mm;align-items:center">${img(cfg.logoTruong, 'LOGO TRƯỜNG', 200, 200, false)}<div>${mono(20, C.text3, 'TRƯỜNG')}<div style="font:700 36mm/1.25 'Plus Jakarta Sans';color:${C.ink2};margin-top:10mm">${T(cfg.tenTruong)}</div></div></div>`) +
-    A(x3, 80, 800, mono(20, C.text3, '// DÙNG THỬ')) +
-    A(x3, 140, 820, `<div style="font:800 64mm/1.05 'Plus Jakarta Sans';letter-spacing:-.02em;color:${C.ink2}">Thử gia sư<br><span style="font:italic 400 70mm 'Newsreader';color:${C.blue}">Socratic ngay.</span></div>`) +
-    A(x3, 520, 420, await qr(cfg.qrDungThu, 400, 'qrDungThu')) +
-    A(x3, 960, 760, `<div style="font:600 28mm/1.35 'Plus Jakarta Sans';color:${C.ink2}">Quét bằng điện thoại.<br><span style="font-weight:500;color:${C.text3}">Không cần cài đặt, chạy trên trình duyệt.</span></div>`) +
-    `<div style="position:absolute;left:-40mm;top:${SKIRT_TOP}mm;width:${WALL_W + 80}mm;height:200mm;background:${C.blue}"></div>`;
-}
-
-// ---------- các hạng mục khác ----------
-function artFascia() {
-  return `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 60mm">
-    <div style="font:600 110mm/1 'JetBrains Mono';background:${C.ink};color:${C.fg};padding:22mm 34mm">${T(cfg.soGian)}</div>
-    ${wordmark(118, C.ink2)}
-    <div style="text-align:right;font:500 34mm/1.3 'Plus Jakarta Sans';color:${C.text2}">Dự án khởi nghiệp<br><b style="color:${C.ink2}">${T(cfg.tenTruong)} · Phú Thọ</b></div></div>
-    <div style="position:absolute;left:-10mm;bottom:-10mm;width:3100mm;height:22mm;background:${C.blue}"></div>`;
-}
-
-async function artStandee() {
-  const bars = [['05', 'Ghi nhớ', C.fg], ['04', 'Hỏi Socratic', C.orangeL], ['03', 'Suy luận', C.blueL], ['02', 'Nhận diện', C.blueL], ['01', 'Nét mực', null]]
-    .map(([n, l, c], i) => `<div style="display:flex;align-items:center;gap:14mm;height:66mm;padding:0 22mm;margin:0 ${80 - i * 20}mm 12mm ${i * 20}mm;border-radius:6mm;${c ? `border:2.5mm solid ${c}` : `background:${C.blue}`}"><span style="font:500 22mm 'JetBrains Mono';color:${c || '#DCE6FB'}">${n}</span><span style="font:700 28mm 'Plus Jakarta Sans';color:#fff">${l}</span></div>`).join('');
-  return grid(800, 2100, 80, C.gridD, 0.5) + corners(800, 2000, 30, 50, 3, '#6E6A62') +
-    A(70, 90, 660, mono(18, C.blueL, '// DỰ ÁN KHỞI NGHIỆP HỌC SINH')) +
-    A(70, 150, 680, `<div style="font:800 118mm/0.98 'Plus Jakarta Sans';letter-spacing:-.035em;color:${C.fg}">Bảng lớp<br>biết <i style="font:italic 400 124mm 'Newsreader';color:${C.blueL};letter-spacing:-.02em">hỏi lại.</i></div>`) +
-    A(70, 470, 640, `<div style="font:500 26mm/1.45 'Plus Jakarta Sans';color:${C.mute2}">Học sinh viết tay lên bảng. AI nhận diện ngay trên máy, dựng mô phỏng và hỏi gợi mở, không đưa sẵn đáp án.</div>`) +
-    A(70, 690, 660, bars) +
-    A(70, 1110, 660, `<div style="display:grid;grid-template-columns:1fr 1fr;border-top:1.2mm solid ${C.line};border-left:1.2mm solid ${C.line}">${[['&lt;16 ms', 'độ trễ nét viết'], ['&lt;15 ms', 'nhận diện tại chỗ'], ['10', 'mô phỏng STEM'], ['37', 'bài Lab bằng tay']].map(([a, b]) => `<div style="border-right:1.2mm solid ${C.line};border-bottom:1.2mm solid ${C.line};padding:18mm 20mm"><div style="font:500 50mm/1 'JetBrains Mono';color:${C.fg}">${a}</div><div style="font:500 18mm/1.3 'Plus Jakarta Sans';color:${C.mute};margin-top:6mm">${b}</div></div>`).join('')}</div>`) +
-    A(70, 1500, 660, `<div style="display:flex;gap:30mm;align-items:center">${await qr(cfg.qrDungThu, 230, 'qrDungThu')}<div style="font:700 32mm/1.25 'Plus Jakarta Sans';color:${C.fg}">Quét để thử<br>gia sư Socratic<div style="font:500 18mm 'JetBrains Mono';color:${C.mute};margin-top:10mm">không cần cài đặt</div></div></div>`) +
-    A(70, 1800, 660, `<div style="border-top:1.2mm solid ${C.line};padding-top:22mm;display:flex;justify-content:space-between;align-items:center"><div style="font:500 18mm/1.35 'Plus Jakarta Sans';color:${C.mute}">Ươm mầm bởi<br><b style="color:${C.fg}">Sở GD&amp;ĐT Phú Thọ</b></div>${img(cfg.logoBTC, 'LOGO BTC', 110, 110, true)}</div>`) +
-    `<div style="position:absolute;left:-20mm;top:2000mm;width:840mm;height:120mm;background:${C.ink}"></div>`;
-}
-
-function artCounter() {
-  return grid(1400, 1000, 100, C.gridD, 0.6) +
-    // chữ quá lớn (> ~1000 px) bị Chromium bỏ khi in PDF → vẽ dấu "?" bằng nét vector
-    A(880, 60, 460, `<svg viewBox="0 0 60 100" style="width:460mm;height:767mm;display:block"><path d="M13 30 C13 9, 47 9, 47 30 C47 46, 30 46, 30 62 V68" fill="none" stroke="${C.orange}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="30" cy="85" r="6" fill="${C.orange}"/></svg>`) +
-    A(90, 110, 820, mono(20, C.blueL, '// MỜI BẠN VÀO THỬ')) +
-    A(90, 165, 880, `<div style="font:800 104mm/1 'Plus Jakarta Sans';letter-spacing:-.03em;color:${C.fg}">Bảng lớp</div><div style="font:italic 400 112mm/1.05 'Newsreader';color:${C.blueL}">biết hỏi lại.</div>`) +
-    A(90, 440, 700, `<div style="font:500 30mm/1.45 'Plus Jakarta Sans';color:${C.mute2}">Viết một câu lên bảng phía sau. Xem AI nghĩ từng bước, ngay trên tháp mica này.</div>`) +
-    A(90, 700, 1000, wordmark(40, C.fg)) +
-    `<div style="position:absolute;left:-30mm;top:850mm;width:1460mm;height:180mm;background:${C.blue}"></div>`;
-}
-
-function artFloor() {
-  return `<div style="position:absolute;left:-5mm;top:-5mm;width:810mm;height:810mm;border-radius:50%;background:${C.orange}"></div>
-    <div style="position:absolute;left:55mm;top:55mm;width:690mm;height:690mm;border-radius:50%;background:${C.paper2};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24mm;text-align:center">
-      <div style="font:700 36mm 'JetBrains Mono';color:${C.orangeD}">▲ MÀN HÌNH</div>
-      <div style="font:800 118mm/0.95 'Plus Jakarta Sans';letter-spacing:-.02em;color:${C.ink2}">ĐỨNG<br>ĐÂY</div>
-      <div style="font:500 38mm/1.3 'Plus Jakarta Sans';color:${C.text2}">giơ tay về phía camera<br>chụm ngón để chọn</div></div>`;
-}
 function dieCircle(d) { return `<svg viewBox="0 0 ${d} ${d}" style="position:absolute;inset:0;width:${d}mm;height:${d}mm"><circle cx="${d / 2}" cy="${d / 2}" r="${d / 2}" fill="none" stroke="#EC008C" stroke-width="0.25"/></svg>`; }
 
-function artStory(i) {
-  const s = cfg.cauChuyen[i];
-  const dark = i === 2;
-  const fg = dark ? C.fg : C.ink2, sub = dark ? C.mute2 : C.text2, acc = i === 0 || i === 4 ? C.orange : (dark ? C.blueL : C.ink2);
-  const extra = dark
-    ? `<div style="display:flex;flex-direction:column;gap:8mm">${['Nét mực · &lt;16 ms', 'Nhận diện · &lt;15 ms', 'Suy luận · tất định', 'Hỏi Socratic · 4 mức', 'Ghi nhớ · BKT'].map((t, k) => `<div style="border:${k === 0 ? 'none' : `1.2mm solid ${k === 3 ? C.orangeL : C.blueL}`};${k === 0 ? `background:${C.blue};` : ''}border-radius:4mm;padding:9mm 12mm;font:600 15mm 'Plus Jakarta Sans';color:#fff">${t}</div>`).join('')}</div>`
-    : img(s.anh, `ẢNH ${s.tieuDe}`, 340, 420, false);
-  return (dark ? grid(420, 1400, 40, C.gridD, 0.4) : '') +
-    A(40, 50, 340, mono(14, dark ? C.mute : C.text3, `${String(i + 1).padStart(2, '0')} / 05 · HÀNH TRÌNH`)) +
-    A(40, 90, 340, `<div style="font:400 170mm/1 'Newsreader';color:${acc}">0${i + 1}</div>`) +
-    A(40, 290, 340, `<div style="font:800 56mm/1.05 'Plus Jakarta Sans';letter-spacing:-.02em;color:${fg}">${T(s.tieuDe)}</div>`) +
-    A(40, 380, 340, `<div style="font:500 17mm/1.45 'Plus Jakarta Sans';color:${sub}">${T(s.noiDung)}</div>`) +
-    (s.soLieu ? A(40, 700, 340, `<div style="border-top:1.2mm solid ${fg};padding-top:12mm;font:600 22mm/1.3 'Plus Jakarta Sans';color:${fg}">${T(s.soLieu)}</div>`) : '') +
-    A(40, 880, 340, extra) +
-    A(40, 1340, 340, `<div style="font:600 12mm 'Plus Jakarta Sans';color:${dark ? C.mute : C.text3}">Socratic Vision Board</div>`);
+// BD — backdrop bạt căng khung
+function artBackdrop() {
+  const scrL = 528, scrR = 1972, por = [2150, 2690];
+  const met = [['&lt;16', 'ms', 'độ trễ nét viết', 'ink latency'], ['&lt;15', 'ms', 'nhận diện tại chỗ', 'on-device recognition'], ['10', '', 'mô phỏng STEM', 'STEM simulations'], ['37', '', 'bài Lab bằng tay', 'hand-tracked labs']]
+    .map(([n, u, v, e]) => `<div style="border-top:1.5mm solid ${C.line};padding-top:12mm;margin-bottom:22mm"><div style="font:500 66mm/1 'JetBrains Mono';color:${C.fg}">${n}<span style="font-size:30mm;color:${C.mute}"> ${u}</span></div><div style="font:600 20mm/1.3 'Plus Jakarta Sans';color:${C.mute2};margin-top:6mm">${v}</div>${en(17, C.mute, e)}</div>`).join('');
+  const ticks = pipe.map((p, i) => A(scrR + 20, 520 + i * 180, 150, `<div style="font:600 30mm 'JetBrains Mono';color:${i === 3 ? C.orangeL : C.blueL}">0${i + 1}</div><div style="font:500 14mm/1.2 'Plus Jakarta Sans';color:${C.mute2}">${p}</div>`)).join('');
+  const team = cfg.thanhVien.map((m) => `<div style="font:600 20mm/1.5 'Plus Jakarta Sans';color:${C.fg}">${T(m.ten)} <span style="font:400 15mm 'JetBrains Mono';color:${C.mute}">· ${esc(m.vaiEn)}</span></div>`).join('');
+  return grid(PW, BH, 100, C.gridD, 0.6) + corners(PW, BH - 150, 40, 70, 4, '#6E6A62') +
+    A(80, 60, 2200, mono(22, C.blueL, `// AI · STEM · EDTECH — ${esc(cfg.suKien.toUpperCase())}`)) +
+    A(80, 110, 2250, `<div style="font:800 118mm/1 'Plus Jakarta Sans';letter-spacing:-.03em;color:${C.fg};white-space:nowrap">Bảng lớp biết <span style="font:italic 400 128mm 'Newsreader';color:${C.blueL};letter-spacing:-.01em">hỏi lại.</span></div>`) +
+    A(84, 262, 2250, en(58, C.mute2, 'The classroom board that asks back.', 'white-space:nowrap')) +
+    A(80, 540, 400, met) +
+    A(scrL + 20, 1395, scrR - scrL - 40, `<div style="border:2mm solid #57534E;border-radius:10mm;padding:18mm 26mm;display:flex;justify-content:space-between;align-items:center"><div><div style="font:700 34mm 'Plus Jakarta Sans';color:${C.fg}">Thử: viết một phương trình</div>${en(24, C.mute2, 'Try it: write any equation')}</div><span style="font:500 24mm 'JetBrains Mono';color:${C.orangeL}">bút · pen ↓</span></div>`) +
+    ticks +
+    A(por[0], 70, PW - por[0] - 60, `<div style="display:flex;gap:20mm;align-items:center">${img(cfg.logoDonVi, 'LOGO ĐƠN VỊ', 120, 120, true)}${img(cfg.logoBTC, 'LOGO SỞ', 120, 120, true)}</div>` + mono(15, C.mute, 'ĐƠN VỊ TRƯNG BÀY · EXHIBITOR', 'margin-top:16mm') + `<div style="font:700 30mm/1.2 'Plus Jakarta Sans';color:${C.fg};margin-top:6mm">${esc(cfg.donVi)}</div>${en(19, C.mute2, esc(cfg.hocSinhCuaEn))}`) +
+    A(por[0], 1520, PW - por[0] - 60, mono(16, C.mute, 'NHÓM DỰ ÁN · TEAM') + `<div style="margin-top:8mm">${team}</div>`) +
+    blueBand(PW, BH - 150);
 }
 
-async function artA5front() {
-  return A(14, 14, 120, `<div style="display:flex;justify-content:space-between;font:500 2.6mm 'JetBrains Mono';letter-spacing:.06em;color:${C.text3}"><span>SOCRATIC VISION BOARD</span><span>GIAN ${T(cfg.soGian)}</span></div>`) +
-    A(14, 26, 120, `<div style="font:400 15mm/1.02 'Newsreader';color:${C.ink2}">Bảng lớp không đưa đáp án. <i style="color:${C.orange}">Nó hỏi lại.</i></div>`) +
-    A(14, 82, 120, `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5mm 6mm">${cfg.cauChuyen.map((s, i) => `<div><div style="font:600 2.4mm 'JetBrains Mono';color:${i === 0 || i === 4 ? C.orangeD : C.text3}">0${i + 1}</div><div style="font:800 3.6mm/1.2 'Plus Jakarta Sans';color:${C.ink2}">${T(s.tieuDe)}</div><div style="font:500 2.75mm/1.4 'Plus Jakarta Sans';color:${C.text2};margin-top:1mm">${T(s.noiDung)}</div></div>`).join('')}<div><div style="font:600 2.4mm 'JetBrains Mono';color:${C.text3}">06</div><div style="font:800 3.6mm/1.2 'Plus Jakarta Sans';color:${C.ink2}">Nhóm cần</div><div style="font:500 2.75mm/1.4 'Plus Jakarta Sans';color:${C.text2};margin-top:1mm">Mentor đồng hành, lớp thử nghiệm, tài trợ thiết bị.</div></div></div>`) +
-    A(14, 176, 120, `<div style="border-top:0.3mm solid ${C.ink2};padding-top:5mm;display:flex;gap:5mm;align-items:center">${await qr(cfg.qrDungThu, 20, 'qrDungThu')}<div style="font:500 2.8mm/1.45 'Plus Jakarta Sans';color:${C.text2}"><b style="color:${C.ink2}">${T(cfg.truongNhom)}</b> · ${T(cfg.tenTruong)}<br>${T(cfg.lienHe)}<br>Ươm mầm bởi Sở GD&amp;ĐT Phú Thọ</div></div>`);
+// Khung cổng: đầu cổng (một mảnh hình chữ U ngược, ghép đôi ở giữa) + 2 chân
+const HEAD_PATH = `M0 0 H${PW} V${HEAD} H${PW - BAR} A${R} ${R} 0 0 0 ${PW - BAR - R} ${BAND} H${BAR + R} A${R} ${R} 0 0 0 ${BAR} ${HEAD} H0 Z`;
+function artHeader() {
+  const inner = `M${PW - BAR + 25} ${HEAD} A${R + 25} ${R + 25} 0 0 0 ${PW - BAR - R} ${BAND - 25} H${BAR + R} A${R + 25} ${R + 25} 0 0 0 ${BAR - 25} ${HEAD}`;
+  return `<svg viewBox="-10 -10 ${PW + 20} ${HEAD + 20}" style="position:absolute;left:-10mm;top:-10mm;width:${PW + 20}mm;height:${HEAD + 20}mm"><path d="${HEAD_PATH}" fill="${C.ink}" stroke="${C.ink}" stroke-width="20" stroke-linejoin="round"/><path d="${inner}" fill="none" stroke="${C.blue}" stroke-width="10"/></svg>` +
+    A(70, 34, 1200, mono(18, C.mute, `${esc(cfg.suKien.toUpperCase())}`)) +
+    A(PW - 870, 34, 800, mono(18, C.mute, `GIAN · BOOTH ${T(cfg.soGian)}`, 'text-align:right')) +
+    A(0, 70, PW, `<div style="display:flex;justify-content:center">${wordmark(132, C.fg)}</div>`) +
+    A(0, 262, PW, `<div style="text-align:center;font:500 22mm 'JetBrains Mono';letter-spacing:.12em;color:${C.blueL}">BẢNG TƯƠNG TÁC THÔNG MINH · SMART INTERACTIVE BOARD FOR STEM</div>`);
 }
-async function artA5back() {
-  const nodes = [['Console giáo viên', 'lớp · tiết · bài tập'], ['AI Engine', 'nhận diện · suy luận · BKT'], ['Bảng lớp', 'viết · mô phỏng · QR'], ['App học sinh', 'gia sư sau giờ học'], ['Phụ huynh', 'báo cáo tiến bộ']];
+function dieHeader() { return `<svg viewBox="0 0 ${PW} ${HEAD}" style="position:absolute;inset:0;width:${PW}mm;height:${HEAD}mm"><path d="${HEAD_PATH}" fill="none" stroke="#EC008C" stroke-width="0.5"/><path d="M${PW / 2} 0 V${BAND}" stroke="#EC008C" stroke-width="0.5" stroke-dasharray="6 4"/></svg><div style="position:absolute;left:${PW / 2 + 8}mm;top:${BAND / 2}mm;font:600 14mm 'JetBrains Mono';color:#EC008C">ĐƯỜNG GHÉP 2 TẤM</div>`; }
+
+function artLeg(side) {
+  const innerX = side === 'L' ? BAR - 25 : 25;
+  return `<div style="position:absolute;left:${innerX - 5}mm;top:-20mm;width:10mm;height:${LEG + 40}mm;background:${C.blue}"></div>` +
+    `<div style="position:absolute;left:${BAR / 2}mm;top:${LEG / 2 - 120}mm;width:0;height:0"><div style="position:absolute;left:0;top:0;transform:translate(-50%,-50%) rotate(${side === 'L' ? -90 : 90}deg);white-space:nowrap;font:800 92mm 'Plus Jakarta Sans';letter-spacing:.02em;color:${C.fg}">SOCRATIC VISION</div></div>` +
+    A((BAR - 170) / 2, LEG - 260, 170, ringLogo(170, C.fg, C.orange)) +
+    A(40, 60, BAR - 80, mono(20, C.mute, side === 'L' ? 'AI · STEM' : 'EDTECH', 'text-align:center'));
+}
+
+// Cánh trong: câu chuyện song ngữ
+function storyBlock(i, w, big) {
+  const s = cfg.cauChuyen[i];
+  const acc = i === 0 || i === 4 ? C.orange : (i === 3 ? C.orangeL : C.blueL);
+  const k = big ? 1 : 0.78;
+  return `<div style="border-top:1.5mm solid ${C.line};padding-top:${18 * k}mm">
+    <div style="display:flex;align-items:flex-end;gap:${20 * k}mm"><div style="font:400 ${190 * k}mm/0.8 'Newsreader';color:${acc}">0${i + 1}</div>
+    <div><div style="font:800 ${74 * k}mm/1 'Plus Jakarta Sans';letter-spacing:-.02em;color:${C.fg}">${T(s.tieuDe)}</div>${en(44 * k, C.mute2, T(s.tieuDeEn))}</div></div>
+    <div style="font:500 ${25 * k}mm/1.42 'Plus Jakarta Sans';color:${C.fg};margin-top:${22 * k}mm">${T(s.noiDung)}</div>
+    ${en(21 * k, C.mute, T(s.noiDungEn), `margin-top:${10 * k}mm;line-height:1.4`)}
+    ${s.soLieu ? `<div style="margin-top:${18 * k}mm;display:inline-block;border:1.2mm solid ${acc};border-radius:4mm;padding:${8 * k}mm ${12 * k}mm;font:600 ${22 * k}mm 'Plus Jakarta Sans';color:${C.fg}">${T(s.soLieu)}</div>` : ''}
+    ${i === 2 ? `<div style="margin-top:${20 * k}mm">${pipeBars(w, 20, 6)}</div>` : ''}</div>`;
+}
+function artWingIn(side) {
+  const w = WW - 140;
+  const head = A(70, 60, w, mono(18, C.blueL, side === 'L' ? '// HÀNH TRÌNH · OUR JOURNEY' : '// CÔNG NGHỆ & LỘ TRÌNH · TECH & ROADMAP'));
+  const body = side === 'L'
+    ? A(70, 140, w, storyBlock(0, w, true)) + A(70, 1120, w, storyBlock(1, w, true))
+    : A(70, 130, w, storyBlock(2, w, false)) + A(70, 1080, w, storyBlock(3, w, false)) + A(70, 1580, w, storyBlock(4, w, false));
+  return grid(WW, BH, 100, C.gridD, 0.6) + head + body + blueBand(WW, BH - 150);
+}
+function artWingOut() {
+  return grid(WW, BH, 100, C.gridD, 0.6) + A((WW - 420) / 2, 140, 420, ringLogo(420, C.fg, C.orange)) +
+    `<div style="position:absolute;left:${WW / 2}mm;top:${(BH - 150) / 2 + 230}mm;width:0;height:0"><div style="position:absolute;transform:translate(-50%,-50%) rotate(-90deg);white-space:nowrap;font:800 150mm 'Plus Jakarta Sans';color:${C.fg}">SOCRATIC</div></div>` +
+    A(60, BH - 260, WW - 120, mono(20, C.mute, 'AI · STEM · EDTECH', 'text-align:center')) + blueBand(WW, BH - 150);
+}
+
+// Totem tam giác: 3 mặt 600 × 2200
+const TW = 600, TH = 2200;
+function artTotemA() {
+  return grid(TW, TH, 60, C.gridD, 0.5) +
+    A(50, 560, 500, `<div style="font:800 96mm/0.98 'Plus Jakarta Sans';letter-spacing:-.035em;color:${C.fg}">Bảng lớp<br>biết <i style="font:italic 400 104mm 'Newsreader';color:${C.blueL}">hỏi lại.</i></div>`) +
+    A(52, 805, 500, en(40, C.mute2, 'The board that asks back.')) +
+    A(50, 930, 500, pipeBars(500, 21, 10)) +
+    A(50, 1500, 500, `<div style="font:500 22mm/1.45 'Plus Jakarta Sans';color:${C.mute2}">Học sinh viết tay, AI hỏi lại từng bước, không đưa sẵn đáp án.</div>${en(19, C.mute, 'Students write by hand. The AI asks back, step by step, never handing over the answer.', 'margin-top:8mm')}`) +
+    A(50, 1820, 500, `<div style="font:700 30mm 'Plus Jakarta Sans';color:${C.fg}">Mời vào thử →</div>${en(24, C.blueL, 'Step inside and try it')}`) +
+    blueBand(TW, TH - 150);
+}
+function artTotemB() {
+  return grid(TW, TH, 60, C.gridD, 0.5) +
+    A(50, 110, 500, mono(20, C.mute, 'GIẢI THƯỞNG · AWARD')) +
+    A(50, 170, 500, `<div style="font:800 120mm/0.95 'Plus Jakarta Sans';letter-spacing:-.03em;color:${C.orange}">GIẢI<br>NHẤT</div><div style="font:700 58mm/1.1 'Plus Jakarta Sans';color:${C.fg};margin-top:14mm">cấp tỉnh</div>${en(44, C.mute2, esc(cfg.giaiThuongEn), 'margin-top:8mm')}`) +
+    A(50, 820, 500, `<div style="border-top:1.5mm solid ${C.line};padding-top:22mm;font:600 26mm/1.4 'Plus Jakarta Sans';color:${C.fg}">${esc(cfg.cuocThi)}</div>${en(21, C.mute, esc(cfg.cuocThiEn), 'margin-top:10mm')}`) +
+    A(50, 1260, 500, `<div style="border-top:1.5mm solid ${C.line};padding-top:22mm">${mono(16, C.mute, 'DỰ ÁN · PROJECT')}<div style="font:500 22mm/1.42 'Plus Jakarta Sans';color:${C.mute2};margin-top:8mm">${esc(cfg.tenDuAnDayDu)}</div></div>`) +
+    A(50, 1700, 500, `<div style="font:700 28mm/1.3 'Plus Jakarta Sans';color:${C.fg}">${esc(cfg.hocSinhCua)}</div>${en(22, C.mute2, esc(cfg.hocSinhCuaEn))}<div style="display:flex;gap:14mm;margin-top:18mm">${img(cfg.logoDonVi, 'LOGO ĐƠN VỊ', 120, 120, true)}${img(cfg.logoBTC, 'LOGO SỞ', 120, 120, true)}</div>`) +
+    blueBand(TW, TH - 150);
+}
+async function artTotemC() {
+  return grid(TW, TH, 60, C.gridD, 0.5) +
+    A(50, 110, 500, mono(20, C.blueL, '// THỬ NGAY · TRY IT NOW')) +
+    A(50, 170, 500, `<div style="font:800 92mm/0.98 'Plus Jakarta Sans';letter-spacing:-.03em;color:${C.fg}">Quét<br>để thử.</div>${en(46, C.blueL, 'Scan to try.', 'margin-top:8mm')}`) +
+    A(50, 560, 500, await qr(cfg.qrDungThu, 500, 'qrDungThu')) +
+    A(50, 1110, 500, `<div style="font:600 26mm/1.4 'Plus Jakarta Sans';color:${C.fg}">Gia sư Socratic trên điện thoại, không cần cài đặt.</div>${en(21, C.mute, 'The Socratic tutor on your phone. No install needed.', 'margin-top:8mm')}`) +
+    A(50, 1420, 500, `<div style="border-top:1.5mm solid ${C.line};padding-top:22mm">${mono(16, C.mute, 'LIÊN HỆ NHÓM · CONTACT')}<div style="font:700 26mm/1.4 'Plus Jakarta Sans';color:${C.fg};margin-top:8mm">${T(cfg.truongNhom)}</div><div style="font:500 20mm/1.4 'JetBrains Mono';color:${C.mute2}">${T(cfg.lienHe)}</div></div>`) +
+    blueBand(TW, TH - 150);
+}
+
+// Quầy 1000 × 500 × 1000
+function artCounterFront() {
+  return grid(1000, 1000, 100, C.gridD, 0.6) + A(640, 70, 320, bigQ(320, 533, C.orange)) +
+    A(70, 90, 560, mono(18, C.blueL, '// XEM AI NGHĨ · WATCH THE AI THINK')) +
+    A(70, 140, 600, `<div style="font:800 88mm/1 'Plus Jakarta Sans';letter-spacing:-.03em;color:${C.fg}">Bảng lớp</div><div style="font:italic 400 94mm/1.05 'Newsreader';color:${C.blueL}">biết hỏi lại.</div>`) +
+    A(72, 390, 560, en(34, C.mute2, 'The board that asks back.')) +
+    A(70, 500, 560, `<div style="font:500 24mm/1.45 'Plus Jakarta Sans';color:${C.mute2}">Mỗi nét viết đi qua 5 lớp. Lớp đang chạy sáng lên trên tháp mica.</div>${en(19, C.mute, 'Every stroke passes 5 layers. Watch them light up on the acrylic tower.', 'margin-top:8mm')}`) +
+    A(70, 730, 860, wordmark(34, C.fg)) + blueBand(1000, 850);
+}
+function artCounterSide() {
+  return grid(500, 1000, 100, C.gridD, 0.6) + A(110, 110, 280, ringLogo(280, C.fg, C.orange)) +
+    A(40, 470, 420, `<div style="text-align:center;font:800 40mm/1.1 'Plus Jakarta Sans';color:${C.fg}">AI · STEM</div><div style="text-align:center;font:500 20mm 'JetBrains Mono';color:${C.mute};margin-top:10mm">EDTECH · PHÚ THỌ</div>`) + blueBand(500, 850);
+}
+
+// Cờ buồm: vùng in 700 × 2800
+const FW = 700, FH = 2800;
+function artFlag() {
+  return grid(FW, FH, 70, C.gridD, 0.5) + `<div style="position:absolute;left:${FW - 90}mm;top:-30mm;width:120mm;height:${FH + 60}mm;background:${C.blue}"></div>` +
+    A(110, 160, 400, ringLogo(400, C.fg, C.orange)) +
+    `<div style="position:absolute;left:${(FW - 90) / 2}mm;top:${FH / 2 + 250}mm;width:0;height:0"><div style="position:absolute;transform:translate(-50%,-50%) rotate(-90deg);white-space:nowrap;font:800 190mm 'Plus Jakarta Sans';letter-spacing:-.01em;color:${C.fg}">SOCRATIC <span style="font:italic 400 200mm 'Newsreader';color:${C.blueL}">vision</span></div></div>` +
+    A(60, FH - 220, FW - 180, mono(26, C.mute, 'AI · STEM · EDTECH', 'text-align:center'));
+}
+
+// Huy hiệu giải thưởng Ø440
+function artSeal() {
+  const d = 440, r = d / 2;
+  return `<svg viewBox="-5 -5 ${d + 10} ${d + 10}" style="position:absolute;left:-5mm;top:-5mm;width:${d + 10}mm;height:${d + 10}mm">
+    <defs><path id="arc" d="M ${r} ${r} m -${r - 38} 0 a ${r - 38} ${r - 38} 0 1 1 ${2 * (r - 38)} 0 a ${r - 38} ${r - 38} 0 1 1 -${2 * (r - 38)} 0"/></defs>
+    <circle cx="${r}" cy="${r}" r="${r + 5}" fill="${C.orange}"/><circle cx="${r}" cy="${r}" r="${r - 70}" fill="${C.ink}"/>
+    <circle cx="${r}" cy="${r}" r="${r - 82}" fill="none" stroke="${C.orangeL}" stroke-width="2"/>
+    <text font-family="JetBrains Mono" font-size="22" font-weight="600" fill="#fff" letter-spacing="3"><textPath href="#arc" startOffset="0">${esc(cfg.cuocThiEn.toUpperCase())} · ${esc(cfg.giaiThuongEn.toUpperCase())} · </textPath></text>
+  </svg>` + `<div style="position:absolute;left:90mm;top:108mm;width:260mm;text-align:center;color:#fff">
+    <div style="font:500 20mm 'JetBrains Mono';letter-spacing:.1em;color:${C.orangeL}">2026–2027</div>
+    <div style="font:800 72mm/0.98 'Plus Jakarta Sans';margin-top:26mm">GIẢI<br>NHẤT</div>
+    <div style="font:600 26mm 'Plus Jakarta Sans';margin-top:6mm">cấp tỉnh</div></div>`;
+}
+
+function artFloorBi() {
+  return `<div style="position:absolute;left:-5mm;top:-5mm;width:810mm;height:810mm;border-radius:50%;background:${C.blue}"></div>
+    <div style="position:absolute;left:55mm;top:55mm;width:690mm;height:690mm;border-radius:50%;background:${C.ink};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16mm;text-align:center">
+      <div style="font:700 32mm 'JetBrains Mono';color:${C.blueL}">▲ MÀN HÌNH · SCREEN</div>
+      <div style="font:800 112mm/0.95 'Plus Jakarta Sans';letter-spacing:-.02em;color:${C.fg}">ĐỨNG<br>ĐÂY</div>
+      <div style="font:italic 400 62mm 'Newsreader';color:${C.blueL}">Stand here</div>
+      <div style="font:500 30mm/1.3 'Plus Jakarta Sans';color:${C.mute2}">giơ tay · chụm để chọn<br><span style="font-family:'JetBrains Mono';font-size:24mm">raise hand · pinch to pick</span></div></div>`;
+}
+
+async function artA5(lang) {
+  const vi = lang === 'vi';
+  const st = cfg.cauChuyen;
   return grid(148, 210, 10, C.gridD, 0.1) +
-    A(14, 14, 120, mono(2.6, C.blueL, '// KIẾN TRÚC · TAM GIÁC 3 ĐỈNH')) +
-    A(14, 24, 120, `<div style="font:400 11mm/1.05 'Newsreader';color:${C.fg}">Một nét viết,<br><i style="color:${C.blueL}">năm lớp xử lý.</i></div>`) +
-    A(14, 56, 120, ['Nét mực · &lt;16 ms', 'Nhận diện · &lt;15 ms', 'Suy luận · tất định', 'Hỏi Socratic · 4 mức', 'Ghi nhớ · BKT'].map((t, k) => `<div style="margin-bottom:2.2mm;border-radius:1.2mm;padding:2.4mm 3mm;font:600 3.2mm 'Plus Jakarta Sans';color:#fff;${k === 0 ? `background:${C.blue}` : `border:0.35mm solid ${k === 3 ? C.orangeL : C.blueL}`}">0${k + 1} · ${t}</div>`).join('')) +
-    A(14, 122, 120, nodes.map(([a, b], k) => `<div style="display:flex;align-items:center;gap:3mm;margin-bottom:2.4mm"><div style="width:2.4mm;height:2.4mm;border-radius:50%;background:${k === 1 ? C.blue : C.mute}"></div><div style="font:700 3.2mm 'Plus Jakarta Sans';color:${C.fg}">${a}</div><div style="font:400 2.6mm 'JetBrains Mono';color:${C.mute}">${b}</div></div>`).join('')) +
-    A(14, 168, 120, `<div style="border-top:0.3mm solid ${C.line};padding-top:5mm;display:flex;gap:5mm;align-items:center">${await qr(cfg.qrDungThu, 22, 'qrDungThu')}<div style="font:600 3.6mm/1.35 'Plus Jakarta Sans';color:${C.fg}">Quét để thử gia sư Socratic<div style="font:400 2.6mm 'JetBrains Mono';color:${C.mute};margin-top:1mm">không cần cài đặt</div></div></div>`);
+    A(14, 14, 120, `<div style="display:flex;justify-content:space-between;font:500 2.4mm 'JetBrains Mono';letter-spacing:.06em;color:${C.mute}"><span>SOCRATIC VISION BOARD</span><span>${vi ? 'GIAN' : 'BOOTH'} ${T(cfg.soGian)}</span></div>`) +
+    A(14, 24, 120, vi ? `<div style="font:800 12mm/1 'Plus Jakarta Sans';letter-spacing:-.03em;color:${C.fg}">Bảng lớp biết <i style="font:italic 400 13mm 'Newsreader';color:${C.blueL}">hỏi lại.</i></div>` : `<div style="font:800 11mm/1.02 'Plus Jakarta Sans';letter-spacing:-.03em;color:${C.fg}">The board that <i style="font:italic 400 12mm 'Newsreader';color:${C.blueL}">asks back.</i></div>`) +
+    A(14, 42, 120, `<div style="display:inline-block;background:${C.orange};color:#fff;border-radius:1mm;padding:1.4mm 2.4mm;font:700 3mm 'Plus Jakarta Sans'">${vi ? esc(cfg.giaiThuong) : esc(cfg.giaiThuongEn)}</div><span style="font:400 2.5mm 'Plus Jakarta Sans';color:${C.mute2};margin-left:2mm">${vi ? esc(cfg.cuocThi) : esc(cfg.cuocThiEn)}</span>`) +
+    A(14, 56, 120, `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4.5mm 6mm">${st.map((s, i) => `<div><div style="font:600 2.4mm 'JetBrains Mono';color:${i === 0 || i === 4 ? C.orangeL : C.blueL}">0${i + 1}</div><div style="font:800 3.6mm/1.2 'Plus Jakarta Sans';color:${C.fg}">${T(vi ? s.tieuDe : s.tieuDeEn)}</div><div style="font:400 2.6mm/1.4 'Plus Jakarta Sans';color:${C.mute2};margin-top:1mm">${T(vi ? s.noiDung : s.noiDungEn)}</div></div>`).join('')}<div><div style="font:600 2.4mm 'JetBrains Mono';color:${C.mute}">06</div><div style="font:800 3.6mm/1.2 'Plus Jakarta Sans';color:${C.fg}">${vi ? 'Nhóm cần' : 'We are looking for'}</div><div style="font:400 2.6mm/1.4 'Plus Jakarta Sans';color:${C.mute2};margin-top:1mm">${vi ? 'Mentor đồng hành, lớp thử nghiệm, tài trợ thiết bị.' : 'Mentors, pilot classrooms and hardware sponsors.'}</div></div></div>`) +
+    A(14, 172, 120, `<div style="border-top:0.3mm solid ${C.line};padding-top:4mm;display:flex;gap:5mm;align-items:center">${await qr(cfg.qrDungThu, 22, 'qrDungThu')}<div style="font:400 2.6mm/1.45 'Plus Jakarta Sans';color:${C.mute2}"><b style="color:${C.fg}">${T(cfg.truongNhom)}</b> · ${esc(vi ? cfg.hocSinhCua : cfg.hocSinhCuaEn)}<br>${T(cfg.lienHe)}<br>${vi ? 'Đơn vị trưng bày' : 'Exhibitor'}: ${esc(cfg.donVi)}</div></div>`);
 }
-function artSticker() {
+function artStickerBi() {
   return `<div style="position:absolute;left:-2mm;top:-2mm;width:64mm;height:64mm;border-radius:50%;background:${C.orange}"></div>
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center">
-  <div style="font:400 26mm/0.8 'Newsreader'">?</div><div style="font:800 4.6mm/1.15 'Plus Jakarta Sans';margin-top:2mm">Tôi đã hỏi<br>bảng 1 câu</div></div>`;
+  <div style="font:400 22mm/0.8 'Newsreader'">?</div><div style="font:800 4.2mm/1.15 'Plus Jakarta Sans';margin-top:2mm">Tôi đã hỏi<br>bảng 1 câu</div><div style="font:italic 400 3.4mm 'Newsreader';margin-top:1mm">I asked the board</div></div>`;
 }
-function artBadge(m) {
-  return `<div style="position:absolute;left:-3mm;top:-3mm;width:96mm;height:12mm;background:${C.blue}"></div>
-  ${A(10, 22, 70, mono(2.6, C.text3, 'ĐỒNG SÁNG LẬP · SOCRATIC VISION BOARD'))}
-  ${A(10, 32, 70, `<div style="font:400 10mm/1.05 'Newsreader';color:${C.ink2}">${T(m.ten)}</div>`)}
-  ${A(10, 62, 70, `<div style="font:700 4.4mm 'Plus Jakarta Sans';color:${C.ink2}">${esc(m.vai)}</div><div style="font:500 3.4mm 'Plus Jakarta Sans';color:${C.text3};margin-top:1.5mm">${T(m.lop)} · ${T(cfg.tenTruong)}</div>`)}
-  ${A(10, 98, 70, `<div style="background:${C.ink};color:${C.fg};border-radius:2mm;padding:4mm 5mm;font:italic 400 5.2mm/1.25 'Newsreader'">${m.vai === 'Người kỹ thuật' ? 'Hỏi mình cách AI nghĩ.' : m.vai === 'Người pitch' ? 'Hỏi mình về dự án.' : m.vai === 'Người demo' ? 'Thử viết một câu nhé.' : 'Bạn đang học, dạy, hay tìm dự án?'}</div>`)}
+function artBadgeBi(m) {
+  const q = { 'Người kỹ thuật': ['Hỏi mình cách AI nghĩ.', 'Ask me how the AI thinks.'], 'Người pitch': ['Hỏi mình về dự án.', 'Ask me about the project.'], 'Người demo': ['Thử viết một câu nhé.', 'Try writing on the board.'] }[m.vai] || ['Bạn đang học, dạy hay tìm dự án?', 'Student, teacher or investor?'];
+  return grid(90, 130, 6, C.gridD, 0.1) + `<div style="position:absolute;left:-3mm;top:-3mm;width:96mm;height:12mm;background:${C.blue}"></div>
+  ${A(10, 20, 70, mono(2.5, C.mute, 'ĐỒNG SÁNG LẬP · CO-FOUNDER'))}
+  ${A(10, 28, 70, `<div style="font:400 10mm/1.05 'Newsreader';color:${C.fg}">${T(m.ten)}</div>`)}
+  ${A(10, 60, 70, `<div style="font:700 4.4mm 'Plus Jakarta Sans';color:${C.fg}">${esc(m.vai)} <span style="font:italic 400 4mm 'Newsreader';color:${C.blueL}">· ${esc(m.vaiEn)}</span></div><div style="font:500 3.2mm 'Plus Jakarta Sans';color:${C.mute};margin-top:1.5mm">${T(m.lop)} · ${esc(cfg.hocSinhCua)}</div>`)}
+  ${A(10, 92, 70, `<div style="border:0.4mm solid ${C.blueL};color:${C.fg};border-radius:2mm;padding:3.5mm 4.5mm;font:600 4.2mm/1.3 'Plus Jakarta Sans'">${q[0]}<div style="font:italic 400 3.8mm 'Newsreader';color:${C.blueL};margin-top:1mm">${q[1]}</div></div>`)}
   <div style="position:absolute;left:38.5mm;top:6mm;width:13mm;height:3mm;border-radius:1.5mm;border:0.25mm solid #EC008C"></div>`;
 }
 
@@ -283,31 +311,28 @@ function artPlate(p) {
 }
 
 // ---------- danh sách hạng mục ----------
-const T_W = (n) => `${VW}×${VH}`;
 async function items() {
   const L = [];
-  CUR = 'V-HAU'; const back = artBack();
-  CUR = 'V-TRAI'; const left = await artLeft();
-  CUR = 'V-PHAI'; const right = await artRight();
-  const tiles = (code, name, art, where) => {
-    for (let i = 0; i < VN; i++) L.push({
-      group: '01-kho-lon', code: `${code}-${i + 1}`, name: `${name} — tấm ${i + 1}/${VN}`, w: VW, h: VH, bleed: 10, bg: code === 'V-HAU' ? C.ink : C.paper2,
-      html: `<div style="position:absolute;left:${-i * VW}mm;top:0;width:${WALL_W}mm;height:${VH}mm">${art}</div>`,
-      mat: 'Decal PP keo xám (chống thấu), in UV, cán màng mờ', fin: 'Dán phủ kín tấm vách, xén mép tại chỗ', qty: 1, where: `${where}, tấm ${i + 1} ${where === 'Vách hậu' ? 'tính từ trái' : 'tính từ lối đi'}`,
-    });
-  };
-  CUR = 'V-HAU'; tiles('V-HAU', 'Phủ vách hậu', back, 'Vách hậu');
-  CUR = 'V-TRAI'; tiles('V-TRAI', 'Phủ vách trái', left, 'Vách trái');
-  CUR = 'V-PHAI'; tiles('V-PHAI', 'Phủ vách phải', right, 'Vách phải');
-  CUR = 'F01'; L.push({ group: '01-kho-lon', code: 'F01', name: 'Bảng tên cửa gian (fascia)', w: 3000, h: 300, bleed: 5, bg: C.paper, html: artFascia(), mat: 'Decal PP in UV (hoặc theo mẫu BTC)', fin: 'Dán lên băng fascia BTC', qty: 1, where: 'Trên cửa gian' });
-  CUR = 'S01'; L.push({ group: '01-kho-lon', code: 'S01', name: 'Standee cuốn', w: 800, h: 2100, bleed: 5, bg: C.ink, html: await artStandee(), mat: 'Bạt PP/PET chống quăn mép, in UV', fin: 'Lắp chân cuốn nhôm 80×200; 100 mm dưới cùng cuộn vào chân', qty: 1, where: 'Góc phải phía trước' });
-  CUR = 'Q01'; L.push({ group: '01-kho-lon', code: 'Q01', name: 'Ốp mặt trước quầy', w: 1400, h: 1000, bleed: 10, bg: C.ink, html: artCounter(), mat: 'Decal PP in UV, cán mờ', fin: 'Dán phủ mặt quầy, gấp mép 10 mm', qty: 1, where: 'Mặt quầy quay ra lối đi' });
-  CUR = 'D01'; L.push({ group: '01-kho-lon', code: 'D01', name: 'Decal sàn "Đứng đây" Ø800', w: 800, h: 800, bleed: 5, bg: '#fff', html: artFloor(), die: dieCircle(800), mat: 'Decal sàn, cán màng chống trượt R10', fin: 'Bế tròn Ø800 theo đường cắt riêng', qty: 1, where: 'Sàn trước bảng, tâm cách vách hậu 1,1 m' });
-  for (let i = 0; i < 5; i++) { CUR = `T0${i + 1}`; L.push({ group: '01-kho-lon', code: `T0${i + 1}`, name: `Tấm câu chuyện ${i + 1}: ${cfg.cauChuyen[i].tieuDe}`, w: 420, h: 1400, bleed: 5, bg: i === 2 ? C.ink : C.paper, html: artStory(i), mat: 'Decal PP cán mờ bồi Format (foam) 5 mm', fin: 'Cắt thẳng, dán băng keo xốp 2 mặt', qty: 1, where: `Vách trái, vị trí ${i + 1}` }); }
-  CUR = 'A5'; L.push({ group: '02-an-pham-nho', code: 'A5', name: 'Tờ giới thiệu một trang A5 (2 mặt)', w: 148, h: 210, bleed: 3, marks: true, bg: C.paper, html: await artA5front(), pages2: { bg: C.ink, html: await artA5back() }, mat: 'Couche mờ 250 gsm, in 4/4', fin: 'Xén thành phẩm', qty: 500, where: 'Quầy' });
-  CUR = 'ST'; L.push({ group: '02-an-pham-nho', code: 'ST', name: 'Sticker tròn Ø60', w: 60, h: 60, bleed: 2, marks: true, bg: '#fff', html: artSticker(), die: dieCircle(60), mat: 'Decal giấy hoặc nhựa sữa, cán bóng', fin: 'Bế tròn Ø60 (đường cắt màu hồng)', qty: 500, where: 'Quà tặng học sinh' });
-  cfg.thanhVien.forEach((m, i) => { CUR = `TD${i + 1}`; L.push({ group: '02-an-pham-nho', code: `TD${i + 1}`, name: `Thẻ đeo — ${m.vai}`, w: 90, h: 130, bleed: 3, marks: true, bg: C.paper, html: artBadge(m), mat: 'PVC trắng 0,76 mm (thẻ nhựa) hoặc giấy C300 ép plastic', fin: 'Đục lỗ ô van 13×3 mm (đường hồng), dây đeo xanh', qty: 1, where: 'Thành viên nhóm' }); });
-  PLATES.forEach((p, i) => { CUR = `M0${i + 1}`; L.push({ group: '03-mica-laser', code: `M0${i + 1}`, name: `Tấm mica ${p.n.replace(' · ', ' ')}`, w: 300, h: p.h + 10, bleed: 0, bg: '#fff', html: artPlate(p), mat: 'Mica trong loại đúc (cast) 5 mm', fin: 'Đỏ nét mảnh = cắt; đen = khắc mặt sau (lật gương)', qty: 1, where: 'Tháp 5 lớp trên quầy' }); });
+  const add = (o) => L.push(o);
+  CUR = 'BD'; add({ group: '01-khung-va-bat', code: 'BD', name: 'Backdrop sau', w: PW, h: BH, bleed: 50, bg: C.ink, html: artBackdrop(), mat: 'Bạt hiflex 440 gsm in UV ngoài trời (hoặc bạt PP)', fin: 'Căng khung sắt hộp, biên 50 mm mỗi cạnh cuốn ra sau', qty: 1, where: 'Sát mép sau lều' });
+  CUR = 'K-DAU'; add({ group: '01-khung-va-bat', code: 'K-DAU', name: 'Khung cổng — đầu cổng', w: PW, h: HEAD, bleed: 10, bg: '#fff', html: artHeader(), die: dieHeader(), mat: 'Decal PP in UV cán mờ, dán lên fomex 10 mm cắt CNC', fin: 'Cắt CNC theo đường hồng, ghép 2 tấm ở giữa, đèn LED viền trong', qty: 1, where: 'Mặt trước, lùi 600 mm' });
+  CUR = 'K-CHAN'; add({ group: '01-khung-va-bat', code: 'K-CHAN-T', name: 'Khung cổng — chân trái', w: BAR, h: LEG, bleed: 10, bg: C.ink, html: artLeg('L'), mat: 'Decal PP in UV cán mờ trên fomex 10 mm', fin: 'Bọc khung sắt hộp 300 × 200; mặt hông dán decal đen', qty: 1, where: 'Chân trái cổng' });
+  add({ group: '01-khung-va-bat', code: 'K-CHAN-P', name: 'Khung cổng — chân phải', w: BAR, h: LEG, bleed: 10, bg: C.ink, html: artLeg('R'), mat: 'Decal PP in UV cán mờ trên fomex 10 mm', fin: 'Bọc khung sắt hộp 300 × 200; mặt hông dán decal đen', qty: 1, where: 'Chân phải cổng' });
+  CUR = 'C-TRONG'; add({ group: '01-khung-va-bat', code: 'C-TRONG-T', name: 'Cánh trái — mặt trong', w: WW, h: BH, bleed: 50, bg: C.ink, html: artWingIn('L'), mat: 'Bạt hiflex in UV', fin: 'Căng khung sắt hộp 900 × ' + BH, qty: 1, where: 'Cánh trái, mặt nhìn vào gian' });
+  add({ group: '01-khung-va-bat', code: 'C-TRONG-P', name: 'Cánh phải — mặt trong', w: WW, h: BH, bleed: 50, bg: C.ink, html: artWingIn('R'), mat: 'Bạt hiflex in UV', fin: 'Căng khung sắt hộp 900 × ' + BH, qty: 1, where: 'Cánh phải, mặt nhìn vào gian' });
+  CUR = 'C-NGOAI'; add({ group: '01-khung-va-bat', code: 'C-NGOAI', name: 'Cánh — mặt ngoài', w: WW, h: BH, bleed: 50, bg: C.ink, html: artWingOut(), mat: 'Bạt hiflex in UV', fin: 'Căng mặt ngoài 2 cánh', qty: 2, where: 'Mặt ngoài 2 cánh' });
+  CUR = 'TT'; add({ group: '01-khung-va-bat', code: 'TT-A', name: 'Totem tam giác — mặt A', w: TW, h: TH, bleed: 10, bg: C.ink, html: artTotemA(), mat: 'Decal PP in UV trên fomex 5 mm', fin: 'Dán lên khung tam giác sắt, đế đổ cát 15 kg', qty: 1, where: 'Góc trước trái, ngoài cổng' });
+  add({ group: '01-khung-va-bat', code: 'TT-B', name: 'Totem tam giác — mặt B (giải thưởng)', w: TW, h: TH, bleed: 10, bg: C.ink, html: artTotemB(), mat: 'Decal PP in UV trên fomex 5 mm', fin: 'Như mặt A', qty: 1, where: 'Mặt hướng lối đi chính' });
+  add({ group: '01-khung-va-bat', code: 'TT-C', name: 'Totem tam giác — mặt C (QR)', w: TW, h: TH, bleed: 10, bg: C.ink, html: await artTotemC(), mat: 'Decal PP in UV trên fomex 5 mm', fin: 'Như mặt A', qty: 1, where: 'Mặt hướng vào gian' });
+  CUR = 'Q'; add({ group: '01-khung-va-bat', code: 'Q-TRUOC', name: 'Quầy — mặt trước', w: 1000, h: 1000, bleed: 10, bg: C.ink, html: artCounterFront(), mat: 'Decal PP in UV cán mờ', fin: 'Dán lên quầy gỗ/fomex 1000 × 500 × 1000, gấp mép 10 mm', qty: 1, where: 'Quầy ngoài cổng, quay ra lối đi' });
+  add({ group: '01-khung-va-bat', code: 'Q-HONG', name: 'Quầy — mặt hông', w: 500, h: 1000, bleed: 10, bg: C.ink, html: artCounterSide(), mat: 'Decal PP in UV cán mờ', fin: 'Dán 2 mặt hông', qty: 2, where: 'Hai hông quầy' });
+  CUR = 'CO'; add({ group: '01-khung-va-bat', code: 'CO', name: 'Cờ buồm 3,5 m', w: FW, h: FH, bleed: 20, bg: C.ink, html: artFlag(), mat: 'Vải voan lưới in chuyển nhiệt (xuyên 2 mặt)', fin: 'May theo khuôn cờ của nhà cung cấp; chân cắm đế nước hoặc kẹp cột lều', qty: 2, where: 'Hai cột trước của lều' });
+  CUR = 'HH'; add({ group: '01-khung-va-bat', code: 'HH', name: 'Huy hiệu Giải Nhất Ø440', w: 440, h: 440, bleed: 5, bg: '#fff', html: artSeal(), die: dieCircle(440), mat: 'Decal PP in UV trên fomex 10 mm', fin: 'Cắt CNC tròn, gắn nổi 30 mm bằng ke nhựa', qty: 1, where: 'Đầu totem, mặt A (cách mép trên 60 mm)' });
+  CUR = 'D01'; add({ group: '01-khung-va-bat', code: 'D01', name: 'Decal sàn "Đứng đây / Stand here" Ø800', w: 800, h: 800, bleed: 5, bg: '#fff', html: artFloorBi(), die: dieCircle(800), mat: 'Decal sàn cán màng chống trượt R10, dán trên thảm cứng', fin: 'Bế tròn Ø800', qty: 1, where: 'Trước màn 65", tâm cách backdrop 1,1 m' });
+  CUR = 'A5'; add({ group: '02-an-pham-nho', code: 'A5', name: 'Tờ giới thiệu A5 song ngữ (mặt Việt, mặt Anh)', w: 148, h: 210, bleed: 3, marks: true, bg: C.ink, html: await artA5('vi'), pages2: { bg: C.ink, html: await artA5('en') }, mat: 'Couche mờ 250 gsm, in 4/4', fin: 'Xén thành phẩm', qty: 600, where: 'Quầy' });
+  CUR = 'ST'; add({ group: '02-an-pham-nho', code: 'ST', name: 'Sticker tròn Ø60 song ngữ', w: 60, h: 60, bleed: 2, marks: true, bg: '#fff', html: artStickerBi(), die: dieCircle(60), mat: 'Decal nhựa sữa, cán bóng', fin: 'Bế tròn Ø60', qty: 600, where: 'Quà tặng' });
+  cfg.thanhVien.forEach((m, i) => { CUR = `TD${i + 1}`; add({ group: '02-an-pham-nho', code: `TD${i + 1}`, name: `Thẻ đeo — ${m.vai}`, w: 90, h: 130, bleed: 3, marks: true, bg: C.ink, html: artBadgeBi(m), mat: 'Thẻ nhựa PVC 0,76 mm in 2 mặt (mặt sau đen)', fin: 'Đục lỗ ô van 13 × 3 mm, dây đeo xanh', qty: 1, where: 'Thành viên nhóm' }); });
+  PLATES.forEach((p, i) => { CUR = `M0${i + 1}`; add({ group: '03-mica-laser', code: `M0${i + 1}`, name: `Tấm mica ${p.n.replace(' · ', ' ')}`, w: 300, h: p.h + 10, bleed: 0, bg: '#fff', html: artPlate(p), mat: 'Mica trong loại đúc (cast) 5 mm', fin: 'Đỏ nét mảnh = cắt; đen = khắc mặt sau (lật gương)', qty: 1, where: 'Tháp 5 lớp trên quầy' }); });
   return L;
 }
 
@@ -370,15 +395,15 @@ td{border-bottom:0.2mm solid #DCD9D0;padding:1.6mm 2mm;vertical-align:top;font-s
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:4mm 0 6mm}.box{border:0.3mm solid #1D1B16;padding:3mm;border-radius:1.5mm}.sw{height:9mm;border-radius:1mm;margin-bottom:2mm}
 h2{font:700 10pt 'Plus Jakarta Sans';margin:5mm 0 2mm;letter-spacing:.04em}</style></head><body>
 <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:0.5mm solid #1D1B16;padding-bottom:3mm">
-<div><div class="m" style="font-size:7.5pt;letter-spacing:.08em;color:#57534E">BẢNG KÊ HẠNG MỤC IN ẤN · GIAN ${esc(cfg.soGian)}</div><h1>Socratic Vision Board — gian 3 × 3 m</h1>
-<div>Dự án khởi nghiệp học sinh · ${esc(cfg.tenTruong)} · ươm mầm bởi Sở GD&amp;ĐT Phú Thọ · triển lãm ${esc(cfg.ngayTrienLam)}</div></div>
+<div><div class="m" style="font-size:7.5pt;letter-spacing:.08em;color:#57534E">BẢNG KÊ HẠNG MỤC IN ẤN · GIAN ${esc(cfg.soGian)}</div><h1>Socratic Vision Board — gian lều 3 × 3 m · ${esc(cfg.suKien)}</h1>
+<div>Đơn vị trưng bày: ${esc(cfg.donVi)} · ${esc(cfg.giaiThuong)} · ${esc(cfg.diaDiem)} · lắp ${esc(cfg.ngayLap)} · trưng bày ${esc(cfg.ngayTrienLam)}</div></div>
 <div style="text-align:right">Liên hệ duyệt file: <b>${esc(cfg.truongNhom)}</b><br>${esc(cfg.lienHe)}<br><span class="m">Ngày xuất file: ${TODAY}</span></div></div>
 <h2>QUY CÁCH CHUNG</h2>
 <div class="grid">
 <div class="box"><b>File</b><br>PDF vector tỷ lệ 1:1, đơn vị mm. Font đã nhúng. Hàng khổ lớn: không dấu cắt, đã có tràn lề. Ấn phẩm nhỏ: có dấu cắt và dòng thông tin.</div>
 <div class="box"><b>Màu</b><br>File hệ RGB. Nhờ nhà in chuyển CMYK theo mã bên dưới và <b>in thử màu</b> (proof) trên đúng vật liệu trước khi in hàng loạt.</div>
 <div class="box"><b>Đường cắt</b><br>Bế tròn, đục lỗ: nét màu hồng (#EC008C) trong tệp *_DUONG-CAT.pdf hoặc trên file, không in. Mica: nét đỏ 0,01 mm = cắt.</div>
-<div class="box"><b>Vách</b><br>File làm theo tấm nhìn thấy ${VW} × ${VH} mm, ${VN} tấm mỗi vách. <b>Đo thực tế trước khi in</b>; khác thì báo nhóm xuất lại.</div>
+<div class="box"><b>Lều</b><br>File theo lều cao mép mái ${LEU.caoMepMai} mm, rộng trong cột ${LEU.rongTrongCot} mm. <b>Đo lều thật</b>; khác thì sửa config.leu và xuất lại.</div>
 </div>
 <div class="grid">
 <div class="box"><div class="sw" style="background:#141310"></div><b>Đen nền</b> #141310<br><span class="m">C50 M40 Y40 K100</span></div>
@@ -390,8 +415,8 @@ h2{font:700 10pt 'Plus Jakarta Sans';margin:5mm 0 2mm;letter-spacing:.04em}</sty
 <table><thead><tr><th>XEM TRƯỚC</th><th>MÃ</th><th>HẠNG MỤC</th><th>THÀNH PHẨM (mm)</th><th>TRÀN LỀ</th><th>VẬT LIỆU</th><th>GIA CÔNG</th><th>SL</th><th>VỊ TRÍ</th><th>TRẠNG THÁI FILE</th></tr></thead><tbody>${rows}</tbody></table>
 <h2>LƯU Ý THI CÔNG</h2>
 <div class="grid" style="grid-template-columns:repeat(3,1fr)">
-<div class="box">Vách tiêu chuẩn của BTC: <b>không khoan, không bắn đinh</b>. Decal dán trực tiếp; tấm Format dán băng keo xốp 2 mặt. Màn hình đặt trên chân đứng.</div>
-<div class="box">Tấm câu chuyện T01–T05: đáy tấm cách sàn 570 mm, khoảng cách theo bản vẽ mặt đứng (2 tấm mỗi tấm vách, cách nhau 40 mm, cách mép tấm vách 35 mm).</div>
+<div class="box"><b>Ngoài trời, có gió:</b> mọi khung đứng (backdrop, cánh, cổng, totem, cờ) có chân đế và bao cát hoặc đế nước; buộc dây vào cột lều. Bạt và decal loại ngoài trời.</div>
+<div class="box"><b>Lắp trong 3 giờ</b> (${esc(cfg.ngayLap)}): khung sơn đen, gia công sẵn tại xưởng, chỉ bắt bu lông tại chỗ. Bạt căng sẵn trên khung trước khi chở đến.</div>
 <div class="box">Logo Sở GD&amp;ĐT Phú Thọ chỉ dùng file chính thức do BTC cung cấp. Ô còn ghi "CHƯA ĐỦ" là file chưa được in.</div>
 </div></body></html>`;
 }

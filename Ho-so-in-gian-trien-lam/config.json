@@ -1,68 +1,75 @@
 {
   "_huongDan": "Điền thông tin thật vào các ô [ ... ], đặt logo và ảnh vào thư mục assets/ rồi ghi tên tệp vào đây. Chạy: npm run build. Còn ô nào chưa điền, bảng kê sẽ báo 'CHƯA ĐỦ'.",
 
+  "suKien": "STEM Carnival · AIROC 2026 International",
+  "diaDiem": "Nhà thi đấu thể thao Phú Thọ",
+  "ngayLap": "13h30–16h30, 28/11/2026",
+  "ngayTrienLam": "6h30–17h00, 29/11/2026",
   "soGian": "[SỐ GIAN]",
+
+  "donVi": "UBND phường Phúc Yên",
+  "hocSinhCua": "Học sinh phường Phúc Yên",
+  "hocSinhCuaEn": "Students of Phuc Yen Ward",
+  "giaiThuong": "Giải Nhất cấp tỉnh",
+  "giaiThuongEn": "1st Prize · Provincial",
+  "cuocThi": "Cuộc thi học sinh, sinh viên với ý tưởng khởi nghiệp năm học 2026–2027",
+  "cuocThiEn": "Student Startup Ideas Competition 2026–2027",
+  "tenDuAnDayDu": "Bảng tương tác thông minh Socratic Vision Board hỗ trợ dạy học thực nghiệm STEM trong giáo dục phổ thông",
+
   "tenTruong": "[Tên trường]",
   "giaoVienHuongDan": "[Tên thầy cô hướng dẫn]",
   "truongNhom": "[Tên trưởng nhóm]",
   "lienHe": "[Số điện thoại / email nhóm]",
-  "ngayTrienLam": "[Ngày triển lãm]",
 
   "qrDungThu": "",
   "qrLienHe": "",
 
+  "logoDonVi": "",
   "logoBTC": "",
-  "logoTruong": "",
 
-  "vach": {
-    "_ghiChu": "Kích thước PHẦN NHÌN THẤY của một tấm vách tiêu chuẩn. Đo thực tế tại gian rồi sửa, chạy lại build.",
-    "soTam": 3,
-    "rongTam": 950,
-    "caoTam": 2350
+  "leu": {
+    "_ghiChu": "Đo lều thật khi nhận mặt bằng: chiều cao mép mái (phía trong cột) quyết định chiều cao khung cổng và backdrop.",
+    "caoMepMai": 2500,
+    "rongTrongCot": 2920
   },
 
   "thanhVien": [
-    { "ten": "[Tên thành viên 1]", "vai": "Người pitch", "lop": "[Lớp]", "anh": "" },
-    { "ten": "[Tên thành viên 2]", "vai": "Người kỹ thuật", "lop": "[Lớp]", "anh": "" },
-    { "ten": "[Tên thành viên 3]", "vai": "Người demo", "lop": "[Lớp]", "anh": "" },
-    { "ten": "[Tên thành viên 4]", "vai": "Người đón khách", "lop": "[Lớp]", "anh": "" }
+    { "ten": "[Tên thành viên 1]", "vai": "Người pitch", "vaiEn": "Pitch lead", "lop": "[Lớp]", "anh": "" },
+    { "ten": "[Tên thành viên 2]", "vai": "Người kỹ thuật", "vaiEn": "Tech lead", "lop": "[Lớp]", "anh": "" },
+    { "ten": "[Tên thành viên 3]", "vai": "Người demo", "vaiEn": "Demo lead", "lop": "[Lớp]", "anh": "" },
+    { "ten": "[Tên thành viên 4]", "vai": "Người đón khách", "vaiEn": "Host", "lop": "[Lớp]", "anh": "" }
   ],
 
   "cauChuyen": [
     {
-      "tieuDe": "Vấn đề",
+      "tieuDe": "Vấn đề", "tieuDeEn": "The problem",
       "noiDung": "Học sinh chép lời giải mà không hiểu vì sao. Trong một tiết học, thầy cô không đủ thời gian hỏi lại từng em.",
-      "soLieu": "[Số liệu khảo sát của nhóm]",
-      "moc": "[Tháng/năm bắt đầu]",
-      "anh": ""
+      "noiDungEn": "Students copy solutions without understanding why. In one lesson, a teacher cannot question every student.",
+      "soLieu": "[Số liệu khảo sát của nhóm]"
     },
     {
-      "tieuDe": "Giải pháp",
-      "noiDung": "Bảng lớp biết hỏi lại. Học sinh viết tay, AI nhận diện, dựng mô phỏng và đặt câu hỏi gợi mở thay vì đưa sẵn đáp án.",
-      "soLieu": "",
-      "moc": "[Mốc ra bản đầu tiên]",
-      "anh": ""
+      "tieuDe": "Giải pháp", "tieuDeEn": "Our solution",
+      "noiDung": "Bảng lớp biết hỏi lại. Học sinh viết tay, AI nhận diện, dựng mô phỏng STEM và đặt câu hỏi gợi mở thay vì đưa sẵn đáp án.",
+      "noiDungEn": "A classroom board that asks back. Students write by hand; the AI reads it, builds a STEM simulation and asks guiding questions instead of giving answers.",
+      "soLieu": ""
     },
     {
-      "tieuDe": "Công nghệ",
-      "noiDung": "Nhận diện chữ viết tay ngay trên máy, bộ máy suy luận tất định, gia sư Socratic gợi mở 4 mức và mô hình theo dõi mức hiểu (BKT).",
-      "soLieu": "",
-      "moc": "[Mốc hoàn thiện công nghệ]",
-      "anh": ""
+      "tieuDe": "Công nghệ", "tieuDeEn": "Technology",
+      "noiDung": "Nhận diện chữ viết tay ngay trên máy, bộ máy suy luận tất định, gia sư Socratic gợi mở 4 mức, mô hình theo dõi mức hiểu (BKT).",
+      "noiDungEn": "On-device handwriting recognition, a deterministic reasoning engine, a 4-level Socratic tutor and knowledge tracing (BKT).",
+      "soLieu": ""
     },
     {
-      "tieuDe": "Thử nghiệm",
+      "tieuDe": "Thử nghiệm", "tieuDeEn": "Pilot",
       "noiDung": "[Số lớp] lớp, [số học sinh] học sinh tại [tên trường thử nghiệm]. [Một câu nhận xét thật của thầy cô]",
-      "soLieu": "[Kết quả đo được]",
-      "moc": "[Mốc thử nghiệm]",
-      "anh": ""
+      "noiDungEn": "[N] classes, [N] students at [pilot school]. [One real teacher quote]",
+      "soLieu": "[Kết quả đo được]"
     },
     {
-      "tieuDe": "Lộ trình",
+      "tieuDe": "Lộ trình", "tieuDeEn": "Roadmap",
       "noiDung": "[Năm]: thử nghiệm tại trường. [Năm]: mở rộng các trường trong tỉnh. [Năm]: [mốc tiếp theo].",
-      "soLieu": "",
-      "moc": "[Mốc tiếp theo]",
-      "anh": ""
+      "noiDungEn": "[Year]: school pilot. [Year]: schools across the province. [Year]: [next milestone].",
+      "soLieu": ""
     }
   ]
 }

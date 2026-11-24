@@ -136,6 +136,7 @@ button { cursor: pointer; }
       <div class="sec" id="inspector"></div>
       <div class="sec">
         <h2>Ý tưởng khối nổi</h2>
+        <div class="idea"><b>Trạm Lab 3D qua webcam</b><p>Khách đứng ở vòng cam "Giơ tay" cách mặt tiền khoảng 1,1 m. Vùng xanh là tầm nhìn camera: chỉnh để chỉ chứa người đang chơi, không lấy người phía sau.</p></div>
         <div class="idea"><b>Vì sao dồn ra mặt tiền</b><p>Hai gian bên cạnh dựng vách kín và ít khách bước vào trong, nên chỉ mặt tiền, biển vẫy và cờ là được nhìn thấy. Bấm “Đi tới từ trái” hoặc “Đi tới từ phải” để xem.</p></div>
         <div class="idea"><b>Chữ nổi hắt sáng</b><p>Ba lớp: chữ trắng, thân màu nhấn, quầng sáng phía sau. Gắn trên đầu khung cổng.</p></div>
         <div class="idea"><b>Đèn hiệu dấu hỏi</b><p>Vòng LED đứng và dấu "?" 3D trên đỉnh totem, quay chậm, ngay sát lối đi.</p></div>
@@ -168,7 +169,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 const M = 0.001; // mm → m
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FONT = { sans: '"Plus Jakarta Sans", system-ui, sans-serif', mono: '"JetBrains Mono", ui-monospace, monospace', serif: 'Newsreader, Georgia, serif' };
-const STORE = 'svb-booth-studio-v3'; // v3: mặt tiền liền khối, mọi thứ hướng ra lối đi
+const STORE = 'svb-booth-studio-v4'; // v4: mặt tiền = bảng viết 65" + trạm Lab 3D qua webcam
 
 // ---------------- dữ liệu mặc định ----------------
 const DEFAULT = () => [
@@ -177,15 +178,16 @@ const DEFAULT = () => [
   { id: 'nbR', type: 'neighbor', walls: true, name: 'Gian bên phải (vách kín)', x: 3000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#3A6EA5', accent: '#C8553D', text: 'GIAN HÀNG 04', locked: true, group: 'context' },
   { id: 'floor', type: 'floor', name: 'Thảm in mạch điện', x: 0, y: 0, z: 0, ry: 0, w: 3000, h: 12, d: 3000, color: '#0D0F15', accent: '#2F6BFF', emissive: 0.9, pattern: 'circuit' },
   { id: 'ceil', type: 'ceiling', name: 'Trần vải đen đèn sao', x: 0, y: 2470, z: 0, ry: 0, w: 2960, h: 10, d: 2960, color: '#07080B', accent: '#D6E4FF', emissive: 1.2 },
-  { id: 'kiosk', type: 'kiosk', name: 'Mặt tiền trái: kiosk màn 65"', x: -590, y: 0, z: 1120, ry: 0, w: 1720, h: 2200, d: 720, scrW: 1490, scrH: 900, scrD: 90, gap: 5, bottom: 900, offX: 0, tray: true, qr: false, color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Viết thử |lên bảng.', sub: 'Try writing on the board. The AI will ask you back.', mount: 'stand', xray: false },
-  { id: 'kiosk2', type: 'kiosk', name: 'Mặt tiền phải: màn 43" + hologram', x: 860, y: 0, z: 1120, ry: 0, w: 1180, h: 2200, d: 720, scrW: 540, scrH: 950, scrD: 70, gap: 5, bottom: 900, offX: -230, tray: false, qr: true, variant: 'pipeline', color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Nhìn AI |nghĩ.', sub: 'Watch the AI think, layer by layer.', mount: 'vesa', xray: false },
-  { id: 'relief', type: 'relief', name: 'Chữ nổi hắt sáng (đầu mặt tiền)', x: 0, y: 1950, z: 1482, ry: 0, w: 2500, h: 190, d: 60, color: '#F5F2EA', accent: '#3D7BFF', emissive: 1.6, text: 'Socratic Vision Board' },
-  { id: 'holo', type: 'holo', name: 'Quạt hologram gắn mặt tiền', x: 1190, y: 0, z: 1490, ry: 0, w: 460, h: 1180, d: 460, mount: 'wall', accent: '#5B8CFF', emissive: 2 },
-  { id: 'seal', type: 'seal', name: 'Huy hiệu Giải Nhất nổi', x: 1190, y: 1460, z: 1482, ry: 0, w: 400, h: 400, d: 30 },
-  { id: 'tower', type: 'tower', name: 'Kệ + tháp mica 5 lớp', x: 630, y: 660, z: 1480, ry: 0, w: 420, h: 240, d: 180, accent: '#3D7BFF', emissive: 1.8 },
+  { id: 'kiosk', type: 'kiosk', name: 'Mặt tiền trái: bảng viết 65"', x: -660, y: 0, z: 1120, ry: 0, w: 1580, h: 2200, d: 720, scrW: 1490, scrH: 900, scrD: 90, gap: 5, bottom: 900, offX: 0, tray: true, qr: false, color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Viết thử |lên bảng.', sub: 'Try writing on the board. The AI will ask you back.', mount: 'stand', xray: false },
+  { id: 'kiosk2', type: 'kiosk', name: 'Mặt tiền phải: trạm Lab 3D 50" + webcam', x: 790, y: 0, z: 1120, ry: 0, w: 1320, h: 2200, d: 720, scrW: 1120, scrH: 650, scrD: 70, gap: 5, bottom: 1000, offX: 0, tray: false, qr: true, guide: true, cam: true, showCam: true, variant: 'lab', color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Thí nghiệm |bằng tay.', sub: 'No touching: raise your hands to the camera.', mount: 'vesa', xray: false },
+  { id: 'relief', type: 'relief', name: 'Chữ nổi hắt sáng (trên bảng viết)', x: -660, y: 1960, z: 1482, ry: 0, w: 1420, h: 170, d: 60, color: '#F5F2EA', accent: '#3D7BFF', emissive: 1.6, text: 'Socratic Vision Board' },
+  { id: 'seal', type: 'seal', name: 'Huy hiệu Giải Nhất nổi', x: 1245, y: 1740, z: 1482, ry: 0, w: 380, h: 380, d: 30 },
+  { id: 'tower', type: 'tower', name: 'Kệ + tháp mica 5 lớp', x: -80, y: 560, z: 1480, ry: 0, w: 380, h: 240, d: 160, accent: '#3D7BFF', emissive: 1.8 },
+  { id: 'holo', type: 'holo', name: 'Quạt hologram (tùy chọn)', visible: false, x: 1190, y: 0, z: 1490, ry: 0, w: 460, h: 1180, d: 460, mount: 'wall', accent: '#5B8CFF', emissive: 2 },
   { id: 'bladeL', type: 'blade', name: 'Biển vẫy trái (2 mặt)', x: -1500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.8 },
   { id: 'bladeR', type: 'blade', name: 'Biển vẫy phải (2 mặt)', x: 1500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.8 },
-  { id: 'decal', type: 'decal', name: 'Decal lối đi "Đứng đây"', x: -590, y: 0, z: 1980, ry: 0, w: 800, h: 4, d: 800, accent: '#3D7BFF', text: 'ĐỨNG ĐÂY' },
+  { id: 'decal', type: 'decal', name: 'Decal lối đi: viết bảng', x: -660, y: 0, z: 1950, ry: 0, w: 760, h: 4, d: 760, accent: '#3D7BFF', text: 'ĐỨNG ĐÂY' },
+  { id: 'decal2', type: 'decal', name: 'Decal lối đi: Lab 3D', x: 790, y: 0, z: 2600, ry: 0, w: 900, h: 4, d: 900, accent: '#FF6A2B', text: 'GIƠ TAY' },
   { id: 'washL', type: 'strip', name: 'Dải LED mép trước', x: 0, y: 0, z: 1520, ry: 90, w: 30, h: 8, d: 2900, accent: '#3D7BFF', emissive: 2.2 },
   { id: 'flagL', type: 'flag', name: 'Cờ buồm trái', x: -1560, y: 0, z: 1560, ry: -80, w: 700, h: 3500, d: 30, color: '#0B0C10', accent: '#2F6BFF', text: 'SOCRATIC' },
   { id: 'flagR', type: 'flag', name: 'Cờ buồm phải', x: 1560, y: 0, z: 1560, ry: 80, w: 700, h: 3500, d: 30, color: '#0B0C10', accent: '#2F6BFF', text: 'SOCRATIC' },
@@ -194,6 +196,7 @@ const DEFAULT = () => [
   { id: 'beacon', type: 'beacon', name: 'Đèn hiệu ? 3D (đã ẩn)', visible: false, x: 1150, y: 1730, z: 300, ry: 0, w: 480, h: 480, d: 80, color: '#FF6A2B', accent: '#3D7BFF', emissive: 2 },
   { id: 'p1', type: 'person', name: 'Người (tỉ lệ)', x: -2300, y: 0, z: 2900, ry: 90, w: 450, h: 1680, d: 300, color: '#4A5466', group: 'people' },
   { id: 'p2', type: 'person', name: 'Người (tỉ lệ)', x: 2400, y: 0, z: 3300, ry: -90, w: 450, h: 1600, d: 300, color: '#6A4A4A', group: 'people' },
+  { id: 'p4', type: 'person', name: 'Khách chơi Lab (tỉ lệ)', x: 790, y: 0, z: 2600, ry: 180, w: 450, h: 1650, d: 300, color: '#5A4A6A', group: 'people' },
   { id: 'p3', type: 'person', name: 'Khách đang viết (tỉ lệ)', x: -950, y: 0, z: 1850, ry: 180, w: 450, h: 1720, d: 300, color: '#3E5A4A', group: 'people' },
 ];
 
@@ -447,7 +450,16 @@ function paintTotem(o) {
 }
 function paintScreen(o, active = 0) {
   const W = o.w, H = o.h; const { c, ctx } = makeCanvas(W, H, 1600);
-  if (o.variant === 'board') {
+  if (o.variant === 'lab') {
+    const g0 = ctx.createRadialGradient(W * 0.5, H * 0.45, 10, W * 0.5, H * 0.5, W * 0.7); g0.addColorStop(0, '#1A2440'); g0.addColorStop(1, '#06080E'); ctx.fillStyle = g0; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(143,176,245,.18)'; ctx.lineWidth = 2; for (let i = -10; i <= 10; i++) { ctx.beginPath(); ctx.moveTo(W / 2 + i * 60, H * 0.62); ctx.lineTo(W / 2 + i * 160, H); ctx.stroke(); } for (let j = 0; j < 6; j++) { const y = H * 0.62 + (j * j * H) / 90; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    const cx = W * 0.5, cy = H * 0.46, r = H * 0.26; const hg = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, 5, cx, cy, r); hg.addColorStop(0, '#F07A7A'); hg.addColorStop(0.6, '#B3263B'); hg.addColorStop(1, '#5A0F1D'); ctx.fillStyle = hg; ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.82, r, -0.35, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#E8C46A'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(cx - r * 0.2, cy - r * 0.9); ctx.bezierCurveTo(cx - r * 0.1, cy - r * 1.3, cx + r * 0.3, cy - r * 1.25, cx + r * 0.25, cy - r * 0.8); ctx.stroke();
+    [[W * 0.24, H * 0.5, '#8FB0F5'], [W * 0.76, H * 0.42, '#FF8A5B']].forEach(([x, y, col]) => { ctx.strokeStyle = col; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, y, H * 0.06, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(x, y, H * 0.015, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); });
+    ctx.fillStyle = 'rgba(11,12,16,.75)'; roundRect(ctx, W * 0.03, H * 0.05, W * 0.34, H * 0.12, 12); ctx.fill(); ctx.fillStyle = '#F5F2EA'; ctx.font = `700 ${H * 0.05}px ${FONT.sans}`; ctx.fillText('Lab 3D · Phẫu thuật tim', W * 0.05, H * 0.125);
+    ctx.fillStyle = '#3FB97A'; ctx.beginPath(); ctx.arc(W * 0.93, H * 0.1, H * 0.018, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#C9C5BB'; ctx.font = `500 ${H * 0.035}px ${FONT.mono}`; ctx.textAlign = 'right'; ctx.fillText('2 tay · camera', W * 0.9, H * 0.112); ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(11,12,16,.75)'; roundRect(ctx, W * 0.3, H * 0.84, W * 0.4, H * 0.1, 10); ctx.fill(); ctx.fillStyle = '#E6E4DD'; ctx.font = `500 ${H * 0.038}px ${FONT.sans}`; ctx.textAlign = 'center'; ctx.fillText('Chụm ngón để cầm dụng cụ', W * 0.5, H * 0.905); ctx.textAlign = 'left';
+  } else if (o.variant === 'board') {
     ctx.fillStyle = '#FBF9F4'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = '#ECE8DF'; ctx.lineWidth = 1.5; for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); } for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
     ctx.fillStyle = '#1D1B16'; roundRect(ctx, 24, 24, 360, 52, 26); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = `600 22px ${FONT.sans}`; ctx.fillText('✎  Bút   ◯ Lasso   ⌫', 46, 58);
     ctx.fillStyle = '#1D1B16'; ctx.font = `italic 400 ${H * 0.11}px ${FONT.serif}`; ctx.fillText('y = x² − 4x + 3', W * 0.06, H * 0.3);
@@ -554,7 +566,7 @@ B.hexwall = (o, g) => {
 };
 B.screen = (o, g) => {
   const W = o.w * M, H = o.h * M; const bez = box(W + 0.03, H + 0.03, (o.d || 60) * M, MAT.std('#0A0A0B', { roughness: 0.3, metalness: 0.4 })); bez.position.y = H / 2; g.add(bez);
-  const c = paintScreen(o); const t = tex(c); const s = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ map: t, toneMapped: true })); s.position.set(0, H / 2, ((o.d || 60) * M) / 2 + 0.002); g.add(s);
+  const c = paintScreen(o); const t = tex(c); const s = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ map: t, color: o.variant === 'board' ? '#8E8E8E' : '#D0D0D0' })); s.position.set(0, H / 2, ((o.d || 60) * M) / 2 + 0.002); g.add(s);
   if (o.stand) { const p = box(0.06, o.y * M, 0.06, MAT.std('#2A2B2F', { metalness: 0.6 })); p.position.set(0, -(o.y * M) / 2, -0.06); g.add(p); const b = box(Math.min(W, 0.8), 0.04, 0.5, MAT.std('#2A2B2F', { metalness: 0.6 })); b.position.set(0, -o.y * M + 0.02, 0); g.add(b); }
   if (o.variant === 'pipeline') { let last = -1; g.userData.tick = (t) => { const a = Math.floor(t / 1.6) % 5; if (a !== last && !REDUCED) { last = a; const nc = paintScreen(o, a); t0(nc); } }; const t0 = (nc) => { c.getContext('2d').drawImage(nc, 0, 0); t.needsUpdate = true; }; }
 };
@@ -675,8 +687,17 @@ function paintKiosk(o) {
   ctx.fillStyle = '#C9C5BB'; ctx.font = `italic 400 34px ${FONT.serif}`; wrap(ctx, o.sub || '', o.qr ? W - 440 : W - 120).forEach((l, i) => ctx.fillText(l, 62, ly + 140 + i * 42));
   if (o.tray !== false) { ctx.fillStyle = '#FF8A5B'; ctx.font = `600 22px ${FONT.mono}`; ctx.textAlign = 'right'; ctx.fillText('bút · pen ↑', x1, yB + 70); ctx.textAlign = 'left'; }
   if (o.qr) { const q = 300, qx = W - q - 60, qy = H - q - 300; ctx.fillStyle = '#fff'; ctx.fillRect(qx, qy, q, q); const Rq = rng('qr' + o.id); const n = 25, ms = (q - 40) / n; ctx.fillStyle = '#111'; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { if ((i < 7 && j < 7) || (i < 7 && j > n - 8) || (i > n - 8 && j < 7)) continue; if (Rq() < 0.48) ctx.fillRect(qx + 20 + i * ms, qy + 20 + j * ms, ms, ms); } [[0, 0], [0, n - 7], [n - 7, 0]].forEach(([a, b]) => { ctx.fillStyle = '#111'; ctx.fillRect(qx + 20 + a * ms, qy + 20 + b * ms, 7 * ms, 7 * ms); ctx.fillStyle = '#fff'; ctx.fillRect(qx + 20 + (a + 1) * ms, qy + 20 + (b + 1) * ms, 5 * ms, 5 * ms); ctx.fillStyle = '#111'; ctx.fillRect(qx + 20 + (a + 2) * ms, qy + 20 + (b + 2) * ms, 3 * ms, 3 * ms); }); ctx.fillStyle = '#F5F2EA'; ctx.font = `700 26px ${FONT.sans}`; ctx.fillText('Quét để thử', qx - 220, qy + 60); ctx.fillStyle = '#8FB0F5'; ctx.font = `italic 400 24px ${FONT.serif}`; ctx.fillText('Scan to try', qx - 220, qy + 94); }
-  const tags = o.qr ? ['5 lớp xử lý', 'Đo trực tiếp'] : ['Nhận diện tại chỗ · <15 ms', 'Gợi mở 4 mức', 'Chạy ngoại tuyến']; let tx = 60; ctx.font = `500 19px ${FONT.mono}`;
+  const tags = o.guide ? [] : o.qr ? ['5 lớp xử lý', 'Đo trực tiếp'] : ['Nhận diện tại chỗ · <15 ms', 'Gợi mở 4 mức', 'Chạy ngoại tuyến']; let tx = 60; ctx.font = `500 19px ${FONT.mono}`;
   tags.forEach((t) => { const w = ctx.measureText(t).width + 36; ctx.strokeStyle = rgba(accL, 0.7); ctx.lineWidth = 2; roundRect(ctx, tx, H - 250, w, 46, 23); ctx.stroke(); ctx.fillStyle = '#E6E4DD'; ctx.fillText(t, tx + 18, H - 220); tx += w + 14; });
+  if (o.guide) {
+    ctx.fillStyle = '#F5F2EA'; ctx.font = `800 64px ${FONT.sans}`; ctx.fillText('PHÒNG THÍ NGHIỆM 3D', 60, 150); ctx.fillStyle = accL; ctx.font = `500 22px ${FONT.mono}`; ctx.fillText('3D LAB · ĐIỀU KHIỂN BẰNG TAY QUA CAMERA', 62, 192);
+    const gy = yB + 360, gw = Math.min(250, (W - 480) / 3), items = [['Chụm', 'Pinch to pick', 'pinch'], ['Kéo', 'Move to rotate', 'drag'], ['Mở tay', 'Open to drop', 'open']];
+    items.forEach(([v, e, k], i) => { const x = 60 + i * (gw + 18); ctx.strokeStyle = rgba(accL, 0.8); ctx.lineWidth = 2.5; roundRect(ctx, x, gy, gw, 190, 16); ctx.stroke(); const ix = x + gw / 2, iy = gy + 62; ctx.strokeStyle = '#FF8A5B'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+      if (k === 'pinch') { ctx.beginPath(); ctx.moveTo(ix - 40, iy - 30); ctx.quadraticCurveTo(ix - 10, iy, ix, iy); ctx.moveTo(ix + 40, iy + 30); ctx.quadraticCurveTo(ix + 10, iy, ix, iy); ctx.stroke(); ctx.fillStyle = '#FF8A5B'; ctx.beginPath(); ctx.arc(ix, iy, 8, 0, Math.PI * 2); ctx.fill(); }
+      else if (k === 'drag') { ctx.beginPath(); ctx.moveTo(ix - 50, iy); ctx.lineTo(ix + 50, iy); ctx.moveTo(ix + 32, iy - 16); ctx.lineTo(ix + 50, iy); ctx.lineTo(ix + 32, iy + 16); ctx.moveTo(ix - 32, iy - 16); ctx.lineTo(ix - 50, iy); ctx.lineTo(ix - 32, iy + 16); ctx.stroke(); }
+      else { for (let f = 0; f < 5; f++) { const a = -Math.PI / 2 + (f - 2) * 0.38; ctx.beginPath(); ctx.moveTo(ix + Math.cos(a) * 14, iy + 20 + Math.sin(a) * 14); ctx.lineTo(ix + Math.cos(a) * 52, iy + 20 + Math.sin(a) * 52); ctx.stroke(); } }
+      ctx.lineCap = 'butt'; ctx.fillStyle = '#F5F2EA'; ctx.font = `700 30px ${FONT.sans}`; ctx.textAlign = 'center'; ctx.fillText(v, ix, gy + 140); ctx.fillStyle = '#C9C5BB'; ctx.font = `italic 400 22px ${FONT.serif}`; ctx.fillText(e, ix, gy + 172); ctx.textAlign = 'left'; });
+  }
   band(ctx, W, H, acc, 'AI  ·  STEM  ·  EDTECH  ·  ', 120);
   return c;
 }
@@ -710,8 +731,18 @@ B.kiosk = (o, g) => {
   const ledm = MAT.glow(o.accent, (o.emissive ?? 2) * 0.8); const lt = box(x1 - x0 - 0.02, 0.005, 0.006, ledm); lt.position.set(ox, y1 - 0.004, D / 2 - t - 0.012); g.add(lt);
   [x0 + 0.004, x1 - 0.004].forEach((x) => { const l = box(0.005, y1 - y0 - 0.02, 0.006, ledm); l.position.set(x, (y0 + y1) / 2, D / 2 - t - 0.012); g.add(l); });
   const bez = box(sw, sh, sd, MAT.std('#0A0A0B', { roughness: 0.3, metalness: 0.4 })); bez.position.set(ox, o.bottom * M + sh / 2, D / 2 - sd / 2); g.add(bez);
-  const sc0 = { w: o.scrW - 40, h: o.scrH - 40, variant: o.variant || 'board' }; const scv = paintScreen(sc0); const sct = tex(scv); const scr = new THREE.Mesh(new THREE.PlaneGeometry(sw - 0.04, sh - 0.04), new THREE.MeshBasicMaterial({ map: sct })); scr.position.set(ox, o.bottom * M + sh / 2, D / 2 + 0.001); g.add(scr);
+  const sc0 = { w: o.scrW - 40, h: o.scrH - 40, variant: o.variant || 'board' }; const scv = paintScreen(sc0); const sct = tex(scv); const scr = new THREE.Mesh(new THREE.PlaneGeometry(sw - 0.04, sh - 0.04), new THREE.MeshBasicMaterial({ map: sct, color: sc0.variant === 'board' ? '#8E8E8E' : '#D0D0D0' })); scr.position.set(ox, o.bottom * M + sh / 2, D / 2 + 0.001); g.add(scr);
   if (sc0.variant === 'pipeline') { let last = -1; g.userData.tick = (tt) => { const a = Math.floor(tt / 1.6) % 5; if (a !== last && !REDUCED) { last = a; scv.getContext('2d').drawImage(paintScreen(sc0, a), 0, 0); sct.needsUpdate = true; } }; }
+  if (o.cam) {
+    const camY = y1 + 0.05; const cam = box(0.11, 0.035, 0.05, MAT.std('#111215', { roughness: 0.3, metalness: 0.4 })); cam.position.set(ox, camY, D / 2 + 0.03); cam.rotation.x = -0.26; g.add(cam);
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.011, 24), MAT.glow('#3FB97A', 0.6)); lens.position.set(ox, camY, D / 2 + 0.056); lens.rotation.x = -0.26; g.add(lens);
+    const bar = box(0.56, 0.03, 0.05, MAT.std('#1A1B20', { metalness: 0.5 })); bar.position.set(ox, camY + 0.09, D / 2 + 0.035); bar.rotation.x = -0.5; g.add(bar);
+    const lit = box(0.54, 0.006, 0.035, MAT.glow('#FFF1DC', 1.6)); lit.position.set(ox, camY + 0.073, D / 2 + 0.045); lit.rotation.x = -0.5; g.add(lit);
+    if (o.showCam) { const L = 1.9, hf = THREE.MathUtils.degToRad(78) / 2, vf = THREE.MathUtils.degToRad(48) / 2; const hw = Math.tan(hf) * L, hh = Math.tan(vf) * L;
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, -hw, hh, L, hw, hh, L, hw, -hh, L, -hw, -hh, L], 3)); geo.setIndex([0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1]); geo.computeVertexNormals();
+      const fr = new THREE.Group(); fr.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: '#3FB97A', transparent: true, opacity: 0.045, side: THREE.DoubleSide, depthWrite: false }))); fr.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: '#3FB97A', transparent: true, opacity: 0.4 })));
+      fr.position.set(ox, camY, D / 2 + 0.06); fr.rotation.x = 0.26; fr.userData.noPick = true; g.add(fr); }
+  }
   if (o.tray !== false) { const tray = box(Math.min(0.9, sw * 0.6), 0.022, 0.11, MAT.std('#16181E', { metalness: 0.6, roughness: 0.3 })); tray.position.set(ox, y0 - 0.035, D / 2 + 0.055); g.add(tray);
   const trayLed = box(Math.min(0.9, sw * 0.6) - 0.02, 0.004, 0.006, MAT.glow(o.accent, o.emissive ?? 2)); trayLed.position.set(ox, y0 - 0.048, D / 2 + 0.108); g.add(trayLed); }
   if (o.mount !== 'vesa') { const pm = MAT.std('#3A3D45', { metalness: 0.6 }); [-0.3, 0.3].forEach((x) => { const p = box(0.06, o.bottom * M + sh / 2 - 0.05, 0.06, pm); p.position.set(x, (o.bottom * M + sh / 2 - 0.05) / 2 + 0.05, D / 2 - sd - 0.1); g.add(p); }); const bs = box(1.0, 0.05, 0.62, pm); bs.position.set(0, 0.085, D / 2 - sd - 0.3); g.add(bs); [[-0.45, -0.25], [0.45, -0.25], [-0.45, 0.25], [0.45, 0.25]].forEach(([x, z]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.03, 14), MAT.std('#111')); w.rotation.z = Math.PI / 2; w.position.set(x, 0.075, D / 2 - sd - 0.3 + z); g.add(w); }); }
@@ -815,7 +846,7 @@ renderer.domElement.addEventListener('pointerdown', (e) => { down = { x: e.clien
 renderer.domElement.addEventListener('pointerup', (e) => {
   if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5 || tc.dragging) return; const r = renderer.domElement.getBoundingClientRect();
   ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ptr, camera);
-  const hits = ray.intersectObjects(root.children, true).filter((h) => h.object.visible && isShown(h.object)); select(hits.length ? hits[0].object.userData.id : null);
+  const hits = ray.intersectObjects(root.children, true).filter((h) => h.object.visible && isShown(h.object) && !(h.object.parent && h.object.parent.userData.noPick)); select(hits.length ? hits[0].object.userData.id : null);
 });
 function isShown(obj) { let o = obj; while (o) { if (!o.visible) return false; o = o.parent; } return true; }
 function select(id) { selected = id; const o = selObj(); tc.detach(); if (o && !o.locked) tc.attach(groups.get(id)); renderLayers(); renderInspector(); updateDims(); }
@@ -846,15 +877,15 @@ function addObj(it) {
   objects.push(o); build(o); commit(); select(id); toast('Đã thêm: ' + it.label);
 }
 const FIELDS = {
-  kiosk: ['scrW', 'scrH', 'scrD', 'gap', 'bottom', 'offX', 'variant', 'tray', 'qr', 'mount', 'xray', 'pattern', 'text', 'sub', 'color', 'accent', 'emissive'],
+  kiosk: ['scrW', 'scrH', 'scrD', 'gap', 'bottom', 'offX', 'variant', 'tray', 'qr', 'guide', 'cam', 'showCam', 'mount', 'xray', 'pattern', 'text', 'sub', 'color', 'accent', 'emissive'],
   panel: ['layout', 'pattern', 'text', 'sub', 'startNo', 'color', 'accent', 'emissive'], portal: ['band', 'bar', 'radius', 'text', 'sub', 'color', 'accent', 'emissive'], relief: ['text', 'color', 'accent', 'emissive'],
   totem: ['text', 'sub', 'color', 'accent'], beacon: ['color', 'accent', 'emissive'], counter: ['text', 'sub', 'color', 'accent', 'emissive'], screen: ['variant', 'stand'], hexwall: ['cell', 'color', 'accent', 'emissive'],
   floor: ['color', 'accent', 'emissive'], ceiling: ['color', 'accent', 'emissive'], halo: ['accent', 'emissive'], aicore: ['color', 'accent', 'emissive'], holo: ['mount', 'accent', 'emissive'], strip: ['accent', 'emissive'],
   decal: ['text', 'accent'], flag: ['text', 'color', 'accent'], tent: ['text', 'color', 'accent'], neighbor: ['walls', 'color', 'accent'], person: ['color'],
   seal: [], tower: ['accent', 'emissive'], blade: ['arm', 'color', 'accent', 'emissive'],
 };
-const FLABEL = { offX: 'Lệch ô ngang', tray: 'Khay bút', qr: 'Mã QR', arm: 'Tay vươn', walls: 'Vách kín', scrW: 'Màn rộng', scrH: 'Màn cao', scrD: 'Màn dày', gap: 'Khe hở', bottom: 'Đáy màn', mount: 'Cách đỡ', xray: 'Nhìn xuyên', layout: 'Bố cục', pattern: 'Họa tiết', text: 'Chữ chính', sub: 'Chữ phụ', startNo: 'Số bắt đầu', color: 'Màu nền', accent: 'Màu nhấn', emissive: 'Độ sáng', band: 'Băng tên', bar: 'Bề chân', radius: 'Bo góc', variant: 'Nội dung', stand: 'Chân đứng', cell: 'Cỡ ô' };
-const OPTS = { layout: [['hero', 'Backdrop chính'], ['story', 'Câu chuyện'], ['plain', 'Tiêu đề giữa']], pattern: [['contour', 'Đồng mức + mạch'], ['circuit', 'Mạch điện'], ['hex', 'Lục giác'], ['dots', 'Lưới điểm'], ['grid', 'Lưới kỹ thuật'], ['plain', 'Trơn']], variant: [['board', 'Bảng viết tay'], ['pipeline', 'Hộp kính 5 lớp']], mount: [['stand', 'Chân đế bánh xe bên trong'], ['vesa', 'Treo VESA lên khung'], ['wall', 'Gắn lên mặt tiền'], ['pole', 'Chân đứng riêng']] };
+const FLABEL = { guide: 'Hướng dẫn tay', cam: 'Webcam + đèn', showCam: 'Vùng camera', offX: 'Lệch ô ngang', tray: 'Khay bút', qr: 'Mã QR', arm: 'Tay vươn', walls: 'Vách kín', scrW: 'Màn rộng', scrH: 'Màn cao', scrD: 'Màn dày', gap: 'Khe hở', bottom: 'Đáy màn', mount: 'Cách đỡ', xray: 'Nhìn xuyên', layout: 'Bố cục', pattern: 'Họa tiết', text: 'Chữ chính', sub: 'Chữ phụ', startNo: 'Số bắt đầu', color: 'Màu nền', accent: 'Màu nhấn', emissive: 'Độ sáng', band: 'Băng tên', bar: 'Bề chân', radius: 'Bo góc', variant: 'Nội dung', stand: 'Chân đứng', cell: 'Cỡ ô' };
+const OPTS = { layout: [['hero', 'Backdrop chính'], ['story', 'Câu chuyện'], ['plain', 'Tiêu đề giữa']], pattern: [['contour', 'Đồng mức + mạch'], ['circuit', 'Mạch điện'], ['hex', 'Lục giác'], ['dots', 'Lưới điểm'], ['grid', 'Lưới kỹ thuật'], ['plain', 'Trơn']], variant: [['board', 'Bảng viết tay'], ['pipeline', 'Hộp kính 5 lớp'], ['lab', 'Lab 3D cử chỉ tay']], mount: [['stand', 'Chân đế bánh xe bên trong'], ['vesa', 'Treo VESA lên khung'], ['wall', 'Gắn lên mặt tiền'], ['pole', 'Chân đứng riêng']] };
 function renderInspector() {
   const el = $('#inspector'); const o = selObj();
   if (!o) { el.innerHTML = `<h2>Thuộc tính</h2><p class="hint">Bấm vào một khối trong khung 3D hoặc trong danh sách bên trái để chỉnh. Kéo mũi tên để di chuyển (bước 50 mm), vòng tròn để xoay (bước 15°).</p><p class="hint">Phím tắt: W di chuyển · E xoay · Delete xóa · Ctrl+D nhân bản · Ctrl+Z hoàn tác · F lấy nét vào khối.</p>`; return; }
@@ -875,7 +906,7 @@ function renderInspector() {
     else if (k === 'text' || k === 'sub') { input = document.createElement('textarea'); input.value = o[k] || ''; }
     else if (k === 'color' || k === 'accent') { input = document.createElement('input'); input.type = 'color'; input.value = o[k] || '#000000'; }
     else if (k === 'emissive') { input = document.createElement('input'); input.type = 'range'; input.min = 0; input.max = 3; input.step = 0.05; input.value = o[k] ?? 1; }
-    else if (k === 'stand' || k === 'xray' || k === 'tray' || k === 'qr' || k === 'walls') { input = document.createElement('input'); input.type = 'checkbox'; input.checked = !!o[k]; }
+    else if (['stand', 'xray', 'tray', 'qr', 'walls', 'guide', 'cam', 'showCam'].includes(k)) { input = document.createElement('input'); input.type = 'checkbox'; input.checked = !!o[k]; }
     else { input = document.createElement('input'); input.type = 'number'; input.step = 10; input.value = o[k] ?? ''; }
     input.id = id; const lab = document.createElement('label'); lab.htmlFor = id; lab.textContent = FLABEL[k] || k; wrapEl.append(lab, input); ex.append(wrapEl);
     const ev = input.type === 'color' || input.type === 'range' ? 'input' : 'change';

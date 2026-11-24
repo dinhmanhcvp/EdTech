@@ -1,3 +1,7 @@
+# 2026-11-24 (6) — Trạm Lab 3D qua webcam ở mặt tiền phải
+- Studio (khóa lưu v4): mặt tiền = bảng viết 65" (1 580, viền hông 40) + trạm Lab 3D (1 320, màn 50" ngang đáy 1 000, `variant: 'lab'`, `guide`, `cam` webcam + đèn 4000K, `showCam` vùng nhìn 78° × 48° chúc 15°); vòng "Giơ tay" cách 1,1 m; huy hiệu góc trên phải; tháp mica dời sang bảng viết; hologram ẩn.
+- `/lab` thật: `numHands: 2`, camera 640×360, chỉ chạy trên localhost/https, WASM + mô hình tải từ CDN lần đầu (`handTracker.ts`). README hồ sơ in có mục vận hành. CHƯA làm: chế độ triển lãm (chỉ nhận tay gần nhất, tự quay về bài đầu khi không có người, mô hình chép cục bộ).
+
 # 2026-11-24 (5) — Dồn toàn bộ ra mặt tiền (gian bên cạnh dựng vách kín)
 - Studio (khóa lưu v3): mặt tiền liền khối 2 900 = kiosk trái 1720 (màn 65", khay bút) + kiosk phải 1180 (màn 43" dọc lệch ô `offX` −230, QR, hologram gắn tường `mount: 'wall'`, huy hiệu `seal`, kệ `tower`); chữ nổi chạy suốt đầu mặt tiền; 2 biển vẫy `blade` Ø640 hai mặt trên cột trước, tay vươn 450 ra lối đi (CẦN BTC CHO PHÉP); hàng xóm có vách kín (`walls`); góc nhìn "Đi tới từ trái/phải". Nội thất (backdrop, totem, đèn hiệu) ẩn.
 - File in: `config.kiosk` + `config.kiosk2` → KO1/KO2-TRUOC (+ đường khoét) và -HONG; BV biển vẫy ×4 mặt; HH chuyển lên mặt tiền phải. 31 hạng mục. Canvas bảng 10/11 lỗi thời.

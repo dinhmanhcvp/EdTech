@@ -43,3 +43,11 @@ Tệp `*_DUONG-CAT.pdf` là đường bế (nét hồng), không in.
 - Nếu nhà in dùng CorelDRAW hoặc Illustrator mà font bị đổi: nhờ họ chuyển chữ thành đường nét (outline) ngay khi mở file.
 - Khổ lớn: có tràn lề, không có dấu cắt. Ấn phẩm nhỏ: có dấu cắt cách mép tràn 1,5 mm, kèm dòng thông tin.
 - Chromium bỏ mất chữ quá lớn (khoảng trên 1 000 px) khi in PDF. Hình cỡ lớn như dấu "?" ở ốp quầy vì vậy được vẽ bằng đường vector.
+
+## Vận hành trạm Lab 3D qua webcam (mặt tiền phải)
+
+- **Thiết bị:** màn 50" nằm ngang (đáy cách sàn 1 000), webcam 1080p góc rộng khoảng 78° đặt giữa mép trên màn, chúc xuống khoảng 15°, đèn LED 4000K dài 560 mm ngay trên webcam chiếu vào tay khách. Laptop có GPU tốt vì nhận diện tay chạy trên GPU.
+- **Chạy:** trên laptop của trạm, trong `socratic-monorepo` chạy `npm run dev`, mở Chrome tại `http://localhost:3001/lab?bai=heart-surgery` (camera chỉ bật được trên localhost hoặc https), bấm F11 toàn màn hình.
+- **Mạng:** lần bật camera đầu tiên phải tải mô hình nhận diện tay từ jsDelivr và Google Storage. Mở thử ít nhất một lần khi có mạng vào sáng 29/11, hoặc chép hai tệp này vào `public/` theo ghi chú đầu `apps/teacher-board/src/utils/lab/hands/handTracker.ts`.
+- **Chỗ đứng:** khách đứng ở vòng "Giơ tay" cách mặt tiền khoảng 1,1 m. Lab nhận tối đa 2 bàn tay: chỉnh góc chúc của camera để khung hình chỉ lấy người đang chơi, không lấy người đứng sau. Kiểm tra bằng khung hình camera trong Lab trước giờ mở cửa.
+- **Bài gợi ý cho khách thử nhanh (1–2 phút):** `heart-surgery`, `soft-tissue`, `chem`, `robot`, `drone`. Thử từng bài trên đúng máy của trạm trước ngày triển lãm.

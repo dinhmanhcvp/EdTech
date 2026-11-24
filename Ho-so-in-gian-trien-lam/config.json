@@ -29,15 +29,15 @@
 
   "kiosk": {
     "_ghiChu": "Đo VIỀN NGOÀI THẬT của màn 65 inch (thước cuộn, đo cả viền cảm ứng). Ô khoét = màn + khe mỗi phía. Mặt kiosk phẳng với mặt viền màn.",
-    "rong": 1720, "cao": 2200, "sau": 720,
+    "rong": 1580, "cao": 2200, "sau": 720,
     "manRong": 1490, "manCao": 900, "khe": 5, "dayMan": 900, "lechNgang": 0,
     "tieuDe": "Viết thử ", "tieuDeNghieng": "lên bảng.", "phu": "Try writing on the board. The AI will ask you back.", "khayBut": true
   },
   "kiosk2": {
-    "_ghiChu": "Mặt tiền phải: màn 43 inch dựng dọc (hộp kính), hologram gắn tường, huy hiệu, QR. Đo viền ngoài thật của màn 43.",
-    "rong": 1180, "cao": 2200, "sau": 720,
-    "manRong": 540, "manCao": 950, "khe": 5, "dayMan": 900, "lechNgang": -230,
-    "tieuDe": "Nhìn AI ", "tieuDeNghieng": "nghĩ.", "phu": "Watch the AI think, layer by layer.", "khayBut": false
+    "_ghiChu": "Mặt tiền phải: trạm Lab 3D, màn 50 inch nằm ngang + webcam + đèn chiếu tay. Đo viền ngoài thật của màn 50.",
+    "rong": 1320, "cao": 2200, "sau": 720,
+    "manRong": 1120, "manCao": 650, "khe": 5, "dayMan": 1000, "lechNgang": 0,
+    "tieuDe": "Thí nghiệm ", "tieuDeNghieng": "bằng tay.", "phu": "No touching: raise your hands to the camera.", "khayBut": false, "huongDanTay": true
   },
 
   "leu": {

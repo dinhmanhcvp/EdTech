@@ -1,3 +1,7 @@
+# 2026-11-24 (5) — Dồn toàn bộ ra mặt tiền (gian bên cạnh dựng vách kín)
+- Studio (khóa lưu v3): mặt tiền liền khối 2 900 = kiosk trái 1720 (màn 65", khay bút) + kiosk phải 1180 (màn 43" dọc lệch ô `offX` −230, QR, hologram gắn tường `mount: 'wall'`, huy hiệu `seal`, kệ `tower`); chữ nổi chạy suốt đầu mặt tiền; 2 biển vẫy `blade` Ø640 hai mặt trên cột trước, tay vươn 450 ra lối đi (CẦN BTC CHO PHÉP); hàng xóm có vách kín (`walls`); góc nhìn "Đi tới từ trái/phải". Nội thất (backdrop, totem, đèn hiệu) ẩn.
+- File in: `config.kiosk` + `config.kiosk2` → KO1/KO2-TRUOC (+ đường khoét) và -HONG; BV biển vẫy ×4 mặt; HH chuyển lên mặt tiền phải. 31 hạng mục. Canvas bảng 10/11 lỗi thời.
+
 # 2026-11-24 (4) — Kiosk ốp màn 65" ở mép trước gian (studio + file in)
 - Người dùng chọn: kiosk ốp kín màn 65" và chân đế bánh xe, đặt mép trước quay ra lối đi. Studio: type `kiosk` (scrW/scrH/scrD/gap/bottom/mount stand|vesa/xray), `kioskSpec()` tính ô khoét = màn + khe; bố cục mặc định đổi (khóa lưu v2): khung cổng ẩn, totem + đèn hiệu vào trong bên phải, quầy dọc cánh phải, lõi AI giữa backdrop.
 - File in: `config.kiosk` (đang giả định viền ngoài 1490 × 900 — PHẢI đo màn thật) → KO-TRUOC 1720 × 2140 (+ _DUONG-CAT có kích thước ô khoét) và KO-HONG ×2. Bảng 10/11 trên canvas vẫn là phương án khung cổng cũ.

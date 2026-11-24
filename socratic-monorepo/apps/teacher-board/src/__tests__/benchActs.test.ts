@@ -2,9 +2,7 @@ import {readFileSync} from 'fs';
 import {join} from 'path';
 import {describe, expect, it} from 'vitest';
 import {OVER_R, dropped, wirePath, newSqueeze, newStir, pourStep, pourTilt, squash, squeezeStep, stirProgress, stirStep} from '../utils/lab/hands/benchActs';
-import {BENCH_MOVES, BENCH_SETUP, benchManual} from '../utils/lab/hands/benchMoves';
-import {FX_PARTS} from '../engines/families/benchMotion';
-import {BIO_FX_PARTS} from '../engines/families/benchMotionBio';
+import {BENCH_SETUP, benchManual} from '../utils/lab/hands/benchMoves';
 
 const nodes = (file: string): Set<string> => {
   const b = readFileSync(join(__dirname, '../../public/models', file));
@@ -88,7 +86,7 @@ describe('thao tác thật trong bước chuẩn bị (đặt, rót, khuấy, b�
     }
   });
 
-  it('bước dùng phần động có sẵn: phần đó có trong bộ dụng cụ và được cảnh nạp (BENCH_MOVES hoặc phần chạy tự do)', () => {
+  it('bước dùng phần động có sẵn: phần đó có trong bộ dụng cụ (cảnh tự nạp mọi phần mà bước chuẩn bị cầm)', () => {
     const phys = nodes('bench-phys.glb');
     const bio = nodes('bench-bio.glb');
     let n = 0;
@@ -98,10 +96,22 @@ describe('thao tác thật trong bước chuẩn bị (đặt, rót, khuấy, b�
         if (part === undefined) continue;
         n++;
         expect(phys.has('Mov_' + id + '_' + part) || bio.has('Mov_' + id + '_' + part), id + ': phần động trong GLB').toBe(true);
-        const loaded = (BENCH_MOVES[id] ?? []).some((m) => m.n === part) || (FX_PARTS[id] ?? BIO_FX_PARTS[id] ?? []).includes(part);
-        expect(loaded, id + ': phần động được cảnh nạp').toBe(true);
       }
-    expect(n).toBeGreaterThanOrEqual(14);
+    expect(n).toBeGreaterThanOrEqual(36);
+  });
+
+  it('không còn bước chuẩn bị nào là "kéo cục cam": bước nào cũng làm bằng vật thật, phần động hoặc công tắc', () => {
+    const blob = Object.entries(BENCH_SETUP).flatMap(([id, steps]) => steps.flatMap((s, i) => (s.act ? [] : [`${id}[${i}] ${s.label}`])));
+    expect(blob).toEqual([]);
+  });
+
+  it('hướng dẫn LÀM thí nghiệm nói đúng cử chỉ của cảnh (kéo vật / khóa dao / cần trượt), không còn "nút cam"', () => {
+    const t = (id: string) => (benchManual(id)?.tools ?? []).join(' ');
+    expect(t('PHYS_LAB_SPEED')).toContain('kéo lệch rồi thả');
+    expect(t('PHYS_LAB_OHM_LAW')).toContain('KHÓA DAO');
+    expect(t('PHYS_LAB_HOOKE')).toContain('CẦN TRƯỢT');
+    for (const id of ['PHYS_LAB_SPEED', 'PHYS_LAB_OHM_LAW', 'BIO_LAB_ENZYME']) expect(t(id)).not.toMatch(/nút cam|thanh trượt/);
+    expect(t('PHYS_LAB_LATENT_HEAT_FUSION')).toContain('Lau bằng giấy thấm');
   });
 
   it('hướng dẫn của bài nói đúng thao tác thật (rót, khuấy, bóp, đặt), không còn "cục cam" cho bước đã đổi', () => {

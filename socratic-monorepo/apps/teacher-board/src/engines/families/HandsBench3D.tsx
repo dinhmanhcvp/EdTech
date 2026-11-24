@@ -2,7 +2,7 @@
 
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
-import {BENCH_ACTION, BENCH_MOVES, BENCH_PICK, BENCH_PULL, BENCH_SETUP, dragT, grabOf, isTimeUnit, type BenchMove} from '../../utils/lab/hands/benchMoves';
+import {BENCH_ACTION, BENCH_KNIFE, BENCH_MOVES, BENCH_PICK, BENCH_PULL, BENCH_SETUP, dragT, grabOf, isTimeUnit, type BenchMove} from '../../utils/lab/hands/benchMoves';
 import {AUTO_FLAG, isToggle, pickProp, tintOf, trayLayout} from '../../utils/lab/hands/benchPick';
 import {OVER_R, wirePath, dropped, newSqueeze, newStir, pourStep, pourTilt, squash, squeezeStep, stirProgress, stirStep} from '../../utils/lab/hands/benchActs';
 import {BENCH_FX, FX_PARTS} from './benchMotion';
@@ -198,6 +198,10 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       const movers: {obj: THREE.Object3D; base: THREE.Vector3; m: (typeof BENCH_MOVES)[string][number]}[] = [];
       /** mọi phần động theo số thứ tự (kể cả phần chạy tự do không gắn thanh trượt) để hiệu ứng chuyển động ghi đè */
       const byN = new Map<number, {obj: THREE.Object3D; base: THREE.Vector3; free: boolean}>();
+      /** bộ dụng cụ (Set_ + Mov_) đã tải xong: trước đó bước cầm phần động phải CHỜ, không được coi là thiếu phần mà bỏ qua */
+      let setLoaded = false;
+      /** phần động chỉ dùng cho bước chuẩn bị (không thanh trượt, không hiệu ứng): mỗi khung hình về gốc rồi cộng độ lệch đang cầm / đang để ở mép bàn */
+      const setupParts: {obj: THREE.Object3D; base: THREE.Vector3}[] = [];
       void loadModel(`/models/bench-${live.file}.glb`)
         .then((lib) => {
           const set = partOf(lib, `Set_${e.id}`);
@@ -234,8 +238,31 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             root.add(sk.obj);
             byN.set(n, {obj: sk.obj, base: src.position.clone(), free: true});
           }
+          // phần động mà bước CHUẨN BỊ cầm đặt vào chỗ (thước, micro, lực kế, nhiệt kế…): nạp cả khi không gắn thanh trượt / hiệu ứng
+          for (const s of setup) {
+            const n = s.act?.part;
+            if (n === undefined || byN.has(n)) continue;
+            const name = `Mov_${e.id}_${n}`;
+            const src = lib.getObjectByName(name);
+            const sk = partOf(lib, name);
+            if (!src || !sk) continue;
+            glassify(sk.obj);
+            sk.obj.position.copy(src.position);
+            root.add(sk.obj);
+            byN.set(n, {obj: sk.obj, base: src.position.clone(), free: false});
+            setupParts.push({obj: sk.obj, base: src.position.clone()});
+          }
+          // chưa tới bước của nó thì vật nằm sẵn ở mép bàn (chưa lắp), không đứng sẵn đúng chỗ rồi mới "nhảy" ra mép bàn
+          for (const [i, s] of setup.entries()) {
+            const a = s.act;
+            const q = a?.part !== undefined ? byN.get(a.part) : undefined;
+            if (a && q && i >= stage && !partOffs.has(q.obj)) partOffs.set(q.obj, new THREE.Vector3(a.from[0] - q.base.x, 0.06 - q.base.y, a.from[2] - q.base.z));
+          }
+          setLoaded = true;
         })
-        .catch(() => undefined);
+        .catch(() => {
+          setLoaded = true; // không tải được bộ dụng cụ: bước dùng phần động được bỏ qua thay vì kẹt
+        });
 
       const slider = (key: string) => e.sliders.find((p) => p.key === key)!;
       const unit = (key: string) => {
@@ -337,6 +364,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           return;
         }
         if (a.part !== undefined) {
+          if (!setLoaded) return;
           const q = byN.get(a.part);
           if (!q) {
             A.for = stage;
@@ -463,6 +491,9 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         if (!curAct() || !o || A.for !== stage) return false;
         return A.held >= 0 || P.distAt(nx, ny, worldPt(A.part ? localCenter(o) : o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0)))) < reach;
       };
+      // chỉ khi phát triển: chỗ cầm của vật bước hiện tại (hệ bộ dụng cụ) cho máy dò trình duyệt kéo thử từng bước chuẩn bị
+      if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined')
+        Object.assign((window as unknown as {__bench: object}).__bench, {grabPt: () => (A.obj && A.for === stage ? (A.part ? localCenter(A.obj) : A.obj.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0))) : null)});
       const frameAct = (dt: number, elapsed: number) => {
         ensureProp();
         for (let i = anims.length - 1; i >= 0; i--) {
@@ -791,8 +822,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       };
       // THAO TÁC LÀM THÍ NGHIỆM cho bài không có vật để kéo: một KHÓA / CẦN GẠT thật đặt trước dụng cụ. Bài điện: khóa dao (lưỡi đồng quay từ mở sang đóng);
       // bài khác: cần trượt trên ray. Nắm tay cầm, gạt hết hành trình thì thí nghiệm chạy và ghi số đo; thả ra cần bật về vị trí mở.
-      const KNIFE = new Set(['OHM_LAW', 'EMF_INTERNAL_R', 'CAPACITOR_RC', 'TRANSFORMER', 'SPECIFIC_HEAT', 'WAVE_INTERFERENCE', 'STANDING_WAVE', 'SOUND_FREQUENCY']);
-      const knife = KNIFE.has(e.id);
+      const knife = BENCH_KNIFE.has(e.id);
       const levOn = e.columns.length > 0 && !pull;
       const lev = new THREE.Group();
       const levBase = new THREE.MeshStandardMaterial({color: knife ? '#1A1A1C' : '#2A2E66', roughness: 0.5});
@@ -879,7 +909,8 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       const fx = (BENCH_FX[e.id] ?? BIO_FX[e.id])?.({
         e,
         root,
-        part: (n) => byN.get(n)?.obj,
+        // phần còn chờ học sinh đặt vào chỗ (bước chuẩn bị chưa làm) đứng yên ở mép bàn: không cho hiệu ứng làm nó chạy / trượt khi đang cần cầm
+        part: (n) => (setup.some((st, i) => i >= stage && st.act?.part === n) ? undefined : byN.get(n)?.obj),
         choiceNum: (key, dflt = 1) => {
           const label = e.choices?.find((c) => c.key === key)?.options.find((o) => o[0] === live.st.s[key])?.[1] ?? '';
           const m = /-?\d+(?:[.,]\d+)?/.exec(label);
@@ -916,6 +947,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           else if (m.axis === 'rz') obj.rotation.z = x;
           else obj.position[m.axis] = base[m.axis] + x;
         }
+        for (const q of setupParts) q.obj.position.copy(q.base);
         for (const q of byN.values()) {
           if (!q.free) continue;
           q.obj.position.copy(q.base);
@@ -1076,7 +1108,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         const row = live.st.rows[live.st.rows.length - 1];
         k.caption(!setupDone() ? `${e.lesson}\nChuẩn bị ${stage + 1}/${setup.length}: ${setup[stage].label} · ${{place: 'chụm vật ở mép bàn, kéo vào vòng cam rồi buông', pour: 'chụm lọ, đưa miệng lọ tới vòng cam và giữ yên để rót', stir: 'chụm, đưa vào vòng cam rồi vẽ vòng tròn', squeeze: 'chụm giữ để bóp, nhả để phồng', connect: 'chụm phích có dây, kéo tới chốt cần nối rồi buông', press: 'chụm một lần vào công tắc (vòng cam) để bật'}[setup[stage].act?.kind ?? 'place'] ?? 'chụm cục cam rồi kéo thả vào vòng cam trên dụng cụ'}` : row ? `Lần đo ${live.st.rows.length}: ${e.columns.map((c) => `${c.label} = ${fmt(row[c.key], c.digits ?? 2)}${c.unit ? ` ${c.unit}` : ''}`).join(' · ')}
 Đổi điều kiện rồi làm lại để có lần đo tiếp` : `${e.lesson}
-Kéo bộ phận có vòng cam để chỉnh · cầm vật ở khay đặt vào vòng vàng để chọn${e.columns.length ? ` · chạm vào dụng cụ có nhãn xanh để ${action.toLowerCase()} và ghi số đo` : ''}`);
+Kéo bộ phận có vòng cam để chỉnh · cầm vật ở khay đặt vào vòng vàng để chọn${e.columns.length ? ` · ${pull ? `kéo ${pull.what.split(':')[0]} rồi thả` : levOn ? (knife ? 'gạt khóa dao xuống' : 'gạt cần trượt sang ô xanh') : 'giữ chụm trên dụng cụ'} để ${action.toLowerCase()} và ghi số đo` : ''}`);
       };
     },
   };

@@ -420,10 +420,11 @@ def phys():
     part('Set_SAFETY', o)
 
     # ERROR_MEASURE: thanh kim loại, thước thẳng, thước kẹp
-    o = [B(1.6, 0.12, 0.12, 0, 0.06, -0.3, STEEL, 0.01)] + ruler(-1.2, 1.2, 0.05)
+    o = ruler(-1.2, 1.2, 0.05)
     o += [B(1.8, 0.03, 0.12, 0, 0.015, 0.55, CHROME, 0.004), B(0.06, 0.03, 0.4, -0.87, 0.015, 0.41, CHROME, 0.004), ]
     o += [B(0.004, 0.002, 0.04, -0.8 + i * 0.1, 0.032, 0.52, INK, 0) for i in range(16)]
     part('Set_ERROR_MEASURE', o)
+    part('Mov_ERROR_MEASURE_2', [B(1.6, 0.12, 0.12, 0, 0.06, -0.3, STEEL, 0.01)], pivot=(0, 0, -0.3))  # thanh kim loại: học sinh đặt lên thước
     part('Mov_ERROR_MEASURE_1', [B(0.06, 0.03, 0.4, -0.2, 0.015, 0.41, CHROME, 0.004), B(0.3, 0.05, 0.16, -0.08, 0.025, 0.55, STEEL, 0.006)], pivot=(-0.2, 0.015, 0.41))
 
     # SPEED: đường ray, xe, hai cổng quang (cổng 2 động), đồng hồ hiện số
@@ -440,21 +441,25 @@ def phys():
     part('Mov_FREE_FALL_G_2', [S(0.05, 0, 1.95, -0.2, STEEL)], pivot=(0, 1.95, -0.2))
     part('Mov_FREE_FALL_G_1', [B(0.5, 0.06, 0.06, 0, 0, -0.2, INK, 0.008), B(0.06, 0.06, 0.3, -0.22, 0, -0.08, INK, 0.008), B(0.06, 0.06, 0.3, 0.22, 0, -0.08, INK, 0.008), S(0.02, 0.19, 0, 0.05, LED), C(0.02, 0.5, -0.4, 0, -0.2, CHROME, 'x')], pivot=(0, 0, 0))
 
-    # FORCE_COMPOSITION: bảng từ, ba lực kế, vòng nhẫn, thước đo góc
-    o = [B(2.6, 1.8, 0.06, 0, 1.0, -0.4, WHITE, 0.01), B(0.1, 0.1, 0.6, -1.1, 0.05, -0.3, IRON, 0.01), B(0.1, 0.1, 0.6, 1.1, 0.05, -0.3, IRON, 0.01), LA([(0.05, 0), (0.07, 0), (0.07, 0.02), (0.05, 0.02)], 0, 1.0, -0.34, CHROME)]
-    o[-1].rotation_euler = (R90, 0, 0)
+    # FORCE_COMPOSITION: bảng từ, ba lực kế móc vào vòng nhẫn (phần động 1: học sinh móc vào chốt giữa bảng), thước đo góc (phần động 2)
+    o = [B(2.6, 1.8, 0.06, 0, 1.0, -0.4, WHITE, 0.01), B(0.1, 0.1, 0.6, -1.1, 0.05, -0.3, IRON, 0.01), B(0.1, 0.1, 0.6, 1.1, 0.05, -0.3, IRON, 0.01)]
+    ring = LA([(0.05, 0), (0.07, 0), (0.07, 0.02), (0.05, 0.02)], 0, 1.0, -0.34, CHROME)
+    ring.rotation_euler = (R90, 0, 0)
+    dyn = [ring]
     for a, m in ((2.5, RED), (0.7, BLUE), (-1.57, GREENM)):
         cx, cy = 0.55 * math.cos(a), 1.0 + 0.55 * math.sin(a)
-        o += [B(0.5, 0.09, 0.04, cx, cy, -0.34, m, 0.01, rz=a), TB([(0.07 * math.cos(a), 1.0 + 0.07 * math.sin(a), -0.34), (0.3 * math.cos(a), 1.0 + 0.3 * math.sin(a), -0.34)], 0.006, INK, False), C(0.05, 0.05, 0.85 * math.cos(a), 1.0 + 0.85 * math.sin(a), -0.35, IRON, 'z')]
-    o += [C(0.4, 0.008, 0, 1.0, -0.365, mat('prot', hexc('#E3B341'), rough=0.3, alpha=0.5), 'z', seg=40)]
+        dyn += [B(0.5, 0.09, 0.04, cx, cy, -0.34, m, 0.01, rz=a), TB([(0.07 * math.cos(a), 1.0 + 0.07 * math.sin(a), -0.34), (0.3 * math.cos(a), 1.0 + 0.3 * math.sin(a), -0.34)], 0.006, INK, False)]
+        o += [C(0.05, 0.05, 0.85 * math.cos(a), 1.0 + 0.85 * math.sin(a), -0.35, IRON, 'z')]
     part('Set_FORCE_COMPOSITION', o)
+    part('Mov_FORCE_COMPOSITION_1', dyn, pivot=(0, 1.0, -0.34))
+    part('Mov_FORCE_COMPOSITION_2', [C(0.4, 0.008, 0, 1.0, -0.365, mat('prot', hexc('#E3B341'), rough=0.3, alpha=0.5), 'z', seg=40)], pivot=(0, 0.6, -0.365))
 
     # SOUND_FREQUENCY: âm thoa trên hộp cộng hưởng, micro, dao động kí
     o = [B(0.9, 0.3, 0.4, -1.8, 0.15, 0, WOOD, 0.01), C(0.02, 0.25, -1.8, 0.42, 0, CHROME), B(0.17, 0.04, 0.04, -1.8, 0.55, 0, CHROME, 0.006)]
-    o += [C(0.14, 0.03, -0.6, 0.015, 0, IRON), C(0.015, 0.6, -0.6, 0.3, 0, CHROME), C(0.05, 0.22, -0.72, 0.62, 0, BAKELITE, 'x'), S(0.07, -0.85, 0.62, 0, STEEL)]
     o += [B(1.4, 0.9, 0.7, 1.4, 0.45, -0.2, CASE, 0.03), B(0.8, 0.6, 0.012, 1.15, 0.5, 0.151, SCREEN, 0)]
     o += [C(0.05, 0.04, 1.85, 0.7 - i * 0.2, 0.16, BAKELITE, 'z') for i in range(1, 3)] + [wire((-0.6, 0.05, 0), (1.0, 0.1, 0.16), INK, 0.4)]
     part('Set_SOUND_FREQUENCY', o)
+    part('Mov_SOUND_FREQUENCY_3', [C(0.14, 0.03, -0.6, 0.015, 0, IRON), C(0.015, 0.6, -0.6, 0.3, 0, CHROME), C(0.05, 0.22, -0.72, 0.62, 0, BAKELITE, 'x'), S(0.07, -0.85, 0.62, 0, STEEL)], pivot=(-0.6, 0, 0))  # micro: đặt sát âm thoa
     part('Mov_SOUND_FREQUENCY_9', knob(1.85, 0.7, 0.17, 0.05), pivot=(1.85, 0.7, 0.17))
     part('Mov_SOUND_FREQUENCY_1', [B(0.03, 0.6, 0.04, -1.87, 0.85, 0, CHROME, 0.006)], pivot=(-1.87, 0.55, 0))
     part('Mov_SOUND_FREQUENCY_2', [B(0.03, 0.6, 0.04, -1.73, 0.85, 0, CHROME, 0.006)], pivot=(-1.73, 0.55, 0))
@@ -465,8 +470,9 @@ def phys():
         o += [B(0.1, 0.25, 0.5, x, 0.125, 0, WOOD, 0.01)]
     o += [B(0.5, 0.6, 0.5, -1.9, 0.3, 0, BAKELITE, 0.02), LA([(0, 0), (0.18, 0.06), (0.2, 0.08), (0, 0.08)], -1.64, 0.45, 0, IRON)]
     o[-1].rotation_euler = (0, R90, 0)
-    o += ruler(-1.4, 1.8, 0.45) + thermometer(2.6, 0.1, 0.5, 0.8) + [C(0.1, 0.05, 2.6, 0.025, 0.5, IRON)]
+    o += thermometer(2.6, 0.1, 0.5, 0.8) + [C(0.1, 0.05, 2.6, 0.025, 0.5, IRON)]
     part('Set_SOUND_SPEED', o)
+    part('Mov_SOUND_SPEED_1', ruler(-1.4, 1.8, 0.45), pivot=(0.2, 0, 0.45))  # thước: đặt dọc ống
 
     # EMF_INTERNAL_R: pin, biến trở (con chạy động), ampe kế, vôn kế, khóa K, dây
     o = battery(-2.3, 0.2) + meter(-0.9, -0.5, 'A', RED, 0.3) + meter(0.2, -0.5, 'V', BLUE, -0.2) + switch(-2.2, -0.6)
@@ -487,17 +493,19 @@ def phys():
 
     # FRICTION: tấm bề mặt, khối gỗ, quả cân (động), lực kế kéo ngang
     o = [B(3.6, 0.06, 0.9, 0, 0.03, 0, WOOD, 0.01), B(1.1, 0.012, 0.8, -1.9, 0.07, 0.95, GLASS, 0), B(1.1, 0.03, 0.8, -0.6, 0.02, 0.95, RUBBER, 0.004), ]
-    o += [C(0.06, 0.7, 0.65, 0.21, 0, mat('sbody', hexc('#F4EEDD'), rough=0.4), 'x'), C(0.02, 0.3, 1.1, 0.21, 0, CHROME, 'x'), LA([(0.03, 0), (0.045, 0), (0.045, 0.012), (0.03, 0.012)], 1.3, 0.21, 0, CHROME)]
-    o += [B(0.004, 0.125, 0.004, 0.4 + i * 0.05, 0.21, 0.0, INK, 0) for i in range(11)]
+    dyn = [C(0.06, 0.7, 0.65, 0.21, 0, mat('sbody', hexc('#F4EEDD'), rough=0.4), 'x'), C(0.02, 0.3, 1.1, 0.21, 0, CHROME, 'x'), LA([(0.03, 0), (0.045, 0), (0.045, 0.012), (0.03, 0.012)], 1.3, 0.21, 0, CHROME)]
+    dyn += [B(0.004, 0.125, 0.004, 0.4 + i * 0.05, 0.21, 0.0, INK, 0) for i in range(11)]
     part('Set_FRICTION', o)
+    part('Mov_FRICTION_4', dyn, pivot=(0.75, 0.06, 0))  # lực kế: móc vào khối gỗ
     part('Mov_FRICTION_2', [B(0.7, 0.3, 0.45, -0.8, 0.21, 0, WOOD, 0.015), C(0.02, 0.04, -0.44, 0.21, 0, CHROME, 'x')], pivot=(-0.8, 0.21, 0))
     part('Mov_FRICTION_3', [TB([(-0.42, 0.21, 0), (0.3, 0.21, 0)], 0.005, INK, False)], pivot=(0.3, 0.21, 0))
     part('Mov_FRICTION_1', weight(-0.9, 0.36, 0, 0.12, 0.1) + weight(-0.65, 0.36, 0, 0.12, 0.1), pivot=(-0.8, 0.36, 0))
 
     # HOOKE: giá treo, lò xo (co giãn), quả cân (động), thước milimét
-    o = stand(-0.6, -0.2, 2.2, 0.6) + ruler(0.35, 2.35, -0.25, vertical=True, at=0.06) + [C(0.012, 0.08, 0, 2.16, -0.2, CHROME)]
+    o = stand(-0.6, -0.2, 2.2, 0.6) + [C(0.012, 0.08, 0, 2.16, -0.2, CHROME)]
     o += weight(1.4, 0, 0.4, 0.1, 0.1) + weight(1.7, 0, 0.4, 0.1, 0.1) + weight(1.55, 0, 0.7, 0.1, 0.1)
     part('Set_HOOKE', o)
+    part('Mov_HOOKE_3', ruler(0.35, 2.35, -0.25, vertical=True, at=0.06), pivot=(0.35, 0.06, -0.25))  # thước đứng: đặt sát lò xo
     part('Mov_HOOKE_1', spring(0, 1.4, 2.12, -0.2), pivot=(0, 2.12, -0.2))
     part('Mov_HOOKE_2', [C(0.008, 0.14, 0, 1.33, -0.2, CHROME), B(0.1, 0.006, 0.006, 0.05, 1.3, -0.2, RED, 0)] + weight(0, 1.14, -0.2, 0.1, 0.12), pivot=(0, 1.4, -0.2))
 
@@ -512,8 +520,8 @@ def phys():
     # BOYLE: xi lanh thủy tinh đứng, pit-tông (động), áp kế, thước chia
     o = [B(0.9, 0.08, 0.7, 0, 0.04, 0, IRON, 0.02), C(0.26, 1.5, 0, 0.83, 0, GLASS, seg=32), C(0.28, 0.06, 0, 0.11, 0, CHROME), C(0.28, 0.04, 0, 1.6, 0, CHROME)]
     o += [B(0.006, 0.004, 0.006, 0.262, 0.25 + i * 0.06, 0.0, INK, 0) for i in range(22)] + [B(0.05, 0.004, 0.006, 0.27, 0.25 + i * 0.3, 0.0, INK, 0) for i in range(5)]
-    o += [TB([(0.26, 0.2, 0), (0.7, 0.2, 0), (1.2, 0.5, 0)], 0.025, RUBBER), C(0.34, 0.12, 1.2, 0.75, 0, CHROME, 'z', seg=36), C(0.3, 0.012, 1.2, 0.75, 0.061, CREAM, 'z', seg=36), B(0.012, 0.24, 0.006, 1.27, 0.82, 0.07, RED, 0, rz=-0.6), TX('kPa', 0.07, 1.2, 0.6, 0.07)]
     part('Set_BOYLE', o)
+    part('Mov_BOYLE_2', [TB([(0.26, 0.2, 0), (0.7, 0.2, 0), (1.2, 0.5, 0)], 0.025, RUBBER), C(0.34, 0.12, 1.2, 0.75, 0, CHROME, 'z', seg=36), C(0.3, 0.012, 1.2, 0.75, 0.061, CREAM, 'z', seg=36), B(0.012, 0.24, 0.006, 1.27, 0.82, 0.07, RED, 0, rz=-0.6), TX('kPa', 0.07, 1.2, 0.6, 0.07)], pivot=(0.8, 0.2, 0))  # áp kế có ống: lắp khít vào đầu xi lanh
     part('Mov_BOYLE_1', [C(0.245, 0.1, 0, 0, 0, RUBBER, seg=32), C(0.03, 1.2, 0, 0.6, 0, CHROME), C(0.2, 0.04, 0, 1.22, 0, BAKELITE)], pivot=(0, 0, 0))
 
     # OHM_LAW: nguồn chỉnh được, điện trở, ampe kế, vôn kế
@@ -533,8 +541,9 @@ def phys():
     # CHARLES: bình khí trong cốc nước nóng trên bếp, xi lanh ngang (pit-tông động), nhiệt kế
     o = [B(0.9, 0.16, 0.8, -1.4, 0.08, 0, CASE, 0.02), C(0.3, 0.02, -1.4, 0.17, 0, IRON)] + up(beaker(-1.4, 0, 0.36, 0.6, 0.7, liq('hot', '#E8A07F', 0.4)), 0.18)
     o += [TB([(-1.4, 0.88, 0), (-1.4, 1.2, 0), (-0.6, 1.2, 0), (-0.2, 0.9, 0), (0.1, 0.9, 0)], 0.02, RUBBER), C(0.16, 1.6, 0.9, 0.9, 0, GLASS, 'x', seg=24)] + stand(0.9, -0.3, 0.9, 0.0) + [B(0.1, 0.1, 0.4, 0.9, 0.9, -0.15, IRON, 0.01)]
-    o += [B(0.004, 0.006, 0.006, 0.2 + i * 0.1, 1.062, 0, INK, 0) for i in range(15)] + thermometer(-1.6, 0.4, 0.1, 0.9, 0.15)
+    o += [B(0.004, 0.006, 0.006, 0.2 + i * 0.1, 1.062, 0, INK, 0) for i in range(15)]
     part('Set_CHARLES', o)
+    part('Mov_CHARLES_2', thermometer(-1.6, 0.4, 0.1, 0.9, 0.15), pivot=(-1.6, 0.37, 0.1))  # nhiệt kế: cắm vào cốc nước
     part('Mov_CHARLES_1', [C(0.15, 0.08, 0, 0.9, 0, RUBBER, 'x', seg=24), C(0.02, 0.9, 0.45, 0.9, 0, CHROME, 'x')], pivot=(0, 0, 0))
 
     # EM_INDUCTION: cuộn dây, nam châm thẳng (động), milivôn kế
@@ -549,17 +558,18 @@ def phys():
     for dx in (-1.2, 1.2):
         for dz in (-0.7, 0.7):
             o.append(C(0.03, 0.5, dx, 0.25, dz, CHROME))
-    for sx in (-0.3, 0.3):
-        o += [C(0.012, 0.3, sx, 0.75, -0.3, CHROME, seg=8)]
-    o += [B(0.9, 0.06, 0.06, 0, 0.9, -0.3, IRON, 0.008), B(0.3, 0.2, 0.2, -0.7, 0.9, -0.3, BAKELITE, 0.02)] + stand(-1.9, -0.3, 0.9, 1.1) + lamp(2.0, -0.6, 1.9, -1) + ruler(-1.0, 1.0, 1.0)
+    prong = [C(0.012, 0.3, sx, 0.75, -0.3, CHROME, seg=8) for sx in (-0.3, 0.3)] + [B(0.9, 0.06, 0.06, 0, 0.9, -0.3, IRON, 0.008)]
+    o += [B(0.3, 0.2, 0.2, -0.7, 0.9, -0.3, BAKELITE, 0.02)] + stand(-1.9, -0.3, 0.9, 1.1) + lamp(2.0, -0.6, 1.9, -1) + ruler(-1.0, 1.0, 1.0)
     o += [B(2.4, 0.01, 1.4, 0, 0.012, 0, PAPER, 0)]
     part('Set_WAVE_INTERFERENCE', o)
+    part('Mov_WAVE_INTERFERENCE_1', prong, pivot=(0, 0.6, -0.3))  # thanh hai mũi nhọn: nhúng vào mặt nước
     part('Mov_WAVE_INTERFERENCE_9', knob(-0.7, 0.9, -0.17, 0.05), pivot=(-0.7, 0.9, -0.17))
 
     # STANDING_WAVE: máy phát dao động, sợi dây có sóng dừng, ròng rọc, quả cân, thước
     o = [B(0.7, 0.5, 0.5, -2.3, 0.25, 0, CASE, 0.02), C(0.05, 0.04, -2.5, 0.35, 0.26, BAKELITE, 'z'), B(0.3, 0.1, 0.012, -2.2, 0.35, 0.255, DARK, 0), C(0.03, 0.3, -1.9, 0.62, 0, CHROME), B(0.2, 0.06, 0.1, -1.9, 0.52, 0, IRON, 0.008)]
-    o += stand(2.1, -0.3, 0.78, 0.0) + [C(0.12, 0.04, 2.0, 0.66, 0, ALU, 'z'), TB([(2.12, 0.66, 0), (2.12, 0.3, 0)], 0.005, INK, False)] + weight(2.12, 0.08, 0, 0.1, 0.2) + ruler(-1.9, 1.9, 0.6)
+    o += stand(2.1, -0.3, 0.78, 0.0) + [C(0.12, 0.04, 2.0, 0.66, 0, ALU, 'z')] + ruler(-1.9, 1.9, 0.6)
     part('Set_STANDING_WAVE', o)
+    part('Mov_STANDING_WAVE_1', [TB([(2.12, 0.66, 0), (2.12, 0.3, 0)], 0.005, INK, False)] + weight(2.12, 0.08, 0, 0.1, 0.2), pivot=(2.12, 0.08, 0))  # dây vắt qua ròng rọc + quả cân
     # cầu chặn dây (động): dịch dọc dây để đổi chiều dài phần dây dao động
     part('Mov_STANDING_WAVE_9', [B(0.3, 0.05, 0.3, 0, 0.025, 0, IRON, 0.01), B(0.05, 0.68, 0.16, 0, 0.39, 0, ALU, 0.008), B(0.02, 0.06, 0.16, 0, 0.75, 0, CHROME, 0.004)], pivot=(0, 0, 0))
 
@@ -584,10 +594,11 @@ def phys():
     part('Mov_LEVER_MOMENT_1', [TB([(0, 1.46, 0), (0, 1.2, 0)], 0.005, INK, False)] + weight(0, 0.95, 0, 0.11, 0.25), pivot=(0, 0, 0))
 
     # PROJECTILE_HORIZONTAL: máng ném trên bệ (động theo h), bi thép, giấy than, thước
-    o = [B(2.2, 0.01, 0.9, 1.3, 0.006, 0, PAPER, 0), B(2.0, 0.006, 0.8, 1.3, 0.014, 0, mat('carbon', hexc('#2A2E33'), rough=0.8), 0)] + ruler(0.2, 2.6, 0.6)
+    o = [B(2.2, 0.01, 0.9, 1.3, 0.006, 0, PAPER, 0)] + ruler(0.2, 2.6, 0.6)
     o += [S(0.035, 0.3 + 0.35 * i, 1.4 - 0.2 * i * i * 0.55, 0, mat('trail%d' % i, (0.6, 0.62, 0.65), metallic=1, rough=0.3, alpha=0.35 + 0.1 * i)) for i in range(1, 5)] + [C(0.03, 1.6, -0.9, 0.8, -0.4, CHROME), B(0.6, 0.06, 0.5, -1.0, 0.03, -0.3, IRON, 0.015)]
     part('Set_PROJECTILE_HORIZONTAL', o)
     part('Mov_PROJECTILE_HORIZONTAL_1', [B(1.2, 0.06, 0.4, -0.8, -0.05, 0, WOOD, 0.01), B(1.0, 0.04, 0.12, -1.0, 0.22, 0, ALU, 0.006, rz=0.45), B(0.5, 0.04, 0.12, -0.35, 0.0, 0, ALU, 0.006), B(0.1, 0.1, 0.1, -0.9, -0.05, -0.4, IRON, 0.01)], pivot=(0, 0, 0))
+    part('Mov_PROJECTILE_HORIZONTAL_3', [B(2.0, 0.006, 0.8, 1.3, 0.014, 0, mat('carbon', hexc('#2A2E33'), rough=0.8), 0)], pivot=(1.3, 0.011, 0))  # giấy than: đặt lên tờ giấy trắng
     part('Mov_PROJECTILE_HORIZONTAL_2', [S(0.05, -0.2, 0.07, 0, STEEL)], pivot=(-0.2, 0.07, 0))
 
     # TRANSFORMER: lõi sắt chữ U, hai cuộn dây, nguồn xoay chiều, hai vôn kế
@@ -630,11 +641,14 @@ def bio():
         return _PART(name, objs, pivot)
 
     # BIOMOLECULES: giá 5 ống mẫu, 4 lọ thuốc thử, đèn cồn, cốc cách thủy
-    o = rack(-1.5, 0, [liq('starch', '#EDE6CF', 0.8), L_YELLOW, liq('egg', '#F3EFD8', 0.7), liq('oil', '#E8C84A', 0.8), WATER])
+    tubes = rack(-1.5, 0, [liq('starch', '#EDE6CF', 0.8), L_YELLOW, liq('egg', '#F3EFD8', 0.7), liq('oil', '#E8C84A', 0.8), WATER])
+    bots = []
     for i, (m, c) in enumerate(((L_BROWN, INK), (L_BLUE, BLUE), (L_VIOLET, PURPLE), (L_RED, RED))):
-        o += bottle(0.1 + i * 0.35, 0.5, m, c)
-    o += burner(0.4, -0.4) + up(beaker(1.9, -0.1, 0.32, 0.5, 0.6) + ttube(1.85, 0.06, -0.1, L_BRICK), 0.14) + [B(0.9, 0.14, 0.8, 1.9, 0.07, -0.1, CASE, 0.02)]
+        bots += bottle(0.1 + i * 0.35, 0.5, m, c)
+    o = burner(0.4, -0.4) + up(beaker(1.9, -0.1, 0.32, 0.5, 0.6) + ttube(1.85, 0.06, -0.1, L_BRICK), 0.14) + [B(0.9, 0.14, 0.8, 1.9, 0.07, -0.1, CASE, 0.02)]
     part('Set_BIOMOLECULES', o)
+    part('Mov_BIOMOLECULES_3', tubes, pivot=(-1.5, 0, 0))  # giá ống mẫu thử: đặt vào chỗ
+    part('Mov_BIOMOLECULES_4', bots, pivot=(0.625, 0, 0.5))  # bốn lọ thuốc thử: đặt cạnh giá ống
     part('Mov_BIOMOLECULES_1', [C(0.014, 0.3, 0, 0.17, 0, GLASS, seg=10), LA([(0, 0), (0.012, 0.02), (0.012, 0.04), (0, 0.04)], 0, 0, 0, GLASS), S(0.045, 0, 0.35, 0, RUBBER)])
 
     # CELL_OBSERVE: kính hiển vi (bàn kính động theo núm chỉnh nét), lam kính, củ hành, xanh methylene
@@ -673,8 +687,8 @@ def bio():
 
     # TRANSPIRATION: chậu cây bọc túi trên cân, đèn (động), lọ vaseline
     o = digital(-0.6, 0, '352.18 g', 1.0, True) + up(plant(-0.6, 0, 0.8, 8, r=0.24), 0.26) + bottle(1.9, 0.5, mat('vas', hexc('#F1E7B5'), rough=0.5), BLUE, 0.14, 0.18)
-    o += [LA([(0.27, 0), (0.3, 0.2), (0.27, 0.38), (0.26, 0.38), (0.29, 0.2), (0.26, 0)], -0.6, 0.27, 0, mat('bag', (0.95, 0.97, 1), rough=0.1, alpha=0.3))]
     part('Set_TRANSPIRATION', o)
+    part('Mov_TRANSPIRATION_2', [LA([(0.27, 0), (0.3, 0.2), (0.27, 0.38), (0.26, 0.38), (0.29, 0.2), (0.26, 0)], -0.6, 0.27, 0, mat('bag', (0.95, 0.97, 1), rough=0.1, alpha=0.3))], pivot=(-0.6, 0.27, 0))  # túi nilon: bọc quanh gốc chậu
     part('Mov_TRANSPIRATION_1', lamp(0, -0.2, 1.7, -1), pivot=(0, 0, 0))
 
     # PIGMENT: cối chày, lá, ống đong có giấy sắc kí với các vạch sắc tố, acetone, thước
@@ -691,11 +705,14 @@ def bio():
 
     # SEED_RESPIRATION: hai bình kín (hạt sống / hạt luộc) nối ống sang nước vôi trong, bể ổn nhiệt, cảm biến CO₂
     o = tank(-1.0, 0, 2.0, 0.45, 0.9, 0.7, WATER, 0.12) + [B(2.1, 0.12, 1.0, -1.0, 0.06, 0, CASE, 0.02)]
+    hose = []
     for i, (sx, m) in enumerate(((-1.5, LEAF2), (-0.5, mat('boiled', hexc('#B59A6A'))))):
         o += [LA([(0, 0), (0.28, 0), (0.3, 0.3), (0.12, 0.5), (0.12, 0.62), (0, 0.62)], sx, 0.16, 0, GLASS), C(0.13, 0.06, sx, 0.8, 0, RUBBER)] + [S(0.05, sx + 0.12 * math.cos(k * 1.1), 0.22 + 0.04 * (k % 3), 0.12 * math.sin(k * 1.1), m) for k in range(12)]
-        o += [TB([(sx, 0.82, 0), (sx, 1.1, 0), (sx + 0.3, 1.2, 0.3), (1.0 + i * 0.5, 1.0, 0.3), (1.0 + i * 0.5, 0.3, 0.3)], 0.015, GLASS)] + ttube(1.0 + i * 0.5, 0.05, 0.3, liq('lime%d' % i, '#F4F4F0' if i == 0 else '#CFE3F0', 0.8 if i == 0 else 0.4), 0.6)
+        hose.append(TB([(sx, 0.82, 0), (sx, 1.1, 0), (sx + 0.3, 1.2, 0.3), (1.0 + i * 0.5, 1.0, 0.3), (1.0 + i * 0.5, 0.3, 0.3)], 0.015, GLASS))
+        o += ttube(1.0 + i * 0.5, 0.05, 0.3, liq('lime%d' % i, '#F4F4F0' if i == 0 else '#CFE3F0', 0.8 if i == 0 else 0.4), 0.6)
     o += [B(0.9, 0.06, 0.4, 1.25, 0.03, 0.3, WOOD, 0.01), B(0.7, 0.4, 0.3, 2.3, 0.2, -0.3, CASE, 0.02), B(0.4, 0.14, 0.012, 2.3, 0.24, -0.149, DARK, 0), B(1.2, 0.03, 0.012, -1.0, 0.06, 0.502, INK, 0)]
     part('Set_SEED_RESPIRATION', o)
+    part('Mov_SEED_RESPIRATION_2', hose, pivot=(0.1, 0.82, 0.15))  # hai ống dẫn khí: nối từ nút bình sang ống nước vôi
     part('Mov_SEED_RESPIRATION_1', [B(0.08, 0.1, 0.07, 0, 0.06, 0.53, ORANGE, 0.01)])
 
     # CIRCULATION: cánh tay mô hình trên gối, vòng bít, máy đo huyết áp, đồng hồ bấm giây
@@ -714,8 +731,9 @@ def bio():
     # APICAL_DOMINANCE: hai chậu cây (để nguyên ngọn / đã bấm ngọn mọc cành bên), kéo, thước
     o = plant(-1.3, 0, 1.3, 6, r=0.26) + plant(0.7, 0, 0.7, 4, r=0.26)
     side = [TB([(0.7, 0.8, 0), (0.7 + sx * 0.3, 1.0, 0.05), (0.7 + sx * 0.45, 1.25, 0.05)], 0.014, LEAF2) for sx in (-1, 1)] + [B(0.24, 0.012, 0.12, 0.7 + sx * 0.5, 1.28, 0.05, LEAF, 0.004, ry=0.5 * sx) for sx in (-1, 1)] + [B(0.2, 0.012, 0.1, 0.7 + sx * 0.3, 1.05, 0.12, LEAF, 0.004) for sx in (-1, 1)]
-    o += ruler(-0.2, 1.4, -0.3, vertical=True, at=0.0) + [B(0.3, 0.04, 0.3, -0.2, 0.02, -0.3, IRON, 0.01), B(0.5, 0.012, 0.04, 1.9, 0.01, 0.55, CHROME, 0.002, ry=0.2), B(0.5, 0.012, 0.04, 1.9, 0.016, 0.55, CHROME, 0.002, ry=-0.2), LA([(0.05, 0), (0.07, 0), (0.07, 0.012), (0.05, 0.012)], 2.2, 0, 0.47, ORANGE), LA([(0.05, 0), (0.07, 0), (0.07, 0.012), (0.05, 0.012)], 2.2, 0, 0.63, ORANGE)]
+    o += ruler(-0.2, 1.4, -0.3, vertical=True, at=0.0) + [B(0.3, 0.04, 0.3, -0.2, 0.02, -0.3, IRON, 0.01)]
     part('Set_APICAL_DOMINANCE', o)
+    part('Mov_APICAL_DOMINANCE_3', [B(0.5, 0.012, 0.04, 1.9, 0.01, 0.55, CHROME, 0.002, ry=0.2), B(0.5, 0.012, 0.04, 1.9, 0.016, 0.55, CHROME, 0.002, ry=-0.2), LA([(0.05, 0), (0.07, 0), (0.07, 0.012), (0.05, 0.012)], 2.2, 0, 0.47, ORANGE), LA([(0.05, 0), (0.07, 0), (0.07, 0.012), (0.05, 0.012)], 2.2, 0, 0.63, ORANGE)], pivot=(2.0, 0, 0.55))  # kéo: đưa tới ngọn cây để cắt
     part('Mov_APICAL_DOMINANCE_1', side, pivot=(0.7, 0.8, 0))
     part('Mov_APICAL_DOMINANCE_2', [C(0.016, 0.5, -1.3, 0.25, 0, LEAF2, seg=8), B(0.24, 0.012, 0.12, -1.2, 0.45, 0.02, LEAF, 0.004, ry=0.4), B(0.24, 0.012, 0.12, -1.4, 0.3, -0.02, LEAF, 0.004, ry=2.6)], pivot=(-1.3, 0, 0))
 
@@ -723,8 +741,9 @@ def bio():
     def slice_(x, z, r):
         q = [C(r, 0.12, x, 0.06, z, mat('bark', hexc('#4A3220'), rough=0.9), seg=36), C(r * 0.94, 0.006, x, 0.123, z, mat('sap', hexc('#E3C28F'), rough=0.7), seg=36)]
         return q + [LA([(r * k, 0), (r * k + 0.008, 0), (r * k + 0.008, 0.004), (r * k, 0.004)], x, 0.124, z, mat('ringw', hexc('#8A5A2E'), rough=0.8)) for k in (0.15, 0.3, 0.42, 0.55, 0.66, 0.76, 0.85)]
-    o = slice_(2.3, -0.4, 0.25) + magnifier(-1.6, 0.5) + ruler(-0.9, 0.9, 0.85)
+    o = slice_(2.3, -0.4, 0.25) + magnifier(-1.6, 0.5)
     part('Set_TREE_AGE', o)
+    part('Mov_TREE_AGE_2', ruler(-0.9, 0.9, 0.85), pivot=(0, 0, 0.85))  # thước: đặt ngang lát cắt
     part('Mov_TREE_AGE_1', slice_(0, 0, 0.5), pivot=(0, 0, 0))
 
     # METAMORPHOSIS: bể nuôi nòng nọc, hộp nuôi sâu, kính lúp, thước
@@ -735,18 +754,19 @@ def bio():
     o += [S(0.09, -0.85, 0.42, 0.2, GREENM), S(0.04, -0.8, 0.5, 0.24, GREENM), B(0.3, 0.03, 0.3, -0.85, 0.34, 0.2, mat('rock', hexc('#7A7468'), rough=0.9), 0.02)]
     o += [B(1.0, 0.03, 0.7, 0.7, 0.015, 0, WOOD, 0.01)] + [C(0.012, 0.7, 0.7 + dx, 0.38, dz, WOOD, seg=6) for dx in (-0.48, 0.48) for dz in (-0.33, 0.33)] + [B(1.0, 0.7, 0.008, 0.7, 0.38, sz * 0.34, mat('mesh', (0.9, 0.9, 0.9), alpha=0.18), 0) for sz in (-1, 1)] + [B(1.0, 0.03, 0.7, 0.7, 0.74, 0, WOOD, 0.01)]
     o += [TB([(0.4, 0.03, 0), (0.45, 0.4, 0.05), (0.6, 0.55, 0)], 0.015, mat('twig', hexc('#5A3A1E'))), B(0.3, 0.012, 0.16, 0.7, 0.55, 0, LEAF, 0.004), TB([(0.6, 0.57, 0), (0.7, 0.6, 0), (0.8, 0.57, 0)], 0.025, LEAF2), LA([(0, 0), (0.04, 0.03), (0.045, 0.12), (0, 0.2)], 0.95, 0.3, 0.1, mat('pupa', hexc('#8A9A3A')))]
-    o += magnifier(2.0, 0.5) + ruler(1.5, 2.7, -0.4)
     part('Set_METAMORPHOSIS', o)
+    part('Mov_METAMORPHOSIS_2', magnifier(2.0, 0.5) + ruler(1.5, 2.7, -0.4), pivot=(2.1, 0, 0.05))  # kính lúp + thước: đặt cạnh bể
     part('Mov_METAMORPHOSIS_1', tad, pivot=(-1.5, 0.2, 0))
 
     # PROPAGATION: chậu giâm cành, cành chiết bọc bầu, dao ghép, dây buộc, auxin, bút lông, hoa bao túi
-    o = []
+    cut = []
     for i in range(3):
-        o += plant(-2.3 + i * 0.5, 0.3, 0.35, 2, r=0.16)
-    o += [TB([(-0.9, 0.05, -0.2), (-0.6, 0.6, -0.2), (-0.2, 1.1, -0.2)], 0.03, mat('branch', hexc('#6B4A2A'), rough=0.9)), S(0.14, -0.6, 0.6, -0.2, mat('wrap', hexc('#2A2E33'), rough=0.6)), B(0.3, 0.012, 0.15, -0.1, 1.15, -0.2, LEAF, 0.004), C(0.3, 0.3, -0.9, 0.15, -0.2, TERRA, r2=0.36, seg=24)]
+        cut += plant(-2.3 + i * 0.5, 0.3, 0.35, 2, r=0.16)
+    o = [TB([(-0.9, 0.05, -0.2), (-0.6, 0.6, -0.2), (-0.2, 1.1, -0.2)], 0.03, mat('branch', hexc('#6B4A2A'), rough=0.9)), S(0.14, -0.6, 0.6, -0.2, mat('wrap', hexc('#2A2E33'), rough=0.6)), B(0.3, 0.012, 0.15, -0.1, 1.15, -0.2, LEAF, 0.004), C(0.3, 0.3, -0.9, 0.15, -0.2, TERRA, r2=0.36, seg=24)]
     o += [B(0.5, 0.02, 0.05, 0.5, 0.01, 0.6, CHROME, 0.002), B(0.3, 0.04, 0.06, 0.1, 0.02, 0.6, WOOD, 0.01), LA([(0.06, 0), (0.12, 0), (0.12, 0.06), (0.06, 0.06)], 0.7, 0, 0.2, WHITE)] + bottle(1.2, -0.3, L_YELLOW, YELLOW, 0.09, 0.26) + [C(0.012, 0.5, 1.1, 0.015, 0.6, WOOD, 'x', seg=6), C(0.02, 0.08, 1.38, 0.015, 0.6, INK, 'x', r2=0.004, seg=8)]
     o += plant(2.2, 0, 0.9, 5, r=0.22) + [S(0.1, 2.2, 1.35, 0, PINK), LA([(0.14, 0), (0.17, 0.15), (0.12, 0.34), (0.11, 0.34), (0.16, 0.15), (0.13, 0)], 2.2, 1.18, 0, mat('bag2', (0.97, 0.97, 0.95), rough=0.4, alpha=0.4))]
     part('Set_PROPAGATION', o)
+    part('Mov_PROPAGATION_1', cut, pivot=(-1.8, 0, 0.3))  # ba bầu giâm có cành: đặt vào chỗ giâm
 
     # DNA_EXTRACT: cối chày, cốc dịch nghiền, phễu lọc trên giá, cồn lạnh trong xô đá, ống có sợi DNA + que thủy tinh, muối, nước rửa chén
     mo = mortar(-2.2, 0.2, mat('liver', hexc('#7A3A2A'), rough=0.5))

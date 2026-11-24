@@ -15,7 +15,9 @@ OUT = argv[0] if argv else '.'
 PREVIEW = argv[1] if len(argv) > 1 else None
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
-FONT = bpy.data.fonts.load('C:/Windows/Fonts/arialbd.ttf')
+import os  # noqa: E402
+# chữ đậm: Arial Bold trên Windows, Liberation Sans Bold (cùng số đo chữ) trên Linux
+FONT = bpy.data.fonts.load(next((f for f in ('C:/Windows/Fonts/arialbd.ttf', '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf') if os.path.exists(f)), 'C:/Windows/Fonts/arialbd.ttf'))
 
 
 def T(x, y, z):

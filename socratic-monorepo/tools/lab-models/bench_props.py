@@ -1,6 +1,6 @@
 """
 Vật THẬT mà học sinh cầm trong các bước chuẩn bị của bài thực hành SGK (`HandsBench3D.tsx` + `benchActs.ts`): lam kính, lamen, giá ống nghiệm, lọ thuốc thử,
-cốc rót, chày, đũa thủy tinh, bóng bơm, bình tam giác, lát cắt thân cây, lá nhôm, hũ sữa chua. Mỗi vật là MỘT lưới `Prop_<tên>`, gốc toạ độ ở GIỮA ĐÁY
+cốc rót, chày, đũa thủy tinh, bóng bơm, bình tam giác, lát cắt thân cây, lá nhôm, hũ sữa chua, giấy thấm. Mỗi vật là MỘT lưới `Prop_<tên>`, gốc toạ độ ở GIỮA ĐÁY
 (riêng chày và đũa: gốc ở ĐẦU DƯỚI, cầm đầu trên), đứng thẳng theo +y, đơn vị như bộ dụng cụ `bench_parts.py` (cốc cao 0,42).
 Vật liệu thủy tinh tên `glass` (cảnh làm trong); `liquid` là chất lỏng trong vật (cảnh có thể tô màu).
 
@@ -155,6 +155,11 @@ prop('caliper', [B(0.6, 0.012, 0.045, 0, 0.006, 0, STEELP, 0.002), B(0.018, 0.1,
 prop('objective', [C(0.06, 0.26, 0, 0.13, 0, INKP, seg=28, bevel=0.01), C(0.062, 0.05, 0, 0.17, 0, TINT, seg=28), C(0.035, 0.07, 0, 0.035, 0, CHROME, r2=0.02, seg=24)])
 # phiếu / tờ giấy có dòng kẻ và dải tiêu đề tô màu (phiếu khảo sát, quy tắc, bản đồ khu vực)
 prop('paper', [B(0.3, 0.012, 0.4, 0, 0.006, 0, PAPERM, 0.002), B(0.3, 0.014, 0.07, 0, 0.007, -0.16, TINT, 0.002)] + [B(0.22, 0.014, 0.008, 0, 0.007, -0.06 + i * 0.05, INKP, 0) for i in range(6)])
+# giấy thấm gấp tư: xấp giấy trắng mềm, mép hơi so le, vân dập nổi (lau khô nước đá)
+TOWELM = mat('towel', hexc('#F2F4F1'), rough=0.95)
+tw = [B(0.26 - 0.01 * i, 0.012, 0.2 - 0.008 * i, 0.004 * i, 0.006 + 0.012 * i, -0.003 * i, TOWELM, 0.004) for i in range(4)]
+tw += [B(0.22, 0.004, 0.006, 0, 0.051, -0.07 + 0.035 * i, mat('towelline', hexc('#DCE2DD'), rough=0.95), 0) for i in range(5)]
+prop('towel', tw)
 # chậu cây đất nung có cây non, vòng nhãn tô màu theo nhóm
 pot = [LA([(0, 0), (0.1, 0), (0.15, 0.2), (0.16, 0.22), (0.14, 0.22), (0, 0.2)], TERRA), C(0.152, 0.03, 0, 0.215, 0, TINT, seg=28), C(0.135, 0.02, 0, 0.22, 0, SOILM, seg=24), C(0.012, 0.3, 0, 0.36, 0, LEAFG, seg=8)]
 for a_ in range(5):

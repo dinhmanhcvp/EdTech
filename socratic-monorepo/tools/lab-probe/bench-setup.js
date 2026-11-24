@@ -1,6 +1,7 @@
 // Máy dò /lab (chỉ bản dev, cần `npm run dev` cổng 3001 và Playwright): kéo thử bằng chuột thật trọn các bước CHUẨN BỊ của bài thực hành SGK.
 // Dùng: node tools/lab-probe/bench-setup.js PHYS_LAB_HOOKE BIO_LAB_ENZYME …  → in PASS/FAIL từng bước; ảnh chụp ở thư mục PROBE_OUT (mặc định thư mục hiện tại).
 // Dựa vào móc dev `window.__bench` (stageOf, setup, grabPt, cam, root) của HandsBench3D.tsx.
+const {chromium} = require('playwright');
 const ids = process.argv.slice(2);
 (async () => {
   const b = await chromium.launch();

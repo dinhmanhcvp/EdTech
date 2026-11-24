@@ -1,3 +1,8 @@
+# 2026-11-24 (9) — Ba gian xếp bậc, chỉ trang trí mặt ngoài
+- Studio khóa lưu v7: khối có `booth: 'L'|'C'|'R'`; `settings.step` (ô "Bậc lùi", mặc định 600 mm) → `zoff()`: gian 1 (trái) lùi 2 × bậc, gian 2 Socratic lùi 1 × bậc, gian 3 sát lối; số âm đảo chiều. Kéo thả trừ lại `zoff` khi ghi `o.z`.
+- Bỏ nội thất: trần ẩn; gian 1 = mặt tiền đặc `panel` sâu 600 (mặt hông in chữ `side` + khe LED) + khung vòm `portal` ốp ngoài + bục ở sân trước; gian 3 = mặt tiền lưới sâu 600 + lục giác + chữ nổi (bỏ bục). Góc "Đi tới" dời ra giữa lối (z 5 m).
+- Hồ sơ in CHƯA cập nhật cho mặt tiền gian 1/3 và mặt hông lộ ra theo bậc.
+
 # 2026-11-24 (8) — Webcam Lab treo trên, nhìn xuống bàn thao tác
 - `/lab` đã hỗ trợ sẵn camera trên cao nhìn xuống (gợi ý trong `HandsLab.tsx`; nút "Lật trái–phải"/"Lật trên–dưới" lưu localStorage) → không sửa mã ứng dụng.
 - Studio khóa lưu v6: trạm Lab lùi thành hốc (kiosk2 z 680, đáy màn 1 150), `handdesk` bàn thao tác 1100 × 440 cao 950 (mặt in tối mờ), `overcam` tay cần + webcam cao 2 080 nhìn xuống, góc 65° × 40°, vùng nhìn hiển thị tới mặt bàn.

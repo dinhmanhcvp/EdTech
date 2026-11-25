@@ -1,3 +1,16 @@
+# 2026-11-25 (23) — Áp dụng ý tưởng từ gian FireSense năm trước
+- Studio v39 thêm 3 loại khối mới:
+  - `letters`: chữ đứng trên bệ.
+  - `cutout`: standee cắt hình dạng bóng thoại hoặc đĩa, có biểu tượng dự án.
+  - `shelf`: kệ ô vuông trắng có hộp sản phẩm.
+  - Mặt in có thêm trường `team` ("Tên|Vai trò;…"), vẽ chân dung trong khung lục giác.
+- Đã đặt:
+  - `F-letters` SOCRATIC ở mép trước bên phải, kèm `F-q` (bóng thoại "?"). `F-g` (đĩa GAVIS) ở mép trước bên trái.
+  - `G-shelf` dưới ảnh GAVIS.
+  - Dải LED viền `led-*` ở các mép.
+  - Quầy dời sang x −350; kệ tờ rơi dời vào hai vách hông.
+- Dự toán thêm n12–n15.
+
 # 2026-11-25 (22) — Webcam và kệ đặt tay ngay tại màn
 - Studio v38:
   - `labshelf` (handdesk 1 100 × 450, cao 850) đặt dưới màn tại `CH.at(0, 225)`.

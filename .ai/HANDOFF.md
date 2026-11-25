@@ -1,3 +1,12 @@
+# 2026-11-25 (32) — Tác phẩm Formex, gọn ấn phẩm
+- Studio v48 thêm khối `formexart`, chọn kiểu bằng `kind`:
+  - `pen`: bút Socratic khổng lồ, `A-pen` ở góc vách chéo.
+  - `bubbles`: đám mây câu hỏi, treo trên lối vào (`A-bubbles`).
+  - `sphere`: quả cầu ghép rãnh, xoay chậm trên bàn Lab (`A-sphere`).
+  - `wave`: standee sóng âm GAVIS ở góc trước trái (`A-wave`).
+  - Đã bỏ `D-S`, `D-G`, `halo`, `F-g`.
+- Dự toán: bỏ sticker, huy hiệu cài áo, bookmark, quạt, thẻ thử thách, thẻ để bàn, vòng treo, standee đĩa, đĩa treo; thêm n20–n23. Phương án khuyến nghị khoảng 37,1 triệu.
+
 # 2026-11-25 (31) — Cáp webcam
 - Webcam cắm vào cổng USB của màn 65". Cáp đi theo máng Formex `cable` trên sàn, từ bàn Lab tới đầu trái vách chéo (dài khoảng 1,23 m), rồi luồn ra sau vách. Dự toán thêm t5: cáp nối dài USB active 5 m và máng dây.
 

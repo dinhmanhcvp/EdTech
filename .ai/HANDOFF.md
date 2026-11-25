@@ -1,3 +1,9 @@
+# 2026-11-25 (14) — Logo GAVIS mới, số liệu Socratic
+- Logo GAVIS: `Ho-so-in-gian-trien-lam/logo/build-gavis.js` sinh ra `logo/gavis/` (biểu tượng màu/trắng/đen, logo ngang và dọc trên nền sáng/tối, icon ứng dụng; SVG + PNG 2048, kèm `mark-paths.json`).
+  - Ý tưởng: chữ G một nét cung là khung nhìn, con ngươi xanh ngọc #2DD4BF ở tâm, hai sóng âm phía sau, thanh ngang là tia ánh nhìn. Gradient #C4B5FD → #8B5CF6 → #6D28D9.
+- Studio v26: hàm `gavisMark(ctx, cx, cy, size, mono)` vẽ logo cho mọi `glyph: 'G'` (cờ, biển vẫy, đầu tấm in, hình mờ nền).
+- Số liệu Socratic theo người dùng: hơn 300 mẫu trực quan, hơn 100 bài Lab 3D. Đã thay "10 mô phỏng" và "37 bài Lab" ở studio và trang dự toán.
+
 # 2026-11-25 (13) — Một lều cho Socratic và GAVIS
 - Người dùng bỏ FireSense, chỉ còn một lều 3 × 3 m, Socratic là chính.
 - Studio khóa lưu v25, hình chữ U mở ra lối đi:

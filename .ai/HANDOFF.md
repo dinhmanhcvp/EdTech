@@ -1,3 +1,12 @@
+# 2026-11-25 (12) — Bỏ MDF và gỗ
+- Người dùng: không dùng MDF, chỉ dùng Formex dày. Trong `du-toan-gian.html`, mọi kết cấu đổi sang khung thép hộp sơn đen ốp Formex:
+  - Kiosk: mặt Formex 15 mm CNC, hông và nóc 10 mm.
+  - Bàn Lab: mặt Formex 18 mm.
+  - Bục: Formex 10 mm ghép hộp.
+  - Vách in: Formex 5 mm bắt lên khung thép.
+- Formex không chịu lực: màn 65" đứng trên chân riêng, màn Lab treo VESA lên thanh thép của khung.
+- Tổng mới: tối thiểu khoảng 32,3 triệu, khuyến nghị khoảng 62,0 triệu, đầy đủ khoảng 93,7 triệu.
+
 # 2026-11-25 (11) — Dự toán, chất liệu, ấn phẩm, trang trí
 - Trang mới `Ho-so-in-gian-trien-lam/du-toan/du-toan-gian.html` (artifact "Dự toán gian Vision AI"):
   - 33 hạng mục chia 3 bậc: thiết yếu / nên có / tùy chọn. Có 3 phương án: Tối thiểu khoảng 36,8 triệu, Khuyến nghị khoảng 67,1 triệu, Đầy đủ khoảng 99,5 triệu (đã gồm dự phòng 10 %). Giá là khoảng tham khảo, chưa VAT, cần xin báo giá.

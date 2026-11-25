@@ -1,3 +1,6 @@
+# 2026-11-25 (37) — Formex 350 nghìn/m²
+- Dự toán: đơn giá Formex đổi thành 350 nghìn/m² (gồm in UV và cắt).
+
 # 2026-11-25 (36) — Bàn đặt tay thu nhỏ
 - Studio v50: `labshelf` còn 600 × 400 × 800, đặt tại (1260, −460) áp vách phải, đầu sau sát vách chéo. Webcam đặt cao 420 mm vẫn bao đủ 0,6 × 0,4 m mặt bàn (góc 70°). Dự toán k1 còn khoảng 2,3 m² Formex.
 

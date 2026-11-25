@@ -1,3 +1,13 @@
+# 2026-11-25 (29) — Toàn bộ bằng Formex, bàn điều khiển Lab, thêm đồ trang trí
+- Studio v45, các khối mới:
+  - `console`: thân hình nêm, mặt nghiêng, 2 vòm cong và thanh vòm. Webcam có sẵn của nhóm gắn cách mặt bàn 420 (`hood`), LED chiếu tay dưới thanh. Thay cho `labshelf`/`overcam`. Mặt dưới màn nâng lên 1 000 để thanh vòm không che màn.
+  - `topper`: ký hiệu STEM ở vách phải, sóng âm ở vách trái.
+  - `dangler`: 2 đĩa treo dưới mái.
+  - `footprints`: dấu chân dẫn lối.
+  - `frame`: khung ảnh "I asked Socratic?".
+  - Bục `vitrine` bỏ hộp che mica.
+- Dự toán: mọi phần dựng chuyển sang Formex (không còn mica, nhôm, thép); bỏ mua webcam; thêm n16–n19 và a8–a11 (bookmark thước, quạt giấy, thẻ thử thách A6, thẻ dựng để bàn). Phương án khuyến nghị khoảng 39,1 triệu.
+
 # 2026-11-25 (28) — Chữ "Socratic?"
 - `build-wordmark.js`: chữ "Socratic" viết thường. Ngay sau chữ là dấu hỏi vẽ theo logo: nét móc dày 140 bằng nét chữ, cao bằng chữ hoa, con ngươi xanh bên trong, chấm cam r 74 nằm trên dòng chân chữ. Dữ liệu thêm trường `hook`. Studio v44 tô nét móc chung lớp với chữ.
 

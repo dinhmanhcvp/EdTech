@@ -174,7 +174,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 const M = 0.001; // mm → m
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FONT = { sans: '"Plus Jakarta Sans", system-ui, sans-serif', mono: '"JetBrains Mono", ui-monospace, monospace', serif: 'Newsreader, Georgia, serif' };
-const STORE = 'svb-booth-studio-v16'; // v16: open trapezoid, walk-in // // v15: trapezoid plan, FireSense | Socratic on one front // // v14: one 6 m booth, a single 65" screen // v13: English + chamfered facades // v12: 2 lều 3 m: FireSense | GAVIS + Socratic, thông nhau // v11: 2 gian — FireSense AI | GAVIS + Socratic thông nhau // v10: gian trước cũng thụt để có vách quảng bá // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
+const STORE = 'svb-booth-studio-v18'; // v18: editorial print layout // // v17: GAVIS content from the team's report, headset bust // // v16: open trapezoid, walk-in // // v15: trapezoid plan, FireSense | Socratic on one front // // v14: one 6 m booth, a single 65" screen // v13: English + chamfered facades // v12: 2 lều 3 m: FireSense | GAVIS + Socratic, thông nhau // v11: 2 gian — FireSense AI | GAVIS + Socratic thông nhau // v10: gian trước cũng thụt để có vách quảng bá // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
 const MARK_HOOK = 'M31.8 39.7 A30 30 0 1 1 75 76 Q60 83 60 93', MARK_IRIS = 'M46.8 45.2 A14 14 0 0 1 73.2 45.2';
 // // v4: mặt tiền = bảng viết 65" + trạm Lab 3D qua webcam
 
@@ -192,13 +192,13 @@ const DEFAULT = () => [
   { id: 'nbR', type: 'neighbor', walls: true, name: 'Neighbouring booth (right)', x: 4500, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#3A6EA5', accent: '#C8553D', text: 'BOOTH', locked: true, group: 'context' },
   { id: 'floor', type: 'floor', name: 'One continuous floor mat, 6 m', x: 0, y: 0, z: 0, ry: 0, w: 6000, h: 12, d: 3000, color: '#0E0D14', accent: '#6C6CFF', emissive: 0.6, pattern: 'circuit' },
   // Front, left half: FireSense
-  { id: 'F-front', type: 'promo', name: 'FireSense · back wall, left half', x: -850, y: 0, z: BZ - 40, ry: 0, w: 1680, h: 2000, d: 80, col: 880, color: '#120A08', accent: '#FF4D2E', pattern: 'contour', glyph: '!', title: 'FireSense AI · Vinh Phuc Ward', text: 'Smell |fire risk first.', sub: 'Odour|caught before smoke or flame\nIoT|alerts straight to your phone', award: '1ST PRIZE · NATIONAL · 2025–2026', qr: false },
+  { id: 'F-front', type: 'promo', name: 'FireSense · back wall, left half', x: -850, y: 0, z: BZ - 40, ry: 0, w: 1680, h: 2000, d: 80, col: 900, color: '#120A08', accent: '#FF4D2E', pattern: 'contour', glyph: '!', title: 'FireSense AI', kicker: 'An electronic nose for fire safety · Vinh Phuc Ward students', text: 'Smell |fire risk first.', lede: 'FireSense reads the air the way a nose does and raises the alarm before there is smoke or flame. The alert reaches your phone wherever you are.', sub: 'Odour|sensed before smoke or flame\nIoT|alerts straight to your phone', steps: 'Sense|gas sensors sample the air all day\nRecognise|AI matches the odour pattern of an early fire\nAlert|siren on site, message on your phone', chips: 'Electronic nose;AI;IoT;Early warning', award: '1ST PRIZE · NATIONAL · STUDENT STARTUP IDEAS 2025–2026', qr: false },
   { id: 'F-relief', type: 'relief', name: 'FireSense · 3D letters on top of the front', x: -850, y: 2030, z: BZ - 50, ry: 0, w: 1400, h: 200, d: 60, color: '#FFF1E6', accent: '#FF4D2E', emissive: 1.2, text: 'FIRESENSE AI' },
   { id: 'F-hex', type: 'hexwall', name: 'FireSense · "electronic nose" sensor array', x: -330, y: 620, z: BZ + 3, ry: 0, w: 560, h: 640, d: 110, color: '#1E1210', accent: '#FFB020', emissive: 1.4, cell: 75 },
   { id: 'F-seal', type: 'seal', name: 'FireSense · 1st Prize seal (national)', x: -330, y: 1360, z: BZ + 3, ry: 0, w: 360, h: 360, d: 30, l2: 'national', year: '2025–2026', ring: 'STUDENT STARTUP IDEAS COMPETITION 2025–2026 · 1ST PRIZE · NATIONAL' },
   // Left chamfered side: FireSense story + device plinth in front of it
-  { id: 'F-side', type: 'promo', name: 'FireSense · left chamfered side (story, faces in)', ...LS.at(0, -40), y: 0, ry: LS.ry, w: Math.round(LS.L - 20), h: 2000, d: 80, color: '#120A08', accent: '#FF4D2E', pattern: 'contour', glyph: '!', title: 'FireSense AI · how it works', text: '[The fire problem we tackle] |[one line]', sub: '[How it works 1]|[short description]\n[How it works 2]|[short description]\n[Pilot]|[where, result]', award: '', qr: false },
-  { id: 'F-ped', type: 'aicore', name: 'FireSense · device plinth', ...LS.at(-700, 450), y: 0, ry: LS.ry, w: 420, h: 1050, d: 460, accent: '#FF4D2E', emissive: 1.6, color: '#140C0A', text: 'FIRESENSE DEVICE' },
+  { id: 'F-side', type: 'promo', name: 'FireSense · left chamfered side (story, faces in)', ...LS.at(0, -40), y: 0, ry: LS.ry, w: Math.round(LS.L - 20), h: 2000, d: 80, col: 1100, colAlign: 'right', color: '#120A08', accent: '#FF4D2E', pattern: 'contour', glyph: '!', title: 'FireSense AI · the story', kicker: '[School, team members]', text: '[Why fire safety] |[matters to us]', lede: '[Two sentences: who is at risk, and why a smoke alarm comes too late.]', sub: '[N]|[fires or injuries nearby, source]\n[N min]|[earlier than a smoke alarm, test]', stepsTitle: 'OUR JOURNEY', steps: 'Problem|[what we saw]\nPrototype|[what we built]\nPilot|[where, result]', award: '', qr: false },
+  { id: 'F-ped', type: 'aicore', name: 'FireSense · device plinth', ...LS.at(-860, 470), y: 0, ry: LS.ry, w: 420, h: 1050, d: 460, accent: '#FF4D2E', emissive: 1.6, color: '#140C0A', text: 'FIRESENSE DEVICE' },
   // Centre pole: wrapped as the light seam between FireSense and Socratic
   { id: 'join', type: 'strip', name: 'Light seam between FireSense and Socratic', x: 0, y: 0, z: BZ + 5, ry: 0, w: 60, h: 2200, d: 40, accent: '#B07CFF', emissive: 2.6 },
   // Front, right half: the one 65" screen (Socratic)
@@ -207,9 +207,10 @@ const DEFAULT = () => [
   { id: 'seal', type: 'seal', name: 'Socratic · 1st Prize seal (provincial)', x: 1470, y: 1880, z: BZ + 3, ry: 0, w: 280, h: 280, d: 30, l2: 'provincial', year: '2026–2027', ring: 'STUDENT STARTUP IDEAS COMPETITION 2026–2027 · 1ST PRIZE · PROVINCIAL' },
   { id: 'tower', type: 'tower', name: 'Shelf + 5-layer acrylic tower', x: 1410, y: 560, z: BZ + 3, ry: 0, w: 380, h: 240, d: 160, accent: '#3D7BFF', emissive: 1.8 },
   // Right chamfered side: GAVIS
-  { id: 'G-side', type: 'promo', name: 'GAVIS · right chamfered side (faces in)', ...RS.at(0, -40), y: 0, ry: RS.ry, w: Math.round(RS.L - 20), h: 2000, d: 80, col: 900, color: '#0E0B16', accent: '#8B5CF6', pattern: 'contour', glyph: 'G', title: 'GAVIS · Vinh Phuc High School for the Gifted', text: 'Hear |with your eyes.', sub: 'Sound + image|fused into captions\nGaze|guides what you see', award: '1ST PRIZE · PROVINCIAL · SCIENCE FAIR', qr: false },
+  { id: 'G-side', type: 'promo', name: 'GAVIS · right chamfered side (faces in)', ...RS.at(0, -40), y: 0, ry: RS.ry, w: Math.round(RS.L - 20), h: 2000, d: 80, col: 1000, color: '#0E0B16', accent: '#8B5CF6', pattern: 'contour', glyph: 'G', title: 'GAVIS · Provincial Science Fair 2026–2027', kicker: 'A head-worn aid for deaf and hard-of-hearing people', text: 'Hear |with your eyes.', lede: 'A camera finds the person facing you, AI lifts their voice out of the noise and shows it as captions on smart glasses. Danger sounds make the frame buzz on the side they come from.', sub: '91.7%|camera picks the right speaker\n−26.4 pts|caption word errors at 65 dB\n92.0%|danger sounds recognised\n0.28 s|from horn to vibration', steps: 'Look|the camera locks on the speaker in a 50° zone\nCaption|a U-Net model isolates the voice, text in 1.18 s\nFeel|a horn behind you? the motor at your neck buzzes', chips: '4-mic array;Smart glasses;TinyML;168 g on the head;5.4 h battery', award: '1ST PRIZE · PROVINCIAL SCIENCE FAIR 2026–2027', qr: false },
   { id: 'G-relief', type: 'relief', name: 'GAVIS · 3D letters on top of the side', ...RS.at(0, -40), y: 2030, ry: RS.ry, w: 800, h: 200, d: 60, color: '#F4F0FF', accent: '#8B5CF6', emissive: 1.3, text: 'GAVIS' },
-  { id: 'G-hex', type: 'hexwall', name: 'GAVIS · hexagon sound-wave cluster', ...RS.at(550, 3), y: 700, ry: RS.ry, w: 560, h: 700, d: 110, color: '#17122A', accent: '#A78BFA', emissive: 1.3, cell: 75 },
+  { id: 'G-hex', type: 'hexwall', name: 'GAVIS · hexagon sound-wave cluster', ...RS.at(550, 3), y: 1180, ry: RS.ry, w: 560, h: 600, d: 110, color: '#17122A', accent: '#A78BFA', emissive: 1.3, cell: 75 },
+  { id: 'G-bust', type: 'bust', name: 'GAVIS · headset on a mannequin head (try it on)', ...RS.at(700, 450), y: 0, ry: RS.ry, w: 420, h: 1050, d: 420, color: '#17122A', accent: '#A78BFA', emissive: 1.6 },
   { id: 'kiosk2', type: 'kiosk', visible: false, name: '(Hidden: one screen only) 50" 3D Lab station', x: 3790, y: 0, z: 680, ry: 0, w: 1320, h: 2200, d: 720, scrW: 1120, scrH: 650, scrD: 70, gap: 5, bottom: 1150, offX: 0, tray: false, qr: false, guide: true, cam: false, showCam: false, variant: 'lab', color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Experiment |by hand.', sub: 'Hands over the table. The camera watches from above.', mount: 'vesa', xray: false },
   { id: 'desk', type: 'handdesk', visible: false, name: '(Hidden: no room) Lab hand desk', x: 3790, y: 0, z: 1260, ry: 0, w: 1100, h: 950, d: 440, color: '#0B0D13', accent: '#3D7BFF', emissive: 1.6 },
   { id: 'overcam', type: 'overcam', visible: false, name: '(Hidden: no room) Arm + downward webcam', x: 3790, y: 0, z: 1040, ry: 0, w: 120, h: 2080, d: 230, arm: 230, fov: 65, vfov: 40, target: 950, accent: '#3D7BFF', emissive: 1.6, showCam: true },
@@ -237,6 +238,7 @@ const LIB = [
   { type: 'beacon', label: 'Beacon ?', note: 'LED ring + 3D question mark', o: { w: 500, h: 500, d: 80, y: 1200, color: '#FF6A2B', accent: '#3D7BFF', emissive: 2 } },
   { type: 'hexwall', label: 'Raised hexagons', note: 'raised, lit modules', o: { w: 600, h: 800, d: 120, y: 800, color: '#141823', accent: '#2F6BFF', emissive: 1.4, cell: 90 } },
   { type: 'halo', label: 'Halo ring', note: 'horizontal LED ring', o: { w: 1000, h: 40, d: 1000, y: 2300, accent: '#3D7BFF', emissive: 2 } },
+  { type: 'bust', label: 'Wearable on a head', note: 'headset demo on a plinth', o: { w: 420, h: 1050, d: 420, color: '#17122A', accent: '#A78BFA', emissive: 1.6 } },
   { type: 'aicore', label: 'AI core', note: 'plinth + glass cube', o: { w: 400, h: 1300, d: 400, accent: '#3D7BFF', emissive: 2, color: '#0B0C10' } },
   { type: 'holo', label: 'Hologram', note: '3D fan on a stand', o: { w: 560, h: 1700, d: 560, accent: '#5B8CFF', emissive: 2 } },
   { type: 'panel', label: 'Printed panel', note: 'foam board, banner, pattern', o: { w: 900, h: 1800, d: 40, color: '#0C0F18', accent: '#2F6BFF', emissive: 0.2, pattern: 'circuit', layout: 'plain', text: 'Title', sub: 'Sub line' } },
@@ -248,7 +250,7 @@ const LIB = [
   { type: 'decal', label: 'Floor decal', note: 'Ø800 ring', o: { w: 800, h: 4, d: 800, accent: '#3D7BFF', text: 'STAND HERE' } },
   { type: 'person', label: 'People', note: 'for scale', o: { w: 450, h: 1650, d: 300, color: '#4A5466' } },
 ];
-const TYPE_LABEL = { promo: 'PROMO WALL',  handdesk: 'HAND DESK', overcam: 'CAMERA', seal: 'SEAL', tower: 'TOWER', blade: 'BLADE SIGN', kiosk: 'FACADE', tent: 'TENT', neighbor: 'NEXT DOOR', floor: 'FLOOR', ceiling: 'CEILING', panel: 'PANEL', hexwall: 'HEXAGONS', screen: 'SCREEN', halo: 'RING', decal: 'DECAL', holo: 'HOLO', aicore: 'AI CORE', portal: 'PORTAL', relief: '3D LETTERS', totem: 'TOTEM', beacon: 'BEACON', counter: 'COUNTER', strip: 'LED', flag: 'FLAG', person: 'PERSON' };
+const TYPE_LABEL = { bust: 'WEARABLE', promo: 'PROMO WALL',  handdesk: 'HAND DESK', overcam: 'CAMERA', seal: 'SEAL', tower: 'TOWER', blade: 'BLADE SIGN', kiosk: 'FACADE', tent: 'TENT', neighbor: 'NEXT DOOR', floor: 'FLOOR', ceiling: 'CEILING', panel: 'PANEL', hexwall: 'HEXAGONS', screen: 'SCREEN', halo: 'RING', decal: 'DECAL', holo: 'HOLO', aicore: 'AI CORE', portal: 'PORTAL', relief: '3D LETTERS', totem: 'TOTEM', beacon: 'BEACON', counter: 'COUNTER', strip: 'LED', flag: 'FLAG', person: 'PERSON' };
 
 // ---------------- tiện ích ----------------
 function hash(s) { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -695,6 +697,27 @@ B.flag = (o, g) => {
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.08, 24), MAT.std('#8FB0F5', { roughness: 0.3, transparent: true, opacity: 0.85 })); base.position.y = 0.04; g.add(base);
   g.userData.tick = (t) => { if (!REDUCED) sail.rotation.y = Math.sin(t * 0.9 + hash(o.id) % 7) * 0.12; };
 };
+// GAVIS headset on a mannequin head: plinth, head, over-the-head frame, 4-mic array on top, T-Glass display on the left, camera, 3 vibration motors, belt pack
+B.bust = (o, g) => {
+  const W = o.w * M, Hp = o.h * M, D = o.d * M, em = o.emissive ?? 1.6;
+  const pl = box(W, Hp, D, MAT.std(o.color || '#17122A', { roughness: 0.5, metalness: 0.2 })); pl.position.y = Hp / 2; g.add(pl);
+  const lip = box(W + 0.012, 0.014, D + 0.012, MAT.glow(o.accent, em)); lip.position.y = Hp; g.add(lip);
+  const strip = box(W * 0.7, 0.012, 0.004, MAT.glow(o.accent, em)); strip.position.set(0, Hp * 0.62, D / 2 + 0.002); g.add(strip);
+  const skin = MAT.std('#E4DED4', { roughness: 0.55 }), dark = MAT.std('#15151A', { roughness: 0.35, metalness: 0.4 });
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.065, 0.12, 32), skin); neck.position.y = Hp + 0.06; g.add(neck);
+  const hc = Hp + 0.12 + 0.115; const head = new THREE.Mesh(new THREE.SphereGeometry(0.1, 48, 32), skin); head.scale.set(0.95, 1.18, 1.05); head.position.y = hc; head.castShadow = true; g.add(head);
+  const frame = new THREE.Mesh(new THREE.TorusGeometry(0.112, 0.009, 10, 64, Math.PI), dark); frame.position.y = hc; g.add(frame);
+  const back = new THREE.Mesh(new THREE.TorusGeometry(0.112, 0.008, 10, 64, Math.PI), dark); back.rotation.y = Math.PI / 2; back.position.y = hc; back.scale.set(1, 1, 1.05); g.add(back);
+  const mic = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.012, 40), dark); mic.position.y = hc + 0.124; g.add(mic);
+  const micLed = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.003, 8, 40), MAT.glow(o.accent, em * 1.3)); micLed.rotation.x = Math.PI / 2; micLed.position.y = hc + 0.131; g.add(micLed);
+  const glass = box(0.05, 0.022, 0.012, dark); glass.position.set(-0.04, hc + 0.015, 0.107); g.add(glass);
+  const prism = box(0.022, 0.016, 0.004, MAT.glow('#9FE7FF', em)); prism.position.set(-0.035, hc + 0.015, 0.114); g.add(prism);
+  const cam = box(0.022, 0.016, 0.018, dark); cam.position.set(0.03, hc + 0.045, 0.1); g.add(cam);
+  const lens = new THREE.Mesh(new THREE.CircleGeometry(0.005, 20), MAT.glow('#3FB97A', 0.8)); lens.position.set(0.03, hc + 0.045, 0.11); g.add(lens);
+  [[-0.097, 0, 0.02], [0.097, 0, 0.02], [0, -0.02, -0.112]].forEach(([x, y, z]) => { const v = new THREE.Mesh(new THREE.SphereGeometry(0.011, 16, 12), MAT.glow('#FF6A2B', em * 1.2)); v.position.set(x, hc + y, z); g.add(v); });
+  const pack = box(0.115, 0.078, 0.036, dark); pack.position.set(W * 0.28, Hp + 0.039, D * 0.15); g.add(pack);
+  const packLed = box(0.06, 0.004, 0.002, MAT.glow(o.accent, em)); packLed.position.set(W * 0.28, Hp + 0.06, D * 0.15 + 0.019); g.add(packLed);
+};
 B.aicore = (o, g) => {
   const S = o.w * M, H = o.h * M, plH = H - S; const pl = box(S * 1.1, plH, S * 1.1, MAT.std(o.color || '#0B0C10', { roughness: 0.35, metalness: 0.3 })); pl.position.y = plH / 2; g.add(pl);
   const e = new THREE.LineSegments(new THREE.EdgesGeometry(pl.geometry), new THREE.LineBasicMaterial({ color: o.accent })); e.position.copy(pl.position); g.add(e);
@@ -883,27 +906,61 @@ function promoSlot(slot) {
   if (slot === 'deep') return { x: pos ? 0.05 - 0.006 : -0.05 + 0.006, z0: fDeep, z1: fFront, nx: pos ? -1 : 1 };
   return { x: pos ? -2.97 : 2.97, z0: fDeep, z1: F, nx: pos ? 1 : -1 };
 }
+// Printed wall, editorial layout: header (mark + title + kicker), headline, lede, KPI cards ("value|label" per line),
+// "how it works" steps ("title|description" per line), tech chips (";"), then award ribbon and QR at the foot.
+// The content block is measured first and scaled down to fit; "col" limits its width, "colAlign: right" moves it to the right.
+function promoContent(ctx, o, w, acc, accL, fg, mute) {
+  let y = 0; const ic = 96;
+  if (o.logo) ringQ(ctx, ic / 2, ic / 2, ic / 2, fg, '#FF6A2B', 0);
+  else { ctx.strokeStyle = acc; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(ic / 2, ic / 2, ic / 2 - 3, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = accL; ctx.textAlign = 'center'; ctx.font = `800 ${ic * 0.56}px ${FONT.sans}`; ctx.fillText(o.glyph || '•', ic / 2, ic * 0.7); ctx.textAlign = 'left'; }
+  const tx = ic + 26, tw = w - tx; ctx.fillStyle = accL; ctx.font = `600 ${fitFont(ctx, (o.title || '').toUpperCase(), `600 {s}px ${FONT.mono}`, 24, tw)}px ${FONT.mono}`; ctx.fillText((o.title || '').toUpperCase(), tx, 38);
+  if (o.kicker) { ctx.fillStyle = mute; ctx.font = `500 26px ${FONT.sans}`; wrap(ctx, o.kicker, tw).slice(0, 2).forEach((l, i) => ctx.fillText(l, tx, 76 + i * 32)); }
+  y = ic + (o.kicker && wrap(ctx, o.kicker, tw).length > 1 ? 56 : 30);
+  ctx.strokeStyle = rgba(acc, 0.5); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); ctx.fillStyle = acc; ctx.fillRect(0, y - 3, 90, 6); y += 40;
+  const [a, b = ''] = String(o.text || '').split('|'); const hs = Math.min(150, w * 0.15);
+  ctx.font = `800 ${hs}px ${FONT.sans}`; ctx.fillStyle = fg; wrap(ctx, a.trim(), w).forEach((l) => { y += hs * 0.92; ctx.fillText(l, 0, y); });
+  ctx.font = `italic 400 ${hs * 1.08}px ${FONT.serif}`; ctx.fillStyle = accL; wrap(ctx, b.trim(), w).forEach((l) => { y += hs * 1.0; ctx.fillText(l, 0, y); }); y += 34;
+  if (o.lede) { ctx.font = `400 32px ${FONT.sans}`; ctx.fillStyle = '#D8D3C9'; wrap(ctx, o.lede, w).slice(0, 6).forEach((l) => { y += 44; ctx.fillText(l, 0, y); }); y += 34; }
+  const rows = String(o.sub || '').split('\n').filter(Boolean);
+  if (rows.length) { const cols = w > 640 && rows.length > 1 ? 2 : 1, gap = 22, cwd = (w - gap * (cols - 1)) / cols, ns = Math.min(88, cwd * 0.2), ch = 30 + ns + 18 + 2 * 30 + 22;
+    rows.forEach((r, i) => { const [v, lab = ''] = r.split('|'); const cx = (i % cols) * (cwd + gap), cy = y + Math.floor(i / cols) * (ch + gap);
+      ctx.fillStyle = 'rgba(255,255,255,.05)'; roundRect(ctx, cx, cy, cwd, ch, 18); ctx.fill(); ctx.strokeStyle = rgba(acc, 0.45); ctx.lineWidth = 2; roundRect(ctx, cx, cy, cwd, ch, 18); ctx.stroke();
+      ctx.fillStyle = acc; roundRect(ctx, cx + 24, cy - 4, 64, 8, 4); ctx.fill();
+      ctx.fillStyle = fg; ctx.font = `800 ${fitFont(ctx, v.trim(), `800 {s}px ${FONT.sans}`, ns, cwd - 48)}px ${FONT.sans}`; ctx.fillText(v.trim(), cx + 24, cy + 26 + ns * 0.9);
+      ctx.fillStyle = mute; ctx.font = `500 24px ${FONT.sans}`; wrap(ctx, lab.trim(), cwd - 48).slice(0, 2).forEach((l, j) => ctx.fillText(l, cx + 24, cy + 26 + ns + 34 + j * 30)); });
+    y += Math.ceil(rows.length / cols) * (ch + gap) + 22; }
+  const steps = String(o.steps || '').split('\n').filter(Boolean);
+  if (steps.length) { ctx.fillStyle = accL; ctx.font = `600 22px ${FONT.mono}`; ctx.fillText(o.stepsTitle || 'HOW IT WORKS', 0, y + 22); ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ctx.measureText(o.stepsTitle || 'HOW IT WORKS').width + 18, y + 14); ctx.lineTo(w, y + 14); ctx.stroke(); y += 50;
+    const r = 30, tx2 = 2 * r + 24; const pts = [];
+    steps.forEach((s, i) => { const [t, d = ''] = s.split('|'); ctx.font = `400 25px ${FONT.sans}`; const dl = wrap(ctx, d.trim(), w - tx2).slice(0, 2); const hgt = Math.max(2 * r, 36 + dl.length * 31) + 26;
+      pts.push(y + r); ctx.fillStyle = shade(o.color || '#111', 0.05); ctx.beginPath(); ctx.arc(r, y + r, r, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = acc; ctx.lineWidth = 4; ctx.stroke();
+      ctx.fillStyle = accL; ctx.textAlign = 'center'; ctx.font = `700 26px ${FONT.mono}`; ctx.fillText(String(i + 1).padStart(2, '0'), r, y + r + 9); ctx.textAlign = 'left';
+      ctx.fillStyle = fg; ctx.font = `700 31px ${FONT.sans}`; ctx.fillText(t.trim(), tx2, y + 30); ctx.fillStyle = mute; ctx.font = `400 25px ${FONT.sans}`; dl.forEach((l, j) => ctx.fillText(l, tx2, y + 66 + j * 31)); y += hgt; });
+    ctx.save(); ctx.globalCompositeOperation = 'destination-over'; ctx.strokeStyle = rgba(acc, 0.6); ctx.lineWidth = 3; ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(r, pts[0]); ctx.lineTo(r, pts[pts.length - 1]); ctx.stroke(); ctx.restore(); y += 10; }
+  const chips = String(o.chips || '').split(';').map((s) => s.trim()).filter(Boolean);
+  if (chips.length) { ctx.font = `600 22px ${FONT.mono}`; let x = 0; y += 6; chips.forEach((t) => { const tw2 = ctx.measureText(t).width + 36; if (x + tw2 > w && x > 0) { x = 0; y += 58; } ctx.strokeStyle = rgba(acc, 0.7); ctx.lineWidth = 2; roundRect(ctx, x, y, tw2, 44, 22); ctx.stroke(); ctx.fillStyle = fg; ctx.fillText(t, x + 18, y + 30); x += tw2 + 12; }); y += 58; }
+  return y;
+}
 function paintPromo(o, W) {
-  const H = o.h; const { c, ctx } = makeCanvas(W, H, 2048); const acc = o.accent, accL = shade(acc, 0.45), fg = '#F5F2EA', m = Math.max(40, Math.min(W * 0.07, 140)), cw = Math.min(W - 2 * m, o.col || 1e9);
-  bgBase(ctx, W, H, o.color, acc, 0.18); pattern(ctx, W, H, o.pattern || 'contour', acc, o.id); corners(ctx, W, H - 120, 22, 50, 'rgba(255,255,255,.45)', 3);
-  let y = 90; const ic = Math.min(110, cw * 0.28);
-  if (o.logo) ringQ(ctx, m + ic / 2, y + ic / 2, ic / 2, '#F5F2EA', '#FF6A2B', 0);
-  else if (o.glyph) { ctx.strokeStyle = acc; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(m + ic / 2, y + ic / 2, ic / 2 - 3, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = accL; ctx.textAlign = 'center'; ctx.font = `800 ${ic * 0.6}px ${FONT.sans}`; ctx.fillText(o.glyph, m + ic / 2, y + ic * 0.72); ctx.textAlign = 'left'; }
-  ctx.fillStyle = accL; const ts = fitFont(ctx, (o.title || '').toUpperCase(), `600 {s}px ${FONT.mono}`, 24, cw - ic - 20); ctx.font = `600 ${ts}px ${FONT.mono}`; wrap(ctx, (o.title || '').toUpperCase(), cw - ic - 20).slice(0, 2).forEach((l, i) => ctx.fillText(l, m + ic + 20, y + ic * 0.45 + i * (ts + 8)));
-  y += ic + 90; const [a, b = ''] = String(o.text || '').split('|'); const hs = Math.min(118, cw * 0.19);
-  ctx.font = `800 ${hs}px ${FONT.sans}`; ctx.fillStyle = fg; wrap(ctx, a.trim(), cw).forEach((l) => { ctx.fillText(l, m, y); y += hs * 1.02; });
-  ctx.font = `italic 400 ${hs * 1.06}px ${FONT.serif}`; ctx.fillStyle = accL; wrap(ctx, b.trim(), cw).forEach((l) => { ctx.fillText(l, m, y); y += hs * 1.06; });
-  y += 50; const rows = String(o.sub || '').split('\n').filter(Boolean); const vs = Math.min(84, cw * 0.15);
-  rows.forEach((r) => { const [v, lab = ''] = r.split('|'); ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(m, y); ctx.lineTo(m + cw, y); ctx.stroke();
-    ctx.fillStyle = fg; ctx.font = `500 ${fitFont(ctx, v, `500 {s}px ${FONT.mono}`, vs, cw)}px ${FONT.mono}`; ctx.fillText(v, m, y + vs + 14); ctx.fillStyle = '#C9C5BB'; ctx.font = `500 ${Math.max(18, vs * 0.28)}px ${FONT.sans}`;
-    wrap(ctx, lab, cw).slice(0, 2).forEach((l, i) => ctx.fillText(l, m, y + vs + 52 + i * 30)); y += vs + 110; });
-  const qs = o.qr ? Math.min(300, cw * 0.62) : 0; const bottom = H - 150;
-  if (o.award) { const ay = bottom - qs - (o.qr ? 110 : 20) - 70; ctx.fillStyle = '#FF6A2B'; roundRect(ctx, m, ay, cw, 64, 32); ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = `800 ${fitFont(ctx, o.award, `800 {s}px ${FONT.sans}`, 28, cw - 40)}px ${FONT.sans}`; ctx.fillText(o.award, m + cw / 2, ay + 43); ctx.textAlign = 'left'; }
-  if (o.qr) { const qx = m, qy = bottom - qs - 60; ctx.fillStyle = '#fff'; ctx.fillRect(qx, qy, qs, qs); const Rq = rng('pq' + o.id); const n = 25, ms = (qs - 24) / n; ctx.fillStyle = '#111';
-    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { if ((i < 7 && j < 7) || (i < 7 && j > n - 8) || (i > n - 8 && j < 7)) continue; if (Rq() < 0.48) ctx.fillRect(qx + 12 + i * ms, qy + 12 + j * ms, ms, ms); }
-    [[0, 0], [0, n - 7], [n - 7, 0]].forEach(([p, q]) => { ctx.fillStyle = '#111'; ctx.fillRect(qx + 12 + p * ms, qy + 12 + q * ms, 7 * ms, 7 * ms); ctx.fillStyle = '#fff'; ctx.fillRect(qx + 12 + (p + 1) * ms, qy + 12 + (q + 1) * ms, 5 * ms, 5 * ms); ctx.fillStyle = '#111'; ctx.fillRect(qx + 12 + (p + 2) * ms, qy + 12 + (q + 2) * ms, 3 * ms, 3 * ms); });
-    ctx.fillStyle = fg; ctx.font = `700 26px ${FONT.sans}`; ctx.fillText('Scan to try', qx, qy + qs + 40); }
-  band(ctx, W, H, acc, (o.title || '') + '  ·  ', 120); return c;
+  const H = o.h; const { c, ctx } = makeCanvas(W, H, 2048); const acc = o.accent, accL = shade(acc, 0.45), fg = '#F5F2EA', mute = '#B9B4AA';
+  const m = Math.max(50, Math.min(W * 0.075, 120)), cw = Math.min(W - 2 * m, o.col || 1e9), x0 = o.colAlign === 'right' ? W - m - cw : m;
+  bgBase(ctx, W, H, o.color, acc, 0.2); pattern(ctx, W, H, o.pattern || 'contour', acc, o.id);
+  const gx = o.colAlign === 'right' ? W * 0.15 : W * 0.85, rg = ctx.createRadialGradient(gx, H * 0.1, 0, gx, H * 0.1, Math.max(W, 900)); rg.addColorStop(0, rgba(acc, 0.3)); rg.addColorStop(1, rgba(acc, 0)); ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+  const rg2 = ctx.createRadialGradient(x0, H * 0.8, 0, x0, H * 0.8, 800); rg2.addColorStop(0, rgba(acc, 0.14)); rg2.addColorStop(1, rgba(acc, 0)); ctx.fillStyle = rg2; ctx.fillRect(0, 0, W, H);
+  if (o.mark !== false) { ctx.save(); ctx.globalAlpha = 0.07; const ms = Math.min(H * 0.5, W * 0.9); const mx = o.colAlign === 'right' ? ms * 0.45 : W - ms * 0.45;
+    if (o.logo) ringQ(ctx, mx, H * 0.56, ms / 2, fg, fg, 0); else { ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.font = `800 ${ms}px ${FONT.sans}`; ctx.fillText(o.glyph || '', mx, H * 0.56 + ms * 0.36); ctx.textAlign = 'left'; } ctx.restore(); }
+  ctx.fillStyle = acc; ctx.fillRect(o.colAlign === 'right' ? W - 12 : 0, 0, 12, H - 120); corners(ctx, W, H - 120, 22, 50, 'rgba(255,255,255,.4)', 3);
+  const bandH = 120, fb = H - bandH - 44; const q = o.qr ? Math.min(250, cw * 0.32) : 0; const footH = o.qr ? q : (o.award ? 70 : 0);
+  if (o.qr) { const qx = x0, qy = fb - q; ctx.fillStyle = '#fff'; roundRect(ctx, qx - 8, qy - 8, q + 16, q + 16, 14); ctx.fill(); const Rq = rng('pq' + o.id); const n = 25, ms2 = q / n; ctx.fillStyle = '#111';
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { if ((i < 7 && j < 7) || (i < 7 && j > n - 8) || (i > n - 8 && j < 7)) continue; if (Rq() < 0.48) ctx.fillRect(qx + i * ms2, qy + j * ms2, ms2, ms2); }
+    [[0, 0], [0, n - 7], [n - 7, 0]].forEach(([p, r]) => { ctx.fillStyle = '#111'; ctx.fillRect(qx + p * ms2, qy + r * ms2, 7 * ms2, 7 * ms2); ctx.fillStyle = '#fff'; ctx.fillRect(qx + (p + 1) * ms2, qy + (r + 1) * ms2, 5 * ms2, 5 * ms2); ctx.fillStyle = '#111'; ctx.fillRect(qx + (p + 2) * ms2, qy + (r + 2) * ms2, 3 * ms2, 3 * ms2); });
+    const tx = qx + q + 34, tw = cw - q - 34; ctx.fillStyle = fg; ctx.font = `800 ${fitFont(ctx, o.qrTitle || 'Scan to try', `800 {s}px ${FONT.sans}`, 44, tw)}px ${FONT.sans}`; ctx.fillText(o.qrTitle || 'Scan to try', tx, qy + 50);
+    ctx.fillStyle = accL; ctx.font = `500 ${fitFont(ctx, o.url || 'svb-stem.vercel.app', `500 {s}px ${FONT.mono}`, 24, tw)}px ${FONT.mono}`; ctx.fillText(o.url || 'svb-stem.vercel.app', tx, qy + 92); }
+  if (o.award) { const ax = o.qr ? x0 + q + 34 : x0, aw = o.qr ? cw - q - 34 : cw, ay = fb - 66; ctx.fillStyle = '#FF6A2B'; roundRect(ctx, ax, ay, aw, 66, 33); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = `800 30px ${FONT.sans}`; ctx.fillText('★', ax + 26, ay + 44); ctx.font = `800 ${fitFont(ctx, o.award, `800 {s}px ${FONT.sans}`, 26, aw - 90)}px ${FONT.sans}`; ctx.fillText(o.award, ax + 66, ay + 43); }
+  const top = 80, avail = fb - footH - 50 - top; const meas = document.createElement('canvas').getContext('2d'); const need = promoContent(meas, o, cw, acc, accL, fg, mute);
+  let k = Math.min(1, avail / Math.max(1, need)); for (let it = 0; it < 5; it++) { const n2 = promoContent(meas, o, cw / k, acc, accL, fg, mute); const k2 = Math.min(1.35, avail / Math.max(1, n2)); if (n2 * k > avail) { k = k2; continue; } if (Math.abs(k2 - k) < 0.01) break; k = Math.min(k2, k * 1.12); } while (promoContent(meas, o, cw / k, acc, accL, fg, mute) * k > avail && k > 0.3) k *= 0.97; ctx.save(); ctx.translate(x0, top); ctx.scale(k, k); promoContent(ctx, o, cw / k, acc, accL, fg, mute); ctx.restore();
+  band(ctx, W, H, acc, (o.title || '') + '  ·  ', bandH); return c;
 }
 B.promo = (o, g) => {
   if (!o.slot) { // free-standing wall: placed by its own x, z, ry; printed face points to local +z
@@ -1016,16 +1073,16 @@ function addObj(it) {
   objects.push(o); build(o); commit(); select(id); toast('Added: ' + it.label);
 }
 const FIELDS = {
-  promo: ['title', 'text', 'sub', 'award', 'glyph', 'logo', 'qr', 'col', 'pattern', 'color', 'accent'],
+  promo: ['title', 'kicker', 'text', 'lede', 'sub', 'steps', 'chips', 'award', 'glyph', 'logo', 'qr', 'url', 'col', 'colAlign', 'pattern', 'color', 'accent'],
   handdesk: ['color', 'accent', 'emissive'], overcam: ['arm', 'fov', 'vfov', 'target', 'showCam', 'accent', 'emissive'],
   kiosk: ['caption', 'side', 'sideSub', 'tags', 'scrW', 'scrH', 'scrD', 'gap', 'bottom', 'offX', 'variant', 'tray', 'qr', 'guide', 'cam', 'showCam', 'mount', 'xray', 'pattern', 'text', 'sub', 'color', 'accent', 'emissive'],
   panel: ['side', 'layout', 'pattern', 'text', 'sub', 'startNo', 'color', 'accent', 'emissive'], portal: ['band', 'bar', 'radius', 'legs', 'text', 'sub', 'color', 'accent', 'emissive'], relief: ['text', 'color', 'accent', 'emissive'],
   totem: ['text', 'sub', 'color', 'accent'], beacon: ['color', 'accent', 'emissive'], counter: ['text', 'sub', 'color', 'accent', 'emissive'], screen: ['variant', 'stand'], hexwall: ['cell', 'color', 'accent', 'emissive'],
-  floor: ['color', 'accent', 'emissive'], ceiling: ['color', 'accent', 'emissive'], halo: ['accent', 'emissive'], aicore: ['text', 'color', 'accent', 'emissive'], holo: ['mount', 'accent', 'emissive'], strip: ['accent', 'emissive'],
+  bust: ['color', 'accent', 'emissive'], floor: ['color', 'accent', 'emissive'], ceiling: ['color', 'accent', 'emissive'], halo: ['accent', 'emissive'], aicore: ['text', 'color', 'accent', 'emissive'], holo: ['mount', 'accent', 'emissive'], strip: ['accent', 'emissive'],
   decal: ['text', 'sub', 'accent'], flag: ['text', 'sub', 'glyph', 'color', 'accent'], tent: ['text', 'color', 'accent'], neighbor: ['walls', 'color', 'accent'], person: ['color'],
   seal: ['l2', 'year', 'ring'], tower: ['accent', 'emissive'], blade: ['text', 'glyph', 'arm', 'color', 'accent', 'emissive'],
 };
-const FLABEL = { col: 'Text column mm', l2: 'Award level', year: 'School year', ring: 'Ring text', caption: 'Top line', tags: 'Tags (;)', sideSub: 'Side sub-text',  title: 'Name', award: 'Award', logo: 'Use logo',  side: 'Side text',  fov: 'Horizontal FOV °', vfov: 'Vertical FOV °', target: 'Desk height',  glyph: 'Centre glyph', legs: 'Leg text', guide: 'Hand guide', cam: 'Webcam + light', showCam: 'Camera field', offX: 'Screen offset X', tray: 'Pen tray', qr: 'QR code', arm: 'Arm reach', walls: 'Closed walls', scrW: 'Screen width', scrH: 'Screen height', scrD: 'Screen depth', gap: 'Gap', bottom: 'Screen bottom', mount: 'Mount', xray: 'X-ray', layout: 'Layout', pattern: 'Pattern', text: 'Headline', sub: 'Sub-text', startNo: 'Start number', color: 'Base colour', accent: 'Accent colour', emissive: 'Brightness', band: 'Name band', bar: 'Leg width', radius: 'Corner radius', variant: 'Content', stand: 'Stand', cell: 'Cell size' };
+const FLABEL = { col: 'Text column mm', colAlign: 'Column side (left/right)', kicker: 'Kicker', lede: 'Lede', steps: 'Steps (title|text per line)', chips: 'Chips (;)', url: 'QR link text', l2: 'Award level', year: 'School year', ring: 'Ring text', caption: 'Top line', tags: 'Tags (;)', sideSub: 'Side sub-text',  title: 'Name', award: 'Award', logo: 'Use logo',  side: 'Side text',  fov: 'Horizontal FOV °', vfov: 'Vertical FOV °', target: 'Desk height',  glyph: 'Centre glyph', legs: 'Leg text', guide: 'Hand guide', cam: 'Webcam + light', showCam: 'Camera field', offX: 'Screen offset X', tray: 'Pen tray', qr: 'QR code', arm: 'Arm reach', walls: 'Closed walls', scrW: 'Screen width', scrH: 'Screen height', scrD: 'Screen depth', gap: 'Gap', bottom: 'Screen bottom', mount: 'Mount', xray: 'X-ray', layout: 'Layout', pattern: 'Pattern', text: 'Headline', sub: 'Sub-text', startNo: 'Start number', color: 'Base colour', accent: 'Accent colour', emissive: 'Brightness', band: 'Name band', bar: 'Leg width', radius: 'Corner radius', variant: 'Content', stand: 'Stand', cell: 'Cell size' };
 const OPTS = { layout: [['hero', 'Main backdrop'], ['story', 'Story'], ['plain', 'Centred title']], pattern: [['contour', 'Contours + circuit'], ['circuit', 'Circuit'], ['hex', 'Hexagons'], ['dots', 'Dot grid'], ['grid', 'Technical grid'], ['plain', 'Plain']], variant: [['board', 'Handwriting board'], ['pipeline', '5-layer glass case'], ['lab', '3D Lab · hand gestures'], ['fire', 'FireSense odour monitor'], ['gavis', 'GAVIS captions + gaze']], mount: [['stand', 'Wheeled stand inside'], ['vesa', 'VESA-mounted on the frame'], ['wall', 'Facade-mounted'], ['pole', 'Own stand']] };
 function renderInspector() {
   const el = $('#inspector'); const o = selObj();
@@ -1045,7 +1102,7 @@ function renderInspector() {
     const id = 'f-' + k; const wrapEl = document.createElement('div'); wrapEl.className = 'field'; let input;
     if (OPTS[k]) { input = document.createElement('select'); OPTS[k].forEach(([v, l]) => { const op = document.createElement('option'); op.value = v; op.textContent = l; input.append(op); }); input.value = o[k] || OPTS[k][0][0]; }
     else if (['glyph', 'side', 'title', 'award', 'l2', 'year', 'ring', 'caption', 'tags', 'sideSub'].includes(k)) { input = document.createElement('input'); input.type = 'text'; input.value = o[k] || ''; }
-    else if (k === 'text' || k === 'sub') { input = document.createElement('textarea'); input.value = o[k] || ''; }
+    else if (k === 'text' || k === 'sub' || k === 'lede' || k === 'steps') { input = document.createElement('textarea'); input.value = o[k] || ''; }
     else if (k === 'color' || k === 'accent') { input = document.createElement('input'); input.type = 'color'; input.value = o[k] || '#000000'; }
     else if (k === 'emissive') { input = document.createElement('input'); input.type = 'range'; input.min = 0; input.max = 3; input.step = 0.05; input.value = o[k] ?? 1; }
     else if (['stand', 'xray', 'tray', 'qr', 'walls', 'guide', 'cam', 'showCam', 'legs', 'logo'].includes(k)) { input = document.createElement('input'); input.type = 'checkbox'; input.checked = !!o[k]; }

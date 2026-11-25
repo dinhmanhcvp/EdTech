@@ -1,3 +1,11 @@
+# 2026-11-25 (7) — Nội dung GAVIS thật, tấm in dạng editorial
+- Đọc thư mục Drive GAVIS (báo cáo BC150.10.02 mới nhất và 3 poster). Số liệu và nguồn lưu ở `Ho-so-in-gian-trien-lam/san-pham/gavis.json`. Không dùng báo cáo cũ BaoCao_GAVIS.docx vì số liệu đã cũ.
+- Studio khóa lưu v18:
+  - `paintPromo` viết lại thành `promoContent`: tiêu đề và kicker, câu chính, `lede`, thẻ KPI (`sub`, mỗi dòng "số|nhãn"), `steps` (mỗi dòng "bước|mô tả", tiêu đề lấy từ `stepsTitle`), `chips` (phân cách bằng `;`), dải giải thưởng, QR (`url`, `qrTitle`).
+  - Nội dung được đo trước rồi co giãn vừa chiều cao tấm. `colAlign: 'right'` đặt cột chữ bên phải.
+  - Khối mới `bust` (đầu ma-nơ-canh đeo GAVIS) đặt ở `G-bust`, cạnh cửa vào bên phải.
+- Nội dung FireSense vẫn là suy luận chung (mũi điện tử, IoT). Tấm câu chuyện FireSense còn ô `[ ]` chờ nhóm điền.
+
 # 2026-11-25 (6) — Hình thang mở, khách đi vào trong gian
 - Studio khóa lưu v16: hình thang đảo chiều, cạnh dài 6 m mở ra lối đi. Vách sau 3,4 m đặt tại `BZ = -400` (khách vào sâu khoảng 1,9 m), gồm FireSense `F-front` (nửa trái) và màn 65" Socratic `kiosk` (nửa phải), nối bằng dải sáng tím.
 - Hai mặt vát quay vào trong: `F-side` (−2950,1450)→(−1700,BZ) là câu chuyện FireSense, bục thiết bị đặt sát cửa bên trái; `G-side` (1700,BZ)→(2950,1450) là GAVIS. Cột lều giữa đứng giữa cửa vào, thẳng hàng với đường nối.

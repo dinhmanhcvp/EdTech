@@ -1,3 +1,8 @@
+# 2026-11-25 (27) — Chữ Socratic cách điệu
+- `logo/build-wordmark.js` sinh `logo/out/socratic-wordmark.json` và 2 file SVG (nền tối, nền sáng). Chữ "Socratıc" dùng Plus Jakarta 800 với chữ i không chấm; chấm cam r 86 thay chấm chữ i, cung con ngươi xanh nằm trong chữ o.
+- Studio v43: `B.letters` thêm chế độ `wordmark`. Chữ dựng thành 3 lớp phẳng (chữ, cung con ngươi, chấm) đặt trên bệ thấp, mặt bệ in `sub`. Dữ liệu chữ nhúng ở `WORDMARK`; hàm `layered()` xếp các lớp mặt nạ.
+- Dự toán n12: 3 lớp cắt CNC phẳng.
+
 # 2026-11-25 (26) — Logo Socratic đứng thay cho chữ SOCRAT?C
 - Hàm mới `socraticMark3D(g, cx, y0, qH, z, col, acc)` dựng logo hỏi chấm 3D.
 - `B.letters` thêm chế độ `lockup` (`markH`, `sub`): biểu tượng cao 720 bên trái, chữ "Socratic" cao 190 và "VISION BOARD" bên phải, đặt trên bệ thấp màu than có LED.

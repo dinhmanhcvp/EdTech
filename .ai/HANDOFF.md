@@ -1,3 +1,13 @@
+# 2026-11-25 (11) — Dự toán, chất liệu, ấn phẩm, trang trí
+- Trang mới `Ho-so-in-gian-trien-lam/du-toan/du-toan-gian.html` (artifact "Dự toán gian Vision AI"):
+  - 33 hạng mục chia 3 bậc: thiết yếu / nên có / tùy chọn. Có 3 phương án: Tối thiểu khoảng 36,8 triệu, Khuyến nghị khoảng 67,1 triệu, Đầy đủ khoảng 99,5 triệu (đã gồm dự phòng 10 %). Giá là khoảng tham khảo, chưa VAT, cần xin báo giá.
+  - Phần khuyến nghị chất liệu.
+  - Mẫu dựng bằng HTML: tờ rơi A5 ×3 + mặt sau chung, thẻ QR, thẻ đeo, sticker, huy hiệu cài áo.
+  - Danh sách đồ trang trí thêm.
+  - Logo nhúng dạng data URI, QR thật lấy từ `logo/out/qr-svb-stem-tron.svg`.
+- Studio khóa lưu v24: thêm khối `brochure` (kệ ấn phẩm 3 túi A5, tờ rơi vẽ bằng `paintLeaflet`) ×3 và vòng hào quang `halo` treo trên lối vào.
+- Chưa làm: xuất file in thật (PDF 1:1) cho ấn phẩm mới; `build.js` vẫn theo bố cục cũ.
+
 # 2026-11-25 (10) — Logo thật cho trường, Sở và AIROC
 - Thêm vào `Ho-so-in-gian-trien-lam/assets/`: `logo-thpt-chuyen-vinh-phuc.png` (gốc chỉ 200 px, cần bản lớn hơn để in), `logo-so-gddt-phu-tho.png`, `logo-airoc-2026.png`. Trong `config.json`, `logoBTC` trỏ tới logo Sở.
 - Studio khóa lưu v23: `LOGO_SRC` có thêm `fit`. `cover` dùng cho logo tròn (cắt theo hình tròn); `contain` đặt trọn logo trong ô tròn trắng (Sở, AIROC). Tầng bảo trợ cao 220.

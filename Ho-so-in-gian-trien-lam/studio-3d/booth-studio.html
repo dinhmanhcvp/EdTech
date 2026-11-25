@@ -175,7 +175,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 const M = 0.001; // mm → m
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FONT = { sans: '"Plus Jakarta Sans", system-ui, sans-serif', mono: '"JetBrains Mono", ui-monospace, monospace', serif: 'Newsreader, Georgia, serif' };
-const STORE = 'svb-booth-studio-v23'; // v23: real logos for Chuyen Vinh Phuc, Phu Tho DOET, AIROC 2026 // // v22: Socratic keystone, FireSense left pair, GAVIS right pair, real school logo // // v21: FireSense left pair, GAVIS keystone, Socratic right pair // // v20: 2 m faces + crown below the valance // // v19: five-sided vault, crown fascia, Lab station // // v18: editorial print layout // // v17: GAVIS content from the team's report, headset bust // // v16: open trapezoid, walk-in // // v15: trapezoid plan, FireSense | Socratic on one front // // v14: one 6 m booth, a single 65" screen // v13: English + chamfered facades // v12: 2 lều 3 m: FireSense | GAVIS + Socratic, thông nhau // v11: 2 gian — FireSense AI | GAVIS + Socratic thông nhau // v10: gian trước cũng thụt để có vách quảng bá // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
+const STORE = 'svb-booth-studio-v24'; // v24: brochure stands + entrance halo // // v23: real logos for Chuyen Vinh Phuc, Phu Tho DOET, AIROC 2026 // // v22: Socratic keystone, FireSense left pair, GAVIS right pair, real school logo // // v21: FireSense left pair, GAVIS keystone, Socratic right pair // // v20: 2 m faces + crown below the valance // // v19: five-sided vault, crown fascia, Lab station // // v18: editorial print layout // // v17: GAVIS content from the team's report, headset bust // // v16: open trapezoid, walk-in // // v15: trapezoid plan, FireSense | Socratic on one front // // v14: one 6 m booth, a single 65" screen // v13: English + chamfered facades // v12: 2 lều 3 m: FireSense | GAVIS + Socratic, thông nhau // v11: 2 gian — FireSense AI | GAVIS + Socratic thông nhau // v10: gian trước cũng thụt để có vách quảng bá // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
 const MARK_HOOK = 'M31.8 39.7 A30 30 0 1 1 75 76 Q60 83 60 93', MARK_IRIS = 'M46.8 45.2 A14 14 0 0 1 73.2 45.2';
 // // v4: mặt tiền = bảng viết 65" + trạm Lab 3D qua webcam
 
@@ -224,6 +224,10 @@ const DEFAULT = () => [
   { id: 'C-G1t', type: 'relief', name: 'Crown · GAVIS letters', ...GI.at(-120, 3), y: 2060, ry: GI.ry, w: 520, h: 140, d: 50, color: '#F4F0FF', accent: '#8B5CF6', emissive: 1.3, text: 'GAVIS' },
   { id: 'C-G2', type: 'fascia', name: 'Crown · GAVIS (outer)', ...GO.at(0, 0), y: 2000, ry: GO.ry, w: Math.round(GO.L), h: 260, d: 60, color: '#0E0B16', accent: '#8B5CF6', pattern: 'waves', text: 'PROVINCIAL 1ST PRIZE · 2026–2027', sub: 'HEAR WITH YOUR EYES' },
   ...[1, 2, 3, 4].map((i) => ({ id: 'rib' + i, type: 'strip', name: 'Light rib, vault corner ' + i, x: VAULT[i][0], y: 0, z: VAULT[i][1] + 8, ry: 0, w: 40, h: i === 2 || i === 3 ? 2460 : 2260, d: 40, accent: ['#FF7A4D', '#7C8CFF', '#7C8CFF', '#B07CFF'][i - 1], emissive: 2.4 })),
+  { id: 'B-F', type: 'brochure', name: 'FireSense · brochure stand', ...FO.at(330, 420), y: 0, ry: FO.ry, w: 320, h: 1450, d: 260, color: '#120A08', accent: '#FF4D2E', pattern: 'plume', text: 'FireSense AI', sub: 'smell fire risk first' },
+  { id: 'B-S', type: 'brochure', name: 'Socratic · brochure stand (between board and Lab)', ...SC.at(160, 420), y: 0, ry: SC.ry, w: 320, h: 1450, d: 260, color: '#0B0D13', accent: '#3D7BFF', pattern: 'grid', text: 'Socratic', sub: 'the board that asks back' },
+  { id: 'B-G', type: 'brochure', name: 'GAVIS · brochure stand', ...GI.at(-330, 420), y: 0, ry: GI.ry, w: 320, h: 1450, d: 260, color: '#0E0B16', accent: '#8B5CF6', pattern: 'waves', text: 'GAVIS', sub: 'hear with your eyes' },
+  { id: 'halo', type: 'halo', name: 'Hanging halo ring over the entrance', x: 0, y: 2380, z: 500, ry: 0, w: 1100, h: 40, d: 1100, accent: '#9B8CFF', emissive: 2 },
   { id: 'decal-in', type: 'decal', name: 'Floor decal: entrance', x: 0, y: 0, z: 1050, ry: 0, w: 760, h: 4, d: 760, accent: '#7C8CFF', text: 'COME IN', sub: 'three projects inside' },
   { id: 'F-blade', type: 'blade', name: 'FireSense · blade sign', x: -3000, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#120A08', accent: '#FF4D2E', emissive: 1.8, glyph: '!', text: 'FIRESENSE AI · FIRE ALERT' },
   { id: 'S-blade', type: 'blade', name: 'Socratic · blade sign (centre pole)', x: 0, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.8 },
@@ -248,6 +252,7 @@ const LIB = [
   { type: 'beacon', label: 'Beacon ?', note: 'LED ring + 3D question mark', o: { w: 500, h: 500, d: 80, y: 1200, color: '#FF6A2B', accent: '#3D7BFF', emissive: 2 } },
   { type: 'hexwall', label: 'Raised hexagons', note: 'raised, lit modules', o: { w: 600, h: 800, d: 120, y: 800, color: '#141823', accent: '#2F6BFF', emissive: 1.4, cell: 90 } },
   { type: 'halo', label: 'Halo ring', note: 'horizontal LED ring', o: { w: 1000, h: 40, d: 1000, y: 2300, accent: '#3D7BFF', emissive: 2 } },
+  { type: 'brochure', label: 'Brochure stand', note: 'A5 flyers, 3 pockets', o: { w: 320, h: 1450, d: 260, color: '#0B0D13', accent: '#3D7BFF', text: 'Project', sub: 'take a flyer' } },
   { type: 'fascia', label: 'Crown fascia', note: 'logos + sponsor line', o: { w: 1600, h: 260, d: 60, y: 2200, color: '#0B0C10', accent: '#E8C872', logosL: 'Logo', text: 'INCUBATED AND SPONSORED BY', sub: 'Organisation name' } },
   { type: 'bust', label: 'Wearable on a head', note: 'headset demo on a plinth', o: { w: 420, h: 1050, d: 420, color: '#17122A', accent: '#A78BFA', emissive: 1.6 } },
   { type: 'aicore', label: 'AI core', note: 'plinth + glass cube', o: { w: 400, h: 1300, d: 400, accent: '#3D7BFF', emissive: 2, color: '#0B0C10' } },
@@ -261,7 +266,7 @@ const LIB = [
   { type: 'decal', label: 'Floor decal', note: 'Ø800 ring', o: { w: 800, h: 4, d: 800, accent: '#3D7BFF', text: 'STAND HERE' } },
   { type: 'person', label: 'People', note: 'for scale', o: { w: 450, h: 1650, d: 300, color: '#4A5466' } },
 ];
-const TYPE_LABEL = { fascia: 'CROWN', bust: 'WEARABLE', promo: 'PROMO WALL',  handdesk: 'HAND DESK', overcam: 'CAMERA', seal: 'SEAL', tower: 'TOWER', blade: 'BLADE SIGN', kiosk: 'FACADE', tent: 'TENT', neighbor: 'NEXT DOOR', floor: 'FLOOR', ceiling: 'CEILING', panel: 'PANEL', hexwall: 'HEXAGONS', screen: 'SCREEN', halo: 'RING', decal: 'DECAL', holo: 'HOLO', aicore: 'AI CORE', portal: 'PORTAL', relief: '3D LETTERS', totem: 'TOTEM', beacon: 'BEACON', counter: 'COUNTER', strip: 'LED', flag: 'FLAG', person: 'PERSON' };
+const TYPE_LABEL = { brochure: 'LEAFLETS', fascia: 'CROWN', bust: 'WEARABLE', promo: 'PROMO WALL',  handdesk: 'HAND DESK', overcam: 'CAMERA', seal: 'SEAL', tower: 'TOWER', blade: 'BLADE SIGN', kiosk: 'FACADE', tent: 'TENT', neighbor: 'NEXT DOOR', floor: 'FLOOR', ceiling: 'CEILING', panel: 'PANEL', hexwall: 'HEXAGONS', screen: 'SCREEN', halo: 'RING', decal: 'DECAL', holo: 'HOLO', aicore: 'AI CORE', portal: 'PORTAL', relief: '3D LETTERS', totem: 'TOTEM', beacon: 'BEACON', counter: 'COUNTER', strip: 'LED', flag: 'FLAG', person: 'PERSON' };
 
 // ---------------- tiện ích ----------------
 function hash(s) { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -745,6 +750,15 @@ function paintFascia(o) { const W = o.w, H = o.h; const { c, ctx } = makeCanvas(
 B.fascia = (o, g) => { const W = o.w * M, H = o.h * M, D = (o.d || 60) * M; const t = tex(paintFascia(o)); const mat = new THREE.MeshStandardMaterial({ map: t, roughness: 0.5, emissiveMap: t, emissive: '#ffffff', emissiveIntensity: 0.22 });
   const dark = MAT.std(shade(o.color, -0.25), { roughness: 0.4, metalness: 0.3 }); const m = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), [dark, dark, dark, dark, mat, dark]); m.position.set(0, H / 2, -D / 2); m.castShadow = true; g.add(m);
   const led = box(W, 0.012, 0.014, MAT.glow(o.accent, o.emissive ?? 2.2)); led.position.set(0, 0.006, 0.006); g.add(led); };
+// Floor brochure stand: slim pole, base plate and three tilted acrylic pockets holding the project's A5 flyers.
+function paintLeaflet(o) { const { c, ctx } = makeCanvas(148, 210, 512); const acc = o.accent; ctx.fillStyle = o.color; ctx.fillRect(0, 0, 148, 210); pattern(ctx, 148, 210, o.pattern || 'contour', acc, o.id + 'lf');
+  ctx.fillStyle = acc; ctx.fillRect(0, 0, 6, 210); ctx.fillStyle = '#F5F2EA'; ctx.font = `800 ${fitFont(ctx, o.text || '', `800 {s}px ${FONT.sans}`, 20, 120)}px ${FONT.sans}`; ctx.fillText(o.text || '', 14, 40);
+  ctx.fillStyle = shade(acc, 0.45); ctx.font = `italic 400 13px ${FONT.serif}`; ctx.fillText(o.sub || '', 14, 58); ctx.fillStyle = '#fff'; ctx.fillRect(98, 160, 38, 38); return c; }
+B.brochure = (o, g) => { const H = (o.h || 1450) * M, metal = MAT.std('#1A1B1F', { roughness: 0.35, metalness: 0.7 });
+  const base = box(0.32, 0.012, 0.26, metal); base.position.y = 0.006; g.add(base); const pole = box(0.03, H, 0.03, metal); pole.position.set(0, H / 2, -0.06); g.add(pole);
+  const lt = tex(paintLeaflet(o)); const leaf = new THREE.MeshStandardMaterial({ map: lt, roughness: 0.6, emissiveMap: lt, emissive: '#ffffff', emissiveIntensity: 0.12 }); const acr = new THREE.MeshStandardMaterial({ color: '#ffffff', transparent: true, opacity: 0.18, roughness: 0.05, metalness: 0.1 });
+  [0.62, 0.95, 1.28].filter((y) => y < H).forEach((y) => { const p = new THREE.Group(); p.position.set(0, y, -0.03); p.rotation.x = -0.22; const sheet = new THREE.Mesh(new THREE.PlaneGeometry(0.148, 0.21), leaf); sheet.position.set(0, 0.105, 0.012); p.add(sheet);
+    const front = box(0.16, 0.12, 0.004, acr); front.position.set(0, 0.06, 0.03); p.add(front); const lip = box(0.16, 0.006, 0.03, MAT.glow(o.accent, 1.2)); lip.position.set(0, 0.003, 0.016); p.add(lip); g.add(p); }); };
 // GAVIS headset on a mannequin head: plinth, head, over-the-head frame, 4-mic array on top, T-Glass display on the left, camera, 3 vibration motors, belt pack
 B.bust = (o, g) => {
   const W = o.w * M, Hp = o.h * M, D = o.d * M, em = o.emissive ?? 1.6;
@@ -1131,7 +1145,7 @@ const FIELDS = {
   kiosk: ['stats', 'guideY', 'caption', 'side', 'sideSub', 'tags', 'scrW', 'scrH', 'scrD', 'gap', 'bottom', 'offX', 'variant', 'tray', 'qr', 'guide', 'cam', 'showCam', 'mount', 'xray', 'pattern', 'text', 'sub', 'color', 'accent', 'emissive'],
   panel: ['side', 'layout', 'pattern', 'text', 'sub', 'startNo', 'color', 'accent', 'emissive'], portal: ['band', 'bar', 'radius', 'legs', 'text', 'sub', 'color', 'accent', 'emissive'], relief: ['text', 'color', 'accent', 'emissive'],
   totem: ['text', 'sub', 'color', 'accent'], beacon: ['color', 'accent', 'emissive'], counter: ['text', 'sub', 'color', 'accent', 'emissive'], screen: ['variant', 'stand'], hexwall: ['cell', 'color', 'accent', 'emissive'],
-  bust: ['color', 'accent', 'emissive'], fascia: ['text', 'sub', 'logosL', 'logosR', 'logoNames', 'pattern', 'color', 'accent', 'emissive'], floor: ['color', 'accent', 'emissive'], ceiling: ['color', 'accent', 'emissive'], halo: ['accent', 'emissive'], aicore: ['text', 'color', 'accent', 'emissive'], holo: ['mount', 'accent', 'emissive'], strip: ['accent', 'emissive'],
+  bust: ['color', 'accent', 'emissive'], brochure: ['text', 'sub', 'pattern', 'color', 'accent'], fascia: ['text', 'sub', 'logosL', 'logosR', 'logoNames', 'pattern', 'color', 'accent', 'emissive'], floor: ['color', 'accent', 'emissive'], ceiling: ['color', 'accent', 'emissive'], halo: ['accent', 'emissive'], aicore: ['text', 'color', 'accent', 'emissive'], holo: ['mount', 'accent', 'emissive'], strip: ['accent', 'emissive'],
   decal: ['text', 'sub', 'accent'], flag: ['text', 'sub', 'glyph', 'color', 'accent'], tent: ['text', 'color', 'accent'], neighbor: ['walls', 'color', 'accent'], person: ['color'],
   seal: ['l2', 'year', 'ring'], tower: ['accent', 'emissive'], blade: ['text', 'glyph', 'arm', 'color', 'accent', 'emissive'],
 };

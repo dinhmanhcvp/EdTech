@@ -1,3 +1,9 @@
+# 2026-11-25 (26) — Logo Socratic đứng thay cho chữ SOCRAT?C
+- Hàm mới `socraticMark3D(g, cx, y0, qH, z, col, acc)` dựng logo hỏi chấm 3D.
+- `B.letters` thêm chế độ `lockup` (`markH`, `sub`): biểu tượng cao 720 bên trái, chữ "Socratic" cao 190 và "VISION BOARD" bên phải, đặt trên bệ thấp màu than có LED.
+- Relief thêm cờ `halo: false`. Đã bỏ standee bóng thoại `F-q`.
+- Dự toán: cập nhật n12, n13 còn 1 standee.
+
 # 2026-11-25 (25) — Bỏ bàn GAVIS, thay bằng 3 bục lục giác
 - Studio v41:
   - Đã bỏ `desk` (bàn BTC) và `G-shelf`.

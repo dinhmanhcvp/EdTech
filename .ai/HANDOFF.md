@@ -1,3 +1,8 @@
+# 2026-11-25 (17) — Lab trên màn 65", ảnh GAVIS
+- Bỏ màn 43", chân boom và webcam. Lab 3D chạy bằng cảm ứng ngay trên màn 65" trong hộp ốp. Bàn BTC (`desk`, type `counter`) thành quầy đón khách; `G-bust` đặt trên mặt bàn để khách đeo thử. Studio v30.
+- Vách GAVIS (`G-wall`) có 3 ảnh thật lấy từ tài liệu "kịch bản" của nhóm GAVIS: người đeo thiết bị, cụm đeo đầu, hộp đeo hông. Ảnh lưu ở `assets/photos/gavis-*.jpg`. Đã bỏ cụm lục giác và chữ nổi trên vách này.
+- Dự toán: bỏ màn 43", chân boom và webcam; phương án khuyến nghị khoảng 28,9 triệu.
+
 # 2026-11-25 (16) — Hộp ốp màn, đổi bên, ảnh nhóm
 - Studio v29:
   - `kiosk` là hộp ốp Formex cho màn 65" (mặt sau hở, `mount: 'stand'`), đặt sát vách sau bên phải.

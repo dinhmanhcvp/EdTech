@@ -1,3 +1,6 @@
+# 2026-11-25 (40) — Bộ dụng cụ học tập khổng lồ
+- Đã bỏ bục đứng, khung viền màn và logo chiếu sàn. `formexart` thêm 2 kiểu: `setsquare` (ê-ke có vạch thước, `A-square` dựa vách phải gần lối vào) và `magnifier` (kính lúp 1,5 m có biểu tượng Socratic trong mắt kính, `A-lens` ở mép trước cạnh chữ Socratic?). Cùng bút `A-pen` thành bộ 3 món. Studio v53. Dự toán thêm n26, n27 và bỏ n24, n25, t6.
+
 # 2026-11-25 (39) — Thêm trang trí cho Socratic
 - Studio v52 thêm: `S-stage` (bục đứng Formex 8 cm, kẻ ô, trước màn) kèm `S-stageLED`; `S-fr-*` (khung viền màn phát sáng 4 cạnh); `S-gobo` (logo Socratic? chiếu xuống sàn lối vào). Dự toán thêm n24, n25, t6 vào nhóm S.
 

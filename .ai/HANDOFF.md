@@ -1,3 +1,13 @@
+# 2026-11-25 (8) — Vòm 5 cạnh, dải đầu vòm, trạm Lab 3D
+- Studio khóa lưu v21. Mặt bằng `VAULT`: 6 điểm trên nửa elip (bán trục 2 950 × 1 900), góc chia 41°/76°/104°/139°.
+  - Hai mặt trái là FireSense: `F-main` ở mặt ngoài, có bục và huy hiệu đặt trên dải trống bên trái; `F-story` ở mặt trong, có cụm lục giác.
+  - Mặt giữa là GAVIS: `G-wall`, kèm `G-bust`.
+  - Hai mặt phải là Socratic: bảng 65" `kiosk` ở mặt trong; trạm Lab 50" `kiosk2` ở mặt ngoài, có `desk` và `overcam`.
+- Mọi mặt cao 2 000 mm. Dải đầu vòm `fascia` (y 2 000, cao 260) có ô logo `logosL`/`logosR` và chữ nổi đặt phía trước. Mặt giữa ghi dòng bảo trợ Sở GD&ĐT Phú Thọ, kèm ô logo Sở và STEM Carnival · AIROC 2026. Bốn gân sáng `rib1–4` ở các góc vòm.
+- Họa tiết mới: `plume` (FireSense), `waves` (GAVIS); Socratic dùng `grid`. Hàm `logoSlot()` vẽ ô logo giữ chỗ. Mặt in có thêm trường `schoolLogo` (logo trường đặt dưới góc phải đầu tấm).
+- Kiosk có thêm trường `stats` (các thẻ KPI) và `guideY` (thẻ cử chỉ thu gọn, nằm giữa đáy màn và mặt bàn).
+- Logo mới chỉ là ô giữ chỗ: cần file chính thức của Sở GD&ĐT Phú Thọ, STEM Carnival/AIROC và ba trường.
+
 # 2026-11-25 (7) — Nội dung GAVIS thật, tấm in dạng editorial
 - Đọc thư mục Drive GAVIS (báo cáo BC150.10.02 mới nhất và 3 poster). Số liệu và nguồn lưu ở `Ho-so-in-gian-trien-lam/san-pham/gavis.json`. Không dùng báo cáo cũ BaoCao_GAVIS.docx vì số liệu đã cũ.
 - Studio khóa lưu v18:

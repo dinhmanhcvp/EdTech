@@ -1,3 +1,10 @@
+# 2026-11-25 (20) — Vách chéo theo bản vẽ, ảnh GAVIS tách nền
+- Studio v36:
+  - Vách chéo `CH` theo bản vẽ của người dùng, đi từ vách sau (x 10) tới vách phải (z −810), dài khoảng 1,6 m, chéo khoảng 24°. Màn 65" nằm khít trong vách (`kiosk`, `noBack`).
+  - Khoảng trống sau vách chỉ sâu 0,3–0,6 m, nên đặt `mount: 'vesa'`: màn treo chân VESA mỏng, không dùng xe bánh.
+  - Phần trái vách sau là `S-team` (ảnh nhóm, mô hình kinh doanh). Vách phải `S-wall` dài 2,2 m (ảnh bảng 3D, các bước hoạt động, Lab, QR). Đã bỏ `S-lab` và `S-photo`.
+- Ảnh GAVIS dùng PNG trong suốt (`assets/photos/gavis-*.png`), đặt trên thẻ nền sáng tím nhạt có bóng đổ. Cú pháp ảnh: dòng `photos` thêm phần thứ ba `|cut`.
+
 # 2026-11-25 (19) — Socratic thành 3 tấm hình thang
 - Studio v33: `TL`/`TC`/`TR` là 3 tấm liền nhau. Tấm giữa `kiosk` rộng 1 600, mặt ở z −830, `noBack: true`, màn 1 483,2 × 896,9 × 104, đáy màn cao 900. Tấm trái `S-team` (ảnh nhóm, mô hình kinh doanh) và tấm phải `S-lab` (Lab 3D chạm, QR) vát về hai góc sau; chân màn giấu trong khoảng trống phía sau. Đã bỏ `S-back`; vách phải `S-wall` dùng lại đủ chiều dài.
 - Kiosk có thêm cờ `noBack` để bỏ tấm hậu. Dự toán: thay hộp ốp bằng cụm 3 tấm hình thang.

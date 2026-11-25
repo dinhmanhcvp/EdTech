@@ -1,3 +1,6 @@
+# 2026-11-25 (34) — Formex 300 nghìn/m²
+- Dự toán: mọi món Formex tính theo m² × 300 nghìn (giá người dùng đưa, giả định đã gồm in UV và cắt), tổng khoảng 21 m². Thêm n0 (gia công lắp ghép), bỏ k4 (decal dán lên Formex vì Formex in trực tiếp). Phương án khuyến nghị khoảng 21,9 triệu (dải 12,3–35,6 triệu).
+
 # 2026-11-25 (33) — Đi dây webcam giấu trong khung
 - Dây webcam đi trong rãnh thanh vòm, xuống vòm trái, qua thân bàn, ra máng sàn rồi tới cổng màn; tổng khoảng 3,3 m. Chỉ cần dây nối dài USB 2.0 thường 2 m (sửa t5 và k1 trong dự toán, đổi chú thích trong studio).
 

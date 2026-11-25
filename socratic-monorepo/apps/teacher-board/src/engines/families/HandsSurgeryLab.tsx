@@ -2,7 +2,8 @@
 
 import React, {useEffect, useReducer, useRef, useState} from 'react';
 import {CHECKLIST, GAUZE_TOTAL, LAYERS, SURG_NAME, SURG_TOOLS, STEP_DO, STEP_TOOL, alarms, bleedRate, capnoAt, debrief, ecgAt, mapOf, newSurg, plethAt, surgReducer, surgStep, type CheckPhase, type SAction} from '../../utils/lab/hands/surgery';
-import {BTN_GHOST} from './Controls';
+import {ACT_SAFE, CABG_BRIEF, CABG_STEPS, CABG_TOOLS, CABG_TOOL_NAME, cabgDebrief, cabgReducer, cabgStep, cabgTool, cabgVitals, monitorLanes, newCabg, type CabgAction} from '../../utils/lab/hands/cabg';
+import {BTN, BTN_GHOST} from './Controls';
 import type {OrView, SliceAxis, SurgMode, SurgeryLive} from './HandsSurgery3D';
 import type {HandsInput} from './handsKit';
 
@@ -10,9 +11,10 @@ const Surgery3D = React.lazy(() => import('./HandsSurgery3D'));
 type ShellProps = {hint: string; render: (input: HandsInput, onFail: () => void) => React.ReactNode; children: React.ReactNode; lens?: React.ReactNode};
 const PILL = (on: boolean) => `min-h-[40px] rounded-full border px-3 text-xs font-medium ${on ? 'border-[#1D1B16] bg-[#1D1B16] text-[#F3EFE6]' : 'border-[#1D1B16]/20 bg-white'}`;
 const MODES: [SurgMode, string][] = [
+  ['cabg', 'Ca mổ bắc cầu mạch vành'],
+  ['surgery', 'Mở màng ngoài tim'],
   ['slice', 'Cắt lớp'],
   ['peel', 'Bóc lớp'],
-  ['surgery', 'Phẫu thuật'],
 ];
 const AXES: [SliceAxis, string][] = [
   ['front', 'Bốn buồng'],
@@ -29,6 +31,14 @@ const LANES: [string, number, number][] = [
   ['#7AD8F7', 0.62, 0.2],
   ['#F7E27A', 0.96, 0.22],
 ];
+
+/** sinh hiệu đưa lên monitor: ca bắc cầu lấy theo trạng thái tuần hoàn (máy tim phổi, liệt tim, rung thất), chế độ khác theo ca mở màng ngoài tim */
+const vitalsOf = (L: SurgeryLive) => {
+  if (L.mode !== 'cabg') return L.st.vitals;
+  const c = cabgVitals(L.cabg);
+  return {...L.st.vitals, hr: c.hr, sys: c.sys, dia: c.dia, spo2: c.spo2, etco2: c.etco2};
+};
+const monOf = (L: SurgeryLive) => (L.mode === 'cabg' ? cabgVitals(L.cabg) : {rhythm: 'sinus' as const, pulsatile: true, vent: true});
 
 /** monitor gây mê ở góc cảnh: điện tim, sóng mạch, sóng CO₂ chạy; nhịp, huyết áp, SpO₂, EtCO₂, thân nhiệt, máu mất; bíp theo từng nhịp, tiếng trầm dần khi SpO₂ giảm */
 const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({live}) => {
@@ -70,23 +80,25 @@ const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({l
     const frame = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      const v = live.current.st.vitals;
+      const v = vitalsOf(live.current);
+      const m = monOf(live.current);
       const c = cv.current?.getContext('2d');
       if (c && cv.current) {
         const W = cv.current.width;
         const H = cv.current.height;
-        phase += (dt * v.hr) / 60;
+        phase += (dt * Math.max(0, v.hr)) / 60;
         if (phase >= 1) {
           phase -= 1;
           // bíp 60 ms mỗi nhịp; cao độ giảm theo SpO₂ như monitor phòng mổ, nghe được mà không cần nhìn
-          if (soundRef.current && now - lastBeep > 200) {
+          if (soundRef.current && now - lastBeep > 200 && m.rhythm !== 'vf' && v.hr > 0) {
             beep(Math.max(520, 880 - (99 - v.spo2) * 30));
             lastBeep = now;
           }
         }
         // cùng đồng hồ với cảnh 3D (phổi thở, monitor trên máy gây mê): sóng CO₂ khớp nhịp phổi phồng / xẹp
         breath = ((now / 1000) * v.rr / 60) % 1;
-        const vals = [ecgAt(phase), -plethAt(phase), -capnoAt(breath) * (v.etco2 / 40)];
+        const lanes = monitorLanes(m, [ecgAt(phase), plethAt(phase), capnoAt(breath) * (v.etco2 / 40)], now / 1000);
+        const vals = [lanes[0], -lanes[1], -lanes[2]];
         const nx = (x + dt * 70) % W;
         c.fillStyle = '#05130F';
         c.fillRect(x, 0, Math.max(6, nx - x + 6), H);
@@ -117,9 +129,11 @@ const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({l
       void ac?.close();
     };
   }, [live]);
-  const v = live.current.st.vitals;
-  const al = alarms(v);
-  const bleed = bleedRate(live.current.st);
+  const v = vitalsOf(live.current);
+  const m = monOf(live.current);
+  const cab = live.current.mode === 'cabg';
+  const al = cab ? (m.rhythm === 'vf' ? ['Rung thất'] : m.rhythm === 'arrest' ? ['Tim ngừng (liệt tim)'] : []) : alarms(v);
+  const bleed = cab ? 0 : bleedRate(live.current.st);
   return (
     <div data-testid="vitals" data-hr={Math.round(v.hr)} className="pointer-events-auto absolute bottom-9 right-3 z-10 w-[236px] rounded-xl border border-white/10 bg-[#05130F]/95 p-2 font-mono text-[11px] text-[#CFE9DC] shadow-lg">
       <div className="flex items-center justify-between">
@@ -131,7 +145,7 @@ const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({l
       <canvas ref={cv} width={220} height={92} className="mt-1 block h-[92px] w-[220px] rounded bg-[#05130F]" />
       <div className="mt-1 grid grid-cols-3 gap-1">
         <span>
-          <b className={`block text-lg leading-none ${v.hr > 110 ? 'text-[#FF6B5A]' : 'text-[#46F08C]'}`}>{Math.round(v.hr)}</b>nhịp/phút
+          <b className={`block text-lg leading-none ${v.hr > 110 || m.rhythm === 'vf' ? 'text-[#FF6B5A]' : 'text-[#46F08C]'}`}>{m.rhythm === 'vf' ? 'VF' : Math.round(v.hr)}</b>nhịp/phút
         </span>
         <span>
           <b className={`block text-lg leading-none ${v.sys < 90 ? 'text-[#FF6B5A]' : 'text-[#F7E27A]'}`}>
@@ -148,11 +162,11 @@ const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({l
         <span data-testid="vitals-etco2" className={v.etco2 < 25 ? 'text-[#FF6B5A]' : 'text-[#F7E27A]'}>
           EtCO₂ {Math.round(v.etco2)}
         </span>
-        <span>NT {v.rr}</span>
+        <span>{m.vent ? `NT ${v.rr}` : 'Ngừng thở máy'}</span>
         <span>{v.temp.toFixed(1)}°C</span>
       </div>
       <div className="mt-1 flex justify-between text-[10px] text-[#CFE9DC]/80">
-        <span>Mất máu {Math.round(v.loss)} mL</span>
+        <span>{cab ? (cabgVitals(live.current.cabg).pumpFlow ? `Máy ${cabgVitals(live.current.cabg).pumpFlow} L/phút` : 'Máy tim phổi tắt') : `Mất máu ${Math.round(v.loss)} mL`}</span>
         <span className={bleed ? 'text-[#FF6B5A]' : ''}>{bleed ? `Đang chảy ${bleed} mL/s` : v.deficit > 1 ? `Truyền dịch bù, thiếu ${Math.round(v.deficit)} mL` : 'Không chảy máu'}</span>
       </div>
       {al.length > 0 && <div className="mt-1 rounded bg-[#FF6B5A]/20 px-1.5 py-0.5 text-[#FFB3A8]">⚠ {al.join(' · ')}</div>}
@@ -169,8 +183,20 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
   const lastDraw = useRef(0);
   const [epoch, setEpoch] = useState(0);
   const live = useRef<SurgeryLive>({
-    mode: 'slice',
+    mode: 'cabg',
     st: newSurg(true),
+    cabg: newCabg(),
+    cabgDispatch: (a: CabgAction) => {
+      const L = live.current;
+      const next = cabgReducer(L.cabg, a);
+      if (next === L.cabg) return;
+      L.cabg = next;
+      const now = performance.now();
+      if ((a.t !== 'tick' && a.t !== 'plegia' && a.t !== 'cut') || now - lastDraw.current > 300) {
+        lastDraw.current = now;
+        redraw();
+      }
+    },
     view: 'field',
     peeled: 0,
     slice: {axis: 'front', off: 0.0, tilt: 0, locked: false},
@@ -197,21 +223,35 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
   const setMode = (m: SurgMode) => {
     L.mode = m;
     L.st = {...L.st, warn: ''};
+    L.cabg = {...L.cabg, warn: ''};
     redraw();
   };
+  const cb = L.cabg;
+  const cStep = cabgStep(cb);
+  const cNeed = cabgTool(cStep);
+  const cv = cabgVitals(cb);
+  const mmss = (x: number) => `${String(Math.floor(x / 60)).padStart(2, '0')}:${String(Math.floor(x % 60)).padStart(2, '0')}`;
+  const team: [CabgAction, string, boolean][] = [
+    [{t: 'heparin'}, 'Tiêm heparin', cStep === 'heparin' && !cb.heparin],
+    [{t: 'pumpOn'}, 'Lên máy tim phổi', cStep === 'pumpOn'],
+    [{t: 'shock'}, 'Sốc điện trong 20 J', cStep === 'defib'],
+    [{t: 'wean'}, 'Thở lại, cai máy', cStep === 'wean'],
+    [{t: 'protamine'}, 'Tiêm protamine', cStep === 'protamine'],
+    [{t: 'flow'}, 'Đo lưu lượng cầu nối', cStep === 'flow'],
+  ];
 
   const phase: CheckPhase | null = step === 'signin' || step === 'timeout' || step === 'signout' ? step : null;
   const need = step === 'done' ? null : STEP_TOOL[step];
 
   return (
     <Shell
-      hint="Cắt lớp: tay xòe dời mặt cắt. Bóc lớp: chụm vào lớp ngoài cùng rồi kéo ra. Phẫu thuật: hoàn thành bảng kiểm, lấy dụng cụ ở khay bên phải bằng một lần chụm, làm theo vòng cam."
+      hint="Ca mổ bắc cầu: lấy dụng cụ ở khay bên phải bằng một lần chụm, làm theo vòng cam; bước của kíp (heparin, lên máy, sốc điện, cai máy, protamine) bấm ở bảng điều khiển. Cắt lớp: tay xòe dời mặt cắt. Bóc lớp: chụm vào lớp ngoài cùng rồi kéo ra."
       render={(input, onFail) => <Surgery3D key={epoch} input={input} live={L} onFail={onFail} />}
       lens={<VitalsMonitor live={live} />}
     >
       <p className="leading-relaxed text-[#4B473D]">
         <b className="block font-semibold text-[#1D1B16]">Nhiệm vụ · Sinh 11, bài 9–11 (tuần hoàn)</b>
-        Quan sát cấu tạo tim người bằng mặt cắt và bóc từng lớp, rồi thực hiện một ca mở màng ngoài tim trong phòng mổ: làm bảng kiểm an toàn, rạch đúng đường giải phẫu, xử lí chảy máu, hút sạch, đếm gạc, khâu đóng.
+        Thực hiện một ca mổ tim thật — bắc cầu động mạch vành (động mạch ngực trong trái nối vào động mạch liên thất trước) trên máy tim phổi nhân tạo — và thấy tuần hoàn thay đổi ra sao ở từng bước; hoặc xem cấu tạo tim bằng mặt cắt, bóc lớp, và tập mở màng ngoài tim.
       </p>
       <div role="tablist" aria-label="Chế độ" className="flex gap-1.5">
         {MODES.map(([m, name]) => (
@@ -228,6 +268,99 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
           </button>
         ))}
       </div>
+
+      {L.mode === 'cabg' && (
+        <>
+          <div data-testid="cabg-status" data-step={cStep} className={`rounded-xl px-3 py-2 leading-relaxed ${cStep === 'done' ? 'bg-[#1F7A4D]/[.09]' : 'bg-[#1D1B16]/[.05]'}`}>
+            {cStep === 'done' ? (
+              <b className="block font-semibold text-[#1F7A4D]">Ca mổ hoàn tất</b>
+            ) : (
+              <>
+                <b className="block font-semibold">
+                  Bước {CABG_STEPS.findIndex((x) => x.id === cStep) + 1}/{CABG_STEPS.length} · {CABG_STEPS.find((x) => x.id === cStep)!.name}
+                </b>
+                <span className="block">{CABG_STEPS.find((x) => x.id === cStep)!.how}</span>
+                <span className="mt-1 block text-[#4B473D]">Vì sao: {CABG_STEPS.find((x) => x.id === cStep)!.why}</span>
+                {cNeed && <span className="mt-1 block">Cần: {CABG_TOOL_NAME[cNeed].toLowerCase()} · đang cầm: {cb.tool ? CABG_TOOL_NAME[cb.tool].toLowerCase() : 'tay không'}</span>}
+                {cStep === 'plegia' && cb.plegia > 0 && <span className="block">Đã truyền {cb.plegia.toFixed(1)} s · nhịp {cb.hr}/phút</span>}
+                {cStep === 'arteriotomy' && cb.arteriotomy > 0 && <span className="block">Đã mở {Math.round(cb.arteriotomy * 100)} %</span>}
+                {cStep === 'anast' && <span className="block">Đã khâu {cb.stitches}/8 mũi</span>}
+              </>
+            )}
+          </div>
+          <div data-testid="cabg-circ" className="grid grid-cols-2 gap-1 rounded-xl bg-white px-3 py-2 font-mono text-[11px]">
+            <span>
+              ACT <b className={cb.act >= ACT_SAFE ? 'text-[#1F7A4D]' : ''}>{Math.round(cb.act)} s</b>
+            </span>
+            <span>
+              Máy: <b>{cv.pumpFlow ? `${cv.pumpFlow} L/ph` : 'tắt'}</b>
+            </span>
+            <span>
+              Chạy máy <b>{mmss(cb.cpbT)}</b>
+            </span>
+            <span>
+              Kẹp ĐMC <b>{mmss(cb.xclampT)}</b>
+            </span>
+            <span>
+              Nhịp: <b className={cv.rhythm === 'vf' ? 'text-[#C4261A]' : ''}>{{sinus: 'xoang', slowing: 'chậm dần', arrest: 'ngừng (liệt tim)', vf: 'rung thất'}[cv.rhythm]}</b>
+            </span>
+            <span>
+              Thở máy: <b>{cv.vent ? 'có' : 'ngừng'}</b>
+            </span>
+          </div>
+          {cStep === 'brief' && (
+            <fieldset data-testid="cabg-brief" className="flex flex-col gap-1 rounded-xl bg-white px-3 py-2">
+              <legend className="px-1 text-xs font-semibold">Dừng lại trước khi bắt đầu · kíp mổ tim</legend>
+              {CABG_BRIEF.map((item, i) => (
+                <label key={item} className="flex min-h-[32px] items-center gap-2 text-xs">
+                  <input type="checkbox" data-testid={`cabg-brief-${i}`} checked={cb.brief[i]} onChange={() => L.cabgDispatch({t: 'brief', i})} className="h-4 w-4 shrink-0 accent-[#1F7A4D]" />
+                  {item}
+                </label>
+              ))}
+            </fieldset>
+          )}
+          <div role="group" aria-label="Việc của kíp" className="flex flex-wrap gap-1.5">
+            {team.map(([a, name, now]) => (
+              <button key={name} type="button" data-testid={`cabg-${a.t}`} onClick={() => L.cabgDispatch(a)} className={now ? BTN : BTN_GHOST}>
+                {name}
+              </button>
+            ))}
+          </div>
+          {cb.warn && (
+            <p data-testid="cabg-warn" role="alert" className="rounded-xl bg-[#C4261A]/[.08] px-3 py-2 font-medium text-[#C4261A]">
+              {cb.warn}
+            </p>
+          )}
+          <div role="group" aria-label="Dụng cụ đang cầm" className="flex flex-wrap gap-1.5">
+            {CABG_TOOLS.map((t) => (
+              <button key={t} type="button" data-testid={`cabg-tool-${t}`} aria-pressed={cb.tool === t} onClick={() => L.cabgDispatch({t: 'tool', tool: cb.tool === t ? null : t})} className={`${PILL(cb.tool === t)} ${cNeed === t && cb.tool !== t ? 'ring-2 ring-[#D9481C]' : ''}`}>
+                {CABG_TOOL_NAME[t]}
+              </button>
+            ))}
+          </div>
+          <ol className="flex flex-col gap-0.5 text-xs">
+            {CABG_STEPS.map((x, i) => {
+              const at = cStep === 'done' ? CABG_STEPS.length : CABG_STEPS.findIndex((q) => q.id === cStep);
+              return (
+                <li key={x.id} data-testid={`cabg-step-${x.id}`} className={`flex gap-2 rounded px-1.5 py-0.5 ${i === at ? 'bg-white font-semibold' : i < at ? 'text-[#1F7A4D]' : 'text-[#4B473D]'}`}>
+                  <span className="w-4 shrink-0 text-right">{i < at ? '✓' : i + 1}</span>
+                  {x.name}
+                </li>
+              );
+            })}
+          </ol>
+          {cStep === 'done' && (
+            <p data-testid="cabg-debrief" className="rounded-xl bg-[#1F7A4D]/[.09] px-3 py-2 leading-relaxed text-[#1D1B16]">
+              <b className="block font-semibold text-[#1F7A4D]">Nhận xét ca mổ</b>
+              {cabgDebrief(cb)}
+            </p>
+          )}
+          <p className="leading-relaxed text-[#4B473D]">Mô phỏng học tập, không phải hướng dẫn phẫu thuật. Thời gian được rút gọn (thực tế chạy máy 60–120 phút, kẹp động mạch chủ 30–60 phút cho một cầu nối); ngưỡng ACT, liều sốc điện, lưu lượng cầu nối là mức điển hình trong y văn.</p>
+          <button type="button" data-testid="cabg-reset" onClick={() => { L.cabgDispatch({t: 'reset'}); setEpoch((e) => e + 1); }} className={BTN_GHOST}>
+            Mổ lại từ đầu
+          </button>
+        </>
+      )}
 
       {L.mode === 'slice' && (
         <>

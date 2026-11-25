@@ -5,13 +5,15 @@ import * as THREE from 'three';
 import {cutAdvance, pointAt} from '../../utils/lab/hands/dissect';
 import {INCISION, LAYERS, SURG_NAME, SURG_TOOLS, STEP_DO, STEP_TOOL, alarms, capnoAt, ecgAt, lungVolAt, mapOf, peelable, plethAt, surgStep, type SAction, type SurgState, type SurgTool} from '../../utils/lab/hands/surgery';
 import {cardiacPhase} from './heart3d';
+import {CABG_STEPS, CABG_TOOL_NAME, cabgStep, cabgTool, cabgVitals, monitorLanes, type CabgAction, type CabgState, type CabgTool, type MonitorState} from '../../utils/lab/hands/cabg';
+import {makeCabg} from './surgCabg';
 import {handPointers, type HandsInput} from './handsKit';
 import {oneEuro} from '../../utils/lab/hands/handTracker';
 import {glassify, loadModel} from './labParts';
 import {clothTexture, organAll, surgPost} from './surgLook';
 import {Stage3D, setLine, type SceneDef} from './Stage3D';
 
-export type SurgMode = 'slice' | 'peel' | 'surgery';
+export type SurgMode = 'cabg' | 'slice' | 'peel' | 'surgery';
 export type SliceAxis = 'front' | 'short' | 'side';
 export type OrView = 'field' | 'room';
 /** trạng thái dùng chung giữa bảng React và cảnh (React ghi, cảnh đọc mỗi khung hình; cảnh gọi lại qua các hàm) */
@@ -24,7 +26,16 @@ export interface SurgeryLive {
   slice: {axis: SliceAxis; off: number; tilt: number; locked: boolean};
   /** góc nhìn: trường mổ (phẫu thuật viên) hoặc toàn phòng */
   view: OrView;
+  /** ca bắc cầu động mạch vành (chế độ `cabg`) */
+  cabg: CabgState;
+  cabgDispatch: (a: CabgAction) => void;
 }
+/** ô trên khay Mayo dùng chung: ở ca bắc cầu, ô ống hút là ống thông */
+const CABG_OF: Record<SurgTool, CabgTool> = {scalpel: 'scalpel', clamp: 'clamp', suction: 'cannula', needle: 'needle'};
+const SLOT_OF: Record<CabgTool, SurgTool> = {scalpel: 'scalpel', clamp: 'clamp', cannula: 'suction', needle: 'needle'};
+const CABG_LABEL = CABG_TOOL_NAME;
+/** vị trí máy quay so với chỗ nối khi đeo kính lúp phẫu thuật */
+const LOUPE = new THREE.Vector3(0.15, 1.7, 1.25);
 
 const ORANGE = '#D9481C';
 /** dụng cụ trên khay Mayo bên phải: mũi ở x = 3,25, thân dọc +x */
@@ -142,16 +153,16 @@ function gauzeTexture(): THREE.Texture {
 }
 
 /** vẽ màn hình monitor gắn trên máy gây mê: ba sóng cuộn theo thời gian và các chỉ số */
-function drawScreen(g: CanvasRenderingContext2D, v: SurgState['vitals'], time: number) {
+function drawScreen(g: CanvasRenderingContext2D, v: SurgState['vitals'], time: number, m: MonitorState = {rhythm: 'sinus', pulsatile: true, vent: true}) {
   const W = g.canvas.width;
   const H = g.canvas.height;
   g.fillStyle = '#04100C';
   g.fillRect(0, 0, W, H);
   const plot = W * 0.62;
   const traces: [string, (t: number) => number, number, number][] = [
-    ['#46F08C', (t) => ecgAt((t * v.hr) / 60 % 1), H * 0.2, H * 0.14],
-    ['#7AD8F7', (t) => -plethAt((t * v.hr) / 60 % 1), H * 0.58, H * 0.17],
-    ['#F7E27A', (t) => -capnoAt((t * v.rr) / 60 % 1) * (v.etco2 / 40), H * 0.92, H * 0.2],
+    ['#46F08C', (t) => monitorLanes(m, [ecgAt((t * v.hr) / 60 % 1), 0, 0], t)[0], H * 0.2, H * 0.14],
+    ['#7AD8F7', (t) => -monitorLanes(m, [0, plethAt((t * v.hr) / 60 % 1), 0], t)[1], H * 0.58, H * 0.17],
+    ['#F7E27A', (t) => -monitorLanes(m, [0, 0, capnoAt((t * v.rr) / 60 % 1) * (v.etco2 / 40)], t)[2], H * 0.92, H * 0.2],
   ];
   g.lineWidth = 2;
   for (const [col, fn, y0, a] of traces) {
@@ -318,6 +329,8 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
       };
 
       const lungs: {o: THREE.Object3D; side: number; x: number}[] = [];
+      /** ca bắc cầu động mạch vành (dựng khi mô hình đã tải) */
+      let cabg: ReturnType<typeof makeCabg> | null = null;
       // thiếu mô hình phòng thì vẫn mổ được trên nền trơn
       void Promise.all([loadModel('/models/surgery-heart.glb'), loadModel('/models/dissect-parts.glb'), loadModel('/models/or-room.glb').catch(() => null)])
         .then(([lib, dlib, room]) => {
@@ -419,6 +432,31 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           });
           // đường rạch dán lên mặt màng ngoài tim; đưa về hệ của lưới màng để shader bỏ điểm ảnh đúng chỗ
           layCut();
+          cabg = makeCabg({
+            k,
+            onNode: (id, x, z) => {
+              const o = nodes.get(id);
+              if (!o) return null;
+              ray.set(v3.set(x, 6, z), DOWN);
+              const hit = ray.intersectObject(o, true)[0];
+              return hit ? hit.point.clone() : null;
+            },
+            surfaceY: (x, z) => {
+              ray.set(v3.set(x, 6, z), DOWN);
+              const parts = pickable.filter((o) => o.visible && o.userData.part !== 'SH_peri');
+              return ray.intersectObjects(parts, true)[0]?.point.y ?? 0.5;
+            },
+            ladPts,
+            clampModel: () => tools.get('clamp'),
+            dispatch: (a) => live.cabgDispatch(a),
+            distAt: (nx, ny, q) => P.distAt(nx, ny, q),
+            toNdc: (q) => {
+              const v = q.clone().project(k.camera);
+              return new THREE.Vector2(v.x, v.y);
+            },
+            state: () => live.cabg,
+          });
+          cabg.init();
           if (field)
             gauzes.forEach((g, i) => {
               const [x, z] = GAUZE_AT[i];
@@ -590,6 +628,9 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
       type Drag = {kind: 'peel'; i: number; start: THREE.Vector3; a0: number; a: number; dir: THREE.Vector2; len: number} | {kind: 'cut'; prog: number; sent: number; sew: boolean} | {kind: 'slice'} | {kind: 'suck'};
       const drag: (Drag | null)[] = P.ptrs.map(() => null);
       let lastTool: THREE.Vector3 | null = null;
+      let lastLead: THREE.Vector3 | null = null;
+      let lastLeadDown = false;
+      let loupe = false;
       let last = performance.now();
       let heartBox: THREE.Box3 | null = null;
       const center = new THREE.Vector3();
@@ -613,6 +654,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           const i = layerOf(partOf(h?.object ?? null));
           return (i >= 0 && (i === next || i === back)) || (next !== null && P.distAt(nx, ny, gripOf(next, w3)) < 0.16);
         }
+        if (live.mode === 'cabg') return !!onTray(nx, ny) || (!!live.cabg.tool && Math.abs(P.onPlane(nx, ny, 0.3, v3).x) < 3 && Math.abs(v3.z) < 3);
         if (surgStep(live.st) === 'count' && nearGauze(nx, ny, 0.12) >= 0) return true;
         return !!onTray(nx, ny) || (!!live.st.tool && Math.abs(P.onPlane(nx, ny, 0.3, v3).x) < 3 && Math.abs(v3.z) < 3);
       });
@@ -663,7 +705,10 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         }
         if (screen.visible && now - screenAt > 80) {
           screenAt = now;
-          drawScreen(screenCv.getContext('2d')!, st.vitals, now / 1000);
+          if (mode === 'cabg') {
+            const c = cabgVitals(live.cabg);
+            drawScreen(screenCv.getContext('2d')!, {...st.vitals, hr: c.hr, sys: c.sys, dia: c.dia, spo2: c.spo2, etco2: c.etco2}, now / 1000, c);
+          } else drawScreen(screenCv.getContext('2d')!, st.vitals, now / 1000);
           screenTex.needsUpdate = true;
         }
         while (gz.length < st.gauze) gz.push(gauzes.findIndex((_, j) => !gz.includes(j)));
@@ -671,15 +716,34 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         gauzes.forEach((g, j) => (g.visible = mode === 'surgery' && gz.includes(j)));
 
         // ---- phổi thở theo máy thở (cùng pha với sóng EtCO₂ trên monitor): phồng ra trước và lấn vào giữa khi hít vào
-        const vol = lungVolAt(((now / 1000) * st.vitals.rr) / 60 % 1);
+        const cv = mode === 'cabg' ? cabgVitals(live.cabg) : null;
+        // đang chạy máy tim phổi: ngừng thở máy, phổi xẹp nằm yên
+        const vol = cv && !cv.vent ? 0 : lungVolAt(((now / 1000) * st.vitals.rr) / 60 % 1);
         for (const L of lungs) {
           L.o.scale.set(1 + 0.08 * vol, 1 + 0.28 * vol, 1 + 0.04 * vol);
           L.o.position.x = L.x - L.side * 0.26 * vol;
         }
         // ---- nhịp tim theo monitor
-        const period = 60 / Math.max(30, st.vitals.hr);
+        const period = 60 / Math.max(30, cv ? Math.max(1, cv.hr) : st.vitals.hr);
         const {atria, ventricles} = cardiacPhase(now / 1000, period);
-        beat.scale.set(1 - 0.03 * ventricles - 0.01 * atria, 1 - 0.02 * ventricles, 1 - 0.03 * ventricles);
+        const cf = cabg?.frame(mode === 'cabg', dt, now, lastLead, lastLeadDown, w3.set(TRAY_X, TRAY_Y, SLOT.suction)) ?? {jolt: 0, focus: null};
+        // kính lúp: máy quay trôi tới sát chỗ nối khi vào bước vi phẫu, xong thì trả về góc nhìn đang chọn
+        if (cf.focus) {
+          const e = 1 - Math.exp(-dt * 3);
+          k.controls.target.lerp(cf.focus, e);
+          k.camera.position.lerp(v3.copy(cf.focus).add(LOUPE), e);
+          loupe = true;
+        } else if (loupe) {
+          loupe = false;
+          tween = 1;
+        }
+        if (cv && (cv.rhythm === 'arrest' || cv.hr === 0) && cv.rhythm !== 'vf') beat.scale.setScalar(1.012 - 0.03 * cf.jolt); // liệt tim: tim mềm, giãn, đứng yên
+        else if (cv?.rhythm === 'vf') {
+          // rung thất: cơ tim rung lăn tăn hỗn loạn, không co bóp thành nhịp
+          const t = now / 1000;
+          const q = 0.006 * Math.sin(t * 47) + 0.004 * Math.sin(t * 31 + 1.1);
+          beat.scale.set(1 + q - 0.03 * cf.jolt, 1 - q * 0.7, 1 + q * 0.8);
+        } else beat.scale.set(1 - 0.03 * ventricles - 0.01 * atria - 0.03 * cf.jolt, 1 - 0.02 * ventricles, 1 - 0.03 * ventricles);
 
         // ---- hiện / ẩn theo chế độ
         const slice = mode === 'slice';
@@ -687,9 +751,12 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         if (slice) applySlice();
         else plane.set(v3.set(0, -1, 0), 100);
         const periNode = nodes.get('SH_peri');
-        if (periNode) periNode.visible = mode !== 'slice';
-        for (const o of tools.values()) o.visible = mode === 'surgery';
-        for (const [id, tg] of toolTags) tg(mode === 'surgery' && curView === 'field' ? w3.set(TRAY_X + 0.55, TRAY_Y, SLOT[id] + 0.3) : null);
+        // ca bắc cầu: màng ngoài tim đã mở và treo lên (chỉ treo trong trường mổ)
+        if (periNode) periNode.visible = mode !== 'slice' && mode !== 'cabg';
+        const cabgMode = mode === 'cabg';
+        for (const [id, o] of tools) o.visible = mode === 'surgery' || (cabgMode && id !== 'suction');
+        for (const [id, tg] of toolTags) tg((mode === 'surgery' || cabgMode) && curView === 'field' ? w3.set(TRAY_X + 0.55, TRAY_Y, SLOT[id] + 0.3) : null, undefined, cabgMode ? CABG_LABEL[CABG_OF[id]] : SURG_NAME[id]);
+        if (cabgMode) live.cabgDispatch({t: 'tick', dt});
         for (const w of writers) w.visible = slice;
         if (mode === 'surgery') live.dispatch({t: 'tick', dt});
 
@@ -754,6 +821,14 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
                 }
               }
             }
+          } else if (mode === 'cabg') {
+            const tray = onTray(p.ndc.x, p.ndc.y);
+            const hit = hp ? hp.point.clone() : P.onPlane(p.ndc.x, p.ndc.y, 0.3, new THREE.Vector3());
+            if (p.pressed && tray) {
+              const want = CABG_OF[tray];
+              live.cabgDispatch({t: 'tool', tool: live.cabg.tool === want ? null : want});
+              p.hot = true;
+            } else if (!(cabg?.pointer(p, n, hit, dt) ?? false)) p.hot = p.hot || !!tray;
           } else {
             // phẫu thuật
             const tray = onTray(p.ndc.x, p.ndc.y);
@@ -816,7 +891,8 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
             }
           }
           // chỉ vào bộ phận: thẻ tên + chức năng; cắt lớp mà tia gặp mặt cắt trước (trong khối tim) thì gọi tên vùng lát cắt đi qua
-          if (!drag[n] && !hoverPart) {
+          // ca bắc cầu đang cầm dụng cụ: không bật thẻ tên bộ phận (thẻ che đúng chỗ đang thao tác)
+          if (!drag[n] && !hoverPart && !(mode === 'cabg' && live.cabg.tool)) {
             const h = hp;
             ray.setFromCamera(v2.set(p.ndc.x, p.ndc.y), k.camera);
             const x = slice ? ray.ray.intersectPlane(plane, new THREE.Vector3()) : null;
@@ -842,6 +918,8 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           }
         }
 
+        lastLead = lead;
+        lastLeadDown = leadDown;
         // ---- bóc lớp: lớp trượt ra / về theo trạng thái đã chốt
         LAYERS.forEach((l, i) => {
           const dragging = drag.some((d) => d?.kind === 'peel' && d.i === i);
@@ -856,7 +934,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
 
         // ---- dụng cụ
         for (const [t, o] of tools) {
-          const held = mode === 'surgery' && st.tool === t;
+          const held = (mode === 'surgery' && st.tool === t) || (mode === 'cabg' && t !== 'suction' && live.cabg.tool !== null && SLOT_OF[live.cabg.tool] === t);
           if (held) {
             if (tipTool !== t) {
               tipTool = t;
@@ -990,7 +1068,14 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
                       : step === 'suction'
                         ? 'Đưa ống hút xuống vũng dịch quanh tim, chụm và giữ để hút.'
                         : 'Chụm ở vòng cam rồi kéo dọc đường rạch để khâu vắt.';
-        k.caption(`${mode === 'surgery' ? `${STEP_DO[step]}` : mode === 'peel' ? 'Bóc tách từng lớp' : 'Cắt lớp thời gian thực'}\n${st.warn && mode !== 'slice' ? st.warn : how}`);
+        if (mode === 'cabg') {
+          const c = live.cabg;
+          const cs = cabgStep(c);
+          const meta = CABG_STEPS.find((x) => x.id === cs);
+          const need = cabgTool(cs);
+          const hint = cs === 'done' ? 'Ca mổ hoàn tất: xem nhận xét ở bảng điều khiển.' : need && c.tool !== need ? `Lấy ${CABG_LABEL[need].toLowerCase()} ở khay bên phải (chụm một lần), rồi: ${meta!.how}` : meta!.how;
+          k.caption(`Bắc cầu động mạch vành · ${meta ? meta.name : 'Hoàn tất'}\n${c.warn || hint}`);
+        } else k.caption(`${mode === 'surgery' ? `${STEP_DO[step]}` : mode === 'peel' ? 'Bóc tách từng lớp' : 'Cắt lớp thời gian thực'}\n${st.warn && mode !== 'slice' ? st.warn : how}`);
       };
     },
   };

@@ -3,7 +3,7 @@
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {cutAdvance, pointAt} from '../../utils/lab/hands/dissect';
-import {INCISION, LAYERS, SURG_NAME, SURG_TOOLS, STEP_DO, STEP_TOOL, alarms, capnoAt, ecgAt, mapOf, peelable, plethAt, surgStep, type SAction, type SurgState, type SurgTool} from '../../utils/lab/hands/surgery';
+import {INCISION, LAYERS, SURG_NAME, SURG_TOOLS, STEP_DO, STEP_TOOL, alarms, capnoAt, ecgAt, lungVolAt, mapOf, peelable, plethAt, surgStep, type SAction, type SurgState, type SurgTool} from '../../utils/lab/hands/surgery';
 import {cardiacPhase} from './heart3d';
 import {handPointers, type HandsInput} from './handsKit';
 import {oneEuro} from '../../utils/lab/hands/handTracker';
@@ -317,6 +317,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         m.needsUpdate = true;
       };
 
+      const lungs: {o: THREE.Object3D; side: number; x: number}[] = [];
       // thiếu mô hình phòng thì vẫn mổ được trên nền trơn
       void Promise.all([loadModel('/models/surgery-heart.glb'), loadModel('/models/dissect-parts.glb'), loadModel('/models/or-room.glb').catch(() => null)])
         .then(([lib, dlib, room]) => {
@@ -340,6 +341,13 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           }
           screen.visible = !!room;
           const field = take(lib.getObjectByName('SH_field'), k.scene);
+          // hai lá phổi thật (thùy, rãnh liên thùy) nằm dưới mép xương ức, thở theo máy thở
+          for (const [name, side] of [['SHL_lungR', -1], ['SHL_lungL', 1]] as const) {
+            const o = take(lib.getObjectByName(name), k.scene);
+            if (!o) continue;
+            organAll(o, 'lung', 0.9);
+            lungs.push({o, side, x: o.position.x});
+          }
           if (field) {
             // bóng ướt chỉ cho mô (khoang ngực, phổi, mép vết mổ); khăn và thép giữ mặt mờ để dụng cụ nổi trên khay
             field.traverse((c) => {
@@ -662,6 +670,12 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         while (gz.length > st.gauze) gz.pop();
         gauzes.forEach((g, j) => (g.visible = mode === 'surgery' && gz.includes(j)));
 
+        // ---- phổi thở theo máy thở (cùng pha với sóng EtCO₂ trên monitor): phồng ra trước và lấn vào giữa khi hít vào
+        const vol = lungVolAt(((now / 1000) * st.vitals.rr) / 60 % 1);
+        for (const L of lungs) {
+          L.o.scale.set(1 + 0.08 * vol, 1 + 0.28 * vol, 1 + 0.04 * vol);
+          L.o.position.x = L.x - L.side * 0.26 * vol;
+        }
         // ---- nhịp tim theo monitor
         const period = 60 / Math.max(30, st.vitals.hr);
         const {atria, ventricles} = cardiacPhase(now / 1000, period);

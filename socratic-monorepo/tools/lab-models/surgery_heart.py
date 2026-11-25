@@ -155,11 +155,6 @@ WET = tissue('cavity', '#FFFFFF', rough=0.3, coat=0.7, vcol=True)
 bowl = lathe('bowl', [(0.0, -1.05), (1.0, -1.0), (1.8, -0.8), (2.3, -0.35), (2.45, 0.1), (2.5, 0.22)], T(0, 0, -0.2), WET, steps=64)
 bowl.scale = (1.0, 1.25, 1.0)
 field = [colored(bowl, lambda p, n: blend(tint('#B85A5A', 1 + 0.12 * fbm(p, 5)), tint('#E8C9A0'), max(0.0, fbm(p, 2) - 0.2)), rough=0.3, coat=0.7)]
-LUNG = tissue('lungx', '#FFFFFF', rough=0.4, coat=0.6, vcol=True)
-for sx in (-1, 1):
-    lg = blob('lg', [('E', (sx * 2.05, -0.25, -0.3), (0.55, 0.45, 1.6))], LUNG, res=0.04)
-    roughen(lg, 0.02, 0.3)
-    field.append(colored(lg, lambda p, n: blend(tint('#D88F8F', 1 + 0.1 * fbm(p, 6)), tint('#7A4650'), max(0.0, abs(fbm(p, 9)) - 0.35) * 2), rough=0.4, coat=0.6))
 BONE = tissue('sternum', '#E9E0CC', rough=0.55, coat=0.2)
 FAT = tissue('fat', '#E8CF8A', rough=0.4, coat=0.5)
 SKIN = tissue('skin', '#D9A487', rough=0.5, coat=0.2)
@@ -185,7 +180,36 @@ CLOTH = mat('cloth', hexc('#1E5A55'), rough=0.95)
 field += [B3('mayo', (1.5, 0.05, 3.6), T(3.9, 0.3, 0.2), STEEL, bevel=0.02), B3('mcl', (1.4, 0.012, 3.5), T(3.9, 0.33, 0.2), CLOTH, bevel=0.004)]
 for sx in (-1, 1):
     field += [B3('mr', (0.05, 0.1, 3.6), T(3.9 + sx * 0.73, 0.34, 0.2), STEEL, bevel=0.015)]
+# chỉ treo màng ngoài tim (stay sutures): mép màng ngoài tim đã mở được khâu treo lên khăn mổ, tạo "nôi" nâng tim lên trường mổ;
+# chỉ prolene xanh, đầu ngoài kẹp bằng kẹp muỗi cán bọc cao su đặt trên khăn
+PROLENE = mat('prolene', hexc('#2B5BB0'), rough=0.35)
+for k, (ang, rr) in enumerate([(2.4, 2.3), (2.9, 2.3), (-2.6, 2.25), (0.75, 2.3), (0.25, 2.3), (-0.55, 2.25)]):  # ba mũi mỗi bên dọc mép màng
+    cx, cz = math.cos(ang) * rr, -0.2 - math.sin(ang) * rr * 1.25
+    ox, oz = math.cos(ang) * 3.08, -0.2 - math.sin(ang) * 3.3  # đầu ngoài nằm trên da / mép khăn, không lấn khay Mayo (x ≥ 3,15)
+    field.append(tube('stay%d' % k, [T(cx, -0.05, cz), T((cx * 2 + ox) / 3, 0.34, (cz * 2 + oz) / 3), T(ox, 0.33, oz)], 0.008, PROLENE))
+    field += [B3('mosq%d' % k, (0.36, 0.035, 0.05), T(ox + math.cos(ang) * 0.18, 0.34, oz - math.sin(ang) * 0.18), STEEL, bevel=0.01),
+              cyl('ring%d' % k, 0.05, 0.02, T(ox + math.cos(ang) * 0.4, 0.34, oz - math.sin(ang) * 0.4), STEEL)]
 piece('SH_field', field, (0, 0, 0))
+
+# phổi THẬT (thùy, rãnh liên thùy, đốm than — dùng chung `organs.lungs` với bài mổ người), mỗi lá một nút `SHL_lung*` để cảnh cho thở theo máy:
+# nằm ngửa (đỉnh phổi về phía đầu −z, mặt trước lên), nằm dưới mép xương ức; trường mổ chỉ thấy bờ trước–trong của phổi phồng lên mỗi nhịp thở.
+# Gốc nút ở rốn phổi (bờ sau–trong) để cảnh phóng quanh đó: phổi nở ra phía trước và vào giữa như thật.
+from organs import lungs as real_lungs  # noqa: E402
+for lg, name, sx in zip(real_lungs(s=1.0, gap=0.2, rings=False), ('SHL_lungR', 'SHL_lungL'), (-1, 1)):
+    bpy.context.view_layer.objects.active = lg
+    bpy.ops.object.select_all(action='DESELECT')
+    lg.select_set(True)
+    # phổi dựng sẵn có góc xoay / tỉ lệ trên đối tượng: áp vào lưới trước (lưới đứng thẳng, đỉnh phổi lên trên) rồi mới đặt nằm ngửa
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+    lg.location = (0, 0, 0)
+    lg.rotation_euler = (math.radians(-90), 0, 0)
+    lg.scale = (2.0, 1.25, 2.8)  # theo trục CỤC BỘ trước khi xoay: x ngang, y dày trước–sau, z dài đỉnh–đáy
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+    lg.location = T(sx * 2.72, -0.32, -0.35)
+    d = lg.modifiers.new('dec', 'DECIMATE')
+    d.ratio = 0.4  # 34 nghìn → ~13 nghìn đỉnh mỗi lá: giữ bờ cong mịn ở khoảng nhìn trường mổ
+    piece(name, [lg], (sx * 2.72, -0.75, -0.35))
 
 # ================================================================== dụng cụ (mũi ở gốc, thân dọc +x, nằm ngang)
 EDGE = mat('edge', (0.9, 0.92, 0.95), metallic=1, rough=0.08)
@@ -241,7 +265,7 @@ piece('TOOL_retractor', rt, (0, 0, 0))
 
 bpy.data.objects.remove(probe, do_unlink=True)
 for o in list(bpy.data.objects):
-    if not o.name.startswith(('SH_', 'TOOL_')):
+    if not o.name.startswith(('SH_', 'SHL_', 'TOOL_')):
         bpy.data.objects.remove(o, do_unlink=True)
 print('NODES', sorted(o.name for o in bpy.data.objects))
 export_glb('surgery-heart.glb')

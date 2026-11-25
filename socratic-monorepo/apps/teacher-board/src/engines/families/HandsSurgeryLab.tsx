@@ -84,7 +84,8 @@ const VitalsMonitor: React.FC<{live: React.MutableRefObject<SurgeryLive>}> = ({l
             lastBeep = now;
           }
         }
-        breath = (breath + (dt * v.rr) / 60) % 1;
+        // cùng đồng hồ với cảnh 3D (phổi thở, monitor trên máy gây mê): sóng CO₂ khớp nhịp phổi phồng / xẹp
+        breath = ((now / 1000) * v.rr / 60) % 1;
         const vals = [ecgAt(phase), -plethAt(phase), -capnoAt(breath) * (v.etco2 / 40)];
         const nx = (x + dt * 70) % W;
         c.fillStyle = '#05130F';

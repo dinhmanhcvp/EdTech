@@ -1,5 +1,7 @@
+import {readFileSync} from 'fs';
+import {join} from 'path';
 import {describe, expect, it} from 'vitest';
-import {BLEED, CHECKLIST, FIELD_OK, GAUZE_TOTAL, LAYERS, NICK_BLEED, PERI_FLUID, VITALS0, alarms, capnoAt, debrief, ecgAt, mapOf, plethAt, newSurg, peelable, surgReducer, surgStep, vitalsGoal, vitalsStep, type SAction, type SurgState} from '../utils/lab/hands/surgery';
+import {BLEED, CHECKLIST, FIELD_OK, GAUZE_TOTAL, LAYERS, NICK_BLEED, PERI_FLUID, VITALS0, alarms, capnoAt, debrief, lungVolAt, ecgAt, mapOf, plethAt, newSurg, peelable, surgReducer, surgStep, vitalsGoal, vitalsStep, type SAction, type SurgState} from '../utils/lab/hands/surgery';
 import {MANUAL} from '../utils/lab/hands/manual';
 import {SUBJECT_OF} from '../utils/lab/hands/sims/catalog';
 
@@ -159,5 +161,29 @@ describe('bóc lớp và danh mục', () => {
   it('bài nằm ở môn Sinh và có Hướng dẫn', () => {
     expect(SUBJECT_OF['heart-surgery']).toBe('sinh');
     expect(MANUAL['heart-surgery'].steps.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe('phổi thở theo máy thở trong trường mổ', () => {
+  it('cùng pha với sóng CO₂: căng nhất khi CO₂ về 0 (thì hít vào), xẹp dần trong lúc CO₂ đi bình nguyên', () => {
+    expect(lungVolAt(0.25)).toBeGreaterThan(0.95);
+    expect(capnoAt(0.25)).toBe(0);
+    expect(lungVolAt(0.88)).toBeLessThan(0.05);
+    expect(capnoAt(0.88)).toBeGreaterThan(0.9);
+    // thở ra: giảm dần, không nảy
+    let last = lungVolAt(0.25);
+    for (let f = 0.27; f < 0.9; f += 0.02) {
+      const v = lungVolAt(f);
+      expect(v).toBeLessThanOrEqual(last + 1e-9);
+      last = v;
+    }
+    for (let f = 0; f < 1; f += 0.01) expect(lungVolAt(f)).toBeGreaterThanOrEqual(0);
+  });
+  it('mô hình có hai lá phổi thật làm nút riêng (không nằm trong khối trường mổ tĩnh)', () => {
+    const b = readFileSync(join(__dirname, '../../public/models/surgery-heart.glb'));
+    const n = b.readUInt32LE(12);
+    const names = (JSON.parse(b.subarray(20, 20 + n).toString('utf8')) as {nodes: {name: string}[]}).nodes.map((x) => x.name);
+    expect(names).toContain('SHL_lungR');
+    expect(names).toContain('SHL_lungL');
   });
 });

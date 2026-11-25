@@ -79,6 +79,18 @@ export const ecgAt = (f: number) => (f < 0.1 ? -0.12 * Math.sin((f / 0.1) * Math
 export const plethAt = (f: number) => (f < 0.18 ? Math.sin((f / 0.18) * (Math.PI / 2)) : Math.min(1, (1 - (f - 0.18) / 0.82) ** 1.6 + 0.07 * Math.exp(-(((f - 0.46) / 0.05) ** 2))));
 /** sóng CO₂ theo pha nhịp thở, 0–1: hít vào = 0, thở ra lên cao nguyên rồi tụt */
 export const capnoAt = (f: number) => (f < 0.4 ? 0 : f < 0.47 ? ((f - 0.4) / 0.07) * 0.9 : f < 0.92 ? 0.9 + (0.1 * (f - 0.47)) / 0.45 : Math.max(0, 1 - (f - 0.92) / 0.05));
+/**
+ * Thể tích phổi tương đối (0 = cuối thì thở ra, 1 = cuối thì hít vào) theo CÙNG pha `f` với `capnoAt`, máy thở I:E ≈ 1:2:
+ * máy bơm khí vào khi đường CO₂ vừa rơi về 0 (f ≈ 0,92 → 0,25), phổi xẹp dần (thở ra thụ động) trong lúc CO₂ đi bình nguyên.
+ */
+export const lungVolAt = (f: number) => {
+  const g = (((f + 0.08) % 1) + 1) % 1;
+  if (g < 0.33) {
+    const u = g / 0.33;
+    return u * u * (3 - 2 * u);
+  }
+  return Math.exp(-(g - 0.33) * 7);
+};
 
 // ------------------------------------------------------------------ bóc lớp
 export interface Layer {

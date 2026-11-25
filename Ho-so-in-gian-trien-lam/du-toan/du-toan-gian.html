@@ -93,7 +93,7 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
   <div class="top">
     <div>
       <h1>Dự toán gian Vision AI · AIROC 2026</h1>
-      <p class="mute">Một lều 3 × 3 m, BTC đã dựng vách, bàn ghế, điện, đèn và thảm. Nhóm chỉ dán decal lên vách, đặt màn 65" trong hộp ốp (chạy cả bảng viết lẫn Lab 3D bằng cảm ứng) và biến bàn BTC thành quầy đón khách, đeo thử GAVIS. Lắp 13h30–16h30 ngày 28/11, trưng bày ngày 29/11/2026.</p>
+      <p class="mute">Một lều 3 × 3 m, BTC đã dựng vách, bàn ghế, điện, đèn và thảm. Nhóm chỉ dán decal lên vách, đặt màn 65" trong vách chéo (bảng viết + Lab 3D qua webcam) và bày GAVIS trên 3 bục lục giác. Lắp 13h30–16h30 ngày 28/11, trưng bày ngày 29/11/2026.</p>
       <div class="total" id="tot">0</div>
       <p class="mute" id="totnote"></p>
     </div>
@@ -163,7 +163,7 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
     <div><h3>✓ Kệ đặt tay Lab ngay dưới màn 65"</h3><p>Kệ 1,1 × 0,45 m cao 850 mm gắn vách chéo, mặt đen mờ; webcam trên tay cần từ đỉnh vách nhìn thẳng xuống kệ. Khách đưa tay trên kệ và thấy ngay kết quả trên màn trước mặt.</p></div>
     <div><h3>✓ Kệ ấn phẩm đứng × 2</h3><p>Hai góc trước, mỗi dự án một kệ, túi mica A5 viền LED theo màu dự án.</p></div>
     <div><h3>✓ Vòng hào quang treo trên quầy</h3><p>Ø 0,9 m, LED neon xanh tím treo từ khung mái lều (tùy chọn), kéo mắt từ xa về quầy Lab.</p></div>
-    <div><h3>✓ Đầu ma-nơ-canh GAVIS</h3><p>Trên bục cạnh vách phải, đeo thiết bị thật; khách được đeo thử.</p></div>
+    <div><h3>✓ Ba bục lục giác GAVIS</h3><p>Bục cao nhất đặt đầu ma-nơ-canh đeo GAVIS để khách thử; hai bục thấp có hộp mica che hộp đeo hông và cụm kính. Viền LED tím ở mép trên, logo GAVIS phát sáng ở mặt trước.</p></div>
     <div><h3>Kệ QR mica A6 × 2</h3><p>Một trên quầy đón khách, một cạnh hộp ốp màn 65".</p></div>
     <div><h3>✓ Học từ gian FireSense năm trước</h3><p>Chữ đứng SOCRATIC trên bệ ở mép trước làm khu chụp ảnh, standee bóng thoại "?" và đĩa GAVIS dưới sàn, ảnh chân dung thành viên trong khung lục giác, LED viền mọi mép vách, kệ ô vuông trắng bày thiết bị GAVIS.</p></div>
     <div><h3>Áo đồng phục 2 màu</h3><p>Áo đen in biểu tượng dự án ở ngực trái, dải xanh (Socratic) hoặc tím (GAVIS) ở tay.</p></div>
@@ -178,14 +178,12 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
 const G = [['k','Đồ dựng thêm','#0B0D13'],['i','Decal và in','#3D7BFF'],['n','Khối nổi và ánh sáng','#8B5CF6'],['t','Thiết bị','#9AA3B2'],['a','Ấn phẩm','#FF6A2B'],['l','Lắp đặt','#5b6070']];
 const R = [
  ['k1','k','Tay cần webcam gắn đỉnh vách chéo + kệ đặt tay dưới màn 1,1 × 0,45 m, cao 850','tay cần thép hộp vươn 30 cm; kệ Formex 15 mm chân thép, mặt decal đen cán MỜ',1,'bộ',1200,1900,1],
- ['k2','k','Bục GAVIS 36 × 36 × 105 cm + đầu ma-nơ-canh','Formex 10 mm ghép hộp, decal tím than, đầu nhựa trắng',1,'bộ',800,1300,1],
+ ['k2','k','Đầu ma-nơ-canh trưng bày GAVIS','đầu nhựa trắng, đế nhỏ, đặt trên bục cao nhất',1,'cái',250,450,1],
  ['k3','k','Cụm 3 tấm hình thang Socratic: tấm giữa 1,6 × 2,2 m khoét màn + 2 tấm vát 0,91 × 2,2 m','Formex 15 mm (tấm giữa CNC khoét màn 1 493 × 907 mm), nối nhôm V, chân chữ L; khoảng sau giấu chân màn',1,'bộ',2400,3800,1],
  ['k4','k','Decal 3 tấm hình thang','decal PP in UV cán mờ dán lên Formex',7.5,'m²',160,230,1],
  ['i1','i','Decal vách BTC: vách sau 2,94 × 2,2 m','decal PP in UV cán mờ, keo bóc được không để vết',6.5,'m²',160,230,1],
  ['i2','i','Decal 2 vách hông 2,87 × 2,2 m','decal PP in UV cán mờ, keo bóc được',12.6,'m²',160,230,1],
  ['i3','i','Dải bảo trợ trên vách sau 2,94 × 0,18 m','Formex 5 mm in UV, treo bằng móc chữ S',1,'tấm',300,500,1],
- ['i4','i','Phủ mặt bàn BTC thành quầy đón khách 1,2 × 0,6 m','decal đen mờ dán lên tấm Formex 3 mm đặt rời trên bàn',1,'tấm',150,250,1],
- ['i5','i','Váy bàn in 1,2 × 0,7 m','vải poly in chuyển nhiệt, dán gai dính quanh mép bàn',1,'cái',250,400,1],
  ['i6','i','Decal sàn "STAND HERE" Ø 640','PVC in UV cán nhám, dán lên thảm BTC (hỏi BTC trước)',1,'cái',120,200,2],
  ['n1','n','Chữ nổi Socratic Vision Board và GAVIS (≈ 24 chữ)','Formex 10 mm, mặt mica 2 mm, LED hắt chân, dán băng keo 2 mặt',24,'chữ',90,150,2],
  ['n2','n','Huy hiệu giải nổi Ø 240','mica 3 lớp in UV, viền cam',1,'cái',220,350,2],
@@ -194,11 +192,11 @@ const R = [
  ['n5','n','Biển vẫy tròn Ø 640','hộp đèn mica 2 mặt có LED, kẹp vào cột lều',2,'cái',1300,2000,2],
  ['n6','n','Cờ buồm 3,5 m','vải poly in chuyển nhiệt, cột + chân nước',2,'bộ',700,1000,2],
  ['n7','n','Kệ ấn phẩm đứng 3 tầng','khung thép sơn đen, túi mica A5',2,'cái',450,700,2],
- ['n8','n','Vòng hào quang treo Ø 0,9 m trên quầy Lab','nhôm uốn + LED neon xanh tím',1,'cái',800,1300,3],
+ ['n8','n','Vòng hào quang treo Ø 0,9 m trên lối vào','nhôm uốn + LED neon xanh tím',1,'cái',800,1300,3],
  ['n12','n','Chữ đứng SOCRAT?C trên bệ (khu chụp ảnh): chữ cao 23 cm, dấu ? xanh cao 50 cm thay chữ I','chữ Formex 20 mm sơn trắng mặt mica; dấu ? uốn ống nhựa/nhôm Ø 4 cm sơn xanh có LED, chấm cầu mica cam có đèn; bệ Formex in chữ ASK WHY, LED viền',1,'bộ',2200,3500,2],
  ['n13','n','2 standee cắt hình dưới sàn (bóng thoại ? và đĩa GAVIS), cao 1,15–1,2 m','Formex 10 mm in UV 2 mặt, cắt CNC theo hình, chân sắt đế vuông',2,'cái',450,750,2],
  ['n14','n','LED viền mép vách (2 mép trước, 3 mép trên, 2 mép vách chéo)','LED dây silicon 12 V ≈ 22 m + 2 nguồn, kẹp nhôm',1,'lô',900,1500,2],
- ['n15','n','Kệ ô vuông trắng trưng bày thiết bị GAVIS 1 × 0,52 m','Formex 10 mm trắng ghép 3 × 2 ô, LED viền trên',1,'cái',600,1000,2],
+ ['n15','n','3 bục lục giác nâng bậc GAVIS (cao 65 · 85 · 105 cm, Ø 40 cm)','Formex 10 mm ghép lục giác, decal tím than bóng mờ, logo GAVIS mặt trước, LED viền mép trên và chân, 2 hộp mica trong 3 mm',1,'bộ',2200,3500,1],
  ['t1','t','Màn cảm ứng 65" + chân bánh xe (nếu chưa có)','thuê 2 ngày',2,'ngày',2500,4000,3],
  ['t3','t','Webcam 1080p 65–70° + vòng đèn 4000K','nhìn thẳng xuống kệ đặt tay dưới màn',1,'bộ',800,1500,1],
  ['t4','t','Ổ cắm kéo dài, dây, băng dính 2 mặt','nguồn điện chính do BTC cấp',1,'lô',250,450,1],

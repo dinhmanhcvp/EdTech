@@ -1,3 +1,10 @@
+# 2026-11-25 (25) — Bỏ bàn GAVIS, thay bằng 3 bục lục giác
+- Studio v41:
+  - Đã bỏ `desk` (bàn BTC) và `G-shelf`.
+  - Khối mới `vitrine` (`G-plinths`): 3 bục lục giác cao 650/850/1050 sát vách trái, z −400 đến −1200. Mỗi bục có viền LED, logo GAVIS, và hộp mica (`covers`).
+  - `G-bust` đặt trên bục cao nhất (z −1200, y 1050). `halo` dời về lối vào.
+- Dự toán: bỏ phần mặt bàn và váy bàn, thêm 3 bục (n15).
+
 # 2026-11-25 (24) — Chữ đứng SOCRAT?C
 - `B.letters` thêm trường `qmark` (vị trí chữ đổi thành dấu hỏi) và `qscale` (độ cao dấu hỏi so với chữ).
   - Dấu hỏi dựng 3D theo đường của logo: ống xanh, cung con ngươi trắng phát sáng, chấm cam phát sáng, quầng sáng phía sau.

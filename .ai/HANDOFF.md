@@ -1,3 +1,6 @@
+# 2026-11-25 (30) — Dời bàn Lab khỏi vùng viết bảng
+- Studio v46: `labshelf` (console) đặt tại (−300, −250), xoay −49°, hướng về màn. Vùng trước màn (`decal`) để trống cho người viết bảng. Thêm dấu chân `steps` dẫn tới bàn Lab và người mẫu tỉ lệ `p4`. Khung ảnh dời ra mép trước, chính giữa.
+
 # 2026-11-25 (29) — Toàn bộ bằng Formex, bàn điều khiển Lab, thêm đồ trang trí
 - Studio v45, các khối mới:
   - `console`: thân hình nêm, mặt nghiêng, 2 vòm cong và thanh vòm. Webcam có sẵn của nhóm gắn cách mặt bàn 420 (`hood`), LED chiếu tay dưới thanh. Thay cho `labshelf`/`overcam`. Mặt dưới màn nâng lên 1 000 để thanh vòm không che màn.

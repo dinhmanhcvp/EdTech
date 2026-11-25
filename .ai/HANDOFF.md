@@ -1,3 +1,9 @@
+# 2026-11-25 (24) — Chữ đứng SOCRAT?C
+- `B.letters` thêm trường `qmark` (vị trí chữ đổi thành dấu hỏi) và `qscale` (độ cao dấu hỏi so với chữ).
+  - Dấu hỏi dựng 3D theo đường của logo: ống xanh, cung con ngươi trắng phát sáng, chấm cam phát sáng, quầng sáng phía sau.
+  - Mặt trước bệ in `tagline`.
+- `F-letters`: SOCRAT?C (chữ I thành dấu hỏi), chữ cao 230, dấu hỏi gấp 2,2 lần, bệ in "ASK WHY · SOCRATIC VISION BOARD". Standee `F-q` dời ra sau.
+
 # 2026-11-25 (23) — Áp dụng ý tưởng từ gian FireSense năm trước
 - Studio v39 thêm 3 loại khối mới:
   - `letters`: chữ đứng trên bệ.

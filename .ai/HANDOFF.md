@@ -1,3 +1,7 @@
+# 2026-11-25 (10) — Logo thật cho trường, Sở và AIROC
+- Thêm vào `Ho-so-in-gian-trien-lam/assets/`: `logo-thpt-chuyen-vinh-phuc.png` (gốc chỉ 200 px, cần bản lớn hơn để in), `logo-so-gddt-phu-tho.png`, `logo-airoc-2026.png`. Trong `config.json`, `logoBTC` trỏ tới logo Sở.
+- Studio khóa lưu v23: `LOGO_SRC` có thêm `fit`. `cover` dùng cho logo tròn (cắt theo hình tròn); `contain` đặt trọn logo trong ô tròn trắng (Sở, AIROC). Tầng bảo trợ cao 220.
+
 # 2026-11-25 (9) — Socratic ở mặt giữa, logo THCS Hùng Vương
 - Socratic thuộc THCS Hùng Vương (Hung Vuong Secondary School); logo lưu tại `Ho-so-in-gian-trien-lam/assets/logo-thcs-hung-vuong.png`. FireSense và GAVIS đều thuộc THPT Chuyên Vĩnh Phúc.
 - Studio khóa lưu v22, `VAULT` cố định:

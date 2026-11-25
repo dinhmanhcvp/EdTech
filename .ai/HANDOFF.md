@@ -1,3 +1,13 @@
+# 2026-11-25 (13) — Một lều cho Socratic và GAVIS
+- Người dùng bỏ FireSense, chỉ còn một lều 3 × 3 m, Socratic là chính.
+- Studio khóa lưu v25, hình chữ U mở ra lối đi:
+  - `BACK` (z −450, rộng 2,94 m): bảng 65" (`kiosk`, a −650) và Lab 50" (`kiosk2`, a +815) kèm `desk`, `overcam`, đường nối sáng `seam`.
+  - `LW` (vách trái): `S-wall` câu chuyện Socratic có QR, cùng tháp mica, huy hiệu, kệ tờ rơi.
+  - `RW` (vách phải): `G-wall` kèm lục giác, `G-bust`, kệ tờ rơi.
+  - Đầu vòm: `C-S` (logo Hùng Vương, chữ nổi) và `C-sponsor`; hai vách bên có `C-L` (logo AIROC) và `C-G` (logo Chuyên Vĩnh Phúc).
+  - Hàng xóm đặt ở ±3 000.
+- `du-toan-gian.html` tính lại cho 1 lều: tối thiểu khoảng 26,6 triệu, khuyến nghị khoảng 50,7 triệu, đầy đủ khoảng 78,5 triệu. Đã bỏ tờ rơi, sticker và huy hiệu FireSense.
+
 # 2026-11-25 (12) — Bỏ MDF và gỗ
 - Người dùng: không dùng MDF, chỉ dùng Formex dày. Trong `du-toan-gian.html`, mọi kết cấu đổi sang khung thép hộp sơn đen ốp Formex:
   - Kiosk: mặt Formex 15 mm CNC, hông và nóc 10 mm.

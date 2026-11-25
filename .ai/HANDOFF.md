@@ -2868,3 +2868,9 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 - `Ho-so-in-gian-trien-lam/build-thi-cong.js` → `out-thi-cong/`: 21 hạng mục PDF tỉ lệ 1:1 (mm), tách `1-socratic/`, `2-gavis/`, `3-chung/`; file `_DUONG-CAT.pdf` = đường cắt CNC màu magenta #EC008C, chữ đã chuyển nét; `00_BANG-KE-THI-CONG.pdf` (bảng kê, SL, vật liệu Formex 350k/m²), `01_BAN-VE-KICH-THUOC.pdf` (5 tờ A3 từ `ban-ve.js`: mặt bằng, vách chéo, bàn Lab 3 hình chiếu, bục/chữ/bút, vị trí decal 3 vách). `xem-truoc/` = PNG duyệt nhanh.
 - S09/S10 (ê-ke, kính lúp) chỉ xuất khi `WITH_OPTIONAL=1`. Chạy lại: `cd Ho-so-in-gian-trien-lam && node build-thi-cong.js`.
 - Còn thiếu (đánh dấu "Thiếu"/[...] trong file): tên + vai trò thành viên, số gian, liên hệ; cần ảnh gốc độ phân giải cao; đo lại màn thật + vách BTC trước khi CNC. Zip gửi thợ không commit (tạo lại bằng `zip -r` trong `out-thi-cong`).
+
+## (42) Vật phẩm trang trí độc bản + bỏ thẻ đeo, bỏ tên thành viên
+- `Ho-so-in-gian-trien-lam/decor-art.js`: hình vẽ dùng chung (lớp SVG cho file in + canvas cho studio, studio nhúng bản sao giữa marker "shared with decor-art.js" — sửa thì chép lại): bình tam giác "3D LAB · 100+" (S13, 520 × 880), bóng đèn dây tóc "?" treo (S14, 560 × 860), kính phụ đề GAVIS treo (G04, 1 100 × 420).
+- Kit: S09 ê-ke, S10 kính lúp thành mặc định (bỏ `WITH_OPTIONAL`); xoá thẻ đeo S12/G04 cũ (mã G04 nay là kính GAVIS); S02 bỏ tên/vai trò, thay bằng 2 ảnh (bảng phấn → bảng hỏi lại); S03 QR dời lên cột x 1 180 không bị che. Bản vẽ thêm tờ 06 (vật phẩm), mặt bằng cập nhật vị trí.
+- Bố cục mới: vách phải (sau → trước) bàn Lab · bình S13 (z −160…360) · cột QR · ê-ke (z 710…1 410); hàng trước: bút (x −1 000), kính lúp (x −420), chữ Socratic?. Studio v54. Dự toán: thêm n28/n29/n30, bỏ a5s/a5g.
+- Còn thiếu duy nhất: số gian trên tờ rơi.

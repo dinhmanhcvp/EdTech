@@ -97,7 +97,7 @@ button { cursor: pointer; }
   <header class="top">
     <div class="brand"><svg width="30" height="31" viewBox="0 0 120 124" aria-hidden="true"><path d="M31.8 39.7 A30 30 0 1 1 75 76 Q60 83 60 93" fill="none" stroke="#E8EBF1" stroke-width="13" stroke-linecap="round"/><path d="M46.8 45.2 A14 14 0 0 1 73.2 45.2" fill="none" stroke="#3D7BFF" stroke-width="7.5" stroke-linecap="round"/><circle cx="60" cy="109" r="8.2" fill="#FF6A2B"/></svg><div><b>Socratic Booth Studio</b><br><span>FIRESENSE · GAVIS + SOCRATIC · AIROC 2026</span></div></div>
     <div class="seg" role="group" aria-label="Góc nhìn">
-      <button type="button" data-cam="pavilion" aria-pressed="false">Cả 3 gian</button>
+      <button type="button" data-cam="pavilion" aria-pressed="false">Cả cụm</button>
       <button type="button" data-cam="approach" aria-pressed="false">Đi tới từ trái</button>
       <button type="button" data-cam="approachR" aria-pressed="false">Đi tới từ phải</button>
       <button type="button" data-cam="aisle" aria-pressed="true">Chính diện</button>
@@ -139,7 +139,7 @@ button { cursor: pointer; }
       <div class="sec" id="inspector"></div>
       <div class="sec">
         <h2>Ý tưởng khối nổi</h2>
-        <div class="idea"><b>Hai gian: FireSense | GAVIS + Socratic</b><p>FireSense (than hồng, "ngửi thấy nguy cơ") lùi sâu hơn để lộ vách quảng bá. GAVIS và Socratic chung mặt tiền 6 m theo chủ đề Vision AI, nối bằng cột sáng tím sang xanh.</p></div>
+        <div class="idea"><b>Hai lều 3 m: FireSense | GAVIS + Socratic</b><p>Hai lều 3 m thông nhau. Gian 1 FireSense (than hồng) lùi sâu hơn để lộ vách quảng bá. Gian 2 chia đôi mặt tiền 2,9 m: GAVIS 1 320 (màn 50") và Socratic 1 580 (bảng 65"), nối bằng cột sáng tím sang xanh.</p></div>
         <div class="idea"><b>Vách thụt in quảng bá</b><p>Bốn bề mặt tự giãn theo "Bậc lùi" và "Thụt gian trước": vách thụt 1 (sản phẩm 2), vách thụt 2 (Socratic), vách thụt 3 ở mép phải gian 3 (sản phẩm 3) và vách sân trước gian 1. Bấm vào vách để sửa tên, thông điệp, số liệu (mỗi dòng "số|nhãn"), giải thưởng, QR.</p></div>
         <div class="idea"><b>Ba gian xếp bậc</b><p>Gian 1 lùi sâu nhất, gian 2 lùi vừa, gian 3 sát lối đi. Mỗi bậc lộ ra một mặt hông quay về phía khách đi tới từ bên trái, in tên sản phẩm cỡ lớn. Chỉnh "Bậc lùi" trên thanh công cụ; nhập số âm để đảo chiều.</p></div>
         <div class="idea"><b>Trạm Lab 3D: camera nhìn từ trên xuống</b><p>Webcam treo trên tay cần, chúc thẳng xuống bàn thao tác cao 950 mm. Khách đứng trước bàn, đưa tay trên mặt bàn và nhìn màn. Camera chỉ thấy tay trên nền tối, không thấy người phía sau. Vùng xanh là tầm nhìn camera.</p></div>
@@ -175,52 +175,49 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 const M = 0.001; // mm → m
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FONT = { sans: '"Plus Jakarta Sans", system-ui, sans-serif', mono: '"JetBrains Mono", ui-monospace, monospace', serif: 'Newsreader, Georgia, serif' };
-const STORE = 'svb-booth-studio-v11'; // v11: 2 gian — FireSense AI | GAVIS + Socratic thông nhau // v10: gian trước cũng thụt để có vách quảng bá // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
+const STORE = 'svb-booth-studio-v12'; // v12: 2 lều 3 m: FireSense | GAVIS + Socratic, thông nhau // v11: 2 gian — FireSense AI | GAVIS + Socratic thông nhau // v10: gian trước cũng thụt để có vách quảng bá // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
 const MARK_HOOK = 'M31.8 39.7 A30 30 0 1 1 75 76 Q60 83 60 93', MARK_IRIS = 'M46.8 45.2 A14 14 0 0 1 73.2 45.2';
 // // v4: mặt tiền = bảng viết 65" + trạm Lab 3D qua webcam
 
 // ---------------- dữ liệu mặc định ----------------
 const DEFAULT = () => [
-  { id: 'nbL', type: 'neighbor', walls: true, name: 'Gian hàng xóm (trái)', x: -6000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#E6A34A', accent: '#3F8F6E', text: 'GIAN HÀNG', locked: true, group: 'context' },
-  { id: 'nbR', type: 'neighbor', walls: true, name: 'Gian hàng xóm (phải)', x: 6000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#3A6EA5', accent: '#C8553D', text: 'GIAN HÀNG', locked: true, group: 'context' },
-  { id: 'tentF', type: 'tent', name: 'Lều FireSense AI', x: -3000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'GIAN HÀNG [SỐ] · FIRESENSE AI', locked: true },
-  { id: 'tentG', type: 'tent', name: 'Lều GAVIS (thông sang Socratic)', x: 0, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'GIAN HÀNG [SỐ] · GAVIS', locked: true },
-  { id: 'tentS', type: 'tent', name: 'Lều Socratic (thông sang GAVIS)', x: 3000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'GIAN HÀNG [SỐ] · SOCRATIC', locked: true },
-  { id: 'F-floor', type: 'floor', name: 'FireSense · thảm sân trước', x: -3000, y: 0, z: 0, ry: 0, w: 3000, h: 12, d: 3000, color: '#140C0A', accent: '#FF4D2E', emissive: 0.5, pattern: 'circuit' },
-  { id: 'S-floor', type: 'floor', name: 'GAVIS + Socratic · thảm sân trước 6 m', x: 1500, y: 0, z: 0, ry: 0, w: 6000, h: 12, d: 3000, color: '#0D0D16', accent: '#6C6CFF', emissive: 0.6, pattern: 'circuit' },
-  { id: 'F-face', type: 'kiosk', booth: 'F', name: 'FireSense · mặt tiền + màn giám sát', x: -3000, y: 0, z: 1180, ry: 0, w: 2900, h: 2200, d: 600, scrW: 960, scrH: 560, scrD: 60, gap: 5, bottom: 1100, offX: 650, tray: false, qr: false, guide: false, cam: false, showCam: false, variant: 'fire', color: '#120A08', accent: '#FF4D2E', emissive: 1.8, pattern: 'contour', text: 'Ngửi thấy |nguy cơ cháy.', sub: 'FireSense AI detects fire risk by smell, before smoke and flame.', caption: '// FIRESENSE AI · HỌC SINH PHƯỜNG VĨNH PHÚC', side: 'FIRESENSE', sideSub: ' AI', tags: 'Nhận diện mùi;Cảnh báo sớm;IoT', mount: 'vesa', xray: false },
-  { id: 'F-relief', type: 'relief', booth: 'F', name: 'FireSense · chữ nổi', x: -3000, y: 1880, z: 1482, ry: 0, w: 2200, h: 230, d: 60, color: '#FFF1E6', accent: '#FF4D2E', emissive: 1.2, text: 'FIRESENSE AI' },
-  { id: 'F-hex', type: 'hexwall', booth: 'F', name: 'FireSense · mảng cảm biến "mũi điện tử"', x: -3850, y: 1120, z: 1480, ry: 0, w: 900, h: 640, d: 120, color: '#1E1210', accent: '#FFB020', emissive: 1.4, cell: 85 },
-  { id: 'F-seal', type: 'seal', booth: 'F', name: 'FireSense · huy hiệu Giải Nhất quốc gia', x: -3115, y: 1150, z: 1482, ry: 0, w: 380, h: 380, d: 30, l2: 'cấp quốc gia', year: '2025–2026', ring: 'STUDENT STARTUP IDEAS COMPETITION 2025–2026 · 1ST PRIZE · NATIONAL' },
-  { id: 'F-ped', type: 'aicore', booth: 'F', name: 'FireSense · bục thiết bị ở sân trước', x: -2600, y: 0, z: 2000, ry: 0, w: 460, h: 1250, d: 460, accent: '#FF4D2E', emissive: 1.6, color: '#140C0A', text: 'THIẾT BỊ FIRESENSE · DEVICE' },
-  { id: 'G-face', type: 'kiosk', booth: 'S', name: 'GAVIS · mặt tiền + màn demo 55"', x: 0, y: 0, z: 1120, ry: 0, w: 2900, h: 2200, d: 720, scrW: 1250, scrH: 720, scrD: 70, gap: 5, bottom: 1050, offX: -600, tray: false, qr: false, guide: false, cam: true, showCam: false, variant: 'gavis', color: '#0E0B16', accent: '#8B5CF6', emissive: 1.8, pattern: 'contour', text: 'Nghe |bằng mắt.', sub: 'GAVIS fuses sound and image, guided by gaze, to support hearing-impaired learners.', caption: '// GAVIS · THPT CHUYÊN VĨNH PHÚC', side: 'GAVIS', sideSub: '', tags: 'Âm thanh + hình ảnh;Định hướng ánh nhìn;Hỗ trợ người khiếm thính', mount: 'vesa', xray: false },
-  { id: 'G-relief', type: 'relief', booth: 'S', name: 'GAVIS · chữ nổi', x: -600, y: 1880, z: 1482, ry: 0, w: 1100, h: 230, d: 60, color: '#F4F0FF', accent: '#8B5CF6', emissive: 1.3, text: 'GAVIS' },
-  { id: 'G-hex', type: 'hexwall', booth: 'S', name: 'GAVIS · cụm sóng âm lục giác', x: 520, y: 1150, z: 1480, ry: 0, w: 600, h: 620, d: 110, color: '#17122A', accent: '#A78BFA', emissive: 1.3, cell: 80 },
-  { id: 'G-seal', type: 'seal', booth: 'S', name: 'GAVIS · huy hiệu Giải Nhất cấp tỉnh (KHKT)', x: 1100, y: 1350, z: 1482, ry: 0, w: 380, h: 380, d: 30, l2: 'cấp tỉnh', year: '2026–2027', ring: 'SCIENCE & ENGINEERING FAIR 2026–2027 · 1ST PRIZE · PROVINCIAL' },
-  { id: 'join', type: 'strip', booth: 'S', name: 'Cột sáng nối GAVIS – Socratic', x: 1500, y: 0, z: 1488, ry: 0, w: 40, h: 2200, d: 40, accent: '#7C8CFF', emissive: 2.6 },
-  { id: 'kiosk', type: 'kiosk', booth: 'S', name: 'Socratic · bảng viết 65"', x: 2340, y: 0, z: 1120, ry: 0, w: 1580, h: 2200, d: 720, scrW: 1490, scrH: 900, scrD: 90, gap: 5, bottom: 900, offX: 0, tray: true, qr: false, color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Viết thử |lên bảng.', sub: 'Try writing on the board. The AI will ask you back.', mount: 'stand', xray: false },
-  { id: 'kiosk2', type: 'kiosk', booth: 'S', name: 'Socratic · trạm Lab 3D 50" (hốc)', x: 3790, y: 0, z: 680, ry: 0, w: 1320, h: 2200, d: 720, scrW: 1120, scrH: 650, scrD: 70, gap: 5, bottom: 1150, offX: 0, tray: false, qr: false, guide: true, cam: false, showCam: false, variant: 'lab', color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Thí nghiệm |bằng tay.', sub: 'Hands over the table. The camera watches from above.', mount: 'vesa', xray: false },
-  { id: 'desk', type: 'handdesk', booth: 'S', name: 'Bàn thao tác Lab (mặt in tối mờ)', x: 3790, y: 0, z: 1260, ry: 0, w: 1100, h: 950, d: 440, color: '#0B0D13', accent: '#3D7BFF', emissive: 1.6 },
-  { id: 'overcam', type: 'overcam', booth: 'S', name: 'Tay cần + webcam nhìn xuống', x: 3790, y: 0, z: 1040, ry: 0, w: 120, h: 2080, d: 230, arm: 230, fov: 65, vfov: 40, target: 950, accent: '#3D7BFF', emissive: 1.6, showCam: true },
-  { id: 'relief', type: 'relief', booth: 'S', name: 'Chữ nổi hắt sáng (trên bảng viết)', x: 2340, y: 1960, z: 1482, ry: 0, w: 1420, h: 170, d: 60, color: '#F5F2EA', accent: '#3D7BFF', emissive: 1.6, text: 'Socratic Vision Board' },
-  { id: 'tower', type: 'tower', booth: 'S', name: 'Kệ + tháp mica 5 lớp', x: 2920, y: 560, z: 1480, ry: 0, w: 380, h: 240, d: 160, accent: '#3D7BFF', emissive: 1.8 },
-  { id: 'decal', type: 'decal', name: 'Decal lối đi: viết bảng', x: 2340, y: 0, z: 1950, ry: 0, w: 760, h: 4, d: 760, accent: '#3D7BFF', text: 'ĐỨNG ĐÂY' },
-  { id: 'decal2', type: 'decal', name: 'Decal lối đi: Lab 3D', x: 3790, y: 0, z: 1900, ry: 0, w: 900, h: 4, d: 900, accent: '#FF6A2B', text: 'GIƠ TAY' },
-  { id: 'p3', type: 'person', name: 'Khách đang viết (tỉ lệ)', x: 2050, y: 0, z: 1850, ry: 180, w: 450, h: 1720, d: 300, color: '#3E5A4A', group: 'people' },
-  { id: 'p4', type: 'person', name: 'Khách chơi Lab (tỉ lệ)', x: 3790, y: 0, z: 1820, ry: 180, w: 450, h: 1650, d: 300, color: '#5A4A6A', group: 'people' },
-  { id: 'seal', type: 'seal', booth: 'S', name: 'Socratic · huy hiệu Giải Nhất cấp tỉnh', x: 4245, y: 1790, z: 1042, ry: 0, w: 380, h: 380, d: 30, l2: 'cấp tỉnh', year: '2026–2027', ring: 'STUDENT STARTUP IDEAS COMPETITION 2026–2027 · 1ST PRIZE · PROVINCIAL' },
+  { id: 'tentF', type: 'tent', name: 'Lều FireSense AI', x: -1500, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'GIAN HÀNG [SỐ] · FIRESENSE AI', locked: true },
+  { id: 'tentS', type: 'tent', name: 'Lều gian 2: GAVIS + Socratic (thông gian 1)', x: 1500, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'GIAN HÀNG [SỐ] · GAVIS · SOCRATIC', locked: true },
+  { id: 'nbL', type: 'neighbor', walls: true, name: 'Gian hàng xóm (trái)', x: -4500, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#E6A34A', accent: '#3F8F6E', text: 'GIAN HÀNG', locked: true, group: 'context' },
+  { id: 'nbR', type: 'neighbor', walls: true, name: 'Gian hàng xóm (phải)', x: 4500, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#3A6EA5', accent: '#C8553D', text: 'GIAN HÀNG', locked: true, group: 'context' },
+  { id: 'F-floor', type: 'floor', name: 'FireSense · thảm sân trước', x: -1500, y: 0, z: 0, ry: 0, w: 3000, h: 12, d: 3000, color: '#140C0A', accent: '#FF4D2E', emissive: 0.5, pattern: 'circuit' },
+  { id: 'S-floor', type: 'floor', name: 'GAVIS + Socratic · thảm sân trước', x: 1500, y: 0, z: 0, ry: 0, w: 3000, h: 12, d: 3000, color: '#0D0D16', accent: '#6C6CFF', emissive: 0.6, pattern: 'circuit' },
+  { id: 'F-face', type: 'kiosk', booth: 'F', name: 'FireSense · mặt tiền + màn giám sát', x: -1500, y: 0, z: 1180, ry: 0, w: 2900, h: 2200, d: 600, scrW: 960, scrH: 560, scrD: 60, gap: 5, bottom: 1100, offX: 650, tray: false, qr: false, guide: false, cam: false, showCam: false, variant: 'fire', color: '#120A08', accent: '#FF4D2E', emissive: 1.8, pattern: 'contour', text: 'Ngửi thấy |nguy cơ cháy.', sub: 'FireSense AI detects fire risk by smell, before smoke and flame.', caption: '// FIRESENSE AI · HỌC SINH PHƯỜNG VĨNH PHÚC', side: 'FIRESENSE', sideSub: ' AI', tags: 'Nhận diện mùi;Cảnh báo sớm;IoT', mount: 'vesa', xray: false },
+  { id: 'F-relief', type: 'relief', booth: 'F', name: 'FireSense · chữ nổi', x: -1500, y: 1880, z: 1482, ry: 0, w: 2200, h: 230, d: 60, color: '#FFF1E6', accent: '#FF4D2E', emissive: 1.2, text: 'FIRESENSE AI' },
+  { id: 'F-hex', type: 'hexwall', booth: 'F', name: 'FireSense · mảng cảm biến "mũi điện tử"', x: -2350, y: 1120, z: 1480, ry: 0, w: 900, h: 640, d: 120, color: '#1E1210', accent: '#FFB020', emissive: 1.4, cell: 85 },
+  { id: 'F-seal', type: 'seal', booth: 'F', name: 'FireSense · huy hiệu Giải Nhất quốc gia', x: -1615, y: 1150, z: 1482, ry: 0, w: 380, h: 380, d: 30, l2: 'cấp quốc gia', year: '2025–2026', ring: 'STUDENT STARTUP IDEAS COMPETITION 2025–2026 · 1ST PRIZE · NATIONAL' },
+  { id: 'F-ped', type: 'aicore', booth: 'F', name: 'FireSense · bục thiết bị ở sân trước', x: -1250, y: 0, z: 2000, ry: 0, w: 420, h: 1050, d: 460, accent: '#FF4D2E', emissive: 1.6, color: '#140C0A', text: 'THIẾT BỊ FIRESENSE · DEVICE' },
+  { id: 'G-face', type: 'kiosk', booth: 'S', name: 'GAVIS · mặt tiền + màn demo 50"', x: 710, y: 0, z: 1120, ry: 0, w: 1320, h: 2200, d: 720, scrW: 1120, scrH: 650, scrD: 70, gap: 5, bottom: 1050, offX: 0, tray: false, qr: false, guide: false, cam: true, showCam: false, variant: 'gavis', color: '#0E0B16', accent: '#8B5CF6', emissive: 1.8, pattern: 'contour', text: 'Nghe |bằng mắt.', sub: 'GAVIS fuses sound and image, guided by gaze, to support hearing-impaired learners.', caption: '// GAVIS · THPT CHUYÊN VĨNH PHÚC', side: 'GAVIS', sideSub: '', tags: 'Âm thanh + hình ảnh;Định hướng ánh nhìn;Hỗ trợ người khiếm thính', mount: 'vesa', xray: false },
+  { id: 'G-relief', type: 'relief', booth: 'S', name: 'GAVIS · chữ nổi', x: 600, y: 1880, z: 1482, ry: 0, w: 800, h: 200, d: 60, color: '#F4F0FF', accent: '#8B5CF6', emissive: 1.3, text: 'GAVIS' },
+  { id: 'G-seal', type: 'seal', booth: 'S', name: 'GAVIS · huy hiệu Giải Nhất cấp tỉnh (KHKT)', x: 1180, y: 1735, z: 1482, ry: 0, w: 300, h: 300, d: 30, l2: 'cấp tỉnh', year: '2026–2027', ring: 'SCIENCE & ENGINEERING FAIR 2026–2027 · 1ST PRIZE · PROVINCIAL' },
+  { id: 'G-hex', type: 'hexwall', visible: false, booth: 'S', name: 'GAVIS · cụm sóng âm lục giác', x: 710, y: 1150, z: 1480, ry: 0, w: 600, h: 620, d: 110, color: '#17122A', accent: '#A78BFA', emissive: 1.3, cell: 80 },
+  { id: 'kiosk', type: 'kiosk', booth: 'S', name: 'Socratic · bảng 65" (viết bảng + chạy /lab)', x: 2160, y: 0, z: 1120, ry: 0, w: 1580, h: 2200, d: 720, scrW: 1490, scrH: 900, scrD: 90, gap: 5, bottom: 900, offX: 0, tray: true, qr: false, color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Viết thử |lên bảng.', sub: 'Try writing on the board. The AI will ask you back.', mount: 'stand', xray: false },
+  { id: 'relief', type: 'relief', booth: 'S', name: 'Chữ nổi hắt sáng (trên bảng viết)', x: 2000, y: 1960, z: 1482, ry: 0, w: 1100, h: 170, d: 60, color: '#F5F2EA', accent: '#3D7BFF', emissive: 1.6, text: 'Socratic Vision Board' },
+  { id: 'seal', type: 'seal', booth: 'S', name: 'Socratic · huy hiệu Giải Nhất cấp tỉnh', x: 2810, y: 1830, z: 1482, ry: 0, w: 300, h: 300, d: 30, l2: 'cấp tỉnh', year: '2026–2027', ring: 'STUDENT STARTUP IDEAS COMPETITION 2026–2027 · 1ST PRIZE · PROVINCIAL' },
+  { id: 'tower', type: 'tower', booth: 'S', name: 'Kệ + tháp mica 5 lớp', x: 2720, y: 560, z: 1480, ry: 0, w: 380, h: 240, d: 160, accent: '#3D7BFF', emissive: 1.8 },
+  { id: 'join', type: 'strip', booth: 'S', name: 'Cột sáng nối GAVIS – Socratic', x: 1370, y: 0, z: 1488, ry: 0, w: 40, h: 2200, d: 40, accent: '#7C8CFF', emissive: 2.6 },
+  { id: 'kiosk2', type: 'kiosk', booth: 'S', visible: false, name: '(Đã ẩn: không đủ chỗ trong 3 m) Socratic · trạm Lab 3D 50" (hốc)', x: 3790, y: 0, z: 680, ry: 0, w: 1320, h: 2200, d: 720, scrW: 1120, scrH: 650, scrD: 70, gap: 5, bottom: 1150, offX: 0, tray: false, qr: false, guide: true, cam: false, showCam: false, variant: 'lab', color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Thí nghiệm |bằng tay.', sub: 'Hands over the table. The camera watches from above.', mount: 'vesa', xray: false },
+  { id: 'desk', type: 'handdesk', booth: 'S', visible: false, name: '(Đã ẩn: không đủ chỗ trong 3 m) Bàn thao tác Lab (mặt in tối mờ)', x: 3790, y: 0, z: 1260, ry: 0, w: 1100, h: 950, d: 440, color: '#0B0D13', accent: '#3D7BFF', emissive: 1.6 },
+  { id: 'overcam', type: 'overcam', booth: 'S', visible: false, name: '(Đã ẩn: không đủ chỗ trong 3 m) Tay cần + webcam nhìn xuống', x: 3790, y: 0, z: 1040, ry: 0, w: 120, h: 2080, d: 230, arm: 230, fov: 65, vfov: 40, target: 950, accent: '#3D7BFF', emissive: 1.6, showCam: true },
+  { id: 'decal', type: 'decal', name: 'Decal lối đi: viết bảng', x: 2160, y: 0, z: 1950, ry: 0, w: 760, h: 4, d: 760, accent: '#3D7BFF', text: 'ĐỨNG ĐÂY' },
+  { id: 'decal2', type: 'decal', name: 'Decal lối đi: GAVIS', x: 710, y: 0, z: 1900, ry: 0, w: 900, h: 4, d: 900, accent: '#FF6A2B', text: 'ĐỨNG ĐÂY' },
   { id: 'vt-deep', type: 'promo', slot: 'deep', locked: true, name: 'Vách thụt · quảng bá FireSense', x: 0, y: 0, z: 0, ry: 0, w: 600, h: 2200, d: 6, color: '#120A08', accent: '#FF4D2E', pattern: 'contour', glyph: '!', title: 'FireSense AI', text: 'Phát hiện cháy |bằng mùi.', sub: 'Mùi|nhận biết trước khi có khói, lửa · smell first\nIoT|cảnh báo tới điện thoại · alerts', award: 'GIẢI NHẤT CẤP QUỐC GIA', qr: false },
   { id: 'vt-court', type: 'promo', slot: 'court', locked: true, name: 'Vách sân trước FireSense · câu chuyện', x: 0, y: 0, z: 0, ry: 0, w: 1000, h: 2200, d: 60, color: '#120A08', accent: '#FF4D2E', pattern: 'contour', glyph: '!', title: 'FireSense AI', text: '[Vấn đề cháy nổ đang gặp] |[một câu]', sub: '[Cách hoạt động 1]|[mô tả ngắn]\n[Cách hoạt động 2]|[mô tả ngắn]\n[Thử nghiệm]|[ở đâu, kết quả]', award: 'GIẢI NHẤT CẤP QUỐC GIA', qr: false },
   { id: 'vt-front', type: 'promo', slot: 'front', locked: true, name: 'Vách thụt · Vision AI: GAVIS × Socratic', x: 0, y: 0, z: 0, ry: 0, w: 400, h: 2200, d: 60, color: '#0D0D16', accent: '#7C8CFF', pattern: 'contour', logo: true, title: 'Vision AI · GAVIS × Socratic', text: 'AI biết |nhìn để giúp học.', sub: 'GAVIS|nghe bằng mắt\nSocratic|bảng biết hỏi lại', award: 'HAI GIẢI NHẤT CẤP TỈNH', qr: true },
-  { id: 'F-blade', type: 'blade', name: 'FireSense · biển vẫy', x: -4500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#120A08', accent: '#FF4D2E', emissive: 1.8, glyph: '!', text: 'FIRESENSE AI · CẢNH BÁO CHÁY' },
-  { id: 'G-blade', type: 'blade', name: 'GAVIS · biển vẫy', x: -1500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0E0B16', accent: '#8B5CF6', emissive: 1.8, glyph: 'G', text: 'GAVIS · NGHE BẰNG MẮT' },
-  { id: 'S-blade', type: 'blade', name: 'Socratic · biển vẫy', x: 1500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.8 },
-  { id: 'S-blade2', type: 'blade', name: 'Socratic · biển vẫy đầu cụm', x: 4500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.8 },
-  { id: 'F-flag', type: 'flag', name: 'FireSense · cờ buồm', x: -4560, y: 0, z: 1560, ry: -80, w: 700, h: 3500, d: 30, color: '#120A08', accent: '#FF4D2E', text: 'FIRESENSE', sub: ' AI', glyph: '!' },
-  { id: 'S-flag', type: 'flag', name: 'Vision AI · cờ buồm', x: 4560, y: 0, z: 1560, ry: 80, w: 700, h: 3500, d: 30, color: '#0D0D16', accent: '#7C8CFF', text: 'VISION', sub: ' AI', glyph: 'AI' },
-  { id: 'all-led', type: 'strip', name: 'Dải LED chung 9 m mép trước', x: 0, y: 0, z: 1530, ry: 90, w: 30, h: 8, d: 8950, accent: '#E8EBF1', emissive: 1.8 },
-  { id: 'p1', type: 'person', name: 'Người (tỉ lệ)', x: -2300, y: 0, z: 2900, ry: 90, w: 450, h: 1680, d: 300, color: '#4A5466', group: 'people' },
-  { id: 'p2', type: 'person', name: 'Người (tỉ lệ)', x: -300, y: 0, z: 2300, ry: 180, w: 450, h: 1600, d: 300, color: '#6A4A4A', group: 'people' },
+  { id: 'F-blade', type: 'blade', name: 'FireSense · biển vẫy', x: -3000, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#120A08', accent: '#FF4D2E', emissive: 1.8, glyph: '!', text: 'FIRESENSE AI · CẢNH BÁO CHÁY' },
+  { id: 'G-blade', type: 'blade', name: 'GAVIS · biển vẫy', x: 0, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0E0B16', accent: '#8B5CF6', emissive: 1.8, glyph: 'G', text: 'GAVIS · NGHE BẰNG MẮT' },
+  { id: 'S-blade', type: 'blade', name: 'Socratic · biển vẫy', x: 3000, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.8 },
+  { id: 'F-flag', type: 'flag', name: 'FireSense · cờ buồm', x: -3060, y: 0, z: 1560, ry: -80, w: 700, h: 3500, d: 30, color: '#120A08', accent: '#FF4D2E', text: 'FIRESENSE', sub: ' AI', glyph: '!' },
+  { id: 'S-flag', type: 'flag', name: 'Vision AI · cờ buồm', x: 3060, y: 0, z: 1560, ry: 80, w: 700, h: 3500, d: 30, color: '#0D0D16', accent: '#7C8CFF', text: 'VISION', sub: ' AI', glyph: 'AI' },
+  { id: 'all-led', type: 'strip', name: 'Dải LED chung 6 m mép trước', x: 0, y: 0, z: 1530, ry: 90, w: 30, h: 8, d: 5950, accent: '#E8EBF1', emissive: 1.8 },
+  { id: 'p1', type: 'person', name: 'Người (tỉ lệ)', x: -3800, y: 0, z: 2900, ry: 90, w: 450, h: 1680, d: 300, color: '#4A5466', group: 'people' },
+  { id: 'p2', type: 'person', name: 'Khách xem GAVIS (tỉ lệ)', x: 700, y: 0, z: 1900, ry: 180, w: 450, h: 1600, d: 300, color: '#6A4A4A', group: 'people' },
+  { id: 'p3', type: 'person', name: 'Khách đang viết (tỉ lệ)', x: 1900, y: 0, z: 1850, ry: 180, w: 450, h: 1720, d: 300, color: '#3E5A4A', group: 'people' },
 ];
 
 const LIB = [
@@ -875,10 +872,10 @@ B.overcam = (o, g) => {
 function promoSlot(slot) {
   const st = Number(settings.step) || 0, A = Math.abs(st) * M, rc = Math.max(0, Number(settings.recess) || 0) * M; const pos = st >= 0, F = 1.48, fFront = F - rc;
   const fDeep = fFront - A;
-  if (slot === 'front') return rc < 0.1 ? null : { x: pos ? 4.47 : -4.47, z0: fFront, z1: F, nx: pos ? -1 : 1 };
+  if (slot === 'front') return rc < 0.1 ? null : { x: pos ? 2.97 : -2.97, z0: fFront, z1: F, nx: pos ? -1 : 1 };
   if (A < 0.1) return null;
-  if (slot === 'deep') return { x: pos ? -1.45 - 0.006 : -1.55 + 0.006, z0: fDeep, z1: fFront, nx: pos ? -1 : 1 };
-  return { x: pos ? -4.47 : 4.47, z0: fDeep, z1: F, nx: pos ? 1 : -1 };
+  if (slot === 'deep') return { x: pos ? 0.05 - 0.006 : -0.05 + 0.006, z0: fDeep, z1: fFront, nx: pos ? -1 : 1 };
+  return { x: pos ? -2.97 : 2.97, z0: fDeep, z1: F, nx: pos ? 1 : -1 };
 }
 function paintPromo(o, W) {
   const H = o.h; const { c, ctx } = makeCanvas(W, H, 2048); const acc = o.accent, accL = shade(acc, 0.45), fg = '#F5F2EA', m = Math.max(40, W * 0.07), cw = W - 2 * m;
@@ -963,7 +960,7 @@ function applyMode() {
 }
 
 // ---------------- máy quay ----------------
-const CAMS = { pavilion: [[0.6, 2.3, 10.8], [0, 1.35, 0]], approach: [[-12, 1.65, 5.0], [0, 1.4, 0.6]], approachR: [[12, 1.65, 5.0], [0, 1.4, 0.6]], aisle: [[0.5, 1.7, 7.9], [0, 1.3, 0]], threeq: [[5.6, 3.1, 6.4], [0, 1.1, 0]], top: [[0.01, 9.5, 0.9], [0, 0, 0]], inside: [[0.95, 1.6, 0.75], [-0.4, 1.35, -1.5]] };
+const CAMS = { pavilion: [[0.4, 2.1, 8.6], [0, 1.35, 0]], approach: [[-10, 1.65, 5.0], [0, 1.4, 0.6]], approachR: [[10, 1.65, 5.0], [0, 1.4, 0.6]], aisle: [[0.5, 1.7, 7.9], [0, 1.3, 0]], threeq: [[5.6, 3.1, 6.4], [0, 1.1, 0]], top: [[0.01, 9.5, 0.9], [0, 0, 0]], inside: [[0.95, 1.6, 0.75], [-0.4, 1.35, -1.5]] };
 let camAnim = null; function setCam(k, instant) {
   settings.cam = k; const [p, t] = CAMS[k]; document.querySelectorAll('[data-cam]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cam === k)));
   if (k === 'top' && settings.roof) { settings.roof = false; document.getElementById('optRoof').checked = false; applyRoof(); }

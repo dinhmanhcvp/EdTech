@@ -1,3 +1,7 @@
+# 2026-11-25 (2) — 2 lều 3 m thông nhau: FireSense | GAVIS + Socratic
+- Người dùng làm rõ: chỉ 2 lều × 3 m, gian 2 (GAVIS + Socratic) vẫn 3 m và thông với gian 1. Studio khóa lưu v12: lều x −1500 (FireSense, lùi sâu) và x 1500; mặt tiền gian 2 = GAVIS 1 320 (màn 50", webcam) + Socratic 1 580 (bảng 65", chạy cả /lab); trạm Lab riêng, bàn thao tác, tay cần ẩn vì không đủ chỗ. Vách thụt: deep x 0,05 (mặt hông trái gian 2), court x −2,97, front x 2,97. Hàng xóm ±4500.
+- Lỗi đã gặp: thay trường bằng regex `key: [^,]+,` khớp nhầm `booth:`/`id:` và nuốt dấu `}` → luôn dùng `(?<![A-Za-z])key:` và `node --check` phần script trước khi xuất bản.
+
 # 2026-11-25 — Bố cục 2 gian: FireSense AI | GAVIS + Socratic thông nhau
 - Studio khóa lưu v11: lều x −3000 (FireSense, `booth: 'F'`), x 0 và 3000 (GAVIS + Socratic, `booth: 'S'`, mặt tiền liền 6 m). `zoff`: F lùi recess + bậc, S lùi recess (bậc âm đảo). Promo: `deep` = mặt hông trái gian đôi (quảng bá FireSense), `court` = mép trái sân trước FireSense, `front` = mép phải gian đôi (Vision AI GAVIS × Socratic).
 - FireSense: kiosk màn 43" biến thể `fire` (thanh cảm biến CO/VOC/khói/nhiệt, trạng thái an toàn/cảnh báo đổi theo nhịp), cụm lục giác hổ phách, huy hiệu Giải Nhất cấp quốc gia 2025–2026, bục thiết bị ở sân trước. GAVIS: kiosk màn 55" biến thể `gavis` (khung video, tia ánh nhìn, phụ đề, sóng âm), webcam, cụm lục giác tím, huy hiệu Giải Nhất cấp tỉnh KHKT 2026–2027. Socratic dời sang x +3000. Cột sáng nối ở x 1500.

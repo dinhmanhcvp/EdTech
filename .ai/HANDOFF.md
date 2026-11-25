@@ -1,3 +1,7 @@
+# 2026-11-25 (21) — Khu đặt tay webcam cho Lab
+- Studio v37: bàn BTC (`desk`) chia đôi. Nửa trái đặt `G-bust`. Nửa phải là `handpad` (decal "HANDS HERE", y 752) với `overcam` (`pole: true`, x 300, z 690, tay cần 340, nhìn xuống mặt bàn cao 750). Khách đứng ngoài lối đi, nhìn màn 65" ở vách chéo.
+- Dự toán thêm lại chân boom và webcam kèm vòng đèn; mặt bàn dùng decal đen mờ chống lóa. Phương án khuyến nghị khoảng 31,5 triệu.
+
 # 2026-11-25 (20) — Vách chéo theo bản vẽ, ảnh GAVIS tách nền
 - Studio v36:
   - Vách chéo `CH` theo bản vẽ của người dùng, đi từ vách sau (x 10) tới vách phải (z −810), dài khoảng 1,6 m, chéo khoảng 24°. Màn 65" nằm khít trong vách (`kiosk`, `noBack`).

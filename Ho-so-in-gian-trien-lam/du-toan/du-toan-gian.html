@@ -160,7 +160,7 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
   <h2>Trang trí thêm trong gian</h2>
   <p class="mute">Các mục có dấu ✓ đã đặt trong studio 3D để xem vị trí và tỉ lệ.</p>
   <div class="decor">
-    <div><h3>✓ Lab 3D chạy thẳng trên màn 65"</h3><p>Không cần màn phụ hay webcam: khách chạm tay kéo thả dụng cụ trên chính màn 65" trong hộp ốp. Bàn BTC ở mép trước thành quầy đón khách, có đầu ma-nơ-canh GAVIS để đeo thử.</p></div>
+    <div><h3>✓ Khu đặt tay Lab 3D trên quầy</h3><p>Nửa phải bàn BTC là tấm đen mờ "HANDS HERE", webcam treo trên chân boom nhìn thẳng xuống; khách đưa tay ở đây và nhìn màn 65" ở góc sau. Nửa trái là đầu ma-nơ-canh GAVIS để đeo thử. Lab vẫn chạm tay được trực tiếp trên màn.</p></div>
     <div><h3>✓ Kệ ấn phẩm đứng × 2</h3><p>Hai góc trước, mỗi dự án một kệ, túi mica A5 viền LED theo màu dự án.</p></div>
     <div><h3>✓ Vòng hào quang treo trên quầy</h3><p>Ø 0,9 m, LED neon xanh tím treo từ khung mái lều (tùy chọn), kéo mắt từ xa về quầy Lab.</p></div>
     <div><h3>✓ Đầu ma-nơ-canh GAVIS</h3><p>Trên bục cạnh vách phải, đeo thiết bị thật; khách được đeo thử.</p></div>
@@ -176,13 +176,14 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
 {
 const G = [['k','Đồ dựng thêm','#0B0D13'],['i','Decal và in','#3D7BFF'],['n','Khối nổi và ánh sáng','#8B5CF6'],['t','Thiết bị','#9AA3B2'],['a','Ấn phẩm','#FF6A2B'],['l','Lắp đặt','#5b6070']];
 const R = [
+ ['k1','k','Chân boom + tay cần webcam cho Lab 3D','chân đèn sân khấu cao 1,75 m, tay ngang 34 cm, kẹp webcam, đặt sau bàn BTC',1,'bộ',500,900,1],
  ['k2','k','Bục GAVIS 36 × 36 × 105 cm + đầu ma-nơ-canh','Formex 10 mm ghép hộp, decal tím than, đầu nhựa trắng',1,'bộ',800,1300,1],
  ['k3','k','Cụm 3 tấm hình thang Socratic: tấm giữa 1,6 × 2,2 m khoét màn + 2 tấm vát 0,91 × 2,2 m','Formex 15 mm (tấm giữa CNC khoét màn 1 493 × 907 mm), nối nhôm V, chân chữ L; khoảng sau giấu chân màn',1,'bộ',2400,3800,1],
  ['k4','k','Decal 3 tấm hình thang','decal PP in UV cán mờ dán lên Formex',7.5,'m²',160,230,1],
  ['i1','i','Decal vách BTC: vách sau 2,94 × 2,2 m','decal PP in UV cán mờ, keo bóc được không để vết',6.5,'m²',160,230,1],
  ['i2','i','Decal 2 vách hông 2,87 × 2,2 m','decal PP in UV cán mờ, keo bóc được',12.6,'m²',160,230,1],
  ['i3','i','Dải bảo trợ trên vách sau 2,94 × 0,18 m','Formex 5 mm in UV, treo bằng móc chữ S',1,'tấm',300,500,1],
- ['i4','i','Phủ mặt bàn BTC thành quầy đón khách 1,2 × 0,6 m','decal đen mờ dán lên tấm Formex 3 mm đặt rời trên bàn',1,'tấm',150,250,1],
+ ['i4','i','Mặt quầy + tấm đặt tay Lab 1,2 × 0,6 m','decal đen cán MỜ (chống lóa cho webcam) trên Formex 3 mm đặt rời trên bàn, in vòng "HANDS HERE"',1,'tấm',150,250,1],
  ['i5','i','Váy bàn in 1,2 × 0,7 m','vải poly in chuyển nhiệt, dán gai dính quanh mép bàn',1,'cái',250,400,1],
  ['i6','i','Decal sàn "STAND HERE" Ø 640','PVC in UV cán nhám, dán lên thảm BTC (hỏi BTC trước)',1,'cái',120,200,2],
  ['n1','n','Chữ nổi Socratic Vision Board và GAVIS (≈ 24 chữ)','Formex 10 mm, mặt mica 2 mm, LED hắt chân, dán băng keo 2 mặt',24,'chữ',90,150,2],
@@ -194,6 +195,7 @@ const R = [
  ['n7','n','Kệ ấn phẩm đứng 3 tầng','khung thép sơn đen, túi mica A5',2,'cái',450,700,2],
  ['n8','n','Vòng hào quang treo Ø 0,9 m trên quầy Lab','nhôm uốn + LED neon xanh tím',1,'cái',800,1300,3],
  ['t1','t','Màn cảm ứng 65" + chân bánh xe (nếu chưa có)','thuê 2 ngày',2,'ngày',2500,4000,3],
+ ['t3','t','Webcam 1080p 65–70° + vòng đèn 4000K','nhìn thẳng xuống tấm đặt tay',1,'bộ',800,1500,1],
  ['t4','t','Ổ cắm kéo dài, dây, băng dính 2 mặt','nguồn điện chính do BTC cấp',1,'lô',250,450,1],
  ['a1','a','Tờ rơi A5 2 mặt (Socratic 600, GAVIS 400)','couché 200 gsm, cán mờ 2 mặt',1000,'tờ',1.2,1.8,1],
  ['a2','a','Thẻ QR dùng thử Socratic 90 × 55','couché 300 gsm, cán mờ, bo góc',1000,'thẻ',0.4,0.7,2],

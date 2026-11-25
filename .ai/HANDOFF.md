@@ -1,3 +1,10 @@
+# 2026-11-25 (22) — Webcam và kệ đặt tay ngay tại màn
+- Studio v38:
+  - `labshelf` (handdesk 1 100 × 450, cao 850) đặt dưới màn tại `CH.at(0, 225)`.
+  - `overcam` gắn đỉnh vách chéo (h 2 150, tay cần 300, nhìn xuống mặt kệ cao 850). Vùng nhìn của webcam đang tắt; bật `showCam` để xem.
+  - Quầy BTC chỉ còn GAVIS; đã bỏ `handpad`.
+- Dự toán: tay cần và kệ tính chung thành một hạng mục.
+
 # 2026-11-25 (21) — Khu đặt tay webcam cho Lab
 - Studio v37: bàn BTC (`desk`) chia đôi. Nửa trái đặt `G-bust`. Nửa phải là `handpad` (decal "HANDS HERE", y 752) với `overcam` (`pole: true`, x 300, z 690, tay cần 340, nhìn xuống mặt bàn cao 750). Khách đứng ngoài lối đi, nhìn màn 65" ở vách chéo.
 - Dự toán thêm lại chân boom và webcam kèm vòng đèn; mặt bàn dùng decal đen mờ chống lóa. Phương án khuyến nghị khoảng 31,5 triệu.

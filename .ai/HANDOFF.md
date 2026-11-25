@@ -1,3 +1,7 @@
+# 2026-11-25 (19) — Socratic thành 3 tấm hình thang
+- Studio v33: `TL`/`TC`/`TR` là 3 tấm liền nhau. Tấm giữa `kiosk` rộng 1 600, mặt ở z −830, `noBack: true`, màn 1 483,2 × 896,9 × 104, đáy màn cao 900. Tấm trái `S-team` (ảnh nhóm, mô hình kinh doanh) và tấm phải `S-lab` (Lab 3D chạm, QR) vát về hai góc sau; chân màn giấu trong khoảng trống phía sau. Đã bỏ `S-back`; vách phải `S-wall` dùng lại đủ chiều dài.
+- Kiosk có thêm cờ `noBack` để bỏ tấm hậu. Dự toán: thay hộp ốp bằng cụm 3 tấm hình thang.
+
 # 2026-11-25 (18) — Hộp ốp màn 65" xoay chéo
 - Studio v31: hộp ốp `kiosk` đặt tại (560, −650), xoay −35°, quay về phía khách đi từ trái. Phần trái vách sau để trống cho ảnh nhóm. Chữ nổi, decal sàn và người mẫu tỉ lệ dời theo hộp. Nhóm GAVIS đã đồng ý in ảnh.
 

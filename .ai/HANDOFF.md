@@ -1,3 +1,8 @@
+# 2026-11-25 (6) — Hình thang mở, khách đi vào trong gian
+- Studio khóa lưu v16: hình thang đảo chiều, cạnh dài 6 m mở ra lối đi. Vách sau 3,4 m đặt tại `BZ = -400` (khách vào sâu khoảng 1,9 m), gồm FireSense `F-front` (nửa trái) và màn 65" Socratic `kiosk` (nửa phải), nối bằng dải sáng tím.
+- Hai mặt vát quay vào trong: `F-side` (−2950,1450)→(−1700,BZ) là câu chuyện FireSense, bục thiết bị đặt sát cửa bên trái; `G-side` (1700,BZ)→(2950,1450) là GAVIS. Cột lều giữa đứng giữa cửa vào, thẳng hàng với đường nối.
+- Thêm decal "COME IN" ở cửa. Góc nhìn "Walk in" (trước là "Trong gian") nhìn từ lối đi vào trong.
+
 # 2026-11-25 (5) — Mặt bằng hình thang, FireSense liền Socratic
 - Studio khóa lưu v15. Mặt trước phẳng 3,4 m sát lối đi: FireSense `F-front` (x −850, cao 2 000) và màn 65" Socratic `kiosk` (x 850). Hai bên nối ở cột lều giữa x 0, cột bọc dải sáng tím `join`.
 - Hai mặt vát lùi về góc sau: trái `F-side` (câu chuyện FireSense, bục thiết bị phía trước) từ (−2950,300) đến (−1700,1450); phải `G-side` GAVIS từ (1700,1450) đến (2950,300). Tổng khoảng 6,8 m mặt in.

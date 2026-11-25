@@ -103,7 +103,7 @@ button { cursor: pointer; }
       <button type="button" data-cam="aisle" aria-pressed="true">Front</button>
       <button type="button" data-cam="threeq" aria-pressed="false">3/4 view</button>
       <button type="button" data-cam="top" aria-pressed="false">Top</button>
-      <button type="button" data-cam="inside" aria-pressed="false">Trong gian</button>
+      <button type="button" data-cam="inside" aria-pressed="false">Walk in</button>
     </div>
     <div class="seg" role="group" aria-label="Lighting">
       <button type="button" data-mode="day" aria-pressed="true">Day</button>
@@ -139,7 +139,7 @@ button { cursor: pointer; }
       <div class="sec" id="inspector"></div>
       <div class="sec">
         <h2>3D element ideas</h2>
-        <div class="idea"><b>Trapezoid plan over both tents</b><p>A flat 3.4 m front sits on the aisle line: FireSense on the left half, the one 65" Socratic screen on the right half, joined at the centre tent pole, which is wrapped as a purple light seam. Two chamfered sides run back to the rear corners: the FireSense story on the left (with the device plinth in front of it) and GAVIS on the right. About 6.8 m of printed face.</p></div>
+        <div class="idea"><b>Open trapezoid: walk in</b><p>The wide side of the trapezoid opens onto the aisle (6 m) and two chamfered sides close in towards a 3.4 m back wall set 1.9 m into the tents: FireSense on the left half, the one 65" Socratic screen on the right, joined by a purple light seam. The sides face inwards: FireSense story on the left, GAVIS on the right, each also turned towards visitors coming along the aisle. The centre tent pole stands in the middle of the entrance, lined up with the seam.</p></div>
         <div class="idea"><b>Letters on top of the walls</b><p>The printed walls are 2 000 mm tall with 3D letters standing on their top edge, so the letters read above visitors' heads and never cover the print. "Text column" on a wall keeps its text clear of the hexagons and seals.</p></div>
         <div class="idea"><b>3D Lab station: camera looking down</b><p>A webcam on an arm points straight down at a 950 mm hand desk. Visitors stand at the desk, move their hands over it and watch the screen. The camera sees only hands on a dark surface, not the people behind. The green volume is the camera field. Hidden by default: there is no room for it in 3 m.</p></div>
         <div class="idea"><b>Why everything faces the aisle</b><p>The neighbouring booths have closed walls and few visitors step inside, so only the faces, blade signs and flags are seen. Click “Approach from left” or “Approach from right” to check each direction.</p></div>
@@ -174,7 +174,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 const M = 0.001; // mm → m
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FONT = { sans: '"Plus Jakarta Sans", system-ui, sans-serif', mono: '"JetBrains Mono", ui-monospace, monospace', serif: 'Newsreader, Georgia, serif' };
-const STORE = 'svb-booth-studio-v15'; // v15: trapezoid plan, FireSense | Socratic on one front // // v14: one 6 m booth, a single 65" screen // v13: English + chamfered facades // v12: 2 lều 3 m: FireSense | GAVIS + Socratic, thông nhau // v11: 2 gian — FireSense AI | GAVIS + Socratic thông nhau // v10: gian trước cũng thụt để có vách quảng bá // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
+const STORE = 'svb-booth-studio-v16'; // v16: open trapezoid, walk-in // // v15: trapezoid plan, FireSense | Socratic on one front // // v14: one 6 m booth, a single 65" screen // v13: English + chamfered facades // v12: 2 lều 3 m: FireSense | GAVIS + Socratic, thông nhau // v11: 2 gian — FireSense AI | GAVIS + Socratic thông nhau // v10: gian trước cũng thụt để có vách quảng bá // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
 const MARK_HOOK = 'M31.8 39.7 A30 30 0 1 1 75 76 Q60 83 60 93', MARK_IRIS = 'M46.8 45.2 A14 14 0 0 1 73.2 45.2';
 // // v4: mặt tiền = bảng viết 65" + trạm Lab 3D qua webcam
 
@@ -182,8 +182,9 @@ const MARK_HOOK = 'M31.8 39.7 A30 30 0 1 1 75 76 Q60 83 60 93', MARK_IRIS = 'M46
 // Chamfered layout: every facade is a straight segment P0 → P1 (front face, mm). at(a, t) = point a mm along the face from its middle, t mm out from it.
 const seg = (x0, z0, x1, z1) => { const dx = x1 - x0, dz = z1 - z0, L = Math.hypot(dx, dz), ux = dx / L, uz = dz / L, mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
   return { L, ry: Math.round((-Math.atan2(dz, dx) * 1800) / Math.PI) / 10, at: (a, t = 0) => ({ x: Math.round(mx + ux * a - uz * t), z: Math.round(mz + uz * a + ux * t) }) }; };
-const LS = seg(-2950, 300, -1700, 1450), RS = seg(1700, 1450, 2950, 300);
-// Trapezoid plan over both tents: a flat 3.4 m front at the aisle (FireSense | Socratic, joined at the centre tent pole) and two chamfered sides running back to the rear corners.
+const BZ = -400; // back wall line (mm): visitors walk in about 1.9 m
+const LS = seg(-2950, 1450, -1700, BZ), RS = seg(1700, BZ, 2950, 1450);
+// Open trapezoid over both tents: the wide side opens onto the aisle, two chamfered sides close in towards a 3.4 m back wall (FireSense | Socratic), so visitors can walk in.
 const DEFAULT = () => [
   { id: 'tentF', type: 'tent', name: 'Tent 1 (open to tent 2)', x: -1500, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'BOOTH [NO.] · FIRESENSE AI · SOCRATIC', locked: true },
   { id: 'tentS', type: 'tent', name: 'Tent 2 (open to tent 1)', x: 1500, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'BOOTH [NO.] · SOCRATIC · GAVIS', locked: true },
@@ -191,28 +192,29 @@ const DEFAULT = () => [
   { id: 'nbR', type: 'neighbor', walls: true, name: 'Neighbouring booth (right)', x: 4500, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#3A6EA5', accent: '#C8553D', text: 'BOOTH', locked: true, group: 'context' },
   { id: 'floor', type: 'floor', name: 'One continuous floor mat, 6 m', x: 0, y: 0, z: 0, ry: 0, w: 6000, h: 12, d: 3000, color: '#0E0D14', accent: '#6C6CFF', emissive: 0.6, pattern: 'circuit' },
   // Front, left half: FireSense
-  { id: 'F-front', type: 'promo', name: 'FireSense · front face (left half of the trapezoid)', x: -850, y: 0, z: 1410, ry: 0, w: 1680, h: 2000, d: 80, col: 880, color: '#120A08', accent: '#FF4D2E', pattern: 'contour', glyph: '!', title: 'FireSense AI · Vinh Phuc Ward', text: 'Smell |fire risk first.', sub: 'Odour|caught before smoke or flame\nIoT|alerts straight to your phone', award: '1ST PRIZE · NATIONAL · 2025–2026', qr: false },
-  { id: 'F-relief', type: 'relief', name: 'FireSense · 3D letters on top of the front', x: -850, y: 2030, z: 1400, ry: 0, w: 1400, h: 200, d: 60, color: '#FFF1E6', accent: '#FF4D2E', emissive: 1.2, text: 'FIRESENSE AI' },
-  { id: 'F-hex', type: 'hexwall', name: 'FireSense · "electronic nose" sensor array', x: -330, y: 620, z: 1453, ry: 0, w: 560, h: 640, d: 110, color: '#1E1210', accent: '#FFB020', emissive: 1.4, cell: 75 },
-  { id: 'F-seal', type: 'seal', name: 'FireSense · 1st Prize seal (national)', x: -330, y: 1360, z: 1453, ry: 0, w: 360, h: 360, d: 30, l2: 'national', year: '2025–2026', ring: 'STUDENT STARTUP IDEAS COMPETITION 2025–2026 · 1ST PRIZE · NATIONAL' },
+  { id: 'F-front', type: 'promo', name: 'FireSense · back wall, left half', x: -850, y: 0, z: BZ - 40, ry: 0, w: 1680, h: 2000, d: 80, col: 880, color: '#120A08', accent: '#FF4D2E', pattern: 'contour', glyph: '!', title: 'FireSense AI · Vinh Phuc Ward', text: 'Smell |fire risk first.', sub: 'Odour|caught before smoke or flame\nIoT|alerts straight to your phone', award: '1ST PRIZE · NATIONAL · 2025–2026', qr: false },
+  { id: 'F-relief', type: 'relief', name: 'FireSense · 3D letters on top of the front', x: -850, y: 2030, z: BZ - 50, ry: 0, w: 1400, h: 200, d: 60, color: '#FFF1E6', accent: '#FF4D2E', emissive: 1.2, text: 'FIRESENSE AI' },
+  { id: 'F-hex', type: 'hexwall', name: 'FireSense · "electronic nose" sensor array', x: -330, y: 620, z: BZ + 3, ry: 0, w: 560, h: 640, d: 110, color: '#1E1210', accent: '#FFB020', emissive: 1.4, cell: 75 },
+  { id: 'F-seal', type: 'seal', name: 'FireSense · 1st Prize seal (national)', x: -330, y: 1360, z: BZ + 3, ry: 0, w: 360, h: 360, d: 30, l2: 'national', year: '2025–2026', ring: 'STUDENT STARTUP IDEAS COMPETITION 2025–2026 · 1ST PRIZE · NATIONAL' },
   // Left chamfered side: FireSense story + device plinth in front of it
-  { id: 'F-side', type: 'promo', name: 'FireSense · left chamfered side (story, faces left)', ...LS.at(0, -40), y: 0, ry: LS.ry, w: Math.round(LS.L - 20), h: 2000, d: 80, color: '#120A08', accent: '#FF4D2E', pattern: 'contour', glyph: '!', title: 'FireSense AI · how it works', text: '[The fire problem we tackle] |[one line]', sub: '[How it works 1]|[short description]\n[How it works 2]|[short description]\n[Pilot]|[where, result]', award: '', qr: false },
-  { id: 'F-ped', type: 'aicore', name: 'FireSense · device plinth', ...LS.at(-150, 520), y: 0, ry: LS.ry, w: 420, h: 1050, d: 460, accent: '#FF4D2E', emissive: 1.6, color: '#140C0A', text: 'FIRESENSE DEVICE' },
+  { id: 'F-side', type: 'promo', name: 'FireSense · left chamfered side (story, faces in)', ...LS.at(0, -40), y: 0, ry: LS.ry, w: Math.round(LS.L - 20), h: 2000, d: 80, color: '#120A08', accent: '#FF4D2E', pattern: 'contour', glyph: '!', title: 'FireSense AI · how it works', text: '[The fire problem we tackle] |[one line]', sub: '[How it works 1]|[short description]\n[How it works 2]|[short description]\n[Pilot]|[where, result]', award: '', qr: false },
+  { id: 'F-ped', type: 'aicore', name: 'FireSense · device plinth', ...LS.at(-700, 450), y: 0, ry: LS.ry, w: 420, h: 1050, d: 460, accent: '#FF4D2E', emissive: 1.6, color: '#140C0A', text: 'FIRESENSE DEVICE' },
   // Centre pole: wrapped as the light seam between FireSense and Socratic
-  { id: 'join', type: 'strip', name: 'Light seam at the centre tent pole', x: 0, y: 0, z: 1455, ry: 0, w: 60, h: 2200, d: 40, accent: '#B07CFF', emissive: 2.6 },
+  { id: 'join', type: 'strip', name: 'Light seam between FireSense and Socratic', x: 0, y: 0, z: BZ + 5, ry: 0, w: 60, h: 2200, d: 40, accent: '#B07CFF', emissive: 2.6 },
   // Front, right half: the one 65" screen (Socratic)
-  { id: 'kiosk', type: 'kiosk', name: 'Socratic · 65" interactive screen (front, right half)', x: 850, y: 0, z: 1090, ry: 0, w: 1660, h: 2200, d: 720, scrW: 1490, scrH: 900, scrD: 90, gap: 5, bottom: 900, offX: 0, tray: true, qr: true, color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Write on |the board.', sub: 'Try writing on the board. The AI will ask you back.', caption: '// SOCRATIC VISION BOARD · TRY IT NOW', mount: 'stand', xray: false },
-  { id: 'relief', type: 'relief', name: 'Socratic · back-lit 3D letters', x: 700, y: 1960, z: 1453, ry: 0, w: 1000, h: 170, d: 60, color: '#F5F2EA', accent: '#3D7BFF', emissive: 1.6, text: 'Socratic Vision Board' },
-  { id: 'seal', type: 'seal', name: 'Socratic · 1st Prize seal (provincial)', x: 1470, y: 1880, z: 1453, ry: 0, w: 280, h: 280, d: 30, l2: 'provincial', year: '2026–2027', ring: 'STUDENT STARTUP IDEAS COMPETITION 2026–2027 · 1ST PRIZE · PROVINCIAL' },
-  { id: 'tower', type: 'tower', name: 'Shelf + 5-layer acrylic tower', x: 1410, y: 560, z: 1453, ry: 0, w: 380, h: 240, d: 160, accent: '#3D7BFF', emissive: 1.8 },
+  { id: 'kiosk', type: 'kiosk', name: 'Socratic · 65" interactive screen (back wall, right half)', x: 850, y: 0, z: BZ - 360, ry: 0, w: 1660, h: 2200, d: 720, scrW: 1490, scrH: 900, scrD: 90, gap: 5, bottom: 900, offX: 0, tray: true, qr: true, color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Write on |the board.', sub: 'Try writing on the board. The AI will ask you back.', caption: '// SOCRATIC VISION BOARD · TRY IT NOW', mount: 'stand', xray: false },
+  { id: 'relief', type: 'relief', name: 'Socratic · back-lit 3D letters', x: 700, y: 1960, z: BZ + 3, ry: 0, w: 1000, h: 170, d: 60, color: '#F5F2EA', accent: '#3D7BFF', emissive: 1.6, text: 'Socratic Vision Board' },
+  { id: 'seal', type: 'seal', name: 'Socratic · 1st Prize seal (provincial)', x: 1470, y: 1880, z: BZ + 3, ry: 0, w: 280, h: 280, d: 30, l2: 'provincial', year: '2026–2027', ring: 'STUDENT STARTUP IDEAS COMPETITION 2026–2027 · 1ST PRIZE · PROVINCIAL' },
+  { id: 'tower', type: 'tower', name: 'Shelf + 5-layer acrylic tower', x: 1410, y: 560, z: BZ + 3, ry: 0, w: 380, h: 240, d: 160, accent: '#3D7BFF', emissive: 1.8 },
   // Right chamfered side: GAVIS
-  { id: 'G-side', type: 'promo', name: 'GAVIS · right chamfered side (faces right)', ...RS.at(0, -40), y: 0, ry: RS.ry, w: Math.round(RS.L - 20), h: 2000, d: 80, col: 900, color: '#0E0B16', accent: '#8B5CF6', pattern: 'contour', glyph: 'G', title: 'GAVIS · Vinh Phuc High School for the Gifted', text: 'Hear |with your eyes.', sub: 'Sound + image|fused into captions\nGaze|guides what you see', award: '1ST PRIZE · PROVINCIAL · SCIENCE FAIR', qr: false },
+  { id: 'G-side', type: 'promo', name: 'GAVIS · right chamfered side (faces in)', ...RS.at(0, -40), y: 0, ry: RS.ry, w: Math.round(RS.L - 20), h: 2000, d: 80, col: 900, color: '#0E0B16', accent: '#8B5CF6', pattern: 'contour', glyph: 'G', title: 'GAVIS · Vinh Phuc High School for the Gifted', text: 'Hear |with your eyes.', sub: 'Sound + image|fused into captions\nGaze|guides what you see', award: '1ST PRIZE · PROVINCIAL · SCIENCE FAIR', qr: false },
   { id: 'G-relief', type: 'relief', name: 'GAVIS · 3D letters on top of the side', ...RS.at(0, -40), y: 2030, ry: RS.ry, w: 800, h: 200, d: 60, color: '#F4F0FF', accent: '#8B5CF6', emissive: 1.3, text: 'GAVIS' },
-  { id: 'G-hex', type: 'hexwall', name: 'GAVIS · hexagon sound-wave cluster', ...RS.at(500, 3), y: 700, ry: RS.ry, w: 560, h: 700, d: 110, color: '#17122A', accent: '#A78BFA', emissive: 1.3, cell: 75 },
+  { id: 'G-hex', type: 'hexwall', name: 'GAVIS · hexagon sound-wave cluster', ...RS.at(550, 3), y: 700, ry: RS.ry, w: 560, h: 700, d: 110, color: '#17122A', accent: '#A78BFA', emissive: 1.3, cell: 75 },
   { id: 'kiosk2', type: 'kiosk', visible: false, name: '(Hidden: one screen only) 50" 3D Lab station', x: 3790, y: 0, z: 680, ry: 0, w: 1320, h: 2200, d: 720, scrW: 1120, scrH: 650, scrD: 70, gap: 5, bottom: 1150, offX: 0, tray: false, qr: false, guide: true, cam: false, showCam: false, variant: 'lab', color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Experiment |by hand.', sub: 'Hands over the table. The camera watches from above.', mount: 'vesa', xray: false },
   { id: 'desk', type: 'handdesk', visible: false, name: '(Hidden: no room) Lab hand desk', x: 3790, y: 0, z: 1260, ry: 0, w: 1100, h: 950, d: 440, color: '#0B0D13', accent: '#3D7BFF', emissive: 1.6 },
   { id: 'overcam', type: 'overcam', visible: false, name: '(Hidden: no room) Arm + downward webcam', x: 3790, y: 0, z: 1040, ry: 0, w: 120, h: 2080, d: 230, arm: 230, fov: 65, vfov: 40, target: 950, accent: '#3D7BFF', emissive: 1.6, showCam: true },
-  { id: 'decal', type: 'decal', name: 'Floor decal: in front of the screen', x: 850, y: 0, z: 1980, ry: 0, w: 760, h: 4, d: 760, accent: '#3D7BFF', text: 'STAND HERE', sub: 'and write' },
+  { id: 'decal', type: 'decal', name: 'Floor decal: in front of the screen', x: 850, y: 0, z: BZ + 650, ry: 0, w: 760, h: 4, d: 760, accent: '#3D7BFF', text: 'STAND HERE', sub: 'and write' },
+  { id: 'decal-in', type: 'decal', name: 'Floor decal: entrance', x: 0, y: 0, z: 1000, ry: 0, w: 760, h: 4, d: 760, accent: '#B07CFF', text: 'COME IN', sub: 'and try it' },
   { id: 'F-blade', type: 'blade', name: 'FireSense · blade sign', x: -3000, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#120A08', accent: '#FF4D2E', emissive: 1.8, glyph: '!', text: 'FIRESENSE AI · FIRE ALERT' },
   { id: 'S-blade', type: 'blade', name: 'Socratic · blade sign (centre pole)', x: 0, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.8 },
   { id: 'G-blade', type: 'blade', name: 'GAVIS · blade sign', x: 3000, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0E0B16', accent: '#8B5CF6', emissive: 1.8, glyph: 'G', text: 'GAVIS · HEAR WITH YOUR EYES' },
@@ -220,8 +222,8 @@ const DEFAULT = () => [
   { id: 'S-flag', type: 'flag', name: 'Vision AI · sail flag', x: 3060, y: 0, z: 1560, ry: 80, w: 700, h: 3500, d: 30, color: '#0D0D16', accent: '#7C8CFF', text: 'VISION', sub: ' AI', glyph: 'AI' },
   { id: 'all-led', type: 'strip', name: 'Shared 6 m LED strip, front edge', x: 0, y: 0, z: 1530, ry: 90, w: 30, h: 8, d: 5950, accent: '#E8EBF1', emissive: 1.8 },
   { id: 'p1', type: 'person', name: 'Person (scale)', x: -3800, y: 0, z: 2900, ry: 90, w: 450, h: 1680, d: 300, color: '#4A5466', group: 'people' },
-  { id: 'p2', type: 'person', name: 'Visitor at FireSense (scale)', x: -1150, y: 0, z: 2150, ry: 180, w: 450, h: 1600, d: 300, color: '#6A4A4A', group: 'people' },
-  { id: 'p3', type: 'person', name: 'Visitor writing on the screen (scale)', x: 700, y: 0, z: 1950, ry: 180, w: 450, h: 1720, d: 300, color: '#3E5A4A', group: 'people' },
+  { id: 'p2', type: 'person', name: 'Visitor at FireSense (scale)', x: -900, y: 0, z: BZ + 900, ry: 180, w: 450, h: 1600, d: 300, color: '#6A4A4A', group: 'people' },
+  { id: 'p3', type: 'person', name: 'Visitor writing on the screen (scale)', x: 700, y: 0, z: BZ + 620, ry: 180, w: 450, h: 1720, d: 300, color: '#3E5A4A', group: 'people' },
 ];
 
 const LIB = [
@@ -733,7 +735,7 @@ function paintKiosk(o) {
   const ly = yB + 120; splitHead(ctx, o.text || '', 60, ly + 80, 92, (o.qr ? W - 420 : W - 120), '#F5F2EA', accL);
   ctx.fillStyle = '#C9C5BB'; ctx.font = `italic 400 34px ${FONT.serif}`; wrap(ctx, o.sub || '', o.qr ? W - 440 : W - 120).forEach((l, i) => ctx.fillText(l, 62, ly + 140 + i * 42));
   if (o.tray !== false) { ctx.fillStyle = '#FF8A5B'; ctx.font = `600 22px ${FONT.mono}`; ctx.textAlign = 'right'; ctx.fillText('pen ↑', x1, yB + 70); ctx.textAlign = 'left'; }
-  if (o.qr) { const q = 300, qx = W - q - 60, qy = H - q - 300; ctx.fillStyle = '#fff'; ctx.fillRect(qx, qy, q, q); const Rq = rng('qr' + o.id); const n = 25, ms = (q - 40) / n; ctx.fillStyle = '#111'; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { if ((i < 7 && j < 7) || (i < 7 && j > n - 8) || (i > n - 8 && j < 7)) continue; if (Rq() < 0.48) ctx.fillRect(qx + 20 + i * ms, qy + 20 + j * ms, ms, ms); } [[0, 0], [0, n - 7], [n - 7, 0]].forEach(([a, b]) => { ctx.fillStyle = '#111'; ctx.fillRect(qx + 20 + a * ms, qy + 20 + b * ms, 7 * ms, 7 * ms); ctx.fillStyle = '#fff'; ctx.fillRect(qx + 20 + (a + 1) * ms, qy + 20 + (b + 1) * ms, 5 * ms, 5 * ms); ctx.fillStyle = '#111'; ctx.fillRect(qx + 20 + (a + 2) * ms, qy + 20 + (b + 2) * ms, 3 * ms, 3 * ms); }); ctx.fillStyle = '#F5F2EA'; ctx.font = `700 26px ${FONT.sans}`; ctx.fillText('Scan to try', qx - 220, qy + 60); ctx.fillStyle = '#8FB0F5'; ctx.font = `italic 400 24px ${FONT.serif}`; ctx.fillText('Scan to try', qx - 220, qy + 94); }
+  if (o.qr) { const q = 300, qx = W - q - 60, qy = H - q - 300; ctx.fillStyle = '#fff'; ctx.fillRect(qx, qy, q, q); const Rq = rng('qr' + o.id); const n = 25, ms = (q - 40) / n; ctx.fillStyle = '#111'; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { if ((i < 7 && j < 7) || (i < 7 && j > n - 8) || (i > n - 8 && j < 7)) continue; if (Rq() < 0.48) ctx.fillRect(qx + 20 + i * ms, qy + 20 + j * ms, ms, ms); } [[0, 0], [0, n - 7], [n - 7, 0]].forEach(([a, b]) => { ctx.fillStyle = '#111'; ctx.fillRect(qx + 20 + a * ms, qy + 20 + b * ms, 7 * ms, 7 * ms); ctx.fillStyle = '#fff'; ctx.fillRect(qx + 20 + (a + 1) * ms, qy + 20 + (b + 1) * ms, 5 * ms, 5 * ms); ctx.fillStyle = '#111'; ctx.fillRect(qx + 20 + (a + 2) * ms, qy + 20 + (b + 2) * ms, 3 * ms, 3 * ms); }); ctx.fillStyle = '#F5F2EA'; ctx.font = `700 26px ${FONT.sans}`; ctx.fillText('Scan to try', qx - 220, qy + 60); ctx.fillStyle = '#8FB0F5'; ctx.font = `italic 400 24px ${FONT.serif}`; ctx.fillText('on your phone', qx - 220, qy + 94); }
   const tags = o.tags ? String(o.tags).split(';').filter(Boolean) : o.guide ? [] : o.qr ? ['5 processing layers', 'Live measurements'] : ['On-device recognition · <15 ms', '4-level hints', 'Runs offline']; let tx = 60; ctx.font = `500 19px ${FONT.mono}`;
   tags.forEach((t) => { const w = ctx.measureText(t).width + 36; ctx.strokeStyle = rgba(accL, 0.7); ctx.lineWidth = 2; roundRect(ctx, tx, H - 250, w, 46, 23); ctx.stroke(); ctx.fillStyle = '#E6E4DD'; ctx.fillText(t, tx + 18, H - 220); tx += w + 14; });
   if (o.guide) {
@@ -969,7 +971,7 @@ function applyMode() {
 }
 
 // ---------------- máy quay ----------------
-const CAMS = { pavilion: [[0.4, 2.1, 8.6], [0, 1.35, 0]], approach: [[-10, 1.65, 5.0], [0, 1.4, 0.6]], approachR: [[10, 1.65, 5.0], [0, 1.4, 0.6]], aisle: [[0.5, 1.7, 7.9], [0, 1.3, 0]], threeq: [[5.6, 3.1, 6.4], [0, 1.1, 0]], top: [[0.01, 9.5, 0.9], [0, 0, 0]], inside: [[0.95, 1.6, 0.75], [-0.4, 1.35, -1.5]] };
+const CAMS = { pavilion: [[0.4, 2.1, 8.6], [0, 1.35, 0]], approach: [[-10, 1.65, 5.0], [0, 1.4, 0.6]], approachR: [[10, 1.65, 5.0], [0, 1.4, 0.6]], aisle: [[0.5, 1.7, 7.9], [0, 1.3, 0]], threeq: [[5.6, 3.1, 6.4], [0, 1.1, 0]], top: [[0.01, 9.5, 0.9], [0, 0, 0]], inside: [[0.2, 1.65, 3.4], [0, 1.15, -0.4]] };
 let camAnim = null; function setCam(k, instant) {
   settings.cam = k; const [p, t] = CAMS[k]; document.querySelectorAll('[data-cam]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cam === k)));
   if (k === 'top' && settings.roof) { settings.roof = false; document.getElementById('optRoof').checked = false; applyRoof(); }

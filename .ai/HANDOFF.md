@@ -1,3 +1,6 @@
+# 2026-11-25 (18) — Hộp ốp màn 65" xoay chéo
+- Studio v31: hộp ốp `kiosk` đặt tại (560, −650), xoay −35°, quay về phía khách đi từ trái. Phần trái vách sau để trống cho ảnh nhóm. Chữ nổi, decal sàn và người mẫu tỉ lệ dời theo hộp. Nhóm GAVIS đã đồng ý in ảnh.
+
 # 2026-11-25 (17) — Lab trên màn 65", ảnh GAVIS
 - Bỏ màn 43", chân boom và webcam. Lab 3D chạy bằng cảm ứng ngay trên màn 65" trong hộp ốp. Bàn BTC (`desk`, type `counter`) thành quầy đón khách; `G-bust` đặt trên mặt bàn để khách đeo thử. Studio v30.
 - Vách GAVIS (`G-wall`) có 3 ảnh thật lấy từ tài liệu "kịch bản" của nhóm GAVIS: người đeo thiết bị, cụm đeo đầu, hộp đeo hông. Ảnh lưu ở `assets/photos/gavis-*.jpg`. Đã bỏ cụm lục giác và chữ nổi trên vách này.

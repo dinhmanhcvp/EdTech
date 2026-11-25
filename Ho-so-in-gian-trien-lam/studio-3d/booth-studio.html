@@ -95,7 +95,7 @@ button { cursor: pointer; }
 
 <div class="app">
   <header class="top">
-    <div class="brand"><svg width="30" height="31" viewBox="0 0 120 124" aria-hidden="true"><path d="M31.8 39.7 A30 30 0 1 1 75 76 Q60 83 60 93" fill="none" stroke="#E8EBF1" stroke-width="13" stroke-linecap="round"/><path d="M46.8 45.2 A14 14 0 0 1 73.2 45.2" fill="none" stroke="#3D7BFF" stroke-width="7.5" stroke-linecap="round"/><circle cx="60" cy="109" r="8.2" fill="#FF6A2B"/></svg><div><b>Socratic Booth Studio</b><br><span>3 GIAN LIỀN NHAU · AIROC 2026</span></div></div>
+    <div class="brand"><svg width="30" height="31" viewBox="0 0 120 124" aria-hidden="true"><path d="M31.8 39.7 A30 30 0 1 1 75 76 Q60 83 60 93" fill="none" stroke="#E8EBF1" stroke-width="13" stroke-linecap="round"/><path d="M46.8 45.2 A14 14 0 0 1 73.2 45.2" fill="none" stroke="#3D7BFF" stroke-width="7.5" stroke-linecap="round"/><circle cx="60" cy="109" r="8.2" fill="#FF6A2B"/></svg><div><b>Socratic Booth Studio</b><br><span>FIRESENSE · GAVIS + SOCRATIC · AIROC 2026</span></div></div>
     <div class="seg" role="group" aria-label="Góc nhìn">
       <button type="button" data-cam="pavilion" aria-pressed="false">Cả 3 gian</button>
       <button type="button" data-cam="approach" aria-pressed="false">Đi tới từ trái</button>
@@ -139,6 +139,7 @@ button { cursor: pointer; }
       <div class="sec" id="inspector"></div>
       <div class="sec">
         <h2>Ý tưởng khối nổi</h2>
+        <div class="idea"><b>Hai gian: FireSense | GAVIS + Socratic</b><p>FireSense (than hồng, "ngửi thấy nguy cơ") lùi sâu hơn để lộ vách quảng bá. GAVIS và Socratic chung mặt tiền 6 m theo chủ đề Vision AI, nối bằng cột sáng tím sang xanh.</p></div>
         <div class="idea"><b>Vách thụt in quảng bá</b><p>Bốn bề mặt tự giãn theo "Bậc lùi" và "Thụt gian trước": vách thụt 1 (sản phẩm 2), vách thụt 2 (Socratic), vách thụt 3 ở mép phải gian 3 (sản phẩm 3) và vách sân trước gian 1. Bấm vào vách để sửa tên, thông điệp, số liệu (mỗi dòng "số|nhãn"), giải thưởng, QR.</p></div>
         <div class="idea"><b>Ba gian xếp bậc</b><p>Gian 1 lùi sâu nhất, gian 2 lùi vừa, gian 3 sát lối đi. Mỗi bậc lộ ra một mặt hông quay về phía khách đi tới từ bên trái, in tên sản phẩm cỡ lớn. Chỉnh "Bậc lùi" trên thanh công cụ; nhập số âm để đảo chiều.</p></div>
         <div class="idea"><b>Trạm Lab 3D: camera nhìn từ trên xuống</b><p>Webcam treo trên tay cần, chúc thẳng xuống bàn thao tác cao 950 mm. Khách đứng trước bàn, đưa tay trên mặt bàn và nhìn màn. Camera chỉ thấy tay trên nền tối, không thấy người phía sau. Vùng xanh là tầm nhìn camera.</p></div>
@@ -174,58 +175,52 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 const M = 0.001; // mm → m
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FONT = { sans: '"Plus Jakarta Sans", system-ui, sans-serif', mono: '"JetBrains Mono", ui-monospace, monospace', serif: 'Newsreader, Georgia, serif' };
-const STORE = 'svb-booth-studio-v10'; // v10: gian trước cũng thụt để có vách quảng bá // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
+const STORE = 'svb-booth-studio-v11'; // v11: 2 gian — FireSense AI | GAVIS + Socratic thông nhau // v10: gian trước cũng thụt để có vách quảng bá // v7: 3 gian xếp bậc, chỉ trang trí mặt ngoài // v5: 3 gian liền nhau, logo mới
 const MARK_HOOK = 'M31.8 39.7 A30 30 0 1 1 75 76 Q60 83 60 93', MARK_IRIS = 'M46.8 45.2 A14 14 0 0 1 73.2 45.2';
 // // v4: mặt tiền = bảng viết 65" + trạm Lab 3D qua webcam
 
 // ---------------- dữ liệu mặc định ----------------
 const DEFAULT = () => [
-  { id: 'tent', type: 'tent', name: 'Lều gian giữa (Socratic)', x: 0, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'GIAN HÀNG [SỐ]', locked: true },
-  { id: 'nbL', type: 'neighbor', walls: true, name: 'Gian ngoài cụm (trái)', x: -6000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#E6A34A', accent: '#3F8F6E', text: 'GIAN HÀNG', locked: true, group: 'context' },
-  { id: 'nbR', type: 'neighbor', walls: true, name: 'Gian ngoài cụm (phải)', x: 6000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#3A6EA5', accent: '#C8553D', text: 'GIAN HÀNG', locked: true, group: 'context' },
-  { id: 'tentL', type: 'tent', name: 'Lều gian trái (sản phẩm 2)', x: -3000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'GIAN HÀNG [SỐ]', locked: true },
-  { id: 'tentR', type: 'tent', name: 'Lều gian phải (sản phẩm 3)', x: 3000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'GIAN HÀNG [SỐ]', locked: true },
-  { id: 'L-floor', type: 'floor', name: 'SP2 · Thảm xanh ngọc', x: -3000, y: 0, z: 0, ry: 0, w: 3000, h: 12, d: 3000, color: '#0B1A1A', accent: '#2BB3A3', emissive: 0.5, pattern: 'circuit' },
-  { id: 'L-face', type: 'panel', booth: 'L', name: 'Gian 1 · Mặt tiền đặc (hông in)', x: -3000, y: 0, z: 1050, ry: 0, w: 2900, h: 2200, d: 600, color: '#0A1C1C', accent: '#2BB3A3', emissive: 0.3, pattern: 'hex', layout: 'plain', text: '[Sản phẩm 2] |đang cập nhật', sub: 'Phong cách: cổng vòm, xanh ngọc', side: '[SẢN PHẨM 2]' },
-  { id: 'L-portal', type: 'portal', booth: 'L', name: 'Gian 1 · Khung vòm LED ốp mặt tiền', x: -3000, y: 0, z: 1420, ry: 0, w: 2900, h: 2200, d: 120, band: 380, bar: 260, radius: 700, legs: false, color: '#081414', accent: '#2BB3A3', emissive: 2.2, text: '[TÊN SẢN PHẨM 2]', sub: '[ĐƠN VỊ · GIẢI THƯỞNG]' },
-  { id: 'L-ped', type: 'aicore', booth: 'L', name: 'Gian 1 · Bục trưng bày ở sân trước', x: -3000, y: 0, z: 2020, ry: 0, w: 480, h: 1250, d: 480, accent: '#2BB3A3', emissive: 1.6, color: '#0A1414', text: 'SẢN PHẨM MẪU · PROTOTYPE' },
-  { id: 'vt-deep', type: 'promo', slot: 'deep', locked: true, name: 'Vách thụt 1 · quảng bá sản phẩm 2', x: 0, y: 0, z: 0, ry: 0, w: 600, h: 2200, d: 6, color: '#0A1C1C', accent: '#2BB3A3', pattern: 'hex', glyph: '2', title: '[TÊN SẢN PHẨM 2]', text: '[Thông điệp chính |sản phẩm 2]', sub: '[Số liệu 1]|[nhãn ngắn]\n[Số liệu 2]|[nhãn ngắn]', award: '[GIẢI THƯỞNG]', qr: false },
-  { id: 'vt-mid', type: 'promo', slot: 'mid', locked: true, name: 'Vách thụt 2 · quảng bá Socratic', x: 0, y: 0, z: 0, ry: 0, w: 600, h: 2200, d: 6, color: '#0B0D13', accent: '#3D7BFF', pattern: 'contour', logo: true, title: 'Socratic Vision Board', text: 'Bảng lớp |biết hỏi lại.', sub: '<16 ms|độ trễ nét viết · ink latency\n10|mô phỏng STEM · simulations\n37|bài Lab bằng tay · hand labs\n4 mức|gợi mở, không lộ đáp án', award: 'GIẢI NHẤT CẤP TỈNH', qr: true },
-  { id: 'vt-court', type: 'promo', slot: 'court', locked: true, name: 'Vách sân trước gian 1 · câu chuyện sản phẩm 2', x: 0, y: 0, z: 0, ry: 0, w: 1200, h: 2200, d: 60, color: '#0A1C1C', accent: '#2BB3A3', pattern: 'hex', glyph: '2', title: '[TÊN SẢN PHẨM 2]', text: '[Vấn đề sản phẩm giải quyết] |[một câu]', sub: '[Điểm nổi bật 1]|[mô tả ngắn]\n[Điểm nổi bật 2]|[mô tả ngắn]\n[Điểm nổi bật 3]|[mô tả ngắn]', award: '[GIẢI THƯỞNG]', qr: true },
-  { id: 'L-blade', type: 'blade', name: 'SP2 · Biển vẫy', x: -4500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#081414', accent: '#2BB3A3', emissive: 1.8, glyph: '2', text: '[TÊN SẢN PHẨM 2]' },
-  { id: 'L-flag', type: 'flag', name: 'SP2 · Cờ buồm', x: -4560, y: 0, z: 1560, ry: -80, w: 700, h: 3500, d: 30, color: '#081414', accent: '#2BB3A3', text: '[SP 2]', sub: '' },
-  { id: 'R-floor', type: 'floor', name: 'SP3 · Thảm graphite', x: 3000, y: 0, z: 0, ry: 0, w: 3000, h: 12, d: 3000, color: '#14110E', accent: '#FF7A2B', emissive: 0.45, pattern: 'circuit' },
-  { id: 'R-wall', type: 'panel', booth: 'R', name: 'Gian 3 · Mặt tiền lưới kỹ thuật (hông in)', x: 3000, y: 0, z: 1180, ry: 0, w: 2900, h: 2200, d: 600, color: '#15110D', accent: '#FF7A2B', emissive: 0.3, pattern: 'grid', layout: 'plain', text: '[Sản phẩm 3] |đang cập nhật', sub: 'Phong cách: khối công nghiệp, cam', side: '[SẢN PHẨM 3]' },
-  { id: 'R-hex', type: 'hexwall', booth: 'R', name: 'Gian 3 · Cụm lục giác cam', x: 2150, y: 350, z: 1480, ry: 0, w: 900, h: 1350, d: 140, color: '#1E1612', accent: '#FF7A2B', emissive: 1.3, cell: 110 },
-  { id: 'R-relief', type: 'relief', booth: 'R', name: 'Gian 3 · Chữ nổi', x: 3420, y: 1800, z: 1482, ry: 0, w: 1700, h: 200, d: 60, color: '#F5F2EA', accent: '#FF7A2B', emissive: 0.7, text: '[TÊN SẢN PHẨM 3]' },
-  { id: 'vt-front', type: 'promo', slot: 'front', locked: true, name: 'Vách thụt 3 · quảng bá sản phẩm 3', x: 0, y: 0, z: 0, ry: 0, w: 400, h: 2200, d: 60, color: '#15110D', accent: '#FF7A2B', pattern: 'grid', glyph: '3', title: '[TÊN SẢN PHẨM 3]', text: '[Thông điệp |sản phẩm 3]', sub: '[Số liệu]|[nhãn]\n[Số liệu]|[nhãn]', award: '[GIẢI THƯỞNG]', qr: false },
-  { id: 'R-blade', type: 'blade', name: 'SP3 · Biển vẫy', x: 4500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#14100C', accent: '#FF7A2B', emissive: 1.8, glyph: '3', text: '[TÊN SẢN PHẨM 3]' },
-  { id: 'R-flag', type: 'flag', name: 'SP3 · Cờ buồm', x: 4560, y: 0, z: 1560, ry: 80, w: 700, h: 3500, d: 30, color: '#14100C', accent: '#FF7A2B', text: '[SP 3]', sub: '' },
+  { id: 'nbL', type: 'neighbor', walls: true, name: 'Gian hàng xóm (trái)', x: -6000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#E6A34A', accent: '#3F8F6E', text: 'GIAN HÀNG', locked: true, group: 'context' },
+  { id: 'nbR', type: 'neighbor', walls: true, name: 'Gian hàng xóm (phải)', x: 6000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#3A6EA5', accent: '#C8553D', text: 'GIAN HÀNG', locked: true, group: 'context' },
+  { id: 'tentF', type: 'tent', name: 'Lều FireSense AI', x: -3000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'GIAN HÀNG [SỐ] · FIRESENSE AI', locked: true },
+  { id: 'tentG', type: 'tent', name: 'Lều GAVIS (thông sang Socratic)', x: 0, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'GIAN HÀNG [SỐ] · GAVIS', locked: true },
+  { id: 'tentS', type: 'tent', name: 'Lều Socratic (thông sang GAVIS)', x: 3000, y: 0, z: 0, ry: 0, w: 3000, h: 2500, d: 3000, color: '#F3F3EF', accent: '#1E4FB0', text: 'GIAN HÀNG [SỐ] · SOCRATIC', locked: true },
+  { id: 'F-floor', type: 'floor', name: 'FireSense · thảm sân trước', x: -3000, y: 0, z: 0, ry: 0, w: 3000, h: 12, d: 3000, color: '#140C0A', accent: '#FF4D2E', emissive: 0.5, pattern: 'circuit' },
+  { id: 'S-floor', type: 'floor', name: 'GAVIS + Socratic · thảm sân trước 6 m', x: 1500, y: 0, z: 0, ry: 0, w: 6000, h: 12, d: 3000, color: '#0D0D16', accent: '#6C6CFF', emissive: 0.6, pattern: 'circuit' },
+  { id: 'F-face', type: 'kiosk', booth: 'F', name: 'FireSense · mặt tiền + màn giám sát', x: -3000, y: 0, z: 1180, ry: 0, w: 2900, h: 2200, d: 600, scrW: 960, scrH: 560, scrD: 60, gap: 5, bottom: 1100, offX: 650, tray: false, qr: false, guide: false, cam: false, showCam: false, variant: 'fire', color: '#120A08', accent: '#FF4D2E', emissive: 1.8, pattern: 'contour', text: 'Ngửi thấy |nguy cơ cháy.', sub: 'FireSense AI detects fire risk by smell, before smoke and flame.', caption: '// FIRESENSE AI · HỌC SINH PHƯỜNG VĨNH PHÚC', side: 'FIRESENSE', sideSub: ' AI', tags: 'Nhận diện mùi;Cảnh báo sớm;IoT', mount: 'vesa', xray: false },
+  { id: 'F-relief', type: 'relief', booth: 'F', name: 'FireSense · chữ nổi', x: -3000, y: 1880, z: 1482, ry: 0, w: 2200, h: 230, d: 60, color: '#FFF1E6', accent: '#FF4D2E', emissive: 1.2, text: 'FIRESENSE AI' },
+  { id: 'F-hex', type: 'hexwall', booth: 'F', name: 'FireSense · mảng cảm biến "mũi điện tử"', x: -3850, y: 1120, z: 1480, ry: 0, w: 900, h: 640, d: 120, color: '#1E1210', accent: '#FFB020', emissive: 1.4, cell: 85 },
+  { id: 'F-seal', type: 'seal', booth: 'F', name: 'FireSense · huy hiệu Giải Nhất quốc gia', x: -3115, y: 1150, z: 1482, ry: 0, w: 380, h: 380, d: 30, l2: 'cấp quốc gia', year: '2025–2026', ring: 'STUDENT STARTUP IDEAS COMPETITION 2025–2026 · 1ST PRIZE · NATIONAL' },
+  { id: 'F-ped', type: 'aicore', booth: 'F', name: 'FireSense · bục thiết bị ở sân trước', x: -2600, y: 0, z: 2000, ry: 0, w: 460, h: 1250, d: 460, accent: '#FF4D2E', emissive: 1.6, color: '#140C0A', text: 'THIẾT BỊ FIRESENSE · DEVICE' },
+  { id: 'G-face', type: 'kiosk', booth: 'S', name: 'GAVIS · mặt tiền + màn demo 55"', x: 0, y: 0, z: 1120, ry: 0, w: 2900, h: 2200, d: 720, scrW: 1250, scrH: 720, scrD: 70, gap: 5, bottom: 1050, offX: -600, tray: false, qr: false, guide: false, cam: true, showCam: false, variant: 'gavis', color: '#0E0B16', accent: '#8B5CF6', emissive: 1.8, pattern: 'contour', text: 'Nghe |bằng mắt.', sub: 'GAVIS fuses sound and image, guided by gaze, to support hearing-impaired learners.', caption: '// GAVIS · THPT CHUYÊN VĨNH PHÚC', side: 'GAVIS', sideSub: '', tags: 'Âm thanh + hình ảnh;Định hướng ánh nhìn;Hỗ trợ người khiếm thính', mount: 'vesa', xray: false },
+  { id: 'G-relief', type: 'relief', booth: 'S', name: 'GAVIS · chữ nổi', x: -600, y: 1880, z: 1482, ry: 0, w: 1100, h: 230, d: 60, color: '#F4F0FF', accent: '#8B5CF6', emissive: 1.3, text: 'GAVIS' },
+  { id: 'G-hex', type: 'hexwall', booth: 'S', name: 'GAVIS · cụm sóng âm lục giác', x: 520, y: 1150, z: 1480, ry: 0, w: 600, h: 620, d: 110, color: '#17122A', accent: '#A78BFA', emissive: 1.3, cell: 80 },
+  { id: 'G-seal', type: 'seal', booth: 'S', name: 'GAVIS · huy hiệu Giải Nhất cấp tỉnh (KHKT)', x: 1100, y: 1350, z: 1482, ry: 0, w: 380, h: 380, d: 30, l2: 'cấp tỉnh', year: '2026–2027', ring: 'SCIENCE & ENGINEERING FAIR 2026–2027 · 1ST PRIZE · PROVINCIAL' },
+  { id: 'join', type: 'strip', booth: 'S', name: 'Cột sáng nối GAVIS – Socratic', x: 1500, y: 0, z: 1488, ry: 0, w: 40, h: 2200, d: 40, accent: '#7C8CFF', emissive: 2.6 },
+  { id: 'kiosk', type: 'kiosk', booth: 'S', name: 'Socratic · bảng viết 65"', x: 2340, y: 0, z: 1120, ry: 0, w: 1580, h: 2200, d: 720, scrW: 1490, scrH: 900, scrD: 90, gap: 5, bottom: 900, offX: 0, tray: true, qr: false, color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Viết thử |lên bảng.', sub: 'Try writing on the board. The AI will ask you back.', mount: 'stand', xray: false },
+  { id: 'kiosk2', type: 'kiosk', booth: 'S', name: 'Socratic · trạm Lab 3D 50" (hốc)', x: 3790, y: 0, z: 680, ry: 0, w: 1320, h: 2200, d: 720, scrW: 1120, scrH: 650, scrD: 70, gap: 5, bottom: 1150, offX: 0, tray: false, qr: false, guide: true, cam: false, showCam: false, variant: 'lab', color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Thí nghiệm |bằng tay.', sub: 'Hands over the table. The camera watches from above.', mount: 'vesa', xray: false },
+  { id: 'desk', type: 'handdesk', booth: 'S', name: 'Bàn thao tác Lab (mặt in tối mờ)', x: 3790, y: 0, z: 1260, ry: 0, w: 1100, h: 950, d: 440, color: '#0B0D13', accent: '#3D7BFF', emissive: 1.6 },
+  { id: 'overcam', type: 'overcam', booth: 'S', name: 'Tay cần + webcam nhìn xuống', x: 3790, y: 0, z: 1040, ry: 0, w: 120, h: 2080, d: 230, arm: 230, fov: 65, vfov: 40, target: 950, accent: '#3D7BFF', emissive: 1.6, showCam: true },
+  { id: 'relief', type: 'relief', booth: 'S', name: 'Chữ nổi hắt sáng (trên bảng viết)', x: 2340, y: 1960, z: 1482, ry: 0, w: 1420, h: 170, d: 60, color: '#F5F2EA', accent: '#3D7BFF', emissive: 1.6, text: 'Socratic Vision Board' },
+  { id: 'tower', type: 'tower', booth: 'S', name: 'Kệ + tháp mica 5 lớp', x: 2920, y: 560, z: 1480, ry: 0, w: 380, h: 240, d: 160, accent: '#3D7BFF', emissive: 1.8 },
+  { id: 'decal', type: 'decal', name: 'Decal lối đi: viết bảng', x: 2340, y: 0, z: 1950, ry: 0, w: 760, h: 4, d: 760, accent: '#3D7BFF', text: 'ĐỨNG ĐÂY' },
+  { id: 'decal2', type: 'decal', name: 'Decal lối đi: Lab 3D', x: 3790, y: 0, z: 1900, ry: 0, w: 900, h: 4, d: 900, accent: '#FF6A2B', text: 'GIƠ TAY' },
+  { id: 'p3', type: 'person', name: 'Khách đang viết (tỉ lệ)', x: 2050, y: 0, z: 1850, ry: 180, w: 450, h: 1720, d: 300, color: '#3E5A4A', group: 'people' },
+  { id: 'p4', type: 'person', name: 'Khách chơi Lab (tỉ lệ)', x: 3790, y: 0, z: 1820, ry: 180, w: 450, h: 1650, d: 300, color: '#5A4A6A', group: 'people' },
+  { id: 'seal', type: 'seal', booth: 'S', name: 'Socratic · huy hiệu Giải Nhất cấp tỉnh', x: 4245, y: 1790, z: 1042, ry: 0, w: 380, h: 380, d: 30, l2: 'cấp tỉnh', year: '2026–2027', ring: 'STUDENT STARTUP IDEAS COMPETITION 2026–2027 · 1ST PRIZE · PROVINCIAL' },
+  { id: 'vt-deep', type: 'promo', slot: 'deep', locked: true, name: 'Vách thụt · quảng bá FireSense', x: 0, y: 0, z: 0, ry: 0, w: 600, h: 2200, d: 6, color: '#120A08', accent: '#FF4D2E', pattern: 'contour', glyph: '!', title: 'FireSense AI', text: 'Phát hiện cháy |bằng mùi.', sub: 'Mùi|nhận biết trước khi có khói, lửa · smell first\nIoT|cảnh báo tới điện thoại · alerts', award: 'GIẢI NHẤT CẤP QUỐC GIA', qr: false },
+  { id: 'vt-court', type: 'promo', slot: 'court', locked: true, name: 'Vách sân trước FireSense · câu chuyện', x: 0, y: 0, z: 0, ry: 0, w: 1000, h: 2200, d: 60, color: '#120A08', accent: '#FF4D2E', pattern: 'contour', glyph: '!', title: 'FireSense AI', text: '[Vấn đề cháy nổ đang gặp] |[một câu]', sub: '[Cách hoạt động 1]|[mô tả ngắn]\n[Cách hoạt động 2]|[mô tả ngắn]\n[Thử nghiệm]|[ở đâu, kết quả]', award: 'GIẢI NHẤT CẤP QUỐC GIA', qr: false },
+  { id: 'vt-front', type: 'promo', slot: 'front', locked: true, name: 'Vách thụt · Vision AI: GAVIS × Socratic', x: 0, y: 0, z: 0, ry: 0, w: 400, h: 2200, d: 60, color: '#0D0D16', accent: '#7C8CFF', pattern: 'contour', logo: true, title: 'Vision AI · GAVIS × Socratic', text: 'AI biết |nhìn để giúp học.', sub: 'GAVIS|nghe bằng mắt\nSocratic|bảng biết hỏi lại', award: 'HAI GIẢI NHẤT CẤP TỈNH', qr: true },
+  { id: 'F-blade', type: 'blade', name: 'FireSense · biển vẫy', x: -4500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#120A08', accent: '#FF4D2E', emissive: 1.8, glyph: '!', text: 'FIRESENSE AI · CẢNH BÁO CHÁY' },
+  { id: 'G-blade', type: 'blade', name: 'GAVIS · biển vẫy', x: -1500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0E0B16', accent: '#8B5CF6', emissive: 1.8, glyph: 'G', text: 'GAVIS · NGHE BẰNG MẮT' },
+  { id: 'S-blade', type: 'blade', name: 'Socratic · biển vẫy', x: 1500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.8 },
+  { id: 'S-blade2', type: 'blade', name: 'Socratic · biển vẫy đầu cụm', x: 4500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.8 },
+  { id: 'F-flag', type: 'flag', name: 'FireSense · cờ buồm', x: -4560, y: 0, z: 1560, ry: -80, w: 700, h: 3500, d: 30, color: '#120A08', accent: '#FF4D2E', text: 'FIRESENSE', sub: ' AI', glyph: '!' },
+  { id: 'S-flag', type: 'flag', name: 'Vision AI · cờ buồm', x: 4560, y: 0, z: 1560, ry: 80, w: 700, h: 3500, d: 30, color: '#0D0D16', accent: '#7C8CFF', text: 'VISION', sub: ' AI', glyph: 'AI' },
   { id: 'all-led', type: 'strip', name: 'Dải LED chung 9 m mép trước', x: 0, y: 0, z: 1530, ry: 90, w: 30, h: 8, d: 8950, accent: '#E8EBF1', emissive: 1.8 },
-  { id: 'floor', type: 'floor', name: 'Socratic · thảm sân trước', x: 0, y: 0, z: 0, ry: 0, w: 3000, h: 12, d: 3000, color: '#0D0F15', accent: '#2F6BFF', emissive: 0.9, pattern: 'circuit' },
-  { id: 'ceil', type: 'ceiling', visible: false, name: 'Trần vải đen đèn sao (bên trong, đã ẩn)', x: 0, y: 2470, z: 0, ry: 0, w: 2960, h: 10, d: 2960, color: '#07080B', accent: '#D6E4FF', emissive: 1.2 },
-  { id: 'kiosk', type: 'kiosk', booth: 'C', name: 'Mặt tiền trái: bảng viết 65"', x: -660, y: 0, z: 1120, ry: 0, w: 1580, h: 2200, d: 720, scrW: 1490, scrH: 900, scrD: 90, gap: 5, bottom: 900, offX: 0, tray: true, qr: false, color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Viết thử |lên bảng.', sub: 'Try writing on the board. The AI will ask you back.', mount: 'stand', xray: false },
-  { id: 'kiosk2', type: 'kiosk', booth: 'C', name: 'Mặt tiền phải: trạm Lab 3D 50" (lùi thành hốc)', x: 790, y: 0, z: 680, ry: 0, w: 1320, h: 2200, d: 720, scrW: 1120, scrH: 650, scrD: 70, gap: 5, bottom: 1150, offX: 0, tray: false, qr: false, guide: true, cam: false, showCam: false, variant: 'lab', color: '#0B0D13', accent: '#3D7BFF', emissive: 2, pattern: 'contour', text: 'Thí nghiệm |bằng tay.', sub: 'Hands over the table. The camera watches from above.', mount: 'vesa', xray: false },
-  { id: 'desk', type: 'handdesk', booth: 'C', name: 'Bàn thao tác Lab (mặt in tối mờ)', x: 790, y: 0, z: 1260, ry: 0, w: 1100, h: 950, d: 440, color: '#0B0D13', accent: '#3D7BFF', emissive: 1.6 },
-  { id: 'overcam', type: 'overcam', booth: 'C', name: 'Tay cần + webcam nhìn xuống', x: 790, y: 0, z: 1040, ry: 0, w: 120, h: 2080, d: 230, arm: 230, fov: 65, vfov: 40, target: 950, accent: '#3D7BFF', emissive: 1.6, showCam: true },
-  { id: 'relief', type: 'relief', booth: 'C', name: 'Chữ nổi hắt sáng (trên bảng viết)', x: -660, y: 1960, z: 1482, ry: 0, w: 1420, h: 170, d: 60, color: '#F5F2EA', accent: '#3D7BFF', emissive: 1.6, text: 'Socratic Vision Board' },
-  { id: 'seal', type: 'seal', booth: 'C', name: 'Huy hiệu Giải Nhất nổi', x: 1245, y: 1790, z: 1042, ry: 0, w: 380, h: 380, d: 30 },
-  { id: 'tower', type: 'tower', booth: 'C', name: 'Kệ + tháp mica 5 lớp', x: -80, y: 560, z: 1480, ry: 0, w: 380, h: 240, d: 160, accent: '#3D7BFF', emissive: 1.8 },
-  { id: 'holo', type: 'holo', booth: 'C', name: 'Quạt hologram (tùy chọn)', visible: false, x: 1190, y: 0, z: 1490, ry: 0, w: 460, h: 1180, d: 460, mount: 'wall', accent: '#5B8CFF', emissive: 2 },
-  { id: 'bladeL', type: 'blade', name: 'Biển vẫy trái (2 mặt)', x: -1500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.8 },
-  { id: 'bladeR', type: 'blade', name: 'Biển vẫy phải (2 mặt)', x: 1500, y: 2500, z: 1500, ry: 0, w: 640, h: 640, d: 60, arm: 450, color: '#0B0C10', accent: '#3D7BFF', emissive: 1.8 },
-  { id: 'decal', type: 'decal', name: 'Decal lối đi: viết bảng', x: -660, y: 0, z: 1950, ry: 0, w: 760, h: 4, d: 760, accent: '#3D7BFF', text: 'ĐỨNG ĐÂY' },
-  { id: 'decal2', type: 'decal', name: 'Decal lối đi: Lab 3D', x: 790, y: 0, z: 1900, ry: 0, w: 900, h: 4, d: 900, accent: '#FF6A2B', text: 'GIƠ TAY' },
-
-  { id: 'flagL', type: 'flag', visible: false, name: 'Cờ buồm Socratic trái (đã ẩn)', x: -1560, y: 0, z: 1560, ry: -80, w: 700, h: 3500, d: 30, color: '#0B0C10', accent: '#2F6BFF', text: 'SOCRATIC' },
-  { id: 'flagR', type: 'flag', visible: false, name: 'Cờ buồm Socratic phải (đã ẩn)', x: 1560, y: 0, z: 1560, ry: 80, w: 700, h: 3500, d: 30, color: '#0B0C10', accent: '#2F6BFF', text: 'SOCRATIC' },
-  { id: 'bd', type: 'panel', name: 'Backdrop trong (đã ẩn)', visible: false, x: 0, y: 0, z: -1440, ry: 0, w: 2900, h: 2300, d: 60, color: '#0C0F18', accent: '#2F6BFF', emissive: 0.25, pattern: 'contour', layout: 'hero', text: 'Bảng lớp biết |hỏi lại.', sub: 'The classroom board that asks back.' },
-  { id: 'totem', type: 'totem', name: 'Totem (đã ẩn, thay bằng huy hiệu)', visible: false, x: 1150, y: 0, z: 300, ry: 0, w: 600, h: 1700, d: 600, color: '#0B0C10', accent: '#FF6A2B', text: 'GIẢI NHẤT', sub: 'cấp tỉnh · 1st Prize, Provincial' },
-  { id: 'beacon', type: 'beacon', name: 'Đèn hiệu ? 3D (đã ẩn)', visible: false, x: 1150, y: 1730, z: 300, ry: 0, w: 480, h: 480, d: 80, color: '#FF6A2B', accent: '#3D7BFF', emissive: 2 },
   { id: 'p1', type: 'person', name: 'Người (tỉ lệ)', x: -2300, y: 0, z: 2900, ry: 90, w: 450, h: 1680, d: 300, color: '#4A5466', group: 'people' },
-  { id: 'p2', type: 'person', name: 'Người (tỉ lệ)', x: 2400, y: 0, z: 3300, ry: -90, w: 450, h: 1600, d: 300, color: '#6A4A4A', group: 'people' },
-  { id: 'p4', type: 'person', name: 'Khách chơi Lab (tỉ lệ)', x: 790, y: 0, z: 1820, ry: 180, w: 450, h: 1650, d: 300, color: '#5A4A6A', group: 'people' },
-  { id: 'p3', type: 'person', name: 'Khách đang viết (tỉ lệ)', x: -950, y: 0, z: 1850, ry: 180, w: 450, h: 1720, d: 300, color: '#3E5A4A', group: 'people' },
+  { id: 'p2', type: 'person', name: 'Người (tỉ lệ)', x: -300, y: 0, z: 2300, ry: 180, w: 450, h: 1600, d: 300, color: '#6A4A4A', group: 'people' },
 ];
 
 const LIB = [
@@ -441,12 +436,12 @@ function paintCounter(o) {
   band(ctx, W, H, acc, 'AI · STEM · EDTECH  ·  ', 120);
   return c;
 }
-function paintSeal(r = 220) {
+function paintSeal(o = {}, r = 220) {
   const D = r * 2; const { c, ctx } = makeCanvas(D, D, 700, 1); ctx.fillStyle = '#FF6A2B'; ctx.beginPath(); ctx.arc(r, r, r, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#121212'; ctx.beginPath(); ctx.arc(r, r, r - 70, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#FF9A70'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(r, r, r - 82, 0, Math.PI * 2); ctx.stroke();
-  const txt = 'STUDENT STARTUP IDEAS COMPETITION 2026–2027 · 1ST PRIZE · PROVINCIAL · '; ctx.fillStyle = '#fff'; ctx.font = `600 21px ${FONT.mono}`; ctx.textAlign = 'center';
+  const txt = (o.ring || 'STUDENT STARTUP IDEAS COMPETITION 2026–2027 · 1ST PRIZE · PROVINCIAL') + ' · '; ctx.fillStyle = '#fff'; ctx.font = `600 ${Math.min(21, 900 / txt.length)}px ${FONT.mono}`; ctx.textAlign = 'center';
   const per = (Math.PI * 2) / txt.length; for (let i = 0; i < txt.length; i++) { const ang = -Math.PI / 2 + i * per; ctx.save(); ctx.translate(r + (r - 38) * Math.cos(ang), r + (r - 38) * Math.sin(ang)); ctx.rotate(ang + Math.PI / 2); ctx.fillText(txt[i], 0, 7); ctx.restore(); }
-  ctx.fillStyle = '#FF9A70'; ctx.font = `500 22px ${FONT.mono}`; ctx.fillText('2026–2027', r, r - 82); ctx.fillStyle = '#fff'; ctx.font = `800 70px ${FONT.sans}`; ctx.fillText('GIẢI', r, r - 4); ctx.fillText('NHẤT', r, r + 66); ctx.font = `600 26px ${FONT.sans}`; ctx.fillText('cấp tỉnh', r, r + 108); ctx.textAlign = 'left';
+  ctx.fillStyle = '#FF9A70'; ctx.font = `500 22px ${FONT.mono}`; ctx.fillText(o.year || '2026–2027', r, r - 82); ctx.fillStyle = '#fff'; ctx.font = `800 70px ${FONT.sans}`; ctx.fillText('GIẢI', r, r - 4); ctx.fillText('NHẤT', r, r + 66); ctx.font = `600 26px ${FONT.sans}`; ctx.fillText(o.l2 || 'cấp tỉnh', r, r + 108); ctx.textAlign = 'left';
   return c;
 }
 function paintTotem(o) {
@@ -485,7 +480,21 @@ function paintTotem(o) {
 }
 function paintScreen(o, active = 0) {
   const W = o.w, H = o.h; const { c, ctx } = makeCanvas(W, H, 1600);
-  if (o.variant === 'lab') {
+  if (o.variant === 'fire') {
+    const g0 = ctx.createLinearGradient(0, 0, 0, H); g0.addColorStop(0, '#1C0E0A'); g0.addColorStop(1, '#0A0605'); ctx.fillStyle = g0; ctx.fillRect(0, 0, W, H); pGrid(ctx, W, H, '#FF4D2E', 0.05);
+    ctx.fillStyle = '#FFB27A'; ctx.font = `600 ${H * 0.05}px ${FONT.mono}`; ctx.fillText('FIRESENSE · GIÁM SÁT MÙI · LIVE', W * 0.05, H * 0.1);
+    const alarm = active % 2 === 1; ctx.fillStyle = alarm ? '#E5341B' : '#1F7A4D'; roundRect(ctx, W * 0.66, H * 0.04, W * 0.3, H * 0.09, H * 0.045); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = `800 ${H * 0.045}px ${FONT.sans}`; ctx.textAlign = 'center'; ctx.fillText(alarm ? 'CẢNH BÁO · ALERT' : 'AN TOÀN · SAFE', W * 0.81, H * 0.1); ctx.textAlign = 'left';
+    const R0 = rng('fire'); ['Khí CO', 'VOC', 'Khói', 'Nhiệt độ'].forEach((lab, i) => { const y = H * (0.22 + i * 0.12); const v = 0.25 + R0() * 0.45 + (alarm && i < 2 ? 0.3 : 0);
+      ctx.fillStyle = '#E6D5CC'; ctx.font = `500 ${H * 0.042}px ${FONT.sans}`; ctx.fillText(lab, W * 0.05, y + H * 0.045); ctx.fillStyle = 'rgba(255,255,255,.08)'; roundRect(ctx, W * 0.24, y, W * 0.7, H * 0.06, H * 0.03); ctx.fill();
+      const gr = ctx.createLinearGradient(W * 0.24, 0, W * 0.94, 0); gr.addColorStop(0, '#FFB020'); gr.addColorStop(1, '#E5341B'); ctx.fillStyle = gr; roundRect(ctx, W * 0.24, y, W * 0.7 * Math.min(1, v), H * 0.06, H * 0.03); ctx.fill(); });
+    ctx.strokeStyle = '#FF8A5B'; ctx.lineWidth = 3; ctx.beginPath(); for (let x = 0; x <= W * 0.9; x += 8) { const y = H * 0.86 - (Math.sin(x / 60 + active) * 0.3 + Math.sin(x / 23) * 0.15 + (alarm ? x / (W * 0.9) : 0)) * H * 0.1; x ? ctx.lineTo(W * 0.05 + x, y) : ctx.moveTo(W * 0.05 + x, y); } ctx.stroke();
+  } else if (o.variant === 'gavis') {
+    ctx.fillStyle = '#0E0B16'; ctx.fillRect(0, 0, W, H); const fx = W * 0.04, fy = H * 0.06, fw = W * 0.6, fh = H * 0.72; const gv = ctx.createLinearGradient(fx, fy, fx, fy + fh); gv.addColorStop(0, '#2A2342'); gv.addColorStop(1, '#141024'); ctx.fillStyle = gv; roundRect(ctx, fx, fy, fw, fh, 14); ctx.fill();
+    ctx.strokeStyle = '#C4B5FD'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(fx + fw * 0.35, fy + fh * 0.42, fw * 0.12, fh * 0.24, 0, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(fx + fw * 0.35, fy + fh * 0.95, fw * 0.2, Math.PI, 0); ctx.stroke();
+    ctx.strokeStyle = '#FBBF24'; ctx.setLineDash([10, 8]); ctx.beginPath(); ctx.moveTo(fx + fw * 0.35, fy + fh * 0.38); ctx.lineTo(fx + fw * 0.85, fy + fh * 0.2); ctx.stroke(); ctx.setLineDash([]); ctx.strokeStyle = '#FBBF24'; ctx.lineWidth = 4; ctx.strokeRect(fx + fw * 0.74, fy + fh * 0.08, fw * 0.22, fh * 0.24); ctx.fillStyle = '#FBBF24'; ctx.font = `600 ${H * 0.035}px ${FONT.mono}`; ctx.fillText('ÁNH NHÌN · GAZE', fx + fw * 0.66, fy + fh * 0.4);
+    ctx.fillStyle = 'rgba(0,0,0,.65)'; roundRect(ctx, W * 0.04, H * 0.82, W * 0.92, H * 0.13, 10); ctx.fill(); ctx.fillStyle = '#FFFFFF'; ctx.font = `600 ${H * 0.055}px ${FONT.sans}`; ctx.fillText('Phụ đề: “Các em nhìn lên bảng nhé.”', W * 0.07, H * 0.905);
+    ctx.fillStyle = '#C4B5FD'; ctx.font = `600 ${H * 0.04}px ${FONT.mono}`; ctx.fillText('ÂM THANH → CHỮ', W * 0.68, H * 0.12); const R1 = rng('gav'); for (let i = 0; i < 22; i++) { const h = H * (0.05 + R1() * 0.4); ctx.fillStyle = i % 5 === 0 ? '#FBBF24' : '#8B5CF6'; roundRect(ctx, W * 0.68 + i * W * 0.0135, H * 0.48 - h / 2, W * 0.008, h, 3); ctx.fill(); }
+  } else if (o.variant === 'lab') {
     const g0 = ctx.createRadialGradient(W * 0.5, H * 0.45, 10, W * 0.5, H * 0.5, W * 0.7); g0.addColorStop(0, '#1A2440'); g0.addColorStop(1, '#06080E'); ctx.fillStyle = g0; ctx.fillRect(0, 0, W, H);
     ctx.strokeStyle = 'rgba(143,176,245,.18)'; ctx.lineWidth = 2; for (let i = -10; i <= 10; i++) { ctx.beginPath(); ctx.moveTo(W / 2 + i * 60, H * 0.62); ctx.lineTo(W / 2 + i * 160, H); ctx.stroke(); } for (let j = 0; j < 6; j++) { const y = H * 0.62 + (j * j * H) / 90; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
     const cx = W * 0.5, cy = H * 0.46, r = H * 0.26; const hg = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, 5, cx, cy, r); hg.addColorStop(0, '#F07A7A'); hg.addColorStop(0.6, '#B3263B'); hg.addColorStop(1, '#5A0F1D'); ctx.fillStyle = hg; ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.82, r, -0.35, 0, Math.PI * 2); ctx.fill();
@@ -517,7 +526,7 @@ function paintScreen(o, active = 0) {
 function paintFlag(o) {
   const W = o.w, H = o.h * 0.8; const { c, ctx } = makeCanvas(W, H, 1600); const acc = o.accent, accL = shade(acc, 0.45);
   bgBase(ctx, W, H, o.color, acc, 0.18); pContour(ctx, W, H, acc, o.id, 0.16); ctx.fillStyle = acc; ctx.fillRect(W - 90, 0, 90, H);
-  ringQ(ctx, W * 0.42, H * 0.12, W * 0.24, '#F5F2EA', '#FF6A2B', 14);
+  if (o.glyph) { ctx.strokeStyle = acc; ctx.lineWidth = 14; ctx.beginPath(); ctx.arc(W * 0.42, H * 0.12, W * 0.22, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = '#F5F2EA'; ctx.textAlign = 'center'; ctx.font = `800 ${W * (o.glyph.length > 1 ? 0.17 : 0.26)}px ${FONT.sans}`; ctx.fillText(o.glyph, W * 0.42, H * 0.12 + W * 0.09); ctx.textAlign = 'left'; } else ringQ(ctx, W * 0.42, H * 0.12, W * 0.24, '#F5F2EA', '#FF6A2B', 14);
   ctx.save(); ctx.translate(W * 0.62, H * 0.92); ctx.rotate(-Math.PI / 2); ctx.fillStyle = '#F5F2EA'; ctx.font = `800 ${W * 0.27}px ${FONT.sans}`; ctx.fillText(o.text || '', 0, 0); const tw = ctx.measureText(o.text || '').width; ctx.fillStyle = accL; ctx.font = `italic 400 ${W * 0.28}px ${FONT.serif}`; ctx.fillText(o.sub ?? ' vision', tw, 0); ctx.restore();
   return c;
 }
@@ -716,7 +725,7 @@ function paintKiosk(o) {
   const W = o.w, H = o.h, sp = kioskSpec(o); const { c, ctx } = makeCanvas(W, H, 2048); const acc = o.accent, accL = shade(acc, 0.45);
   bgBase(ctx, W, H, o.color, acc, 0.16); pattern(ctx, W, H, o.pattern || 'contour', acc, o.id);
   const x0 = (W - sp.cutW) / 2 + sp.offX, x1 = x0 + sp.cutW, yT = H - (sp.cutY + sp.cutH), yB = H - sp.cutY;
-  ctx.fillStyle = accL; ctx.font = `500 19px ${FONT.mono}`; ctx.fillText('// SOCRATIC VISION BOARD · STEM CARNIVAL AIROC 2026', 50, 52); ctx.textAlign = 'right'; ctx.fillText('LIVE · ' + Math.round(o.scrW) + ' × ' + Math.round(o.scrH), W - 50, 52); ctx.textAlign = 'left';
+  ctx.fillStyle = accL; ctx.font = `500 19px ${FONT.mono}`; ctx.fillText(o.caption || '// SOCRATIC VISION BOARD · STEM CARNIVAL AIROC 2026', 50, 52); ctx.textAlign = 'right'; ctx.fillText('LIVE · ' + Math.round(o.scrW) + ' × ' + Math.round(o.scrH), W - 50, 52); ctx.textAlign = 'left';
   ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 4; const m = 26, L = 70;
   [[x0 - m, yT - m, 1, 1], [x1 + m, yT - m, -1, 1], [x0 - m, yB + m, 1, -1], [x1 + m, yB + m, -1, -1]].forEach(([x, y, sx, sy]) => { ctx.beginPath(); ctx.moveTo(x, y + sy * L); ctx.lineTo(x, y); ctx.lineTo(x + sx * L, y); ctx.stroke(); });
   ctx.strokeStyle = rgba(accL, 0.6); ctx.lineWidth = 2; for (let y = yT; y <= yB; y += 25) { const l = (y - yT) % 100 === 0 ? 22 : 10; ctx.beginPath(); ctx.moveTo(x0 - 40, y); ctx.lineTo(x0 - 40 - l, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x1 + 40, y); ctx.lineTo(x1 + 40 + l, y); ctx.stroke(); }
@@ -724,7 +733,7 @@ function paintKiosk(o) {
   ctx.fillStyle = '#C9C5BB'; ctx.font = `italic 400 34px ${FONT.serif}`; wrap(ctx, o.sub || '', o.qr ? W - 440 : W - 120).forEach((l, i) => ctx.fillText(l, 62, ly + 140 + i * 42));
   if (o.tray !== false) { ctx.fillStyle = '#FF8A5B'; ctx.font = `600 22px ${FONT.mono}`; ctx.textAlign = 'right'; ctx.fillText('bút · pen ↑', x1, yB + 70); ctx.textAlign = 'left'; }
   if (o.qr) { const q = 300, qx = W - q - 60, qy = H - q - 300; ctx.fillStyle = '#fff'; ctx.fillRect(qx, qy, q, q); const Rq = rng('qr' + o.id); const n = 25, ms = (q - 40) / n; ctx.fillStyle = '#111'; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { if ((i < 7 && j < 7) || (i < 7 && j > n - 8) || (i > n - 8 && j < 7)) continue; if (Rq() < 0.48) ctx.fillRect(qx + 20 + i * ms, qy + 20 + j * ms, ms, ms); } [[0, 0], [0, n - 7], [n - 7, 0]].forEach(([a, b]) => { ctx.fillStyle = '#111'; ctx.fillRect(qx + 20 + a * ms, qy + 20 + b * ms, 7 * ms, 7 * ms); ctx.fillStyle = '#fff'; ctx.fillRect(qx + 20 + (a + 1) * ms, qy + 20 + (b + 1) * ms, 5 * ms, 5 * ms); ctx.fillStyle = '#111'; ctx.fillRect(qx + 20 + (a + 2) * ms, qy + 20 + (b + 2) * ms, 3 * ms, 3 * ms); }); ctx.fillStyle = '#F5F2EA'; ctx.font = `700 26px ${FONT.sans}`; ctx.fillText('Quét để thử', qx - 220, qy + 60); ctx.fillStyle = '#8FB0F5'; ctx.font = `italic 400 24px ${FONT.serif}`; ctx.fillText('Scan to try', qx - 220, qy + 94); }
-  const tags = o.guide ? [] : o.qr ? ['5 lớp xử lý', 'Đo trực tiếp'] : ['Nhận diện tại chỗ · <15 ms', 'Gợi mở 4 mức', 'Chạy ngoại tuyến']; let tx = 60; ctx.font = `500 19px ${FONT.mono}`;
+  const tags = o.tags ? String(o.tags).split(';').filter(Boolean) : o.guide ? [] : o.qr ? ['5 lớp xử lý', 'Đo trực tiếp'] : ['Nhận diện tại chỗ · <15 ms', 'Gợi mở 4 mức', 'Chạy ngoại tuyến']; let tx = 60; ctx.font = `500 19px ${FONT.mono}`;
   tags.forEach((t) => { const w = ctx.measureText(t).width + 36; ctx.strokeStyle = rgba(accL, 0.7); ctx.lineWidth = 2; roundRect(ctx, tx, H - 250, w, 46, 23); ctx.stroke(); ctx.fillStyle = '#E6E4DD'; ctx.fillText(t, tx + 18, H - 220); tx += w + 14; });
   if (o.guide) {
     ctx.fillStyle = '#F5F2EA'; ctx.font = `800 64px ${FONT.sans}`; ctx.fillText('PHÒNG THÍ NGHIỆM 3D', 60, 150); ctx.fillStyle = accL; ctx.font = `500 22px ${FONT.mono}`; ctx.fillText('3D LAB · ĐIỀU KHIỂN BẰNG TAY QUA CAMERA', 62, 192);
@@ -740,7 +749,7 @@ function paintKiosk(o) {
 }
 function paintKioskSide(o) {
   const W = o.d, H = o.h; const { c, ctx } = makeCanvas(W, H, 1024); bgBase(ctx, W, H, o.color, o.accent, 0.1); pContour(ctx, W, H, o.accent, o.id + 's', 0.14);
-  ctx.save(); ctx.translate(W * 0.58, H - 260); ctx.rotate(-Math.PI / 2); ctx.fillStyle = '#F5F2EA'; ctx.font = `800 ${W * 0.2}px ${FONT.sans}`; ctx.fillText('SOCRATIC', 0, 0); const tw = ctx.measureText('SOCRATIC').width; ctx.fillStyle = shade(o.accent, 0.45); ctx.font = `italic 400 ${W * 0.21}px ${FONT.serif}`; ctx.fillText(' vision', tw, 0); ctx.restore();
+  ctx.save(); ctx.translate(W * 0.58, H - 260); ctx.rotate(-Math.PI / 2); ctx.fillStyle = '#F5F2EA'; ctx.font = `800 ${W * 0.2}px ${FONT.sans}`; ctx.fillText(o.side || 'SOCRATIC', 0, 0); const tw = ctx.measureText(o.side || 'SOCRATIC').width; ctx.fillStyle = shade(o.accent, 0.45); ctx.font = `italic 400 ${W * 0.21}px ${FONT.serif}`; ctx.fillText(o.sideSub ?? ' vision', tw, 0); ctx.restore();
   band(ctx, W, H, o.accent, 'SOCRATIC  ·  ', 120); return c;
 }
 B.kiosk = (o, g) => {
@@ -769,7 +778,7 @@ B.kiosk = (o, g) => {
   [x0 + 0.004, x1 - 0.004].forEach((x) => { const l = box(0.005, y1 - y0 - 0.02, 0.006, ledm); l.position.set(x, (y0 + y1) / 2, D / 2 - t - 0.012); g.add(l); });
   const bez = box(sw, sh, sd, MAT.std('#0A0A0B', { roughness: 0.3, metalness: 0.4 })); bez.position.set(ox, o.bottom * M + sh / 2, D / 2 - sd / 2); g.add(bez);
   const sc0 = { w: o.scrW - 40, h: o.scrH - 40, variant: o.variant || 'board' }; const scv = paintScreen(sc0); const sct = tex(scv); const scr = new THREE.Mesh(new THREE.PlaneGeometry(sw - 0.04, sh - 0.04), new THREE.MeshBasicMaterial({ map: sct, color: sc0.variant === 'board' ? '#8E8E8E' : '#D0D0D0' })); scr.position.set(ox, o.bottom * M + sh / 2, D / 2 + 0.001); g.add(scr);
-  if (sc0.variant === 'pipeline') { let last = -1; g.userData.tick = (tt) => { const a = Math.floor(tt / 1.6) % 5; if (a !== last && !REDUCED) { last = a; scv.getContext('2d').drawImage(paintScreen(sc0, a), 0, 0); sct.needsUpdate = true; } }; }
+  if (sc0.variant === 'pipeline' || sc0.variant === 'fire') { let last = -1; g.userData.tick = (tt) => { const a = Math.floor(tt / 1.6) % 5; if (a !== last && !REDUCED) { last = a; scv.getContext('2d').drawImage(paintScreen(sc0, a), 0, 0); sct.needsUpdate = true; } }; }
   if (o.cam) {
     const camY = y1 + 0.05; const cam = box(0.11, 0.035, 0.05, MAT.std('#111215', { roughness: 0.3, metalness: 0.4 })); cam.position.set(ox, camY, D / 2 + 0.03); cam.rotation.x = -0.26; g.add(cam);
     const lens = new THREE.Mesh(new THREE.CircleGeometry(0.011, 24), MAT.glow('#3FB97A', 0.6)); lens.position.set(ox, camY, D / 2 + 0.056); lens.rotation.x = -0.26; g.add(lens);
@@ -787,7 +796,7 @@ B.kiosk = (o, g) => {
 };
 
 B.seal = (o, g) => {
-  const r = (o.w * M) / 2, d = (o.d || 30) * M; const st = tex(paintSeal());
+  const r = (o.w * M) / 2, d = (o.d || 30) * M; const st = tex(paintSeal(o));
   const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d, 72), [MAT.std('#FF6A2B'), new THREE.MeshStandardMaterial({ map: st, roughness: 0.5, emissiveMap: st, emissive: '#ffffff', emissiveIntensity: 0.15 }), MAT.std('#FF6A2B')]);
   m.rotation.x = Math.PI / 2; m.position.set(0, r, d / 2 + 0.01); m.castShadow = true; g.add(m);
   const halo = new THREE.Mesh(new THREE.TorusGeometry(r + 0.012, 0.006, 8, 96), MAT.glow('#FF8A5B', 1.6)); halo.position.set(0, r, 0.008); g.add(halo);
@@ -865,11 +874,10 @@ B.overcam = (o, g) => {
 // ---------------- vách thụt: mặt hông lộ ra theo bậc ----------------
 function promoSlot(slot) {
   const st = Number(settings.step) || 0, A = Math.abs(st) * M, rc = Math.max(0, Number(settings.recess) || 0) * M; const pos = st >= 0, F = 1.48, fFront = F - rc;
-  const fDeep = fFront - 2 * A, fMid = fFront - A;
+  const fDeep = fFront - A;
   if (slot === 'front') return rc < 0.1 ? null : { x: pos ? 4.47 : -4.47, z0: fFront, z1: F, nx: pos ? -1 : 1 };
   if (A < 0.1) return null;
-  if (slot === 'deep') return { x: pos ? -1.45 - 0.006 : 1.45 + 0.006, z0: fDeep, z1: fMid, nx: pos ? -1 : 1 };
-  if (slot === 'mid') return { x: pos ? 1.55 - 0.006 : -1.55 + 0.006, z0: fMid, z1: fFront, nx: pos ? -1 : 1 };
+  if (slot === 'deep') return { x: pos ? -1.45 - 0.006 : -1.55 + 0.006, z0: fDeep, z1: fFront, nx: pos ? -1 : 1 };
   return { x: pos ? -4.47 : 4.47, z0: fDeep, z1: F, nx: pos ? 1 : -1 };
 }
 function paintPromo(o, W) {
@@ -934,7 +942,7 @@ let saveT; function save() { clearTimeout(saveT); saveT = setTimeout(() => { try
 let lastSnap = JSON.stringify(objects); function commit() { const now = JSON.stringify(objects); if (now !== lastSnap) { history.push(lastSnap); if (history.length > 60) history.shift(); lastSnap = now; save(); renderLayers(); } }
 
 function dispose(gr) { gr.traverse((m) => { if (m.geometry) m.geometry.dispose(); const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : []; mats.forEach((mt) => { ['map', 'emissiveMap', 'alphaMap'].forEach((k) => mt[k] && mt[k].dispose()); mt.dispose(); }); }); }
-function zoff(o) { const st = Number(settings.step) || 0, rc = Math.max(0, Number(settings.recess) || 0); if (o.booth === 'L') return -rc - 2 * Math.max(st, 0); if (o.booth === 'C') return -rc - Math.abs(st); if (o.booth === 'R') return -rc - 2 * Math.max(-st, 0); return 0; }
+function zoff(o) { const st = Number(settings.step) || 0, rc = Math.max(0, Number(settings.recess) || 0); if (o.booth === 'F') return -rc - Math.max(st, 0); if (o.booth === 'S') return -rc - Math.max(-st, 0); return 0; }
 function build(o) {
   const old = groups.get(o.id); if (old) { if (tc.object === old) tc.detach(); root.remove(old); dispose(old); }
   const g = new THREE.Group(); g.userData.id = o.id; (B[o.type] || (() => {}))(o, g);
@@ -1002,15 +1010,15 @@ function addObj(it) {
 const FIELDS = {
   promo: ['title', 'text', 'sub', 'award', 'glyph', 'logo', 'qr', 'pattern', 'color', 'accent'],
   handdesk: ['color', 'accent', 'emissive'], overcam: ['arm', 'fov', 'vfov', 'target', 'showCam', 'accent', 'emissive'],
-  kiosk: ['scrW', 'scrH', 'scrD', 'gap', 'bottom', 'offX', 'variant', 'tray', 'qr', 'guide', 'cam', 'showCam', 'mount', 'xray', 'pattern', 'text', 'sub', 'color', 'accent', 'emissive'],
+  kiosk: ['caption', 'side', 'sideSub', 'tags', 'scrW', 'scrH', 'scrD', 'gap', 'bottom', 'offX', 'variant', 'tray', 'qr', 'guide', 'cam', 'showCam', 'mount', 'xray', 'pattern', 'text', 'sub', 'color', 'accent', 'emissive'],
   panel: ['side', 'layout', 'pattern', 'text', 'sub', 'startNo', 'color', 'accent', 'emissive'], portal: ['band', 'bar', 'radius', 'legs', 'text', 'sub', 'color', 'accent', 'emissive'], relief: ['text', 'color', 'accent', 'emissive'],
   totem: ['text', 'sub', 'color', 'accent'], beacon: ['color', 'accent', 'emissive'], counter: ['text', 'sub', 'color', 'accent', 'emissive'], screen: ['variant', 'stand'], hexwall: ['cell', 'color', 'accent', 'emissive'],
   floor: ['color', 'accent', 'emissive'], ceiling: ['color', 'accent', 'emissive'], halo: ['accent', 'emissive'], aicore: ['text', 'color', 'accent', 'emissive'], holo: ['mount', 'accent', 'emissive'], strip: ['accent', 'emissive'],
-  decal: ['text', 'accent'], flag: ['text', 'sub', 'color', 'accent'], tent: ['text', 'color', 'accent'], neighbor: ['walls', 'color', 'accent'], person: ['color'],
-  seal: [], tower: ['accent', 'emissive'], blade: ['text', 'glyph', 'arm', 'color', 'accent', 'emissive'],
+  decal: ['text', 'accent'], flag: ['text', 'sub', 'glyph', 'color', 'accent'], tent: ['text', 'color', 'accent'], neighbor: ['walls', 'color', 'accent'], person: ['color'],
+  seal: ['l2', 'year', 'ring'], tower: ['accent', 'emissive'], blade: ['text', 'glyph', 'arm', 'color', 'accent', 'emissive'],
 };
-const FLABEL = { title: 'Tên', award: 'Giải thưởng', logo: 'Dùng logo',  side: 'Chữ mặt hông',  fov: 'Góc ngang °', vfov: 'Góc dọc °', target: 'Mặt bàn cao',  glyph: 'Ký tự giữa', legs: 'Chữ ở chân', guide: 'Hướng dẫn tay', cam: 'Webcam + đèn', showCam: 'Vùng camera', offX: 'Lệch ô ngang', tray: 'Khay bút', qr: 'Mã QR', arm: 'Tay vươn', walls: 'Vách kín', scrW: 'Màn rộng', scrH: 'Màn cao', scrD: 'Màn dày', gap: 'Khe hở', bottom: 'Đáy màn', mount: 'Cách đỡ', xray: 'Nhìn xuyên', layout: 'Bố cục', pattern: 'Họa tiết', text: 'Chữ chính', sub: 'Chữ phụ', startNo: 'Số bắt đầu', color: 'Màu nền', accent: 'Màu nhấn', emissive: 'Độ sáng', band: 'Băng tên', bar: 'Bề chân', radius: 'Bo góc', variant: 'Nội dung', stand: 'Chân đứng', cell: 'Cỡ ô' };
-const OPTS = { layout: [['hero', 'Backdrop chính'], ['story', 'Câu chuyện'], ['plain', 'Tiêu đề giữa']], pattern: [['contour', 'Đồng mức + mạch'], ['circuit', 'Mạch điện'], ['hex', 'Lục giác'], ['dots', 'Lưới điểm'], ['grid', 'Lưới kỹ thuật'], ['plain', 'Trơn']], variant: [['board', 'Bảng viết tay'], ['pipeline', 'Hộp kính 5 lớp'], ['lab', 'Lab 3D cử chỉ tay']], mount: [['stand', 'Chân đế bánh xe bên trong'], ['vesa', 'Treo VESA lên khung'], ['wall', 'Gắn lên mặt tiền'], ['pole', 'Chân đứng riêng']] };
+const FLABEL = { l2: 'Cấp giải', year: 'Năm học', ring: 'Chữ vòng', caption: 'Dòng đầu', tags: 'Nhãn (;)', sideSub: 'Chữ hông phụ',  title: 'Tên', award: 'Giải thưởng', logo: 'Dùng logo',  side: 'Chữ mặt hông',  fov: 'Góc ngang °', vfov: 'Góc dọc °', target: 'Mặt bàn cao',  glyph: 'Ký tự giữa', legs: 'Chữ ở chân', guide: 'Hướng dẫn tay', cam: 'Webcam + đèn', showCam: 'Vùng camera', offX: 'Lệch ô ngang', tray: 'Khay bút', qr: 'Mã QR', arm: 'Tay vươn', walls: 'Vách kín', scrW: 'Màn rộng', scrH: 'Màn cao', scrD: 'Màn dày', gap: 'Khe hở', bottom: 'Đáy màn', mount: 'Cách đỡ', xray: 'Nhìn xuyên', layout: 'Bố cục', pattern: 'Họa tiết', text: 'Chữ chính', sub: 'Chữ phụ', startNo: 'Số bắt đầu', color: 'Màu nền', accent: 'Màu nhấn', emissive: 'Độ sáng', band: 'Băng tên', bar: 'Bề chân', radius: 'Bo góc', variant: 'Nội dung', stand: 'Chân đứng', cell: 'Cỡ ô' };
+const OPTS = { layout: [['hero', 'Backdrop chính'], ['story', 'Câu chuyện'], ['plain', 'Tiêu đề giữa']], pattern: [['contour', 'Đồng mức + mạch'], ['circuit', 'Mạch điện'], ['hex', 'Lục giác'], ['dots', 'Lưới điểm'], ['grid', 'Lưới kỹ thuật'], ['plain', 'Trơn']], variant: [['board', 'Bảng viết tay'], ['pipeline', 'Hộp kính 5 lớp'], ['lab', 'Lab 3D cử chỉ tay'], ['fire', 'FireSense giám sát mùi'], ['gavis', 'GAVIS phụ đề + ánh nhìn']], mount: [['stand', 'Chân đế bánh xe bên trong'], ['vesa', 'Treo VESA lên khung'], ['wall', 'Gắn lên mặt tiền'], ['pole', 'Chân đứng riêng']] };
 function renderInspector() {
   const el = $('#inspector'); const o = selObj();
   if (!o) { el.innerHTML = `<h2>Thuộc tính</h2><p class="hint">Bấm vào một khối trong khung 3D hoặc trong danh sách bên trái để chỉnh. Kéo mũi tên để di chuyển (bước 50 mm), vòng tròn để xoay (bước 15°).</p><p class="hint">Phím tắt: W di chuyển · E xoay · Delete xóa · Ctrl+D nhân bản · Ctrl+Z hoàn tác · F lấy nét vào khối.</p>`; return; }
@@ -1028,7 +1036,7 @@ function renderInspector() {
   (FIELDS[o.type] || []).forEach((k) => {
     const id = 'f-' + k; const wrapEl = document.createElement('div'); wrapEl.className = 'field'; let input;
     if (OPTS[k]) { input = document.createElement('select'); OPTS[k].forEach(([v, l]) => { const op = document.createElement('option'); op.value = v; op.textContent = l; input.append(op); }); input.value = o[k] || OPTS[k][0][0]; }
-    else if (k === 'glyph' || k === 'side' || k === 'title' || k === 'award') { input = document.createElement('input'); input.type = 'text'; input.value = o[k] || ''; }
+    else if (['glyph', 'side', 'title', 'award', 'l2', 'year', 'ring', 'caption', 'tags', 'sideSub'].includes(k)) { input = document.createElement('input'); input.type = 'text'; input.value = o[k] || ''; }
     else if (k === 'text' || k === 'sub') { input = document.createElement('textarea'); input.value = o[k] || ''; }
     else if (k === 'color' || k === 'accent') { input = document.createElement('input'); input.type = 'color'; input.value = o[k] || '#000000'; }
     else if (k === 'emissive') { input = document.createElement('input'); input.type = 'range'; input.min = 0; input.max = 3; input.step = 0.05; input.value = o[k] ?? 1; }

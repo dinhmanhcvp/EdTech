@@ -1,3 +1,8 @@
+# 2026-11-25 — Bố cục 2 gian: FireSense AI | GAVIS + Socratic thông nhau
+- Studio khóa lưu v11: lều x −3000 (FireSense, `booth: 'F'`), x 0 và 3000 (GAVIS + Socratic, `booth: 'S'`, mặt tiền liền 6 m). `zoff`: F lùi recess + bậc, S lùi recess (bậc âm đảo). Promo: `deep` = mặt hông trái gian đôi (quảng bá FireSense), `court` = mép trái sân trước FireSense, `front` = mép phải gian đôi (Vision AI GAVIS × Socratic).
+- FireSense: kiosk màn 43" biến thể `fire` (thanh cảm biến CO/VOC/khói/nhiệt, trạng thái an toàn/cảnh báo đổi theo nhịp), cụm lục giác hổ phách, huy hiệu Giải Nhất cấp quốc gia 2025–2026, bục thiết bị ở sân trước. GAVIS: kiosk màn 55" biến thể `gavis` (khung video, tia ánh nhìn, phụ đề, sóng âm), webcam, cụm lục giác tím, huy hiệu Giải Nhất cấp tỉnh KHKT 2026–2027. Socratic dời sang x +3000. Cột sáng nối ở x 1500.
+- Mới: `paintSeal(o)` có `l2/year/ring`; kiosk có `caption/tags/side/sideSub`; cờ có `glyph`. Thông tin hai sản phẩm lấy từ công văn; chi tiết khác để ô chờ. Hồ sơ in CHƯA chuyển sang bố cục này.
+
 # 2026-11-24 (11) — Gian trước cũng thụt, thêm vách thụt 3
 - Studio khóa lưu v10: `settings.recess` (ô "Thụt gian trước", mặc định 400) cộng vào `zoff` của cả ba gian; slot promo mới `front` = vách ở mép ngoài sân trước gian trước (rộng = recess, quay về phía khách đi tới). Mặc định: gian 3 lùi 400, Socratic 1 000, gian 1 1 600.
 - Hồ sơ in: `config.thutGianTruoc` + `vachThut.vt3` → VT3 (400 × 2200, vách đứng riêng); VT-SAN rộng 2 × bậc + thụt (1 600). 37 hạng mục.

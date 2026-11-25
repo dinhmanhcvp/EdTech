@@ -1,3 +1,6 @@
+# 2026-11-25 (36) — Bàn đặt tay thu nhỏ
+- Studio v50: `labshelf` còn 600 × 400 × 800, đặt tại (1260, −460) áp vách phải, đầu sau sát vách chéo. Webcam đặt cao 420 mm vẫn bao đủ 0,6 × 0,4 m mặt bàn (góc 70°). Dự toán k1 còn khoảng 2,3 m² Formex.
+
 # 2026-11-25 (35) — Bàn Lab sát vách phải, dự toán tách theo dự án
 - Studio v49:
   - Bàn Lab (`labshelf`) đặt tại (1210, −210), xoay −90°, lưng áp vách phải, đầu sau sát mép vách chéo cạnh màn; đã bỏ máng dây sàn.

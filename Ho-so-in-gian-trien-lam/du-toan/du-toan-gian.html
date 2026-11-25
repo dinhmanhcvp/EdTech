@@ -113,6 +113,8 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
 <section class="band" style="padding-top:0"><div class="in">
   <h2>Từng hạng mục theo dự án</h2>
   <p class="mute">Tách riêng Socratic, GAVIS và phần chung; số ở dòng tiêu đề mỗi nhóm (*) đã gồm dự phòng 10 %. Formex tính theo giá 350 nghìn/m² (đã gồm in UV và cắt), tổng khoảng 21,0 m². Bỏ chọn để loại khỏi tổng. Đơn giá theo nghìn đồng, giá tham khảo thị trường in quảng cáo miền Bắc cuối 2026, chưa VAT. Phương án Tối thiểu lấy giá thấp, Khuyến nghị lấy giá giữa, Đầy đủ lấy giá cao.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 14px"><button type="button" id="exp" style="font:600 15px 'Plus Jakarta Sans';padding:10px 16px;min-height:44px;border-radius:999px;border:0;background:var(--ink);color:var(--bg);cursor:pointer">Chép danh sách đã chọn</button><span class="mute" id="expmsg" style="font-size:14px">Bấm rồi dán vào chat để cập nhật bản 3D theo đúng các mục đã tích.</span></div>
+  <textarea id="exptxt" hidden readonly style="width:100%;min-height:120px;font:13px/1.4 'JetBrains Mono',monospace;margin-bottom:14px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink)"></textarea>
   <div class="scroll"><table class="stack" id="tbl"><thead><tr><th></th><th>Hạng mục</th><th class="n">SL</th><th class="n">Đơn giá</th><th class="n">Thành tiền</th></tr></thead><tbody></tbody><tfoot></tfoot></table></div>
 </div></section>
 
@@ -246,5 +248,8 @@ function draw() {
 document.querySelectorAll('[data-s]').forEach((b) => b.addEventListener('click', () => { sc = b.dataset.s; ov = {}; draw(); }));
 body.addEventListener('change', (e) => { const id = e.target.dataset.id; if (id) { ov[id] = e.target.checked; draw(); } });
 draw();
+document.getElementById('exp').addEventListener('click', async () => { const sel = R.filter(on), txt = 'DA CHON (' + S[sc][0] + '):\n' + sel.map((r) => r[0] + ' · ' + r[2]).join('\n') + '\nBO: ' + R.filter((r) => !on(r)).map((r) => r[0]).join(', ');
+  const ta = document.getElementById('exptxt'); ta.value = txt; ta.hidden = false; ta.select(); const m = document.getElementById('expmsg');
+  try { await navigator.clipboard.writeText(txt); m.textContent = 'Đã chép ' + sel.length + ' mục. Dán vào chat là xong.'; } catch (e) { m.textContent = 'Trình duyệt chặn chép tự động: danh sách đã bôi đen bên dưới, nhấn Ctrl+C.'; } });
 }
 </script>

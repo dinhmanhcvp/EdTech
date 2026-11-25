@@ -1,3 +1,8 @@
+# 2026-11-25 (5) — Mặt bằng hình thang, FireSense liền Socratic
+- Studio khóa lưu v15. Mặt trước phẳng 3,4 m sát lối đi: FireSense `F-front` (x −850, cao 2 000) và màn 65" Socratic `kiosk` (x 850). Hai bên nối ở cột lều giữa x 0, cột bọc dải sáng tím `join`.
+- Hai mặt vát lùi về góc sau: trái `F-side` (câu chuyện FireSense, bục thiết bị phía trước) từ (−2950,300) đến (−1700,1450); phải `G-side` GAVIS từ (1700,1450) đến (2950,300). Tổng khoảng 6,8 m mặt in.
+- Chữ nổi FireSense và GAVIS đứng trên mép trên vách cao 2 000 nên không đè lên mặt in. Bỏ vách hồi và tay Vision AI. QR dùng thử đặt trên kiosk.
+
 # 2026-11-25 (4) — Một gian 6 m, chỉ một màn 65"
 - Người dùng: chỉ có một màn tương tác 65", hai lều thông nhau thành một gian. Studio khóa lưu v14: màn 65" (kiosk `kiosk`) đặt giữa lều 2, x 1500, vì cột lều ở x 0 sẽ chắn trước màn nếu đặt chính giữa 6 m. Màn chạy Socratic và demo GAVIS, FireSense luân phiên.
 - Cánh in vát (promo không có slot, d 80): FireSense `F-wing` (−2900,350)→(−100,1450); tay trái màn `vt-vision` (100,450)→(670,1450), có QR; tay phải `G-wing` GAVIS (2330,1450)→(2900,450). Vách hồi: `vt-court` câu chuyện FireSense ở x −2950, `vt-mid` câu chuyện GAVIS ở x 30. Thảm sàn chung 6 m. Bỏ kiosk GAVIS và kiosk FireSense.

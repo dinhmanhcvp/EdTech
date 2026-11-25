@@ -1,3 +1,6 @@
+# 2026-11-25 (39) — Thêm trang trí cho Socratic
+- Studio v52 thêm: `S-stage` (bục đứng Formex 8 cm, kẻ ô, trước màn) kèm `S-stageLED`; `S-fr-*` (khung viền màn phát sáng 4 cạnh); `S-gobo` (logo Socratic? chiếu xuống sàn lối vào). Dự toán thêm n24, n25, t6 vào nhóm S.
+
 # 2026-11-25 (38) — Studio chỉ còn các mục đã tích
 - Theo danh sách người dùng tích trong dự toán, studio v51 ẩn (`visible: false`): T-S, T-G, A-bubbles, A-sphere, A-wave, P-frame, steps, decal, S-blade, G-blade, S-flag, G-flag, B-S, B-G, G-bust. Các khối vẫn còn trong danh sách bên trái, bấm biểu tượng con mắt để hiện lại.
 - Trang dự toán có nút "Chép danh sách đã chọn".

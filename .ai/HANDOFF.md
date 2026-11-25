@@ -1,3 +1,6 @@
+# 2026-11-25 (28) — Chữ "Socratic?"
+- `build-wordmark.js`: chữ "Socratic" viết thường. Ngay sau chữ là dấu hỏi vẽ theo logo: nét móc dày 140 bằng nét chữ, cao bằng chữ hoa, con ngươi xanh bên trong, chấm cam r 74 nằm trên dòng chân chữ. Dữ liệu thêm trường `hook`. Studio v44 tô nét móc chung lớp với chữ.
+
 # 2026-11-25 (27) — Chữ Socratic cách điệu
 - `logo/build-wordmark.js` sinh `logo/out/socratic-wordmark.json` và 2 file SVG (nền tối, nền sáng). Chữ "Socratıc" dùng Plus Jakarta 800 với chữ i không chấm; chấm cam r 86 thay chấm chữ i, cung con ngươi xanh nằm trong chữ o.
 - Studio v43: `B.letters` thêm chế độ `wordmark`. Chữ dựng thành 3 lớp phẳng (chữ, cung con ngươi, chấm) đặt trên bệ thấp, mặt bệ in `sub`. Dữ liệu chữ nhúng ở `WORDMARK`; hàm `layered()` xếp các lớp mặt nạ.

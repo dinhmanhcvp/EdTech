@@ -1,3 +1,9 @@
+# 2026-11-25 (3) — Studio tiếng Anh + mặt tiền vát chéo
+- Studio khóa lưu v13, toàn bộ giao diện và nội dung in trên khối đã chuyển sang tiếng Anh (bảng dịch ở scratchpad, không commit). Chú thích trong mã vẫn tiếng Việt.
+- Bố cục vát chéo: hàm `seg(x0,z0,x1,z1)` trong DEFAULT trả `{L, ry, at(a,t)}`; FireSense một mặt (−2900,150)→(−200,1450), d 400; gian 2 hình chữ V: GAVIS (80,550)→(1500,1450), Socratic (1500,1450)→(2920,550), cột sáng ở mũi x 1500. Khối gắn mặt dùng `at(a, 3)`.
+- Promo đứng tự do: `type: 'promo'` không có `slot` → đặt theo x/z/ry của chính khối, mặt in hướng +z cục bộ (vt-court x −2950 ry 90, vt-mid x 30 ry 90, vt-front x 2950 ry −90). Ô "Bậc lùi"/"Thụt" bị ẩn, mặc định 0; slot cũ vẫn chạy nếu nạp JSON cũ.
+- Hồ sơ in (`build.js`) vẫn theo bố cục cũ và tiếng Việt: chờ thông tin FireSense/GAVIS để làm lại bằng tiếng Anh.
+
 # 2026-11-25 (2) — 2 lều 3 m thông nhau: FireSense | GAVIS + Socratic
 - Người dùng làm rõ: chỉ 2 lều × 3 m, gian 2 (GAVIS + Socratic) vẫn 3 m và thông với gian 1. Studio khóa lưu v12: lều x −1500 (FireSense, lùi sâu) và x 1500; mặt tiền gian 2 = GAVIS 1 320 (màn 50", webcam) + Socratic 1 580 (bảng 65", chạy cả /lab); trạm Lab riêng, bàn thao tác, tay cần ẩn vì không đủ chỗ. Vách thụt: deep x 0,05 (mặt hông trái gian 2), court x −2,97, front x 2,97. Hàng xóm ±4500.
 - Lỗi đã gặp: thay trường bằng regex `key: [^,]+,` khớp nhầm `booth:`/`id:` và nuốt dấu `}` → luôn dùng `(?<![A-Za-z])key:` và `node --check` phần script trước khi xuất bản.

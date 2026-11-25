@@ -1,3 +1,7 @@
+# 2026-11-25 (38) — Studio chỉ còn các mục đã tích
+- Theo danh sách người dùng tích trong dự toán, studio v51 ẩn (`visible: false`): T-S, T-G, A-bubbles, A-sphere, A-wave, P-frame, steps, decal, S-blade, G-blade, S-flag, G-flag, B-S, B-G, G-bust. Các khối vẫn còn trong danh sách bên trái, bấm biểu tượng con mắt để hiện lại.
+- Trang dự toán có nút "Chép danh sách đã chọn".
+
 # 2026-11-25 (37) — Formex 350 nghìn/m²
 - Dự toán: đơn giá Formex đổi thành 350 nghìn/m² (gồm in UV và cắt).
 

@@ -1,3 +1,8 @@
+# 2026-11-25 (4) — Một gian 6 m, chỉ một màn 65"
+- Người dùng: chỉ có một màn tương tác 65", hai lều thông nhau thành một gian. Studio khóa lưu v14: màn 65" (kiosk `kiosk`) đặt giữa lều 2, x 1500, vì cột lều ở x 0 sẽ chắn trước màn nếu đặt chính giữa 6 m. Màn chạy Socratic và demo GAVIS, FireSense luân phiên.
+- Cánh in vát (promo không có slot, d 80): FireSense `F-wing` (−2900,350)→(−100,1450); tay trái màn `vt-vision` (100,450)→(670,1450), có QR; tay phải `G-wing` GAVIS (2330,1450)→(2900,450). Vách hồi: `vt-court` câu chuyện FireSense ở x −2950, `vt-mid` câu chuyện GAVIS ở x 30. Thảm sàn chung 6 m. Bỏ kiosk GAVIS và kiosk FireSense.
+- `paintPromo` có thêm trường `col` (bề rộng cột chữ, mm) để chữ không đè lên chữ nổi, lục giác, huy hiệu trên cánh rộng. Decal có trường `sub`.
+
 # 2026-11-25 (3) — Studio tiếng Anh + mặt tiền vát chéo
 - Studio khóa lưu v13, toàn bộ giao diện và nội dung in trên khối đã chuyển sang tiếng Anh (bảng dịch ở scratchpad, không commit). Chú thích trong mã vẫn tiếng Việt.
 - Bố cục vát chéo: hàm `seg(x0,z0,x1,z1)` trong DEFAULT trả `{L, ry, at(a,t)}`; FireSense một mặt (−2900,150)→(−200,1450), d 400; gian 2 hình chữ V: GAVIS (80,550)→(1500,1450), Socratic (1500,1450)→(2920,550), cột sáng ở mũi x 1500. Khối gắn mặt dùng `at(a, 3)`.

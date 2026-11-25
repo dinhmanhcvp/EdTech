@@ -1,3 +1,13 @@
+# 2026-11-25 (15) — Thiết kế trên phần BTC đã dựng sẵn
+- BTC cấp vách, bàn ghế, điện, đèn, thảm và cho dán, treo thêm. Studio v27:
+  - Decal lên vách BTC: `S-back` (vách sau, cột chữ bên phải), `S-wall` (vách trái, có QR), `G-wall` (vách phải); dải bảo trợ `C-sponsor` trên cùng vách sau.
+  - Bàn BTC thành quầy Lab ở mép trước: `desk` 1,2 × 0,6 × 0,75, váy bàn `skirt`, màn 43" `labscreen`, `overcam` với `pole: true` (chân boom đứng sàn).
+  - Bảng 65" `board` (type `screen`, có chân) ở góc sau trái, xoay 18°.
+  - `G-bust` cạnh vách phải; kệ tờ rơi ở hai góc trước; `halo` treo trên quầy.
+  - Đã bỏ khung thép, kiosk và thảm tự làm.
+- `du-toan-gian.html` tính lại: tối thiểu khoảng 10,1 triệu, khuyến nghị khoảng 26,5 triệu, đầy đủ khoảng 49,7 triệu.
+  - Phần chất liệu: decal PP keo bóc được; cần hỏi BTC kích thước ô vách và công suất ổ điện.
+
 # 2026-11-25 (14) — Logo GAVIS mới, số liệu Socratic
 - Logo GAVIS: `Ho-so-in-gian-trien-lam/logo/build-gavis.js` sinh ra `logo/gavis/` (biểu tượng màu/trắng/đen, logo ngang và dọc trên nền sáng/tối, icon ứng dụng; SVG + PNG 2048, kèm `mark-paths.json`).
   - Ý tưởng: chữ G một nét cung là khung nhìn, con ngươi xanh ngọc #2DD4BF ở tâm, hai sóng âm phía sau, thanh ngang là tia ánh nhìn. Gradient #C4B5FD → #8B5CF6 → #6D28D9.

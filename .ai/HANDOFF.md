@@ -1,3 +1,12 @@
+# 2026-11-25 (9) — Socratic ở mặt giữa, logo THCS Hùng Vương
+- Socratic thuộc THCS Hùng Vương (Hung Vuong Secondary School); logo lưu tại `Ho-so-in-gian-trien-lam/assets/logo-thcs-hung-vuong.png`. FireSense và GAVIS đều thuộc THPT Chuyên Vĩnh Phúc.
+- Studio khóa lưu v22, `VAULT` cố định:
+  - Mặt giữa SC rộng 2,96 m tại z −450: bảng 65" (`kiosk`, a −660) và Lab 50" (`kiosk2`, a +820) kèm `desk` và `overcam`.
+  - Hai mặt trái là FireSense (`F-main`, `F-story`), hai mặt phải là GAVIS (`G-wall`, `G-res` có số liệu khảo sát và dùng thử, `G-bust`).
+  - Mặt giữa có hai tầng đầu vòm: `C-S` (logo trường, chữ nổi) và `C-sponsor` (y 2 260, dòng bảo trợ Sở GD&ĐT Phú Thọ).
+- Logo thật nhúng qua `LOGO_SRC` (data URI JPEG 384 px), khóa theo tên tổ chức; `logoSlot(..., name)` vẽ ảnh thật nếu có, nếu không thì vẽ ô giữ chỗ. Khởi động chờ `logosReady`.
+- Logo còn thiếu: Sở GD&ĐT Phú Thọ, STEM Carnival/AIROC 2026, THPT Chuyên Vĩnh Phúc.
+
 # 2026-11-25 (8) — Vòm 5 cạnh, dải đầu vòm, trạm Lab 3D
 - Studio khóa lưu v21. Mặt bằng `VAULT`: 6 điểm trên nửa elip (bán trục 2 950 × 1 900), góc chia 41°/76°/104°/139°.
   - Hai mặt trái là FireSense: `F-main` ở mặt ngoài, có bục và huy hiệu đặt trên dải trống bên trái; `F-story` ở mặt trong, có cụm lục giác.

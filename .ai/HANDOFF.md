@@ -1,3 +1,13 @@
+# 2026-11-25 (16) — Hộp ốp màn, đổi bên, ảnh nhóm
+- Studio v29:
+  - `kiosk` là hộp ốp Formex cho màn 65" (mặt sau hở, `mount: 'stand'`), đặt sát vách sau bên phải.
+  - Khách đi từ trái sang nên đổi bên: GAVIS ở vách trái (`G-wall`, `G-bust`), Socratic ở vách phải (`S-wall`, quay về phía khách).
+  - Vách sau `S-back`: ảnh nhóm và mô hình kinh doanh. Số liệu lấy từ video của nhóm: 81,4 % xử lý trên thiết bị, dưới 350 đ mỗi tiết, biên gộp 89,5 %, hòa vốn tháng 7; khẩu hiệu "Learn the why. Own the future."
+  - Mặt in có thêm trường `photos` ("key@x,y,w,h|caption") và `contentTop`; ảnh lấy từ `PHOTO_SRC`.
+- Ảnh từ Drive "ANH TAP THE" (khung hình video 1 920 px) lưu ở `Ho-so-in-gian-trien-lam/assets/photos/`. In khổ lớn cần ảnh gốc từ máy quay. Biết tên một thành viên: Nguyễn Vũ Nam, CFO, lớp 8A3.
+- Lab 3D (`engines/families/HandsLab.tsx`) nhận cả chạm và chuột (`pointerType`), nên chạy được thẳng trên bảng 65" không cần webcam.
+- Dự toán: hộp ốp màn 65" và decal của hộp chuyển thành hạng mục thiết yếu.
+
 # 2026-11-25 (15) — Thiết kế trên phần BTC đã dựng sẵn
 - BTC cấp vách, bàn ghế, điện, đèn, thảm và cho dán, treo thêm. Studio v27:
   - Decal lên vách BTC: `S-back` (vách sau, cột chữ bên phải), `S-wall` (vách trái, có QR), `G-wall` (vách phải); dải bảo trợ `C-sponsor` trên cùng vách sau.

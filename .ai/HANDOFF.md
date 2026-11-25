@@ -1,3 +1,9 @@
+# 2026-11-25 (35) — Bàn Lab sát vách phải, dự toán tách theo dự án
+- Studio v49:
+  - Bàn Lab (`labshelf`) đặt tại (1210, −210), xoay −90°, lưng áp vách phải, đầu sau sát mép vách chéo cạnh màn; đã bỏ máng dây sàn.
+  - Bút khổng lồ dời ra trước bàn, sát vách phải; quả cầu treo trên bàn.
+- Dự toán chia 3 nhóm S (Socratic), G (GAVIS), C (chung); dòng tiêu đề mỗi nhóm ghi tổng nhóm đã cộng dự phòng 10 %. Các hạng mục dùng chung được tách đôi: decal vách hông, topper, biển vẫy, cờ, kệ tờ rơi, tờ rơi (120 + 80 = 200 tờ), thẻ đeo, áo. Phương án khuyến nghị khoảng 18,6 triệu: Socratic 8,4 · GAVIS 4,8 · chung 5,3.
+
 # 2026-11-25 (34) — Formex 300 nghìn/m²
 - Dự toán: mọi món Formex tính theo m² × 300 nghìn (giá người dùng đưa, giả định đã gồm in UV và cắt), tổng khoảng 21 m². Thêm n0 (gia công lắp ghép), bỏ k4 (decal dán lên Formex vì Formex in trực tiếp). Phương án khuyến nghị khoảng 21,9 triệu (dải 12,3–35,6 triệu).
 

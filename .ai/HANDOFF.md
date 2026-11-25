@@ -1,3 +1,6 @@
+# 2026-11-25 (33) — Đi dây webcam giấu trong khung
+- Dây webcam đi trong rãnh thanh vòm, xuống vòm trái, qua thân bàn, ra máng sàn rồi tới cổng màn; tổng khoảng 3,3 m. Chỉ cần dây nối dài USB 2.0 thường 2 m (sửa t5 và k1 trong dự toán, đổi chú thích trong studio).
+
 # 2026-11-25 (32) — Tác phẩm Formex, gọn ấn phẩm
 - Studio v48 thêm khối `formexart`, chọn kiểu bằng `kind`:
   - `pen`: bút Socratic khổng lồ, `A-pen` ở góc vách chéo.

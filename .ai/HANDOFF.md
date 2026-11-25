@@ -1,3 +1,6 @@
+# 2026-11-25 (31) — Cáp webcam
+- Webcam cắm vào cổng USB của màn 65". Cáp đi theo máng Formex `cable` trên sàn, từ bàn Lab tới đầu trái vách chéo (dài khoảng 1,23 m), rồi luồn ra sau vách. Dự toán thêm t5: cáp nối dài USB active 5 m và máng dây.
+
 # 2026-11-25 (30) — Dời bàn Lab khỏi vùng viết bảng
 - Studio v46: `labshelf` (console) đặt tại (−300, −250), xoay −49°, hướng về màn. Vùng trước màn (`decal`) để trống cho người viết bảng. Thêm dấu chân `steps` dẫn tới bàn Lab và người mẫu tỉ lệ `p4`. Khung ảnh dời ra mép trước, chính giữa.
 

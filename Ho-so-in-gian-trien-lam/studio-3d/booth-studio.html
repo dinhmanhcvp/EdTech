@@ -108,6 +108,7 @@ button { cursor: pointer; }
     <div class="seg" role="group" aria-label="Lighting">
       <button type="button" data-mode="day" aria-pressed="true">Day</button>
       <button type="button" data-mode="evening" aria-pressed="false">Evening</button>
+      <button type="button" id="sunBtn" aria-pressed="false" title="Sunlight on/off (off = indoor hall light, less glare)">Sun</button>
     </div>
     <label class="chk" for="optRecess" hidden>Front booth recess <input type="number" id="optRecess" step="50" value="400" style="width:70px;background:var(--bg);border:1px solid var(--line2);border-radius:6px;padding:4px 6px"> mm</label>
     <label class="chk" for="optStep" hidden>Step back <input type="number" id="optStep" step="50" value="600" style="width:76px;background:var(--bg);border:1px solid var(--line2);border-radius:6px;padding:4px 6px"> mm</label>
@@ -1367,7 +1368,7 @@ tc.addEventListener('dragging-changed', (e) => { orbit.enabled = !e.value; if (!
 tc.addEventListener('objectChange', () => { const o = selObj(); const gobj = tc.object; if (!o || !gobj) return; o.x = Math.round(gobj.position.x / M); o.y = Math.round(gobj.position.y / M); o.z = Math.round(gobj.position.z / M) - zoff(o); o.ry = Math.round(THREE.MathUtils.radToDeg(gobj.rotation.y)); updateDims(); syncInspectorNums(); });
 
 // ---------------- trạng thái ----------------
-let objects = DEFAULT(); let settings = { mode: 'day', neighbors: true, roof: true, people: true, cam: 'pavilion', step: 0, recess: 0 }; let selected = null; const history = [];
+let objects = DEFAULT(); let settings = { mode: 'day', sun: false, neighbors: true, roof: true, people: true, cam: 'pavilion', step: 0, recess: 0 }; let selected = null; const history = [];
 try { const s = JSON.parse(localStorage.getItem(STORE) || 'null'); if (s && Array.isArray(s.objects)) { objects = s.objects; settings = { ...settings, ...(s.settings || {}) }; } } catch (e) {}
 const groups = new Map();
 const selObj = () => objects.find((o) => o.id === selected);
@@ -1390,8 +1391,12 @@ function rebuildAll() { for (const [id, g] of groups) { root.remove(g); dispose(
 function applyMode() {
   const day = settings.mode === 'day';
   scene.background = new THREE.Color(day ? '#DCE6EE' : '#0A1020'); scene.fog = new THREE.Fog(day ? '#DCE6EE' : '#0A1020', 18, 60);
-  scene.environment = day ? envTex : null; hemi.intensity = day ? 0.65 : 0.12; hemi.color.set(day ? '#ffffff' : '#7F95C9'); sun.intensity = day ? 2.1 : 0; spots.forEach((s) => (s.intensity = day ? 2 : 14));
-  bloom.strength = day ? 0.32 : 1.05; bloom.threshold = day ? 0.92 : 0.55; bloom.radius = day ? 0.45 : 0.65; renderer.toneMappingExposure = day ? 0.82 : 1.15;
+  // Sun off (default): soft indoor hall light, no hard sunlight, less bloom, so the booth is not glaring.
+  const sunOn = day && settings.sun;
+  scene.environment = day ? envTex : null; hemi.intensity = day ? (sunOn ? 0.65 : 0.9) : 0.12; hemi.color.set(day ? '#ffffff' : '#7F95C9'); sun.intensity = sunOn ? 2.1 : 0; spots.forEach((s) => (s.intensity = day ? (sunOn ? 2 : 1.4) : 14));
+  if (day && !sunOn) { scene.background = new THREE.Color('#C9D0D6'); scene.fog = new THREE.Fog('#C9D0D6', 18, 60); }
+  bloom.strength = day ? (sunOn ? 0.32 : 0.12) : 1.05; bloom.threshold = day ? (sunOn ? 0.92 : 0.97) : 0.55; bloom.radius = day ? 0.45 : 0.65; renderer.toneMappingExposure = day ? (sunOn ? 0.82 : 0.72) : 1.15;
+  const sb = document.getElementById('sunBtn'); if (sb) { sb.setAttribute('aria-pressed', String(!!settings.sun)); sb.disabled = !day; }
   document.querySelectorAll('[data-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === settings.mode)));
 }
 
@@ -1494,6 +1499,7 @@ function modal(html, onReady) { const m = $('#modal'); m.innerHTML = `<div class
 
 document.querySelectorAll('[data-cam]').forEach((b) => (b.onclick = () => setCam(b.dataset.cam)));
 document.querySelectorAll('[data-mode]').forEach((b) => (b.onclick = () => { settings.mode = b.dataset.mode; applyMode(); save(); }));
+document.getElementById('sunBtn').onclick = () => { settings.sun = !settings.sun; applyMode(); save(); };
 document.querySelectorAll('[data-tool]').forEach((b) => (b.onclick = () => setTool(b.dataset.tool)));
 function setTool(t) { tc.setMode(t); tc.showX = t === 'translate'; tc.showZ = t === 'translate'; tc.showY = true; document.querySelectorAll('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === t))); }
 $('#optRecess').value = settings.recess ?? 0; $('#optRecess').onchange = (e) => { settings.recess = Math.max(0, Number(e.target.value) || 0); rebuildAll(); select(selected); save(); renderInspector(); toast('Front booth recess ' + settings.recess + ' mm'); };

@@ -66,7 +66,7 @@ sections = [
    ('t5', 'Dây nối USB 1 m + nẹp dây', 'Webcam → cổng USB màn, đi ngầm sau vách chéo', 'bộ', 1, 60000, ''),
  ]),
  ('II', 'KẾT CẤU & VẬT PHẨM FORMEX (in UV + cắt CNC)', [
-   ('k3', 'Vách chéo khoét màn 65" (S01, S06)', 'Formex 15 mm 1,6 × 2,2 m, khoét 1 493 × 907 mm, nẹp viền', 'm²', 4.1, FX, ''),
+   ('k3', 'Vách chéo khoét màn 65" (S01, S06)', 'Formex 15 mm 1,87 × 2,2 m (ghép 2 tấm), khoét 1 493 × 907 mm, nẹp viền', 'm²', 4.7, FX, 'Màn 1 483 × 897 × 104 mm'),
    ('n31', 'Cổng Socratic chữ Π (S15)', '2 cột 0,22 × 2,53 m + hộp chữ 3 × 0,62 m + đĩa logo Ø 0,9 m, đỉnh 3,9 m', 'm²', 9.4, FX, 'Xin BTC chiều cao 3,9 m'),
    ('k1', 'Bàn đặt tay Lab 3D (S07)', '0,6 × 0,4 × 0,8 m, 2 vòm cong, thanh vòm gắn webcam', 'm²', 2.3, FX, ''),
    ('n12', 'Chữ đứng "Socratic?" + bệ (S04, S05)', 'Chữ 1,38 m, 3 lớp Formex; bệ 1,48 × 0,28 × 0,14 m', 'm²', 1.5, FX, 'Khu chụp ảnh'),
@@ -80,8 +80,8 @@ sections = [
    ('a6', 'Giá chữ L cho thẻ QR A6 (S18s)', 'Formex 5 mm gấp V', 'm²', 0.05, FX, ''),
  ]),
  ('III', 'IN ẤN, DECAL & CỜ', [
-   ('i1', 'Decal vách sau: ảnh nhóm + mô hình (S02)', 'Decal PP in UV cán mờ, keo bóc được, 1,48 × 2,2 m', 'm²', 3.3, 160000, ''),
-   ('i2', 'Decal vách phải: how it works + QR (S03)', 'Decal PP in UV cán mờ, 2,2 × 2,2 m', 'm²', 4.8, 160000, ''),
+   ('i1', 'Decal vách sau: ảnh nhóm + mô hình (S02)', 'Decal PP in UV cán mờ, keo bóc được, 1,24 × 2,2 m', 'm²', 2.8, 160000, ''),
+   ('i2', 'Decal vách phải: how it works + QR (S03)', 'Decal PP in UV cán mờ, 2,1 × 2,2 m', 'm²', 4.7, 160000, ''),
    ('n6s', 'Cờ buồm 3,5 m Socratic (S16)', 'Vải lụa poly in chuyển nhiệt, cột sợi thủy tinh + chân nước', 'bộ', 1, 700000, ''),
    ('a1s', 'Tờ rơi A5 2 mặt (S11)', 'Couché 200 gsm, cán mờ 2 mặt', 'tờ', 120, 1200, ''),
    ('a6c', 'Thẻ QR dùng thử A6 (S18)', 'Couché 300 gsm cán mờ', 'thẻ', 2, 5000, ''),

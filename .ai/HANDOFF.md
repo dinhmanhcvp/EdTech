@@ -2888,3 +2888,7 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 - `corel-export.sh out-thi-cong-socratic` → `out-thi-cong-socratic-corel/` (PDF chữ → nét, kèm HUONG-DAN-MO-BANG-COREL.txt).
 - Studio v56: màu sáng, khẩu hiệu, áp danh sách chọn 26/11 (ẩn LED viền vách + kính GAVIS; hiện cờ buồm, kệ tờ rơi, standee sóng âm sát vách trái, topper + biển vẫy GAVIS).
 - `du-toan/build-du-toan-socratic.py` → `Du-toan-ngan-sach-Socratic.xlsx` (Tổng hợp / Chi tiết / Giả định): thuê màn 2,5 tr × 2 ngày, Formex 350k/m², Socratic chịu 70% chi phí chung, dự phòng 5%, chi phí thiết kế tự bù cho tổng = 20 000 000.
+
+## (45) Vách chéo dời ra 100 mm cho màn dày 104 mm
+- Màn 1 483,2 × 896,9 × 104: với vách chéo cũ (10,−1 470)→(1 470,−810) lưng màn lấn vách sau ~70 mm. Mới: CH = (−232,−1 470)→(1 470,−700), dài 1 868, vẫn 24,3°; màn lệch 105 mm về vách phải (offX 105, x0 ô khoét 292 trong S01), lưng hở 27 mm (vách sau) / 37 mm (vách phải).
+- Kéo theo: S01 rộng 1 868 (ghép 1 220 + 648), S02 1 218, S03 2 080 (QR 260 mm đặt ngay trên miệng bình S13), bàn Lab z −650…−50, bình S13 z −30…490, ê-ke z 510…1 210. Bản vẽ tờ 01, 02, 05 cập nhật; G04 kính GAVIS bỏ (BO). Studio v57.

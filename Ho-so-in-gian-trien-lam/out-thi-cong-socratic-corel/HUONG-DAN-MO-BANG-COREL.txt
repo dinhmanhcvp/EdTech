@@ -9,4 +9,4 @@ STEM Carnival · AIROC 2026 · Nhà thi đấu Phú Thọ · lắp 28/11, trưng
 4. Ảnh chụp (S02, S03) là ảnh bitmap nhúng sẵn. Xin ảnh gốc độ phân giải cao từ nhóm trước khi in khổ lớn.
 5. Bản vẽ kích thước: 01_BAN-VE-KICH-THUOC.pdf (A3). Màu: hệ RGB, chuyển CMYK theo máy in, giữ xanh tươi (gần C80 M55 Y0 K0) và cam (gần C0 M65 Y80 K0).
 6. Xem nhanh: thư mục xem-truoc/*.png.
-7. Đo lại màn 65" và vách BTC thực tế trước khi cắt S01 (ô khoét màn).
+7. Màn 1 483,2 × 896,9 × 104 mm. Ô khoét S01 lệch 105 mm về phía vách phải để lưng màn không chạm vách BTC (hở 27 mm vách sau, 37 mm vách phải). Đo lại màn và vách thực tế trước khi cắt.

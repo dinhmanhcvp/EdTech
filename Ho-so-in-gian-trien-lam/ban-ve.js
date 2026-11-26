@@ -24,12 +24,12 @@ function plan() { // mặt bằng: gốc toạ độ = tâm lều, z tăng ra l�
     s += ln('M-1500 -1500H1500V1500H-1500Z', k, { w: 0.25, dash: [2, 1.5], op: 0.6 }) + txt(0, 1600, 3, 'LỐI ĐI (khách đi từ trái sang phải) →', k, { a: 'middle', c: '#555' });
     s += ln('M-1470 1500V-1470H1470V1500', k, { w: 1.2 }) + txt(-1440, -1380, 2.6, 'VÁCH BTC', k, { c: '#777', mono: 1 });
     // decal ranges
-    s += ln('M-1455 1400V-1455', k, { c: '#8B5CF6', w: 2 }) + ln('M-1455 -1455H-10', k, { c: '#3D7BFF', w: 2 }) + ln('M1455 -810V1400', k, { c: '#3D7BFF', w: 2 });
+    s += ln('M-1455 1400V-1455', k, { c: '#8B5CF6', w: 2 }) + ln('M-1455 -1455H-252', k, { c: '#3D7BFF', w: 2 }) + ln('M1455 -700V1400', k, { c: '#3D7BFF', w: 2 });
     // chamfer
-    s += ln('M10 -1470L1470 -810', k, { w: 2.2 }) + ln('M10 -1470L1470 -810L1470 -1470Z', k, { fill: '#e9e9ef', w: 0.2 }) + txt(950, -1350, 2.4, 'khoảng giấu chân màn', k, { a: 'middle', c: '#666' });
-    const cx = 740, cz = -1140; s += txt(cx - 80, cz + 120, 2.8, 'S01 VÁCH CHÉO · màn 65"', k, { rot: 24.3, w: 700 });
+    s += ln('M-232 -1470L1470 -700', k, { w: 2.2 }) + ln('M-232 -1470L1470 -700L1470 -1470Z', k, { fill: '#e9e9ef', w: 0.2 }) + txt(950, -1350, 2.4, 'khoảng giấu chân màn', k, { a: 'middle', c: '#666' });
+    const cx = 714, cz = -1042; s += txt(cx - 80, cz + 120, 2.8, 'S01 VÁCH CHÉO · màn 65"', k, { rot: 24.3, w: 700 });
     // console
-    s += ln('M1060 -760H1460V-160H1060Z', k, { fill: '#dfe7ff', w: 0.6 }) + txt(1000, -460, 2.6, 'S07 BÀN LAB', k, { rot: -90, a: 'middle', w: 700 });
+    s += ln('M1060 -650H1460V-50H1060Z', k, { fill: '#dfe7ff', w: 0.6 }) + txt(1000, -350, 2.6, 'S07 BÀN LAB', k, { rot: -90, a: 'middle', w: 700 });
     // plinths
     [[-400, 650], [-800, 850], [-1200, 1050]].forEach(([z, h]) => { s += ln(poly(hexPts(-1180, z, 184, Math.PI / 6)), k, { fill: '#ece6ff', w: 0.6 }) + txt(-1180, z + 12, 2.4, String(h), k, { a: 'middle', mono: 1 }); });
     s += txt(-940, -800, 2.6, 'G02 3 BỤC (cao)', k, { w: 700 });
@@ -38,35 +38,37 @@ function plan() { // mặt bằng: gốc toạ độ = tâm lều, z tăng ra l�
     // pen
     s += ln('M-1130 1265H-870V1295H-1130Z', k, { fill: '#3D7BFF', w: 0.4 }) + txt(-1000, 1240, 2.2, 'S08 BÚT', k, { a: 'middle', w: 700 });
     // decor pieces (S09 set-square, S10 magnifier, S13 flask, S14 bulb hung, G04 glasses hung)
-    s += ln('M1440 710H1470V1410H1440Z', k, { fill: '#9fbaff', w: 0.4 }) + txt(1380, 900, 2.2, 'S09 Ê-KE', k, { a: 'end', w: 700 });
+    s += ln('M1440 510H1470V1210H1440Z', k, { fill: '#9fbaff', w: 0.4 }) + txt(1380, 860, 2.2, 'S09 Ê-KE', k, { a: 'end', w: 700 });
     s += ln('M-730 1265H-110V1295H-730Z', k, { fill: '#3D7BFF', w: 0.4 }) + txt(-420, 1240, 2.2, 'S10 KÍNH LÚP', k, { a: 'middle', w: 700 });
-    s += ln('M1345 -160H1375V360H1345Z', k, { fill: '#3D7BFF', w: 0.4 }) + txt(1300, 100, 2.2, 'S13 BÌNH LAB', k, { a: 'end', w: 700 });
+    s += ln('M1345 -30H1375V490H1345Z', k, { fill: '#3D7BFF', w: 0.4 }) + txt(1300, 230, 2.2, 'S13 BÌNH LAB', k, { a: 'end', w: 700 });
     s += ln('M870 1315H1430V1345H870Z', k, { dash: [1, 0.7], c: '#FF6A2B', w: 0.6 }) + txt(1150, 1105, 2.2, 'S14 BÓNG ĐÈN (TREO, đáy +1 490)', k, { a: 'middle', c: '#C0461A', w: 700 });
-    s += ln('M-1290 -1310L-1100 -270', k, { dash: [1, 0.7], c: '#8B5CF6', w: 0.8 }) + txt(-1010, -300, 2.2, 'G04 KÍNH (TREO, đáy +1 830)', k, { c: '#6D28D9', w: 700 });
+    s += ln('M-1480 1100H-1160V1360H-1480Z', k, { fill: '#3D7BFF', w: 0.4 }) + txt(-1320, 1060, 2.2, 'S17 KỆ TỜ RƠI', k, { a: 'middle', w: 700 });
+    s += `<circle cx="1380" cy="1780" r="200" fill="#dfe7ff" stroke="#3D7BFF" stroke-width="${0.4 * k}"/>` + txt(1150, 1800, 2.2, 'S16 CỜ BUỒM (lối đi, hỏi BTC)', k, { a: 'end', w: 700 });
+    s += ln('M-1330 -400H-1270V500H-1330Z', k, { fill: '#c4b5fd', w: 0.4 }) + txt(-1220, 50, 2.2, 'standee sóng âm GAVIS', k, { c: '#6D28D9', w: 700 });
     // gate S15 (front edge, protrudes 60 into the aisle)
     s += ln('M-1500 1440H-1280V1560H-1500Z M1280 1440H1500V1560H1280Z', k, { fill: '#14161c', w: 0.4 }) + ln('M-1500 1500H1500', k, { dash: [2, 1], c: '#3D7BFF', w: 0.8 }) + txt(0, 1690, 2.2, 'S15 CỔNG (hộp chữ trên cao 2 530–3 150)', k, { a: 'middle', c: '#3D7BFF', w: 700 });
     // writing zone
     s += ln(`M${cx - 300} ${cz + 300}L${cx + 150} ${cz + 500}L${cx + 30} ${cz + 770}L${cx - 420} ${cz + 570}Z`, k, { dash: [1.5, 1], c: '#3D7BFF' }) + txt(cx - 120, cz + 560, 2.4, 'vùng đứng viết bảng', k, { a: 'middle', c: '#3D7BFF' });
     // dimensions
     s += dim(-1500, 1500, 1500, 1500, 220, '3 000 (lều)', k) + dim(1500, -1500, 1500, 1500, -260, '3 000', k);
-    s += dim(10, -1470, 1470, -1470, -150, '1 460', k) + dim(1470, -1470, 1470, -810, -150, '660', k) + dim(10, -1470, 1470, -810, 120, '1 602 (vách chéo, 24,3°)', k);
-    s += dim(-1470, -1470, 10, -1470, -150, '1 480 (decal S02)', k) + dim(1470, -810, 1470, 1400, -380, '2 210 (decal S03)', k) + dim(-1470, 1400, -1470, -1470, 150, '2 870 (decal G01)', k);
-    s += dim(1060, -160, 1460, -160, 70, '400', k) + dim(1060, -760, 1060, -160, 80, '600', k) + dim(1470, -810, 1470, -760, -240, '50', k);
+    s += dim(-232, -1470, 1470, -1470, -150, '1 702', k) + dim(1470, -1470, 1470, -700, -150, '770', k) + dim(-232, -1470, 1470, -700, 120, '1 868 (vách chéo, 24,3°)', k);
+    s += dim(-1470, -1470, -232, -1470, -150, '1 238 (decal S02)', k) + dim(1470, -700, 1470, 1400, -380, '2 100 (decal S03)', k) + dim(-1470, 1400, -1470, -1470, 150, '2 870 (decal G01)', k);
+    s += dim(1060, -50, 1460, -50, 70, '400', k) + dim(1060, -650, 1060, -50, 80, '600', k) + dim(1470, -700, 1470, -650, -240, '50', k);
     s += dim(-60, 1440, 1420, 1440, 90, '1 480', k) + dim(1420, 1160, 1420, 1440, -60, '280', k) + dim(-1470, 1160, -60, 1160, -60, '1 410', k);
-    s += dim(-1470, -1200, -996, -1200, -40, '474 (tâm bục)', k) + dim(-1364, -400, -1364, -1200, 130, '400 + 400 (tâm–tâm)', k) + dim(1470, -160, 1470, 360, -110, '520 (S13)', k) + dim(1470, 360, 1470, 710, -110, '350 (QR)', k) + dim(1470, 710, 1470, 1410, -110, '700 (S09)', k) + dim(-1130, 1500, -870, 1500, -60, '260', k) + dim(-730, 1500, -110, 1500, -60, '620', k) + dim(-1470, 1500, -1130, 1500, -60, '340', k);
+    s += dim(-1470, -1200, -996, -1200, -40, '474 (tâm bục)', k) + dim(-1364, -400, -1364, -1200, 130, '400 + 400 (tâm–tâm)', k) + dim(1470, -30, 1470, 490, -110, '520 (S13)', k) + dim(1470, 510, 1470, 1210, -110, '700 (S09)', k) + dim(-1130, 1500, -870, 1500, -60, '260', k) + dim(-730, 1500, -110, 1500, -60, '620', k) + dim(-1470, 1500, -1130, 1500, -60, '340', k);
     return s; }, 'Nét đứt cam/tím: vật treo bằng dây cước từ khung mái lều (cao 2 500). Toạ độ lấy mép trong vách BTC. Màu tím: decal GAVIS; màu xanh: decal Socratic. Bục lục giác cạnh 184 mm, cao 650 · 850 · 1 050 từ ngoài vào. Đo lại lều thật khi nhận mặt bằng; lệch ≤ 30 mm thì giữ vị trí vách chéo, dồn sai số về phía lối đi.'); }
 
 function chamfer(rel) { // mặt đứng vách chéo + bàn Lab
-  return sheet('Vách chéo S01 và chữ nổi S06 · mặt đứng', '02', '1:12', [-500, -2550, 2800, 2900], (k) => {
-    const cw = 1493.2, ch = 906.9, x0 = (1600 - cw) / 2, yb = -995, yt = yb - ch; let s = '';
-    s += ln('M0 0H1600V-2200H0Z', k, { w: 0.6, fill: '#f3f4f8' }) + ln(`M${x0} ${yb}H${x0 + cw}V${yt}H${x0}Z`, k, { w: 0.6, fill: '#fff' }) + txt(800, (yb + yt) / 2, 3, 'Ô KHOÉT MÀN', k, { a: 'middle', c: '#888' });
+  return sheet('Vách chéo S01 và chữ nổi S06 · mặt đứng', '02', '1:12', [-500, -2550, 3000, 2900], (k) => {
+    const WW = 1868, cw = 1493.2, ch = 906.9, x0 = 292, mx = x0 + cw / 2, yb = -995, yt = yb - ch; let s = '';
+    s += ln(`M0 0H${WW}V-2200H0Z`, k, { w: 0.6, fill: '#f3f4f8' }) + ln('M1220 0V-2200', k, { w: 0.25, dash: [1.5, 1], c: '#C0261A' }) + txt(1235, -150, 2, 'mối ghép 2 tấm', k, { c: '#C0261A' }) + ln(`M${x0} ${yb}H${x0 + cw}V${yt}H${x0}Z`, k, { w: 0.6, fill: '#fff' }) + txt(mx, (yb + yt) / 2, 3, 'Ô KHOÉT MÀN', k, { a: 'middle', c: '#888' });
     s += ln(`M${x0 - 30} ${yb + 30}H${x0 + cw + 30}V${yt - 30}H${x0 - 30}Z`, k, { dash: [1.5, 1], c: '#3D7BFF' }) + txt(x0 + cw - 10, yt - 45, 2.2, 'nẹp Formex 10 mm rộng 30', k, { a: 'end', c: '#3D7BFF' });
-    s += ln(`M${800 - rel / 2} -2070H${800 + rel / 2}V-1940H${800 - rel / 2}Z`, k, { fill: '#dfe7ff', w: 0.4 }) + txt(800, -1985, 2.6, 'S06 chữ nổi', k, { a: 'middle' });
-    s += ln('M0 0H1600', k, { w: 1 }) + txt(0, 120, 2.6, 'SÀN', k, { mono: 1 });
-    s += dim(0, -2200, 1600, -2200, -160, '1 600', k) + dim(0, 0, 0, -2200, -160, '2 200', k);
+    s += ln(`M${mx - rel / 2} -2070H${mx + rel / 2}V-1940H${mx - rel / 2}Z`, k, { fill: '#dfe7ff', w: 0.4 }) + txt(mx, -1985, 2.6, 'S06 chữ nổi', k, { a: 'middle' });
+    s += ln(`M0 0H${WW}`, k, { w: 1 }) + txt(0, 120, 2.6, 'SÀN', k, { mono: 1 });
+    s += dim(0, -2200, WW, -2200, -160, '1 868', k) + dim(0, 0, 0, -2200, -160, '2 200', k);
     s += dim(x0, yb, x0 + cw, yb, 130, '1 493,2', k) + dim(x0 + cw, yb, x0 + cw, yt, -120, '906,9', k) + dim(x0 + cw + 200, 0, x0 + cw + 200, yb, -60, '995', k) + dim(0, yb + 220, x0, yb + 220, 0, String(x0.toFixed(1)).replace('.', ','), k);
-    s += dim(1600, yt, 1600, -2200, -220, P(2200 - 995 - ch), k) + dim(800 - rel / 2, -2070, 800 + rel / 2, -2070, -90, P(rel), k) + dim(1600, -1940, 1600, -2200, -380, '260 (chân chữ → đỉnh)', k);
-    return s; }, 'Formex 15 mm, in UV trực tiếp. Ô khoét = màn đo thực 1 483,2 × 896,9 mm + khe 5 mm mỗi phía; ĐO LẠI MÀN THẬT trước khi cắt. Mặt màn phẳng với mặt vách; màn đứng trên chân đế trong khoảng tam giác phía sau. Gông vách chéo vào hai vách BTC bằng ke Formex ở 3 cao độ (300 · 1 100 · 2 000).'); }
+    s += dim(WW, yt, WW, -2200, -220, P(2200 - 995 - ch), k) + dim(mx - rel / 2, -2070, mx + rel / 2, -2070, -90, P(rel), k) + dim(WW, -1940, WW, -2200, -380, '260 (chân chữ → đỉnh)', k) + dim(x0 + cw, yb, WW, yb, 130, P(WW - x0 - cw), k) + dim(0, yb + 380, mx, yb + 380, 0, '1 038,6 (tâm màn)', k);
+    return s; }, 'Formex 15 mm, in UV trực tiếp, ghép 2 tấm (1 220 + 648). Ô khoét = màn 1 483,2 × 896,9 × 104 mm + khe 5 mm mỗi phía, lệch 105 mm về phía vách phải để lưng màn dày 104 mm cách vách sau 27 mm, cách vách phải 37 mm; ĐO LẠI MÀN THẬT trước khi cắt. Mặt màn phẳng với mặt vách; màn đứng trên chân đế trong khoảng tam giác phía sau. Gông vách chéo vào hai vách BTC bằng ke Formex ở 3 cao độ (300 · 1 100 · 2 000).'); }
 
 function consoleSheet() {
   return sheet('Bàn đặt tay Lab S07 · 3 hình chiếu', '03', '1:8', [-300, -1550, 2800, 1800], (k) => { let s = '';
@@ -105,9 +107,9 @@ function wallsSheet() {
     const wall = (x, w, label, col, blocks) => { let r = ln(`M${x} 0H${x + w}V${-H}H${x}Z`, k, { fill: col + '22', w: 0.6, c: col }) + txt(x + w / 2, -H - 330, 3.2, label, k, { a: 'middle', w: 800 }) + dim(x, 0, x + w, 0, 140, P(w), k) + dim(x, 0, x, -H, 140, '2 200', k);
       blocks.forEach(([bx, bw, bh, t]) => { r += ln(`M${x + bx} 0H${x + bx + bw}V${-bh}H${x + bx}Z`, k, { fill: '#9993', dash: [1.2, 0.8] }) + txt(x + bx + bw / 2, -bh / 2, 2.2, t, k, { a: 'middle', c: '#444' }); }); return r; };
     s += wall(0, 2850, 'G01 · VÁCH TRÁI (trái file = lối vào)', '#8B5CF6', [[1500, 1350, 1100, 'bục G02 che (chỉ họa tiết)']]);
-    s += wall(3250, 1460, 'S02 · VÁCH SAU (trái)', '#3D7BFF', []);
-    s += wall(5100, 2190, 'S03 · VÁCH PHẢI (trái file = vách chéo)', '#3D7BFF', [[50, 600, 1300, 'bàn Lab che'], [660, 520, 880, 'S13 bình'], [1520, 670, 950, 'S09 ê-ke']]);
-    s += ln('M3250 -2220H6190V-2400H3250Z', k, { fill: '#E8C87244', c: '#a8862a', w: 0.5 }) + txt(4720, -2290, 2.2, 'C01 DẢI BẢO TRỢ 2 940 × 180 (trên đỉnh vách sau)', k, { a: 'middle' });
+    s += wall(3250, 1238, 'S02 · VÁCH SAU (trái)', '#3D7BFF', [[106, 368, 1050, 'bục G02 cao']]);
+    s += wall(4900, 2100, 'S03 · VÁCH PHẢI (trái file = vách chéo)', '#3D7BFF', [[50, 600, 1253, 'bàn Lab che'], [670, 520, 880, 'S13 bình'], [1210, 700, 950, 'S09 ê-ke']]);
+    s += ln('M3250 -2220H6190V-2400H3250Z', k, { fill: '#E8C87244', c: '#a8862a', w: 0.5 }) + txt(4720, -2470, 2.2, 'C01 DẢI BẢO TRỢ 2 940 × 180 (trên đỉnh vách sau)', k, { a: 'middle' });
     s += txt(4000, 900, 3, 'Tràn lề decal 20 mm mỗi phía; không dán đè lên nẹp nhôm vách BTC: cắt decal theo từng ô vách (thường rộng ≈ 1 000 mm) và căn chữ tránh nẹp.', k, { a: 'middle', w: 500 });
     return s; }); }
 
@@ -127,7 +129,7 @@ function gateSheet() {
     return s; }, 'Đặt ở mép trước lều, tâm cột cách tim gian ±1 390, mặt ngoài nhô ra lối đi 60 mm (hỏi BTC). Cột hộp Formex 10 mm có vách ngăn Formex 15 mm mỗi 600 mm, ghép 2 đoạn; đế 280 × 300 đặt bao cát; buộc đai mỗi cột vào cột lều ở cao 1 000 và 2 200. Hộp chữ 3 000 × 620 × 120 xương Formex 15 mm, đặt lên 2 cột, bắt ke. Đĩa Ø900 cắm vào nóc hộp chữ bằng 2 nẹp Formex. Tổng cao 3,9 m: XIN PHÉP BTC giới hạn chiều cao trước khi làm.'); }
 
 function decorSheet() { const { decorArt } = require('./decor-art'); const F = decorArt('flask'), B = decorArt('bulb'), G = decorArt('glasses');
-  return sheet('Vật phẩm trang trí Formex · S09 · S10 · S13 · S14 · G04', '06', '1:15', [-250, -2050, 4800, 2550], (k) => { let s = '';
+  return sheet('Vật phẩm trang trí Formex · S09 · S10 · S13 · S14', '06', '1:15', [-250, -2050, 4800, 2550], (k) => { let s = '';
     const piece = (A, x, y, title) => `<g transform="translate(${x} ${y})"><path d="${A.outline}" fill="#eef0f6" stroke="#14161c" stroke-width="${0.5 * k}"/>${(A.holes || []).map(([hx, hy]) => `<circle cx="${hx}" cy="${hy}" r="5" fill="#fff" stroke="#C0261A" stroke-width="${0.25 * k}"/>`).join('')}</g>` + txt(x + A.w / 2, y - 130, 2.8, title, k, { a: 'middle', w: 800 });
     // S09 set-square
     s += ln('M0 0V-950H0L700 0Z', k, { fill: '#eef0f6', w: 0.5 }) + ln('M140 -140V-614L486 -140Z', k, { fill: '#fff', w: 0.4 }) + txt(350, -1080, 2.8, 'S09 · Ê-KE', k, { a: 'middle', w: 800 });
@@ -139,8 +141,6 @@ function decorSheet() { const { decorArt } = require('./decor-art'); const F = d
     const fx = 1900; s += piece(F, fx, -F.h, 'S13 · BÌNH "3D LAB"') + dim(fx, 0, fx + F.w, 0, 110, P(F.w), k) + dim(fx + F.w, 0, fx + F.w, -F.h, -110, P(F.w ? F.h : 0), k) + dim(fx + 0.36 * F.w, -F.h, fx + 0.64 * F.w, -F.h, -60, P(0.28 * F.w) + ' (cổ)', k) + ln(`M${fx - 20} 0H${fx + F.w + 20}V20H${fx - 20}Z`, k, { fill: '#14161c' });
     // S14 bulb (hung)
     const bx = 2700; s += piece(B, bx, -1800, 'S14 · BÓNG ĐÈN (treo)') + dim(bx, -1800 + B.h, bx + B.w, -1800 + B.h, 110, P(B.w), k) + dim(bx + B.w, -1800, bx + B.w, -1800 + B.h, -110, P(B.h), k) + ln(`M${bx + 190} -1770V-2050M${bx + 370} -1770V-2050`, k, { dash: [1, 0.7], c: '#888' }) + txt(bx + B.w / 2, -1900 + B.h + 330, 2.2, 'treo 2 dây cước, đáy cách sàn ≈ 1 490', k, { a: 'middle' });
-    // G04 glasses (hung)
-    const gx = 3450; s += piece(G, gx, -700, 'G04 · KÍNH GAVIS (treo)') + dim(gx, -700 + G.h, gx + G.w, -700 + G.h, 110, P(G.w), k) + dim(gx + G.w, -700, gx + G.w, -700 + G.h, -110, P(G.h), k) + ln(`M${gx + 340} -690V-1000M${gx + G.w - 340} -690V-1000`, k, { dash: [1, 0.7], c: '#888' }) + txt(gx + G.w / 2, -700 + G.h + 330, 2.2, 'treo 2 dây cước, đáy cách sàn ≈ 1 830', k, { a: 'middle' });
-    return s; }, 'Tất cả Formex in UV 2 mặt, CNC theo file *_DUONG-CAT.pdf. Vật đứng (S09, S10, S13): Formex 10 mm, đế Formex 15 mm sâu 250 mm, 2 ke góc. Vật treo (S14, G04): Formex 5 mm cho nhẹ, 2 lỗ Ø10, dây cước 0,8 mm + móc chữ S vào khung mái lều; kiểm tra khung mái chịu tải trước khi treo.'); }
+    return s; }, 'Tất cả Formex in UV 2 mặt, CNC theo file *_DUONG-CAT.pdf. Vật đứng (S09, S10, S13): Formex 10 mm, đế Formex 15 mm sâu 250 mm, 2 ke góc. Vật treo (S14): Formex 5 mm cho nhẹ, 2 lỗ Ø10, dây cước 0,8 mm + móc chữ S vào khung mái lều; kiểm tra khung mái chịu tải trước khi treo.'); }
 
 module.exports = { gateSheet, decorSheet, plan, chamfer, consoleSheet, piecesSheet, wallsSheet };

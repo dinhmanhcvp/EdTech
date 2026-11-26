@@ -166,7 +166,8 @@ async function items() { const L = [];
 
 async function main() {
   fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(path.join(OUT, 'xem-truoc'), { recursive: true }); fs.mkdirSync(TMP, { recursive: true });
-  const L = (await items()).filter((x) => !ONLY || x.grp === ONLY); const br = await chromium.launch(); const page = await br.newPage(); const files = [];
+  // Gói riêng GAVIS mang theo dải bảo trợ C01 (GAVIS đặt in hạng mục chung này).
+  const ALL = await items(); const L = ALL.map((x) => (ONLY === 'GAVIS' && x.code === 'C01' ? { ...x, grp: 'GAVIS', where: x.where + ' (gói GAVIS đặt in)' } : x)).filter((x) => !ONLY || x.grp === ONLY); const br = await chromium.launch(); const page = await br.newPage(); const files = [];
   const render = async (it, inner, bg, file) => { const hp = path.join(TMP, 'p.html'); fs.writeFileSync(hp, pageHTML(it, inner, bg)); await page.goto('file://' + hp); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(150);
     const s = it.marks ? 12 : 0; await page.pdf({ path: file, width: `${it.w + 2 * (it.bleed || 0) + 2 * s}mm`, height: `${it.h + 2 * (it.bleed || 0) + 2 * s}mm`, printBackground: true, pageRanges: '1' }); };
   for (const it of L) { const dir = path.join(OUT, it.grp === 'Socratic' ? '1-socratic' : it.grp === 'GAVIS' ? '2-gavis' : '3-chung'); fs.mkdirSync(dir, { recursive: true });
@@ -178,7 +179,7 @@ async function main() {
     files.push({ ...it, file: path.relative(OUT, out), pv: pv + '.png', miss: [...(missing.get(it.code) || [])] }); console.log('✓', path.relative(ROOT, out)); }
   fs.writeFileSync(path.join(TMP, 'sheet.html'), sheet(files)); await page.goto('file://' + path.join(TMP, 'sheet.html')); await page.evaluate(() => document.fonts.ready);
   await page.pdf({ path: path.join(OUT, '00_BANG-KE-THI-CONG.pdf'), format: 'A4', landscape: true, printBackground: true, margin: { top: '10mm', bottom: '12mm', left: '10mm', right: '10mm' } });
-  const BV = require('./ban-ve'); const s6w = Math.round(L.find((x) => x.code === 'S06').w), wmH = Math.round(L.find((x) => x.code === 'S04').h);
+  const BV = require('./ban-ve'); const s6w = Math.round(ALL.find((x) => x.code === 'S06').w), wmH = Math.round(ALL.find((x) => x.code === 'S04').h);
   fs.writeFileSync(path.join(TMP, 'bv.html'), `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${F('fonts/fonts.css')}"><style>@page{size:420mm 297mm;margin:0}body{margin:0}</style></head><body>${BV.plan()}${BV.chamfer(s6w)}${BV.consoleSheet()}${BV.piecesSheet(wmH)}${BV.wallsSheet()}${BV.decorSheet()}</body></html>`);
   await page.goto('file://' + path.join(TMP, 'bv.html')); await page.evaluate(() => document.fonts.ready); await page.pdf({ path: path.join(OUT, '01_BAN-VE-KICH-THUOC.pdf'), width: '420mm', height: '297mm', printBackground: true });
   execFileSync('pdftoppm', ['-png', '-r', '40', path.join(OUT, '01_BAN-VE-KICH-THUOC.pdf'), path.join(OUT, 'xem-truoc', 'BV')]);

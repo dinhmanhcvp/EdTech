@@ -2875,3 +2875,4 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 - Bố cục mới: vách phải (sau → trước) bàn Lab · bình S13 (z −160…360) · cột QR · ê-ke (z 710…1 410); hàng trước: bút (x −1 000), kính lúp (x −420), chữ Socratic?. Studio v54. Dự toán: thêm n28/n29/n30, bỏ a5s/a5g.
 - Còn thiếu duy nhất: số gian trên tờ rơi.
 - Xuất riêng Socratic: `ONLY=Socratic node build-thi-cong.js` → `out-thi-cong-socratic/` (16 hạng mục, bảng kê chỉ Socratic; bản vẽ giữ đủ 6 tờ để định vị).
+- Xuất riêng GAVIS: `ONLY=GAVIS node build-thi-cong.js` → `out-thi-cong-gavis/` (8 hạng mục, gồm cả dải bảo trợ C01 do GAVIS đặt in).

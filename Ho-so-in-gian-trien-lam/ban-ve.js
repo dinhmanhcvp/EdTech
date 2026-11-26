@@ -31,8 +31,8 @@ function plan() { // mặt bằng: gốc toạ độ = tâm lều, z tăng ra l�
     // console
     s += ln('M1060 -650H1460V-50H1060Z', k, { fill: '#dfe7ff', w: 0.6 }) + txt(1000, -350, 2.6, 'S07 BÀN LAB', k, { rot: -90, a: 'middle', w: 700 });
     // plinths
-    [[-400, 650], [-800, 850], [-1200, 1050]].forEach(([z, h]) => { s += ln(poly(hexPts(-1180, z, 184, Math.PI / 6)), k, { fill: '#ece6ff', w: 0.6 }) + txt(-1180, z + 12, 2.4, String(h), k, { a: 'middle', mono: 1 }); });
-    s += txt(-940, -800, 2.6, 'G02 3 BỤC (cao)', k, { w: 700 });
+    [[-800, 1050]].forEach(([z, h]) => { s += ln(poly(hexPts(-1180, z, 184, Math.PI / 6)), k, { fill: '#ece6ff', w: 0.6 }) + txt(-1180, z + 12, 2.4, String(h), k, { a: 'middle', mono: 1 }); });
+    s += txt(-940, -800, 2.6, 'G02 BỤC GAVIS (cao 1 050)', k, { w: 700 });
     // letters
     s += ln('M-60 1160H1420V1440H-60Z', k, { fill: '#dfe7ff', w: 0.6 }) + txt(680, 1320, 2.6, 'S04/S05 CHỮ "Socratic?" + BỆ', k, { a: 'middle', w: 700 });
     // pen
@@ -44,7 +44,6 @@ function plan() { // mặt bằng: gốc toạ độ = tâm lều, z tăng ra l�
     s += ln('M870 1315H1430V1345H870Z', k, { dash: [1, 0.7], c: '#FF6A2B', w: 0.6 }) + txt(1150, 1105, 2.2, 'S14 BÓNG ĐÈN (TREO, đáy +1 490)', k, { a: 'middle', c: '#C0461A', w: 700 });
     s += ln('M-1480 1100H-1160V1360H-1480Z', k, { fill: '#3D7BFF', w: 0.4 }) + txt(-1320, 1060, 2.2, 'S17 KỆ TỜ RƠI', k, { a: 'middle', w: 700 });
     s += `<circle cx="1380" cy="1780" r="200" fill="#dfe7ff" stroke="#3D7BFF" stroke-width="${0.4 * k}"/>` + txt(1150, 1800, 2.2, 'S16 CỜ BUỒM (lối đi, hỏi BTC)', k, { a: 'end', w: 700 });
-    s += ln('M-1330 -400H-1270V500H-1330Z', k, { fill: '#c4b5fd', w: 0.4 }) + txt(-1220, 50, 2.2, 'standee sóng âm GAVIS', k, { c: '#6D28D9', w: 700 });
     // gate S15 (front edge, protrudes 60 into the aisle)
     s += ln('M-1500 1440H-1280V1560H-1500Z M1280 1440H1500V1560H1280Z', k, { fill: '#14161c', w: 0.4 }) + ln('M-1500 1500H1500', k, { dash: [2, 1], c: '#3D7BFF', w: 0.8 }) + txt(0, 1690, 2.2, 'S15 CỔNG (hộp chữ trên cao 2 530–3 150)', k, { a: 'middle', c: '#3D7BFF', w: 700 });
     // writing zone
@@ -55,8 +54,8 @@ function plan() { // mặt bằng: gốc toạ độ = tâm lều, z tăng ra l�
     s += dim(-1470, -1470, -232, -1470, -150, '1 238 (decal S02)', k) + dim(1470, -700, 1470, 1400, -380, '2 100 (decal S03)', k) + dim(-1470, 1400, -1470, -1470, 150, '2 870 (decal G01)', k);
     s += dim(1060, -50, 1460, -50, 70, '400', k) + dim(1060, -650, 1060, -50, 80, '600', k) + dim(1470, -700, 1470, -650, -240, '50', k);
     s += dim(-60, 1440, 1420, 1440, 90, '1 480', k) + dim(1420, 1160, 1420, 1440, -60, '280', k) + dim(-1470, 1160, -60, 1160, -60, '1 410', k);
-    s += dim(-1470, -1200, -996, -1200, -40, '474 (tâm bục)', k) + dim(-1364, -400, -1364, -1200, 130, '400 + 400 (tâm–tâm)', k) + dim(1470, -30, 1470, 490, -110, '520 (S13)', k) + dim(1470, 510, 1470, 1210, -110, '700 (S09)', k) + dim(-1130, 1500, -870, 1500, -60, '260', k) + dim(-730, 1500, -110, 1500, -60, '620', k) + dim(-1470, 1500, -1130, 1500, -60, '340', k);
-    return s; }, 'Nét đứt cam/tím: vật treo bằng dây cước từ khung mái lều (cao 2 500). Toạ độ lấy mép trong vách BTC. Màu tím: decal GAVIS; màu xanh: decal Socratic. Bục lục giác cạnh 184 mm, cao 650 · 850 · 1 050 từ ngoài vào. Đo lại lều thật khi nhận mặt bằng; lệch ≤ 30 mm thì giữ vị trí vách chéo, dồn sai số về phía lối đi.'); }
+    s += dim(-1470, -800, -1180, -800, -260, '290 (tâm bục)', k) + dim(-1180, -1470, -1180, -800, 0, '670', k) + dim(1470, -30, 1470, 490, -110, '520 (S13)', k) + dim(1470, 510, 1470, 1210, -110, '700 (S09)', k) + dim(-1130, 1500, -870, 1500, -60, '260', k) + dim(-730, 1500, -110, 1500, -60, '620', k) + dim(-1470, 1500, -1130, 1500, -60, '340', k);
+    return s; }, 'Nét đứt cam/tím: vật treo bằng dây cước từ khung mái lều (cao 2 500). Toạ độ lấy mép trong vách BTC. Màu tím: decal GAVIS; màu xanh: decal Socratic. Bục GAVIS lục giác cạnh 184 mm, cao 1 050. Đo lại lều thật khi nhận mặt bằng; lệch ≤ 30 mm thì giữ vị trí vách chéo, dồn sai số về phía lối đi.'); }
 
 function chamfer(rel) { // mặt đứng vách chéo + bàn Lab
   return sheet('Vách chéo S01 và chữ nổi S06 · mặt đứng', '02', '1:12', [-500, -2550, 3000, 2900], (k) => {
@@ -91,8 +90,8 @@ function consoleSheet() {
 function piecesSheet(wmH) {
   return sheet('Bục GAVIS G02 · chữ đứng S04/S05 · bút S08', '04', '1:12', [-250, -2100, 3700, 2650], (k) => { let s = '';
     // plinths elevations
-    [[0, 650], [440, 850], [880, 1050]].forEach(([x, h]) => { s += ln(`M${x} 0H${x + 319}V${-h}H${x}Z`, k, { fill: '#ece6ff', w: 0.6 }) + ln(`M${x + 80} 0V${-h}M${x + 239} 0V${-h}`, k, { w: 0.2 }) + dim(x + 319, 0, x + 319, -h, -70, P(h), k); });
-    s += dim(0, 0, 319, 0, 100, '319 (2 mặt phẳng song song)', k) + txt(560, -1180, 2.8, 'G02 · 3 BỤC LỤC GIÁC', k, { a: 'middle', w: 800 });
+    [[400, 1050]].forEach(([x, h]) => { s += ln(`M${x} 0H${x + 319}V${-h}H${x}Z`, k, { fill: '#ece6ff', w: 0.6 }) + ln(`M${x + 80} 0V${-h}M${x + 239} 0V${-h}`, k, { w: 0.2 }) + dim(x + 319, 0, x + 319, -h, -70, P(h), k); });
+    s += dim(400, 0, 719, 0, 100, '319 (2 mặt phẳng song song)', k) + txt(560, -1180, 2.8, 'G02 · BỤC LỤC GIÁC GAVIS', k, { a: 'middle', w: 800 });
     s += ln(poly(hexPts(560, 220, 184, Math.PI / 6)), k, { w: 0.6, fill: '#ece6ff' }) + dim(560 - 159.3, 220 + 92, 560 - 159.3, 220 - 92, 30, '184 (cạnh)', k) + dim(560, 36, 560, 404, -200, '368 (góc–góc)', k);
     // letters + plinth
     const lx = 1450; s += ln(`M${lx} 0H${lx + 1480}V-140H${lx}Z`, k, { fill: '#dfe7ff', w: 0.6 }) + ln(`M${lx + 50} -140H${lx + 1430}V${-140 - wmH}H${lx + 50}Z`, k, { dash: [1.5, 1] }) + txt(lx + 740, -140 - wmH / 2 + 30, 6, 'Socratic?', k, { a: 'middle', w: 800 });
@@ -100,14 +99,14 @@ function piecesSheet(wmH) {
     // pen
     const px = 3200; s += ln(`M${px} 0H${px + 260}V-1750H${px}Z`, k, { dash: [1.5, 1] }) + ln(`M${px + 57} -50V-1700M${px + 203} -50V-1700`, k, { c: '#3D7BFF', w: 0.6 }) + ln(`M${px - 20} 0H${px + 280}V-15H${px - 20}Z`, k, { fill: '#14161c' });
     s += dim(px, -1750, px + 260, -1750, -90, '260', k) + dim(px + 260, 0, px + 260, -1750, -90, '1 750', k) + txt(px + 130, -1880, 2.8, 'S08 · BÚT', k, { a: 'middle', w: 800 }) + dim(px - 20, 0, px + 280, 0, 110, 'đế 300 × 250', k);
-    return s; }, 'Bục: 6 tấm Formex 10 mm rộng 184 mm ghép lục giác (in theo file G02), mặt trên G02t, LED tím mép trên + chân, đáy để hở. Chữ đứng: 3 lớp phẳng (chữ trắng 20 mm, chấm cam 20 mm, cung xanh 10 mm), bắt vít từ dưới bệ. Bút: Formex 10 mm in 2 mặt, đứng trên đế 300 × 250 ở mép trước bên trái.'); }
+    return s; }, 'Bục GAVIS: 1 bục cao 1 050, 6 tấm Formex 10 mm rộng 184 mm ghép lục giác (in theo file G02), mặt trên G02t, LED tím mép trên + chân, đáy để hở. Chữ đứng: 3 lớp phẳng (chữ trắng 20 mm, chấm cam 20 mm, cung xanh 10 mm), bắt vít từ dưới bệ. Bút: Formex 10 mm in 2 mặt, đứng trên đế 300 × 250 ở mép trước bên trái.'); }
 
 function wallsSheet() {
   return sheet('Vị trí decal trên vách BTC · 3 mặt đứng', '05', '1:25', [-300, -2750, 9600, 3850], (k) => { let s = ''; const H = 2200;
     const wall = (x, w, label, col, blocks) => { let r = ln(`M${x} 0H${x + w}V${-H}H${x}Z`, k, { fill: col + '22', w: 0.6, c: col }) + txt(x + w / 2, -H - 330, 3.2, label, k, { a: 'middle', w: 800 }) + dim(x, 0, x + w, 0, 140, P(w), k) + dim(x, 0, x, -H, 140, '2 200', k);
       blocks.forEach(([bx, bw, bh, t]) => { r += ln(`M${x + bx} 0H${x + bx + bw}V${-bh}H${x + bx}Z`, k, { fill: '#9993', dash: [1.2, 0.8] }) + txt(x + bx + bw / 2, -bh / 2, 2.2, t, k, { a: 'middle', c: '#444' }); }); return r; };
-    s += wall(0, 2850, 'G01 · VÁCH TRÁI (trái file = lối vào)', '#8B5CF6', [[1500, 1350, 1100, 'bục G02 che (chỉ họa tiết)']]);
-    s += wall(3250, 1238, 'S02 · VÁCH SAU (trái)', '#3D7BFF', [[106, 368, 1050, 'bục G02 cao']]);
+    s += wall(0, 2850, 'G01 · VÁCH TRÁI (trái file = lối vào)', '#8B5CF6', [[2016, 368, 1050, 'bục G02']]);
+    s += wall(3250, 1238, 'S02 · VÁCH SAU (trái)', '#3D7BFF', []);
     s += wall(4900, 2100, 'S03 · VÁCH PHẢI (trái file = vách chéo)', '#3D7BFF', [[50, 600, 1253, 'bàn Lab che'], [670, 520, 880, 'S13 bình'], [1210, 700, 950, 'S09 ê-ke']]);
     s += ln('M3250 -2220H6190V-2400H3250Z', k, { fill: '#E8C87244', c: '#a8862a', w: 0.5 }) + txt(4720, -2470, 2.2, 'C01 DẢI BẢO TRỢ 2 940 × 180 (trên đỉnh vách sau)', k, { a: 'middle' });
     s += txt(4000, 900, 3, 'Tràn lề decal 20 mm mỗi phía; không dán đè lên nẹp nhôm vách BTC: cắt decal theo từng ô vách (thường rộng ≈ 1 000 mm) và căn chữ tránh nẹp.', k, { a: 'middle', w: 500 });

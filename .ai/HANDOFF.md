@@ -2896,3 +2896,6 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 ## (46) Bản gửi offline
 - `Ho-so-in-gian-trien-lam/export-offline.py <node_modules/three>` → `ban-gui/`: studio 3D + trang dự toán thành HTML tự chứa (three.js r160 + addon nhúng data: URL qua importmap, font woff2 nhúng), đã thử chặn mạng: không lỗi. Kèm 5 ảnh phối cảnh và PDF dự toán. Sửa tiêu đề studio còn chữ FireSense.
 - Gói SVG `out-thi-cong-socratic-svg/` (51 SVG vector) cho Corel; .cdr thật chưa làm được (UniConvertor cần Python 2, bị chặn tải).
+
+## (47) GAVIS gọn: 1 bục, bỏ phụ kiện
+- GAVIS chỉ còn 1 bục lục giác cao 1 050 (G02, tâm x −1 180, z −800), bỏ standee sóng âm, topper, biển vẫy, kính treo (studio v58: ẩn; dự toán n23/n16g/n5g về mức 3). Gói GAVIS: G01, G02, G02t, G03 + C01; bản Corel `out-thi-cong-gavis-corel/`.

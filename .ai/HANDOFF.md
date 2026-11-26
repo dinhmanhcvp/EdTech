@@ -2892,3 +2892,7 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 ## (45) Vách chéo dời ra 100 mm cho màn dày 104 mm
 - Màn 1 483,2 × 896,9 × 104: với vách chéo cũ (10,−1 470)→(1 470,−810) lưng màn lấn vách sau ~70 mm. Mới: CH = (−232,−1 470)→(1 470,−700), dài 1 868, vẫn 24,3°; màn lệch 105 mm về vách phải (offX 105, x0 ô khoét 292 trong S01), lưng hở 27 mm (vách sau) / 37 mm (vách phải).
 - Kéo theo: S01 rộng 1 868 (ghép 1 220 + 648), S02 1 218, S03 2 080 (QR 260 mm đặt ngay trên miệng bình S13), bàn Lab z −650…−50, bình S13 z −30…490, ê-ke z 510…1 210. Bản vẽ tờ 01, 02, 05 cập nhật; G04 kính GAVIS bỏ (BO). Studio v57.
+
+## (46) Bản gửi offline
+- `Ho-so-in-gian-trien-lam/export-offline.py <node_modules/three>` → `ban-gui/`: studio 3D + trang dự toán thành HTML tự chứa (three.js r160 + addon nhúng data: URL qua importmap, font woff2 nhúng), đã thử chặn mạng: không lỗi. Kèm 5 ảnh phối cảnh và PDF dự toán. Sửa tiêu đề studio còn chữ FireSense.
+- Gói SVG `out-thi-cong-socratic-svg/` (51 SVG vector) cho Corel; .cdr thật chưa làm được (UniConvertor cần Python 2, bị chặn tải).

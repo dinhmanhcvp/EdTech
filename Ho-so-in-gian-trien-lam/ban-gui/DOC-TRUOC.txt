@@ -1,0 +1,7 @@
+GIAN SOCRATIC VISION BOARD + GAVIS · STEM Carnival · AIROC 2026
+
+1. Studio-3D-gian-Socratic-GAVIS.html — mô hình 3D tương tác của gian. Mở bằng Chrome/Edge trên máy tính,
+   chạy được cả khi KHÔNG có mạng. Kéo chuột để xoay, cuộn để phóng to, bấm các nút Pavilion / Approach / Top / Walk in để đổi góc nhìn.
+   Những gì người xem tự kéo/sửa chỉ lưu trên máy của họ; bấm Reset để về bản gốc.
+2. Du-toan-gian-trien-lam.html — trang dự toán có tick chọn hạng mục (mở offline). Bản in: anh-phoi-canh/Du-toan-gian-trien-lam.pdf
+3. anh-phoi-canh/*.png — 5 ảnh phối cảnh chụp sẵn để gửi nhanh qua Zalo/email.

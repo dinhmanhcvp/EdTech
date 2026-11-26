@@ -2881,3 +2881,10 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 - Studio v55: type `gate` (S-gate, x 0 z 1500): 2 cột 220 × 120 × 2 530, hộp chữ 3 000 × 620 × 120 trên diềm lều (2 530–3 150), đĩa Ø900 logo ? (đỉnh 3 900), LED xanh. Ánh nắng tắt mặc định (nút Sun bật lại).
 - Kit: S15a/b mặt ngoài/trong hộp chữ, S15c/d mặt trước cột, S15e đĩa + logo (đường cắt = viền nét móc/cung/chấm tính bằng `strokeOutline`). Bản vẽ tờ 07; mặt bằng thêm cổng (nhô ra lối đi 60 mm). Dự toán n31 (≈ 9,4 m² Formex), n32 phụ kiện.
 - Cần xin BTC: chiều cao 3,9 m và phần nhô 60 mm ra lối đi.
+
+## (44) Khẩu hiệu, tông sáng, hạng mục mới, bản Corel, dự toán Excel
+- Khẩu hiệu "Learn the why. Own the future." (Tự học bản chất – Làm chủ tương lai): `logo/build-slogan.js` → `logo/slogan/` 16 bộ (ngang/dọc/chỉ khẩu hiệu × nền xanh/trắng/trong suốt × EN/VI), PDF chữ đã chuyển nét + SVG + PNG. Cần `gs` (apt ghostscript).
+- Kit: bảng màu Socratic sáng (`SBG`, `BRIGHT`, `bright()` trong build-thi-cong.js) cho S01–S03, S05, S07a/b, S11, S15a–e, S18; khẩu hiệu trên cổng (hộp chữ 2 mặt, 2 cột đọc liền), dải chân vách, tờ rơi, cờ. Mới: S16 cờ buồm, S17 kệ tờ rơi (+đường cắt vây/đế/túi), S18 thẻ QR A6 + S18s giá chữ L.
+- `corel-export.sh out-thi-cong-socratic` → `out-thi-cong-socratic-corel/` (PDF chữ → nét, kèm HUONG-DAN-MO-BANG-COREL.txt).
+- Studio v56: màu sáng, khẩu hiệu, áp danh sách chọn 26/11 (ẩn LED viền vách + kính GAVIS; hiện cờ buồm, kệ tờ rơi, standee sóng âm sát vách trái, topper + biển vẫy GAVIS).
+- `du-toan/build-du-toan-socratic.py` → `Du-toan-ngan-sach-Socratic.xlsx` (Tổng hợp / Chi tiết / Giả định): thuê màn 2,5 tr × 2 ngày, Formex 350k/m², Socratic chịu 70% chi phí chung, dự phòng 5%, chi phí thiết kế tự bù cho tổng = 20 000 000.

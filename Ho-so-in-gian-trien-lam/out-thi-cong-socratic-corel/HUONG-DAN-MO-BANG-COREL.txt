@@ -1,0 +1,12 @@
+HỒ SƠ THI CÔNG GIAN SOCRATIC VISION BOARD · BẢN CHO CORELDRAW
+STEM Carnival · AIROC 2026 · Nhà thi đấu Phú Thọ · lắp 28/11, trưng bày 29/11
+
+1. Mở file: CorelDRAW > File > Import (Ctrl+I) hoặc Open file .pdf.
+   Toàn bộ chữ đã chuyển thành nét (curves): không cần cài font, không bị nhảy font.
+2. Tỉ lệ 1:1, đơn vị mm. Khổ trang = kích thước thành phẩm + tràn lề (ghi trong 00_BANG-KE-THI-CONG.pdf).
+   Ví dụ S15a = 3 000 × 620 mm + tràn 3 mm mỗi phía.
+3. File *_DUONG-CAT.pdf: đường cắt CNC màu magenta (#EC008C, nét 0,6 mm). Đặt chồng lên file in cùng tên, căn góc trên-trái.
+4. Ảnh chụp (S02, S03) là ảnh bitmap nhúng sẵn. Xin ảnh gốc độ phân giải cao từ nhóm trước khi in khổ lớn.
+5. Bản vẽ kích thước: 01_BAN-VE-KICH-THUOC.pdf (A3). Màu: hệ RGB, chuyển CMYK theo máy in, giữ xanh tươi (gần C80 M55 Y0 K0) và cam (gần C0 M65 Y80 K0).
+6. Xem nhanh: thư mục xem-truoc/*.png.
+7. Đo lại màn 65" và vách BTC thực tế trước khi cắt S01 (ô khoét màn).

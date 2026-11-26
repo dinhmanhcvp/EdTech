@@ -2876,3 +2876,8 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 - Còn thiếu duy nhất: số gian trên tờ rơi.
 - Xuất riêng Socratic: `ONLY=Socratic node build-thi-cong.js` → `out-thi-cong-socratic/` (16 hạng mục, bảng kê chỉ Socratic; bản vẽ giữ đủ 6 tờ để định vị).
 - Xuất riêng GAVIS: `ONLY=GAVIS node build-thi-cong.js` → `out-thi-cong-gavis/` (8 hạng mục, gồm cả dải bảo trợ C01 do GAVIS đặt in).
+
+## (43) Cổng Socratic S15 + tắt nắng studio
+- Studio v55: type `gate` (S-gate, x 0 z 1500): 2 cột 220 × 120 × 2 530, hộp chữ 3 000 × 620 × 120 trên diềm lều (2 530–3 150), đĩa Ø900 logo ? (đỉnh 3 900), LED xanh. Ánh nắng tắt mặc định (nút Sun bật lại).
+- Kit: S15a/b mặt ngoài/trong hộp chữ, S15c/d mặt trước cột, S15e đĩa + logo (đường cắt = viền nét móc/cung/chấm tính bằng `strokeOutline`). Bản vẽ tờ 07; mặt bằng thêm cổng (nhô ra lối đi 60 mm). Dự toán n31 (≈ 9,4 m² Formex), n32 phụ kiện.
+- Cần xin BTC: chiều cao 3,9 m và phần nhô 60 mm ra lối đi.

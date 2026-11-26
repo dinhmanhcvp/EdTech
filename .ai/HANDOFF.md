@@ -2874,3 +2874,4 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 - Kit: S09 ê-ke, S10 kính lúp thành mặc định (bỏ `WITH_OPTIONAL`); xoá thẻ đeo S12/G04 cũ (mã G04 nay là kính GAVIS); S02 bỏ tên/vai trò, thay bằng 2 ảnh (bảng phấn → bảng hỏi lại); S03 QR dời lên cột x 1 180 không bị che. Bản vẽ thêm tờ 06 (vật phẩm), mặt bằng cập nhật vị trí.
 - Bố cục mới: vách phải (sau → trước) bàn Lab · bình S13 (z −160…360) · cột QR · ê-ke (z 710…1 410); hàng trước: bút (x −1 000), kính lúp (x −420), chữ Socratic?. Studio v54. Dự toán: thêm n28/n29/n30, bỏ a5s/a5g.
 - Còn thiếu duy nhất: số gian trên tờ rơi.
+- Xuất riêng Socratic: `ONLY=Socratic node build-thi-cong.js` → `out-thi-cong-socratic/` (16 hạng mục, bảng kê chỉ Socratic; bản vẽ giữ đủ 6 tờ để định vị).

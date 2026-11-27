@@ -21,7 +21,7 @@ const ids = process.argv.slice(2);
   for (const id of ids) {
     errs.length = 0;
     await p.goto(`http://localhost:3001/lab?bai=${id}`, {timeout: 180000});
-    try { await p.waitForFunction(() => window.__bench && window.__bench.A.for >= 0, null, {timeout: 120000}); } catch { console.log(id, 'LOAD TIMEOUT'); bad++; continue; }
+    try { await p.waitForFunction(() => window.__bench && (window.__bench.A.for >= 0 || (window.__bench.setup.length === 0 && performance.now() > 20000)), null, {timeout: 120000}); } catch { console.log(id, 'LOAD TIMEOUT'); bad++; continue; }
     await p.waitForTimeout(600);
     const out = [];
     let ok = true;

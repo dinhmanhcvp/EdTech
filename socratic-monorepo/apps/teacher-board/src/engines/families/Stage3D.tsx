@@ -8,6 +8,7 @@ import {LineMaterial} from 'three/examples/jsm/lines/LineMaterial.js';
 import {LineSegments2} from 'three/examples/jsm/lines/LineSegments2.js';
 import {LineSegmentsGeometry} from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import type {P, S} from '../../utils/presets/types';
+import {warm} from './labParts';
 
 /** một dòng của thẻ thông tin: h = tiêu đề, kv = cặp tên–giá trị, eq = phương trình (chữ đơn cách), p = câu thường, warn = cảnh báo */
 export type CardRow = {t: 'h' | 'kv' | 'eq' | 'p' | 'warn'; a: string; b?: string; c?: string};
@@ -394,6 +395,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
         cap.current.replaceChildren(Object.assign(document.createElement('b'), {className: 'block text-[13px] font-semibold', textContent: head}), ...rest.map((r) => Object.assign(document.createElement('span'), {className: 'block text-xs opacity-75', textContent: r})));
       },
     };
+    Object.assign(warm, {renderer, scene, camera});
     const update = def.setup(kit);
     const post = def.post?.(renderer, scene, camera) ?? null;
     // chỉ khi phát triển: máy đo hiệu năng đọc số lệnh vẽ / tam giác (`renderer.info`) của cảnh đang mở
@@ -610,6 +612,7 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       });
       pmrem.dispose();
       post?.dispose();
+      if (warm.renderer === renderer) warm.renderer = warm.scene = warm.camera = undefined;
       renderer.dispose();
       renderer.forceContextLoss(); // giải phóng ngữ cảnh WebGL ngay (không chờ GC): đổi bài nhiều lần không làm cạn ngữ cảnh của trình duyệt
       renderer.domElement.remove();

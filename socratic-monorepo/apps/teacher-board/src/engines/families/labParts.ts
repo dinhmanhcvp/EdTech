@@ -17,6 +17,14 @@ export function gltfLoader(): GLTFLoader {
   draco ??= new DRACOLoader().setDecoderPath('/draco/');
   return new GLTFLoader().setDRACOLoader(draco);
 }
+/** cảnh 3D đang mở (Stage3D ghi): mô hình vừa tải được dịch shader trước, song song, theo đúng đèn của cảnh */
+export const warm: {renderer?: THREE.WebGLRenderer; scene?: THREE.Scene; camera?: THREE.Camera} = {};
+/** dịch shader của mô hình trước khi giao cho cảnh: lần vẽ đầu không phải chờ GPU dịch (giật 100–200 ms mỗi lần vật mới hiện). Chậm quá 3 s thì giao luôn. */
+function precompile(obj: THREE.Object3D): Promise<void> {
+  const {renderer, scene, camera} = warm;
+  if (!renderer || !scene || !camera) return Promise.resolve();
+  return Promise.race([renderer.compileAsync(obj, camera, scene).then(() => undefined), new Promise<void>((r) => setTimeout(r, 3000))]).catch(() => undefined);
+}
 export function loadModel(url: string): Promise<THREE.Group> {
   let p = cache.get(url);
   if (!p) {
@@ -25,7 +33,7 @@ export function loadModel(url: string): Promise<THREE.Group> {
         assetUrl(url),
         (g) => {
           markBVH(g.scene); // tia trỏ / chạm vào mô hình dùng cây bao (dựng lười ở lần bắn đầu)
-          resolve(g.scene);
+          void precompile(g.scene).then(() => resolve(g.scene));
         },
         undefined,
         reject,

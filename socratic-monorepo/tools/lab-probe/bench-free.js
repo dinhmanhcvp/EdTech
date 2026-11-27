@@ -25,11 +25,12 @@ const ids = process.argv.slice(2);
     const out = [];
     let ok = true;
     const m = p.mouse;
+    // rót: máy ảo vài khung/giây nên 2,2 s mô phỏng có thể mất tới cả phút thật (chờ tối đa 60 s)
     const act = async (i) => {
       if (i.kind === 'press') { await m.move(...i.to); await m.down(); await p.waitForTimeout(80); await m.up(); return; }
       if (i.kind === 'squeeze') { await m.move(...i.from); for (let t = 0; t < (i.k || 5) + 1; t++) { await m.down(); await p.waitForTimeout(120); await m.up(); await p.waitForTimeout(120); } return; }
       await m.move(...i.from); await p.waitForTimeout(120); await m.down(); await p.waitForTimeout(120);
-      if (i.kind === 'pour') { await m.move(...i.to, {steps: 15}); for (let w = 0; w < 120 && (await p.evaluate(() => window.__bench.A.prog)) < 1; w++) await p.waitForTimeout(500); // máy ảo vài khung/giây: rót 2,2 s mô phỏng mất tới cả phút }
+      if (i.kind === 'pour') { await m.move(...i.to, {steps: 15}); for (let w = 0; w < 120 && (await p.evaluate(() => window.__bench.A.prog)) < 1; w++) await p.waitForTimeout(500); }
       else if (i.kind === 'stir' || i.kind === 'turn') { await m.move(...i.to, {steps: 10}); for (let t = 0; t <= ((i.k || 3) + 1) * 24; t++) { const a = t / 24 * 2 * Math.PI; await m.move(i.to[0] + 45 * Math.cos(a), i.to[1] + 22 * Math.sin(a)); await p.waitForTimeout(16); } }
       else await m.move(...i.to, {steps: 15});
       await p.waitForTimeout(150); await m.up();

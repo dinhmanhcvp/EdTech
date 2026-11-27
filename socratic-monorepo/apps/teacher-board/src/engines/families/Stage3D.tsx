@@ -194,6 +194,8 @@ export const Stage3D: React.FC<View3 & {def: SceneDef; onFail: () => void; onPic
       renderer = new THREE.WebGLRenderer({antialias: true, stencil: !!def.stencil});
       // vật liệu có `clippingPlanes` riêng (cắt lớp cơ quan) chỉ có tác dụng khi bật cắt cục bộ
       renderer.localClippingEnabled = true;
+      // bản chạy thật không đọc lại trạng thái biên dịch shader: lệnh đọc đó chặn luồng chính tới khi GPU dịch xong (giật 100–200 ms khi vật mới hiện)
+      renderer.debug.checkShaderErrors = process.env.NODE_ENV !== 'production';
     } catch {
       onFail();
       return;

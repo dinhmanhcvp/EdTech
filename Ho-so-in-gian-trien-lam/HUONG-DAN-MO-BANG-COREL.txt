@@ -18,3 +18,8 @@ CHUYỂN TOÀN BỘ SANG .CDR (1 lần, tự động)
 - Mỗi PDF (kể cả thư mục con) được mở đúng khổ 1:1 mm và lưu thành .cdr cùng tên, cùng chỗ.
 - Nếu Corel hiện hộp "Import PDF" cho từng file: chọn Import text as: Curves > OK (chữ vốn đã là nét).
 - Muốn làm tay từng file: File > Open (Ctrl+O) file .pdf > File > Save As > CorelDRAW (*.cdr).
+
+DÙNG CORELDRAW BẢN WEB (CorelDRAW.app, bản dùng thử)
+- Đăng nhập CorelDRAW.app > File > Open > chọn file .pdf trong gói (hoặc file .svg trong gói SVG) > chữ đã là nét nên mở ra đúng ngay.
+- Kiểm tra khổ trang ở thanh thuộc tính (đơn vị mm) khớp bảng kê, rồi File > Save As / Download > chọn CorelDRAW (.cdr).
+- Bản web không chạy macro .bas: làm từng file, mỗi file khoảng 1 phút.

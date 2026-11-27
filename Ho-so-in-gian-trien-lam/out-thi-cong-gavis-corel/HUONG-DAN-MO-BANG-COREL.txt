@@ -4,7 +4,7 @@ STEM Carnival · AIROC 2026 · Nhà thi đấu Phú Thọ · lắp 28/11, trưng
 1. Mở file: CorelDRAW > File > Import (Ctrl+I) hoặc Open file .pdf.
    Toàn bộ chữ đã chuyển thành nét (curves): không cần cài font, không bị nhảy font.
 2. Tỉ lệ 1:1, đơn vị mm. Khổ trang = kích thước thành phẩm + tràn lề (ghi trong 00_BANG-KE-THI-CONG.pdf).
-   Ví dụ G01 = 2 850 × 2 200 mm + tràn 20 mm mỗi phía.
+   Ví dụ G01 = 2 850 × 2 440 mm + tràn 20 mm mỗi phía.
 3. File *_DUONG-CAT.pdf: đường cắt CNC màu magenta (#EC008C, nét 0,6 mm). Đặt chồng lên file in cùng tên, căn góc trên-trái.
 4. Ảnh thiết bị trên decal G01 là ảnh bitmap nhúng sẵn; xin ảnh gốc độ phân giải cao trước khi in khổ lớn.
 5. Bản vẽ kích thước: 01_BAN-VE-KICH-THUOC.pdf (A3). Màu: hệ RGB, chuyển CMYK theo máy in, giữ xanh tươi (gần C80 M55 Y0 K0) và cam (gần C0 M65 Y80 K0).
@@ -17,3 +17,8 @@ CHUYỂN TOÀN BỘ SANG .CDR (1 lần, tự động)
 - Mỗi PDF (kể cả thư mục con) được mở đúng khổ 1:1 mm và lưu thành .cdr cùng tên, cùng chỗ.
 - Nếu Corel hiện hộp "Import PDF" cho từng file: chọn Import text as: Curves > OK (chữ vốn đã là nét).
 - Muốn làm tay từng file: File > Open (Ctrl+O) file .pdf > File > Save As > CorelDRAW (*.cdr).
+
+DÙNG CORELDRAW BẢN WEB (CorelDRAW.app, bản dùng thử)
+- Đăng nhập CorelDRAW.app > File > Open > chọn file .pdf trong gói (hoặc file .svg trong gói SVG) > chữ đã là nét nên mở ra đúng ngay.
+- Kiểm tra khổ trang ở thanh thuộc tính (đơn vị mm) khớp bảng kê, rồi File > Save As / Download > chọn CorelDRAW (.cdr).
+- Bản web không chạy macro .bas: làm từng file, mỗi file khoảng 1 phút.

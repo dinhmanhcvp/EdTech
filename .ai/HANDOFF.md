@@ -2899,3 +2899,7 @@ Chạy backend + Teacher Board + Student App, giáo viên gõ `y = x^2 - 3` lên
 
 ## (47) GAVIS gọn: 1 bục, bỏ phụ kiện
 - GAVIS chỉ còn 1 bục lục giác cao 1 050 (G02, tâm x −1 180, z −800), bỏ standee sóng âm, topper, biển vẫy, kính treo (studio v58: ẩn; dự toán n23/n16g/n5g về mức 3). Gói GAVIS: G01, G02, G02t, G03 + C01; bản Corel `out-thi-cong-gavis-corel/`.
+
+## (48) Lều 3 m, tấm 2 440
+- Mái lều 3 m. S01 (vách chéo) cao 2 440 = 1 tấm Formex nguyên (cắt từ tấm khổ lớn, không nối); S02, S03, G01 cao 2 440: thêm dải đầu 240 (`tall()`, `headS`, `headG`), phần dưới giữ nguyên độ cao so với sàn. S06 chân chữ cao 2 230; khẩu hiệu in trên màn. C01 dời lên 2 460–2 640. Cổng S15 giữ nguyên, đặt ngoài mép lều (z 1 620). Studio v59. Excel cập nhật (k3 5,0; i1 3,1; i2 5,3 m²), tổng vẫn 20 tr.
+- Corel bản web (CorelDRAW.app): mở PDF/SVG rồi Save As .cdr (hướng dẫn trong HUONG-DAN-MO-BANG-COREL.txt).

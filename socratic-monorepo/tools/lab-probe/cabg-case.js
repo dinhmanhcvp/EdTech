@@ -26,7 +26,8 @@ const {chromium} = require('playwright');
     else if (s === 'protamine') await btn('cabg-protamine');
     else if (s === 'flow') await btn('cabg-flow');
     else if (s === 'count') await btn('cabg-count');
-    else if (s === 'skin') { await btn('cabg-skin'); await p.screenshot({path: '/tmp/claude-0/sp/cabg-closed.png'}); }
+    else if (s === 'skin') { await tool('needle'); const n = await p.evaluate(() => window.__surgery.cabg.skinStitches); if (n === 0) { await p.waitForTimeout(2500); await p.screenshot({path: '/tmp/claude-0/sp/cabg-closed.png'}); } const xy = await p.evaluate((i) => { const S = window.__cabgScene; const v = S.skinPts[i].clone(); v.project(S.cam); const c = document.querySelector('[data-testid=scene-3d] canvas').getBoundingClientRect(); return [c.left + (v.x + 1) / 2 * c.width, c.top + (1 - v.y) / 2 * c.height]; }, n); await click(xy); }
+    else if (s === 'deair') { await tool('cannula'); const xy = await scr('root'); await p.mouse.move(...xy, {steps: 4}); await p.mouse.down(); await p.waitForTimeout(1200); await p.screenshot({path: '/tmp/claude-0/sp/cabg-deair.png'}); await p.waitForFunction(() => window.__surgery.cabg.air === 0, null, {timeout: 25000}).catch(() => {}); await p.mouse.up(); }
     else if (s === 'signout') for (let i = 0; i < 4; i++) await btn(`cabg-signout-${i}`);
     else if (s === 'drains') { await tool('cannula'); const n = await p.evaluate(() => window.__surgery.cabg.drains); await click(await scr(n ? 'drainM' : 'drainP')); }
     else if (s === 'pacing') { await tool('needle'); await click(await scr('pace')); }

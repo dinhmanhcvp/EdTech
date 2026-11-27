@@ -2,7 +2,7 @@
 
 import React, {useEffect, useReducer, useRef, useState} from 'react';
 import {CHECKLIST, GAUZE_TOTAL, LAYERS, SURG_NAME, SURG_TOOLS, STEP_DO, STEP_TOOL, alarms, bleedRate, capnoAt, debrief, ecgAt, mapOf, newSurg, plethAt, surgReducer, surgStep, type CheckPhase, type SAction} from '../../utils/lab/hands/surgery';
-import {ACT_SAFE, CABG_BRIEF, CABG_SIGNOUT, CABG_STEPS, WIRES, CABG_TOOLS, CABG_TOOL_NAME, cabgDebrief, cabgReducer, cabgStep, cabgTool, cabgVitals, monitorLanes, newCabg, type CabgAction} from '../../utils/lab/hands/cabg';
+import {ACT_SAFE, CABG_BRIEF, CABG_SIGNOUT, CABG_STEPS, SKIN_STITCHES, WIRES, CABG_TOOLS, CABG_TOOL_NAME, cabgDebrief, cabgReducer, cabgStep, cabgTool, cabgVitals, monitorLanes, newCabg, type CabgAction} from '../../utils/lab/hands/cabg';
 import {BTN, BTN_GHOST} from './Controls';
 import type {OrView, SliceAxis, SurgMode, SurgeryLive} from './HandsSurgery3D';
 import type {HandsInput} from './handsKit';
@@ -239,7 +239,6 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
     [{t: 'protamine'}, 'Tiêm protamine', cStep === 'protamine'],
     [{t: 'flow'}, 'Đo lưu lượng cầu nối', cStep === 'flow'],
     [{t: 'count'}, 'Đếm đủ gạc, kim, dụng cụ', cStep === 'count'],
-    [{t: 'skin'}, 'Khâu da, băng vết mổ', cStep === 'skin'],
   ];
 
   const phase: CheckPhase | null = step === 'signin' || step === 'timeout' || step === 'signout' ? step : null;
@@ -288,6 +287,8 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
                 {cStep === 'arteriotomy' && cb.arteriotomy > 0 && <span className="block">Đã mở {Math.round(cb.arteriotomy * 100)} %</span>}
                 {cStep === 'anast' && <span className="block">Đã khâu {cb.stitches}/8 mũi</span>}
                 {cStep === 'drains' && <span className="block">Đã đặt {cb.drains}/2 ống</span>}
+                {cStep === 'deair' && <span className="block">Khí còn lại {Math.round(cb.air * 100)} %</span>}
+                {cStep === 'skin' && <span className="block">Đã khâu da {cb.skinStitches}/{SKIN_STITCHES} mũi</span>}
                 {cStep === 'wires' && <span className="block">Chỉ thép {Math.floor(cb.wireTaps / 2)}/{WIRES} sợi{cb.wireTaps % 2 ? ' · đã qua mép phải, chụm tiếp mép trái' : ''}</span>}
               </>
             )}
@@ -311,6 +312,11 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
             <span>
               Thở máy: <b>{cv.vent ? 'có' : 'ngừng'}</b>
             </span>
+            {cb.drains > 0 && (
+              <span className="col-span-2">
+                Dẫn lưu: <b>{Math.round(cb.drainMl)} mL</b> {cb.drainMl > 150 ? '(theo dõi chảy máu)' : ''}
+              </span>
+            )}
           </div>
           {cStep === 'brief' && (
             <fieldset data-testid="cabg-brief" className="flex flex-col gap-1 rounded-xl bg-white px-3 py-2">

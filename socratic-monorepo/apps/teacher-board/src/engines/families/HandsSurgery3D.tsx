@@ -329,6 +329,7 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
       };
 
       const lungs: {o: THREE.Object3D; side: number; x: number; y: number}[] = [];
+      let deairAt = -1e9;
       const chest: {R: THREE.Object3D | null; L: THREE.Object3D | null; retractor: THREE.Object3D | null} = {R: null, L: null, retractor: null};
       /** màu gốc của vật liệu tim (để làm nhợt khi liệt tim lạnh) */
       const heartCols = new Map<THREE.MeshStandardMaterial, THREE.Color>();
@@ -459,7 +460,11 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
             },
             ladPts,
             clampModel: () => tools.get('clamp'),
-            dispatch: (a) => live.cabgDispatch(a),
+            dispatch: (a) => {
+              if (a.t === 'deair') deairAt = performance.now();
+              live.cabgDispatch(a);
+            },
+            lastDeair: () => deairAt,
             distAt: (nx, ny, q) => P.distAt(nx, ny, q),
             onField: (x, z) => {
               if (!field) return null;

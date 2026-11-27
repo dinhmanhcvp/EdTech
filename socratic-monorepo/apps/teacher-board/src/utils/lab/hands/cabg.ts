@@ -23,6 +23,7 @@ export type CabgStep =
   | 'plegia'
   | 'arteriotomy'
   | 'anast'
+  | 'deair'
   | 'unclamp'
   | 'defib'
   | 'wean'
@@ -49,6 +50,7 @@ export const CABG_STEPS: {id: Exclude<CabgStep, 'done'>; name: string; who: 'tea
   {id: 'plegia', name: 'Truyền dung dịch liệt tim', who: 'cannula', how: 'Đặt ống thông vào gốc động mạch chủ (vòng cam) rồi giữ chụm cho tới khi tim ngừng hẳn.', why: 'Dung dịch kali lạnh vào động mạch vành làm tim ngừng ở thì tâm trương và giảm nhu cầu O₂ của cơ tim trong lúc thiếu máu.'},
   {id: 'arteriotomy', name: 'Mở động mạch liên thất trước', who: 'scalpel', how: 'Dao 11: rạch dọc động mạch tại vòng cam (đoạn SAU chỗ hẹp vàng), dài khoảng 4–5 mm.', why: 'Miệng nối phải nằm sau chỗ hẹp để máu từ cầu nối tới được vùng cơ tim thiếu máu.'},
   {id: 'anast', name: 'Khâu nối động mạch ngực trong trái vào động mạch vành', who: 'needle', how: 'Khâu vắt 8 mũi theo thứ tự quanh miệng mở (gót → mũi → trở về gót): chụm đúng vòng cam đang sáng.', why: 'Mũi khâu phải đều, xuyên đủ lớp nội mạc của cả hai mạch; lệch mép làm hẹp miệng nối hoặc rò máu.'},
+  {id: 'deair', name: 'Đuổi khí khỏi tim', who: 'cannula', how: 'Đặt ống thông vào kim hút ở gốc động mạch chủ (vòng cam) và GIỮ chụm: bọt khí sủi ra tới khi hết.', why: 'Mở mạch và khâu nối để lọt khí vào tim; thả kẹp khi còn khí thì bọt khí trôi vào động mạch vành, động mạch não gây thiếu máu cơ tim, đột quỵ.'},
   {id: 'unclamp', name: 'Thả kẹp động mạch chủ', who: 'clamp', how: 'Dùng kẹp chạm vào kẹp đang đặt trên động mạch chủ để mở ra.', why: 'Máu ấm vào lại động mạch vành, rửa trôi dung dịch liệt tim; tim thường rung thất khi vừa được tưới máu lại.'},
   {id: 'defib', name: 'Sốc điện trong (rung thất)', who: 'team', how: 'Đặt hai bản sốc lên tim và sốc 10–20 J: bấm "Sốc điện trong" ở bảng điều khiển.', why: 'Rung thất không bơm được máu; sốc điện đồng bộ hóa lại cơ tim để nút xoang dẫn nhịp.'},
   {id: 'wean', name: 'Thở lại và cai máy', who: 'team', how: 'Bấm "Thở lại, cai máy" khi đã có nhịp xoang.', why: 'Phổi phải được thông khí lại trước khi tim tự bơm; giảm dần lưu lượng máy cho tới khi huyết áp đập theo mạch.'},
@@ -60,13 +62,18 @@ export const CABG_STEPS: {id: Exclude<CabgStep, 'done'>; name: string; who: 'tea
   {id: 'pacing', name: 'Đặt dây điện cực tạm thời', who: 'needle', how: 'Kìm kẹp kim: khâu đầu dây điện cực vào mặt thất phải (vòng cam).', why: 'Sau mổ tim, dẫn truyền có thể chậm hoặc rối loạn; dây điện cực cho phép tạo nhịp ngay từ bên ngoài.'},
   {id: 'count', name: 'Đếm gạc, kim, dụng cụ', who: 'team', how: 'Y tá dụng cụ đếm: bấm "Đếm đủ" khi số gạc, kim, dụng cụ khớp số đã mở.', why: 'Phải đếm đủ trước khi đóng xương ức: dụng cụ sót trong ngực là sai sót nghiêm trọng nhưng phòng được.'},
   {id: 'wires', name: 'Tháo banh ngực, buộc chỉ thép xương ức', who: 'needle', how: 'Luồn 5 sợi chỉ thép: với mỗi sợi chụm điểm sáng ở mép xương ức phải rồi mép trái; đủ 5 sợi thì hai nửa xương ức được kéo khép và xoắn chặt.', why: 'Xương ức đã cưa đôi phải được cố định chắc để liền xương và để người bệnh thở, ho không đau.'},
-  {id: 'skin', name: 'Khâu cân, dưới da, da; băng vết mổ', who: 'team', how: 'Bấm "Khâu da, băng vết mổ".', why: 'Đóng từng lớp giảm nhiễm khuẩn vết mổ xương ức, biến chứng nặng của mổ tim.'},
+  {id: 'skin', name: 'Khâu da, băng vết mổ', who: 'needle', how: 'Kìm kẹp kim: khâu trong da 6 mũi dọc đường giữa từ trên xuống (chụm đúng điểm sáng); đủ mũi thì băng vết mổ.', why: 'Đóng từng lớp giảm nhiễm khuẩn vết mổ xương ức, biến chứng nặng của mổ tim.'},
   {id: 'signout', name: 'Bảng kiểm trước khi rời phòng', who: 'team', how: 'Đánh dấu đủ các mục ở bảng điều khiển.', why: 'Kíp xác nhận tên phẫu thuật, số đếm, ống dẫn lưu, dây điện cực và điểm cần theo dõi khi bàn giao hồi sức.'},
 ];
 /** bảng kiểm trước khi rời phòng mổ tim */
 export const CABG_SIGNOUT = ['Ghi đúng tên phẫu thuật: bắc cầu động mạch vành 1 cầu nối (LIMA–LAD)', 'Số gạc, kim, dụng cụ đã đếm đủ', 'Hai ống dẫn lưu và dây điện cực đã ghi vị trí', 'Bàn giao hồi sức: lượng dịch dẫn lưu, nhịp tim, huyết áp mục tiêu'];
 /** số sợi chỉ thép xương ức (mỗi sợi chạm mép phải rồi mép trái) */
 export const WIRES = 5;
+/** số mũi khâu trong da dọc đường giữa */
+export const SKIN_STITCHES = 6;
+/** khí trong buồng tim sau khi khâu nối (đơn vị tương đối) và tốc độ hút khí qua kim gốc động mạch chủ (mỗi giây) */
+export const AIR_START = 1;
+export const DEAIR_RATE = 0.4;
 export const CABG_BRIEF = ['Xác nhận người bệnh, chẩn đoán hẹp động mạch liên thất trước, cầu nối dự kiến LIMA–LAD', 'Máy tim phổi đã mồi dịch, kiểm tra không còn bọt khí', 'Dung dịch liệt tim lạnh đã sẵn sàng', 'Có máu dự trữ, kháng sinh dự phòng trong 60 phút', 'Máy sốc điện trong đã nối, bản sốc nhỏ trên bàn'];
 
 /** ACT (giây): nền, ngưỡng an toàn để chạy máy */
@@ -116,8 +123,12 @@ export interface CabgState {
   wireTaps: number;
   skin: boolean;
   signout: boolean[];
+  /** khí còn lại trong tim (0 = sạch); số mũi khâu da; dịch máu đã ra ống dẫn lưu (mL) */
+  air: number;
+  skinStitches: number;
+  drainMl: number;
 }
-export const newCabg = (): CabgState => ({brief: CABG_BRIEF.map(() => false), tool: null, t: 0, cpbT: 0, xclampT: 0, heparin: false, act: ACT_BASE, cannAo: false, cannRa: false, pump: false, vent: true, xclamp: false, plegia: 0, rhythm: 'sinus', hr: 78, arteriotomy: 0, stitches: 0, misses: 0, shocks: 0, protamine: false, flow: null, errors: 0, warn: '', reperfused: false, drains: 0, pacing: false, counted: false, wireTaps: 0, skin: false, signout: CABG_SIGNOUT.map(() => false)});
+export const newCabg = (): CabgState => ({brief: CABG_BRIEF.map(() => false), tool: null, t: 0, cpbT: 0, xclampT: 0, heparin: false, act: ACT_BASE, cannAo: false, cannRa: false, pump: false, vent: true, xclamp: false, plegia: 0, rhythm: 'sinus', hr: 78, arteriotomy: 0, stitches: 0, misses: 0, shocks: 0, protamine: false, flow: null, errors: 0, warn: '', reperfused: false, drains: 0, pacing: false, counted: false, wireTaps: 0, skin: false, signout: CABG_SIGNOUT.map(() => false), air: AIR_START, skinStitches: 0, drainMl: 0});
 
 export function cabgStep(s: CabgState): CabgStep {
   if (!s.brief.every(Boolean)) return 'brief';
@@ -131,6 +142,7 @@ export function cabgStep(s: CabgState): CabgStep {
     if (s.rhythm !== 'arrest') return 'plegia';
     if (s.arteriotomy < 1) return 'arteriotomy';
     if (s.stitches < STITCHES) return 'anast';
+    if (s.air > 0.02) return 'deair';
     return 'unclamp';
   }
   if (s.rhythm === 'vf') return 'defib';
@@ -192,7 +204,8 @@ export type CabgAction =
   | {t: 'pace'; ok: boolean}
   | {t: 'count'}
   | {t: 'wire'; ok: boolean}
-  | {t: 'skin'}
+  | {t: 'skin'; ok: boolean}
+  | {t: 'deair'; dt: number}
   | {t: 'signout'; i: number}
   | {t: 'wrong'; msg: string}
   | {t: 'reset'};
@@ -218,7 +231,9 @@ export function cabgReducer(s: CabgState, a: CabgAction): CabgState {
       if (rhythm === 'sinus' && s.reperfused && hr < 82) hr = Math.min(82, hr + 20 * a.dt);
       // ACT vừa đủ: bỏ dòng nhắc "chờ ACT"
       const warn = s.warn.startsWith('Đã tiêm heparin') && act >= ACT_SAFE ? '' : s.warn;
-      return {...s, t: s.t + a.dt, cpbT: s.cpbT + (s.pump ? a.dt : 0), xclampT: s.xclampT + (s.xclamp ? a.dt : 0), act, hr, rhythm, warn};
+      // dịch máu ra ống dẫn lưu sau khi đặt: nhanh lúc đầu, chậm dần khi protamine đã trung hòa heparin (mL, thời gian rút gọn)
+      const drainMl = s.drains > 0 ? s.drainMl + a.dt * (s.protamine ? 6 : 12) * Math.exp(-s.drainMl / 180) : s.drainMl;
+      return {...s, t: s.t + a.dt, cpbT: s.cpbT + (s.pump ? a.dt : 0), xclampT: s.xclampT + (s.xclamp ? a.dt : 0), act, hr, rhythm, warn, drainMl};
     }
     case 'heparin':
       if (step !== 'heparin') return s;
@@ -261,6 +276,7 @@ export function cabgReducer(s: CabgState, a: CabgAction): CabgState {
       return a.ok ? {...s, stitches: s.stitches + 1, warn: ''} : {...s, misses: s.misses + 1, errors: s.errors + 1, warn: 'Mũi khâu lệch mép: nguy cơ hẹp miệng nối. Khâu đúng vòng cam đang sáng.'};
     case 'remove': {
       if (a.at === 'clamp') {
+        if (step === 'deair') return err(s, 'Còn khí trong tim: thả kẹp lúc này bọt khí trôi vào động mạch vành và não. Đuổi khí qua kim gốc động mạch chủ trước.');
         if (step !== 'unclamp') return step === 'anast' || step === 'arteriotomy' ? err(s, 'Chưa xong miệng nối: thả kẹp lúc này máu tràn trường mổ.') : s;
         return {...s, xclamp: false, reperfused: true, rhythm: 'vf', hr: 0, warn: 'Thả kẹp: tim được tưới máu lại và RUNG THẤT. Sốc điện trong.'};
       }
@@ -299,9 +315,17 @@ export function cabgReducer(s: CabgState, a: CabgAction): CabgState {
     case 'wire':
       if (step !== 'wires') return step === 'count' ? err(s, 'Chưa đếm đủ gạc, kim, dụng cụ: không được đóng xương ức.') : s;
       return a.ok ? {...s, wireTaps: s.wireTaps + 1, warn: ''} : err(s, 'Luồn chỉ thép đúng điểm sáng: mỗi sợi đi qua mép xương ức phải rồi mép trái.');
-    case 'skin':
+    case 'deair': {
+      if (step !== 'deair') return s;
+      const air = Math.max(0, s.air - DEAIR_RATE * a.dt);
+      return {...s, air: air <= 0.02 ? 0 : air, warn: ''};
+    }
+    case 'skin': {
       if (step !== 'skin') return s;
-      return {...s, skin: true, warn: ''};
+      if (!a.ok) return err(s, 'Mũi khâu da lệch: khâu đúng điểm sáng, từ trên xuống, hai mép da áp sát nhau.');
+      const n = s.skinStitches + 1;
+      return {...s, skinStitches: n, skin: n >= SKIN_STITCHES, warn: ''};
+    }
     case 'signout':
       if (step !== 'signout') return s;
       return {...s, signout: s.signout.map((v, i) => (i === a.i ? !v : v)), warn: ''};

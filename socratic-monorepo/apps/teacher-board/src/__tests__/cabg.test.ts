@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {ACT_SAFE, CABG_BRIEF, CABG_STEPS, PLEGIA_TIME, STITCHES, cabgDebrief, cabgReducer, cabgStep, cabgTool, cabgVitals, newCabg, type CabgAction, type CabgState} from '../utils/lab/hands/cabg';
+import {ACT_SAFE, CABG_BRIEF, CABG_SIGNOUT, CABG_STEPS, WIRES, PLEGIA_TIME, STITCHES, cabgDebrief, cabgReducer, cabgStep, cabgTool, cabgVitals, newCabg, type CabgAction, type CabgState} from '../utils/lab/hands/cabg';
 
 const run = (s: CabgState, ...as: CabgAction[]) => as.reduce(cabgReducer, s);
 const wait = (s: CabgState, sec: number) => {
@@ -23,12 +23,21 @@ const fullCase = () => {
   s = run(s, {t: 'cut', s: 0.5}, {t: 'cut', s: 1});
   for (let i = 0; i < STITCHES; i++) s = cabgReducer(s, {t: 'stitch', ok: true});
   s = run(s, {t: 'remove', at: 'clamp'}, {t: 'shock'}, {t: 'wean'}, {t: 'remove', at: 'ra'}, {t: 'protamine'}, {t: 'remove', at: 'ao'}, {t: 'flow'});
-  return s;
+  return close(s);
+};
+/** chặng đóng ngực */
+const close = (s: CabgState) => {
+  s = run(s, {t: 'drain', ok: true}, {t: 'drain', ok: true}, {t: 'pace', ok: true}, {t: 'count'});
+  for (let i = 0; i < WIRES * 2; i++) s = cabgReducer(s, {t: 'wire', ok: true});
+  return run(s, {t: 'skin'}, ...CABG_SIGNOUT.map((_, i) => ({t: 'signout', i}) as CabgAction));
 };
 
 describe('ca bắc cầu động mạch vành LIMA–LAD', () => {
-  it('đủ 16 bước theo đúng trình tự của ca mổ thật; dụng cụ khớp từng bước', () => {
-    expect(CABG_STEPS.map((x) => x.id)).toEqual(['brief', 'heparin', 'cannAo', 'cannRa', 'pumpOn', 'xclamp', 'plegia', 'arteriotomy', 'anast', 'unclamp', 'defib', 'wean', 'decanRa', 'protamine', 'decanAo', 'flow']);
+  it('đủ 22 bước theo đúng trình tự của ca mổ thật (tới đóng ngực); dụng cụ khớp từng bước', () => {
+    expect(CABG_STEPS.map((x) => x.id)).toEqual(['brief', 'heparin', 'cannAo', 'cannRa', 'pumpOn', 'xclamp', 'plegia', 'arteriotomy', 'anast', 'unclamp', 'defib', 'wean', 'decanRa', 'protamine', 'decanAo', 'flow', 'drains', 'pacing', 'count', 'wires', 'skin', 'signout']);
+    expect(cabgTool('drains')).toBe('cannula');
+    expect(cabgTool('pacing')).toBe('needle');
+    expect(cabgTool('wires')).toBe('needle');
     expect(cabgTool('cannAo')).toBe('cannula');
     expect(cabgTool('xclamp')).toBe('clamp');
     expect(cabgTool('arteriotomy')).toBe('scalpel');
@@ -124,6 +133,7 @@ describe('ca bắc cầu động mạch vành LIMA–LAD', () => {
     s = run(s, {t: 'cut', s: 1}, {t: 'stitch', ok: false}, {t: 'stitch', ok: false}, {t: 'stitch', ok: false});
     for (let i = 0; i < STITCHES; i++) s = cabgReducer(s, {t: 'stitch', ok: true});
     s = run(s, {t: 'remove', at: 'clamp'}, {t: 'shock'}, {t: 'wean'}, {t: 'remove', at: 'ra'}, {t: 'protamine'}, {t: 'remove', at: 'ao'}, {t: 'flow'});
+    s = close(s);
     expect(s.misses).toBe(3);
     expect(s.flow!.q).toBeLessThan(20);
     expect(cabgDebrief(s)).toContain('làm lại miệng nối');
@@ -143,5 +153,25 @@ describe('ca bắc cầu động mạch vành LIMA–LAD', () => {
     s = run(s, {t: 'remove', at: 'ao'});
     expect(s.cannAo).toBe(true);
     expect(s.errors).toBe(e + 1);
+  });
+});
+
+describe('đóng ngực', () => {
+  it('chưa đếm đủ thì không được buộc chỉ thép; đặt ống / dây sai chỗ là lỗi', () => {
+    let s = fullCase();
+    expect(cabgStep(s)).toBe('done');
+    expect(s.wireTaps).toBe(WIRES * 2);
+    // dựng lại tới bước dẫn lưu
+    s = {...s, drains: 0, pacing: false, counted: false, wireTaps: 0, skin: false, signout: CABG_SIGNOUT.map(() => false)};
+    expect(cabgStep(s)).toBe('drains');
+    s = run(s, {t: 'drain', ok: false});
+    expect(s.drains).toBe(0);
+    s = run(s, {t: 'drain', ok: true}, {t: 'drain', ok: true}, {t: 'pace', ok: true});
+    const e = s.errors;
+    s = run(s, {t: 'wire', ok: true});
+    expect(s.wireTaps).toBe(0);
+    expect(s.errors).toBe(e + 1);
+    s = run(s, {t: 'count'}, {t: 'wire', ok: true});
+    expect(s.wireTaps).toBe(1);
   });
 });

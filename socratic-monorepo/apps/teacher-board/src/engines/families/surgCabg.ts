@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {STITCHES, cabgStep, cabgTool, cabgVitals, CABG_STEPS, CABG_TOOL_NAME, type CabgAction, type CabgState, type CabgTool} from '../../utils/lab/hands/cabg';
+import {STITCHES, WIRES, cabgStep, cabgTool, cabgVitals, CABG_STEPS, CABG_TOOL_NAME, type CabgAction, type CabgState, type CabgTool} from '../../utils/lab/hands/cabg';
 import {setLine, type Kit} from './Stage3D';
 
 /**
@@ -25,6 +25,10 @@ export interface CabgHost {
   distAt: (nx: number, ny: number, at: THREE.Vector3) => number;
   /** toạ độ màn hình (−1…1) của một điểm thế giới */
   toNdc: (at: THREE.Vector3) => THREE.Vector2;
+  /** điểm trên lòng khoang ngực (trường mổ) dưới (x, z) */
+  onField: (x: number, z: number) => THREE.Vector3 | null;
+  /** hai nửa thành ngực (xương ức, cơ, mỡ, da) và banh ngực của mô hình; đóng ngực thì trượt / tháo */
+  chest: () => {R: THREE.Object3D | null; L: THREE.Object3D | null; retractor: THREE.Object3D | null};
 }
 type Ptr = {active: boolean; pressed: boolean; down: boolean; reach: number; hot: boolean; ndc: THREE.Vector2};
 
@@ -62,7 +66,7 @@ export function makeCabg(h: CabgHost) {
   const {k} = h;
   const root = new THREE.Group();
   k.scene.add(root);
-  const T = {ao: new THREE.Vector3(), clamp: new THREE.Vector3(), root: new THREE.Vector3(), ra: new THREE.Vector3(), lad: new THREE.Vector3(), plaque: new THREE.Vector3(), u: new THREE.Vector3(1, 0, 0), w: new THREE.Vector3(0, 0, 1)};
+  const T = {drainP: new THREE.Vector3(), drainM: new THREE.Vector3(), pace: new THREE.Vector3(), ao: new THREE.Vector3(), clamp: new THREE.Vector3(), root: new THREE.Vector3(), ra: new THREE.Vector3(), lad: new THREE.Vector3(), plaque: new THREE.Vector3(), u: new THREE.Vector3(1, 0, 0), w: new THREE.Vector3(0, 0, 1)};
   let ready = false;
 
   // ---- dụng cụ ống thông cầm tay (thay cho ống hút trên khay khi ở chế độ này)
@@ -124,6 +128,26 @@ export function makeCabg(h: CabgHost) {
   const thread = k.line('#2B5BB0', 2, new Array(6).fill(0));
   root.add(thread);
 
+  // ---- ĐÓNG NGỰC: hai ống dẫn lưu, dây điện cực tạm thời, 5 sợi chỉ thép xương ức, băng vết mổ
+  const drainMat = new THREE.MeshPhysicalMaterial({color: '#E9D7D2', roughness: 0.2, transparent: true, opacity: 0.75, clearcoat: 1});
+  const drains = [new THREE.Mesh(new THREE.BufferGeometry(), drainMat), new THREE.Mesh(new THREE.BufferGeometry(), drainMat)];
+  const paceWire = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshStandardMaterial({color: '#2B6CB0', roughness: 0.4}));
+  const steel = new THREE.MeshStandardMaterial({color: '#C9CED6', metalness: 0.9, roughness: 0.25});
+  const wireMeshes = Array.from({length: WIRES}, () => new THREE.Mesh(new THREE.BufferGeometry(), steel));
+  const wirePts: THREE.Vector3[] = [];
+  const dressing = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.02, 5.0), new THREE.MeshStandardMaterial({color: '#F4F2EC', roughness: 0.95}));
+  dressing.position.set(0, 0.305, -0.2);
+  root.add(...drains, paceWire, ...wireMeshes, dressing);
+  /** đầu ra của ống dẫn lưu / dây điện cực: qua da ngay dưới đầu dưới vết mổ */
+  const EXIT = [new THREE.Vector3(-0.35, 0.33, 2.85), new THREE.Vector3(0.35, 0.33, 2.85), new THREE.Vector3(-0.8, 0.33, 2.8)];
+  let closeT = 0;
+  let sink = 0;
+  let closeKey = '';
+  const tubeAlong = (m: THREE.Mesh, pts: THREE.Vector3[], r: number) => {
+    m.geometry.dispose();
+    m.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, r, 8, false);
+  };
+
   // ---- vòng chỉ chỗ làm
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.016, 10, 36).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({color: '#D9481C', depthTest: false, transparent: true}));
   const small = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.008, 8, 24).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({color: '#FFD27F', depthTest: false, transparent: true}));
@@ -173,9 +197,15 @@ export function makeCabg(h: CabgHost) {
     tubeTo(lines.ao, top(aoCann), PUMP, 0.05);
     tubeTo(lines.ra, top(raCann), PUMP.clone().add(new THREE.Vector3(-1.4, 0, 0)), 0.06);
     tubeTo(lines.root, top(rootNeedle), PUMP.clone().add(new THREE.Vector3(-0.6, 0, 0)), 0.025);
+    // đóng ngực: dẫn lưu dưới tim (khoang màng ngoài tim) và trước tim (trung thất), dây điện cực trên mặt thất phải, chỉ thép ở mép xương ức
+    T.drainP.copy(h.onField(-0.3, 2.05) ?? new THREE.Vector3(-0.3, -0.5, 2.05)).add(new THREE.Vector3(0, 0.04, 0));
+    T.drainM.copy(h.onField(0.85, -2.3) ?? new THREE.Vector3(0.85, -0.3, -2.3)).add(new THREE.Vector3(0, 0.04, 0));
+    T.pace.set(-0.55, h.surfaceY(-0.55, 0.75) + 0.01, 0.75);
+    wirePts.length = 0;
+    for (const z of [-1.9, -1.1, -0.3, 0.5, 1.3]) wirePts.push(new THREE.Vector3(-2.36, 0.24, z), new THREE.Vector3(2.36, 0.24, z));
     ready = true;
     // chỉ khi phát triển: máy dò trình duyệt đọc điểm thao tác để chạy thử trọn ca
-    if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') (window as unknown as {__cabgScene?: unknown}).__cabgScene = {T, stitchPts, cam: k.camera};
+    if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') (window as unknown as {__cabgScene?: unknown}).__cabgScene = {T, stitchPts, wirePts, cam: k.camera};
   };
 
   // ---- thao tác
@@ -223,6 +253,23 @@ export function makeCabg(h: CabgHost) {
     const R = Math.max(0.06, p.reach * 0.8);
     const dd = (q: THREE.Vector3) => h.distAt(p.ndc.x, p.ndc.y, q);
     const near = (q: THREE.Vector3, k2 = 1) => dd(q) < R * k2;
+    if (tool === 'cannula' && step === 'drains') {
+      const next = s.drains === 0 ? T.drainP : T.drainM;
+      if (near(T.drainP, 2) || near(T.drainM, 2)) return h.dispatch({t: 'drain', ok: near(next, 1.3)}), true;
+    }
+    if (tool === 'needle' && step === 'pacing' && near(T.pace, 2.5)) return h.dispatch({t: 'pace', ok: near(T.pace, 1.3)}), true;
+    if (tool === 'needle' && (step === 'wires' || step === 'count')) {
+      let best = -1;
+      let bd = Infinity;
+      wirePts.forEach((q, i) => {
+        const d = dd(q);
+        if (d < bd) {
+          bd = d;
+          best = i;
+        }
+      });
+      if (bd < R * 2.5) return h.dispatch({t: 'wire', ok: best === s.wireTaps && bd < R * 1.3}), true;
+    }
     if (tool === 'cannula') {
       if (s.cannRa && !s.pump && s.reperfused && near(T.ra)) return h.dispatch({t: 'remove', at: 'ra'}), true;
       if (s.cannAo && s.reperfused && near(T.ao)) return h.dispatch({t: 'remove', at: 'ao'}), true;
@@ -265,9 +312,14 @@ export function makeCabg(h: CabgHost) {
   /** mỗi khung: hiện / ẩn và đặt vật theo trạng thái; `lead` = điểm con trỏ chính (để dụng cụ cầm tay đi theo) */
   const frame = (on: boolean, dt: number, now: number, lead: THREE.Vector3 | null, leadDown: boolean, trayAt: THREE.Vector3) => {
     root.visible = on && ready;
+    const ch = h.chest();
     if (!root.visible) {
       tag(null);
-      return {jolt: 0, focus: null as THREE.Vector3 | null};
+      // chế độ khác: ngực mở, banh ngực đặt lại
+      if (ch.R) ch.R.position.x = -2.34;
+      if (ch.L) ch.L.position.x = 2.34;
+      if (ch.retractor) ch.retractor.visible = true;
+      return {jolt: 0, focus: null as THREE.Vector3 | null, sink: 0, pale: 0};
     }
     const s = h.state();
     const step = cabgStep(s);
@@ -311,8 +363,13 @@ export function makeCabg(h: CabgHost) {
     bulldog.visible = !s.reperfused;
     stitchMeshes.forEach((m, i) => (m.visible = i < s.stitches));
     const last = s.stitches ? stitchPts[s.stitches - 1] : null;
-    thread.visible = !!last && s.stitches < STITCHES;
-    if (last) setLine(thread, [last.x, last.y, last.z, graftEnd.x, graftEnd.y, graftEnd.z]);
+    // khâu vắt: MỘT sợi chỉ chạy qua mọi mũi đã khâu; đang khâu thì nối tới đầu cầu nối, xong thì khép vòng về mũi đầu (nút buộc)
+    thread.visible = !!last;
+    if (last) {
+      const pts = stitchPts.slice(0, s.stitches).flatMap((q) => [q.x, q.y + 0.006, q.z]);
+      const tail = s.stitches < STITCHES ? graftEnd : stitchPts[0];
+      setLine(thread, [...pts, tail.x, tail.y + 0.006, tail.z]);
+    }
 
     // vòng chỉ chỗ làm của bước hiện tại
     const pulse = 1 + 0.12 * Math.sin(now / 180);
@@ -322,6 +379,12 @@ export function makeCabg(h: CabgHost) {
     else if (step === 'cannRa' || step === 'decanRa') spot = T.ra;
     else if (step === 'xclamp' || step === 'unclamp') spot = T.clamp;
     else if (step === 'plegia') spot = T.root;
+    else if (step === 'drains') spot = s.drains === 0 ? T.drainP : T.drainM;
+    else if (step === 'pacing') spot = T.pace;
+    else if (step === 'wires') {
+      spot = wirePts[s.wireTaps] ?? null;
+      tiny = spot;
+    }
     else if (step === 'arteriotomy') spot = T.lad;
     else if (step === 'anast') {
       spot = T.lad;
@@ -342,9 +405,49 @@ export function makeCabg(h: CabgHost) {
       jolt = 1;
     }
     jolt = Math.max(0, jolt - dt * 5);
+
+    // ---- đóng ngực
+    const wiresDone = s.wireTaps >= WIRES * 2;
+    // tháo banh ngực (và cắt chỉ treo màng ngoài tim) trước khi luồn chỉ thép
+    if (ch.retractor) ch.retractor.visible = !(step === 'wires' || step === 'skin' || step === 'signout' || step === 'done');
+    closeT = Math.min(1, closeT + (wiresDone ? dt / 2.5 : -closeT));
+    const e = closeT * closeT * (3 - 2 * closeT);
+    // tim, phổi, cầu nối hạ xuống lòng ngực khi hai nửa xương ức khép lại (trong ca, nôi màng ngoài tim nâng tim lên cao)
+    sink = 0.85 * e;
+    root.position.y = -sink;
+    const gap = 2.34 * (1 - e) + 0.004;
+    if (ch.R) ch.R.position.x = -gap;
+    if (ch.L) ch.L.position.x = gap;
+    drains.forEach((m, i) => (m.visible = s.drains > i));
+    paceWire.visible = s.pacing;
+    dressing.visible = s.skin;
+    const key = `${s.drains}|${s.pacing}|${s.wireTaps}|${closeT.toFixed(3)}`;
+    if (key !== closeKey) {
+      closeKey = key;
+      // đầu trong theo tim (đã hạ), đầu ngoài cố định ở da dưới vết mổ: bù lại độ hạ của nhóm
+      const up = new THREE.Vector3(0, sink, 0);
+      const out = (q: THREE.Vector3) => q.clone().add(up);
+      for (const [i, from] of [T.drainP, T.drainM].entries()) if (s.drains > i) tubeAlong(drains[i], [from, from.clone().add(new THREE.Vector3(0, 0.25, i ? 0.4 : 0.25)), out(EXIT[i]).add(new THREE.Vector3(0, 0.12, -0.25)), out(EXIT[i]), out(EXIT[i]).add(new THREE.Vector3(i ? 0.4 : -0.4, 0, 1.1))], 0.045);
+      if (s.pacing) tubeAlong(paceWire, [T.pace, T.pace.clone().add(new THREE.Vector3(-0.1, 0.3, 0.4)), out(EXIT[2]).add(new THREE.Vector3(0, 0.1, -0.2)), out(EXIT[2]), out(EXIT[2]).add(new THREE.Vector3(-0.5, 0, 0.9))], 0.008);
+      // chỉ thép: vòng qua hai mép xương ức; khi khép thì hai mép sát nhau, sợi xoắn chặt ở giữa
+      wireMeshes.forEach((m, k2) => {
+        m.visible = s.wireTaps >= k2 * 2 + 2;
+        if (!m.visible) return;
+        const z = wirePts[k2 * 2].z;
+        const xr = -gap - 0.02;
+        const xl = gap + 0.02;
+        const y = 0.24 + sink;
+        const lift = 0.05 + 0.5 * (1 - e);
+        tubeAlong(m, [new THREE.Vector3(xr, y - 0.12, z), new THREE.Vector3(xr, y + 0.02, z), new THREE.Vector3((xr + xl) / 2, y + lift, z), new THREE.Vector3(xl, y + 0.02, z), new THREE.Vector3(xl, y - 0.12, z)], 0.012);
+      });
+    }
+    // da khép: băng nằm trên đường giữa (nhóm đã hạ nên bù độ hạ)
+    dressing.position.y = 0.305 + sink;
+    // tim nhợt, mềm khi liệt tim lạnh; hồng trở lại khi được tưới máu
+    const pale = s.reperfused ? 0 : s.rhythm === 'arrest' ? 1 : s.rhythm === 'slowing' ? Math.min(1, s.plegia / 3) : 0;
     // kính lúp phẫu thuật: mở động mạch vành và khâu nối là vi phẫu (mạch 1,5–2 mm) nên máy quay phóng vào chỗ nối
     const focus = step === 'arteriotomy' || step === 'anast' ? T.lad : null;
-    return {jolt, focus};
+    return {jolt, focus, sink, pale};
   };
   return {init, pointer, frame};
 }

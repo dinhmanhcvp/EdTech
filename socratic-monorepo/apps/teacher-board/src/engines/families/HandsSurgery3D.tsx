@@ -328,7 +328,13 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         m.needsUpdate = true;
       };
 
-      const lungs: {o: THREE.Object3D; side: number; x: number}[] = [];
+      const lungs: {o: THREE.Object3D; side: number; x: number; y: number}[] = [];
+      const chest: {R: THREE.Object3D | null; L: THREE.Object3D | null; retractor: THREE.Object3D | null} = {R: null, L: null, retractor: null};
+      /** màu gốc của vật liệu tim (để làm nhợt khi liệt tim lạnh) */
+      const heartCols = new Map<THREE.MeshStandardMaterial, THREE.Color>();
+      const PALE = new THREE.Color('#E4CFCA');
+      const PALE_GLOW = new THREE.Color('#3A2A28');
+      let heartY0: number | null = null;
       /** ca bắc cầu động mạch vành (dựng khi mô hình đã tải) */
       let cabg: ReturnType<typeof makeCabg> | null = null;
       // thiếu mô hình phòng thì vẫn mổ được trên nền trơn
@@ -354,12 +360,17 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
           }
           screen.visible = !!room;
           const field = take(lib.getObjectByName('SH_field'), k.scene);
+          // hai nửa thành ngực + banh ngực (nút riêng để đóng ngực ở cuối ca bắc cầu)
+          chest.R = take(lib.getObjectByName('SHL_chestR'), k.scene);
+          chest.L = take(lib.getObjectByName('SHL_chestL'), k.scene);
+          chest.retractor = take(lib.getObjectByName('SHL_retractor'), k.scene);
+          for (const o of [chest.R, chest.L]) if (o) organAll(o, 'muscle', 0.8);
           // hai lá phổi thật (thùy, rãnh liên thùy) nằm dưới mép xương ức, thở theo máy thở
           for (const [name, side] of [['SHL_lungR', -1], ['SHL_lungL', 1]] as const) {
             const o = take(lib.getObjectByName(name), k.scene);
             if (!o) continue;
             organAll(o, 'lung', 0.9);
-            lungs.push({o, side, x: o.position.x});
+            lungs.push({o, side, x: o.position.x, y: o.position.y});
           }
           if (field) {
             // bóng ướt chỉ cho mô (khoang ngực, phổi, mép vết mổ); khăn và thép giữ mặt mờ để dụng cụ nổi trên khay
@@ -450,6 +461,13 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
             clampModel: () => tools.get('clamp'),
             dispatch: (a) => live.cabgDispatch(a),
             distAt: (nx, ny, q) => P.distAt(nx, ny, q),
+            onField: (x, z) => {
+              if (!field) return null;
+              ray.set(v3.set(x, 6, z), DOWN);
+              const hit = ray.intersectObject(field, true)[0];
+              return hit ? hit.point.clone() : null;
+            },
+            chest: () => chest,
             toNdc: (q) => {
               const v = q.clone().project(k.camera);
               return new THREE.Vector2(v.x, v.y);
@@ -726,7 +744,21 @@ function makeDef(input: HandsInput, live: SurgeryLive): SceneDef {
         // ---- nhịp tim theo monitor
         const period = 60 / Math.max(30, cv ? Math.max(1, cv.hr) : st.vitals.hr);
         const {atria, ventricles} = cardiacPhase(now / 1000, period);
-        const cf = cabg?.frame(mode === 'cabg', dt, now, lastLead, lastLeadDown, w3.set(TRAY_X, TRAY_Y, SLOT.suction)) ?? {jolt: 0, focus: null};
+        const cf = cabg?.frame(mode === 'cabg', dt, now, lastLead, lastLeadDown, w3.set(TRAY_X, TRAY_Y, SLOT.suction)) ?? {jolt: 0, focus: null, sink: 0, pale: 0};
+        // đóng ngực: tim và phổi hạ xuống lòng ngực theo hai nửa xương ức
+        heartY0 ??= heart.position.y;
+        heart.position.y = heartY0 - cf.sink;
+        for (const L of lungs) L.o.position.y = L.y - cf.sink;
+        // liệt tim lạnh: cơ tim nhợt dần; tưới máu lại thì hồng trở lại
+        // màu tim nằm ở màu đỉnh (vật liệu trắng) nên nhân màu không làm nhợt được: kéo màu vật liệu về hồng xám và cộng ánh nhạt tự phát
+        if (!heartCols.size)
+          for (const [id, o] of nodes)
+            if (id !== 'SH_peri')
+              for (const m of matsOf(o)) if ((m as THREE.MeshStandardMaterial).emissive) heartCols.set(m as THREE.MeshStandardMaterial, (m as THREE.MeshStandardMaterial).color.clone());
+        for (const [m, c0] of heartCols) {
+          m.color.copy(c0).lerp(PALE, 0.35 * cf.pale);
+          m.emissive.copy(PALE_GLOW).multiplyScalar(cf.pale);
+        }
         // kính lúp: máy quay trôi tới sát chỗ nối khi vào bước vi phẫu, xong thì trả về góc nhìn đang chọn
         if (cf.focus) {
           const e = 1 - Math.exp(-dt * 3);

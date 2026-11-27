@@ -158,23 +158,31 @@ field = [colored(bowl, lambda p, n: blend(tint('#B85A5A', 1 + 0.12 * fbm(p, 5)),
 BONE = tissue('sternum', '#E9E0CC', rough=0.55, coat=0.2)
 FAT = tissue('fat', '#E8CF8A', rough=0.4, coat=0.5)
 SKIN = tissue('skin', '#D9A487', rough=0.5, coat=0.2)
+MUSC = tissue('pect', '#9E3A34', rough=0.5, coat=0.4)
+MARROW = tissue('marrow', '#B5502E', rough=0.6, coat=0.3)
+# hai NỬA THÀNH NGỰC (nút riêng `SHL_chestR|L`, gốc ở mặt cắt xương ức): xương ức (mặt cắt có tủy đỏ), cơ ngực, mỡ dưới da, da.
+# Rộng tới dưới khăn mổ: lúc mở chỉ lộ mép cắt; lúc đóng ngực cảnh trượt hai nửa vào giữa là che kín lỗ mổ.
+chest = {}
 for sx in (-1, 1):
-    field += [B3('st', (0.22, 0.2, 5.2), T(sx * 2.45, 0.12, -0.2), BONE, bevel=0.05), B3('ft', (0.3, 0.06, 5.4), T(sx * 2.7, 0.24, -0.2), FAT, bevel=0.03),
-              B3('sk', (0.4, 0.05, 5.6), T(sx * 2.95, 0.27, -0.2), SKIN, bevel=0.02)]
+    m0 = sx * 2.34  # mặt cắt xương ức khi đang banh
+    chest[sx] = [B3('st', (0.22, 0.2, 5.2), T(sx * 2.45, 0.12, -0.2), BONE, bevel=0.05), B3('mrw', (0.012, 0.12, 5.0), T(m0 + sx * 0.004, 0.12, -0.2), MARROW, bevel=0.0),
+                 B3('mu', (3.0, 0.1, 5.2), T(sx * (2.56 + 1.5), 0.15, -0.2), MUSC, bevel=0.03), B3('ft', (3.05, 0.06, 5.4), T(sx * (2.56 + 1.525), 0.24, -0.2), FAT, bevel=0.03),
+                 B3('sk', (3.25, 0.05, 5.6), T(sx * (2.5 + 1.625), 0.27, -0.2), SKIN, bevel=0.02)]
 DRAPE = mat('drape', hexc('#2F6F6A'), rough=0.95)
 dr = B3('drape', (11.0, 0.04, 9.0), T(0, 0.3, 0), DRAPE, bevel=0)
 boolean(dr, B3('hole', (6.4, 1.0, 5.8), T(0, 0.3, -0.2), DRAPE, bevel=0), 'DIFFERENCE')
 field.append(dr)
 STEEL = mat('steel', (0.66, 0.68, 0.72), metallic=1, rough=0.22)
 DARK = mat('dark', hexc('#2B2F3A'), metallic=0.3, rough=0.5)
-# banh ngực: hai lưỡi cong ôm mép xương ức, thanh răng ở phía đầu, tay quay
+# banh ngực: hai lưỡi cong ôm mép xương ức, thanh răng ở phía đầu, tay quay (nút riêng `SHL_retractor`, tháo ra khi đóng ngực, cùng chỉ treo màng ngoài tim)
+retr = []
 for sx in (-1, 1):
-    field += [B3('blade', (0.08, 0.7, 1.4), T(sx * 2.62, 0.02, -0.8), STEEL, bevel=0.02), B3('arm', (0.5, 0.08, 0.16), T(sx * 2.8, 0.38, -2.35), STEEL, bevel=0.02),
+    retr += [B3('blade', (0.08, 0.7, 1.4), T(sx * 2.62, 0.02, -0.8), STEEL, bevel=0.02), B3('arm', (0.5, 0.08, 0.16), T(sx * 2.8, 0.38, -2.35), STEEL, bevel=0.02),
               B3('up', (0.08, 0.5, 0.16), T(sx * 2.62, 0.2, -1.6), STEEL, bevel=0.02), B3('lnk', (0.08, 0.08, 0.9), T(sx * 2.62, 0.4, -1.95), STEEL, bevel=0.02)]
-field.append(B3('rack', (6.6, 0.1, 0.22), T(0, 0.42, -2.45), STEEL, bevel=0.02))
+retr.append(B3('rack', (6.6, 0.1, 0.22), T(0, 0.42, -2.45), STEEL, bevel=0.02))
 for i in range(30):
-    field.append(B3('tooth', (0.06, 0.06, 0.05), T(-3.0 + i * 0.2, 0.5, -2.36), STEEL, bevel=0.01))
-field += [cyl('crank', 0.09, 0.3, T(2.95, 0.55, -2.45), STEEL), B3('handle', (0.08, 0.08, 0.45), T(2.95, 0.72, -2.25), DARK, bevel=0.02)]
+    retr.append(B3('tooth', (0.06, 0.06, 0.05), T(-3.0 + i * 0.2, 0.5, -2.36), STEEL, bevel=0.01))
+retr += [cyl('crank', 0.09, 0.3, T(2.95, 0.55, -2.45), STEEL), B3('handle', (0.08, 0.08, 0.45), T(2.95, 0.72, -2.25), DARK, bevel=0.02)]
 # khay Mayo bên phải (dụng cụ nằm ở y = 0,36, z = −1,2 / −0,4 / 0,4 / 1,2)
 CLOTH = mat('cloth', hexc('#1E5A55'), rough=0.95)
 field += [B3('mayo', (1.5, 0.05, 3.6), T(3.9, 0.3, 0.2), STEEL, bevel=0.02), B3('mcl', (1.4, 0.012, 3.5), T(3.9, 0.33, 0.2), CLOTH, bevel=0.004)]
@@ -186,10 +194,13 @@ PROLENE = mat('prolene', hexc('#2B5BB0'), rough=0.35)
 for k, (ang, rr) in enumerate([(2.4, 2.3), (2.9, 2.3), (-2.6, 2.25), (0.75, 2.3), (0.25, 2.3), (-0.55, 2.25)]):  # ba mũi mỗi bên dọc mép màng
     cx, cz = math.cos(ang) * rr, -0.2 - math.sin(ang) * rr * 1.25
     ox, oz = math.cos(ang) * 3.08, -0.2 - math.sin(ang) * 3.3  # đầu ngoài nằm trên da / mép khăn, không lấn khay Mayo (x ≥ 3,15)
-    field.append(tube('stay%d' % k, [T(cx, -0.05, cz), T((cx * 2 + ox) / 3, 0.34, (cz * 2 + oz) / 3), T(ox, 0.33, oz)], 0.008, PROLENE))
-    field += [B3('mosq%d' % k, (0.36, 0.035, 0.05), T(ox + math.cos(ang) * 0.18, 0.34, oz - math.sin(ang) * 0.18), STEEL, bevel=0.01),
+    retr.append(tube('stay%d' % k, [T(cx, -0.05, cz), T((cx * 2 + ox) / 3, 0.34, (cz * 2 + oz) / 3), T(ox, 0.33, oz)], 0.008, PROLENE))
+    retr += [B3('mosq%d' % k, (0.36, 0.035, 0.05), T(ox + math.cos(ang) * 0.18, 0.34, oz - math.sin(ang) * 0.18), STEEL, bevel=0.01),
               cyl('ring%d' % k, 0.05, 0.02, T(ox + math.cos(ang) * 0.4, 0.34, oz - math.sin(ang) * 0.4), STEEL)]
 piece('SH_field', field, (0, 0, 0))
+piece('SHL_retractor', retr, (0, 0.3, -0.2))
+for sx, name in ((-1, 'SHL_chestR'), (1, 'SHL_chestL')):
+    piece(name, chest[sx], (sx * 2.34, 0.12, -0.2))
 
 # phổi THẬT (thùy, rãnh liên thùy, đốm than — dùng chung `organs.lungs` với bài mổ người), mỗi lá một nút `SHL_lung*` để cảnh cho thở theo máy:
 # nằm ngửa (đỉnh phổi về phía đầu −z, mặt trước lên), nằm dưới mép xương ức; trường mổ chỉ thấy bờ trước–trong của phổi phồng lên mỗi nhịp thở.

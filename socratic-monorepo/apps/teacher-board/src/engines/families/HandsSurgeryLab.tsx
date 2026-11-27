@@ -2,7 +2,7 @@
 
 import React, {useEffect, useReducer, useRef, useState} from 'react';
 import {CHECKLIST, GAUZE_TOTAL, LAYERS, SURG_NAME, SURG_TOOLS, STEP_DO, STEP_TOOL, alarms, bleedRate, capnoAt, debrief, ecgAt, mapOf, newSurg, plethAt, surgReducer, surgStep, type CheckPhase, type SAction} from '../../utils/lab/hands/surgery';
-import {ACT_SAFE, CABG_BRIEF, CABG_STEPS, CABG_TOOLS, CABG_TOOL_NAME, cabgDebrief, cabgReducer, cabgStep, cabgTool, cabgVitals, monitorLanes, newCabg, type CabgAction} from '../../utils/lab/hands/cabg';
+import {ACT_SAFE, CABG_BRIEF, CABG_SIGNOUT, CABG_STEPS, WIRES, CABG_TOOLS, CABG_TOOL_NAME, cabgDebrief, cabgReducer, cabgStep, cabgTool, cabgVitals, monitorLanes, newCabg, type CabgAction} from '../../utils/lab/hands/cabg';
 import {BTN, BTN_GHOST} from './Controls';
 import type {OrView, SliceAxis, SurgMode, SurgeryLive} from './HandsSurgery3D';
 import type {HandsInput} from './handsKit';
@@ -238,6 +238,8 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
     [{t: 'wean'}, 'Thở lại, cai máy', cStep === 'wean'],
     [{t: 'protamine'}, 'Tiêm protamine', cStep === 'protamine'],
     [{t: 'flow'}, 'Đo lưu lượng cầu nối', cStep === 'flow'],
+    [{t: 'count'}, 'Đếm đủ gạc, kim, dụng cụ', cStep === 'count'],
+    [{t: 'skin'}, 'Khâu da, băng vết mổ', cStep === 'skin'],
   ];
 
   const phase: CheckPhase | null = step === 'signin' || step === 'timeout' || step === 'signout' ? step : null;
@@ -285,6 +287,8 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
                 {cStep === 'plegia' && cb.plegia > 0 && <span className="block">Đã truyền {cb.plegia.toFixed(1)} s · nhịp {cb.hr}/phút</span>}
                 {cStep === 'arteriotomy' && cb.arteriotomy > 0 && <span className="block">Đã mở {Math.round(cb.arteriotomy * 100)} %</span>}
                 {cStep === 'anast' && <span className="block">Đã khâu {cb.stitches}/8 mũi</span>}
+                {cStep === 'drains' && <span className="block">Đã đặt {cb.drains}/2 ống</span>}
+                {cStep === 'wires' && <span className="block">Chỉ thép {Math.floor(cb.wireTaps / 2)}/{WIRES} sợi{cb.wireTaps % 2 ? ' · đã qua mép phải, chụm tiếp mép trái' : ''}</span>}
               </>
             )}
           </div>
@@ -314,6 +318,17 @@ export const SurgeryLab: React.FC<{Shell: React.FC<ShellProps>}> = ({Shell}) => 
               {CABG_BRIEF.map((item, i) => (
                 <label key={item} className="flex min-h-[32px] items-center gap-2 text-xs">
                   <input type="checkbox" data-testid={`cabg-brief-${i}`} checked={cb.brief[i]} onChange={() => L.cabgDispatch({t: 'brief', i})} className="h-4 w-4 shrink-0 accent-[#1F7A4D]" />
+                  {item}
+                </label>
+              ))}
+            </fieldset>
+          )}
+          {cStep === 'signout' && (
+            <fieldset data-testid="cabg-signout" className="flex flex-col gap-1 rounded-xl bg-white px-3 py-2">
+              <legend className="px-1 text-xs font-semibold">Bảng kiểm WHO · Trước khi rời phòng mổ</legend>
+              {CABG_SIGNOUT.map((item, i) => (
+                <label key={item} className="flex min-h-[32px] items-center gap-2 text-xs">
+                  <input type="checkbox" data-testid={`cabg-signout-${i}`} checked={cb.signout[i]} onChange={() => L.cabgDispatch({t: 'signout', i})} className="h-4 w-4 shrink-0 accent-[#1F7A4D]" />
                   {item}
                 </label>
               ))}

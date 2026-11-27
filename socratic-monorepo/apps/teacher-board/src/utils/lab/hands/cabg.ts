@@ -30,6 +30,12 @@ export type CabgStep =
   | 'protamine'
   | 'decanAo'
   | 'flow'
+  | 'drains'
+  | 'pacing'
+  | 'count'
+  | 'wires'
+  | 'skin'
+  | 'signout'
   | 'done';
 
 /** ai làm bước này: phẫu thuật viên (dụng cụ trong trường mổ) hay kíp (nút ở bảng điều khiển) */
@@ -50,7 +56,17 @@ export const CABG_STEPS: {id: Exclude<CabgStep, 'done'>; name: string; who: 'tea
   {id: 'protamine', name: 'Trung hòa heparin: protamine', who: 'team', how: 'Bác sĩ gây mê tiêm protamine (nút ở bảng điều khiển); ACT về gần mức nền.', why: 'Đảo ngược tác dụng chống đông để cầm máu trước khi đóng ngực.'},
   {id: 'decanAo', name: 'Rút ống động mạch chủ', who: 'cannula', how: 'Chạm ống thông vào ống ở động mạch chủ để rút, buộc mũi khâu túi.', why: 'Rút sau cùng, khi đã trung hòa heparin và huyết động ổn.'},
   {id: 'flow', name: 'Đo lưu lượng cầu nối', who: 'team', how: 'Bấm "Đo lưu lượng cầu nối" (đầu dò siêu âm thời gian truyền).', why: 'Lưu lượng đủ và chỉ số đập (PI) thấp cho biết miệng nối thông tốt trước khi đóng ngực.'},
+  {id: 'drains', name: 'Đặt hai ống dẫn lưu', who: 'cannula', how: 'Cầm ống, đặt lần lượt vào hai vòng cam: dưới tim (khoang màng ngoài tim) và trước tim (trung thất).', why: 'Máu và dịch rỉ sau mổ phải được dẫn ra ngoài; ứ lại quanh tim gây chèn ép tim cấp.'},
+  {id: 'pacing', name: 'Đặt dây điện cực tạm thời', who: 'needle', how: 'Kìm kẹp kim: khâu đầu dây điện cực vào mặt thất phải (vòng cam).', why: 'Sau mổ tim, dẫn truyền có thể chậm hoặc rối loạn; dây điện cực cho phép tạo nhịp ngay từ bên ngoài.'},
+  {id: 'count', name: 'Đếm gạc, kim, dụng cụ', who: 'team', how: 'Y tá dụng cụ đếm: bấm "Đếm đủ" khi số gạc, kim, dụng cụ khớp số đã mở.', why: 'Phải đếm đủ trước khi đóng xương ức: dụng cụ sót trong ngực là sai sót nghiêm trọng nhưng phòng được.'},
+  {id: 'wires', name: 'Tháo banh ngực, buộc chỉ thép xương ức', who: 'needle', how: 'Luồn 5 sợi chỉ thép: với mỗi sợi chụm điểm sáng ở mép xương ức phải rồi mép trái; đủ 5 sợi thì hai nửa xương ức được kéo khép và xoắn chặt.', why: 'Xương ức đã cưa đôi phải được cố định chắc để liền xương và để người bệnh thở, ho không đau.'},
+  {id: 'skin', name: 'Khâu cân, dưới da, da; băng vết mổ', who: 'team', how: 'Bấm "Khâu da, băng vết mổ".', why: 'Đóng từng lớp giảm nhiễm khuẩn vết mổ xương ức, biến chứng nặng của mổ tim.'},
+  {id: 'signout', name: 'Bảng kiểm trước khi rời phòng', who: 'team', how: 'Đánh dấu đủ các mục ở bảng điều khiển.', why: 'Kíp xác nhận tên phẫu thuật, số đếm, ống dẫn lưu, dây điện cực và điểm cần theo dõi khi bàn giao hồi sức.'},
 ];
+/** bảng kiểm trước khi rời phòng mổ tim */
+export const CABG_SIGNOUT = ['Ghi đúng tên phẫu thuật: bắc cầu động mạch vành 1 cầu nối (LIMA–LAD)', 'Số gạc, kim, dụng cụ đã đếm đủ', 'Hai ống dẫn lưu và dây điện cực đã ghi vị trí', 'Bàn giao hồi sức: lượng dịch dẫn lưu, nhịp tim, huyết áp mục tiêu'];
+/** số sợi chỉ thép xương ức (mỗi sợi chạm mép phải rồi mép trái) */
+export const WIRES = 5;
 export const CABG_BRIEF = ['Xác nhận người bệnh, chẩn đoán hẹp động mạch liên thất trước, cầu nối dự kiến LIMA–LAD', 'Máy tim phổi đã mồi dịch, kiểm tra không còn bọt khí', 'Dung dịch liệt tim lạnh đã sẵn sàng', 'Có máu dự trữ, kháng sinh dự phòng trong 60 phút', 'Máy sốc điện trong đã nối, bản sốc nhỏ trên bàn'];
 
 /** ACT (giây): nền, ngưỡng an toàn để chạy máy */
@@ -93,8 +109,15 @@ export interface CabgState {
   warn: string;
   /** đã từng thả kẹp (để chỉ rung thất một lần) */
   reperfused: boolean;
+  /** đóng ngực: số ống dẫn lưu, dây điện cực, đã đếm, số lần chạm chỉ thép (2 lần một sợi), đã khâu da, bảng kiểm cuối */
+  drains: number;
+  pacing: boolean;
+  counted: boolean;
+  wireTaps: number;
+  skin: boolean;
+  signout: boolean[];
 }
-export const newCabg = (): CabgState => ({brief: CABG_BRIEF.map(() => false), tool: null, t: 0, cpbT: 0, xclampT: 0, heparin: false, act: ACT_BASE, cannAo: false, cannRa: false, pump: false, vent: true, xclamp: false, plegia: 0, rhythm: 'sinus', hr: 78, arteriotomy: 0, stitches: 0, misses: 0, shocks: 0, protamine: false, flow: null, errors: 0, warn: '', reperfused: false});
+export const newCabg = (): CabgState => ({brief: CABG_BRIEF.map(() => false), tool: null, t: 0, cpbT: 0, xclampT: 0, heparin: false, act: ACT_BASE, cannAo: false, cannRa: false, pump: false, vent: true, xclamp: false, plegia: 0, rhythm: 'sinus', hr: 78, arteriotomy: 0, stitches: 0, misses: 0, shocks: 0, protamine: false, flow: null, errors: 0, warn: '', reperfused: false, drains: 0, pacing: false, counted: false, wireTaps: 0, skin: false, signout: CABG_SIGNOUT.map(() => false)});
 
 export function cabgStep(s: CabgState): CabgStep {
   if (!s.brief.every(Boolean)) return 'brief';
@@ -116,6 +139,12 @@ export function cabgStep(s: CabgState): CabgStep {
   if (!s.protamine) return 'protamine';
   if (s.cannAo) return 'decanAo';
   if (!s.flow) return 'flow';
+  if (s.drains < 2) return 'drains';
+  if (!s.pacing) return 'pacing';
+  if (!s.counted) return 'count';
+  if (s.wireTaps < WIRES * 2) return 'wires';
+  if (!s.skin) return 'skin';
+  if (!s.signout.every(Boolean)) return 'signout';
   return 'done';
 }
 export const cabgTool = (step: CabgStep): CabgTool | null => (step === 'done' ? null : (CABG_STEPS.find((x) => x.id === step)!.who as CabgTool | 'team') === 'team' ? null : (CABG_STEPS.find((x) => x.id === step)!.who as CabgTool));
@@ -159,6 +188,12 @@ export type CabgAction =
   | {t: 'wean'}
   | {t: 'protamine'}
   | {t: 'flow'}
+  | {t: 'drain'; ok: boolean}
+  | {t: 'pace'; ok: boolean}
+  | {t: 'count'}
+  | {t: 'wire'; ok: boolean}
+  | {t: 'skin'}
+  | {t: 'signout'; i: number}
   | {t: 'wrong'; msg: string}
   | {t: 'reset'};
 
@@ -251,6 +286,25 @@ export function cabgReducer(s: CabgState, a: CabgAction): CabgState {
       if (step !== 'flow') return s;
       // miệng nối khâu đều: lưu lượng ~40 mL/phút, PI ~1,8; mỗi mũi lệch giảm lưu lượng, tăng PI
       return {...s, flow: {q: Math.max(4, 42 - 9 * s.misses), pi: +(1.8 + 0.9 * s.misses).toFixed(1)}, warn: ''};
+    case 'drain':
+      if (step !== 'drains') return s;
+      return a.ok ? {...s, drains: s.drains + 1, warn: ''} : err(s, 'Ống dẫn lưu đặt ở vòng cam: một ống dưới tim, một ống trước tim.');
+    case 'pace':
+      if (step !== 'pacing') return s;
+      return a.ok ? {...s, pacing: true, warn: ''} : err(s, 'Khâu dây điện cực vào mặt thất phải (vòng cam), tránh động mạch vành.');
+    case 'count':
+      if (step === 'wires' || step === 'skin') return s;
+      if (step !== 'count') return err(s, 'Chưa tới lúc đếm: đặt đủ ống dẫn lưu và dây điện cực trước.');
+      return {...s, counted: true, warn: ''};
+    case 'wire':
+      if (step !== 'wires') return step === 'count' ? err(s, 'Chưa đếm đủ gạc, kim, dụng cụ: không được đóng xương ức.') : s;
+      return a.ok ? {...s, wireTaps: s.wireTaps + 1, warn: ''} : err(s, 'Luồn chỉ thép đúng điểm sáng: mỗi sợi đi qua mép xương ức phải rồi mép trái.');
+    case 'skin':
+      if (step !== 'skin') return s;
+      return {...s, skin: true, warn: ''};
+    case 'signout':
+      if (step !== 'signout') return s;
+      return {...s, signout: s.signout.map((v, i) => (i === a.i ? !v : v)), warn: ''};
   }
 }
 

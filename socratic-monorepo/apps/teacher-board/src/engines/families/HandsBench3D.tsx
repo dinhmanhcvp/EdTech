@@ -2,7 +2,7 @@
 
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
-import {BENCH_ACTION, BENCH_KNIFE, BENCH_MOVES, BENCH_PICK, BENCH_PULL, BENCH_SETUP, dragT, grabOf, isTimeUnit, type BenchMove} from '../../utils/lab/hands/benchMoves';
+import {BENCH_ACTION, BENCH_KNIFE, BENCH_MOVES, BENCH_WATCH, BENCH_PICK, BENCH_PULL, BENCH_SETUP, dragT, grabOf, isTimeUnit, type BenchMove} from '../../utils/lab/hands/benchMoves';
 import {AUTO_FLAG, isToggle, pickProp, tintOf, trayLayout} from '../../utils/lab/hands/benchPick';
 import {OVER_R, wirePath, dropped, newSqueeze, newStir, pourStep, pourTilt, squash, squeezeStep, stirProgress, stirStep} from '../../utils/lab/hands/benchActs';
 import {BENCH_FX, FX_PARTS} from './benchMotion';
@@ -894,9 +894,11 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         if (pokeRay.intersectObject(o, true).length) return true;
         return P.distAt(nx, ny, doBox.setFromObject(o).getCenter(pullPt)) < reach;
       };
-      // THAO TÁC LÀM THÍ NGHIỆM cho bài không có vật để kéo: một KHÓA / CẦN GẠT thật đặt trước dụng cụ. Bài điện: khóa dao (lưỡi đồng quay từ mở sang đóng);
-      // bài khác: cần trượt trên ray. Nắm tay cầm, gạt hết hành trình thì thí nghiệm chạy và ghi số đo; thả ra cần bật về vị trí mở.
+      // THAO TÁC LÀM THÍ NGHIỆM cho bài không có vật để kéo, bằng đồ vật thật: bài điện ĐÓNG KHÓA DAO (lưỡi đồng quay từ mở sang đóng; thả ra bật mở);
+      // bài bấm giờ BẤM NÚM ĐỒNG HỒ BẤM GIÂY có sẵn trong bộ dụng cụ; bài đọc / đếm / quan sát cầm BÚT VIẾT dọc dòng kẻ của sổ thí nghiệm (ghi kết quả).
       const knife = BENCH_KNIFE.has(e.id);
+      const watchAt = knife ? undefined : BENCH_WATCH[e.id];
+      const note = !knife && !watchAt;
       const levOn = e.columns.length > 0 && !pull;
       const lev = new THREE.Group();
       const levBase = new THREE.MeshStandardMaterial({color: knife ? '#1A1A1C' : '#2C2F33', roughness: 0.5});
@@ -915,23 +917,79 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         const bl = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.025, 0.06), levMetal);
         bl.position.set(0.31, 0, 0);
         blade.add(bl);
+        // tay cầm cách điện bằng bakelite đen như khóa dao thật; ánh cam nhẹ cho biết chỗ cầm
+        (levHandle.material as THREE.MeshStandardMaterial).color.set('#26221E');
+        (levHandle.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.28;
+        levHandle.scale.set(1, 0.8, 0.8);
         levHandle.position.set(0.66, 0, 0);
         blade.add(levHandle);
         blade.position.set(0, 0.18, 0);
         lev.add(blade);
+      } else if (watchAt) {
+        // đồng hồ đã có trong bộ dụng cụ: chỉ đánh dấu núm bấm bằng chấm cam nhỏ, nhấn thì núm lún xuống
+        levHandle.scale.setScalar(0.38);
+        levHandle.position.set(0, 0.04, -0.2);
+        lev.add(levHandle);
       } else {
-        const rail = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.16), levBase);
-        rail.position.set(0.55, 0.025, 0);
-        lev.add(rail);
-        const groove = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.012, 0.04), new THREE.MeshStandardMaterial({color: '#0B0E2A'}));
-        groove.position.set(0.55, 0.055, 0);
-        lev.add(groove);
-        const goal = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.015, 20), new THREE.MeshStandardMaterial({color: '#3CCB7F', emissive: '#3CCB7F', emissiveIntensity: 0.5}));
-        goal.position.set(1.1, 0.06, 0);
-        lev.add(goal);
-        levHandle.position.set(0.05, 0.14, 0);
+        // sổ thí nghiệm mở trên bàn: bìa, hai trang giấy kẻ dòng, gáy lò xo; bút bi đứng trên đầu dòng
+        const cover = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.02, 0.66), new THREE.MeshStandardMaterial({color: '#1F3A6B', roughness: 0.7}));
+        cover.position.set(0.55, 0.01, 0);
+        const paper = new THREE.MeshStandardMaterial({color: '#F6F3EA', roughness: 0.95});
+        const rule = new THREE.MeshBasicMaterial({color: '#9DB4D6'});
+        for (const sx of [-1, 1]) {
+          const pg = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.012, 0.6), paper);
+          pg.position.set(0.55 + sx * 0.315, 0.026, 0);
+          lev.add(pg);
+          for (let r = -2; r <= 2; r++) {
+            const ln = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.001, 0.005), rule);
+            ln.position.set(0.55 + sx * 0.315, 0.0325, r * 0.1 + 0.02);
+            lev.add(ln);
+          }
+        }
+        for (let i = 0; i < 12; i++) {
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.004, 6, 12), levMetal);
+          ring.position.set(0.55, 0.03, -0.27 + i * 0.049);
+          ring.rotation.y = Math.PI / 2;
+          lev.add(ring);
+        }
+        lev.add(cover);
+        // bút: ngòi chạm giấy dưới chấm cam (chỗ cầm), thân nghiêng về sau như tay đang cầm viết
+        (levHandle.material as THREE.MeshStandardMaterial).visible = false;
+        const pen = new THREE.Group();
+        const nib = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.05, 12).rotateX(Math.PI), new THREE.MeshStandardMaterial({color: '#C9CED6', metalness: 0.9, roughness: 0.3}));
+        nib.position.y = 0.025;
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.34, 14), new THREE.MeshStandardMaterial({color: '#E9ECEF', roughness: 0.35}));
+        body.position.y = 0.22;
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.1, 14), new THREE.MeshStandardMaterial({color: '#1F4FA8', roughness: 0.4}));
+        cap.position.y = 0.36;
+        const grip = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 10), levHandle.material.clone());
+        (grip.material as THREE.MeshStandardMaterial).visible = true;
+        grip.position.y = 0.12;
+        pen.add(nib, body, cap, grip);
+        pen.rotation.set(-0.35, 0, -0.45);
+        pen.position.y = -0.105;
+        levHandle.add(pen);
+        levHandle.position.set(0.32, 0.14, 0);
         lev.add(levHandle);
       }
+      // nét chữ viết tay: một đường lượn chạy dọc dòng kẻ, hiện dần theo ngòi bút; mỗi lần ghi xong lưu thành một dòng trong sổ
+      const INK_N = 120;
+      const inkGeo = new THREE.BufferGeometry().setFromPoints(
+        Array.from({length: INK_N}, (_, i) => {
+          const u = i / (INK_N - 1);
+          const x = 0.32 + u * 0.98;
+          return new THREE.Vector3(x - 0.012 * Math.sin(u * 95), 0.034, 0.005 + 0.022 * Math.abs(Math.sin(u * 47)) * (0.6 + 0.4 * Math.sin(u * 7)));
+        }),
+      );
+      const inkMat = new THREE.LineBasicMaterial({color: '#1B3A8C'});
+      const ink = new THREE.Line(inkGeo, inkMat);
+      ink.geometry.setDrawRange(0, 0);
+      if (note) lev.add(ink);
+      let inkRows = 0;
+      let doCount = 0;
+      // máy dò (chỉ bản dev): vị trí chỗ cầm, điểm cuối hành trình và số lần đã làm thí nghiệm bằng thiết bị này
+      if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined')
+        Object.assign((window as unknown as {__bench: object}).__bench, {lev: () => ({on: lev.visible, kind: knife ? 'knife' : watchAt ? 'watch' : 'note', grip: levHandle.getWorldPosition(new THREE.Vector3()), end: lev.localToWorld(knife ? new THREE.Vector3(0.66, 0.18, 0) : new THREE.Vector3(1.3, 0.14, 0)), done: doCount})});
       lev.visible = false;
       root.add(lev);
       const levTag = k.label('', '#D9481C');
@@ -950,7 +1008,8 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         const bb = new THREE.Box3().setFromObject(setObj);
         const a = root.worldToLocal(bb.min.clone());
         const b = root.worldToLocal(bb.max.clone());
-        levPos.set(Math.max(-2.6, Math.min(1.6, (a.x + b.x) / 2 - 0.6)), 0.0, Math.min(1.9, Math.max(a.z, b.z) + 0.55));
+        if (watchAt) levPos.set(watchAt[0], 0, watchAt[1]);
+        else levPos.set(Math.max(-2.6, Math.min(1.6, (a.x + b.x) / 2 - 0.6)), 0.0, Math.min(1.9, Math.max(a.z, b.z) + 0.55));
         lev.position.copy(levPos);
         levPlaced = true;
       };
@@ -960,8 +1019,9 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         root.updateMatrixWorld();
         return P.distAt(nx, ny, levHandleWorld(levW)) < reach;
       };
-      /** tiến độ 0..1 của cần theo vị trí con trỏ: khóa dao = góc lưỡi, cần trượt = vị trí trên ray */
+      /** tiến độ 0..1 theo vị trí con trỏ: khóa dao = góc lưỡi, bút = vị trí ngòi dọc dòng kẻ; đồng hồ: nhấn núm là đủ */
       const levFrom = (nx: number, ny: number) => {
+        if (watchAt) return 1;
         pokeRay.setFromCamera(pokeV.set(nx, ny), k.camera);
         root.updateMatrixWorld();
         const o = lev.localToWorld(levW.set(0, knife ? 0.18 : 0.14, 0));
@@ -970,7 +1030,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         if (!q) return levT;
         lev.worldToLocal(q);
         if (knife) return 1 - Math.max(0, Math.min(KNIFE_OPEN, Math.atan2(q.y - 0.18, q.x))) / KNIFE_OPEN;
-        return Math.max(0, Math.min(1, (q.x - 0.05) / 1.05));
+        return Math.max(0, Math.min(1, (q.x - 0.32) / 0.98));
       };
       const HOLD = 1.0;
       const holdT: number[] = P.ptrs.map(() => 0);
@@ -1070,7 +1130,13 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
                 levT = levFrom(x, y);
                 if (levT >= 0.95 && !levLock) {
                   levLock = true;
+                  doCount++;
                   live.dispatch({type: 'measure'});
+                  if (note && inkRows < 4) {
+                    const kept = new THREE.Line(inkGeo, inkMat);
+                    kept.position.z = -0.1 * ++inkRows;
+                    lev.add(kept);
+                  }
                 }
               } else levHeld = -1;
             }
@@ -1141,10 +1207,15 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             if (levT < 0.3) levLock = false;
           }
           if (knife) blade.rotation.z = (1 - levT) * KNIFE_OPEN;
-          else levHandle.position.x = 0.05 + levT * 1.05;
+          else if (watchAt) levHandle.position.y = levHeld >= 0 ? 0.02 : 0.04;
+          else {
+            levHandle.position.x = 0.32 + levT * 0.98;
+            // đang viết: nét hiện tới ngòi; ghi xong thì dòng vừa viết lùi lên trên (dòng mới ở dưới), tối đa 4 dòng
+            ink.geometry.setDrawRange(0, levHeld >= 0 || levLock ? Math.ceil(levT * INK_N) : 0);
+          }
           if (lev.visible) {
             root.updateMatrixWorld();
-            levTag(lev.localToWorld(levW.set(0.45, 0.55, 0)), undefined, levHeld >= 0 ? `${Math.round(levT * 100)} % — ${knife ? 'đóng hẳn khóa' : 'gạt hết cần'} để: ${action.toLowerCase()}` : `${knife ? 'Nắm tay cầm, gạt khóa xuống để' : 'Nắm núm, gạt cần sang ô xanh để'}: ${action.toLowerCase()}`);
+            levTag(lev.localToWorld(levW.set(0.45, 0.55, 0)), undefined, watchAt ? (levHeld >= 0 ? `Đồng hồ đang chạy — ${action.toLowerCase()}` : `Nhấn núm đồng hồ bấm giây để: ${action.toLowerCase()}`) : levHeld >= 0 ? `${Math.round(levT * 100)} % — ${knife ? 'đóng hẳn khóa' : 'viết hết dòng'} để: ${action.toLowerCase()}` : `${knife ? 'Nắm tay cầm, gạt khóa xuống để' : 'Cầm bút, viết dọc dòng kẻ để ghi kết quả'}: ${action.toLowerCase()}`);
           } else levTag(null);
         }
         // cục cam của bước chuẩn bị hiện tại: đặt ở mép bàn (phía người nhìn), kéo vào vòng cam
@@ -1182,7 +1253,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         const row = live.st.rows[live.st.rows.length - 1];
         k.caption(!setupDone() ? `${e.lesson}\nChuẩn bị ${stage + 1}/${setup.length}: ${setup[stage].label} · ${{place: 'chụm vật ở mép bàn, kéo vào vòng cam rồi buông', pour: 'chụm lọ, đưa miệng lọ tới vòng cam và giữ yên để rót', stir: 'chụm, đưa vào vòng cam rồi vẽ vòng tròn', squeeze: 'chụm giữ để bóp, nhả để phồng', connect: 'chụm phích / đầu ống, kéo tới chốt (núm) cần nối rồi buông', press: 'chụm một lần vào công tắc (vòng cam) để bật', turn: 'chụm vào ốc rồi vẽ vòng tròn quanh ốc để vặn'}[setup[stage].act?.kind ?? 'place'] ?? 'chụm cục cam rồi kéo thả vào vòng cam trên dụng cụ'}` : row ? `Lần đo ${live.st.rows.length}: ${e.columns.map((c) => `${c.label} = ${fmt(row[c.key], c.digits ?? 2)}${c.unit ? ` ${c.unit}` : ''}`).join(' · ')}
 Đổi điều kiện rồi làm lại để có lần đo tiếp` : `${e.lesson}
-Kéo bộ phận có vòng cam để chỉnh · cầm vật ở khay đặt vào vòng vàng để chọn${e.columns.length ? ` · ${pull ? `kéo ${pull.what.split(':')[0]} rồi thả` : levOn ? (knife ? 'gạt khóa dao xuống' : 'gạt cần trượt sang ô xanh') : 'giữ chụm trên dụng cụ'} để ${action.toLowerCase()} và ghi số đo` : ''}`);
+Kéo bộ phận có vòng cam để chỉnh · cầm vật ở khay đặt vào vòng vàng để chọn${e.columns.length ? ` · ${pull ? `kéo ${pull.what.split(':')[0]} rồi thả` : levOn ? (knife ? 'gạt khóa dao xuống' : watchAt ? 'nhấn núm đồng hồ bấm giây' : 'cầm bút viết vào sổ') : 'giữ chụm trên dụng cụ'} để ${action.toLowerCase()} và ghi số đo` : ''}`);
       };
     },
   };

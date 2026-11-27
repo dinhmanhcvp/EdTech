@@ -124,11 +124,12 @@ describe('thao tác thật trong bước chuẩn bị (đặt, rót, khuấy, b�
     expect(blob).toEqual([]);
   });
 
-  it('hướng dẫn LÀM thí nghiệm nói đúng cử chỉ của cảnh (kéo vật / khóa dao / cần trượt), không còn "nút cam"', () => {
+  it('hướng dẫn LÀM thí nghiệm nói đúng cử chỉ của cảnh (kéo vật / khóa dao / đồng hồ / sổ), không còn "nút cam"', () => {
     const t = (id: string) => (benchManual(id)?.tools ?? []).join(' ');
     expect(t('PHYS_LAB_SPEED')).toContain('kéo lệch rồi thả');
     expect(t('PHYS_LAB_OHM_LAW')).toContain('KHÓA DAO');
-    expect(t('PHYS_LAB_HOOKE')).toContain('CẦN TRƯỢT');
+    expect(t('PHYS_LAB_HOOKE')).toContain('SỔ THÍ NGHIỆM');
+    expect(t('PHYS_LAB_PENDULUM_G')).toContain('ĐỒNG HỒ BẤM GIÂY');
     for (const id of ['PHYS_LAB_SPEED', 'PHYS_LAB_OHM_LAW', 'BIO_LAB_ENZYME']) expect(t(id)).not.toMatch(/nút cam|thanh trượt/);
     expect(t('PHYS_LAB_LATENT_HEAT_FUSION')).toContain('Lau bằng giấy thấm');
   });

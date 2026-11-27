@@ -616,12 +616,11 @@ def phys():
 # ================================================================== SINH HỌC
 # cần trượt trên ray: mỗi thanh trượt còn lại của bài Sinh là MỘT cần gạt thật nằm trước dụng cụ (id: x đầu ray, z, dài, màu tay cầm)
 LEVERS = {
-    'PLASMOLYSIS': (-0.6, 0.9, 1.0), 'ENZYME': (-0.8, 0.92, 1.0), 'YOGURT': (-1.9, 0.95, 1.0), 'VIRUS_SURVEY': (-1.5, 0.9, 1.0),
-    'PIGMENT': (-0.5, 0.9, 1.0), 'LEAF_STARCH': (0.0, 0.9, 1.0), 'TROPISM': (-0.8, 0.9, 1.0), 'APICAL_DOMINANCE': (-0.6, 0.9, 1.0),
-    'METAMORPHOSIS': (-1.9, 0.85, 1.0), 'PROPAGATION': (-0.6, 0.9, 1.0), 'DNA_EXTRACT': (-1.2, 0.9, 1.0), 'MODIFICATION': (-1.0, 0.9, 1.0),
-    'MINI_ECOSYSTEM': (-1.6, 0.85, 1.0),
+    # thông số THỜI GIAN (ngâm, ủ, chiếu sáng, số ngày) không còn cần gạt: cảnh đặt đồng hồ hẹn giờ thật trên bàn
+    'ENZYME': (-0.8, 0.92, 1.0), 'VIRUS_SURVEY': (-1.5, 0.9, 1.0), 'PIGMENT': (-0.5, 0.9, 1.0), 'DNA_EXTRACT': (-1.2, 0.9, 1.0),
+    'MODIFICATION': (-1.0, 0.9, 1.0), 'MINI_ECOSYSTEM': (-1.6, 0.85, 1.0),
 }
-LEVER2 = {'MINI_ECOSYSTEM': (-0.3, 0.85, 1.0)}
+LEVER2 = {}
 _PART = part
 
 

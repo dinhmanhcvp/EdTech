@@ -11,6 +11,8 @@ const SOCKET_Z = 1.95;
 const TRAY_Z = 2.55;
 const SWEEP = 1.5 * Math.PI; // núm xoay 270°
 const LEVER = 0.7; // góc gạt công tắc (rad)
+/** bề dày bảng điều khiển: núm và nút −/+ gắn trên mặt bảng như máy thật, không nằm rời trên bàn */
+const PANEL_H = 0.04;
 const mesh = (k: Kit, geo: THREE.BufferGeometry, color: string, x: number, y: number, z: number, parent?: THREE.Object3D) => {
   const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color, metalness: 0.25, roughness: 0.45, emissive: '#000000'}));
   m.position.set(x, y, z);
@@ -29,14 +31,30 @@ const mesh = (k: Kit, geo: THREE.BufferGeometry, color: string, x: number, y: nu
 export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpec, ops: OpsDef, write: (id: string, x: number) => void, act: (id: string) => void = () => undefined, anchors: Record<string, THREE.Vector3> = {}) {
   /** hình khối tĩnh sẽ ẩn đi khi mô hình Blender tải xong */
   const plain: THREE.Object3D[] = [];
-  const knobs = knobParams(spec, ops).map((p, i) => {
+  const kps = knobParams(spec, ops);
+  if (kps.length) {
+    // bảng điều khiển: vỏ thép sơn sẫm, mặt nhôm xước, chân cao su, đèn nguồn — mọi núm và nút −/+ của bài gắn trên đó
+    const w = (kps.length - 1) * 1.3 + 1.15;
+    const cx = -3.7 + ((kps.length - 1) * 1.3) / 2;
+    const cz = KNOB_Z + 0.3;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(w, PANEL_H, 1.5), new THREE.MeshStandardMaterial({color: '#2F3237', metalness: 0.4, roughness: 0.5}));
+    body.position.set(cx, PANEL_H / 2, cz);
+    const face = new THREE.Mesh(new THREE.BoxGeometry(w - 0.08, 0.004, 1.42), new THREE.MeshStandardMaterial({color: '#B9BEC4', metalness: 0.75, roughness: 0.38}));
+    face.position.set(cx, PANEL_H + 0.002, cz);
+    body.receiveShadow = face.receiveShadow = true;
+    body.castShadow = true;
+    k.scene.add(body, face);
+    const led = mesh(k, new THREE.SphereGeometry(0.035, 12, 8), '#35C46A', cx + w / 2 - 0.15, PANEL_H + 0.01, cz - 0.6);
+    (led.material as THREE.MeshStandardMaterial).emissive.set('#1E9E4D');
+  }
+  const knobs = kps.map((p, i) => {
     const x = -3.7 + i * 1.3;
-    plain.push(mesh(k, new THREE.CylinderGeometry(0.27, 0.3, 0.08, 28), '#A8ADB3', x, 0.04, KNOB_Z));
-    const cap = mesh(k, new THREE.CylinderGeometry(0.2, 0.22, 0.2, 28), '#E3B341', x, 0.18, KNOB_Z);
+    plain.push(mesh(k, new THREE.CylinderGeometry(0.27, 0.3, 0.08, 28), '#A8ADB3', x, 0.04 + PANEL_H, KNOB_Z));
+    const cap = mesh(k, new THREE.CylinderGeometry(0.2, 0.22, 0.2, 28), '#E3B341', x, 0.18 + PANEL_H, KNOB_Z);
     mesh(k, new THREE.BoxGeometry(0.05, 0.05, 0.17), '#1D1B16', 0, 0.12, -0.09, cap);
     for (let j = 0; j <= 10; j++) {
       const a = -SWEEP / 2 + (j / 10) * SWEEP;
-      const tick = mesh(k, new THREE.BoxGeometry(0.025, 0.02, 0.07), '#8B91B8', x + Math.sin(a) * 0.38, 0.09, KNOB_Z - Math.cos(a) * 0.38);
+      const tick = mesh(k, new THREE.BoxGeometry(0.025, 0.02, 0.07), '#1D1B16', x + Math.sin(a) * 0.38, 0.09 + PANEL_H, KNOB_Z - Math.cos(a) * 0.38);
       tick.rotation.y = a;
       plain.push(tick);
     }
@@ -46,9 +64,9 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
   // ---- nút bấm "−" / "+" trước mỗi núm: giữ ngón tay trên nút (không cần chụm) để đổi giá trị mượt theo thời gian giữ
   const pads = knobs.flatMap((kn, i) =>
     [-1, 1].map((dir) => {
-      const at = new THREE.Vector3(kn.x + dir * 0.2, 0.09, KNOB_Z + 0.62);
-      const m = mesh(k, new THREE.CylinderGeometry(0.11, 0.125, 0.09, 24), dir > 0 ? '#2E9B57' : '#C4261A', at.x, 0.045, at.z);
-      k.label(dir > 0 ? '+' : '−', '#FBF9F4', true)(new THREE.Vector3(at.x, 0.14, at.z));
+      const at = new THREE.Vector3(kn.x + dir * 0.2, 0.09 + PANEL_H, KNOB_Z + 0.62);
+      const m = mesh(k, new THREE.CylinderGeometry(0.11, 0.125, 0.09, 24), dir > 0 ? '#2E9B57' : '#C4261A', at.x, 0.045 + PANEL_H, at.z);
+      k.label(dir > 0 ? '+' : '−', '#FBF9F4', true)(new THREE.Vector3(at.x, 0.14 + PANEL_H, at.z));
       return {i, dir, m, at, held: 0};
     }),
   );
@@ -123,7 +141,7 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
       let ok = true;
       knobs.forEach((kn) => {
         kn.skin = dress(kn.cap, partOf(lib, 'KnobCap'));
-        ok = put('KnobDial', kn.x, 0, KNOB_Z) && ok;
+        ok = put('KnobDial', kn.x, PANEL_H, KNOB_Z) && ok;
       });
       picks.forEach((g) => {
         if (!g.onDevice) ok = put('Socket', g.socket.x, 0, SOCKET_Z) && ok;
@@ -190,7 +208,7 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
           write(p.id, fromUnit(p, Math.min(1, Math.max(0, toUnit(p, v[p.id]) + pd.dir * rate * padDt))));
           sel = pd.i;
         }
-        pd.m.position.y = on ? 0.02 : 0.045;
+        pd.m.position.y = PANEL_H + (on ? 0.02 : 0.045);
         (pd.m.material as THREE.MeshStandardMaterial).emissive.set(on ? (pd.dir > 0 ? '#1E9E4D' : '#8A1A12') : '#000000');
       }
       P.ptrs.forEach((ptr, n) => {
@@ -298,12 +316,22 @@ export const hasOps = (id: string): boolean => id in OPS;
 export function padBank(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpec, read: () => Record<string, number>, write: (id: string, x: number) => void, skip: string[] = []) {
   const ps = spec.params.filter((p) => !skip.includes(p.id));
   const Z0 = 2.7;
+  if (ps.length) {
+    // hộp phím điều khiển đặt ở mép bàn: mọi cặp phím −/+ gắn trên một mặt nhôm
+    const w = (ps.length - 1) * 1.7 + 1.5;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(w, PANEL_H, 0.6), new THREE.MeshStandardMaterial({color: '#2F3237', metalness: 0.4, roughness: 0.5}));
+    body.position.set(-0.3, PANEL_H / 2, Z0);
+    const face = new THREE.Mesh(new THREE.BoxGeometry(w - 0.08, 0.004, 0.52), new THREE.MeshStandardMaterial({color: '#B9BEC4', metalness: 0.75, roughness: 0.38}));
+    face.position.set(-0.3, PANEL_H + 0.002, Z0);
+    body.receiveShadow = face.receiveShadow = true;
+    k.scene.add(body, face);
+  }
   const rows = ps.map((p, i) => {
     const x = -0.3 + (i - (ps.length - 1) / 2) * 1.7;
     const mk = (dir: number) => {
-      const at = new THREE.Vector3(x + dir * 0.5, 0.09, Z0);
-      const m = mesh(k, new THREE.CylinderGeometry(0.15, 0.17, 0.09, 24), dir > 0 ? '#2E9B57' : '#C4261A', at.x, 0.045, at.z);
-      k.label(dir > 0 ? '+' : '−', '#FBF9F4', true)(new THREE.Vector3(at.x, 0.14, at.z));
+      const at = new THREE.Vector3(x + dir * 0.5, 0.09 + PANEL_H, Z0);
+      const m = mesh(k, new THREE.CylinderGeometry(0.15, 0.17, 0.09, 24), dir > 0 ? '#2E9B57' : '#C4261A', at.x, 0.045 + PANEL_H, at.z);
+      k.label(dir > 0 ? '+' : '−', '#FBF9F4', true)(new THREE.Vector3(at.x, 0.14 + PANEL_H, at.z));
       return {dir, m, at, held: 0};
     };
     return {p, tag: k.label(p.label), x, pads: [mk(-1), mk(1)]};
@@ -322,7 +350,7 @@ export function padBank(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
           pd.held = on ? pd.held + dt : 0;
           const rate = padRate(pd.held);
           if (rate) write(r.p.id, fromUnit(r.p, Math.min(1, Math.max(0, toUnit(r.p, v[r.p.id]) + pd.dir * rate * dt))));
-          pd.m.position.y = on ? 0.02 : 0.045;
+          pd.m.position.y = PANEL_H + (on ? 0.02 : 0.045);
           (pd.m.material as THREE.MeshStandardMaterial).emissive.set(on ? (pd.dir > 0 ? '#1E9E4D' : '#8A1A12') : '#000000');
         }
         r.tag(new THREE.Vector3(r.x, 0.45, Z0 + 0.1), undefined, `${r.p.label}: ${fmt(r.p, v[r.p.id])}`);

@@ -27,6 +27,7 @@ export function dragT(m: BenchMove, startT: number, d: number): number {
   const dt = m.axis === 's' || m.axis === 'sy' || m.axis === 'rz' ? d / 2.2 : d / (m.b - m.a);
   return Math.min(1, Math.max(0, startT + dt));
 }
+// thông số THỜI GIAN (phút, giờ, ngày) không có cần riêng: cảnh đặt ĐỒNG HỒ HẸN GIỜ thật trên bàn (vặn kim) thay cho cần gạt trên rãnh
 export const BENCH_MOVES: Record<string, BenchMove[]> = {
   SPEED: [mv(1, 's', 'x', -0.6, 2.2, 'cổng quang thứ hai')],
   // núm vặn thật trên máy (kéo ngang sang phải = vặn theo chiều kim đồng hồ = tăng)
@@ -47,22 +48,16 @@ export const BENCH_MOVES: Record<string, BenchMove[]> = {
   LEVER_MOMENT: [mv(1, 'd1', 'x', -0.4, -1.6, 'quả cân bên trái')], // quả cân trái: mỗi lỗ 10 cm
   PROJECTILE_HORIZONTAL: [mv(1, 'h', 'y', 0.5, 1.5, 'bệ máng ném')], // bệ máng ném
   ENZYME: [mv(9, 'pH', 'x', 0, 1.0, 'cần chọn pH dung dịch đệm'), mv(1, 'T', 'x', -1.1, -0.2, 'cần gạt nhiệt độ bể')],
-  YOGURT: [mv(9, 't', 'x', 0, 1.0, 'cần thời gian ủ'), mv(1, 'T', 'x', -0.14, 0.34, 'cần gạt nhiệt độ ủ')],
+  YOGURT: [mv(1, 'T', 'x', -0.14, 0.34, 'cần gạt nhiệt độ ủ')],
   SEED_RESPIRATION: [mv(1, 'T', 'x', -1.55, -0.45, 'cần gạt nhiệt độ bể')],
   CELL_OBSERVE: [mv(1, 'focus', 'y', 0.44, 0.56, 'bàn kính')], // bàn kính
   TRANSPIRATION: [mv(1, 'L', 'x', 2.2, 0.6, 'đèn')], // đèn lại gần cây
   TREE_AGE: [mv(1, 'D', 's', 0.4, 1.5, 'lát cắt thân cây')], // lát cắt thân cây
-  PLASMOLYSIS: [mv(9, 't', 'x', 0, 1.0, 'cần thời gian ngâm tiêu bản')],
   VIRUS_SURVEY: [mv(9, 'n', 'x', 0, 1.0, 'cần số phiếu khảo sát')],
   PIGMENT: [mv(9, 'ds', 'x', 0, 1.0, 'cần quãng chạy của dung môi')],
-  LEAF_STARCH: [mv(9, 'h', 'x', 0, 1.0, 'cần số giờ chiếu sáng')],
-  TROPISM: [mv(9, 'd', 'x', 0, 1.0, 'cần số ngày nuôi')],
-  APICAL_DOMINANCE: [mv(9, 'd', 'x', 0, 1.0, 'cần số ngày sau khi bấm ngọn')],
-  METAMORPHOSIS: [mv(9, 'd', 'x', 0, 1.0, 'cần số ngày nuôi')],
-  PROPAGATION: [mv(9, 'd', 'x', 0, 1.0, 'cần số ngày giâm cành')],
   DNA_EXTRACT: [mv(9, 'mass', 'x', 0, 1.0, 'cần khối lượng mẫu')],
   MODIFICATION: [mv(9, 'N', 'x', 0, 1.0, 'cần liều phân đạm')],
-  MINI_ECOSYSTEM: [mv(1, 'pl', 's', 0.2, 1.3, 'cây thủy sinh'), mv(9, 'fi', 'x', 0, 1.0, 'cần số cá thả vào bể'), mv(8, 'L', 'x', 0, 1.0, 'cần số giờ chiếu sáng')], // cây thủy sinh
+  MINI_ECOSYSTEM: [mv(1, 'pl', 's', 0.2, 1.3, 'cây thủy sinh'), mv(9, 'fi', 'x', 0, 1.0, 'cần số cá thả vào bể')], // cây thủy sinh
 };
 
 /**
@@ -87,8 +82,13 @@ export const BENCH_PULL: Record<string, BenchPull> = {
   COMMUNITY: {n: 1, dir: [1, 0, 0], max: 1.0, what: 'khung ô tiêu chuẩn: kéo sang vị trí mới rồi thả để đặt khung'},
 };
 
-/** Bài điện / có nguồn: thao tác LÀM là đóng KHÓA DAO (lưỡi đồng quay mở → đóng); bài khác không có vật kéo được thì gạt CẦN TRƯỢT trên ray. */
+/** Bài điện / có nguồn: thao tác LÀM là đóng KHÓA DAO (lưỡi đồng quay mở → đóng). */
 export const BENCH_KNIFE = new Set(['OHM_LAW', 'EMF_INTERNAL_R', 'CAPACITOR_RC', 'TRANSFORMER', 'SPECIFIC_HEAT', 'WAVE_INTERFERENCE', 'STANDING_WAVE', 'SOUND_FREQUENCY']);
+/**
+ * Bài mà phép đo là BẤM GIỜ: thao tác LÀM là bấm núm của chính đồng hồ bấm giây trong bộ dụng cụ (x, z của đồng hồ theo `bench_parts.py`; núm ở z − 0,19).
+ * Bài còn lại (đọc số, đếm, quan sát, cân, đo) không có vật kéo được: cầm BÚT viết dọc dòng kẻ của SỔ THÍ NGHIỆM để ghi kết quả — như khi làm thật.
+ */
+export const BENCH_WATCH: Record<string, [number, number]> = {PENDULUM_G: [1.5, 0.5], ENZYME: [0.6, 0.6], CIRCULATION: [0.6, 0.75]};
 
 /**
  * Thao tác LÀM thí nghiệm của từng bài: học sinh chạm (chụm) vào chính dụng cụ để thực hiện, thí nghiệm chạy rồi số đo mới được ghi vào bảng.
@@ -408,12 +408,13 @@ export function grabOf(expId: string, param: string): (BenchMove & {what: string
   return all.find((m) => m.axis !== 's') ?? all[0];
 }
 
-/** cách làm thí nghiệm (sau chuẩn bị) của bài có bảng số liệu: kéo–thả vật, đóng khóa dao, hoặc gạt cần trượt — đúng như cảnh `HandsBench3D` dựng */
+/** cách làm thí nghiệm (sau chuẩn bị) của bài có bảng số liệu: kéo–thả vật, đóng khóa dao, bấm đồng hồ, hoặc viết vào sổ — đúng như cảnh `HandsBench3D` dựng */
 function doHow(id: string): string {
   const pull = BENCH_PULL[id];
   if (pull) return `chụm vào ${pull.what.split(':')[0]}, kéo lệch rồi thả (${pull.what.split(': ')[1] ?? 'thả ra để chạy'}); vật bật về chỗ cũ, kéo lại để đo lần nữa.`;
   if (BENCH_KNIFE.has(id)) return 'nắm tay cầm của KHÓA DAO trước bộ dụng cụ, gạt lưỡi đồng xuống đóng hẳn mạch; thả ra khóa tự bật mở.';
-  return 'nắm núm CẦN TRƯỢT trên ray trước bộ dụng cụ, gạt hết sang ô xanh; thả ra cần tự bật về.';
+  if (BENCH_WATCH[id]) return 'chụm (nhấn) vào núm bấm của ĐỒNG HỒ BẤM GIÂY trên bàn để bắt đầu đo; đồng hồ chạy và số đo được ghi.';
+  return 'cầm BÚT đặt trên SỔ THÍ NGHIỆM trước bộ dụng cụ, viết dọc hết dòng kẻ để ghi kết quả; buông ra bút về đầu dòng, dòng đã ghi lưu lại trong sổ.';
 }
 
 /** Bài thực hành SGK theo mã preset (`PHYS_LAB_<MÃ>` / `BIO_LAB_<MÃ>`); `file` = tệp mô hình chứa bộ dụng cụ. */

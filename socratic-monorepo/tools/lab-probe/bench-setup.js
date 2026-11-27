@@ -45,6 +45,26 @@ const ids = process.argv.slice(2);
       out.push(`[${i.st}] ${i.kind} "${i.label}" ${pass ? 'OK' : 'FAIL'}`);
       if (!pass) { ok = false; break; }
     }
+    // bước LÀM thí nghiệm bằng thiết bị thật (khóa dao / đồng hồ bấm giây / bút viết sổ): làm một lần, số lần làm phải tăng
+    if (ok) {
+      await p.waitForTimeout(800);
+      const L = await p.evaluate(() => {
+        const B = window.__bench; if (!B.lev) return null; const l = B.lev(); if (!l.on) return {off: true};
+        const c = document.querySelector('canvas').getBoundingClientRect();
+        const scr = (w) => { const v = w.clone().project(B.cam); return [c.left + (v.x + 1) / 2 * c.width, c.top + (1 - v.y) / 2 * c.height]; };
+        return {kind: l.kind, from: scr(l.grip), to: scr(l.end), done: l.done};
+      });
+      if (L && !L.off) {
+        const m = p.mouse;
+        await m.move(...L.from); await p.waitForTimeout(120); await m.down(); await p.waitForTimeout(150);
+        if (L.kind !== 'watch') await m.move(...L.to, {steps: 20});
+        await p.waitForTimeout(300); await m.up(); await p.waitForTimeout(600);
+        const done = await p.evaluate(() => window.__bench.lev().done);
+        const pass = done > L.done;
+        out.push(`[làm] ${L.kind} ${pass ? 'OK' : 'FAIL'}`);
+        if (!pass) ok = false;
+      } else if (L && L.off) out.push('[làm] thiết bị chưa hiện');
+    }
     await p.waitForTimeout(400);
     await p.screenshot({path: `${process.env.PROBE_OUT || '.'}/done-${id}.png`});
     if (!ok || errs.length) bad++;

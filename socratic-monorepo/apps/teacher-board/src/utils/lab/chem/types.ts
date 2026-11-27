@@ -17,6 +17,8 @@ export interface SpeciesInfo {
   phMinConc?: number;
   /** ion hay phân tử tham gia dẫn điện: điện tích tuyệt đối */
   charge?: number;
+  /** nồng độ (M) mà màu dung dịch đã đậm hẳn trong ống nghiệm; mặc định 0,03. MnO₄⁻, [Fe(SCN)]²⁺ đậm ở nồng độ rất loãng, Cu²⁺ và Fe²⁺ nhạt */
+  vivid?: number;
 }
 
 export type Kind = 'solution' | 'solid' | 'liquid' | 'indicator';

@@ -168,9 +168,11 @@ export function derive(v: Vessel): Derived {
   for (const [s, m] of Object.entries(v.moles)) {
     const sp = SPECIES[s];
     if (!sp || sp.phase !== 'aq' || !sp.color || V <= 0) continue;
-    const w = Math.min(1, m / V / 0.03);
+    const w = Math.min(1, m / V / (sp.vivid ?? 0.03));
     if (w > 0.02) parts.push({c: hex(sp.color), w});
   }
+  // NO₂ tan một phần trong HNO₃ đặc cho màu vàng nâu: cùng ion Cu²⁺ (xanh lam) thành dung dịch xanh lục như khi cho đồng vào HNO₃ đặc ngoài đời
+  if ((v.moles['NO2'] ?? 0) > 1e-5 && (v.moles['HNO3(conc)'] ?? 0) > 1e-4) parts.push({c: hex('#C9A227'), w: 0.55});
   const ind = indicatorColor(v, ph);
   if (ind) parts.push({c: hex(ind), w: 0.9});
   for (const p of parts) {

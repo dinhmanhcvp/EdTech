@@ -247,9 +247,6 @@ const no2Lab: Lab = ({k, P, live}) => {
   const rx = peek(k.card('#2E9B57'), P);
   const bathTag = k.label('Bể nước');
   const pTag = k.label('Pít-tông');
-  const brown = cloud(k, 120, '#C2562A', 5);
-  const white = cloud(k, 120, '#F4F1EA', 5);
-  const p = rnd(360);
   const jugs = [
     {name: 'Nước đá', color: '#9FD8FF', rate: -25, home: V(-1.6, 0, 1.6)},
     {name: 'Nước sôi', color: '#E5562B', rate: 25, home: V(0.4, 0, 1.6)},
@@ -273,6 +270,8 @@ const no2Lab: Lab = ({k, P, live}) => {
     .catch(() => undefined);
 
   const lenOf = () => 1.7 / live.v.P;
+  /** phần mol NO₂ đang có: cân bằng chuyển dịch cần thời gian (vài giây) nên nén đột ngột thì ống sậm ngay rồi nhạt bớt, như thí nghiệm thật */
+  let xs = no2(live.v.T, live.v.P).x;
   const thumbAt = V();
   let off = 0;
   const plunger: Grip = {
@@ -311,19 +310,14 @@ const no2Lab: Lab = ({k, P, live}) => {
       const len = lenOf();
       gas.scale.x = len;
       gas.position.x = X0 + len / 2;
-      gas.material.opacity = 0.05 + 0.85 * q.x;
+      // màu nâu đậm theo NỒNG ĐỘ NO₂ (phần mol × áp suất / nhiệt độ), không theo phần mol: nén khí làm NO₂ đặc lại nên sậm hơn
+      xs += (q.x - xs) * (1 - Math.exp(-dt / 1.6));
+      const c = (xs * live.v.P * 298) / (live.v.T + 273);
+      gas.material.opacity = Math.min(0.95, 0.04 + 1.6 * c);
       piston.position.x = X0 + len + 0.06;
       bath.material.color.set('#2F6FD0').lerp(new THREE.Color('#D9481C'), live.v.T / 100);
       bathTag(V(MID, 0.1, Z + 1), undefined, `Bể nước ${live.v.T.toFixed(0)} °C`);
       pTag(V(X0 + len + 3.57, Y + 0.7, Z), undefined, `Pít-tông: ${live.v.P.toFixed(1)} atm · cầm kéo ra / đẩy vào`);
-      const nb = Math.round(120 * q.x);
-      for (let i = 0; i < 120; i++) {
-        const a = p[i * 3 + 1] * 6.283;
-        const r = Math.sqrt(p[i * 3 + 2]) * 0.4;
-        (i < nb ? brown : white).pos.set([X0 + p[i * 3] * len, Y + Math.cos(a) * r, Z + Math.sin(a) * r], (i < nb ? i : i - nb) * 3);
-      }
-      brown.flush(nb);
-      white.flush(120 - nb);
       let hint = '';
       jugs.forEach((j, i) => {
         const ptr = G.by(jugGrips[i]);
@@ -338,7 +332,7 @@ const no2Lab: Lab = ({k, P, live}) => {
       });
       if (G.by(plunger)) hint = `Đang ${live.v.P > 1 ? 'nén' : 'giãn'} khí: ${live.v.P.toFixed(1)} atm`;
       rx(V(MID, 1.9, Z - 0.5), no2Rows(live.v.T, live.v.P, q.x));
-      return `${hint || `NO₂ (nâu) ${(q.x * 100).toFixed(0)} % · N₂O₄ (không màu) ${(100 - q.x * 100).toFixed(0)} % số phân tử`}\nĐẩy pít-tông để nén; rót nước sôi hoặc nước đá vào bể để đổi nhiệt độ. Độ đậm của ống vẽ theo phần mol NO₂`;
+      return `${hint || `NO₂ (nâu) ${(q.x * 100).toFixed(0)} % · N₂O₄ (không màu) ${(100 - q.x * 100).toFixed(0)} % số phân tử`}\nĐẩy pít-tông để nén; rót nước sôi hoặc nước đá vào bể để đổi nhiệt độ. Màu ống theo nồng độ NO₂: nén thì sậm ngay rồi nhạt bớt khi cân bằng chuyển về phía N₂O₄`;
     },
   };
 };
@@ -365,8 +359,8 @@ const chlorineLab: Lab = ({k, P, live}) => {
     drops.pos.set([JAR.x + Math.cos(a) * r, 0.15 + p[i * 3 + 2] * 1.5, Z + Math.sin(a) * r], i * 3);
   }
   const washers = [
-    {humid: 0, name: 'H₂SO₄ đặc (làm khô khí)', color: '#B58A4A', home: V(-1.9, 0, 1.5)},
-    {humid: 100, name: 'Nước (khí ẩm)', color: '#6FB7E8', home: V(-0.3, 0, 1.5)},
+    {humid: 0, name: 'H₂SO₄ đặc (làm khô khí)', color: '#F1ECD9', home: V(-1.9, 0, 1.5)},
+    {humid: 100, name: 'Nước (khí ẩm)', color: '#E2F1FA', home: V(-0.3, 0, 1.5)},
   ].map((w) => {
     const m = solid(k.scene, based(yCyl(0.38, 0.38, 0.9), 0.9), w.color, {x: w.home.x, z: w.home.z});
     return {...w, m, tag: k.label(w.name)};
@@ -379,7 +373,8 @@ const chlorineLab: Lab = ({k, P, live}) => {
     .then((lib) => {
       place(k.scene, lib, 'Generator', [GEN.x, 0, Z], [plain[0]]);
       place(k.scene, lib, 'GasJar', [JAR.x, 0, Z], [plain[1]]);
-      washers.forEach((w) => tint(wear(w.m, lib, 'WashBottle'), 'liquid', w.color));
+      // dung dịch trong bình rửa khí trong suốt như thật (H₂SO₄ đặc và nước đều gần không màu)
+      washers.forEach((w) => wear(w.m, lib, 'WashBottle')?.mats.filter((m) => m.name === 'liquid').forEach((m) => Object.assign(m, {transparent: true, opacity: 0.35, roughness: 0.05}).color.set(w.color)));
       clothSkin = dress(cloth, partOf(lib, 'Cloth'));
       if (clothSkin) clothSkin.obj.rotation.x = Math.PI / 2; // mô hình nằm phẳng, treo dựng lên
     })

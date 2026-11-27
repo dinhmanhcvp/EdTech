@@ -55,7 +55,7 @@ export const SPECIES: Record<string, SpeciesInfo> = {
   'protein': mol('protein (lòng trắng trứng)', '#FFFBEB'),
   'hexane': mol('hexane', undefined, {smell: 'xăng'}),
   'I2(aq)': mol('iodine', '#92400E'),
-  'Br2(aq)': mol('bromine', '#F97316'),
+  'Br2(aq)': mol('bromine', '#E8952C'),
   'Cl2(aq)': mol('chlorine', '#D9F99D', {smell: 'hắc, xốc'}),
   'I2-starch': mol('phức iodine–tinh bột', '#1E1B4B'),
   'Cu-polyol': mol('phức đồng–polyalcohol', '#1E3A8A'),
@@ -88,9 +88,9 @@ export const SPECIES: Record<string, SpeciesInfo> = {
   'sucrose(s)': solid('đường rắn', '#FFFFFF'),
   'CaC2': solid('đất đèn CaC₂', '#6B7280'),
   'Cu2O': solid('Cu₂O', '#B91C1C'),
-  'Cu(OH)2': solid('Cu(OH)₂', '#2563EB'),
-  'Fe(OH)2': solid('Fe(OH)₂', '#D9F99D'),
-  'Fe(OH)3': solid('Fe(OH)₃', '#B45309'),
+  'Cu(OH)2': solid('Cu(OH)₂', '#4F8FD8'),
+  'Fe(OH)2': solid('Fe(OH)₂', '#D8E6C2'),
+  'Fe(OH)3': solid('Fe(OH)₃', '#8E3B12'),
   'Al(OH)3': solid('Al(OH)₃', '#F5F5F4'),
   'Zn(OH)2': solid('Zn(OH)₂', '#F5F5F4'),
   'Mg(OH)2': solid('Mg(OH)₂', '#FFFFFF', {ph: 10.4, phMinConc: 0.01}),
@@ -213,6 +213,15 @@ export const SPECIES: Record<string, SpeciesInfo> = {
   'NH3(g)': gas('NH₃', {smell: 'khai'}),
   'C2H2': gas('C₂H₂', {smell: 'tỏi'}),
 };
+/**
+ * Độ đậm màu thật theo nồng độ (M cho màu đậm hẳn trong ống nghiệm ~1,5 cm): CuSO₄ 0,1 M chỉ xanh lam nhạt, FeSO₄ gần như không màu,
+ * KMnO₄ 0,002 M đã tím đậm, vết [Fe(SCN)]²⁺ đã đỏ máu, hồ tinh bột gặp vết iodine đã xanh tím than.
+ */
+const VIVID: Record<string, number> = {
+  'Cu2+': 0.25, 'Fe2+': 0.5, 'Fe3+': 0.06, 'Mn2+': 1, 'MnO4-': 0.002, 'Cu(NH3)4 2+': 0.01, 'FeSCN2+': 0.002, 'I2(aq)': 0.003, 'Br2(aq)': 0.02,
+  'Cl2(aq)': 0.06, 'I2-starch': 0.0005, 'CrO4 2-': 0.02, 'Cr2O7 2-': 0.02, 'Cu-polyol': 0.01, 'Cu-biuret': 0.02, 'Fe-phenol': 0.005, 'Cu(MeNH2)4 2+': 0.01,
+};
+for (const [k, v] of Object.entries(VIVID)) if (SPECIES[k]) SPECIES[k].vivid = v;
 
 const AQ = [{label: '5 giọt', value: 0.25}, {label: '1 mL', value: 1}, {label: '2 mL', value: 2}, {label: '5 mL', value: 5}, {label: '10 mL', value: 10}];
 const SOLID = [{label: 'mẩu nhỏ', value: 0.1}, {label: '0,5 g', value: 0.5}, {label: '2 g', value: 2}];

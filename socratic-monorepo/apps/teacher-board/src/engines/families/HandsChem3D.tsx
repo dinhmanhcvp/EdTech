@@ -8,6 +8,7 @@ import {SPECIES, SUBSTANCES} from '../../utils/lab/chem/species';
 import type {Action, Derived, LabState, Substance} from '../../utils/lab/chem/types';
 import {benchTop, handPointers, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
+import {vesselFx} from './chemFx3D';
 import {tiltFor} from '../../utils/lab/hands/handTracker';
 import {MISHAPS, chemMishapOf, spillOf} from '../../utils/lab/hands/mishap';
 import {mishapFx, mishapSound} from './mishapFx';
@@ -56,9 +57,9 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
     floor: true,
     room: true,
     bright: true,
-    dist: 8.6,
+    dist: 7.8,
     target: [-0.3, 0.4, 0.0],
-    orbit: () => [0, 46],
+    orbit: () => [0, 34], // nhìn hơi thấp để thấy thân ống nghiệm (hiện tượng trong ống) qua khung giá
     setup: (k) => {
       labRoom(k, [8.4, 5.6, -0.3, 0.1], 'chem');
       benchTop(k, [8.4, 5.6, -0.3, 0.1], 'epoxy');
@@ -85,6 +86,9 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
       solid(gog, new THREE.BoxGeometry(0.2, 0.03, 0.03), '#1D1B16', {y: 0.12});
       const gogTag = k.label('Kính bảo hộ');
 
+      const tmpCol = new THREE.Color();
+      // máy dò (chỉ bản dev): đọc / ghi trạng thái bàn hóa học để dựng sẵn phản ứng khi kiểm tra hình ảnh
+      if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') (window as unknown as {__chem?: ChemLive}).__chem = live;
       // ---- dụng cụ thủy tinh
       const vessels = live.lab.vessels.map((v0, i) => {
         const beaker = v0.kind === 'beaker';
@@ -99,23 +103,15 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
         const rim = new THREE.Mesh(new THREE.TorusGeometry(r, 0.015, 8, 36).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({color: '#E8E6F5', transparent: true, opacity: 0.6}));
         rim.position.y = h;
         const liquid = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.93, r * 0.93, 1, 32), new THREE.MeshStandardMaterial({color: '#E0F2FE', transparent: true, opacity: 0.4, roughness: 0.2}));
-        const sediment = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.93, r * 0.93, 1, 32), new THREE.MeshStandardMaterial({color: '#E5E7EB', roughness: 0.9}));
-        const N = 36;
-        const bub = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3)), new THREE.PointsMaterial({color: '#FFFFFF', size: 7, sizeAttenuation: false, transparent: true, opacity: 0.85}));
-        bub.frustumCulled = false;
         const ring = new THREE.Mesh(new THREE.TorusGeometry(r * 0.7, 0.025, 8, 24).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({color: '#E3B341', depthTest: false, transparent: true}));
         ring.position.y = h + 0.08;
         ring.renderOrder = 3;
-        // kết tủa đang rơi: hạt rơi từ mặt thoáng xuống đáy cho tới khi lớp đáy ngừng dày lên
-        const fall = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(30 * 3), 3)), new THREE.PointsMaterial({color: '#E5E7EB', size: 5, sizeAttenuation: false, transparent: true, opacity: 0.9}));
-        fall.frustumCulled = false;
-        // làn khí / hơi nước thoát ra miệng ống
-        const wisp = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(16 * 3), 3)), new THREE.PointsMaterial({color: '#FFFFFF', size: 14, sizeAttenuation: false, transparent: true, opacity: 0.16, depthWrite: false}));
-        wisp.frustumCulled = false;
         const flash = new THREE.PointLight('#FFF1C2', 0, 3);
         flash.position.y = h * 0.6;
-        g.add(liquid, sediment, shell, base, rim, bub, fall, wisp, flash, ring);
-        return {g, h, r, shell, floor: base, rim, liquid, sediment, bub, fall, wisp, flash, flashAt: -1e9, shownColor: new THREE.Color('#E0F2FE'), shownSh: 0, ring, tag: k.label(v0.id), what: k.label(''), card: k.card('#2E9B57'), rows: [] as Row[], activeAt: -1e9, logLen: 0, home: new THREE.Vector3(VX[i], 0.1, VZ), base: {x: VX[i], z: VZ}};
+        g.add(liquid, shell, base, rim, flash, ring);
+        // chất bên trong (mẩu rắn, kết tủa, bọt, khí, gương bạc, vạch khum): chemFx3D.ts
+        const fx = vesselFx(g, r, h);
+        return {g, h, r, shell, floor: base, rim, liquid, fx, flash, flashAt: -1e9, shownColor: new THREE.Color('#E0F2FE'), ring, tag: k.label(v0.id), what: k.label(''), card: k.card('#2E9B57'), rows: [] as Row[], activeAt: -1e9, logLen: 0, home: new THREE.Vector3(VX[i], 0.1, VZ), base: {x: VX[i], z: VZ}};
       });
 
       // ---- đèn cồn
@@ -123,7 +119,16 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
       lamp.position.copy(LAMP_HOME);
       k.scene.add(lamp);
       const lampPlain = [solid(lamp, new THREE.CylinderGeometry(0.22, 0.28, 0.32, 24), '#9FD3FF', {rough: 0.1, y: 0.16}), solid(lamp, new THREE.CylinderGeometry(0.06, 0.06, 0.12, 12), '#B9BEC5', {y: 0.38, metal: 0.8})];
-      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.4, 14), new THREE.MeshBasicMaterial({color: '#FFB35C', transparent: true, opacity: 0.9}));
+      // lửa đèn cồn: gần như trong suốt, lõi xanh lam, vỏ xanh nhạt, chóp hơi vàng (cộng sáng, không che vật phía sau)
+      const flame = new THREE.Group();
+      const fl = (r0: number, hh: number, c: string, o: number, y: number) => {
+        const f = new THREE.Mesh(new THREE.ConeGeometry(r0, hh, 18, 1, true), new THREE.MeshBasicMaterial({color: c, transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide}));
+        f.position.y = y;
+        flame.add(f);
+      };
+      fl(0.1, 0.42, '#8FB6FF', 0.32, 0);
+      fl(0.055, 0.2, '#3C6CFF', 0.6, -0.09);
+      fl(0.04, 0.12, '#FFD27A', 0.25, 0.16);
       flame.position.y = 0.62;
       lamp.add(flame);
       const lampTag = k.label('Đèn cồn (giữ dưới ống để đun)');
@@ -441,56 +446,12 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
           vs.liquid.position.y = 0.02 + lh / 2;
           const m = vs.liquid.material as THREE.MeshStandardMaterial;
           // màu dung dịch đổi DẦN (hiện tượng đổi màu nhìn thấy được thay vì nhảy tức thì)
-          vs.shownColor.lerp(new THREE.Color(d.color), 1 - Math.exp(-dt * 2.2));
+          // dung dịch không màu (nước, acid loãng…) gần như trong suốt, chỉ ánh nhẹ; có màu thì đậm theo nồng độ
+          const clear = d.color === '#E0F2FE';
+          vs.shownColor.lerp(tmpCol.set(clear ? '#F3F8FB' : d.color), 1 - Math.exp(-dt * 2.2));
           m.color.copy(vs.shownColor);
-          m.opacity = Math.min(0.92, d.colorAlpha + d.turbidity * 0.5);
-          // kết tủa: lớp dày dần ở đáy, màu của chất kết tủa
-          const mol = d.precipitates.reduce((s, q) => s + q.mol, 0);
-          const sh = d.precipitates.length ? Math.min(0.3, 0.03 + Math.log10(1 + mol * 4e4) * 0.06) : 0;
-          vs.shownSh += (sh - vs.shownSh) * (1 - Math.exp(-dt * 0.9)); // lớp đáy dày lên từ từ
-          vs.sediment.visible = vs.shownSh > 0.004;
-          vs.sediment.scale.y = Math.max(0.001, vs.shownSh);
-          vs.sediment.position.y = 0.02 + vs.shownSh / 2;
-          const settling = sh - vs.shownSh > 0.004;
-          const fp = vs.fall.geometry.attributes.position as THREE.BufferAttribute;
-          for (let q = 0; q < 30; q++) {
-            const u = (now / 1600 + q / 30) % 1;
-            fp.setXYZ(q, Math.sin(q * 5.3) * vs.r * 0.7, settling ? 0.02 + vs.shownSh + (1 - u) * Math.max(0, lh - vs.shownSh) : -5, Math.cos(q * 2.9) * vs.r * 0.7);
-          }
-          fp.needsUpdate = true;
-          if (d.precipitates[0]) (vs.fall.material as THREE.PointsMaterial).color.set(d.precipitates[0].color);
-          if (d.precipitates[0]) (vs.sediment.material as THREE.MeshStandardMaterial).color.set(d.precipitates[0].color);
-          // bọt khí: số hạt theo tốc độ sinh khí, bay lên rồi vòng lại
-          const a = vs.bub.geometry.attributes.position as THREE.BufferAttribute;
-          const nb = Math.round(d.bubbles * 36);
-          for (let q = 0; q < 36; q++) {
-            const u = ((now / (900 + (q % 5) * 150) + q / 36 * 1.7) % 1);
-            a.setXYZ(q, Math.sin(q * 7.1 + now / 900) * vs.r * 0.6, q < nb ? 0.05 + u * lh : -5, Math.cos(q * 3.3) * vs.r * 0.6);
-          }
-          a.needsUpdate = true;
-          // làn khí: bọt đang sinh khí hoặc chất lỏng nóng bốc hơi thì có làn trắng mờ bay lên miệng ống
-          const hotSteam = d.temp >= 85;
-          const wp = vs.wisp.geometry.attributes.position as THREE.BufferAttribute;
-          // khí có màu (NO₂ nâu đỏ…) thì làn khí mang đúng màu và đặc hơn
-          let gasColor: string | null = null;
-          let gasMol = 0;
-          for (const [sp, mol] of Object.entries(v.moles)) {
-            const si = SPECIES[sp];
-            if (si?.phase === 'g' && si.color && mol > gasMol) {
-              gasColor = si.color;
-              gasMol = mol;
-            }
-          }
-          const wantWisp = d.bubbles > 0.12 || hotSteam || gasMol > 1e-7;
-          for (let q = 0; q < 16; q++) {
-            const u = (now / 2200 + q / 16) % 1;
-            wp.setXYZ(q, Math.sin(q * 3.7 + now / 1500) * 0.1 * u, wantWisp ? vs.h + 0.05 + u * 0.7 : -5, Math.cos(q * 2.1) * 0.1 * u);
-          }
-          wp.needsUpdate = true;
-          const wm = vs.wisp.material as THREE.PointsMaterial;
-          wm.color.set(gasColor ?? '#FFFFFF');
-          wm.size = gasColor ? 26 : 14;
-          wm.opacity = gasColor ? Math.min(0.6, 0.12 + gasMol * 3000) : 0.2 * (hotSteam ? 1 : d.bubbles);
+          m.opacity = Math.min(0.92, (clear ? 0.14 : d.colorAlpha) + d.turbidity * 0.6);
+          vs.fx.update(v.moles, d, lh, now, dt, m);
           // chớp sáng khi phản ứng dữ dội
           const since = (now - vs.flashAt) / 1000;
           vs.flash.intensity = since < 0.6 ? 14 * (1 - since / 0.6) * (0.6 + 0.4 * Math.sin(now / 25)) : 0;

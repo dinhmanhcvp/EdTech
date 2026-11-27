@@ -36,19 +36,26 @@ const OUT = process.env.PROBE_OUT || '.';
     await p.waitForTimeout(4000);
     const c = await p.$eval('canvas', (el) => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width]; });
     await p.evaluate(() => { window.__js.length = 0; window.__long = 0; });
-    // kéo xoay + bấm vài chỗ
-    const m = p.mouse;
-    const td = Date.now();
-    const drag = async () => {
-      for (const [dx, dy] of [[-150, 0], [150, 60], [0, -120]]) {
-        await m.move(c[0], c[1]); await m.down(); await m.move(c[0] + dx, c[1] + dy, {steps: 6}); await m.up();
+    // kéo bằng sự kiện con trỏ tổng hợp, đo thời gian xử lý JS của từng sự kiện (không phụ thuộc tốc độ vẽ phần mềm của máy ảo)
+    const ev = await p.evaluate(([x, y]) => {
+      const cv = document.querySelector('canvas');
+      const fire = (type, px, py) => {
+        const s = performance.now();
+        cv.dispatchEvent(new PointerEvent(type, {clientX: px, clientY: py, pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1, bubbles: true, cancelable: true}));
+        return performance.now() - s;
+      };
+      const t = [];
+      for (const [dx, dy] of [[-150, 0], [150, 60], [0, -120], [-80, 40]]) {
+        t.push(fire('pointerdown', x, y));
+        for (let i = 1; i <= 10; i++) t.push(fire('pointermove', x + (dx * i) / 10, y + (dy * i) / 10));
+        t.push(fire('pointerup', x + dx, y + dy));
       }
-      await m.click(c[0] - 80, c[1] + 40);
-      await m.wheel(0, -200);
-    };
-    // máy ảo quá tải thì sự kiện chuột xếp hàng sau khung vẽ: chặn trần 60 s để không treo cả lượt quét
-    const dragged = await Promise.race([drag().then(() => true), new Promise((r) => setTimeout(() => r(false), 60000))]);
-    const dragMs = Date.now() - td;
+      const s0 = performance.now();
+      cv.dispatchEvent(new WheelEvent('wheel', {clientX: x, clientY: y, deltaY: -200, bubbles: true, cancelable: true}));
+      t.push(performance.now() - s0);
+      t.sort((u, v) => u - v);
+      return {evMax: +t[t.length - 1].toFixed(1), evMean: +(t.reduce((u, v) => u + v, 0) / t.length).toFixed(2)};
+    }, c);
     await p.waitForTimeout(2500);
     const st = await p.evaluate(() => {
       const a = window.__js.slice().sort((x, y) => x - y);
@@ -56,7 +63,7 @@ const OUT = process.env.PROBE_OUT || '.';
       return {n: a.length, mean: a.length ? +(a.reduce((s, x) => s + x, 0) / a.length).toFixed(1) : null, p95: q(0.95), max: q(1), long: window.__long, heap: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) : null};
     });
     await p.screenshot({path: `${OUT}/sweep-${id}.png`});
-    const row = {id, sec: Math.round((Date.now() - t0) / 1000), dragMs: dragged ? dragMs : 'STUCK', ...st, errs: [...new Set(errs)].slice(0, 3)};
+    const row = {id, sec: Math.round((Date.now() - t0) / 1000), ...ev, ...st, errs: [...new Set(errs)].slice(0, 3)};
     rows.push(row);
     console.log(JSON.stringify(row));
     } catch (e) { rows.push({id, crash: String(e).slice(0, 200)}); console.log(id, 'CRASH', String(e).slice(0, 200)); }

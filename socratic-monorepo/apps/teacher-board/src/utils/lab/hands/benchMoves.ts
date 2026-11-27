@@ -88,6 +88,25 @@ export const BENCH_KNIFE = new Set(['OHM_LAW', 'EMF_INTERNAL_R', 'CAPACITOR_RC',
  * Bài mà phép đo là BẤM GIỜ: thao tác LÀM là bấm núm của chính đồng hồ bấm giây trong bộ dụng cụ (x, z của đồng hồ theo `bench_parts.py`; núm ở z − 0,19).
  * Bài còn lại (đọc số, đếm, quan sát, cân, đo) không có vật kéo được: cầm BÚT viết dọc dòng kẻ của SỔ THÍ NGHIỆM để ghi kết quả — như khi làm thật.
  */
+/**
+ * Việc CHUẨN BỊ làm theo thứ tự nào cũng được, như ở phòng thí nghiệm thật; chỉ việc mà về VẬT LÍ không làm được khi chưa có việc khác
+ * mới bị chặn: {bài: {việc i: việc phải xong trước}} (vd. đậy lamen khi chưa đặt tiêu bản, khép thước kẹp khi chưa có thanh).
+ */
+export const BENCH_AFTER: Record<string, Record<number, number>> = {
+  ERROR_MEASURE: {1: 0}, // khép hàm thước kẹp vào thanh: thanh phải nằm trên thước
+  NEWTON2: {1: 0}, // buộc dây vào xe: xe phải trên đường ray
+  FRICTION: {1: 0}, // móc lực kế vào khối gỗ: khối gỗ phải trên mặt phẳng
+  HOOKE: {1: 0}, // chỉnh số 0 của thước theo đầu lò xo: lò xo phải treo trước
+  WAVE_INTERFERENCE: {1: 0}, // nhúng mũi nhọn vào mặt nước: khay phải có nước
+  ENZYME: {1: 0}, // cho hồ tinh bột và enzyme vào ống đang ở trong bể
+  PLASMOLYSIS: {1: 0}, // đậy lamen lên tiêu bản
+  MITOSIS_SLIDE: {1: 0}, // nhuộm xong mới lên kính (nhuộm trên bàn kính thì hỏng kính)
+  YOGURT: {1: 0}, // đặt hũ đã có sữa và men vào thùng ủ
+  VIRUS_SURVEY: {1: 0}, // phát phiếu rồi mới thu
+  SEED_RESPIRATION: {1: 0}, // ống dẫn khí cắm qua nút bình
+  PROPAGATION: {1: 0}, // quét auxin lên cành đã cắt
+  DNA_EXTRACT: {1: 0}, // nước rửa chén và muối cho vào mẫu đã nghiền
+};
 export const BENCH_WATCH: Record<string, [number, number]> = {PENDULUM_G: [1.5, 0.5], ENZYME: [0.6, 0.6], CIRCULATION: [0.6, 0.75]};
 
 /**

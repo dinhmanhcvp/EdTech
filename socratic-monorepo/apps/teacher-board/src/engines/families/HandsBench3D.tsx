@@ -2,7 +2,7 @@
 
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
-import {BENCH_ACTION, BENCH_KNIFE, BENCH_MOVES, BENCH_WATCH, BENCH_PICK, BENCH_PULL, BENCH_SETUP, dragT, grabOf, isTimeUnit, type BenchMove} from '../../utils/lab/hands/benchMoves';
+import {BENCH_ACTION, BENCH_AFTER, BENCH_KNIFE, BENCH_MOVES, BENCH_WATCH, BENCH_PICK, BENCH_PULL, BENCH_SETUP, dragT, grabOf, isTimeUnit, type BenchMove} from '../../utils/lab/hands/benchMoves';
 import {AUTO_FLAG, isToggle, pickProp, tintOf, trayLayout} from '../../utils/lab/hands/benchPick';
 import {OVER_R, wirePath, dropped, newSqueeze, newStir, pourStep, pourTilt, squash, squeezeStep, stirProgress, stirStep} from '../../utils/lab/hands/benchActs';
 import {BENCH_FX, FX_PARTS} from './benchMotion';
@@ -251,7 +251,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           for (const [i, s] of setup.entries()) {
             const a = s.act;
             const q = a?.part !== undefined ? byN.get(a.part) : undefined;
-            if (a && q && i >= stage && !partOffs.has(q.obj)) partOffs.set(q.obj, new THREE.Vector3(a.from[0] - q.base.x, 0.06 - q.base.y, a.from[2] - q.base.z));
+            if (a && q && !done[i] && !partOffs.has(q.obj)) partOffs.set(q.obj, new THREE.Vector3(spot[i][0] - q.base.x, 0.06 - q.base.y, spot[i][2] - q.base.z));
           }
           setLoaded = true;
         })
@@ -275,11 +275,44 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       // không còn thanh ray: mọi thông số không có bộ phận riêng đều là núm xoay hoặc đồng hồ hẹn giờ; `sliders` giữ cho các chỗ gọi bên dưới
       const sliders = handSliders(k, P, [], [-3.9, 1.4], setParam, () => '');
       const action = BENCH_ACTION[e.id] ?? 'Đo';
-      // CHUẨN BỊ: chuỗi thao tác làm một lần trên dụng cụ (đặt, nối, treo, nhúng…); xong mới tới thao tác đo
+      // CHUẨN BỊ: các việc làm một lần trên dụng cụ (đặt, nối, treo, nhúng…), làm theo THỨ TỰ NÀO CŨNG ĐƯỢC như phòng thí nghiệm thật:
+      // vật của mọi việc chưa làm bày sẵn trên bàn, chụm vào vật nào là làm việc đó (`stage` = việc đang làm). Chỉ việc mà về vật lí cần việc khác
+      // xong trước (`BENCH_AFTER`) mới bị chặn, kèm lời giải thích. Đo khi chưa chuẩn bị xong thì không ra số đo và được nhắc việc còn thiếu.
       const setup = e.columns.length ? BENCH_SETUP[e.id] ?? [] : [];
+      const after = BENCH_AFTER[e.id] ?? {};
+      /** chỗ bày sẵn vật của từng việc ở mép bàn: mọi vật cùng hiện một lúc nên vật trùng chỗ được dịch ngang cho khỏi chồng lên nhau */
+      const spot = (() => {
+        const used: [number, number, number][] = [];
+        return setup.map((st) => {
+          const a = st.act;
+          if (!a || a.kind === 'press' || a.kind === 'turn' || a.kind === 'squeeze') return a?.from ?? st.at;
+          const p: [number, number, number] = [...a.from];
+          for (let k = 1; used.some((u) => Math.hypot(u[0] - p[0], u[2] - p[2]) < 0.55) && k < 12; k++) p[0] = a.from[0] + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.6;
+          used.push(p);
+          return p;
+        });
+      })();
+      const done = setup.map(() => false);
+      /** việc i làm được chưa: việc phải làm trước nó (nếu có) đã xong */
+      const ready = (i: number) => after[i] === undefined || done[after[i]];
+      /** việc nên làm tiếp: việc chưa làm đầu tiên làm được ngay; hết việc = setup.length */
+      const nextOpen = () => {
+        const i = done.findIndex((d, j) => !d && ready(j));
+        return i >= 0 ? i : done.findIndex((d) => !d) >= 0 ? done.findIndex((d) => !d) : setup.length;
+      };
       let stage = 0;
       let flash = 0;
-      const setupDone = () => stage >= setup.length;
+      const setupDone = () => done.every(Boolean);
+      /** lời nhắc khi làm sai trình tự vật lí / đo khi chưa chuẩn bị xong (hiện vài giây ở chỗ vật) */
+      const warnTag = k.label('', '#C4261A');
+      let warnT = 0;
+      let warnAt = new THREE.Vector3();
+      let warnText = '';
+      const warn = (text: string, at: THREE.Vector3) => {
+        warnText = text;
+        warnAt = at.clone();
+        warnT = 3;
+      };
       const marks = setup.map((st) => {
         const g = new THREE.Group();
         g.position.set(...st.at);
@@ -314,8 +347,13 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         })
         .catch(() => undefined);
       const A = {part: false, off: new THREE.Vector3(), home: new THREE.Vector3(), for: -1, obj: null as THREE.Object3D | null, held: -1, prog: 0, tilt: 0.12, sq: 0, stir: newStir(), pump: newSqueeze(), lipH: 0.4};
+      /** trạng thái riêng của từng việc chuẩn bị (vật, tiến độ rót / khuấy…) khi học sinh chuyển sang làm việc khác */
+      const armed: (typeof A | null)[] = setup.map(() => null);
+      let prearmed = false;
       // phần động có sẵn của bộ dụng cụ (`Mov_*`: xe, cổng quang, quả cân, bi, pit-tông…) làm vật để cầm: dịch ra mép bàn bằng một độ lệch `off` cộng lên sau mọi hiệu ứng
       const partOffs = new Map<THREE.Object3D, THREE.Vector3>();
+      /** độ lệch `partOffs` đã cộng vào vị trí phần động trong khung này chưa (cộng ở cuối khung, đặt lại ở đầu khung) */
+      let offApplied = false;
       const partAnims: {off: THREE.Vector3; from: THREE.Vector3; to: THREE.Vector3; t: number}[] = [];
       const partTo = (off: THREE.Vector3, to: THREE.Vector3) => partAnims.push({off, from: off.clone(), to: to.clone(), t: 0});
       const localCenter = (o: THREE.Object3D) => root.worldToLocal(new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()));
@@ -358,11 +396,26 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       const actFinish = (home?: THREE.Vector3) => {
         if (home && A.obj) goTo(A.obj, home);
         A.held = -1;
-        stage++;
+        if (stage < setup.length) done[stage] = true;
+        armed[stage] = null;
+        A.for = -1;
+        stage = nextOpen();
         flash = 0.5;
+      };
+      /** chuyển sang làm việc j: cất trạng thái việc đang làm, lấy lại trạng thái của việc j */
+      const focus = (j: number) => {
+        if (j === stage) return;
+        if (A.for === stage && stage < setup.length && !done[stage]) armed[stage] = {...A};
+        stage = j;
+        A.for = -1;
+        ensureProp();
       };
       const ensureProp = () => {
         const a = curAct();
+        if (a && A.for !== stage && armed[stage]) {
+          Object.assign(A, armed[stage]);
+          return;
+        }
         if (!a || A.for === stage || !propLib) return;
         if (a.kind === 'press') {
           A.for = stage;
@@ -396,7 +449,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             A.obj = null;
             return actFinish(); // thiếu phần động: bỏ qua bước, không để học sinh kẹt
           }
-          const off = new THREE.Vector3(a.from[0] - q.base.x, 0.06 - q.base.y, a.from[2] - q.base.z);
+          const off = new THREE.Vector3(spot[stage][0] - q.base.x, 0.06 - q.base.y, spot[stage][2] - q.base.z);
           partOffs.set(q.obj, off);
           Object.assign(A, {for: stage, obj: q.obj, part: true, off, home: off.clone(), held: -1, prog: 0, tilt: 0.12, sq: 0, lipH: 0.3});
           return;
@@ -410,7 +463,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         glassify(sk.obj, 0.18);
         // rót thuốc / hạt / cát: chất trong lọ lấy màu của thứ sắp rót
         if (a.kind === 'pour' && a.color) for (const m of sk.mats) if (m.name === 'tint') m.color.set(a.color);
-        sk.obj.position.set(...(a.kind === 'squeeze' ? setup[stage].at : a.from));
+        sk.obj.position.set(...(a.kind === 'squeeze' ? setup[stage].at : spot[stage]));
         // phích chuối thật nhỏ hơn đồng hồ nhiều: thu lại để cắm vừa cực
         if (a.kind === 'connect' && a.prop === 'plug') sk.obj.scale.setScalar(0.55);
         // hộp bao đo TRƯỚC khi gắn vào bộ dụng cụ (bộ dụng cụ được phóng ×0,9–1,7): mọi kích thước dưới đây theo hệ của bộ dụng cụ
@@ -422,7 +475,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           const mesh = new THREE.Mesh(new THREE.BufferGeometry(), cableMat(c));
           mesh.castShadow = true;
           root.add(mesh);
-          wires.push({mesh, obj: sk.obj, anchor: a.src ?? [a.from[0], 0.05, a.from[2] + 0.55], h: bb.max.y - sk.obj.position.y, r: c.r, key: ''});
+          wires.push({mesh, obj: sk.obj, anchor: a.src ?? [spot[stage][0], 0.05, spot[stage][2] + 0.55], h: bb.max.y - sk.obj.position.y, r: c.r, key: ''});
         }
         Object.assign(A, {part: false, for: stage, obj: sk.obj, held: -1, prog: 0, tilt: 0.12, sq: 0, stir: newStir(), pump: newSqueeze(), lipH: Math.max(0.2, bb.max.y - sk.obj.position.y)});
       };
@@ -446,7 +499,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         const {x, y} = ptr.ndc;
         const r = Math.max(0.14, ptr.reach);
         const [ax, ay, az] = setup[stage].at;
-        const home = new THREE.Vector3(...a.from);
+        const home = new THREE.Vector3(...spot[stage]);
         // trong vòng lặp con trỏ các phần động vừa được đặt lại về vị trí gốc (độ lệch `off` được cộng ở cuối khung hình): tâm thật = tâm gốc + off
         const grab = A.part ? localCenter(o).add(A.off) : o.parent !== root ? nutAt.clone() : o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0));
         const nearProp = ptr.active && P.distAt(x, y, worldPt(grab)) < r;
@@ -528,12 +581,40 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         return true;
       };
       /** vật thật của bước hiện tại có đang dưới con trỏ không (để cảnh khoá xoay máy quay và nhận cú chụm / nhấn chuột) */
-      const actNear = (nx: number, ny: number, reach: number) => {
-        const pa = curAct();
-        if (pa?.kind === 'press') return P.distAt(nx, ny, worldPt(new THREE.Vector3(...setup[stage].at))) < Math.max(0.18, reach);
-        const o = A.obj;
-        if (!curAct() || !o || A.for !== stage) return false;
-        return A.held >= 0 || P.distAt(nx, ny, worldPt(A.part ? localCenter(o) : o.parent !== root ? nutAt.clone() : o.position.clone().add(new THREE.Vector3(0, A.lipH * 0.45, 0)))) < reach;
+      const actNear = (nx: number, ny: number, reach: number) => !setupDone() && (A.held >= 0 || pendingAt(nx, ny, reach) >= 0);
+      /** chỗ cầm (hệ thế giới) của vật thuộc việc chuẩn bị j; null = việc chưa có vật (chưa tải) */
+      const gripOf = (j: number): THREE.Vector3 | null => {
+        const a = setup[j].act;
+        if (!a) return null;
+        if (a.kind === 'press') return worldPt(new THREE.Vector3(...setup[j].at)).clone();
+        const S = j === stage && A.for === stage ? A : armed[j];
+        const o = S?.obj;
+        if (!S || !o) return null;
+        if (S.part) {
+          // trong vòng con trỏ phần động vừa đặt lại (chưa cộng độ lệch); ngoài vòng thì vị trí đã cộng sẵn
+          const c = localCenter(o);
+          return worldPt(offApplied ? c : c.add(S.off)).clone();
+        }
+        if (o.parent !== root) return o.getWorldPosition(new THREE.Vector3());
+        return worldPt(o.position.clone().add(new THREE.Vector3(0, S.lipH * 0.45, 0))).clone();
+      };
+      if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined')
+        Object.assign((window as unknown as {__bench: object}).__bench, {grip: (j: number) => gripOf(j), doneOf: () => done.slice(), after, warnOf: () => (warnT > 0 ? warnText : '')});
+      /** việc chuẩn bị chưa làm có vật gần con trỏ nhất (−1 = không có) */
+      const pendingAt = (nx: number, ny: number, reach: number): number => {
+        let best = -1;
+        let bd = Infinity;
+        setup.forEach((st, j) => {
+          if (done[j]) return;
+          const g = gripOf(j);
+          const r = st.act?.kind === 'press' ? Math.max(0.18, reach) : reach;
+          const d = g ? P.distAt(nx, ny, g) : Infinity;
+          if (d < r && d < bd) {
+            bd = d;
+            best = j;
+          }
+        });
+        return best;
       };
       // chỉ khi phát triển: chỗ cầm của vật bước hiện tại (hệ bộ dụng cụ) cho máy dò trình duyệt kéo thử từng bước chuẩn bị
       if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined')
@@ -544,14 +625,25 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       const nutAt = new THREE.Vector3();
       const tiltStep = setup.findIndex((st) => st.act?.kind === 'turn' && st.act.tilt);
       const frameAct = (dt: number, elapsed: number) => {
+        // bày sẵn vật của MỌI việc chuẩn bị trên bàn ngay khi bộ dụng cụ và đồ vật tải xong
+        if (!prearmed && setLoaded && propLib && setup.length) {
+          prearmed = true;
+          const first = nextOpen();
+          for (let i = 0; i < setup.length; i++)
+            if (!done[i]) {
+              focus(i);
+              ensureProp();
+            }
+          focus(first < setup.length && !done[first] ? first : nextOpen());
+        }
         ensureProp();
         if (tiltStep >= 0) {
           const tl = setup[tiltStep].act!.tilt!;
-          if (stage < tiltStep) tiltNow = tl.angle;
-          else if (stage > tiltStep) tiltNow = 0;
+          if (done[tiltStep]) tiltNow = 0;
+          else if (A.for !== tiltStep) tiltNow = tl.angle * (1 - (armed[tiltStep]?.prog ?? 0));
           const bar = byN.get(tl.part)?.obj;
           if (bar) bar.rotation.z += tiltNow;
-          const nut = A.for === tiltStep ? A.obj : null;
+          const nut = A.for === tiltStep ? A.obj : armed[tiltStep]?.obj ?? null;
           if (nut && nut.parent !== root) {
             nut.updateWorldMatrix(true, false);
             root.worldToLocal(nut.getWorldPosition(nutAt));
@@ -571,6 +663,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         }
         for (let i = partAnims.length - 1; i >= 0; i--) if (partAnims[i].t >= 1) partAnims.splice(i, 1);
         for (const [po, off] of partOffs) po.position.add(off);
+        offApplied = true;
         // dây nối theo đuôi phích (cả phích đang cầm và phích đã nối xong)
         for (const w of wires) {
           const tail: [number, number, number] = [w.obj.position.x, w.obj.position.y + w.h * 0.92, w.obj.position.z];
@@ -776,7 +869,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         // cờ do bước chuẩn bị đặt: làm xong bước thì tự thành "Rồi"
         choices.forEach((c, i) => {
           const st = autoStep[i];
-          if (st !== undefined && stage > st && live.st.s[c.key] !== c.options[1][0]) live.dispatch({type: 'choose', key: c.key, value: c.options[1][0]});
+          if (st !== undefined && done[st] && live.st.s[c.key] !== c.options[1][0]) live.dispatch({type: 'choose', key: c.key, value: c.options[1][0]});
         });
         const hovered = new Set(P.ptrs.filter((q) => q.active).map((q) => pickAt(q.ndc.x, q.ndc.y, 0.16)).filter(Boolean));
         for (const it of pickItems) {
@@ -848,7 +941,8 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       const grabs = partGrabs(
         k,
         P,
-        () => movers.filter((mv) => mv.m.what && grabOf(e.id, mv.m.param)?.n === mv.m.n).map((mv) => ({obj: mv.obj, m: mv.m, read: () => unit(mv.m.param), write: (t: number) => setParam(mv.m.param, t), text: () => unitText(mv.m.param)})),
+        // phần động còn nằm chờ ở mép bàn (việc chuẩn bị chưa làm) là vật để đặt vào chỗ, chưa phải núm chỉnh thông số
+        () => movers.filter((mv) => mv.m.what && grabOf(e.id, mv.m.param)?.n === mv.m.n && !setup.some((st, i) => !done[i] && st.act?.part === mv.m.n)).map((mv) => ({obj: mv.obj, m: mv.m, read: () => unit(mv.m.param), write: (t: number) => setParam(mv.m.param, t), text: () => unitText(mv.m.param)})),
         () => root.scale.x,
       );
       // LÀM thí nghiệm: chạm (chụm / nhấn) vào chính dụng cụ = thực hiện thao tác của bài (thả xe, thả bi, gõ âm thoa…): thí nghiệm chạy lại từ đầu
@@ -1003,19 +1097,68 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       const levQ = new THREE.Vector3();
       const KNIFE_OPEN = 1.15;
       /** đặt khóa ở mép phía người nhìn của bộ dụng cụ, lệch sang trái để không đè nút chọn */
+      /**
+       * đặt khóa dao / sổ ghi vào CHỖ TRỐNG trên bàn: dò lưới vị trí quanh bộ dụng cụ, loại chỗ chồng lên vật của việc chuẩn bị, vòng đích, khay và vật chọn,
+       * phần động, núm và đồng hồ hẹn giờ; trong các chỗ trống lấy chỗ gần mép trước bộ dụng cụ nhất. Chờ mọi vật đã bày xong mới đặt.
+       */
       const levPlace = () => {
-        if (levPlaced || !setObj) return;
+        if (levPlaced || !setObj || !propLib || (setup.length > 0 && !prearmed)) return;
+        levPlaced = true;
+        if (watchAt) return void lev.position.copy(levPos.set(watchAt[0], 0, watchAt[1]));
+        root.updateMatrixWorld(true);
         const bb = new THREE.Box3().setFromObject(setObj);
         const a = root.worldToLocal(bb.min.clone());
         const b = root.worldToLocal(bb.max.clone());
-        if (watchAt) levPos.set(watchAt[0], 0, watchAt[1]);
-        else levPos.set(Math.max(-2.6, Math.min(1.6, (a.x + b.x) / 2 - 0.6)), 0.0, Math.min(1.9, Math.max(a.z, b.z) + 0.55));
-        lev.position.copy(levPos);
-        levPlaced = true;
+        type Rect = [number, number, number, number];
+        const obs: Rect[] = [];
+        const circ = (x: number, z: number, r: number) => obs.push([x - r, z - r, x + r, z + r]);
+        setup.forEach((st, i) => {
+          circ(spot[i][0], spot[i][2], 0.35);
+          circ(st.at[0], st.at[2], 0.3);
+        });
+        pickItems.forEach((it) => circ(it.slot.x, it.slot.z, 0.3));
+        if (pickItems.length) obs.push([-3.1, TRAY_Z - 0.25, 3.1, TRAY_Z + 0.25]);
+        choices.forEach((c, i) => {
+          const t = targetOf(c, i);
+          circ(t[0], t[2], 0.28);
+        });
+        for (const q of byN.values()) {
+          const qb = new THREE.Box3().setFromObject(q.obj);
+          if (qb.isEmpty()) continue;
+          const u = root.worldToLocal(qb.min.clone());
+          const v = root.worldToLocal(qb.max.clone());
+          obs.push([Math.min(u.x, v.x), Math.min(u.z, v.z), Math.max(u.x, v.x), Math.max(u.z, v.z)]);
+        }
+        for (const w of [...timers.map((t) => t.body.position.clone()), ...dials.map((d) => new THREE.Vector3(d.x, 0, 2.3))]) {
+          const l = root.worldToLocal(w);
+          circ(l.x, l.z, 0.45 / root.scale.x);
+        }
+        const [fx0, fx1, fz] = knife ? [-0.12, 0.8, 0.22] : [-0.15, 1.25, 0.38];
+        const px = Math.max(-2.6, Math.min(1.6, (a.x + b.x) / 2 - 0.6));
+        const pz = Math.min(1.9, b.z + 0.55);
+        let best: [number, number] = [px, pz];
+        let bs = Infinity;
+        const w0 = new THREE.Vector3();
+        const w1 = new THREE.Vector3();
+        for (let x = -3.2; x <= 2.61; x += 0.2)
+          for (let z = -1.8; z <= 2.61; z += 0.2) {
+            const R: Rect = [x + fx0, z - fz, x + fx1, z + fz];
+            root.localToWorld(w0.set(R[0], 0, R[1]));
+            root.localToWorld(w1.set(R[2], 0, R[3]));
+            if (w0.x < -4.3 || w1.x > 3.7 || w0.z < -2.5 || w1.z > 2.75) continue; // trong mặt bàn
+            let hit = R[0] < b.x && R[2] > a.x && R[1] < b.z && R[3] > a.z ? 1 : 0;
+            for (const o of obs) if (R[0] < o[2] && R[2] > o[0] && R[1] < o[3] && R[3] > o[1]) hit++;
+            const score = hit * 100 + Math.hypot(x - px, z - pz);
+            if (score < bs) {
+              bs = score;
+              best = [x, z];
+            }
+          }
+        lev.position.copy(levPos.set(best[0], 0, best[1]));
       };
       const levHandleWorld = (out: THREE.Vector3) => levHandle.getWorldPosition(out);
       const levNear = (nx: number, ny: number, reach: number) => {
-        if (!levOn || !levPlaced || !setupDone()) return false;
+        if (!levOn || !levPlaced) return false;
         root.updateMatrixWorld();
         return P.distAt(nx, ny, levHandleWorld(levW)) < reach;
       };
@@ -1044,7 +1187,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         e,
         root,
         // phần còn chờ học sinh đặt vào chỗ (bước chuẩn bị chưa làm) đứng yên ở mép bàn: không cho hiệu ứng làm nó chạy / trượt khi đang cần cầm
-        part: (n) => (setup.some((st, i) => i >= stage && st.act?.part === n) ? undefined : byN.get(n)?.obj),
+        part: (n) => (setup.some((st, i) => !done[i] && st.act?.part === n) ? undefined : byN.get(n)?.obj),
         choiceNum: (key, dflt = 1) => {
           const label = e.choices?.find((c) => c.key === key)?.options.find((o) => o[0] === live.st.s[key])?.[1] ?? '';
           const m = /-?\d+(?:[.,]\d+)?/.exec(label);
@@ -1088,11 +1231,23 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
           q.obj.rotation.set(0, 0, 0);
           q.obj.scale.set(1, 1, 1);
         }
+        offApplied = false;
         holdShow = 0;
         P.ptrs.forEach((ptr) => {
           const {x, y} = ptr.ndc;
           const r = Math.max(0.09, ptr.reach); // cùng tầm với của con trỏ: chụm gần núm / nút thì vặn núm, không làm thí nghiệm
-          if (!setupDone() && setup[stage].act && actInput(ptr, P.ptrs.indexOf(ptr), dt)) return;
+          // chụm vào vật của việc chuẩn bị khác: chuyển sang làm việc đó (thứ tự tùy học sinh), trừ khi về vật lí chưa làm được
+          if (!setupDone() && ptr.pressed && ptr.active && A.held < 0) {
+            const j = pendingAt(x, y, Math.max(0.14, ptr.reach));
+            if (j >= 0 && j !== stage) {
+              if (!ready(j)) {
+                warn(`Chưa làm được "${setup[j].label}": phải ${setup[after[j]].label.toLowerCase()} trước`, gripOf(j) ?? worldPt(new THREE.Vector3(...setup[j].at)));
+                return;
+              }
+              focus(j);
+            }
+          }
+          if (!setupDone() && setup[stage]?.act && actInput(ptr, P.ptrs.indexOf(ptr), dt)) return;
           if (!setupDone() && puck.visible) {
             const n = P.ptrs.indexOf(ptr);
             if (puckHeld < 0 && ptr.pressed && ptr.active && puckAt(x, y, Math.max(0.12, ptr.reach))) puckHeld = n;
@@ -1106,10 +1261,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
                 puckHeld = -1;
                 // vòng cam nằm trên dụng cụ (cao hơn mặt bàn): thả "vào vòng" tính theo khoảng cách trên màn hình tới vòng, không theo mặt bàn
                 root.updateMatrixWorld();
-                if (P.distAt(x, y, root.localToWorld(markWorld.set(...setup[stage].at))) < Math.max(0.14, ptr.reach * 0.9)) {
-                  stage++;
-                  flash = 0.5;
-                }
+                if (P.distAt(x, y, root.localToWorld(markWorld.set(...setup[stage].at))) < Math.max(0.14, ptr.reach * 0.9)) actFinish();
               }
               return;
             }
@@ -1122,13 +1274,17 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
             return;
           }
           const n2 = P.ptrs.indexOf(ptr);
-          if (levOn && setupDone()) {
+          if (levOn && (setupDone() || levHeld === n2 || (ptr.pressed && levNear(x, y, Math.max(0.12, ptr.reach))))) {
             if (levHeld < 0 && ptr.pressed && ptr.active && !grabs.grab(x, y, r) && !timerGrabs.grab(x, y, r) && !sliders.grab(x, y) && !buttons.grab(x, y, r) && levNear(x, y, Math.max(0.12, ptr.reach))) levHeld = n2;
             if (levHeld === n2) {
               ptr.hot = true;
               if (ptr.active && ptr.down) {
                 levT = levFrom(x, y);
-                if (levT >= 0.95 && !levLock) {
+                if (levT >= 0.95 && !levLock && !setupDone()) {
+                  // đo khi chưa chuẩn bị xong: như ngoài đời, không ra số đo; nhắc việc còn thiếu
+                  levLock = true;
+                  warn(`Chưa đo được: còn phải ${setup.filter((_, i) => !done[i]).map((st) => st.label.toLowerCase()).join('; ')}`, levHandleWorld(new THREE.Vector3()));
+                } else if (levT >= 0.95 && !levLock) {
                   levLock = true;
                   doCount++;
                   live.dispatch({type: 'measure'});
@@ -1201,7 +1357,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         // cần gạt / khóa dao: chỉ hiện khi đã chuẩn bị xong; thả ra thì bật về vị trí mở
         if (levOn) {
           levPlace();
-          lev.visible = levPlaced && setupDone();
+          lev.visible = levPlaced;
           if (levHeld < 0) {
             levT = Math.max(0, levT - dt * 2.2);
             if (levT < 0.3) levLock = false;
@@ -1238,20 +1394,24 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         framePick(dt);
         // nhãn xanh trên dụng cụ cần chạm: nói rõ thao tác của bài
         flash = Math.max(0, flash - dt);
+        // vòng cam: chỗ đặt của MỌI việc chưa làm và làm được ngay; việc đang làm nhấp nháy và có nhãn
         marks.forEach((m, i) => {
-          m.g.visible = i === stage;
-          if (i !== stage) return m.tag(null);
+          m.g.visible = !done[i] && ready(i);
+          (m.ring.material as THREE.MeshBasicMaterial).opacity = i === stage ? 0.95 : 0.4;
+          if (i !== stage || done[i]) return m.tag(null);
           m.ring.scale.setScalar(1 + 0.14 * Math.sin(elapsed * 5) + flash);
           root.updateMatrixWorld();
-          m.tag(root.localToWorld(markWorld.set(...setup[i].at)).setY(markWorld.y + 0.5), undefined, `Bước ${i + 1}/${setup.length}: ${setup[i].label}`);
+          m.tag(root.localToWorld(markWorld.set(...setup[i].at)).setY(markWorld.y + 0.5), undefined, `Đang làm: ${setup[i].label}`);
         });
+        warnT = Math.max(0, warnT - dt);
+        warnTag(warnT > 0 ? warnAt.clone().setY(warnAt.y + 0.45) : null, undefined, warnText);
         const tg = targets();
         if (tg.length && e.columns.length && setupDone() && !levOn) {
           const at = doBox.setFromObject(tg[0]).getCenter(new THREE.Vector3());
           doTag(at.setY(doBox.max.y + (tg[0] === setObj ? 0.35 : 0.5)), undefined, pull ? (pullHeld >= 0 ? `Kéo ${Math.round((pullD / pull.max) * 100)} % — thả ra để: ${action.toLowerCase()}` : `Chụm vào ${pull.what}`) : holdShow > 0.02 ? `Đang ${action.toLowerCase()}… ${Math.round(Math.min(1, holdShow) * 100)} %` : `Giữ chụm để làm: ${action}`);
         } else doTag(null);
         const row = live.st.rows[live.st.rows.length - 1];
-        k.caption(!setupDone() ? `${e.lesson}\nChuẩn bị ${stage + 1}/${setup.length}: ${setup[stage].label} · ${{place: 'chụm vật ở mép bàn, kéo vào vòng cam rồi buông', pour: 'chụm lọ, đưa miệng lọ tới vòng cam và giữ yên để rót', stir: 'chụm, đưa vào vòng cam rồi vẽ vòng tròn', squeeze: 'chụm giữ để bóp, nhả để phồng', connect: 'chụm phích / đầu ống, kéo tới chốt (núm) cần nối rồi buông', press: 'chụm một lần vào công tắc (vòng cam) để bật', turn: 'chụm vào ốc rồi vẽ vòng tròn quanh ốc để vặn'}[setup[stage].act?.kind ?? 'place'] ?? 'chụm cục cam rồi kéo thả vào vòng cam trên dụng cụ'}` : row ? `Lần đo ${live.st.rows.length}: ${e.columns.map((c) => `${c.label} = ${fmt(row[c.key], c.digits ?? 2)}${c.unit ? ` ${c.unit}` : ''}`).join(' · ')}
+        k.caption(!setupDone() ? `${e.lesson}\nChuẩn bị (làm việc nào trước cũng được) — còn ${done.filter((d) => !d).length}/${setup.length}: ${setup.filter((_, i) => !done[i]).map((st) => st.label).join(' · ')}\nĐang làm: ${setup[stage]?.label ?? ''} · ${{place: 'chụm vật ở mép bàn, kéo vào vòng cam rồi buông', pour: 'chụm lọ, đưa miệng lọ tới vòng cam và giữ yên để rót', stir: 'chụm, đưa vào vòng cam rồi vẽ vòng tròn', squeeze: 'chụm giữ để bóp, nhả để phồng', connect: 'chụm phích / đầu ống, kéo tới chốt (núm) cần nối rồi buông', press: 'chụm một lần vào công tắc (vòng cam) để bật', turn: 'chụm vào ốc rồi vẽ vòng tròn quanh ốc để vặn'}[setup[stage]?.act?.kind ?? 'place'] ?? 'chụm cục cam rồi kéo thả vào vòng cam trên dụng cụ'}` : row ? `Lần đo ${live.st.rows.length}: ${e.columns.map((c) => `${c.label} = ${fmt(row[c.key], c.digits ?? 2)}${c.unit ? ` ${c.unit}` : ''}`).join(' · ')}
 Đổi điều kiện rồi làm lại để có lần đo tiếp` : `${e.lesson}
 Kéo bộ phận có vòng cam để chỉnh · cầm vật ở khay đặt vào vòng vàng để chọn${e.columns.length ? ` · ${pull ? `kéo ${pull.what.split(':')[0]} rồi thả` : levOn ? (knife ? 'gạt khóa dao xuống' : watchAt ? 'nhấn núm đồng hồ bấm giây' : 'cầm bút viết vào sổ') : 'giữ chụm trên dụng cụ'} để ${action.toLowerCase()} và ghi số đo` : ''}`);
       };

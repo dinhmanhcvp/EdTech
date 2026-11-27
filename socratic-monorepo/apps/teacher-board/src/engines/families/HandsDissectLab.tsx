@@ -1,7 +1,7 @@
 'use client';
 
 import React, {useReducer, useRef, useState} from 'react';
-import {DISSECT_BY_ID, TOOLS, TOOL_NAME, beatRate, current, dissectReducer, newDissect, optionalStep, stepDone, toolOf, type DAction} from '../../utils/lab/hands/dissect';
+import {DISSECT_BY_ID, TOOLS, TOOL_NAME, active, beatRate, current, dissectReducer, newDissect, optionalStep, stepDone, toolOf, type DAction} from '../../utils/lab/hands/dissect';
 import {BTN_GHOST} from './Controls';
 import type {DissectLive} from './HandsDissect3D';
 import type {HandsInput} from './handsKit';
@@ -26,8 +26,9 @@ export const DissectLab: React.FC<{id: string; Shell: React.FC<ShellProps>}> = (
   Object.assign(live.current, {spec, st});
   // chỉ khi phát triển: cho phép máy dò trình duyệt nhảy tới một bước (`window.__dissect.run(id)` làm đúng mọi bước tới bước n)
   if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') (window as unknown as {__dissect?: DissectLive}).__dissect = live.current;
-  const cur = current(spec, st);
-  const done = cur >= spec.steps.length;
+  // bước đang làm theo dụng cụ đang cầm (làm khác thứ tự khuyên dùng được, miễn là làm được về vật lí)
+  const cur = active(spec, st);
+  const done = current(spec, st) >= spec.steps.length;
   const need = done ? null : toolOf(spec.steps[cur]);
   const rate = beatRate(spec, st);
 

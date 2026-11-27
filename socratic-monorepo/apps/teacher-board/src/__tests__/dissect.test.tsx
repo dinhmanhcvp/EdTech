@@ -3,7 +3,7 @@ import {readFileSync} from 'fs';
 import {join} from 'path';
 import {afterEach, describe, expect, it} from 'vitest';
 import {cleanup, fireEvent, render} from '@testing-library/react';
-import {DISSECTIONS, DISSECT_BY_ID, current, cutAdvance, dissectReducer, newDissect, pathLength, pointAt, reachable, stepDone, toolOf, type DAction, type DissectSpec, type DissectState} from '../utils/lab/hands/dissect';
+import {DISSECTIONS, DISSECT_BY_ID, active, current, cutAdvance, dissectReducer, newDissect, pathLength, pointAt, reachable, stepDone, toolOf, type DAction, type DissectSpec, type DissectState} from '../utils/lab/hands/dissect';
 import {ALL_EXPERIMENTS, HandsLab} from '../engines/families/HandsLab';
 import {LESSON_BY_ID} from '../engines/families/labLessons';
 import {MANUAL} from '../utils/lab/hands/manual';
@@ -90,12 +90,21 @@ describe('bài mổ / quan sát cấu tạo (Sinh)', () => {
     let st = run(frog, [{t: 'tool', tool: 'scalpel'}, {t: 'pin', i: 0}]);
     expect(st.pins[0]).toBeUndefined();
     expect(st.warn).toContain('kim ghim');
-    st = run(frog, [{t: 'tool', tool: 'scissors'}, {t: 'cut', s: 0.5}], st);
-    expect(st.cut[1]).toBeUndefined();
-    expect(st.warn).toContain('Chưa tới lúc này');
+    // lật vạt khi chưa cắt: về vật lí không làm được, nói rõ phải cắt trước
+    st = run(frog, [{t: 'tool', tool: 'forceps'}, {t: 'open', flap: 'left', v: 1}], st);
+    expect(st.open.left).toBeUndefined();
+    expect(st.warn).toContain('Chưa làm được: phải dùng kéo cắt');
     st = run(frog, [{t: 'name', organ: 'heart'}], st);
     expect(st.named).toEqual([]);
     expect(reachable(frog, st, 'heart')).toBe(false);
+    // cắt khi chưa ghim: làm được như ngoài đời, kèm hậu quả
+    st = run(frog, [{t: 'tool', tool: 'scissors'}, {t: 'cut', s: 0.5}], st);
+    expect(st.cut[1]).toBe(0.5);
+    expect(st.warn).toContain('Mẫu chưa ghim');
+    expect(active(frog, st)).toBe(1);
+    st = run(frog, [{t: 'cut', s: 1}, {t: 'tool', tool: 'forceps'}, {t: 'open', flap: 'left', v: 1}, {t: 'open', flap: 'right', v: 1}], st);
+    expect(reachable(frog, st, 'heart')).toBe(true);
+    st = newDissect();
     // ghim một kim hai lần chỉ tính một
     st = run(frog, [{t: 'tool', tool: 'pin'}, {t: 'pin', i: 0}, {t: 'pin', i: 0}]);
     expect(st.pins[0]).toEqual([0]);

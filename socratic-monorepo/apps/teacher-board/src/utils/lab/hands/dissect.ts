@@ -97,10 +97,22 @@ export function current(spec: DissectSpec, st: DissectState): number {
   const i = spec.steps.findIndex((_, n) => !stepDone(spec, st, n));
   return i < 0 ? spec.steps.length : i;
 }
-/** cơ quan đã lộ ra (bước chỉ tên nó đã tới) thì mới chỉ vào được */
+/**
+ * Bước j làm được chưa về VẬT LÍ: mọi bước cắt / lật lớp đứng trước nó đã xong (phải cắt rồi mới lật, lật rồi mới ghim vạt hay nhỏ thuốc lên cơ quan bên trong).
+ * Ghim mẫu nên làm trước nhưng không bắt buộc: như phòng thí nghiệm thật, học sinh làm được theo thứ tự mình chọn và nhận hậu quả.
+ */
+export function possible(spec: DissectSpec, st: DissectState, j: number): boolean {
+  return spec.steps.slice(0, j).every((s, k) => (s.kind !== 'cut' && s.kind !== 'open') || stepDone(spec, st, k));
+}
+/** bước đang làm: bước chưa xong, làm được, khớp dụng cụ đang cầm (cầm kéo khi chưa ghim = đang cắt); không cầm gì thì bước làm được đầu tiên */
+export function active(spec: DissectSpec, st: DissectState): number {
+  const open = spec.steps.map((_, j) => j).filter((j) => !stepDone(spec, st, j) && possible(spec, st, j));
+  if (!open.length) return current(spec, st);
+  return (st.tool ? open.find((j) => toolOf(spec.steps[j]) === st.tool) : undefined) ?? open[0];
+}
+/** cơ quan đã lộ ra (các lớp phủ nó đã cắt và lật) thì mới chỉ vào được */
 export function reachable(spec: DissectSpec, st: DissectState, organ: string): boolean {
-  const cur = current(spec, st);
-  return spec.steps.some((s, i) => s.kind === 'name' && i <= cur && s.organs.includes(organ));
+  return spec.steps.some((s, i) => s.kind === 'name' && possible(spec, st, i) && s.organs.includes(organ));
 }
 export const beatRate = (spec: DissectSpec, st: DissectState): number => (spec.beat ? spec.beat[st.drops > 0 ? 1 : 0] : 0);
 
@@ -123,27 +135,37 @@ const needTool = (spec: DissectSpec, i: number) => {
 export function dissectReducer(spec: DissectSpec, st: DissectState, a: DAction): DissectState {
   if (a.t === 'reset') return newDissect();
   if (a.t === 'tool') return {...st, tool: a.tool, warn: ''};
-  const cur = current(spec, st);
-  const step = spec.steps[cur];
+  const cur = active(spec, st);
   if (a.t === 'name') {
     if (!spec.organs[a.organ]) return st;
     if (!reachable(spec, st, a.organ)) return {...st, warn: 'Chưa nhìn rõ bộ phận này: làm xong các bước trước đã.'};
     return st.named.includes(a.organ) ? {...st, warn: ''} : {...st, named: [...st.named, a.organ], warn: ''};
   }
-  if (a.t === 'wrong') return step ? {...st, warn: needTool(spec, cur)} : st;
-  if (!step) return st;
+  if (a.t === 'wrong') return spec.steps[cur] ? {...st, warn: needTool(spec, cur)} : st;
   const kind = a.t === 'pin' ? 'pin' : a.t === 'cut' ? 'cut' : a.t === 'open' ? 'open' : 'drop';
-  if (step.kind !== kind) return {...st, warn: `Chưa tới lúc này. Bước ${cur + 1}: ${step.do}.`};
-  if (st.tool !== toolOf(step)) return {...st, warn: needTool(spec, cur)};
+  // bước nhận thao tác này: bước chưa xong cùng loại và làm được về vật lí (ưu tiên bước đang làm, rồi bước khớp dụng cụ)
+  const left = spec.steps.map((_, j) => j).filter((j) => spec.steps[j].kind === kind && !stepDone(spec, st, j));
+  if (!left.length) return st;
+  const can = left.filter((j) => possible(spec, st, j));
+  const j = can.includes(cur) ? cur : can.find((n) => toolOf(spec.steps[n]) === st.tool) ?? can[0];
+  if (j === undefined) {
+    const blk = spec.steps.findIndex((s, k) => k < left[0] && (s.kind === 'cut' || s.kind === 'open') && !stepDone(spec, st, k));
+    return {...st, warn: `Chưa làm được: phải ${spec.steps[blk].do.charAt(0).toLowerCase()}${spec.steps[blk].do.slice(1)} trước.`};
+  }
+  const step = spec.steps[j];
+  if (st.tool !== toolOf(step)) return {...st, warn: needTool(spec, j)};
+  // hậu quả của việc làm khác thứ tự khuyên dùng: cắt khi mẫu chưa ghim
+  const unpinned = spec.steps.findIndex((s, k) => k < j && s.kind === 'pin' && !stepDone(spec, st, k));
+  const note = kind === 'cut' && unpinned >= 0 ? `Mẫu chưa ghim nên dễ trượt, đường cắt khó thẳng: nên ${spec.steps[unpinned].do.charAt(0).toLowerCase()}${spec.steps[unpinned].do.slice(1)} trước.` : '';
   switch (a.t) {
     case 'pin': {
-      const have = st.pins[cur] ?? [];
+      const have = st.pins[j] ?? [];
       if (step.kind !== 'pin' || a.i < 0 || a.i >= step.targets.length || have.includes(a.i)) return st;
-      return {...st, pins: {...st.pins, [cur]: [...have, a.i]}, warn: ''};
+      return {...st, pins: {...st.pins, [j]: [...have, a.i]}, warn: ''};
     }
     case 'cut': {
       const s = a.s >= 0.97 ? 1 : Math.max(0, Math.min(1, a.s));
-      return s > (st.cut[cur] ?? 0) ? {...st, cut: {...st.cut, [cur]: s}, warn: ''} : st;
+      return s > (st.cut[j] ?? 0) ? {...st, cut: {...st.cut, [j]: s}, warn: note} : st;
     }
     case 'open':
       if (step.kind !== 'open' || !step.flaps.includes(a.flap)) return st;

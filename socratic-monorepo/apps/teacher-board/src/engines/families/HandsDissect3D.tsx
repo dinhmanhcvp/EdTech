@@ -2,7 +2,7 @@
 
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
-import {TOOLS, TOOL_NAME, beatRate, current, cutAdvance, pointAt, reachable, toolOf, type DAction, type DissectSpec, type DissectState, type Flap, type ToolId} from '../../utils/lab/hands/dissect';
+import {TOOLS, TOOL_NAME, active, beatRate, cutAdvance, possible, pointAt, reachable, toolOf, type DAction, type DissectSpec, type DissectState, type Flap, type ToolId} from '../../utils/lab/hands/dissect';
 import {bioRoom, graniteTop, handPointers, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {glassify, loadModel} from './labParts';
@@ -292,7 +292,7 @@ function makeDef(input: HandsInput, live: DissectLive): SceneDef {
         // khay dụng cụ chia thành năm băng ngang, mỗi băng một dụng cụ: chụm vào đâu trong băng cũng lấy được (đích to cho tay qua webcam)
         const q = P.onPlane(nx, ny, 0.05, v3);
         if (q.x > TRAY_X - 0.2 && q.x < TRAY_X + 1.45 && Math.abs(q.z) < 1.95) return {kind: 'tool', tool: TOOLS.reduce((a, t) => (Math.abs(q.z - SLOT[t]) < Math.abs(q.z - SLOT[a]) ? t : a))};
-        const cur = current(spec, st);
+        const cur = active(spec, st);
         const s = spec.steps[cur];
         if (s?.kind === 'pin') {
           let best = -1;
@@ -334,7 +334,7 @@ function makeDef(input: HandsInput, live: DissectLive): SceneDef {
 
       const act = (tg: Target, n: number, ndc: THREE.Vector2) => {
         const st = live.st;
-        const cur = current(spec, st);
+        const cur = active(spec, st);
         const need = spec.steps[cur] ? toolOf(spec.steps[cur]) : null;
         switch (tg.kind) {
           case 'tool':
@@ -369,7 +369,7 @@ function makeDef(input: HandsInput, live: DissectLive): SceneDef {
         P.step(1 - Math.exp(-dt * 28));
         if (!ready) return;
         const st = live.st;
-        const cur = current(spec, st);
+        const cur = active(spec, st);
         const step = spec.steps[cur];
 
         // ---- con trỏ: kéo đang dở, rồi tìm đích dưới con trỏ
@@ -463,7 +463,7 @@ function makeDef(input: HandsInput, live: DissectLive): SceneDef {
           const nextOpen = spec.steps[i + 1];
           const opened = nextOpen?.kind === 'open' && nextOpen.flaps.some((f) => (flaps.get(f)?.shown ?? 0) > 0.05);
           const prog = i === cur ? Math.max(st.cut[i] ?? 0, drag.reduce((m, d) => (d?.kind === 'cut' ? Math.max(m, d.prog) : m), 0)) : st.cut[i] ?? 0;
-          drawCut(i, prog, s.kind === 'cut' && i <= cur && !opened);
+          drawCut(i, prog, s.kind === 'cut' && possible(spec, st, i) && !opened);
         }
 
         // ---- vòng cam chỉ chỗ làm của bước hiện tại

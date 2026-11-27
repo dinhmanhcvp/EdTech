@@ -101,7 +101,7 @@ export const BENCH_AFTER: Record<string, Record<number, number>> = {
   ENZYME: {1: 0}, // cho hồ tinh bột và enzyme vào ống đang ở trong bể
   PLASMOLYSIS: {1: 0}, // đậy lamen lên tiêu bản
   MITOSIS_SLIDE: {1: 0}, // nhuộm xong mới lên kính (nhuộm trên bàn kính thì hỏng kính)
-  YOGURT: {1: 0}, // đặt hũ đã có sữa và men vào thùng ủ
+  YOGURT: {1: 0}, // rót sữa vào hũ đặt sẵn trong thùng ủ: chưa có hũ thì sữa đổ ra thùng
   VIRUS_SURVEY: {1: 0}, // phát phiếu rồi mới thu
   SEED_RESPIRATION: {1: 0}, // ống dẫn khí cắm qua nút bình
   PROPAGATION: {1: 0}, // quét auxin lên cành đã cắt

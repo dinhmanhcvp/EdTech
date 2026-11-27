@@ -45,7 +45,7 @@ function plan() { // mặt bằng: gốc toạ độ = tâm lều, z tăng ra l�
     s += ln('M-1480 1100H-1160V1360H-1480Z', k, { fill: '#3D7BFF', w: 0.4 }) + txt(-1320, 1060, 2.2, 'S17 KỆ TỜ RƠI', k, { a: 'middle', w: 700 });
     s += `<circle cx="1380" cy="1780" r="200" fill="#dfe7ff" stroke="#3D7BFF" stroke-width="${0.4 * k}"/>` + txt(1150, 1800, 2.2, 'S16 CỜ BUỒM (lối đi, hỏi BTC)', k, { a: 'end', w: 700 });
     // gate S15 (front edge, protrudes 60 into the aisle)
-    s += ln('M-1500 1440H-1280V1560H-1500Z M1280 1440H1500V1560H1280Z', k, { fill: '#14161c', w: 0.4 }) + ln('M-1500 1500H1500', k, { dash: [2, 1], c: '#3D7BFF', w: 0.8 }) + txt(0, 1690, 2.2, 'S15 CỔNG (hộp chữ trên cao 2 530–3 150)', k, { a: 'middle', c: '#3D7BFF', w: 700 });
+    s += ln('M-1500 1560H-1280V1680H-1500Z M1280 1560H1500V1680H1280Z', k, { fill: '#14161c', w: 0.4 }) + ln('M-1500 1620H1500', k, { dash: [2, 1], c: '#3D7BFF', w: 0.8 }) + txt(0, 1790, 2.2, 'S15 CỔNG đặt ngoài mép lều (hộp chữ cao 2 530–3 150)', k, { a: 'middle', c: '#3D7BFF', w: 700 });
     // writing zone
     s += ln(`M${cx - 300} ${cz + 300}L${cx + 150} ${cz + 500}L${cx + 30} ${cz + 770}L${cx - 420} ${cz + 570}Z`, k, { dash: [1.5, 1], c: '#3D7BFF' }) + txt(cx - 120, cz + 560, 2.4, 'vùng đứng viết bảng', k, { a: 'middle', c: '#3D7BFF' });
     // dimensions
@@ -58,16 +58,16 @@ function plan() { // mặt bằng: gốc toạ độ = tâm lều, z tăng ra l�
     return s; }, 'Nét đứt cam/tím: vật treo bằng dây cước từ khung mái lều (cao 2 500). Toạ độ lấy mép trong vách BTC. Màu tím: decal GAVIS; màu xanh: decal Socratic. Bục GAVIS lục giác cạnh 184 mm, cao 1 050. Đo lại lều thật khi nhận mặt bằng; lệch ≤ 30 mm thì giữ vị trí vách chéo, dồn sai số về phía lối đi.'); }
 
 function chamfer(rel) { // mặt đứng vách chéo + bàn Lab
-  return sheet('Vách chéo S01 và chữ nổi S06 · mặt đứng', '02', '1:12', [-500, -2550, 3000, 2900], (k) => {
+  return sheet('Vách chéo S01 và chữ nổi S06 · mặt đứng', '02', '1:12', [-500, -2800, 3000, 3150], (k) => {
     const WW = 1868, cw = 1493.2, ch = 906.9, x0 = 292, mx = x0 + cw / 2, yb = -995, yt = yb - ch; let s = '';
-    s += ln(`M0 0H${WW}V-2200H0Z`, k, { w: 0.6, fill: '#f3f4f8' }) + ln('M1220 0V-2200', k, { w: 0.25, dash: [1.5, 1], c: '#C0261A' }) + txt(1235, -150, 2, 'mối ghép 2 tấm', k, { c: '#C0261A' }) + ln(`M${x0} ${yb}H${x0 + cw}V${yt}H${x0}Z`, k, { w: 0.6, fill: '#fff' }) + txt(mx, (yb + yt) / 2, 3, 'Ô KHOÉT MÀN', k, { a: 'middle', c: '#888' });
+    s += ln(`M0 0H${WW}V-2440H0Z`, k, { w: 0.6, fill: '#f3f4f8' }) + ln(`M${mx - 560} ${yt - 190}H${mx + 560}V${yt - 70}H${mx - 560}Z`, k, { dash: [1.2, 0.8], c: '#3D7BFF' }) + txt(mx, yt - 115, 2.4, 'khẩu hiệu in UV: Learn the why. Own the future.', k, { a: 'middle', c: '#3D7BFF' }) + ln(`M${x0} ${yb}H${x0 + cw}V${yt}H${x0}Z`, k, { w: 0.6, fill: '#fff' }) + txt(mx, (yb + yt) / 2, 3, 'Ô KHOÉT MÀN', k, { a: 'middle', c: '#888' });
     s += ln(`M${x0 - 30} ${yb + 30}H${x0 + cw + 30}V${yt - 30}H${x0 - 30}Z`, k, { dash: [1.5, 1], c: '#3D7BFF' }) + txt(x0 + cw - 10, yt - 45, 2.2, 'nẹp Formex 10 mm rộng 30', k, { a: 'end', c: '#3D7BFF' });
-    s += ln(`M${mx - rel / 2} -2070H${mx + rel / 2}V-1940H${mx - rel / 2}Z`, k, { fill: '#dfe7ff', w: 0.4 }) + txt(mx, -1985, 2.6, 'S06 chữ nổi', k, { a: 'middle' });
+    s += ln(`M${mx - rel / 2} -2360H${mx + rel / 2}V-2230H${mx - rel / 2}Z`, k, { fill: '#dfe7ff', w: 0.4 }) + txt(mx, -2275, 2.6, 'S06 chữ nổi', k, { a: 'middle' });
     s += ln(`M0 0H${WW}`, k, { w: 1 }) + txt(0, 120, 2.6, 'SÀN', k, { mono: 1 });
-    s += dim(0, -2200, WW, -2200, -160, '1 868', k) + dim(0, 0, 0, -2200, -160, '2 200', k);
+    s += dim(0, -2440, WW, -2440, -160, '1 868', k) + dim(0, 0, 0, -2440, -160, '2 440 (1 tấm nguyên, lều cao 3 000)', k);
     s += dim(x0, yb, x0 + cw, yb, 130, '1 493,2', k) + dim(x0 + cw, yb, x0 + cw, yt, -120, '906,9', k) + dim(x0 + cw + 200, 0, x0 + cw + 200, yb, -60, '995', k) + dim(0, yb + 220, x0, yb + 220, 0, String(x0.toFixed(1)).replace('.', ','), k);
-    s += dim(WW, yt, WW, -2200, -220, P(2200 - 995 - ch), k) + dim(mx - rel / 2, -2070, mx + rel / 2, -2070, -90, P(rel), k) + dim(WW, -1940, WW, -2200, -380, '260 (chân chữ → đỉnh)', k) + dim(x0 + cw, yb, WW, yb, 130, P(WW - x0 - cw), k) + dim(0, yb + 380, mx, yb + 380, 0, '1 038,6 (tâm màn)', k);
-    return s; }, 'Formex 15 mm, in UV trực tiếp, ghép 2 tấm (1 220 + 648). Ô khoét = màn 1 483,2 × 896,9 × 104 mm + khe 5 mm mỗi phía, lệch 105 mm về phía vách phải để lưng màn dày 104 mm cách vách sau 27 mm, cách vách phải 37 mm; ĐO LẠI MÀN THẬT trước khi cắt. Mặt màn phẳng với mặt vách; màn đứng trên chân đế trong khoảng tam giác phía sau. Gông vách chéo vào hai vách BTC bằng ke Formex ở 3 cao độ (300 · 1 100 · 2 000).'); }
+    s += dim(WW, yt, WW, -2440, -220, P(2440 - 995 - ch), k) + dim(mx - rel / 2, -2360, mx + rel / 2, -2360, -90, P(rel), k) + dim(WW, -2230, WW, -2440, -380, '210 (chân chữ → đỉnh)', k) + dim(-60, 0, -60, -2230, 0, '2 230', k) + dim(x0 + cw, yb, WW, yb, 130, P(WW - x0 - cw), k) + dim(0, yb + 380, mx, yb + 380, 0, '1 038,6 (tâm màn)', k);
+    return s; }, 'Formex 15 mm, in UV trực tiếp, cắt từ 1 tấm nguyên khổ lớn (không nối), cao 2 440. Ô khoét = màn 1 483,2 × 896,9 × 104 mm + khe 5 mm mỗi phía, lệch 105 mm về phía vách phải để lưng màn dày 104 mm cách vách sau 27 mm, cách vách phải 37 mm; ĐO LẠI MÀN THẬT trước khi cắt. Mặt màn phẳng với mặt vách; màn đứng trên chân đế trong khoảng tam giác phía sau. Gông vách chéo vào hai vách BTC bằng ke Formex ở 3 cao độ (300 · 1 100 · 2 000).'); }
 
 function consoleSheet() {
   return sheet('Bàn đặt tay Lab S07 · 3 hình chiếu', '03', '1:8', [-300, -1550, 2800, 1800], (k) => { let s = '';
@@ -102,19 +102,19 @@ function piecesSheet(wmH) {
     return s; }, 'Bục GAVIS: 1 bục cao 1 050, 6 tấm Formex 10 mm rộng 184 mm ghép lục giác (in theo file G02), mặt trên G02t, LED tím mép trên + chân, đáy để hở. Chữ đứng: 3 lớp phẳng (chữ trắng 20 mm, chấm cam 20 mm, cung xanh 10 mm), bắt vít từ dưới bệ. Bút: Formex 10 mm in 2 mặt, đứng trên đế 300 × 250 ở mép trước bên trái.'); }
 
 function wallsSheet() {
-  return sheet('Vị trí decal trên vách BTC · 3 mặt đứng', '05', '1:25', [-300, -2750, 9600, 3850], (k) => { let s = ''; const H = 2200;
-    const wall = (x, w, label, col, blocks) => { let r = ln(`M${x} 0H${x + w}V${-H}H${x}Z`, k, { fill: col + '22', w: 0.6, c: col }) + txt(x + w / 2, -H - 330, 3.2, label, k, { a: 'middle', w: 800 }) + dim(x, 0, x + w, 0, 140, P(w), k) + dim(x, 0, x, -H, 140, '2 200', k);
+  return sheet('Vị trí decal trên vách BTC · 3 mặt đứng', '05', '1:25', [-300, -3200, 9600, 4300], (k) => { let s = ''; const H = 2440;
+    const wall = (x, w, label, col, blocks) => { let r = ln(`M${x} 0H${x + w}V${-H}H${x}Z`, k, { fill: col + '22', w: 0.6, c: col }) + txt(x + w / 2, -H - 330, 3.2, label, k, { a: 'middle', w: 800 }) + dim(x, 0, x + w, 0, 140, P(w), k) + dim(x, 0, x, -H, 140, '2 440', k) + ln(`M${x} -2200H${x + w}`, k, { w: 0.2, dash: [1, 1], c: col }) + txt(x + w - 20, -2240, 1.8, 'dải đầu 240', k, { a: 'end', c: col });
       blocks.forEach(([bx, bw, bh, t]) => { r += ln(`M${x + bx} 0H${x + bx + bw}V${-bh}H${x + bx}Z`, k, { fill: '#9993', dash: [1.2, 0.8] }) + txt(x + bx + bw / 2, -bh / 2, 2.2, t, k, { a: 'middle', c: '#444' }); }); return r; };
     s += wall(0, 2850, 'G01 · VÁCH TRÁI (trái file = lối vào)', '#8B5CF6', [[2016, 368, 1050, 'bục G02']]);
     s += wall(3250, 1238, 'S02 · VÁCH SAU (trái)', '#3D7BFF', []);
     s += wall(4900, 2100, 'S03 · VÁCH PHẢI (trái file = vách chéo)', '#3D7BFF', [[50, 600, 1253, 'bàn Lab che'], [670, 520, 880, 'S13 bình'], [1210, 700, 950, 'S09 ê-ke']]);
-    s += ln('M3250 -2220H6190V-2400H3250Z', k, { fill: '#E8C87244', c: '#a8862a', w: 0.5 }) + txt(4720, -2470, 2.2, 'C01 DẢI BẢO TRỢ 2 940 × 180 (trên đỉnh vách sau)', k, { a: 'middle' });
+    s += ln('M3250 -2460H6190V-2640H3250Z', k, { fill: '#E8C87244', c: '#a8862a', w: 0.5 }) + txt(4720, -2700, 2.2, 'C01 DẢI BẢO TRỢ 2 940 × 180 (ngay trên decal, cao 2 460–2 640)', k, { a: 'middle' });
     s += txt(4000, 900, 3, 'Tràn lề decal 20 mm mỗi phía; không dán đè lên nẹp nhôm vách BTC: cắt decal theo từng ô vách (thường rộng ≈ 1 000 mm) và căn chữ tránh nẹp.', k, { a: 'middle', w: 500 });
     return s; }); }
 
 function gateSheet() {
   return sheet('Cổng Socratic S15 · mặt đứng + mặt bên', '07', '1:25', [-2000, -4250, 5600, 4700], (k) => { let s = ''; const W = 3000, H = 3150, hh = 620, cw = 220, cr = 450, cy = -(H + cr - 150);
-    s += ln('M-1500 0V-2500M1500 0V-2500M-1500 -2300H1500V-2500H-1500Z', k, { dash: [1.5, 1], c: '#999' }) + txt(0, -2380, 2.2, 'diềm lều BTC (2 300–2 500)', k, { a: 'middle', c: '#888' });
+    s += ln('M-1500 0V-3000M-1500 -3000H1500V0', k, { dash: [1.5, 1], c: '#999' }) + txt(0, -2900, 2.2, 'mép mái lều BTC cao 3 000 (cổng đặt ngoài mép lều 120 mm)', k, { a: 'middle', c: '#888' });
     s += ln(`M${-W / 2} 0H${-W / 2 + cw}V${-(H - hh)}H${-W / 2}Z M${W / 2 - cw} 0H${W / 2}V${-(H - hh)}H${W / 2 - cw}Z`, k, { fill: '#dfe7ff', w: 0.6 }) + ln(`M${-W / 2} ${-(H - hh)}H${W / 2}V${-H}H${-W / 2}Z`, k, { fill: '#c9d6ff', w: 0.6 });
     s += `<circle cx="0" cy="${cy}" r="${cr}" fill="#eef0f6" stroke="#14161c" stroke-width="${0.5 * k}"/>` + txt(0, cy + 40, 3, 'S15e đĩa + logo ?', k, { a: 'middle' }) + txt(0, -(H - hh / 2) + 40, 3.4, 'S15a HỘP CHỮ (mặt ngoài) · S15b (mặt trong)', k, { a: 'middle', w: 800 });
     s += txt(-W / 2 + cw / 2, -1300, 2.4, 'S15c', k, { a: 'middle', rot: -90, w: 700 }) + txt(W / 2 - cw / 2, -1300, 2.4, 'S15d', k, { a: 'middle', rot: -90, w: 700 });
@@ -125,7 +125,7 @@ function gateSheet() {
     // side view
     const sx = 2600; s += ln(`M${sx} 0H${sx + 120}V${-H}H${sx}Z`, k, { fill: '#dfe7ff', w: 0.6 }) + ln(`M${sx + 60 - 150} 0H${sx + 60 + 150}V-30H${sx + 60 - 150}Z`, k, { fill: '#14161c' }) + ln(`M${sx + 80} ${cy - cr}V${cy + cr}`, k, { w: 1.2 }) + txt(sx + 60, -H - 1000, 3, 'MẶT BÊN', k, { a: 'middle', w: 800 });
     s += dim(sx, -H, sx + 120, -H, -120, '120', k) + dim(sx + 60 - 150, 0, sx + 60 + 150, 0, 160, 'đế 300', k) + txt(sx + 260, -1500, 2.2, '← ngoài lối đi | trong gian →', k, { c: '#666' });
-    return s; }, 'Đặt ở mép trước lều, tâm cột cách tim gian ±1 390, mặt ngoài nhô ra lối đi 60 mm (hỏi BTC). Cột hộp Formex 10 mm có vách ngăn Formex 15 mm mỗi 600 mm, ghép 2 đoạn; đế 280 × 300 đặt bao cát; buộc đai mỗi cột vào cột lều ở cao 1 000 và 2 200. Hộp chữ 3 000 × 620 × 120 xương Formex 15 mm, đặt lên 2 cột, bắt ke. Đĩa Ø900 cắm vào nóc hộp chữ bằng 2 nẹp Formex. Tổng cao 3,9 m: XIN PHÉP BTC giới hạn chiều cao trước khi làm.'); }
+    return s; }, 'Đặt nhích ra ngoài mép trước lều: mặt trong cột cách mép lều 60 mm, mặt ngoài nhô ra lối đi 180 mm (hỏi BTC); tâm cột cách tim gian ±1 390. Cột hộp Formex 10 mm có vách ngăn Formex 15 mm mỗi 600 mm, ghép 2 đoạn; đế 280 × 300 đặt bao cát; buộc đai mỗi cột vào cột lều ở cao 1 000 và 2 200. Hộp chữ 3 000 × 620 × 120 xương Formex 15 mm, đặt lên 2 cột, bắt ke. Đĩa Ø900 cắm vào nóc hộp chữ bằng 2 nẹp Formex. Tổng cao 3,9 m: XIN PHÉP BTC giới hạn chiều cao trước khi làm.'); }
 
 function decorSheet() { const { decorArt } = require('./decor-art'); const F = decorArt('flask'), B = decorArt('bulb'), G = decorArt('glasses');
   return sheet('Vật phẩm trang trí Formex · S09 · S10 · S13 · S14', '06', '1:15', [-250, -2050, 4800, 2550], (k) => { let s = '';

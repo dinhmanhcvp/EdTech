@@ -6,7 +6,7 @@ import {substanceRows, vesselRows, type Row} from '../../utils/lab/chem/cards';
 import {derive} from '../../utils/lab/chem/engine';
 import {SPECIES, SUBSTANCES} from '../../utils/lab/chem/species';
 import type {Action, Derived, LabState, Substance} from '../../utils/lab/chem/types';
-import {handPointers, labRoom, type HandsInput} from './handsKit';
+import {benchTop, handPointers, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {tiltFor} from '../../utils/lab/hands/handTracker';
 import {MISHAPS, chemMishapOf, spillOf} from '../../utils/lab/hands/mishap';
@@ -55,12 +55,13 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
   return {
     floor: true,
     room: true,
+    bright: true,
     dist: 8.6,
     target: [-0.3, 0.4, 0.0],
     orbit: () => [0, 46],
     setup: (k) => {
-      labRoom(k, [8.4, 5.6, -0.3, 0.1]);
-      solid(k.scene, new THREE.BoxGeometry(8.4, 0.12, 5.6), '#1C1F4A', {rough: 0.8, x: -0.3, y: -0.056, z: 0.1});
+      labRoom(k, [8.4, 5.6, -0.3, 0.1], 'chem');
+      benchTop(k, [8.4, 5.6, -0.3, 0.1], 'epoxy');
       const P = handPointers(k, input, 0.5);
       const fx = mishapFx(k);
       const raise = (id: string, at: THREE.Vector3) => {
@@ -75,7 +76,7 @@ function makeDef(input: HandsInput, live: ChemLive): SceneDef {
 
       // ---- giá ống nghiệm, thùng thải, kính bảo hộ
       const rackBox = solid(k.scene, new THREE.BoxGeometry(3.4, 0.1, 0.7), '#7A5C3A', {rough: 0.8, x: -1.7, y: 0.05, z: VZ});
-      const binBox = solid(k.scene, new THREE.BoxGeometry(0.9, 0.55, 0.9), '#3A3E7A', {rough: 0.6, x: BIN[0], y: 0.28, z: BIN[1]});
+      const binBox = solid(k.scene, new THREE.BoxGeometry(0.9, 0.55, 0.9), '#A8ADB3', {rough: 0.6, x: BIN[0], y: 0.28, z: BIN[1]});
       const binTag = k.label('Thùng thải (thả ống vào đây để đổ bỏ)');
       const gog = new THREE.Group();
       gog.position.copy(GOGGLES);

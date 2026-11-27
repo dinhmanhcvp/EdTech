@@ -3,7 +3,7 @@
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {BENCH, MIRROR_LEN, clampMirror, trace, type Mirror} from '../../utils/lab/hands/optics';
-import {handPointers, labRoom, type HandsInput} from './handsKit';
+import {benchTop, handPointers, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {dress, partOf, withSims2} from './labParts';
 import {Stage3D, setLine, type SceneDef} from './Stage3D';
@@ -26,7 +26,7 @@ function makeDef(input: HandsInput, live: OpticsLive): SceneDef {
     orbit: () => [0, 55],
     setup: (k) => {
       labRoom(k, [8.4, 5.6, -0.3, -0.5]);
-      solid(k.scene, new THREE.BoxGeometry(8.4, 0.12, 5.6), '#1C1F4A', {rough: 0.9, x: -0.3, y: -0.056, z: -0.5});
+      benchTop(k, [8.4, 5.6, -0.3, -0.5], 'epoxy'); // bàn quang học mặt sẫm, phòng tối: tia laser và vệt sáng rõ như phòng thí nghiệm thật
       const {laser, wall, detector: det} = BENCH;
       const laserBox = solid(k.scene, new THREE.BoxGeometry(0.7, 0.3, 0.3), '#C9CED6', {metal: 0.8, rough: 0.3, x: laser.x - 0.4, y: Y, z: laser.z});
       solid(k.scene, new THREE.BoxGeometry(0.16, Y, 0.16), '#3A3F47', {x: laser.x - 0.4, y: Y / 2, z: laser.z});

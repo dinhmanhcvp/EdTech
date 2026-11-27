@@ -128,7 +128,7 @@ export interface SceneDef {
   noGrid?: boolean;
   /** phòng thực hành ảo: nền tối, góc nhìn rộng, không lưới; cảnh tự dựng phòng (`labRoom`) */
   room?: boolean;
-  /** phòng sáng (phòng thí nghiệm Sinh): nền và sương màu kem thay cho nền tối */
+  /** phòng sáng (phòng thí nghiệm có cửa sổ, đèn trần): nền và sương màu kem thay cho nền tối; bỏ trống = phòng tối (quang học, phòng mổ, phòng đọc phim) */
   bright?: boolean;
   dist: number;
   target?: [number, number, number];

@@ -31,7 +31,7 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
   const plain: THREE.Object3D[] = [];
   const knobs = knobParams(spec, ops).map((p, i) => {
     const x = -3.7 + i * 1.3;
-    plain.push(mesh(k, new THREE.CylinderGeometry(0.27, 0.3, 0.08, 28), '#3A3E7A', x, 0.04, KNOB_Z));
+    plain.push(mesh(k, new THREE.CylinderGeometry(0.27, 0.3, 0.08, 28), '#A8ADB3', x, 0.04, KNOB_Z));
     const cap = mesh(k, new THREE.CylinderGeometry(0.2, 0.22, 0.2, 28), '#E3B341', x, 0.18, KNOB_Z);
     mesh(k, new THREE.BoxGeometry(0.05, 0.05, 0.17), '#1D1B16', 0, 0.12, -0.09, cap);
     for (let j = 0; j <= 10; j++) {
@@ -67,7 +67,7 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
     else {
       g.socket.set(xc, 0.14, SOCKET_Z);
       plain.push(mesh(k, new THREE.TorusGeometry(0.27, 0.025, 10, 32).rotateX(Math.PI / 2), '#E3B341', xc, 0.05, SOCKET_Z));
-      plain.push(mesh(k, new THREE.CylinderGeometry(0.26, 0.26, 0.03, 32), '#2A2E66', xc, 0.02, SOCKET_Z));
+      plain.push(mesh(k, new THREE.CylinderGeometry(0.26, 0.26, 0.03, 32), '#2C2F33', xc, 0.02, SOCKET_Z));
       k.label(`Ổ lắp: ${g.def.title}`)(new THREE.Vector3(xc, 0.12, SOCKET_Z - 0.5));
     }
     g.def.options.forEach((o, i) => {
@@ -95,7 +95,7 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
   const tip = mesh(k, new THREE.SphereGeometry(0.13, 16, 12), '#D9481C', 0, 0, -0.85, lever);
   let blade: THREE.Mesh | null = null;
   if (hasSwitch) {
-    plain.push(mesh(k, new THREE.BoxGeometry(1.1, 0.08, 1.7), '#2A2E66', SW.x, 0.04, SW.z - 0.35));
+    plain.push(mesh(k, new THREE.BoxGeometry(1.1, 0.08, 1.7), '#2C2F33', SW.x, 0.04, SW.z - 0.35));
     plain.push(mesh(k, new THREE.CylinderGeometry(0.1, 0.1, 0.16, 16), '#B9BEC5', SW.x, 0.14, SW.z));
     blade = mesh(k, new THREE.BoxGeometry(0.07, 0.07, 0.85), '#B9BEC5', 0, 0, -0.42, lever);
     k.scene.add(lever);
@@ -105,7 +105,7 @@ export function handOps(k: Kit, P: ReturnType<typeof handPointers>, spec: SimSpe
   const pulls = singles.map((a, i) => {
     const z = 0.2 + i * 0.9;
     const rest = new THREE.Vector3(3.6, 0.17, z);
-    plain.push(mesh(k, new THREE.BoxGeometry(1.5, 0.05, 0.12), '#3A3E7A', 3.0, 0.05, z));
+    plain.push(mesh(k, new THREE.BoxGeometry(1.5, 0.05, 0.12), '#A8ADB3', 3.0, 0.05, z));
     const handle = mesh(k, new THREE.BoxGeometry(0.2, 0.24, 0.4), a.color, rest.x, rest.y, rest.z);
     const band = mesh(k, new THREE.BoxGeometry(1, 0.04, 0.04), '#C8722A', 3.75, 0.2, z);
     k.label(`${a.label}: kéo cần về bên trái rồi buông`)(new THREE.Vector3(3.0, 0.5, z + 0.45));

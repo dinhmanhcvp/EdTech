@@ -39,7 +39,7 @@ export function collisionLab({k, P, live}: {k: Kit; P: ReturnType<typeof handPoi
   k.label('Lò xo bắn: kéo đuôi xe 1 lùi để nén')(V(-3.0, 1.15, ZT - 0.55));
   // nút thả xe đặt xa băng: cầm xe thì dễ nhấc nhầm quả cân đang nằm trên nó
   const BTN = V(-3.3, 0.1, 1.25);
-  solid(k.scene, new THREE.CylinderGeometry(0.3, 0.34, 0.08, 28), '#2A2E66', {x: BTN.x, y: 0.04, z: BTN.z});
+  solid(k.scene, new THREE.CylinderGeometry(0.3, 0.34, 0.08, 28), '#2C2F33', {x: BTN.x, y: 0.04, z: BTN.z});
   const btn = solid(k.scene, new THREE.CylinderGeometry(0.2, 0.2, 0.1, 28), '#2E9B57', {x: BTN.x, y: 0.12, z: BTN.z});
   const btnTag = k.label('Nút thả xe');
   const gateTags = GATES.map((x, i) => {

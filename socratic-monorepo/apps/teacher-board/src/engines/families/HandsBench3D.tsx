@@ -7,7 +7,7 @@ import {AUTO_FLAG, isToggle, pickProp, tintOf, trayLayout} from '../../utils/lab
 import {OVER_R, wirePath, dropped, newSqueeze, newStir, pourStep, pourTilt, squash, squeezeStep, stirProgress, stirStep} from '../../utils/lab/hands/benchActs';
 import {BENCH_FX, FX_PARTS} from './benchMotion';
 import {BIO_FX, BIO_FX_PARTS} from './benchMotionBio';
-import {bioRoom, graniteTop, handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
+import {benchTop, handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {dress, glassify, loadModel, partOf} from './labParts';
 import type {BenchLive} from './PhysBench';
@@ -118,7 +118,7 @@ const fmt = (v: number, d = 2) => (Number.isFinite(v) ? v.toLocaleString('vi-VN'
 function pads(k: Kit, P: ReturnType<typeof handPointers>, defs: {at: [number, number]; color: string; r: number; side?: boolean; text: () => string; press: () => void; notch?: () => [number, number]}[]) {
   const v3 = new THREE.Vector3();
   const rigs = defs.map((d) => {
-    const base = solid(k.scene, new THREE.CylinderGeometry(d.r + 0.05, d.r + 0.07, 0.06, 28), '#2A2E66', {x: d.at[0], y: 0.03, z: d.at[1]});
+    const base = solid(k.scene, new THREE.CylinderGeometry(d.r + 0.05, d.r + 0.07, 0.06, 28), '#2C2F33', {x: d.at[0], y: 0.03, z: d.at[1]});
     const cap = solid(k.scene, new THREE.CylinderGeometry(d.r, d.r, 0.1, 28), d.color, {x: d.at[0], y: 0.1, z: d.at[1], rough: 0.4});
     return {d, base, cap, tag: k.label(d.text()), down: 0};
   });
@@ -173,20 +173,15 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
   return {
     floor: true,
     room: true,
-    bright: live.file === 'bio',
+    bright: true,
     dist: 8.2,
     target: [-0.3, 0.45, 0.1],
     orbit: () => [0, 50],
     setup: (k) => {
       const e = live.e;
-      // bài Sinh: phòng thí nghiệm sáng, mặt bàn đá đen lấm tấm; bài Lí giữ phòng tối
-      if (live.file === 'bio') {
-        bioRoom(k, [8.4, 5.6, -0.3, 0.1]);
-        graniteTop(k, [8.4, 5.6, -0.3, 0.1]);
-      } else {
-        labRoom(k, [8.4, 5.6, -0.3, 0.1]);
-        solid(k.scene, new THREE.BoxGeometry(8.4, 0.12, 5.6), '#1C1F4A', {rough: 0.9, x: -0.3, y: -0.056, z: 0.1});
-      }
+      // bài Sinh: bàn đá granite đen lấm tấm; bài Lí: bàn laminate xám nhạt viền gỗ; cả hai trong phòng thí nghiệm sáng của môn
+      labRoom(k, [8.4, 5.6, -0.3, 0.1], live.file);
+      benchTop(k, [8.4, 5.6, -0.3, 0.1], live.file === 'bio' ? 'granite' : 'laminate');
       const P = handPointers(k, input, 0.3);
 
       // bộ dụng cụ Blender của bài + các phần động theo thanh trượt
@@ -670,8 +665,8 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
         return {ring, tag: k.label('', '#8A6A12')};
       });
       if (pickItems.length) {
-        // khay: tấm lót sẫm dọc mép bàn phía người nhìn
-        const mat = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.012, 0.46), new THREE.MeshStandardMaterial({color: '#4A4E6E', roughness: 0.9, transparent: true, opacity: 0.28}));
+        // khay: khay nhựa trắng ngà dọc mép bàn phía người nhìn (thấy rõ trên cả bàn đá đen lẫn bàn xám)
+        const mat = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.012, 0.46), new THREE.MeshStandardMaterial({color: '#E4E5E1', roughness: 0.55}));
         mat.position.set(0, 0.01, TRAY_Z);
         root.add(mat);
       }
@@ -831,7 +826,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       const SWEEP = 1.5 * Math.PI;
       const dials = railed.map((p, j) => {
         const [x] = dialAt(timed.length + j);
-        const base = solid(k.scene, new THREE.CylinderGeometry(0.27, 0.3, 0.08, 28), '#3A3E7A', {x, y: 0.04, z: 2.3});
+        const base = solid(k.scene, new THREE.CylinderGeometry(0.27, 0.3, 0.08, 28), '#A8ADB3', {x, y: 0.04, z: 2.3});
         const cap = solid(k.scene, new THREE.CylinderGeometry(0.2, 0.22, 0.2, 28), '#E3B341', {x, y: 0.18, z: 2.3, metal: 0.4});
         solid(cap, new THREE.BoxGeometry(0.05, 0.05, 0.17), '#1D1B16', {y: 0.12, z: -0.09});
         const m: BenchMove = {n: 0, param: p.key, axis: 'rz', a: 0, b: 0, what: 'núm vặn'};
@@ -904,7 +899,7 @@ function makeDef(input: HandsInput, live: Bench3DLive): SceneDef {
       const knife = BENCH_KNIFE.has(e.id);
       const levOn = e.columns.length > 0 && !pull;
       const lev = new THREE.Group();
-      const levBase = new THREE.MeshStandardMaterial({color: knife ? '#1A1A1C' : '#2A2E66', roughness: 0.5});
+      const levBase = new THREE.MeshStandardMaterial({color: knife ? '#1A1A1C' : '#2C2F33', roughness: 0.5});
       const levMetal = new THREE.MeshStandardMaterial({color: '#C98A4A', metalness: 0.8, roughness: 0.3});
       const levHandle = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 12), new THREE.MeshStandardMaterial({color: '#FF8A3D', emissive: '#FF8A3D', emissiveIntensity: 0.5, roughness: 0.4}));
       const blade = new THREE.Group();

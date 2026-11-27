@@ -3,7 +3,7 @@
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {TERMS, explain, netSources, wireKey, type Term, type Verdict, type Wire} from '../../utils/lab/hands/threePhase';
-import {handPointers, labRoom, type HandsInput} from './handsKit';
+import {benchTop, handPointers, labRoom, type HandsInput} from './handsKit';
 import {dress, loadModel, partOf, place} from './labParts';
 import {Stage3D, type SceneDef} from './Stage3D';
 
@@ -52,6 +52,7 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
   return {
     floor: true,
     room: true,
+    bright: true,
     dist: 7.5,
     target: [-0.55, 0.2, -0.6],
     orbit: () => [0, 48],
@@ -67,7 +68,7 @@ function makeDef(input: HandsInput, live: HandsLive): SceneDef {
 
       // ---- mặt bàn, tủ điện
       labRoom(k, [7.4, 4.8, -0.4, -0.4]);
-      solid(new THREE.BoxGeometry(7.4, 0.12, 4.8), '#D9C6A5', {rough: 0.85, x: -0.4, y: -0.056, z: -0.4});
+      benchTop(k, [7.4, 4.8, -0.4, -0.4], 'wood');
       const breakerBox = solid(new THREE.BoxGeometry(0.8, 0.5, 1.3), '#ECE8DF', {rough: 0.4, x: -2.5, y: 0.25, z: -0.3});
       solid(xCyl(0.07, 0.07, 1.1, 16), '#1D1B16', {x: -3.4, y: 0.12, z: -0.3});
       const handle = solid(new THREE.BoxGeometry(0.34, 0.14, 0.95), '#2459C9', {rough: 0.35, x: -2.5, y: 0.56, z: -0.3});

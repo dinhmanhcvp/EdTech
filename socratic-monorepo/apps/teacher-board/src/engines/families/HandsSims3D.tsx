@@ -6,8 +6,9 @@ import {condensateFraction, criticalT} from '../../utils/lab/hands/sims/bec';
 import {RHO0, THRESHOLD, match, strain, TRUE} from '../../utils/lab/hands/sims/ligo';
 import {fringe, orderWeight, visibility} from '../../utils/lab/hands/sims/matterwave';
 import {SIM_BY_ID} from '../../utils/lab/hands/sims';
+import {SUBJECT_OF} from '../../utils/lab/hands/sims/catalog';
 import {fmt, fromUnit, toUnit, type Values} from '../../utils/lab/hands/sims/types';
-import {handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
+import {benchTop, handPointers, handSliders, labRoom, type HandsInput} from './handsKit';
 import {handOps, padBank} from './handsOps';
 import {OPS} from '../../utils/lab/hands/sims/ops';
 import {solid} from './handsModels';
@@ -243,14 +244,17 @@ function makeDef(input: HandsInput, live: SimLive): SceneDef {
   return {
     floor: true,
     room: true,
+    bright: true,
     // bài có dụng cụ cao (buret chuẩn độ) lùi máy quay và nhìn cao hơn để không cắt mất đỉnh dụng cụ
     // eddy: ống dài 3 đơn vị, nam châm chờ ở miệng ống nên cũng phải nằm trong khung
     dist: live.id === 'titration' ? 10.6 : live.id === 'eddy' ? 11.4 : 9,
     target: live.id === 'titration' ? [-0.2, 1.0, -0.2] : live.id === 'eddy' ? [-0.2, 1.3, -0.2] : [-0.2, 0.2, -0.2],
     orbit: () => [0, 50],
     setup: (k) => {
-      labRoom(k, [8.4, 5.6, -0.3, 0.1]);
-      solid(k.scene, new THREE.BoxGeometry(8.4, 0.12, 5.6), '#1C1F4A', {rough: 0.9, x: -0.3, y: -0.056, z: 0.1});
+      const chem = SUBJECT_OF[live.id] === 'hoa';
+      const bio = SUBJECT_OF[live.id] === 'sinh';
+      labRoom(k, [8.4, 5.6, -0.3, 0.1], chem ? 'chem' : bio ? 'bio' : 'phys');
+      benchTop(k, [8.4, 5.6, -0.3, 0.1], chem ? 'epoxy' : bio ? 'granite' : 'laminate');
       const P = handPointers(k, input, 0.3);
       // hậu quả thao tác sai: hiệu ứng 3D + âm thanh + thẻ sự cố; sự cố do tham số (quá nhiệt, quá dòng…) phát hiện theo giá trị hiện tại, mỗi lần chuyển từ an toàn sang nguy hiểm
       const fx = mishapFx(k);

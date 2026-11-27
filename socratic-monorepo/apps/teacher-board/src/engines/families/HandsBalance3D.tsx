@@ -5,9 +5,9 @@ import * as THREE from 'three';
 import {BAL, force, range, reading, type BalState} from '../../utils/lab/hands/currentBalance';
 import {padRate} from '../../utils/lab/hands/handTracker';
 import {mishapFx, mishapSound} from './mishapFx';
-import {DEAD_WORLD, handPointers, labRoom, turnDelta, type HandsInput} from './handsKit';
+import {DEAD_WORLD, benchTop, handPointers, labRoom, turnDelta, type HandsInput} from './handsKit';
 import {V, solid} from './handsModels';
-import {assetUrl, gltfLoader} from './labParts';
+import {assetUrl, gltfLoader, realColors} from './labParts';
 import {Stage3D, type Kit, type SceneDef} from './Stage3D';
 
 /** Trạng thái bài cân dòng điện dùng chung giữa bảng điều khiển React và cảnh 3D. */
@@ -37,6 +37,7 @@ function makeDef(input: HandsInput, live: BalanceLive): SceneDef {
   return {
     floor: true,
     room: true,
+    bright: true,
     dist: 6.4,
     target: [0.2, 1.25, 0.2],
     orbit: () => [8, 13],
@@ -53,12 +54,13 @@ function makeDef(input: HandsInput, live: BalanceLive): SceneDef {
       rim.position.set(4, 4, -3);
       k.scene.add(key, key.target, rim);
       labRoom(k, [9.4, 4.6, 0, 0.3]);
-      solid(k.scene, new THREE.BoxGeometry(9.4, 0.12, 4.6), '#1C1F4A', {rough: 0.9, y: -0.056, z: 0.3});
+      benchTop(k, [9.4, 4.6, 0, 0.3], 'laminate');
       // ---- dụng cụ dựng bằng Blender (tools/lab-models/current_balance.py); bộ phận chuyển động là nút mang tên cố định
       type Mat = THREE.MeshStandardMaterial;
       type Rig = Record<'beam' | 'frame' | 'needleM' | 'needleI' | 'knobM' | 'knobI' | 'swK' | 'swI' | 'swB' | 'marker' | 'spring', THREE.Object3D> & {poles: Mat[]; lamp: Mat; edge: Mat; page: Mat; arrows: {o: THREE.Object3D; m: Mat}[]};
       let rig: Rig | null = null;
       gltfLoader().load(assetUrl('/models/current-balance.glb'), (g) => {
+        realColors(g.scene);
         g.scene.traverse((o) => {
           const m = o as THREE.Mesh;
           if (!m.isMesh) return;

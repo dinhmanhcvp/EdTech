@@ -45,7 +45,7 @@ function controls(k: Kit, P: Hands, live: SimLive) {
   const dial = (id: string, x: number, z: number, title: string) => {
     const p = param(id);
     const c = V(x, 0.2, z);
-    const base = solid(k.scene, new THREE.CylinderGeometry(0.44, 0.47, 0.03, 32), '#2A2E66', {x, y: 0.015, z});
+    const base = solid(k.scene, new THREE.CylinderGeometry(0.44, 0.47, 0.03, 32), '#2C2F33', {x, y: 0.015, z});
     const cap = solid(k.scene, new THREE.CylinderGeometry(0.2, 0.22, 0.2, 28), '#E3B341', {x, y: 0.18, z});
     solid(cap, new THREE.BoxGeometry(0.05, 0.05, 0.17), '#1D1B16', {y: 0.12, z: -0.09});
     const tag = k.label(title);
@@ -84,7 +84,7 @@ function controls(k: Kit, P: Hands, live: SimLive) {
     lever.position.copy(SW);
     k.scene.add(lever);
     const parts = [
-      solid(k.scene, new THREE.BoxGeometry(1.1, 0.08, 1.7), '#2A2E66', {x, y: 0.04, z: z - 0.35}),
+      solid(k.scene, new THREE.BoxGeometry(1.1, 0.08, 1.7), '#2C2F33', {x, y: 0.04, z: z - 0.35}),
       solid(lever, new THREE.BoxGeometry(0.07, 0.07, 0.85), '#B9BEC5', {z: -0.42}),
     ];
     const tip = solid(lever, new THREE.SphereGeometry(0.13, 16, 12), '#D9481C', {z: -0.85});
@@ -128,7 +128,7 @@ function controls(k: Kit, P: Hands, live: SimLive) {
   /** cần kéo dây cao su: kéo về bên trái rồi buông; độ kéo 0…1 đưa cho `release` */
   const pull = (x0: number, z: number, color: string, title: string, release: (amount: number) => void) => {
     const rest = V(x0 - 0.15, 0.17, z);
-    const rail = solid(k.scene, new THREE.BoxGeometry(1.5, 0.05, 0.12), '#3A3E7A', {x: x0 - 0.75, y: 0.05, z});
+    const rail = solid(k.scene, new THREE.BoxGeometry(1.5, 0.05, 0.12), '#A8ADB3', {x: x0 - 0.75, y: 0.05, z});
     const handle = solid(k.scene, new THREE.BoxGeometry(0.2, 0.24, 0.4), color, {x: rest.x, y: rest.y, z});
     const band = solid(k.scene, new THREE.BoxGeometry(1, 0.04, 0.04), '#C8722A', {x: x0, y: 0.2, z});
     k.label(title)(V(x0 - 0.75, 0.5, z + 0.45));

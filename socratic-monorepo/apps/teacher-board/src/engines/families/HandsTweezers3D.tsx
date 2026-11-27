@@ -3,7 +3,7 @@
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {DNA, jitter, settle} from '../../utils/lab/hands/tweezers';
-import {handPointers, labRoom, type HandsInput} from './handsKit';
+import {benchTop, handPointers, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {place, withSims2} from './labParts';
 import {Stage3D, setLine, type SceneDef} from './Stage3D';
@@ -26,12 +26,13 @@ function makeDef(input: HandsInput, live: TweezersLive): SceneDef {
   return {
     floor: true,
     room: true,
+    bright: true,
     dist: 8,
     target: [0, 0, -0.2],
     orbit: () => [0, 58],
     setup: (k) => {
       labRoom(k, [9, 4.2, 0, -0.2]);
-      solid(k.scene, new THREE.BoxGeometry(9, 0.12, 4.2), '#1C1F4A', {rough: 0.9, y: -0.056, z: -0.2});
+      benchTop(k, [9, 4.2, 0, -0.2], 'laminate');
       // lam kính của buồng vi lưu: dải sáng mờ để thấy mặt phẳng làm việc
       Object.assign(solid(k.scene, new THREE.BoxGeometry(8.6, 0.04, 1.3), '#7FC8FF', {rough: 0.1, y: 0.03, z: -0.2}).material, {transparent: true, opacity: 0.25});
       withSims2((lib) => {

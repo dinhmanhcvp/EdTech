@@ -6,7 +6,7 @@ import {armIK, blockersToRemove, type AssemblyKind, type AssemblySpec} from '../
 import {holdingMessage} from '../../utils/lab/hands/fasteners';
 import {toolKit} from './HandsAssemblyTools';
 import {dressMachine} from './HandsMachines';
-import {handPointers, labRoom, type HandsInput} from './handsKit';
+import {benchTop, handPointers, labRoom, type HandsInput} from './handsKit';
 import {V, about, buildDrone, buildEngine, buildPC, part, solid, xCyl, xRing, type Built, type Model} from './handsModels';
 import {Stage3D, type SceneDef} from './Stage3D';
 
@@ -147,6 +147,7 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
   return {
     floor: true,
     room: true,
+    bright: true,
     dist: 8.6, // thấy trọn hộp dụng cụ ở mép trước bàn (trước đây bị cắt ở đáy màn hình nên khó cầm tua vít)
     target: [-0.3, 0.2, 0.7],
     orbit: () => [0, 48],
@@ -158,7 +159,7 @@ function makeDef(input: HandsInput, live: AssemblyLive): SceneDef {
       const partObjs = new Set<THREE.Object3D>(Object.values(model.parts).map((q) => q.obj));
       const scenery = k.scene.children.filter((c) => !sceneKids.has(c) && !partObjs.has(c) && ((c as THREE.Mesh).isMesh || (c as THREE.Group).isGroup));
       const robot = live.kind === 'robot';
-      solid(k.scene, new THREE.BoxGeometry(8.4, 0.12, 5.6), '#D9C6A5', {rough: 0.85, x: -0.4, y: -0.056, z: 0.1});
+      benchTop(k, [8.4, 5.6, -0.4, 0.1], 'wood');
       // khay đặt chi tiết
       const trayD = model.tray?.depth ?? (model.wideTray ? 2.2 : 0.9);
       solid(k.scene, new THREE.BoxGeometry(6.6, 0.02, trayD), '#CDB892', {rough: 0.9, x: -0.4, y: 0.012, z: model.tray?.z ?? (model.wideTray ? 1.05 : 0.7)});

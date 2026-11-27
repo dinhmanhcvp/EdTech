@@ -25,6 +25,18 @@ function precompile(obj: THREE.Object3D): Promise<void> {
   if (!renderer || !scene || !camera) return Promise.resolve();
   return Promise.race([renderer.compileAsync(obj, camera, scene).then(() => undefined), new Promise<void>((r) => setTimeout(r, 3000))]).catch(() => undefined);
 }
+/**
+ * Vật liệu trong GLB còn mang màu chàm của phòng tối cũ (đế núm, nỉ ổ lắp, xô nhựa, xốp lót, mặt nguồn): đổi sang màu vật thật
+ * ngay khi tải, không phải dựng lại mô hình. Khoá = tên vật liệu đặt trong `tools/lab-models/*.py`.
+ */
+const REAL: Record<string, string> = {indigo: '#2C2F33', felt: '#3A3C3F', plastic: '#6B7076', foam: '#2A2B2E', front: '#2C2F33'};
+export function realColors(root: THREE.Object3D): void {
+  root.traverse((o) => {
+    const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+    const c = m && !Array.isArray(m) ? REAL[m.name] : undefined;
+    if (c) m!.color.set(c);
+  });
+}
 export function loadModel(url: string): Promise<THREE.Group> {
   let p = cache.get(url);
   if (!p) {
@@ -32,6 +44,7 @@ export function loadModel(url: string): Promise<THREE.Group> {
       gltfLoader().load(
         assetUrl(url),
         (g) => {
+          realColors(g.scene);
           markBVH(g.scene); // tia trỏ / chạm vào mô hình dùng cây bao (dựng lười ở lần bắn đầu)
           void precompile(g.scene).then(() => resolve(g.scene));
         },

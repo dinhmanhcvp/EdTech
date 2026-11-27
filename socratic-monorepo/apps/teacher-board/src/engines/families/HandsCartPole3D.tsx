@@ -3,7 +3,7 @@
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {CART, control, fallen, step, type CartState, type Gains} from '../../utils/lab/hands/cartpole';
-import {handPointers, labRoom, type HandsInput} from './handsKit';
+import {benchTop, handPointers, labRoom, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {partOf, withSims2} from './labParts';
 import {Stage3D, type SceneDef} from './Stage3D';
@@ -30,12 +30,13 @@ function makeDef(input: HandsInput, live: CartLive): SceneDef {
   return {
     floor: true,
     room: true,
+    bright: true,
     dist: 8.4,
     target: [0, 0.9, -0.2],
     orbit: () => [0, 24],
     setup: (k) => {
       labRoom(k, [9, 3.6, 0, -0.2]);
-      solid(k.scene, new THREE.BoxGeometry(9, 0.12, 3.6), '#1C1F4A', {rough: 0.9, y: -0.056, z: -0.2});
+      benchTop(k, [9, 3.6, 0, -0.2], 'laminate');
       const rail = solid(k.scene, new THREE.BoxGeometry(CART.rail * 2 * SCALE, 0.06, 0.18), '#C9CED6', {metal: 0.8, rough: 0.3, y: 0.15, z: -0.2});
       for (const s of [-1, 1]) solid(k.scene, new THREE.BoxGeometry(0.15, 0.5, 0.4), '#D9481C', {y: 0.25, x: s * (CART.rail * SCALE + 0.1), z: -0.2});
       const cart = new THREE.Group();

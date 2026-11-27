@@ -62,7 +62,8 @@ const CORE: Record<string, SceneDef> = {
       const steel = new THREE.MeshStandardMaterial({color: '#D5D9DF', metalness: 1, roughness: 0.16});
       const hot = new THREE.MeshStandardMaterial({color: '#E8762B', metalness: 0.75, roughness: 0.22});
       const dark = new THREE.MeshStandardMaterial({color: '#26231E', metalness: 0.6, roughness: 0.35});
-      const glass = new THREE.MeshPhysicalMaterial({color: '#DCEBFA', roughness: 0.05, transmission: 0.9, thickness: 0.4, ior: 1.45, transparent: true, opacity: 0.9});
+      // không dùng transmission: thêm một lượt vẽ cả cảnh mỗi khung (máy lớp học giật)
+      const glass = new THREE.MeshPhysicalMaterial({color: '#DCEBFA', roughness: 0.05, clearcoat: 1, transparent: true, opacity: 0.45, depthWrite: false});
       const plinth = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.1, 2), glass);
       plinth.position.y = 0.05;
       plinth.receiveShadow = true;

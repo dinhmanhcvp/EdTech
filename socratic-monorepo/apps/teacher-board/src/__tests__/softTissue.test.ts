@@ -70,6 +70,44 @@ describe('mô tứ diện XPBD', () => {
     expect(d1).toBeGreaterThan(d0 * 1.03);
     expect(t.boundary().tri.length).toBeGreaterThan(new Tissue(SMALL).boundary().tri.length);
   });
+  it('rạch lại vào rãnh đã sâu: chạm vách rãnh thì nhát dao vẫn thuộc cột rãnh (sâu thêm), không rơi sang cột bên', () => {
+    const t = new Tissue(SMALL);
+    for (let k = 1; k < 5; k++) t.cut(5, k);
+    const b = t.boundary();
+    expect(b.tet.length).toBe(b.tri.length / 3);
+    const {nx, rows} = SMALL;
+    const NX = nx + 1;
+    const NY = rows.length + 1;
+    const grid = (v: number) => [v % NX, Math.floor(v / NX) % NY, Math.floor(v / (NX * NY))];
+    let walls = 0;
+    let floors = 0;
+    for (let f = 0; f < b.tet.length; f++) {
+      const vs = [0, 1, 2].map((n) => grid(b.tri[f * 3 + n]));
+      const c = t.tetCell[b.tet[f]];
+      const [ci, ck] = [c % nx, Math.floor(c / (nx * rows.length))];
+      const col = t.faceColumn(b.tri[f * 3], b.tri[f * 3 + 1], b.tri[f * 3 + 2], b.tet[f]);
+      // vách rãnh: mặt đứng chung một chỉ số i (x = 5 hoặc 6) của ô cột 4 hoặc 6, ở hàng da, trong đoạn đã rạch
+      const wallX = vs.every((g) => g[0] === vs[0][0]) && (vs[0][0] === 5 || vs[0][0] === 6) && (ci === 4 || ci === 6) && ck >= 1 && ck < 5;
+      if (wallX && vs.every((g) => g[1] >= 2)) {
+        expect(col).toEqual([5, ck]);
+        walls++;
+      }
+      // đáy rãnh (mặt trên của hàng mỡ ở cột 5) và mặt da còn nguyên: cột của chính ô đó
+      if (vs.every((g) => g[1] === vs[0][1])) {
+        expect(col).toEqual([ci, ck]);
+        if (ci === 5 && vs[0][1] === 2) floors++;
+      }
+    }
+    expect(walls).toBe(2 * 4 * 2); // hai vách × 4 ô × 2 tam giác
+    expect(floors).toBe(4 * 2);
+    // vách ngoài cùng của khối (không có cột bên kia): giữ cột của ô
+    const edge = new Tissue(SMALL).boundary();
+    for (let f = 0; f < edge.tet.length; f++) {
+      const c = t.tetCell[edge.tet[f]];
+      const col = t.faceColumn(edge.tri[f * 3], edge.tri[f * 3 + 1], edge.tri[f * 3 + 2], edge.tet[f]);
+      expect(col).toEqual([c % nx, Math.floor(c / (nx * rows.length))]);
+    }
+  });
   it('kéo quá ngưỡng thì mô rách', () => {
     const t = new Tissue(SMALL);
     const v = t.vid(5, 3, 3);

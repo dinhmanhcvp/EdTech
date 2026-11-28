@@ -2,7 +2,7 @@
 
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
-import {TOOLS, TOOL_NAME, beatRate, current, cutAdvance, pointAt, reachable, toolOf, type DAction, type DissectSpec, type DissectState, type Flap, type ToolId} from '../../utils/lab/hands/dissect';
+import {TOOLS, TOOL_NAME, beatRate, current, cutAdvance, pointAt, reachable, tagSlots, toolOf, type DAction, type DissectSpec, type DissectState, type Flap, type ToolId} from '../../utils/lab/hands/dissect';
 import {bioRoom, graniteTop, handPointers, type HandsInput} from './handsKit';
 import {solid} from './handsModels';
 import {glassify, loadModel} from './labParts';
@@ -516,15 +516,15 @@ function makeDef(input: HandsInput, live: DissectLive): SceneDef {
           if (show) shownIds.push(id);
           else o.tag(null);
         }
-        // nhãn ✓ xếp hàng dọc mép sau của khay (hai tầng so le, cách nhau ≥ 0,85) có đường chỉ tới đúng cơ quan: không chồng lên nhau, không che mẫu
+        // nhãn ✓ xếp hàng dọc mép sau của khay (hai hoặc ba tầng so le, xem `tagSlots`) có đường chỉ tới đúng cơ quan: không chồng lên nhau, không che mẫu
         const cx = new Map(shownIds.map((id) => [id, center(organs.get(id)!.obj, new THREE.Vector3())] as const));
         shownIds.sort((a, b) => cx.get(a)!.x - cx.get(b)!.x);
         const mid = shownIds.length ? shownIds.reduce((a, id) => a + cx.get(id)!.x, 0) / shownIds.length : 0;
+        const slots = tagSlots(shownIds.length, mid);
         const seg: number[] = [];
         shownIds.forEach((id, i) => {
           const c = cx.get(id)!;
-          const lx = Math.max(-2.2, Math.min(2.4, mid - ((shownIds.length - 1) * 0.85) / 2 + i * 0.85));
-          const lz = i % 2 ? -1.45 : -1.8;
+          const [lx, lz] = slots[i];
           organs.get(id)!.tag(w3.set(lx, 0.12, lz));
           seg.push(lx, 0.12, lz + 0.05, c.x, c.y, c.z);
         });

@@ -480,8 +480,8 @@ export class Tissue {
     this.heat = next;
   }
 
-  /** mặt ngoài hiện tại: mọi mặt tam giác chỉ thuộc một tứ diện còn sống, kèm lớp của tứ diện đó; hướng pháp tuyến ra ngoài */
-  boundary(): {tri: Int32Array; layer: Uint8Array} {
+  /** mặt ngoài hiện tại: mọi mặt tam giác chỉ thuộc một tứ diện còn sống, kèm lớp và chỉ số của tứ diện đó; hướng pháp tuyến ra ngoài */
+  boundary(): {tri: Int32Array; layer: Uint8Array; tet: Int32Array} {
     const cnt = new Map<number, {f: [number, number, number]; t: number; n: number}>();
     const nv = this.nv;
     const FACES = [
@@ -507,12 +507,41 @@ export class Tissue {
     }
     const tri: number[] = [];
     const layer: number[] = [];
+    const tet: number[] = [];
     for (const c of cnt.values())
       if (c.n === 1) {
         tri.push(...c.f);
         layer.push(this.tetLayer[c.t]);
+        tet.push(c.t);
       }
-    return {tri: Int32Array.from(tri), layer: Uint8Array.from(layer)};
+    return {tri: Int32Array.from(tri), layer: Uint8Array.from(layer), tet: Int32Array.from(tet)};
+  }
+  /**
+   * Cột (i, k) mà nhát dao chạm mặt ngoài (a, b, c) của tứ diện `t` thuộc về. Mặt nằm ngang (da, đáy rãnh): cột của chính ô đó.
+   * Mặt đứng (vách rãnh: lộ ra vì ô cùng hàng ở cột bên đã bị rạch): cột bên kia vách, tức chính rãnh, để rạch lại thì rãnh sâu thêm
+   * chứ không xén sang vách. Vách ngoài cùng của khối (bên kia không còn cột) giữ cột của ô.
+   * Tính theo chỉ số lưới nên đúng cả khi mô đã biến dạng (mép rãnh banh ra vì da căng), khác `cellAt` (theo vị trí nghỉ).
+   */
+  faceColumn(a: number, b: number, c: number, t: number): [number, number] {
+    const {nx, nz, rows} = this.spec;
+    const NX = nx + 1;
+    const NY = rows.length + 1;
+    const cell = this.tetCell[t];
+    const ci = cell % nx;
+    const ck = Math.floor(cell / (nx * rows.length));
+    const gi = (v: number) => v % NX;
+    const gj = (v: number) => Math.floor(v / NX) % NY;
+    const gk = (v: number) => Math.floor(v / (NX * NY));
+    if (gj(a) === gj(b) && gj(b) === gj(c)) return [ci, ck];
+    if (gi(a) === gi(b) && gi(b) === gi(c)) {
+      const ni = gi(a) === ci ? ci - 1 : ci + 1;
+      return ni >= 0 && ni < nx ? [ni, ck] : [ci, ck];
+    }
+    if (gk(a) === gk(b) && gk(b) === gk(c)) {
+      const nk = gk(a) === ck ? ck - 1 : ck + 1;
+      return nk >= 0 && nk < nz ? [ci, nk] : [ci, ck];
+    }
+    return [ci, ck];
   }
   /** đỉnh gần điểm nhất (chỉ đỉnh còn thuộc ít nhất một tứ diện sống) */
   nearest(at: [number, number, number], maxD = Infinity): number {

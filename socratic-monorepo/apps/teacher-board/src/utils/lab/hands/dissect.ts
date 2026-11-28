@@ -153,6 +153,23 @@ export function dissectReducer(spec: DissectSpec, st: DissectState, a: DAction):
   }
 }
 
+// ------------------------------------------------------------------ chỗ đặt nhãn ✓
+/** khoảng x (thế giới) dọc mép sau khay để xếp nhãn ✓, và các hàng z (hàng đầu gần mẫu nhất) */
+export const TAG_X: [number, number] = [-2.2, 2.4];
+const TAG_ROWS2 = [-1.8, -1.45];
+const TAG_ROWS3 = [-1.8, -1.45, -2.15];
+/**
+ * Chỗ (x, z) cho `n` nhãn ✓ đã sắp theo x của cơ quan, quanh tâm `mid`: cách đều 0,85 khi đủ chỗ; nhiều nhãn thì khít lại cho vừa mép khay
+ * và xếp ba hàng so le để nhãn cùng hàng vẫn cách nhau ≥ 1,3 (nhãn dài nhất rộng ≈ 1,2 ở góc nhìn hẹp nhất): không nhãn nào chồng hay bị ẩn vì chật.
+ */
+export function tagSlots(n: number, mid: number): [number, number][] {
+  const span = TAG_X[1] - TAG_X[0];
+  const step = n > 1 ? Math.min(0.85, span / (n - 1)) : 0;
+  const rows = step * 2 >= 1.3 || n <= 2 ? TAG_ROWS2 : TAG_ROWS3;
+  const x0 = Math.max(TAG_X[0], Math.min(TAG_X[1] - (n - 1) * step, mid - ((n - 1) * step) / 2));
+  return Array.from({length: n}, (_, i) => [x0 + i * step, rows[i % rows.length]]);
+}
+
 // ------------------------------------------------------------------ bám đường cắt
 const segLen = (p: [number, number][]) => p.slice(1).map((q, i) => Math.hypot(q[0] - p[i][0], q[1] - p[i][1]));
 export const pathLength = (p: [number, number][]) => segLen(p).reduce((a, b) => a + b, 0);
@@ -309,7 +326,7 @@ export const DISSECTIONS: DissectSpec[] = [
       ovule: {name: 'Noãn', fn: 'Chứa túi phôi có tế bào trứng; sau thụ tinh phát triển thành hạt.'},
     },
     flaps: {
-      petals: {label: 'các cánh hoa', move: [-1.75, -0.22, 0.95], scale: 0.7},
+      petals: {label: 'các cánh hoa', move: [-1.12, -0.22, 0.85], scale: 0.7},
       sepals: {label: 'các lá đài', move: [-1.75, -0.25, -0.95], scale: 0.8},
       stamens: {label: 'các nhị', axis: [1, 0, 0], angle: 1.35, move: [1.5, 0.05, 0.85]},
       pistil: {label: 'nửa trước bầu nhụy', axis: [1, 0, 0], angle: 1.45},

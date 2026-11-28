@@ -3,7 +3,7 @@ import {readFileSync} from 'fs';
 import {join} from 'path';
 import {afterEach, describe, expect, it} from 'vitest';
 import {cleanup, fireEvent, render} from '@testing-library/react';
-import {DISSECTIONS, DISSECT_BY_ID, current, cutAdvance, dissectReducer, newDissect, pathLength, pointAt, reachable, stepDone, toolOf, type DAction, type DissectSpec, type DissectState} from '../utils/lab/hands/dissect';
+import {DISSECTIONS, DISSECT_BY_ID, TAG_X, current, cutAdvance, dissectReducer, newDissect, pathLength, pointAt, reachable, stepDone, tagSlots, toolOf, type DAction, type DissectSpec, type DissectState} from '../utils/lab/hands/dissect';
 import {ALL_EXPERIMENTS, HandsLab} from '../engines/families/HandsLab';
 import {LESSON_BY_ID} from '../engines/families/labLessons';
 import {MANUAL} from '../utils/lab/hands/manual';
@@ -133,6 +133,25 @@ describe('bài mổ / quan sát cấu tạo (Sinh)', () => {
     expect(cutAdvance(path, 0.5, 0.1, 0).s).toBe(0.5);
   });
 
+  it('nhãn ✓ của cơ quan: mọi nhãn nằm trong mép sau khay, nhãn cùng hàng cách nhau đủ rộng (không chồng nhau) kể cả khi gọi tên hết 11 bộ phận tim lợn', () => {
+    // bài nhiều cơ quan nhất (tim lợn, 11): ba hàng còn vừa tới 12 nhãn
+    const most = Math.max(...DISSECTIONS.map((d) => Object.keys(d.organs).length));
+    expect(most).toBeLessThanOrEqual(12);
+    for (let n = 1; n <= most; n++) {
+      for (const mid of [-3, -0.4, 0, 1.2, 3]) {
+        const slots = tagSlots(n, mid);
+        expect(slots).toHaveLength(n);
+        for (const [x] of slots) {
+          expect(x).toBeGreaterThanOrEqual(TAG_X[0] - 1e-9);
+          expect(x).toBeLessThanOrEqual(TAG_X[1] + 1e-9);
+        }
+        // nhãn dài nhất (≈ 1,2 đơn vị ở góc nhìn hẹp nhất) không đè nhãn cùng hàng
+        for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (slots[i][1] === slots[j][1]) expect(Math.abs(slots[i][0] - slots[j][0])).toBeGreaterThanOrEqual(1.25);
+      }
+    }
+    // ít nhãn thì giữ cách đều 0,85 quanh tâm các cơ quan
+    expect(tagSlots(3, 0).map(([x]) => +x.toFixed(2))).toEqual([-0.85, 0, 0.85]);
+  });
   it('bảng điều khiển: chọn dụng cụ bằng nút, bước đang làm và lời nhắc khi cầm sai', () => {
     const r = render(<HandsLab experiment="dissect-frog" />);
     expect(r.getByTestId('dissect-status').getAttribute('data-step')).toBe('0');

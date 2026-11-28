@@ -317,9 +317,13 @@ function makeDef(input: HandsInput, live: TissueLive): SceneDef {
       tray.position.set(TRAY_X + 0.6, 0.0, 0);
       k.scene.add(tray);
 
+      /** tam giác mặt ngoài (chỉ số trong `bnd`) mà lần dò gần nhất chạm; lưới không đánh chỉ số nên tam giác f gồm đỉnh 3f..3f+2 */
+      let hitFace = -1;
       const hitTissue = (nx2: number, ny2: number) => {
         ray.setFromCamera(v2.set(nx2, ny2), k.camera);
-        return ray.intersectObject(mesh, false)[0]?.point ?? null;
+        const h = ray.intersectObject(mesh, false)[0];
+        hitFace = h?.face ? Math.floor(h.face.a / 3) : -1;
+        return h?.point ?? null;
       };
       const onTray = (nx2: number, ny2: number): TTool | null => {
         const q = P.onPlane(nx2, ny2, 0.02, v3);
@@ -370,7 +374,9 @@ function makeDef(input: HandsInput, live: TissueLive): SceneDef {
           const down = p.down && !tr;
           if (tool === 'scalpel') {
             if (down && hit) {
-              const c = tissue.cellAt(hit.x, hit.z);
+              // cột theo mặt bị chạm (đúng cả khi mô biến dạng; chạm vách rãnh thì là cột rãnh), lưới chưa có thì theo vị trí
+              const f = hitFace;
+              const c = f >= 0 && f < bnd.tet.length ? tissue.faceColumn(bnd.tri[f * 3], bnd.tri[f * 3 + 1], bnd.tri[f * 3 + 2], bnd.tet[f]) : tissue.cellAt(hit.x, hit.z);
               const key = c ? `${c[0]},${c[1]}` : '';
               // mỗi nhát (một lần chụm–kéo) cắt mỗi ô một lần: rạch lại cùng chỗ thì vào sâu thêm một lớp
               if (c && !st.lastCell.split('|').includes(key)) {

@@ -1,0 +1,5 @@
+# Chỉ để chạy kiểm thử (CI và máy dev), không cài lên Render.
+# httpx: starlette.testclient (TestClient của FastAPI) cần gói này; thiếu thì 17 tệp kiểm thử lỗi ngay lúc nạp.
+-r requirements.txt
+pytest
+httpx

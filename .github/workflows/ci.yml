@@ -1,0 +1,55 @@
+# Kiểm thử tự động cho socratic-monorepo: mỗi lần đẩy lên main / nhánh claude/** và mỗi pull request.
+#  - web: kiểm kiểu (tsc) 3 ứng dụng + 2 gói dùng chung, rồi toàn bộ vitest (~215 tệp, ~2 phút).
+#  - ai-engine: pytest máy chủ FastAPI (~580 ca, ~1 phút), Python 3.12 như trên Render.
+# Không cần khóa AI hay bí mật nào: kiểm thử tự cô lập (xem services/ai-engine/tests/conftest.py).
+name: ci
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths: ['socratic-monorepo/**', '.github/workflows/ci.yml']
+  pull_request:
+    paths: ['socratic-monorepo/**', '.github/workflows/ci.yml']
+  workflow_dispatch:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: socratic-monorepo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: socratic-monorepo/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Kiểm kiểu (tsc)
+        run: |
+          for p in apps/teacher-board apps/student-app apps/teacher-console packages/types packages/ui; do
+            echo "::group::tsc $p"
+            npx tsc --noEmit -p "$p"
+            echo "::endgroup::"
+          done
+      - name: Vitest (toàn monorepo)
+        run: npx vitest run
+  ai-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: socratic-monorepo/services/ai-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: socratic-monorepo/services/ai-engine/requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Pytest
+        run: python -m pytest tests -q
